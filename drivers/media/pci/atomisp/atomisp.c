@@ -1,0 +1,262 @@
+/*
+ * Copyright (c) 2013 Intel Corporation. All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License version
+ * 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA.
+ *
+ */
+
+#include <linux/device.h>
+#include <linux/interrupt.h>
+#include <linux/pci.h>
+#include <linux/module.h>
+#include <linux/pm_qos.h>
+#include <linux/pm_runtime.h>
+#include <linux/timer.h>
+
+#include <asm/intel-mid.h>
+#include <linux/intel_mid_pm.h>
+
+#include "atomisp.h"
+#include "atomisp-pdata.h"
+#include "atomisp-bus.h"
+#include "atomisp-regs.h"
+
+static void atomisp_msi_irq_init(struct atomisp_device *isp)
+{
+	u32 msg32;
+	u16 msg16;
+
+	pci_read_config_dword(isp->pdev, PCI_MSI_CAPID, &msg32);
+	msg32 |= PCI_MSI_CAPID_ENABLE;
+	pci_write_config_dword(isp->pdev, PCI_MSI_CAPID, msg32);
+
+	pci_write_config_dword(isp->pdev, PCI_INTERRUPT_CTRL,
+			       PCI_INTERRUPT_CTRL_IER | PCI_INTERRUPT_CTRL_IIR);
+
+	pci_read_config_word(isp->pdev, PCI_COMMAND, &msg16);
+	msg16 |= PCI_COMMAND_MEMORY |
+		PCI_COMMAND_MASTER |
+		PCI_COMMAND_INTX_DISABLE;
+	pci_write_config_word(isp->pdev, PCI_COMMAND, msg16);
+}
+
+static void atomisp_msi_irq_uninit(struct atomisp_device *isp)
+{
+	u32 msg32;
+	u16 msg16;
+
+	pci_read_config_dword(isp->pdev, PCI_MSI_CAPID, &msg32);
+	msg32 &=  PCI_MSI_CAPID_ENABLE;
+	pci_write_config_dword(isp->pdev, PCI_MSI_CAPID, msg32);
+
+	pci_write_config_dword(isp->pdev, PCI_INTERRUPT_CTRL, 0);
+
+	pci_read_config_word(isp->pdev, PCI_COMMAND, &msg16);
+	msg16 &= ~(PCI_COMMAND_MASTER |
+		   PCI_COMMAND_INTX_DISABLE);
+	pci_write_config_word(isp->pdev, PCI_COMMAND, msg16);
+}
+
+#define ATOMISP_PCI_BAR		0
+
+static struct device *atomisp_mmu_init(struct pci_dev *pdev,
+				       void __iomem *base, unsigned int nr)
+{
+	struct atomisp_mmu_pdata *pdata =
+		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
+
+	if (!pdata)
+		return ERR_PTR(-ENOMEM);
+
+	pdata->base = base;
+
+	return atomisp_bus_add_device(pdev, pdata, NULL, ATOMISP_MMU_NAME, nr);
+}
+
+static struct device *atomisp_csi2_init(struct pci_dev *pdev, void *iommu,
+					void __iomem *base, unsigned int nr)
+{
+	struct atomisp_csi2_pdata *pdata =
+		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
+
+	if (!pdata)
+		return ERR_PTR(-ENOMEM);
+
+	pdata->base = base;
+
+	return atomisp_bus_add_device(pdev, pdata, iommu, ATOMISP_CSI2_NAME,
+				      nr);
+}
+
+static irqreturn_t atomisp_isr(int irq, void *priv)
+{
+	return IRQ_HANDLED;
+}
+
+static int atomisp_pci_probe(struct pci_dev *pdev,
+			     const struct pci_device_id *id)
+{
+	struct atomisp_device *isp;
+	phys_addr_t phys;
+	void __iomem *base;
+	struct device *iommu_dev, *dev_tmp;
+	int rval;
+
+	rval = pcim_enable_device(pdev);
+	if (rval) {
+		dev_err(&pdev->dev, "Failed to enable CI ISP device (%d)\n",
+			rval);
+		return rval;
+	}
+
+	phys = pci_resource_start(pdev, ATOMISP_PCI_BAR);
+
+	rval = pcim_iomap_regions(pdev, 1 << ATOMISP_PCI_BAR, pci_name(pdev));
+	if (rval) {
+		dev_err(&pdev->dev, "Failed to I/O memory remapping (%d)\n",
+			rval);
+		return rval;
+	}
+	dev_info(&pdev->dev, "physical base address 0x%x\n", phys);
+
+	base = pcim_iomap_table(pdev)[ATOMISP_PCI_BAR];
+	dev_info(&pdev->dev, "mapped as: 0x%p\n", base);
+
+	isp = devm_kzalloc(&pdev->dev, sizeof(*isp), GFP_KERNEL);
+	if (!isp) {
+		dev_err(&pdev->dev, "Failed to alloc CI ISP structure\n");
+		return -ENOMEM;
+	}
+	isp->pdev = pdev;
+	INIT_LIST_HEAD(&isp->devices);
+	pci_set_drvdata(pdev, isp);
+
+	iommu_dev = atomisp_mmu_init(pdev, base + 0x00070000, 0);
+	rval = PTR_ERR(iommu_dev);
+	if (IS_ERR(iommu_dev)) {
+		dev_err(&pdev->dev, "can't create iommu device\n");
+		return -ENOMEM;
+	}
+
+	pr_info("mmu %p\n", iommu_dev);
+	pr_info("a %p\n", iommu_dev->archdata.iommu);
+
+	dev_tmp = atomisp_csi2_init(pdev, iommu_dev, base, 0); /* fixme */
+	rval = PTR_ERR(dev_tmp);
+	if (IS_ERR(dev_tmp))
+		goto out_atomisp_bus_del_devices;
+
+	pci_set_master(pdev);
+
+	rval = pci_enable_msi(pdev);
+	if (rval) {
+		dev_err(&pdev->dev, "Failed to enable msi (%d)\n", rval);
+		goto out_atomisp_bus_del_devices;
+	}
+
+	rval = devm_request_irq(&pdev->dev, pdev->irq, atomisp_isr, IRQF_SHARED,
+				ATOMISP_NAME, isp);
+	if (rval) {
+		dev_err(&pdev->dev, "Failed to request irq (%d)\n", rval);
+		goto out_atomisp_bus_del_devices;
+	}
+
+	atomisp_msi_irq_init(isp);
+
+	pm_runtime_put_noidle(&pdev->dev);
+	pm_runtime_allow(&pdev->dev);
+
+	return 0;
+
+out_atomisp_bus_del_devices:
+	atomisp_bus_del_devices(pdev);
+
+	return rval;
+}
+
+static void atomisp_pci_remove(struct pci_dev *pdev)
+{
+	struct atomisp_device *isp = pci_get_drvdata(pdev);
+
+	atomisp_bus_del_devices(pdev);
+
+	pm_runtime_forbid(&pdev->dev);
+	pm_runtime_get_noresume(&pdev->dev);
+
+	atomisp_msi_irq_uninit(isp);
+}
+
+static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0148)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0149)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014A)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014B)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014C)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014D)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014E)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014F)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x08D0)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1178)},
+	{0,}
+};
+
+MODULE_DEVICE_TABLE(pci, atomisp_pci_tbl);
+
+static struct pci_driver atomisp_pci_driver = {
+	.driver = {
+#ifdef CONFIG_PM
+		.pm = &(const struct dev_pm_ops){},
+#endif /* CONFIG_PM */
+	},
+	.name = ATOMISP_NAME,
+	.id_table = atomisp_pci_tbl,
+	.probe = atomisp_pci_probe,
+	.remove = atomisp_pci_remove,
+};
+
+static int __init atomisp_init(void)
+{
+	int rval = atomisp_bus_register();
+	if (rval) {
+		pr_warn("can't register atomisp bus (%d)\n", rval);
+		return rval;
+	}
+
+	rval = pci_register_driver(&atomisp_pci_driver);
+	if (rval) {
+		pr_warn("can't register pci driver (%d)\n", rval);
+		goto out_pci_register_driver;
+	}
+
+	return 0;
+
+out_pci_register_driver:
+	atomisp_bus_unregister();
+
+	return rval;
+}
+
+static void __exit atomisp_exit(void)
+{
+	pci_unregister_driver(&atomisp_pci_driver);
+	atomisp_bus_unregister();
+}
+
+module_init(atomisp_init);
+module_exit(atomisp_exit);
+
+MODULE_AUTHOR("Sakari Ailus <sakari.ailus@intel.com>");
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("Intel Atom ISP driver");
