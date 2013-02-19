@@ -3451,7 +3451,7 @@ static int css_input_resolution_changed(struct atomisp_device *isp,
 static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			struct atomisp_css_frame_info *output_info,
 			struct atomisp_css_frame_info *raw_output_info,
-			int width, int height, unsigned int pixelformat,
+			struct v4l2_pix_format *pix,
 			unsigned int source_pad)
 {
 	struct camera_mipi_info *mipi_info;
@@ -3480,7 +3480,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		&asd->subdev, NULL, V4L2_SUBDEV_FORMAT_ACTIVE,
 		ATOMISP_SUBDEV_PAD_SINK, V4L2_SEL_TGT_CROP);
 
-	format = atomisp_get_format_bridge(pixelformat);
+	format = atomisp_get_format_bridge(pix->pixelformat);
 	if (format == NULL)
 		return -EINVAL;
 
@@ -3496,7 +3496,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 
 		if (format->sh_fmt == CSS_FRAME_FORMAT_RAW &&
 		     raw_output_format_match_input(
-			mipi_info->input_format, pixelformat))
+			mipi_info->input_format, pix->pixelformat))
 			return -EINVAL;
 	}
 
@@ -3509,9 +3509,9 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		struct v4l2_rect vf_size = {0};
 		struct v4l2_mbus_framefmt vf_ffmt = {0};
 
-		if (width < 640 || height < 480) {
-			vf_size.width = width;
-			vf_size.height = height;
+		if (pix->width < 640 || pix->height < 480) {
+			vf_size.width = pix->width;
+			vf_size.height = pix->height;
 		} else {
 			vf_size.width = 640;
 			vf_size.height = 480;
@@ -3623,15 +3623,16 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	if (format->sh_fmt == CSS_FRAME_FORMAT_RAW ||
 			isp->inputs[asd->input_curr].type == SOC_CAMERA)
 		ret = atomisp_css_copy_configure_output(asd, stream_index,
-				width, height, format->sh_fmt);
+				pix->width, pix->height, format->sh_fmt);
 	else
-		ret = configure_output(asd, width, height, format->sh_fmt);
+		ret = configure_output(asd, pix->width, pix->height,
+				       format->sh_fmt);
 #else
-	ret = configure_output(asd, width, height, format->sh_fmt);
+	ret = configure_output(asd, pix->width, pix->height, format->sh_fmt);
 #endif
 	if (ret) {
 		dev_err(isp->dev, "configure_output %ux%u, format %8.8x\n",
-			width, height, format->sh_fmt);
+			pix->width, pix->height, format->sh_fmt);
 		return -EINVAL;
 	}
 
@@ -3676,7 +3677,8 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	ret = get_frame_info(asd, output_info);
 #endif
 	if (ret) {
-		dev_err(isp->dev, "get_frame_info %ux%u\n", width, height);
+		dev_err(isp->dev, "get_frame_info %ux%u\n", pix->width,
+			pix->height);
 		return -EINVAL;
 	}
 
@@ -4065,8 +4067,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 
 set_fmt_to_isp:
 	ret = atomisp_set_fmt_to_isp(vdev, &output_info, &raw_output_info,
-				     f->fmt.pix.width, f->fmt.pix.height,
-				     f->fmt.pix.pixelformat, source_pad);
+				     &f->fmt.pix, source_pad);
 	if (ret)
 		return -EINVAL;
 done:
