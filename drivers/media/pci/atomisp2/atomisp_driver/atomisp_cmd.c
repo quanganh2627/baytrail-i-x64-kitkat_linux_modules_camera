@@ -3380,6 +3380,7 @@ int configure_pp_input_nop(struct atomisp_sub_device *asd,
 
 int configure_output_nop(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format sh_fmt)
 {
 	return 0;
@@ -3463,6 +3464,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	struct v4l2_subdev_fh fh;
 	int (*configure_output)(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format sh_fmt) =
 							configure_output_nop;
 	int (*get_frame_info)(struct atomisp_sub_device *asd,
@@ -3536,12 +3538,12 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO ||
 		    asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER)
 			atomisp_css_video_configure_viewfinder(asd,
-				vf_size.width, vf_size.height,
+				vf_size.width, vf_size.height, 0,
 				asd->video_out_vf.sh_fmt);
 		else if (source_pad != ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW ||
 			 asd->vfpp->val == ATOMISP_VFPP_DISABLE_LOWLAT)
 			atomisp_css_capture_configure_viewfinder(asd,
-				vf_size.width, vf_size.height,
+				vf_size.width, vf_size.height, 0,
 				asd->video_out_vf.sh_fmt);
 	}
 
@@ -3626,9 +3628,14 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 				pix->width, pix->height, format->sh_fmt);
 	else
 		ret = configure_output(asd, pix->width, pix->height,
+				       format->planar ? pix->bytesperline :
+				       pix->bytesperline * 8 / format->depth,
 				       format->sh_fmt);
 #else
-	ret = configure_output(asd, pix->width, pix->height, format->sh_fmt);
+	ret = configure_output(asd, pix->width, pix->height,
+			       format->planar ? pix->bytesperline :
+			       pix->bytesperline * 8 / format->depth,
+			       format->sh_fmt);
 #endif
 	if (ret) {
 		dev_err(isp->dev, "configure_output %ux%u, format %8.8x\n",
@@ -3677,8 +3684,8 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	ret = get_frame_info(asd, output_info);
 #endif
 	if (ret) {
-		dev_err(isp->dev, "get_frame_info %ux%u\n", pix->width,
-			pix->height);
+		dev_err(isp->dev, "get_frame_info %ux%u (padded to %u)\n",
+			pix->width, pix->height, pix->bytesperline);
 		return -EINVAL;
 	}
 
@@ -3827,8 +3834,10 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	struct v4l2_subdev_fh fh;
 	int ret;
 
-	dev_dbg(isp->dev, "setting resolution %ux%u on pad %u\n",
-		f->fmt.pix.width, f->fmt.pix.height, source_pad);
+	dev_dbg(isp->dev,
+		"setting resolution %ux%u on pad %u, bytesperline %u\n",
+		f->fmt.pix.width, f->fmt.pix.height, source_pad,
+		f->fmt.pix.bytesperline);
 
 	v4l2_fh_init(&fh.vfh, vdev);
 
@@ -3888,13 +3897,17 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
 			atomisp_css_video_configure_viewfinder(asd,
 				f->fmt.pix.width, f->fmt.pix.height,
-				format_bridge->sh_fmt);
+				format_bridge->planar ? f->fmt.pix.bytesperline
+				: f->fmt.pix.bytesperline * 8
+				/ format_bridge->depth,	format_bridge->sh_fmt);
 			atomisp_css_video_get_viewfinder_frame_info(asd,
 								&output_info);
 		} else {
 			atomisp_css_capture_configure_viewfinder(asd,
 				f->fmt.pix.width, f->fmt.pix.height,
-				format_bridge->sh_fmt);
+				format_bridge->planar ? f->fmt.pix.bytesperline
+				: f->fmt.pix.bytesperline * 8
+				/ format_bridge->depth,	format_bridge->sh_fmt);
 			atomisp_css_capture_get_viewfinder_frame_info(
 								asd,
 								&output_info);

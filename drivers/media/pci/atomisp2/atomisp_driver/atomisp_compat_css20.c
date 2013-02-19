@@ -2204,6 +2204,7 @@ int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 
 int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
 	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL,
@@ -2213,6 +2214,7 @@ int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
 
 int atomisp_css_capture_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
 	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL,
@@ -2222,6 +2224,7 @@ int atomisp_css_capture_configure_output(struct atomisp_sub_device *asd,
 
 int atomisp_css_video_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
 	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL,
@@ -2232,6 +2235,7 @@ int atomisp_css_video_configure_output(struct atomisp_sub_device *asd,
 int atomisp_css_video_configure_viewfinder(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
 	__configure_vf_output(asd, width, height, format,
@@ -2242,6 +2246,7 @@ int atomisp_css_video_configure_viewfinder(
 int atomisp_css_capture_configure_viewfinder(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
 	__configure_vf_output(asd, width, height, format,
