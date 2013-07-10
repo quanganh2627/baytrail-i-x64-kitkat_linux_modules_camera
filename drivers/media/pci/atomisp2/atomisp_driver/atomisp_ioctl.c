@@ -2418,7 +2418,6 @@ const struct v4l2_ioctl_ops atomisp_ioctl_ops = {
 	.vidioc_try_fmt_vid_cap = atomisp_try_fmt_cap,
 	.vidioc_g_fmt_vid_cap = atomisp_g_fmt_cap,
 	.vidioc_s_fmt_vid_cap = atomisp_s_fmt_cap,
-	.vidioc_s_fmt_type_private = atomisp_s_fmt_cap,
 	.vidioc_reqbufs = atomisp_reqbufs,
 	.vidioc_querybuf = atomisp_querybuf,
 	.vidioc_qbuf = atomisp_qbuf,
