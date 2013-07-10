@@ -1198,7 +1198,11 @@ int hmm_bo_mmap(struct vm_area_struct *vma, struct hmm_buffer_object *bo)
 	vma->vm_private_data = bo;
 
 	vma->vm_ops = &hmm_bo_vm_ops;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))
+	vma->vm_flags |= VM_IO|VM_DONTEXPAND|VM_DONTDUMP;
+#else
 	vma->vm_flags |= (VM_RESERVED | VM_IO);
+#endif
 
 	/*
 	 * call hmm_bo_vm_open explictly.

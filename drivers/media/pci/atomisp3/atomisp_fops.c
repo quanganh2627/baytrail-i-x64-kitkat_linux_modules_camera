@@ -845,7 +845,7 @@ int atomisp_videobuf_mmap_mapper(struct videobuf_queue *q,
 		    buf->boff == offset) {
 			vm_mem = buf->priv;
 			ret = frame_mmap(isp, vm_mem->vaddr, vma);
-			vma->vm_flags |= VM_DONTEXPAND | VM_RESERVED;
+			vma->vm_flags |= VM_IO|VM_DONTEXPAND|VM_DONTDUMP;
 			break;
 		}
 	}
@@ -954,7 +954,7 @@ static int atomisp_mmap(struct file *file, struct vm_area_struct *vma)
 			goto error;
 		}
 		raw_virt_addr->data_bytes = origin_size;
-		vma->vm_flags |= VM_RESERVED;
+		vma->vm_flags |= VM_IO|VM_DONTEXPAND|VM_DONTDUMP;
 		mutex_unlock(&isp->mutex);
 		return 0;
 	}
