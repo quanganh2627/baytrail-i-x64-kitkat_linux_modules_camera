@@ -803,7 +803,7 @@ static int lm3559_resume(struct device *dev)
 
 #endif /* CONFIG_PM */
 
-static int __devinit lm3559_gpio_init(struct i2c_client *client)
+static int lm3559_gpio_init(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct lm3559 *flash = to_lm3559(sd);
@@ -835,7 +835,7 @@ err_gpio_flash:
 	return ret;
 }
 
-static int __devexit lm3559_gpio_uninit(struct i2c_client *client)
+static int lm3559_gpio_uninit(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct lm3559 *flash = to_lm3559(sd);
@@ -857,7 +857,7 @@ static int __devexit lm3559_gpio_uninit(struct i2c_client *client)
 	return 0;
 }
 
-static int __devinit lm3559_probe(struct i2c_client *client,
+static int lm3559_probe(struct i2c_client *client,
 				  const struct i2c_device_id *id)
 {
 	int err;
@@ -910,7 +910,7 @@ fail1:
 	return err;
 }
 
-static int __devexit lm3559_remove(struct i2c_client *client)
+static int lm3559_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct lm3559 *flash = to_lm3559(sd);
@@ -952,7 +952,7 @@ static struct i2c_driver lm3559_driver = {
 		.pm   = &lm3559_pm_ops,
 	},
 	.probe = lm3559_probe,
-	.remove = __devexit_p(lm3559_remove),
+	.remove = lm3559_remove,
 	.id_table = lm3559_id,
 };
 

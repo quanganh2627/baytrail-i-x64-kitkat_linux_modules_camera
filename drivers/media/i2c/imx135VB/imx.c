@@ -1678,7 +1678,7 @@ static struct i2c_driver imx_driver = {
 		.name = IMX_NAME,
 	},
 	.probe = imx_probe,
-	.remove = __devexit_p(imx_remove),
+	.remove = imx_remove,
 	.id_table = imx_id,
 };
 

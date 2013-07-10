@@ -1555,7 +1555,7 @@ static struct i2c_driver ov9724_driver = {
 		.name = OV9724_NAME,
 	},
 	.probe = ov9724_probe,
-	.remove = __devexit_p(ov9724_remove),
+	.remove = ov9724_remove,
 	.id_table = ov9724_id,
 };
 

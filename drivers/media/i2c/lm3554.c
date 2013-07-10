@@ -733,7 +733,7 @@ static int lm3554_resume(struct device *dev)
 
 #endif /* CONFIG_PM */
 
-static int __devinit lm3554_gpio_init(struct i2c_client *client)
+static int lm3554_gpio_init(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct lm3554 *flash = to_lm3554(sd);
@@ -765,7 +765,7 @@ err_gpio_flash:
 	return ret;
 }
 
-static int __devexit lm3554_gpio_uninit(struct i2c_client *client)
+static int lm3554_gpio_uninit(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct lm3554 *flash = to_lm3554(sd);
@@ -787,7 +787,7 @@ static int __devexit lm3554_gpio_uninit(struct i2c_client *client)
 	return 0;
 }
 
-static int __devinit lm3554_probe(struct i2c_client *client,
+static int lm3554_probe(struct i2c_client *client,
 				  const struct i2c_device_id *id)
 {
 	int err;
@@ -841,7 +841,7 @@ fail1:
 	return err;
 }
 
-static int __devexit lm3554_remove(struct i2c_client *client)
+static int lm3554_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct lm3554 *flash = to_lm3554(sd);
@@ -883,7 +883,7 @@ static struct i2c_driver lm3554_driver = {
 		.pm   = &lm3554_pm_ops,
 	},
 	.probe = lm3554_probe,
-	.remove = __devexit_p(lm3554_remove),
+	.remove = lm3554_remove,
 	.id_table = lm3554_id,
 };
 

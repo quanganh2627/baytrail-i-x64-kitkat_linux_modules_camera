@@ -893,7 +893,7 @@ load_firmware(struct device *dev)
 
 #define ATOM_ISP_PCI_BAR	0
 
-static int __devinit atomisp_pci_probe(struct pci_dev *dev,
+static int atomisp_pci_probe(struct pci_dev *dev,
 				       const struct pci_device_id *id)
 {
 	const struct atomisp_platform_data *pdata;
@@ -1094,7 +1094,7 @@ load_fw_fail:
 	return err;
 }
 
-static void __devexit atomisp_pci_remove(struct pci_dev *dev)
+static void atomisp_pci_remove(struct pci_dev *dev)
 {
 	struct atomisp_device *isp = (struct atomisp_device *)
 		pci_get_drvdata(dev);
