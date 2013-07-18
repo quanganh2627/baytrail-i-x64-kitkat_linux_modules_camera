@@ -761,6 +761,7 @@ static const struct v4l2_ctrl_config ctrl_fmt_auto = {
 	.type = V4L2_CTRL_TYPE_BOOLEAN,
 	.min = 0,
 	.max = 1,
+	.step = 1,
 	.def = 1,
 };
 
@@ -813,6 +814,7 @@ static const struct v4l2_ctrl_config ctrl_continuous_mode = {
 	.name = "Continuous mode",
 	.min = 0,
 	.max = 1,
+	.step = 1,
 	.def = 0,
 };
 
@@ -858,6 +860,7 @@ static const struct v4l2_ctrl_config ctrl_continuous_viewfinder = {
 	.name = "Continuous viewfinder",
 	.min = 0,
 	.max = 1,
+	.step = 1,
 	.def = 0,
 };
 
