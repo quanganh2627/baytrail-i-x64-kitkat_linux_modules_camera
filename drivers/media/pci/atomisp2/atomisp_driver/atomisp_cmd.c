@@ -334,7 +334,7 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 
 done:
 	/* workround to get isp works at 400Mhz for byt due to perf issue */
-	if (intel_mid_identify_cpu() == INTEL_MID_CPU_CHIP_VALLEYVIEW2)
+	if (IS_BYT)
 		new_freq = ISP_FREQ_400MHZ;
 
 	dev_dbg(isp->dev, "DFS target frequency=%d.\n", new_freq);
@@ -3754,7 +3754,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	if (!atomisp_subdev_format_conversion(asd, source_pad))
 		padding_w = 0, padding_h = 0;
 
-	if (intel_mid_identify_cpu() == INTEL_MID_CPU_CHIP_VALLEYVIEW2) {
+	if (IS_BYT) {
 		padding_w = 12;
 		padding_h = 12;
 	}

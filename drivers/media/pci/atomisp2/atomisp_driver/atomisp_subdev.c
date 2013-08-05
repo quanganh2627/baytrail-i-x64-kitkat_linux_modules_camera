@@ -353,8 +353,7 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 
 		/* Workaround for BYT 1080p perfectshot since the maxinum resolution of
 		 * front camera ov2722 is 1932x1092 and cannot use pad_w > 12*/
-		if (intel_mid_identify_cpu() == INTEL_MID_CPU_CHIP_VALLEYVIEW2
-			&& crop[pad]->height == 1092) {
+		if (IS_BYT && crop[pad]->height == 1092) {
 			padding_w = 12;
 			padding_h = 12;
 		}

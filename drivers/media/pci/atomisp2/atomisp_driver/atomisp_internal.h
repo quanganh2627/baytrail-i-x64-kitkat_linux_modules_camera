@@ -29,6 +29,8 @@
 #include <linux/pm_qos.h>
 #include <linux/idr.h>
 
+#include <asm/intel-mid.h>
+
 #include <media/media-device.h>
 #include <media/v4l2-subdev.h>
 
@@ -47,6 +49,9 @@
 
 #include "gp_device.h"
 #include "irq.h"
+
+#define IS_BYT (INTEL_MID_BOARD(1, PHONE, BYT) || \
+	INTEL_MID_BOARD(1, TABLET, BYT))
 
 #define MAX_STREAM_NUM	2
 
