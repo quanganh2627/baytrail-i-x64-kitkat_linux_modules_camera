@@ -637,8 +637,8 @@ void atomisp_set_term_en_count(struct atomisp_device *isp)
 	if (IS_ISP2400(isp))
 		return;
 
-	if (isp->pdev->device == 0x0148 && isp->pdev->revision < 0x6 &&
-		__intel_mid_cpu_chip == INTEL_MID_CPU_CHIP_PENWELL)
+	if (IS_MFLD && isp->pdev->device == 0x0148 &&
+		isp->pdev->revision < 0x6)
 		pwn_b0 = 1;
 
 	val = intel_mid_msgbus_read32(MFLD_IUNITPHY_PORT, MFLD_CSI_CONTROL);
