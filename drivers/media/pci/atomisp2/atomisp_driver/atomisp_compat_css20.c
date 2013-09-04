@@ -444,6 +444,10 @@ static int __create_stream(struct atomisp_sub_device *asd)
 			multi_pipes[pipe_index++] = asd->stream_env.pipes[i];
 	}
 
+#ifdef CONFIG_VIDEO_ATOMISP_CSS21
+	asd->stream_env.stream_config.target_num_cont_raw_buf =
+		asd->continuous_raw_buffer_size->val;
+#endif
 	if (ia_css_stream_create(&asd->stream_env.stream_config,
 	    pipe_index, multi_pipes, &asd->stream_env.stream)
 	    != IA_CSS_SUCCESS)
