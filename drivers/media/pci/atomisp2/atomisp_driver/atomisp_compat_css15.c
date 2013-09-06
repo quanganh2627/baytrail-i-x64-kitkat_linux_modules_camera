@@ -1433,6 +1433,11 @@ int atomisp_css_load_acc_binary(struct atomisp_sub_device *asd,
 	return 0;
 }
 
+void atomisp_set_stop_timeout(unsigned int timeout)
+{
+	sh_css_set_stop_timeout(timeout);
+}
+
 int atomisp_css_isr_thread(struct atomisp_device *isp,
 			   bool *frame_done_found,
 			   bool *css_pipe_done,

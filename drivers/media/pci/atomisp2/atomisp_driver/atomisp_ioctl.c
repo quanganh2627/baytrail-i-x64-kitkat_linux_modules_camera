@@ -1449,6 +1449,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 	atomic_set(&asd->sequence, -1);
 	atomic_set(&asd->sequence_temp, -1);
 	atomic_set(&isp->wdt_count, 0);
+	atomic_set(&isp->fast_reset, 0);
 	if (isp->sw_contex.file_input)
 		isp->wdt_duration = ATOMISP_ISP_FILE_TIMEOUT_DURATION;
 	else
@@ -1474,7 +1475,10 @@ start_sensor:
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp, CSS_IRQ_INFO_CSS_RECEIVER_SOF,
 					true);
-
+#if !defined(CONFIG_VIDEO_ATOMISP_CSS15) || !defined(CONFIG_ISP2400)
+		atomisp_css_irq_enable(isp,
+				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
+#endif
 		atomisp_set_term_en_count(isp);
 
 		if (IS_ISP2400(isp) &&
