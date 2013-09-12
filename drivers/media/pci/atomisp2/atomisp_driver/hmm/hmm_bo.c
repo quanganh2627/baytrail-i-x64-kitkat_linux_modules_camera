@@ -619,11 +619,13 @@ static int get_pfnmap_pages(struct task_struct *tsk, struct mm_struct *mm,
 
 	return __get_pfnmap_pages(tsk, mm, start, nr_pages, flags, pages, vmas);
 }
+
 #ifdef CONFIG_ION
 static int alloc_ion_pages(struct hmm_buffer_object *bo,
 			     unsigned int shared_fd)
 {
-	struct scatterlist *tmp;
+	struct sg_table *sg_tbl;
+	struct scatterlist *sl;
 	int ret, page_nr = 0;
 
 	bo->page_obj = atomisp_kernel_malloc(
@@ -633,7 +635,7 @@ static int alloc_ion_pages(struct hmm_buffer_object *bo,
 		return -ENOMEM;
 	}
 
-	bo->ihandle = ion_import_fd(bo->bdev->iclient, shared_fd);
+	bo->ihandle = ion_import_dma_buf(bo->bdev->iclient, shared_fd);
 	if (IS_ERR_OR_NULL(bo->ihandle)) {
 		dev_err(atomisp_dev, "invalid shared fd to ion.\n");
 		ret = PTR_ERR(bo->ihandle);
@@ -642,19 +644,20 @@ static int alloc_ion_pages(struct hmm_buffer_object *bo,
 		goto error;
 	}
 
-	tmp = ion_map_dma(bo->bdev->iclient, bo->ihandle);
-	if (IS_ERR_OR_NULL(tmp)) {
-		dev_err(atomisp_dev, "ion map_dma error.\n");
-		ret = PTR_ERR(tmp);
-		if (!tmp)
+	sg_tbl = ion_sg_table(bo->bdev->iclient, bo->ihandle);
+	if (IS_ERR_OR_NULL(sg_tbl)) {
+		dev_err(atomisp_dev, "ion_sg_table error.\n");
+		ret = PTR_ERR(sg_tbl);
+		if (!sg_tbl)
 			ret = -EINVAL;
-		goto error;
+		goto error_unmap;
 	}
 
+	sl = sg_tbl->sgl;
 	do {
-		bo->page_obj[page_nr++].page = sg_page(tmp);
-		tmp = sg_next(tmp);
-	} while (tmp && (page_nr < bo->pgnr));
+		bo->page_obj[page_nr++].page = sg_page(sl);
+		sl = sg_next(sl);
+	} while (sl && page_nr < bo->pgnr);
 
 	if (page_nr != bo->pgnr) {
 		dev_err(atomisp_dev,
@@ -667,14 +670,13 @@ static int alloc_ion_pages(struct hmm_buffer_object *bo,
 
 	return 0;
 error_unmap:
-	ion_unmap_dma(bo->bdev->iclient, bo->ihandle);
+	ion_free(bo->bdev->iclient, bo->ihandle);
 error:
 	atomisp_kernel_free(bo->page_obj);
 	return ret;
-
-
 }
 #endif
+
 /*
  * Convert user space virtual address into pages list
  */
@@ -765,7 +767,7 @@ out_of_mem:
 static void free_ion_pages(struct hmm_buffer_object *bo)
 {
 	atomisp_kernel_free(bo->page_obj);
-	ion_unmap_dma(bo->bdev->iclient, bo->ihandle);
+	ion_free(bo->bdev->iclient, bo->ihandle);
 }
 #endif
 
