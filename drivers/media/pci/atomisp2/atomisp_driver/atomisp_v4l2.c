@@ -52,6 +52,12 @@ module_param(repool_pgnr, uint, 0644);
 MODULE_PARM_DESC(repool_pgnr,
 		"Set the reserved memory pool size in page (default:0)");
 
+/* set dynamic memory pool size in page */
+unsigned int dypool_pgnr = UINT_MAX;
+module_param(dypool_pgnr, uint, 0644);
+MODULE_PARM_DESC(dypool_pgnr,
+		"Set the dynamic memory pool size in page (default:0)");
+
 bool dypool_enable;
 module_param(dypool_enable, bool, 0644);
 MODULE_PARM_DESC(dypool_enable,

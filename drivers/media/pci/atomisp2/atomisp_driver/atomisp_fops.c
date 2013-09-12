@@ -461,10 +461,11 @@ static int atomisp_open(struct file *file)
 		goto error;
 	}
 
-	ret = hmm_pool_register((unsigned int)dypool_enable,
-						HMM_POOL_TYPE_DYNAMIC);
-	if (ret)
-		dev_err(isp->dev, "Failed to register dynamic memory pool.\n");
+	if (dypool_enable) {
+		ret = hmm_pool_register(dypool_pgnr, HMM_POOL_TYPE_DYNAMIC);
+		if (ret)
+			dev_err(isp->dev, "Failed to register dynamic memory pool.\n");
+	}
 
 	/* Init ISP */
 	if (atomisp_css_init(isp)) {
