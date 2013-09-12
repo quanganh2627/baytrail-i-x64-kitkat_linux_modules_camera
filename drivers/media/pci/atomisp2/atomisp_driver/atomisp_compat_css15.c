@@ -755,6 +755,8 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 {
 	enum sh_css_err ret;
 
+	/* No need to dump debug traces when css is stopped. */
+	sh_css_set_dtrace_level(0);
 	switch (pipe_id) {
 	case SH_CSS_PREVIEW_PIPELINE:
 		ret = sh_css_preview_stop();
@@ -768,6 +770,8 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 		ret = sh_css_capture_stop();
 		break;
 	}
+	sh_css_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
+
 	if (ret != sh_css_success) {
 		dev_err(asd->isp->dev, "stop css fatal error.\n");
 		return -EINVAL;
