@@ -3557,14 +3557,6 @@ load_preview_binaries(struct sh_css_pipe *pipe)
 			return err;
 	}
 
-	err = alloc_continuous_frames(pipe, true);
-	if (err != IA_CSS_SUCCESS)
-		return err;
-
-#if SH_CSS_PREVENT_UNINIT_READS == 1
-		ia_css_frame_zero(pipe->continuous_frames[0]);
-#endif
-
 	if (pipe->shading_table) {
 		ia_css_shading_table_free(pipe->shading_table);
 		pipe->shading_table = NULL;
@@ -3861,6 +3853,14 @@ preview_start(struct sh_css_pipe *pipe)
 	vf_pp_binary   = &pipe->pipe.preview.vf_pp_binary;
 
 	sh_css_metrics_start_frame();
+
+	err = alloc_continuous_frames(pipe, true);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+
+#if SH_CSS_PREVENT_UNINIT_READS == 1
+	ia_css_frame_zero(pipe->continuous_frames[0]);
+#endif
 
 	if (me->reload) {
 		struct sh_css_pipeline_stage *post_stage;
@@ -5277,16 +5277,6 @@ static enum ia_css_err load_video_binaries(
 			return err;
 	}
 
-	if (pipe->stream->cont_capt) {
-		err = alloc_continuous_frames(pipe, true);
-		if (err != IA_CSS_SUCCESS)
-			return err;
-	
-#if SH_CSS_PREVENT_UNINIT_READS == 1
-		ia_css_frame_zero(pipe->continuous_frames[0]);
-#endif
-	}
-	
 	err = allocate_mipi_frames(pipe);
 	if (err != IA_CSS_SUCCESS)
 		return err;
@@ -5375,6 +5365,14 @@ static enum ia_css_err video_start(
 	num_output_pins = video_binary->info->num_output_pins;
 
 	sh_css_metrics_start_frame();
+
+	err = alloc_continuous_frames(pipe, true);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+
+#if SH_CSS_PREVENT_UNINIT_READS == 1
+	ia_css_frame_zero(pipe->continuous_frames[0]);
+#endif
 
 	if (me->reload) {
 		sh_css_pipeline_clean(me);
