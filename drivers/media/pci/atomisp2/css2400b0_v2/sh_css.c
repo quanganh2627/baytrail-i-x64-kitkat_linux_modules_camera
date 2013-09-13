@@ -5964,14 +5964,7 @@ static enum ia_css_err load_primary_binaries(
 		if (err != IA_CSS_SUCCESS)
 			return err;
 	}
-	err = allocate_mipi_frames(pipe);
-	if (err != IA_CSS_SUCCESS)
-		return err;
-
-	if (need_pp)
-		return alloc_capture_pp_frame(pipe, &mycs->capture_pp_binary);
-	else
-		return IA_CSS_SUCCESS;
+	return allocate_mipi_frames(pipe);
 }
 
 static enum ia_css_err load_advanced_binaries(
@@ -6061,15 +6054,7 @@ static enum ia_css_err load_advanced_binaries(
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
-	err = allocate_mipi_frames(pipe);
-	if (err != IA_CSS_SUCCESS)
-		return err;
-
-	if (need_pp)
-		return alloc_capture_pp_frame(pipe,
-				&pipe->pipe.capture.capture_pp_binary);
-	else
-		return IA_CSS_SUCCESS;
+	return allocate_mipi_frames(pipe);
 }
 
 static enum ia_css_err load_pre_isp_binaries(
@@ -6228,15 +6213,7 @@ static enum ia_css_err load_low_light_binaries(
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
-	err = allocate_mipi_frames(pipe);
-	if (err != IA_CSS_SUCCESS)
-		return err;
-
-	if (need_pp)
-		return alloc_capture_pp_frame(pipe,
-				&pipe->pipe.capture.capture_pp_binary);
-	else
-		return IA_CSS_SUCCESS;
+	return allocate_mipi_frames(pipe);
 }
 
 static bool copy_on_sp(
@@ -6665,6 +6642,13 @@ static enum ia_css_err capture_start(
 	me = &pipe->pipeline;
 
 	sh_css_dtrace(SH_DBG_TRACE_PRIVATE, "capture_start() enter:\n");
+
+	if (need_capture_pp(pipe)) {
+		err = alloc_capture_pp_frame(pipe,
+			&pipe->pipe.capture.capture_pp_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	err = construct_capture_pipe(pipe);
 	if (err != IA_CSS_SUCCESS)
