@@ -38,12 +38,12 @@
 
 #include <asm/intel-mid.h>
 
-#include "ia_css_accelerate.h"
 #ifdef CONFIG_VIDEO_ATOMISP_CSS21
 #include "ia_css_debug.h"
-#else
+#else /* CONFIG_VIDEO_ATOMISP_CSS21 */
+#include "ia_css_accelerate.h"
 #include "sh_css_debug.h"
-#endif
+#endif /* CONFIG_VIDEO_ATOMISP_CSS21 */
 
 #include <linux/pm_runtime.h>
 
@@ -447,7 +447,7 @@ static int __create_stream(struct atomisp_sub_device *asd)
 #ifdef CONFIG_VIDEO_ATOMISP_CSS21
 	asd->stream_env.stream_config.target_num_cont_raw_buf =
 		asd->continuous_raw_buffer_size->val;
-#endif
+#endif /* CONFIG_VIDEO_ATOMISP_CSS21 */
 	if (ia_css_stream_create(&asd->stream_env.stream_config,
 	    pipe_index, multi_pipes, &asd->stream_env.stream)
 	    != IA_CSS_SUCCESS)
@@ -2462,18 +2462,27 @@ int atomisp_css_wait_acc_finish(struct atomisp_sub_device *asd)
 /* Set the ACC binary arguments */
 int atomisp_css_set_acc_parameters(struct atomisp_acc_fw *acc_fw)
 {
+#ifndef CONFIG_VIDEO_ATOMISP_CSS21
 	struct ia_css_data sec;
+#endif /* !CONFIG_VIDEO_ATOMISP_CSS21 */
 	unsigned int mem;
 
 	for (mem = 0; mem < ATOMISP_ACC_NR_MEMORY; mem++) {
 		if (acc_fw->args[mem].length == 0)
 			continue;
 
+#ifndef CONFIG_VIDEO_ATOMISP_CSS21
 		sec.address = acc_fw->args[mem].css_ptr;
 		sec.size = acc_fw->args[mem].length;
 		if (sh_css_acc_set_firmware_parameters(acc_fw->fw, mem, sec)
 			!= IA_CSS_SUCCESS)
 			return -EIO;
+#else /* !CONFIG_VIDEO_ATOMISP_CSS21 */
+		acc_fw->fw->mem_initializers[mem].address =
+						acc_fw->args[mem].css_ptr;
+		acc_fw->fw->mem_initializers[mem].size =
+						acc_fw->args[mem].length;
+#endif /* !CONFIG_VIDEO_ATOMISP_CSS21 */
 	}
 
 	return 0;

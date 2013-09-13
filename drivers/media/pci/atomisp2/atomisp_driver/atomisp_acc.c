@@ -35,7 +35,9 @@
 #include "memory_access/memory_access.h"
 #ifdef CONFIG_VIDEO_ATOMISP_CSS20
 #include "ia_css.h"
+#ifndef CONFIG_VIDEO_ATOMISP_CSS21
 #include "ia_css_accelerate.h"
+#endif /* !CONFIG_VIDEO_ATOMISP_CSS21 */
 #else /* CONFIG_VIDEO_ATOMISP_CSS20 */
 #include "sh_css.h"
 #include "sh_css_accelerate.h"

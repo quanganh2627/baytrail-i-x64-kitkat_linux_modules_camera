@@ -55,7 +55,9 @@
 #include "irq.h"
 
 #ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CONFIG_VIDEO_ATOMISP_CSS21
 #include "ia_css_accelerate.h"
+#endif /* !CONFIG_VIDEO_ATOMISP_CSS21 */
 #include "ia_css_types.h"
 #else /* CONFIG_VIDEO_ATOMISP_CSS20 */
 #include "sh_css_accelerate.h"
