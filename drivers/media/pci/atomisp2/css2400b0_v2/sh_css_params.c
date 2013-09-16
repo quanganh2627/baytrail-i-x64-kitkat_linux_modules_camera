@@ -5850,6 +5850,7 @@ static enum ia_css_err sh_css_params_write_to_ddr_internal(
 	assert(binary != NULL);
 	assert(ddr_map != NULL);
 	assert(ddr_map_size != NULL);
+	assert(binary->info != NULL);
 
 	sh_css_dtrace(SH_DBG_TRACE_PRIVATE, "sh_css_params_write_to_ddr_internal() enter:\n");
 
@@ -5897,6 +5898,7 @@ static enum ia_css_err sh_css_params_write_to_ddr_internal(
 				params->raw_binning,
 				&tmp_sc_table,
 				binary);
+			assert(binary->info != NULL);
 
 			store_sctbl(params, binary, ddr_map->sc_tbl, tmp_sc_table);
 
