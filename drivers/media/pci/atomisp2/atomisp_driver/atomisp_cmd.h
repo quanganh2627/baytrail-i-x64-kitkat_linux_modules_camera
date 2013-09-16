@@ -279,6 +279,15 @@ int atomisp_shading_correction(struct atomisp_sub_device *asd, int flag,
 int atomisp_digital_zoom(struct atomisp_sub_device *asd, int flag,
 			 __s32 *value);
 
+#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
+					  struct atomisp_dvs_6axis_config
+					  *user_6axis_config);
+#endif
+
+int atomisp_compare_grid(struct atomisp_sub_device *asd,
+				struct atomisp_grid_info *atomgrid);
+
 int atomisp_get_sensor_mode_data(struct atomisp_sub_device *asd,
 				 struct atomisp_sensor_mode_data *config);
 

@@ -394,6 +394,9 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->params.false_color = 0;
 	asd->params.online_process = 1;
 	asd->params.yuv_ds_en = 0;
+#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+	asd->params.dvs_6axis = NULL;
+#endif
 	asd->params.offline_parm.num_captures = 1;
 	asd->params.offline_parm.skip_frames = 0;
 	asd->params.offline_parm.offset = 0;
