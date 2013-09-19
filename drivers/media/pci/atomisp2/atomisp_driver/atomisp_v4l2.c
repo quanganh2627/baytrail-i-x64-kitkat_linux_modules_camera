@@ -946,7 +946,17 @@ load_firmware(struct atomisp_device *isp)
 	int rc;
 	char *fw_path = NULL;
 
-	if (isp->media_dev.driver_version == ATOMISP_CSS_VERSION_20) {
+	if (isp->media_dev.driver_version == ATOMISP_CSS_VERSION_21) {
+		if (isp->media_dev.hw_revision ==
+		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
+		     | ATOMISP_HW_STEPPING_A0))
+			fw_path = "shisp_2400a0_v21.bin";
+
+		if (isp->media_dev.hw_revision ==
+		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
+		     | ATOMISP_HW_STEPPING_B0))
+			fw_path = "shisp_2400b0_v21.bin";
+	} else if (isp->media_dev.driver_version == ATOMISP_CSS_VERSION_20) {
 		if (isp->media_dev.hw_revision ==
 		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
 		     | ATOMISP_HW_STEPPING_A0))
@@ -1088,12 +1098,13 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	spin_lock_init(&isp->lock);
 	init_completion(&isp->init_done);
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
-	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_20;
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#ifndef CONFIG_VIDEO_ATOMISP_CSS20
 	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_15;
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
-
+#elif !defined(CONFIG_VIDEO_ATOMISP_CSS21)
+	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_20;
+#else
+	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_21;
+#endif
 	switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED:
