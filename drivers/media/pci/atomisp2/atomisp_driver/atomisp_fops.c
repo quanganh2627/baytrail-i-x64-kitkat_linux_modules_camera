@@ -39,7 +39,6 @@
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 
-#include "sh_css_debug.h"
 #include "host/mmu_local.h"
 #include "device_access/device_access.h"
 #include "memory_access/memory_access.h"
@@ -477,7 +476,7 @@ static int atomisp_open(struct file *file)
 	 * the verbosity level, change the definition of this macro
 	 * up in the file
 	 */
-	sh_css_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
+	atomisp_css_debug_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
 
 	atomisp_dev_init_struct(isp);
 

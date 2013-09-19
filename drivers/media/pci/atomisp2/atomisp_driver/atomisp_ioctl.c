@@ -43,7 +43,6 @@
 #include "sh_css.h"
 #endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
 
-#include "sh_css_debug.h"
 #include "gp_device.h"
 #include "device_access.h"
 #include "irq.h"

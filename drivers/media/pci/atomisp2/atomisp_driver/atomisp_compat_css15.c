@@ -35,6 +35,21 @@
 #include "sh_css_accelerate.h"
 #include <asm/intel-mid.h>
 
+void atomisp_css_debug_dump_sp_sw_debug_info(void)
+{
+	sh_css_dump_sp_sw_debug_info();
+}
+
+void atomisp_css_debug_dump_debug_info(const char *context)
+{
+	sh_css_dump_debug_info(context);
+}
+
+void atomisp_css_debug_set_dtrace_level(const unsigned int trace_level)
+{
+	sh_css_set_dtrace_level(trace_level);
+}
+
 void atomisp_store_uint32(hrt_address addr, uint32_t data)
 {
 	device_store_uint32(addr, data);

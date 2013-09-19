@@ -39,7 +39,11 @@
 #include <asm/intel-mid.h>
 
 #include "ia_css_accelerate.h"
+#ifdef CONFIG_VIDEO_ATOMISP_CSS21
+#include "ia_css_debug.h"
+#else
 #include "sh_css_debug.h"
+#endif
 
 #include <linux/pm_runtime.h>
 
@@ -58,6 +62,38 @@ enum frame_info_type {
 	ATOMISP_CSS_OUTPUT_FRAME,
 	ATOMISP_CSS_RAW_FRAME,
 };
+
+#ifdef CONFIG_VIDEO_ATOMISP_CSS21
+void atomisp_css_debug_dump_sp_sw_debug_info(void)
+{
+	ia_css_debug_dump_sp_sw_debug_info();
+}
+
+void atomisp_css_debug_dump_debug_info(const char *context)
+{
+	ia_css_debug_dump_debug_info(context);
+}
+
+void atomisp_css_debug_set_dtrace_level(const unsigned int trace_level)
+{
+	ia_css_debug_set_dtrace_level(trace_level);
+}
+#else /* CONFIG_VIDEO_ATOMISP_CSS21 */
+void atomisp_css_debug_dump_sp_sw_debug_info(void)
+{
+	sh_css_dump_sp_sw_debug_info();
+}
+
+void atomisp_css_debug_dump_debug_info(const char *context)
+{
+	sh_css_dump_debug_info(context);
+}
+
+void atomisp_css_debug_set_dtrace_level(const unsigned int trace_level)
+{
+	sh_css_set_dtrace_level(trace_level);
+}
+#endif /* CONFIG_VIDEO_ATOMISP_CSS21 */
 
 static ia_css_ptr atomisp_css2_mm_alloc(size_t bytes, uint32_t attr)
 {
@@ -2406,10 +2442,11 @@ int atomisp_css_wait_acc_finish(struct atomisp_sub_device *asd)
 
 		dbg_level = 6;
 		dev_err(isp->dev, "<%s: completion timeout\n", __func__);
-		sh_css_set_dtrace_level(CSS_DTRACE_VERBOSITY_TIMEOUT);
-		sh_css_dump_sp_sw_debug_info();
-		sh_css_dump_debug_info(__func__);
-		sh_css_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
+		atomisp_css_debug_set_dtrace_level(
+						CSS_DTRACE_VERBOSITY_TIMEOUT);
+		atomisp_css_debug_dump_sp_sw_debug_info();
+		atomisp_css_debug_dump_debug_info(__func__);
+		atomisp_css_debug_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
 		dbg_level = old_dbglevel;
 		ret = -EIO;
 	}

@@ -121,6 +121,10 @@ struct atomisp_device;
 struct atomisp_sub_device;
 struct video_device;
 
+void atomisp_css_debug_dump_sp_sw_debug_info(void);
+void atomisp_css_debug_dump_debug_info(const char *context);
+void atomisp_css_debug_set_dtrace_level(const unsigned int trace_level);
+
 void atomisp_store_uint32(hrt_address addr, uint32_t data);
 void atomisp_load_uint32(hrt_address addr, uint32_t *data);
 

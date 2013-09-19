@@ -45,7 +45,6 @@
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 
-#include "sh_css_debug.h"
 #include "sh_css_hrt.h"
 #include "sh_css_defs.h"
 #include "system_global.h"
@@ -1088,10 +1087,11 @@ void atomisp_wdt_work(struct work_struct *work)
 
 	if (atomic_inc_return(&isp->wdt_count) <
 			ATOMISP_ISP_MAX_TIMEOUT_COUNT) {
-		sh_css_set_dtrace_level(CSS_DTRACE_VERBOSITY_TIMEOUT);
-		sh_css_dump_sp_sw_debug_info();
-		sh_css_dump_debug_info(__func__);
-		sh_css_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
+		atomisp_css_debug_set_dtrace_level(
+						CSS_DTRACE_VERBOSITY_TIMEOUT);
+		atomisp_css_debug_dump_sp_sw_debug_info();
+		atomisp_css_debug_dump_debug_info(__func__);
+		atomisp_css_debug_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
 		for (i = 0; i < isp->num_of_streams; i++) {
 			asd = &isp->asd[i];
 			if (asd->streaming != ATOMISP_DEVICE_STREAMING_ENABLED)
