@@ -486,6 +486,12 @@ static int __destroy_pipes(struct atomisp_sub_device *asd, bool force)
 	return ret;
 }
 
+void atomisp_destroy_pipes_stream_force(struct atomisp_sub_device *asd)
+{
+	__destroy_stream(asd, true);
+	__destroy_pipes(asd, true);
+}
+
 static void __apply_additional_pipe_config(
 				struct atomisp_sub_device *asd,
 				enum ia_css_pipe_id pipe_id)

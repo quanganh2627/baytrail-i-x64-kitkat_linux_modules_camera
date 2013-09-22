@@ -591,6 +591,10 @@ static int atomisp_release(struct file *file)
 	del_timer_sync(&isp->wdt);
 	atomisp_acc_release(isp);
 	atomisp_free_all_shading_tables(isp);
+#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+	if (asd->stream_env.stream)
+		atomisp_destroy_pipes_stream_force(asd);
+#endif
 	atomisp_css_uninit(isp);
 #ifndef CONFIG_VIDEO_ATOMISP_CSS20
 	hrt_isp_css_mm_clear();

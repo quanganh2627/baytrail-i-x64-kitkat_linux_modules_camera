@@ -284,6 +284,8 @@ int atomisp_css_allocate_continuous_frames(bool init_time,
 
 void atomisp_css_update_continuous_frames(struct atomisp_sub_device *asd);
 
+void atomisp_destroy_pipes_stream_force(struct atomisp_sub_device *asd);
+
 int atomisp_css_stop(struct atomisp_sub_device *asd,
 			enum atomisp_css_pipe_id pipe_id, bool in_reset);
 
