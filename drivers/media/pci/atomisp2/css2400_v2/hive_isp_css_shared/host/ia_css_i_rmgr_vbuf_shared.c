@@ -1,4 +1,4 @@
-/* Release Version: ci_master_byt_20130905_2200 */
+/* Release Version: ci_master_byt_20130916_2228 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -230,7 +230,6 @@ void ia_css_i_host_rmgr_acq_vbuf(
 	struct ia_css_i_host_rmgr_vbuf_handle **handle)
 {
 	uint32_t size;
-
 	assert(pool != NULL);
 	assert(handle != NULL);
 	assert(*handle != NULL);
