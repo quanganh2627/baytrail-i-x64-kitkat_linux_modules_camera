@@ -1660,8 +1660,10 @@ stopsensor:
 	}
 
 	/* if other streams are running, isp should not be powered off */
-	if (atomisp_streaming_count(isp))
+	if (atomisp_streaming_count(isp)) {
+		atomisp_css_flush(isp);
 		return 0;
+	}
 
 #ifdef PUNIT_CAMERA_BUSY
 	if (!IS_ISP2400(isp) && isp->need_gfx_throttle) {

@@ -318,4 +318,6 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 		      enum atomisp_css_pipe_id css_pipe_id,
 		      bool q_buffers);
 
+void atomisp_css_flush(struct atomisp_device *isp);
+
 #endif /* __ATOMISP_CMD_H__ */
