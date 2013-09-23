@@ -2242,7 +2242,11 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 
 	case ATOMISP_IOC_S_DIS_VECTOR:
+#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+		err = atomisp_set_dvs_6axis_config(asd, arg);
+#else
 		err = atomisp_set_dis_vector(asd, arg);
+#endif
 		break;
 
 	case ATOMISP_IOC_G_ISP_PARM:
@@ -2402,11 +2406,6 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 	case ATOMISP_IOC_S_CONT_CAPTURE_CONFIG:
 		err = atomisp_offline_capture_configure(asd, arg);
 		break;
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
-	case ATOMISP_IOC_S_6AXIS_CONFIG:
-		err = atomisp_set_dvs_6axis_config(asd, arg);
-		break;
-#endif
 	default:
 		mutex_unlock(&isp->mutex);
 		return -EINVAL;
