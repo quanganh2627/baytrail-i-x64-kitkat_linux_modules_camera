@@ -32,6 +32,7 @@
 #include <linux/v4l2-mediabus.h>
 #include <media/media-entity.h>
 #include <media/v4l2-chip-ident.h>
+#include <media/v4l2-ctrls.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
 #include "imx175.h"
@@ -407,6 +408,12 @@ struct imx_device {
 	struct imx_vcm *vcm_driver;
 	const struct imx_resolution *curr_res_table;
 	int entries_curr_table;
+
+	/* used for h/b blank tuning */
+	struct v4l2_ctrl_handler ctrl_handler;
+	struct v4l2_ctrl *pixel_rate;
+	struct v4l2_ctrl *h_blank;
+	struct v4l2_ctrl *v_blank;
 };
 
 #define to_imx_sensor(x) container_of(x, struct imx_device, sd)

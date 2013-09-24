@@ -1432,6 +1432,42 @@ static int imx_try_mbus_fmt(struct v4l2_subdev *sd,
 	return 0;
 }
 
+/* Call with ctrl_handler.lock hold */
+static int __adjust_hvblank(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct imx_device *dev = to_imx_sensor(sd);
+	u16 new_frame_length_lines, new_line_length_pck;
+	int ret;
+
+	/*
+	 * No need to adjust h/v blank if not set dbg value
+	 * Note that there is no other checking on the h/v blank value,
+	 * as h/v blank can be set to any value above zero for debug purpose
+	 */
+	if (!dev->v_blank->val || !dev->h_blank->val)
+		return 0;
+
+	new_frame_length_lines = dev->curr_res_table[dev->fmt_idx].height +
+		dev->v_blank->val;
+	new_line_length_pck = dev->curr_res_table[dev->fmt_idx].width +
+		dev->h_blank->val;
+
+	ret = imx_write_reg(client, IMX_16BIT, IMX_LINE_LENGTH_PIXELS,
+			    new_line_length_pck);
+	if (ret)
+		return ret;
+	ret = imx_write_reg(client, IMX_16BIT, IMX_FRAME_LENGTH_LINES,
+			    new_frame_length_lines);
+	if (ret)
+		return ret;
+
+	dev->lines_per_frame = new_frame_length_lines;
+	dev->pixels_per_line = new_line_length_pck;
+
+	return 0;
+}
+
 static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 			      struct v4l2_mbus_framefmt *fmt)
 {
@@ -1471,6 +1507,12 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 		dev->curr_res_table[dev->fmt_idx].fps_options[dev->fps_index].pixels_per_line;
 	dev->lines_per_frame =
 		dev->curr_res_table[dev->fmt_idx].fps_options[dev->fps_index].lines_per_frame;
+
+	/* dbg h/v blank time */
+	mutex_lock(dev->ctrl_handler.lock);
+	__adjust_hvblank(sd);
+	mutex_unlock(dev->ctrl_handler.lock);
+
 	ret = __imx_update_exposure_timing(client, dev->coarse_itg,
 		dev->pixels_per_line, dev->lines_per_frame);
 	if (ret)
@@ -1545,6 +1587,30 @@ found:
 	return 0;
 }
 
+static void __imx_print_timing(struct v4l2_subdev *sd)
+{
+	struct imx_device *dev = to_imx_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	u16 width = dev->curr_res_table[dev->fmt_idx].width;
+	u16 height = dev->curr_res_table[dev->fmt_idx].height;
+
+	dev_dbg(&client->dev, "Dump imx timing in stream on:\n");
+	dev_dbg(&client->dev, "width: %d:\n", width);
+	dev_dbg(&client->dev, "height: %d:\n", height);
+	dev_dbg(&client->dev, "pixels_per_line: %d:\n", dev->pixels_per_line);
+	dev_dbg(&client->dev, "line per frame: %d:\n", dev->lines_per_frame);
+	dev_dbg(&client->dev, "pix freq: %d:\n", dev->vt_pix_clk_freq_mhz);
+	dev_dbg(&client->dev, "init fps: %d:\n", dev->vt_pix_clk_freq_mhz /
+			dev->pixels_per_line / dev->lines_per_frame);
+	dev_dbg(&client->dev, "HBlank: %d nS:\n",
+			1000 * (dev->pixels_per_line - width) /
+			(dev->vt_pix_clk_freq_mhz / 1000000));
+	dev_dbg(&client->dev, "VBlank: %d uS:\n",
+			(dev->lines_per_frame - height) * dev->pixels_per_line /
+			(dev->vt_pix_clk_freq_mhz / 1000000));
+
+}
+
 /*
  * imx stream on/off
  */
@@ -1556,6 +1622,7 @@ static int imx_s_stream(struct v4l2_subdev *sd, int enable)
 
 	mutex_lock(&dev->input_lock);
 	if (enable) {
+		__imx_print_timing(sd);
 		ret = imx_write_reg_array(client, imx_streaming);
 		if (ret != 0) {
 			v4l2_err(client, "write_reg_array err\n");
@@ -1931,6 +1998,39 @@ static const struct v4l2_subdev_sensor_ops imx_sensor_ops = {
 	.g_skip_frames	= imx_g_skip_frames,
 };
 
+static int imx_set_ctrl(struct v4l2_ctrl *ctrl)
+{
+	return 0;
+}
+
+static int imx_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
+{
+	struct imx_device *dev = container_of(ctrl->handler, struct imx_device,
+			ctrl_handler);
+
+	switch (ctrl->id) {
+	case V4L2_CID_VBLANK:
+		ctrl->val = dev->lines_per_frame -
+			dev->curr_res_table[dev->fmt_idx].height;
+		break;
+	case V4L2_CID_HBLANK:
+		ctrl->val = dev->pixels_per_line -
+			dev->curr_res_table[dev->fmt_idx].width;
+		break;
+	case V4L2_CID_PIXEL_RATE:
+		ctrl->val = dev->vt_pix_clk_freq_mhz;
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static struct v4l2_ctrl_ops imx_ctrl_ops = {
+	.s_ctrl = imx_set_ctrl,
+	.g_volatile_ctrl = imx_g_volatile_ctrl,
+};
+
 static const struct v4l2_subdev_video_ops imx_video_ops = {
 	.s_stream = imx_s_stream,
 	.enum_framesizes = imx_enum_framesizes,
@@ -2025,6 +2125,33 @@ static int __update_imx_device_settings(struct imx_device *dev, u16 sensor_id)
 	return dev->vcm_driver->init(&dev->sd);
 }
 
+static void __imx_init_ctrl_handler(struct imx_device *dev)
+{
+	struct v4l2_ctrl_handler *hdl;
+
+	hdl = &dev->ctrl_handler;
+
+	v4l2_ctrl_handler_init(&dev->ctrl_handler, 3);
+
+	dev->pixel_rate = v4l2_ctrl_new_std(&dev->ctrl_handler,
+					    &imx_ctrl_ops,
+					    V4L2_CID_PIXEL_RATE,
+					    0, UINT_MAX, 1, 0);
+	dev->pixel_rate->flags |= V4L2_CTRL_FLAG_VOLATILE;
+
+	dev->h_blank = v4l2_ctrl_new_std(&dev->ctrl_handler,
+					  &imx_ctrl_ops,
+					  V4L2_CID_HBLANK, 0, SHRT_MAX, 1, 0);
+	dev->h_blank->flags |= V4L2_CTRL_FLAG_VOLATILE;
+
+	dev->v_blank = v4l2_ctrl_new_std(&dev->ctrl_handler,
+					  &imx_ctrl_ops,
+					  V4L2_CID_VBLANK, 0, SHRT_MAX, 1, 0);
+	dev->v_blank->flags |= V4L2_CTRL_FLAG_VOLATILE;
+
+	dev->sd.ctrl_handler = hdl;
+}
+
 static int imx_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
@@ -2062,6 +2189,8 @@ static int imx_probe(struct i2c_client *client,
 	snprintf(dev->sd.name, sizeof(dev->sd.name), "%s%x %d-%04x",
 		IMX_SUBDEV_PREFIX, dev->sensor_id,
 		i2c_adapter_id(client->adapter), client->addr);
+
+	__imx_init_ctrl_handler(dev);
 
 	/* Resolution settings depend on sensor type and platform */
 	ret = __update_imx_device_settings(dev, dev->sensor_id);
