@@ -5874,6 +5874,9 @@ static enum ia_css_err sh_css_params_write_to_ddr_internal(
 
 	sh_css_dtrace(SH_DBG_TRACE_PRIVATE, "sh_css_params_write_to_ddr_internal() enter:\n");
 
+	if (binary == NULL || binary->info == NULL)
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
 	if (binary->info->enable.fpnr) {
 		buff_realloced = reallocate_buffer(&ddr_map->fpn_tbl,
 			&ddr_map_size->fpn_tbl,
