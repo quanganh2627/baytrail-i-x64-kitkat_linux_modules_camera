@@ -1,0 +1,60 @@
+/* Release Version: ci_master_20131001_0952 */
+/*
+ * Support for Intel Camera Imaging ISP subsystem.
+ *
+ * Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License version
+ * 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA.
+ *
+ */
+
+#include "ia_css_types.h"
+#include "sh_css_defs.h"
+#include "ia_css_debug.h"
+
+#include "ia_css_ynr2.host.h"
+
+void
+ia_css_yee2_encode(struct sh_css_isp_yee2_params *to,
+		   const struct ia_css_ynr_config *from)
+{
+	to->edge_sense_gain_0   = from->edge_sense_gain_0;
+	to->edge_sense_gain_1   = from->edge_sense_gain_1;
+	to->corner_sense_gain_0 = from->corner_sense_gain_0;
+	to->corner_sense_gain_1 = from->corner_sense_gain_1;
+}
+
+void
+ia_css_fc_encode(struct sh_css_isp_fc_params *to,
+		 const struct ia_css_fc_config *from)
+{
+	to->gain_exp   = from->gain_exp;
+
+	to->gain_pos_0 = from->gain_pos_0;
+	to->gain_pos_1 = from->gain_pos_1;
+	to->gain_neg_0 = from->gain_neg_0;
+	to->gain_neg_1 = from->gain_neg_1;
+
+	to->crop_pos_0 = from->crop_pos_0;
+	to->crop_pos_1 = from->crop_pos_1;
+	to->crop_neg_0 = from->crop_neg_0;
+	to->crop_neg_1 = from->crop_neg_1;
+}
+
+void
+ia_css_yee2_dump(const struct sh_css_isp_yee2_params *yee2, unsigned level);
+
+void
+ia_css_fc_dump(const struct sh_css_isp_fc_params *fc, unsigned level);
