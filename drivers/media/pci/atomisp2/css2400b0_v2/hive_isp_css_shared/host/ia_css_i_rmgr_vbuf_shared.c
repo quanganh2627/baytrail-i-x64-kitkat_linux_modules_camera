@@ -53,7 +53,7 @@ struct ia_css_i_host_rmgr_vbuf_pool writepool = {
 struct ia_css_i_host_rmgr_vbuf_pool hmmbufferpool = {
 	true, /* copy_on_write */ \
 	true, /* recycle */ \
-	20,    /* size */ \
+	32,    /* size */ \
 	0,     /* index */ \
 	NULL,  /* handles */ \
 };
