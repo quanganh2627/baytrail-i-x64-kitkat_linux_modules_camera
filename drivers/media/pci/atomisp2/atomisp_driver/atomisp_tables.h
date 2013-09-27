@@ -151,7 +151,7 @@ static struct atomisp_css_macc_table green_macc_table = {
 	}
 };
 
-#if defined(CONFIG_ISP2400) || defined(CONFIG_ISP2400B0)
+#if defined(CONFIG_ISP2400) || defined(CONFIG_ISP2400B0) || defined(CONFIG_ISP2401)
 /* this table is from CSS1.5 default_ctc_table(20121003) */
 static struct atomisp_css_ctc_table vivid_ctc_table = {
 #ifdef CONFIG_VIDEO_ATOMISP_CSS20

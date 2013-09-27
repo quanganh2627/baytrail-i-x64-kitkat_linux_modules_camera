@@ -946,6 +946,9 @@ load_firmware(struct atomisp_device *isp)
 	int rc;
 	char *fw_path = NULL;
 
+#if defined(ATOMISP_FWNAME)
+	fw_path = ATOMISP_FWNAME;
+#else
 	if (isp->media_dev.driver_version == ATOMISP_CSS_VERSION_21) {
 		if (isp->media_dev.hw_revision ==
 		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
@@ -976,6 +979,7 @@ load_firmware(struct atomisp_device *isp)
 			== ATOMISP_HW_REVISION_ISP2300)
 			fw_path = "shisp_css15.bin";
 	}
+#endif
 
 	if (!fw_path) {
 		dev_err(isp->dev,
