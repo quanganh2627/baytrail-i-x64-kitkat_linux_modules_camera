@@ -596,6 +596,129 @@ static struct imx_reg const imx134_820_616_30fps[] = {
 	{ IMX_TOK_TERM, 0, 0 }
 };
 
+/* 4 lane, 1/4 binning 30fps 720x592 */
+static struct imx_reg const imx134_720_592_30fps[] = {
+	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* Clock Setting */
+	{ IMX_8BIT, 0x011E, 0x13 },
+	{ IMX_8BIT, 0x011F, 0x33 },
+	{ IMX_8BIT, 0x0301, 0x05 },
+	{ IMX_8BIT, 0x0303, 0x01 },
+	{ IMX_8BIT, 0x0305, 0x0C },
+	{ IMX_8BIT, 0x0309, 0x05 },
+	{ IMX_8BIT, 0x030B, 0x01 },
+	{ IMX_8BIT, 0x030C, 0x01 },
+	{ IMX_8BIT, 0x030D, 0xA9 },
+	{ IMX_8BIT, 0x030E, 0x01 },
+	{ IMX_8BIT, 0x3A06, 0x11 },
+
+	/* Mode setting */
+	{ IMX_8BIT, 0x0108, 0x03 },
+	{ IMX_8BIT, 0x0112, 0x0A },
+	{ IMX_8BIT, 0x0113, 0x0A },
+	{ IMX_8BIT, 0x0381, 0x01 },
+	{ IMX_8BIT, 0x0383, 0x01 },
+	{ IMX_8BIT, 0x0385, 0x01 },
+	{ IMX_8BIT, 0x0387, 0x01 },
+	{ IMX_8BIT, 0x0390, 0x01 },	/* binning */
+	{ IMX_8BIT, 0x0391, 0x44 },	/* 4x4 binning */
+	{ IMX_8BIT, 0x0392, 0x00 },
+	{ IMX_8BIT, 0x0401, 0x00 },	/* no resize */
+	{ IMX_8BIT, 0x0404, 0x00 },
+	{ IMX_8BIT, 0x0405, 0x10 },
+	{ IMX_8BIT, 0x4082, 0x01 },
+	{ IMX_8BIT, 0x4083, 0x01 },
+	{ IMX_8BIT, 0x7006, 0x04 },
+
+	/* Optionnal Function setting */
+	{ IMX_8BIT, 0x0700, 0x00 },
+	{ IMX_8BIT, 0x3A63, 0x00 },
+	{ IMX_8BIT, 0x4100, 0xF8 },
+	{ IMX_8BIT, 0x4203, 0xFF },
+	{ IMX_8BIT, 0x4344, 0x00 },
+	{ IMX_8BIT, 0x441C, 0x01 },
+
+	/* Size setting */
+	{ IMX_8BIT, 0x0344, 0x00 },      /* x_addr_start[15:8]:200 */
+	{ IMX_8BIT, 0x0345, 0xC8 },      /* x_addr_start[7:0] */
+	{ IMX_8BIT, 0x0346, 0x00 },      /* y_addr_start[15:8]:40 */
+	{ IMX_8BIT, 0x0347, 0x28 },      /* y_addr_start[7:0] */
+	{ IMX_8BIT, 0x0348, 0x0C },      /* x_addr_end[15:8]:2880+200-1 */
+	{ IMX_8BIT, 0x0349, 0x07 },      /* x_addr_end[7:0] */
+	{ IMX_8BIT, 0x034A, 0x09 },      /* y_addr_end[15:8]:2368+40-1 */
+	{ IMX_8BIT, 0x034B, 0x67 },      /* y_addr_end[7:0] */
+	{ IMX_8BIT, 0x034C, 0x02 },      /* x_output_size[15:8]: */
+	{ IMX_8BIT, 0x034D, 0xD0 },      /* x_output_size[7:0] */
+	{ IMX_8BIT, 0x034E, 0x02 },      /* y_output_size[15:8]:616 */
+	{ IMX_8BIT, 0x034F, 0x50 },      /* y_output_size[7:0] */
+	{ IMX_8BIT, 0x0350, 0x00 },
+	{ IMX_8BIT, 0x0351, 0x00 },
+	{ IMX_8BIT, 0x0352, 0x00 },
+	{ IMX_8BIT, 0x0353, 0x00 },
+	{ IMX_8BIT, 0x0354, 0x02 },
+	{ IMX_8BIT, 0x0355, 0xD0 },
+	{ IMX_8BIT, 0x0356, 0x02 },
+	{ IMX_8BIT, 0x0357, 0x50 },
+	{ IMX_8BIT, 0x301D, 0x30 },
+	{ IMX_8BIT, 0x3310, 0x02 },
+	{ IMX_8BIT, 0x3311, 0xD0 },
+	{ IMX_8BIT, 0x3312, 0x02 },
+	{ IMX_8BIT, 0x3313, 0x50 },
+	{ IMX_8BIT, 0x331C, 0x02 },
+	{ IMX_8BIT, 0x331D, 0xD0 },
+	{ IMX_8BIT, 0x4084, 0x00 },
+	{ IMX_8BIT, 0x4085, 0x00 },
+	{ IMX_8BIT, 0x4086, 0x00 },
+	{ IMX_8BIT, 0x4087, 0x00 },
+	{ IMX_8BIT, 0x4400, 0x00 },
+
+	/* Global Timing Setting */
+	{ IMX_8BIT, 0x0830, 0x77 },
+	{ IMX_8BIT, 0x0831, 0x2F },
+	{ IMX_8BIT, 0x0832, 0x4F },
+	{ IMX_8BIT, 0x0833, 0x37 },
+	{ IMX_8BIT, 0x0834, 0x2F },
+	{ IMX_8BIT, 0x0835, 0x37 },
+	{ IMX_8BIT, 0x0836, 0xAF },
+	{ IMX_8BIT, 0x0837, 0x37 },
+	{ IMX_8BIT, 0x0839, 0x1F },
+	{ IMX_8BIT, 0x083A, 0x17 },
+	{ IMX_8BIT, 0x083B, 0x02 },
+
+	/* Integration Time Setting */
+	{ IMX_8BIT, 0x0202, 0x09 },
+	{ IMX_8BIT, 0x0203, 0xD2 },
+
+	/* Gain Setting */
+/*	{ IMX_8BIT, 0x0205, 0x00 },
+	{ IMX_8BIT, 0x020E, 0x01 },
+	{ IMX_8BIT, 0x020F, 0x00 },
+	{ IMX_8BIT, 0x0210, 0x01 },
+	{ IMX_8BIT, 0x0211, 0x00 },
+	{ IMX_8BIT, 0x0212, 0x01 },
+	{ IMX_8BIT, 0x0213, 0x00 },
+	{ IMX_8BIT, 0x0214, 0x01 },
+	{ IMX_8BIT, 0x0215, 0x00 },
+*/
+	/* HDR Setting */
+	{ IMX_8BIT, 0x0230, 0x00 },
+	{ IMX_8BIT, 0x0231, 0x00 },
+	{ IMX_8BIT, 0x0233, 0x00 },
+	{ IMX_8BIT, 0x0234, 0x00 },
+	{ IMX_8BIT, 0x0235, 0x40 },
+	{ IMX_8BIT, 0x0238, 0x00 },
+	{ IMX_8BIT, 0x0239, 0x04 },
+	{ IMX_8BIT, 0x023B, 0x00 },
+	{ IMX_8BIT, 0x023C, 0x01 },
+	{ IMX_8BIT, 0x33B0, 0x04 },
+	{ IMX_8BIT, 0x33B1, 0x00 },
+	{ IMX_8BIT, 0x33B3, 0x00 },
+	{ IMX_8BIT, 0x33B4, 0x01 },
+	{ IMX_8BIT, 0x3800, 0x00 },
+	{ IMX_TOK_TERM, 0, 0 }
+};
+
+
 /* 4 lane 2336x1308, 30fps, for 1080p dvs */
 static struct imx_reg const imx134_2336_1308_30fps_v1[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
@@ -1695,6 +1818,24 @@ static struct imx_reg const imx134_1568_876_30fps_v2[] = {
 
 struct imx_resolution imx134_res_preview[] = {
 	{
+		.desc = "imx134_CIF_30fps",
+		.regs = imx134_720_592_30fps,
+		.width = 720,
+		.height = 592,
+		.fps_options = {
+			{
+				 .fps = 30,
+				 .pixels_per_line = 3600,
+				 .lines_per_frame = 2518,
+			},
+			{
+			}
+		},
+		.bin_factor_x = 4,
+		.bin_factor_y = 4,
+		.used = 0,
+	},
+	{
 		.desc = "imx134_820_616_preview_30fps",
 		.regs = imx134_820_616_30fps,
 		.width = 820,
@@ -1770,6 +1911,24 @@ struct imx_resolution imx134_res_preview[] = {
 
 struct imx_resolution imx134_res_still[] = {
 	{
+		.desc = "imx134_CIF_30fps",
+		.regs = imx134_720_592_30fps,
+		.width = 720,
+		.height = 592,
+		.fps_options = {
+			{
+				 .fps = 30,
+				 .pixels_per_line = 3600,
+				 .lines_per_frame = 2518,
+			},
+			{
+			}
+		},
+		.bin_factor_x = 4,
+		.bin_factor_y = 4,
+		.used = 0,
+	},
+	{
 		.desc = "imx134_VGA_still_30fps",
 		.regs = imx134_820_616_30fps,
 		.width = 820,
@@ -1844,6 +2003,24 @@ struct imx_resolution imx134_res_still[] = {
 };
 
 struct imx_resolution imx134_res_video[] = {
+	{
+		.desc = "imx134_CIF_30fps",
+		.regs = imx134_720_592_30fps,
+		.width = 720,
+		.height = 592,
+		.fps_options = {
+			{
+				 .fps = 30,
+				 .pixels_per_line = 3600,
+				 .lines_per_frame = 2518,
+			},
+			{
+			}
+		},
+		.bin_factor_x = 4,
+		.bin_factor_y = 4,
+		.used = 0,
+	},
 	{
 		.desc = "imx134_VGA_30fps",
 		.regs = imx134_820_616_30fps,
