@@ -1306,6 +1306,9 @@ static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1179)},
 	/* Baytrail */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0f38)},
+#elif defined(CONFIG_ISP2401)
+	/* Anniedale (Merrifield+ / Moorefield) */
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1478)},
 #endif
 	{0,}
 };

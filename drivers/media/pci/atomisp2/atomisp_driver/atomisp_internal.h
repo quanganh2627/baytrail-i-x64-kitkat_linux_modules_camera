@@ -50,6 +50,8 @@
 #include "gp_device.h"
 #include "irq.h"
 
+#define IS_MOOR (INTEL_MID_BOARD(1, PHONE, MOOR) || \
+	INTEL_MID_BOARD(1, TABLET, MOOR))
 #define IS_BYT (INTEL_MID_BOARD(1, PHONE, BYT) || \
 	INTEL_MID_BOARD(1, TABLET, BYT))
 #define IS_MFLD (INTEL_MID_BOARD(1, PHONE, MFLD) || \
