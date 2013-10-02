@@ -70,47 +70,106 @@ static const struct atomisp_capability caps = {
 	.driver = "atomisp-psys-stub",
 };
 
+static struct atomisp_kbuffer *atomisp_lookup_kbuffer(struct atomisp_fh *fh, int fd)
+{
+	struct atomisp_kbuffer *kbuffer = NULL;
+
+	list_for_each_entry(kbuffer, &fh->bufmap, list) {
+		if (kbuffer->fd == fd)
+			return kbuffer;
+	}
+
+	return 0;
+}
+
 static long atomisp_ioctl_mapbuf(struct file *file, struct atomisp_buffer __user *arg)
 {
 	struct atomisp_fh *fh = file->private_data;
-	struct atomisp_bufmap *bufmap;
+	struct atomisp_kbuffer *kbuffer;
 	struct atomisp_buffer buf;
-	int err = 0;
 
 	if (copy_from_user(&buf, arg, sizeof buf))
 		return -EFAULT;
-	bufmap = kzalloc(sizeof(*bufmap), GFP_KERNEL);
-	if (!bufmap) {
-		err = -ENOMEM;
-		goto out;
+	kbuffer = atomisp_lookup_kbuffer(fh, buf.fd);
+	if (!kbuffer)
+		return -EINVAL;
+	if (kbuffer->mapped)
+		return -EINVAL;
+	buf.flags |= ATOMISP_BUFFER_FLAG_MAPPED;
+	if (copy_to_user(arg, &buf, sizeof buf)) {
+		kfree(kbuffer);
+		return -EFAULT;
 	}
-	bufmap->userptr = buf.m.userptr;
-	dev_dbg(fh->dev, "IOC_MAPBUF: userptr %p to %p\n", buf.m.userptr, bufmap);
-	list_add_tail(&bufmap->list, &fh->bufmap);
+	kbuffer->mapped = 1;
+	dev_dbg(fh->dev, "IOC_MAPBUF: mapped fd %d\n", kbuffer->fd);
 
-out:
-	return err;
+	return 0;
 }
 
 static long atomisp_ioctl_unmapbuf(struct file *file, struct atomisp_buffer __user *arg)
 {
 	struct atomisp_fh *fh = file->private_data;
-	struct atomisp_bufmap *bufmap = NULL;
+	struct atomisp_kbuffer *kbuffer;
 	struct atomisp_buffer buf;
-	int err = 0;
 
 	if (copy_from_user(&buf, arg, sizeof buf))
 		return -EFAULT;
-	list_for_each_entry(bufmap, &fh->bufmap, list) {
-		if (bufmap->userptr == buf.m.userptr)
-			break;
+	kbuffer = atomisp_lookup_kbuffer(fh, buf.fd);
+	if (!kbuffer)
+		return -EINVAL;
+	if (!kbuffer->mapped)
+		return -EINVAL;
+	buf.flags &= ~ATOMISP_BUFFER_FLAG_MAPPED;
+	if (copy_to_user(arg, &buf, sizeof buf)) {
+		kfree(kbuffer);
+		return -EFAULT;
 	}
-	if (bufmap) {
-		list_del(&bufmap->list);
-		kfree(bufmap);
-		dev_dbg(fh->dev, "IOC_UNMAPBUF: buffer %p\n", buf.m.userptr);
+	kbuffer->mapped = 0;
+	dev_dbg(fh->dev, "IOC_UNMAPBUF: fd %d\n", kbuffer->fd);
+
+	return 0;
+}
+
+static long atomisp_ioctl_getbuf(struct file *file, struct atomisp_buffer __user *arg)
+{
+	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_kbuffer *kbuffer;
+	struct atomisp_buffer buffer;
+
+	if (copy_from_user(&buffer, arg, sizeof buffer))
+		return -EFAULT;
+	kbuffer = kzalloc(sizeof(*kbuffer), GFP_KERNEL);
+	if (!kbuffer)
+		return -ENOMEM;
+	/* TODO: allocate with DMABUF */
+	kbuffer->fd = (int)kbuffer;
+	kbuffer->userptr = buffer.userptr;
+	buffer.fd = kbuffer->fd;
+	if (copy_to_user(arg, &buffer, sizeof buffer)) {
+		kfree(kbuffer);
+		return -EFAULT;
 	}
-	return err;
+	list_add_tail(&kbuffer->list, &fh->bufmap);
+	dev_dbg(fh->dev, "IOC_GETBUF: userptr %p to %d\n", buffer.userptr, buffer.fd);
+	return 0;
+}
+
+static long atomisp_ioctl_putbuf(struct file *file, struct atomisp_buffer __user *arg)
+{
+	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_kbuffer *kbuffer = NULL;
+	struct atomisp_buffer buffer;
+
+	if (copy_from_user(&buffer, arg, sizeof buffer))
+		return -EFAULT;
+	kbuffer = atomisp_lookup_kbuffer(fh, buffer.fd);
+	if (!kbuffer)
+		return -EINVAL;
+	list_del(&kbuffer->list);
+	kfree(kbuffer);
+	dev_dbg(fh->dev, "IOC_PUTBUF: buffer %d\n", buffer.fd);
+
+	return 0;
 }
 
 static int atomisp_queue_event(struct atomisp_fh *fh, struct atomisp_event *e)
@@ -212,6 +271,10 @@ static long atomisp_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 		return atomisp_ioctl_mapbuf(file, argp);
 	case ATOMISP_IOC_UNMAPBUF:
 		return atomisp_ioctl_unmapbuf(file, argp);
+	case ATOMISP_IOC_GETBUF:
+		return atomisp_ioctl_getbuf(file, argp);
+	case ATOMISP_IOC_PUTBUF:
+		return atomisp_ioctl_putbuf(file, argp);
 	case ATOMISP_IOC_QCMD:
 		return atomisp_ioctl_qcmd(file, argp);
 	case ATOMISP_IOC_DQEVENT:
@@ -244,7 +307,7 @@ static int atomisp_release(struct inode *inode, struct file *file)
 {
 	struct atomisp_device *isp = inode_to_atomisp_device(inode);
 	struct atomisp_fh *fh = file->private_data;
-	struct atomisp_bufmap *bm, *bm0;
+	struct atomisp_kbuffer *bm, *bm0;
 
 	mutex_lock(&isp->mutex);
 	list_del(&fh->list);

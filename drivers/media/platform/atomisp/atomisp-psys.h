@@ -26,25 +26,6 @@ struct atomisp_capability {
 	uint8_t driver[20];
 } __attribute__ ((packed));
 
-struct atomisp_buffer {
-	uint32_t type;		/* ATOMISP_BUFFER_TYPE_ */
-	union {
-		void __user *userptr;
-		int fd;
-		uint32_t reserved[2];
-	} m;
-	uint64_t len;
-	uint8_t dir;		/* ATOMISP_BUFFER_DIR_ */
-	uint8_t reserved[3];
-	uint32_t reserved2[4];
-} __attribute__ ((packed)) ;
-
-#define ATOMISP_BUFFER_TYPE_USERPTR    1
-#define ATOMISP_BUFFER_TYPE_DMABUF     2
-
-#define ATOMISP_BUFFER_DIR_INPUT       1
-#define ATOMISP_BUFFER_DIR_OUTPUT      2
-
 struct atomisp_event {
 	uint32_t type;		/* ATOMISP_EVENT_TYPE_ */
 	union {
@@ -56,6 +37,25 @@ struct atomisp_event {
 } __attribute__ ((packed));
 
 #define ATOMISP_EVENT_TYPE_CMD_COMPLETE      1
+
+/**
+ * struct atomisp_buffer - input/output port descriptor
+ * @len:	buffer size
+ * @userptr:	user pointer (NULL if not mapped to user space)
+ * @fd:	DMA-BUF handle (filled by driver)
+ * @flags:	flags
+ */
+struct atomisp_buffer {
+	uint64_t len;
+	void __user *userptr;
+	int fd;
+	uint32_t flags;
+	uint32_t reserved2[4];
+} __attribute__ ((packed)) ;
+
+#define ATOMISP_BUFFER_FLAG_INPUT	(1 << 0)
+#define ATOMISP_BUFFER_FLAG_OUTPUT	(1 << 1)
+#define ATOMISP_BUFFER_FLAG_MAPPED	(1 << 2)
 
 /**
  * struct atomisp_command - processing command
@@ -70,14 +70,16 @@ struct atomisp_command {
 	uint32_t id;
 	int32_t priority;
 	uint32_t bufcount;
-	struct atomisp_buffer __user *bufs;
+	struct atomisp_buffer __user *buffers;
 	uint32_t reserved[4];
 } __attribute__ ((packed));
 
 #define ATOMISP_IOC_QUERYCAP _IOWR('A', 1, struct atomisp_capability)
 #define ATOMISP_IOC_MAPBUF _IOWR('A', 2, struct atomisp_buffer)
 #define ATOMISP_IOC_UNMAPBUF _IOWR('A', 3, struct atomisp_buffer)
-#define ATOMISP_IOC_QCMD _IOWR('A', 4, struct atomisp_command)
-#define ATOMISP_IOC_DQEVENT _IOWR('A', 5, struct atomisp_event)
+#define ATOMISP_IOC_GETBUF _IOWR('A', 4, struct atomisp_buffer)
+#define ATOMISP_IOC_PUTBUF _IOWR('A', 5, struct atomisp_buffer)
+#define ATOMISP_IOC_QCMD _IOWR('A', 6, struct atomisp_command)
+#define ATOMISP_IOC_DQEVENT _IOWR('A', 7, struct atomisp_event)
 
 #endif

@@ -33,8 +33,10 @@ struct list;
 struct device;
 struct atomisp_event;
 
-struct atomisp_bufmap {
+struct atomisp_kbuffer {
 	void *userptr;
+	int mapped;
+	int fd;
 	struct list_head list;
 };
 
