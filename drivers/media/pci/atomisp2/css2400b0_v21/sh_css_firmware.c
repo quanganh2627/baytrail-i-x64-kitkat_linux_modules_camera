@@ -18,8 +18,9 @@
  * 02110-1301, USA.
  *
  */
-
+#ifndef __KERNEL__
 #include <stdlib.h>
+#endif
 #include "sh_css_firmware.h"
 
 #include "sh_css_defs.h"
