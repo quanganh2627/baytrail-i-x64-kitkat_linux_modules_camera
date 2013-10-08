@@ -147,43 +147,16 @@ struct atomisp_video_pipe *atomisp_to_video_pipe(struct video_device *dev)
 
 /* This is just a draft rules, should be tuned when sensor is ready*/
 static struct atomisp_freq_scaling_rule dfs_rules[] = {
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_320MHZ,
-		.run_mode = ATOMISP_RUN_MODE_VIDEO,
-	},
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+	/*
+	 * TODO: SDV maybe have to use 457MHz on TNG B0,
+	 * add 457MHz option later together with SDV.
+	 */
 	{
 		.width = ISP_FREQ_RULE_ANY,
 		.height = ISP_FREQ_RULE_ANY,
 		.fps = ISP_FREQ_RULE_ANY,
 		.isp_freq = ISP_FREQ_400MHZ,
 		.run_mode = ATOMISP_RUN_MODE_VIDEO,
-	},
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
-	{
-		.width = 4192,
-		.height = 3104,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_400MHZ,
-		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
-	},
-	{
-		.width = 4096,
-		.height = 3072,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_400MHZ,
-		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
-	},
-	{
-		.width = 3648,
-		.height = 2736,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_400MHZ,
-		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
 	},
 	{
 		.width = ISP_FREQ_RULE_ANY,
