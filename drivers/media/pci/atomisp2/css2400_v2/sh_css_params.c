@@ -5648,7 +5648,8 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit)
 	assert(stream != NULL);
 
 	params = stream->isp_params_configs;
-	assert(params != NULL);
+	if (!params)
+		return;
 
 	raw_bit_depth = ia_css_stream_input_format_bits_per_pixel(stream);
 	isp_pipe_version = ia_css_pipe_get_isp_pipe_version(stream->pipes[0]);

@@ -5425,6 +5425,8 @@ static enum ia_css_err video_start(
 						&video_stage);
 		if (err != IA_CSS_SUCCESS)
 			return err;
+		if (!video_stage)
+			return IA_CSS_ERR_INTERNAL_ERROR;
 		/* If we use copy iso video, the input must be yuv iso raw */
 		video_stage->args.copy_vf =
 			video_binary->info->mode == SH_CSS_BINARY_MODE_COPY;
@@ -5443,10 +5445,10 @@ static enum ia_css_err video_start(
 	if (!in_stage)
 		in_stage = video_stage;
 
-
-	assert(video_stage != NULL);
-	video_stage->args.in_ref_frame = pipe->pipe.video.ref_frames[0];	
-	video_stage->args.out_ref_frame = pipe->pipe.video.ref_frames[1];	
+	if (!video_stage)
+		return IA_CSS_ERR_INTERNAL_ERROR;
+	video_stage->args.in_ref_frame = pipe->pipe.video.ref_frames[0];
+	video_stage->args.out_ref_frame = pipe->pipe.video.ref_frames[1];
 	video_stage->args.dvs_ref_frame1 = pipe->pipe.video.ref_frames[2];
 	video_stage->args.dvs_ref_frame2 = pipe->pipe.video.ref_frames[3];
 	video_stage->args.dvs_ref_frame3 = pipe->pipe.video.ref_frames[4];
