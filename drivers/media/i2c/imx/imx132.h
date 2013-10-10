@@ -1030,29 +1030,10 @@ struct imx_resolution imx132_res_still[] = {
 
 struct imx_resolution imx132_res_video[] = {
 	{
-		.desc = "imx132_1080p_30fps",
-		.regs = imx132_1080p_30fps,
-		.width = 1936,
-		.height = 1096,
-		.fps_options = {
-			{
-				.fps = 30,
-				.pixels_per_line = 0x0966,
-				.lines_per_frame = 0x0462,
-			},
-			{
-			}
-		},
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.used = 0,
-		.skip_frames = 2,
-	},
-	{
-		.desc = "imx132_720p_dvs_30fps",
-		.regs = imx132_720p_dvs_30fps,
-		.width = 1552,
-		.height = 880,
+		.desc = "imx132_qcif_dvs_30fps",
+		.regs = imx132_qcif_dvs_30fps,
+		.width = 228,
+		.height = 190,
 		.fps_options = {
 			{
 				.fps = 30,
@@ -1062,27 +1043,8 @@ struct imx_resolution imx132_res_video[] = {
 			{
 			}
 		},
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.used = 0,
-		.skip_frames = 2,
-	},
-	{
-		.desc = "imx132_vga_dvs_30fps",
-		.regs = imx132_vga_dvs_30fps,
-		.width = 784,
-		.height = 592,
-		.fps_options = {
-			{
-				.fps = 30,
-				.pixels_per_line = 0x0966,
-				.lines_per_frame = 0x03BC,
-			},
-			{
-			}
-		},
-		.bin_factor_x = 1,
-		.bin_factor_y = 1,
+		.bin_factor_x = 2,
+		.bin_factor_y = 2,
 		.used = 0,
 		.skip_frames = 2,
 	},
@@ -1125,10 +1087,10 @@ struct imx_resolution imx132_res_video[] = {
 		.skip_frames = 2,
 	},
 	{
-		.desc = "imx132_qcif_dvs_30fps",
-		.regs = imx132_qcif_dvs_30fps,
-		.width = 228,
-		.height = 190,
+		.desc = "imx132_vga_dvs_30fps",
+		.regs = imx132_vga_dvs_30fps,
+		.width = 784,
+		.height = 592,
 		.fps_options = {
 			{
 				.fps = 30,
@@ -1138,8 +1100,46 @@ struct imx_resolution imx132_res_video[] = {
 			{
 			}
 		},
-		.bin_factor_x = 2,
-		.bin_factor_y = 2,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 2,
+	},
+	{
+		.desc = "imx132_720p_dvs_30fps",
+		.regs = imx132_720p_dvs_30fps,
+		.width = 1552,
+		.height = 880,
+		.fps_options = {
+			{
+				.fps = 30,
+				.pixels_per_line = 0x0966,
+				.lines_per_frame = 0x03BC,
+			},
+			{
+			}
+		},
+		.bin_factor_x = 0,
+		.bin_factor_y = 0,
+		.used = 0,
+		.skip_frames = 2,
+	},
+	{
+		.desc = "imx132_1080p_30fps",
+		.regs = imx132_1080p_30fps,
+		.width = 1936,
+		.height = 1096,
+		.fps_options = {
+			{
+				.fps = 30,
+				.pixels_per_line = 0x0966,
+				.lines_per_frame = 0x0462,
+			},
+			{
+			}
+		},
+		.bin_factor_x = 0,
+		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
 	},
