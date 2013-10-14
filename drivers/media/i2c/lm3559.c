@@ -176,6 +176,8 @@ static int lm3559_set_indicator(struct lm3559 *flash)
 	int ret;
 	u8 val;
 
+	/* Clear flags register. */
+	lm3559_read(flash, LM3559_FLAGS_REG);
 	val = (flash->indicator.indicator_current
 			<< LM3559_INDICATOR_CURRENT_SHIFT) |
 		(flash->indicator.led1_enable << LM3559_INDICATOR_LED1_SHIFT) |
@@ -195,6 +197,8 @@ static int lm3559_set_torch(struct lm3559 *flash)
 {
 	u8 val;
 
+	/* Clear flags register. */
+	lm3559_read(flash, LM3559_FLAGS_REG);
 	val = (flash->torch_current << LM3559_TORCH_LED1_CURRENT_SHIFT) |
 	      (flash->torch_current << LM3559_TORCH_LED2_CURRENT_SHIFT);
 
@@ -205,6 +209,8 @@ static int lm3559_set_flash(struct lm3559 *flash)
 {
 	u8 val;
 
+	/* Clear flags register. */
+	lm3559_read(flash, LM3559_FLAGS_REG);
 	val = (flash->flash_current << LM3559_FLASH_LED1_CURRENT_SHIFT) |
 		(flash->flash_current << LM3559_FLASH_LED2_CURRENT_SHIFT);
 
