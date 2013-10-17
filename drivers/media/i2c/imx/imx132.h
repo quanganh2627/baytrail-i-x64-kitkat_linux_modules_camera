@@ -649,7 +649,7 @@ static struct imx_reg imx132_qvga_dvs_30fps[] = {
 	{IMX_8BIT, 0x330C, 0x0B}, /* RGTHSZERO[5:0] THS-ZERO */
 	{IMX_8BIT, 0x330D, 0x07}, /* RGTHSTRAIL[3:0] THS-TRAIL */
 	{IMX_8BIT, 0x330E, 0x03},
-	{IMX_8BIT, 0x3318, 0x6A},
+	{IMX_8BIT, 0x3318, 0x69},
 	{IMX_8BIT, 0x3322, 0x09},
 	{IMX_8BIT, 0x3342, 0x00},
 	{IMX_8BIT, 0x3348, 0xE0},
@@ -756,7 +756,7 @@ static struct imx_reg imx132_cif_dvs_30fps[] = {
 	{IMX_8BIT, 0x330C, 0x0B}, /* RGTHSZERO[5:0] THS-ZERO */
 	{IMX_8BIT, 0x330D, 0x07}, /* RGTHSTRAIL[3:0] THS-TRAIL */
 	{IMX_8BIT, 0x330E, 0x03},
-	{IMX_8BIT, 0x3318, 0x6A},
+	{IMX_8BIT, 0x3318, 0x69},
 	{IMX_8BIT, 0x3322, 0x09},
 	{IMX_8BIT, 0x3342, 0x00},
 	{IMX_8BIT, 0x3348, 0xE0},
@@ -1037,8 +1037,8 @@ struct imx_resolution imx132_res_video[] = {
 		.fps_options = {
 			{
 				.fps = 30,
-				.pixels_per_line = 0x0966,
-				.lines_per_frame = 0x03BC,
+				.pixels_per_line = 0x0D20,
+				.lines_per_frame = 0x02AC,
 			},
 			{
 			}
