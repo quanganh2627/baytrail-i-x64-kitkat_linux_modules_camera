@@ -1021,11 +1021,11 @@ static bool is_valid_device(struct pci_dev *dev,
 		return true;
 	}
 
-#ifdef CONFIG_ISP2400
+#ifdef ISP2400
 	return dev->revision <= a0_max_id;
-#else /* CONFIG_ISP2400 */
+#else /* ISP2400 */
 	return dev->revision > a0_max_id;
-#endif /* CONFIG_ISP2400 */
+#endif /* ISP2400 */
 }
 
 /* Declared in hmm.c. */
@@ -1102,9 +1102,9 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	spin_lock_init(&isp->lock);
 	init_completion(&isp->init_done);
 
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_15;
-#elif !defined(CONFIG_VIDEO_ATOMISP_CSS21)
+#elif !defined(CSS21)
 	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_20;
 #else
 	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_21;
@@ -1116,7 +1116,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		isp->media_dev.hw_revision =
 			(ATOMISP_HW_REVISION_ISP2400
 			 << ATOMISP_HW_REVISION_SHIFT) |
-#ifdef CONFIG_ISP2400
+#ifdef ISP2400
 			ATOMISP_HW_STEPPING_A0;
 #else
 			ATOMISP_HW_STEPPING_B0;
@@ -1228,7 +1228,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
  * In css1.5, we still do hmm_init and load_firmware when open camera, this
  * is beacuse ISP timeout will happen if put it here.
  */
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	/* Init ISP memory management */
 	hrt_isp_css_mm_init();
 
@@ -1238,16 +1238,16 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		dev_err(&dev->dev, "Failed to init css.\n");
 		goto css_init_fail;
 	}
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 	return 0;
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 css_init_fail:
 	hrt_isp_css_mm_clear();
 	hmm_pool_unregister(HMM_POOL_TYPE_RESERVED);
 	atomisp_acc_cleanup(isp);
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 enable_msi_fail:
 	destroy_workqueue(isp->delayed_init_workq);
 delayed_init_work_queue_fail:
@@ -1265,10 +1265,10 @@ static void atomisp_pci_remove(struct pci_dev *dev)
 		pci_get_drvdata(dev);
 
 	atomisp_acc_cleanup(isp);
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	atomisp_css_unload_firmware(isp);
 	hrt_isp_css_mm_clear();
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 	pm_runtime_forbid(&dev->dev);
 	pm_runtime_get_noresume(&dev->dev);
@@ -1288,7 +1288,7 @@ static void atomisp_pci_remove(struct pci_dev *dev)
 }
 
 static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
-#if defined CONFIG_ISP2300
+#if defined(ISP2300)
 	/* Medfield */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0148)},
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0149)},
@@ -1300,13 +1300,13 @@ static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014F)},
 	/* Clovertrail */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x08D0)},
-#elif defined CONFIG_ISP2400 || defined CONFIG_ISP2400B0
+#elif defined(ISP2400) || defined(ISP2400B0)
 	/* Merrifield */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1178)},
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1179)},
 	/* Baytrail */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0f38)},
-#elif defined(CONFIG_ISP2401)
+#elif defined(ISP2401)
 	/* Anniedale (Merrifield+ / Moorefield) */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1478)},
 #endif

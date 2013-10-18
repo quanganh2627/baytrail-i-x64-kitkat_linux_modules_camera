@@ -20,9 +20,9 @@
  * 02110-1301, USA.
  *
  */
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 #include <sh_css.h>
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 #include <host/mmu_local.h>
 

@@ -30,11 +30,11 @@
 #include "atomisp_compat.h"
 #include "atomisp_v4l2.h"
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 #include "ia_css.h"
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 #include "sh_css.h"
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 enum atomisp_subdev_input_entity {
 	ATOMISP_SUBDEV_INPUT_NONE,
@@ -156,7 +156,7 @@ struct atomisp_css_params {
 	struct atomisp_css_ctc_table   ctc_table;
 	struct atomisp_css_macc_table  macc_table;
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	struct atomisp_css_ctc_config	ctc_config;
 	struct atomisp_css_cnr_config	cnr_config;
 	struct atomisp_css_macc_config	macc_config;
@@ -195,19 +195,19 @@ struct atomisp_css_params {
 	   CSS and user space. These are needed to perform the
 	   copy_to_user. */
 	struct ia_css_3a_statistics *s3a_user_stat;
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	struct ia_css_dvs2_coefficients *dvs_coeff;
 	struct ia_css_dvs2_statistics *dvs_stat;
 	struct ia_css_dvs_6axis_config *dvs_6axis;
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 	struct ia_css_dvs_coefficients *dvs_coeff;
 	struct ia_css_dvs_statistics *dvs_stat;
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 	int  dvs_hor_coef_bytes;
 	int  dvs_ver_coef_bytes;
 	int  dvs_ver_proj_bytes;
 	int  dvs_hor_proj_bytes;
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 	struct sh_css_3a_output *s3a_output_buf;
 	/* DIS Coefficients */
 	short *dis_hor_coef_buf;
@@ -235,7 +235,7 @@ struct atomisp_css_params {
 	struct atomisp_css_macc_table  *default_macc_table;
 	struct atomisp_css_ctc_table   *default_ctc_table;
 	struct atomisp_css_gamma_table *default_gamma_table;
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 	/* Flash */
 	int num_flash_frames;
@@ -275,7 +275,7 @@ struct atomisp_sub_device {
 
 	struct atomisp_css_params params;
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	struct atomisp_stream_env stream_env;
 #endif
 	struct v4l2_pix_format dvs_envelop;

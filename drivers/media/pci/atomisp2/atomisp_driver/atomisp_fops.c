@@ -394,7 +394,7 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->params.false_color = 0;
 	asd->params.online_process = 1;
 	asd->params.yuv_ds_en = 0;
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	asd->params.dvs_6axis = NULL;
 #endif
 	asd->params.offline_parm.num_captures = 1;
@@ -596,9 +596,9 @@ static int atomisp_release(struct file *file)
 		atomisp_destroy_pipes_stream_force(asd);
 #endif
 	atomisp_css_uninit(isp);
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 	hrt_isp_css_mm_clear();
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 	hmm_pool_unregister(HMM_POOL_TYPE_DYNAMIC);
 
 	ret = v4l2_subdev_call(isp->flash, core, s_power, 0);

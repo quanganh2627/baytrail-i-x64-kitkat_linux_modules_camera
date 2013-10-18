@@ -32,11 +32,11 @@
 
 #include "atomisp_compat.h"
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 #include "ia_css.h"
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 #include <sh_css.h>
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 extern int dbg_level;
 extern int mipicsi_flag;

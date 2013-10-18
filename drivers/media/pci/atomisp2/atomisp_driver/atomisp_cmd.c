@@ -55,16 +55,16 @@
 #include "device_access.h"
 #include "irq.h"
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
-#ifndef CONFIG_VIDEO_ATOMISP_CSS21
+#ifdef CSS20
+#ifndef CSS21
 #include "ia_css_accelerate.h"
-#endif /* !CONFIG_VIDEO_ATOMISP_CSS21 */
+#endif /* !CSS21 */
 #include "ia_css_types.h"
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 #include "sh_css_accelerate.h"
 #include "sh_css.h"
 #include "sh_css_types.h"
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 #include "hrt/bits.h"
 
@@ -539,7 +539,7 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 	if (irq_infos & CSS_IRQ_INFO_EVENTS_READY)
 		atomic_set(&asd->sequence, atomic_read(&asd->sequence_temp));
 
-#if defined(CONFIG_ISP2400) || defined(CONFIG_ISP2400B0) || defined(CONFIG_ISP2401)
+#if defined(ISP2400) || defined(ISP2400B0) || defined(ISP2401)
 	if ((irq_infos & CSS_IRQ_INFO_INPUT_SYSTEM_ERROR) ||
 		(irq_infos & CSS_IRQ_INFO_IF_ERROR)) {
 #else
@@ -552,21 +552,21 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 		atomisp_css_rx_get_irq_info(&rx_infos);
 		atomisp_css_rx_clear_irq_info(rx_infos);
 	}
-#if defined(CONFIG_VIDEO_ATOMISP_CSS15) && defined(CONFIG_ISP2300)
+#if defined(CSS15) && defined(ISP2300)
 	if (irq_infos & CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW) {
 		atomic_inc(&isp->fast_reset);
 		queue_work(isp->wdt_work_queue, &isp->wdt_work);
 		goto out_nowake;
 	}
 #endif
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 	if (irq_infos & CSS_IRQ_INFO_INVALID_FIRST_FRAME) {
 		isp->sw_contex.invalid_frame = 1;
 		isp->sw_contex.invalid_vf_frame = 1;
 		isp->sw_contex.invalid_s3a = 1;
 		isp->sw_contex.invalid_dis = 1;
 	}
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 	spin_unlock_irqrestore(&isp->lock, flags);
 
@@ -852,7 +852,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 				WARN_ON(1);
 				break;
 			}
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 			if (!frame->valid)
 				error = true;
 #endif
@@ -889,7 +889,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 				break;
 			}
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 			if (!frame->valid)
 				error = true;
 #endif
@@ -1046,7 +1046,7 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_SOF, false);
-#if defined(CONFIG_VIDEO_ATOMISPCSS15) && defined(CONFIG_ISP2300)
+#if defined(CONFIG_VIDEO_ATOMISPCSS15) && defined(ISP2300)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, false);
 #endif
@@ -1126,7 +1126,7 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_SOF, true);
-#if defined(CONFIG_VIDEO_ATOMISPCSS15) && defined(CONFIG_ISP2300)
+#if defined(CONFIG_VIDEO_ATOMISPCSS15) && defined(ISP2300)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
 #endif
@@ -1869,7 +1869,7 @@ err_dis:
 static void atomisp_curr_user_grid_info(struct atomisp_sub_device *asd,
 				    struct atomisp_grid_info *info)
 {
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 	info->isp_in_width          = asd->params.curr_grid_info.isp_in_width;
 	info->isp_in_height         =
 		asd->params.curr_grid_info.isp_in_height;
@@ -1892,10 +1892,10 @@ static void atomisp_curr_user_grid_info(struct atomisp_sub_device *asd,
 		asd->params.curr_grid_info.dvs_hor_coef_num;
 	info->dis_ver_coef_num      =
 		asd->params.curr_grid_info.dvs_ver_coef_num;
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 	memcpy(info, &asd->params.curr_grid_info.s3a_grid,
 			sizeof(struct atomisp_css_3a_grid_info));
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 }
 
 int atomisp_compare_grid(struct atomisp_sub_device *asd,
@@ -2090,13 +2090,13 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 		return -EAGAIN;
 	}
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	ret = copy_to_user(config->data, asd->params.s3a_user_stat->data,
 			   asd->params.s3a_output_bytes);
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 	ret = copy_to_user(config->data, asd->params.s3a_output_buf,
 			   asd->params.s3a_output_bytes);
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 	if (ret) {
 		dev_err(isp->dev, "copy to user failed: copied %lu bytes\n",
 				ret);
@@ -2212,7 +2212,7 @@ static int __atomisp_set_general_isp_parameters(
 		atomisp_css_set_gamma_table(asd, &asd->params.gamma_table);
 	}
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	if (arg->ctc_config) {
 		if (copy_from_user(&asd->params.ctc_config, arg->ctc_config,
 					sizeof(struct atomisp_css_ctc_config)))
@@ -2341,7 +2341,7 @@ static int __atomisp_set_general_isp_parameters(
 			return -EFAULT;
 		atomisp_css_set_anr_thres(asd, &asd->params.anr_thres);
 	}
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 	return 0;
 }
 
@@ -2393,7 +2393,7 @@ static int __atomisp_set_lsc_table(struct atomisp_sub_device *asd,
 	shading_table->sensor_width = user_st->sensor_width;
 	shading_table->sensor_height = user_st->sensor_height;
 	shading_table->fraction_bits = user_st->fraction_bits;
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	shading_table->enable = user_st->enable;
 
 	/* No need to update shading table if it is the same */
@@ -2433,7 +2433,7 @@ set_lsc:
 	return 0;
 }
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 #include "ia_css_stream.h"	/* FIXME */
 int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
 					  struct atomisp_dvs_6axis_config
@@ -2603,7 +2603,7 @@ int atomisp_set_parameters(struct atomisp_sub_device *asd,
 	/* indicate to CSS that we have parametes to be updated */
 	asd->params.css_update_params_needed = true;
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	if (asd->stream_env.stream
 		&& (asd->stream_env.stream_state != CSS_STREAM_CREATED
 		|| asd->run_mode->val
@@ -2630,7 +2630,7 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 			return -EINVAL;
 		}
 		atomisp_curr_user_grid_info(asd, &config->info);
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 		/* update dvs grid info */
 		memcpy(&config->dvs_grid, &asd->params.curr_grid_info.dvs_grid,
 			sizeof(struct atomisp_css_dvs_grid_info));
@@ -2726,7 +2726,7 @@ int atomisp_color_effect(struct atomisp_sub_device *asd, int flag,
 	if (*effect == asd->params.color_effect)
 		return 0;
 
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 	/*
 	 * restore the default cc and ctc table config:
 	 * when change from sepia/mono to macc effect, the default
@@ -2740,7 +2740,7 @@ int atomisp_color_effect(struct atomisp_sub_device *asd, int flag,
 	 * sepia/mono,
 	 */
 	macc_table = asd->params.default_macc_table;
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 	/*
 	 * isp_subdev->params.macc_en should be set to false.
 	 */
@@ -3382,7 +3382,7 @@ static int css_input_resolution_changed(struct atomisp_device *isp,
 		}
 	}
 
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 	ret = atomisp_css_capture_configure_pp_input(asd, ffmt->width,
 				ffmt->height);
 	if (ret)
@@ -3471,7 +3471,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		atomisp_subdev_set_ffmt(&asd->subdev, NULL,
 					V4L2_SUBDEV_FORMAT_ACTIVE,
 					ATOMISP_SUBDEV_PAD_SOURCE_VF, &vf_ffmt);
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 		asd->video_out_vf.sh_fmt = CSS_FRAME_FORMAT_NV12;
 #else
 		asd->video_out_vf.sh_fmt = CSS_FRAME_FORMAT_YUV420;
@@ -3561,7 +3561,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	}
 	if (asd->continuous_mode->val &&
 	    configure_pp_input == atomisp_css_preview_configure_pp_input) {
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 		/* for isp 2.2, configure pp input is available for continuous
 		 * mode */
 		ret = configure_pp_input(asd, isp_sink_crop->width,
@@ -4044,7 +4044,7 @@ int atomisp_set_shading_table(struct atomisp_sub_device *asd,
 	if (!user_shading_table)
 		return -EINVAL;
 
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 	if (user_shading_table->flags & ATOMISP_SC_FLAG_QUERY) {
 		user_shading_table->enable = asd->params.sc_en;
 		return 0;

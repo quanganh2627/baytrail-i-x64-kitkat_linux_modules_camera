@@ -1,15 +1,15 @@
-ifneq ($(CONFIG_ISP2400), )
+ifneq ($(ISP2400), )
 	css_platform_folder = hive_isp_css_2400_system
-else ifneq ($(CONFIG_ISP2400B0), )
+else ifneq ($(ISP2400B0), )
 	css_platform_folder = hive_isp_css_2400_system
-else ifneq ($(CONFIG_ISP2401), )
+else ifneq ($(ISP2401), )
 	css_platform_folder = hive_isp_css_2400_system
 else
 	css_platform_folder = hive_isp_css_system
 endif
 
-ifneq ($(CONFIG_VIDEO_ATOMISP_CSS20), )
-ifneq ($(CONFIG_VIDEO_ATOMISP_CSS21), )
+ifneq ($(CSS20), )
+ifneq ($(CSS21), )
 # Objects for CSS 2.1
 atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_ioctl.o \
@@ -227,13 +227,13 @@ INCLUDES += -I$(src)/css \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared/host
 
-ifneq ($(CONFIG_VIDEO_ATOMISP_CSS20), )
+ifneq ($(CSS20), )
 # Includes for CSS host code, CSS 2.0 and 2.1
 INCLUDES += -I$(srctree)/$(src)/css/hive_isp_css_kernel/pipeline \
 	    -I$(srctree)/$(src)/css/hive_isp_css_kernel/pipeline/host \
 	    -I$(srctree)/$(src)/css/hive_isp_css_kernel/csc \
 	    -I$(srctree)/$(src)/css/hive_isp_css_kernel/csc/host
-ifneq ($(CONFIG_VIDEO_ATOMISP_CSS21), )
+ifneq ($(CSS21), )
 # Includes for CSS host code, CSS 2.1 only
 INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/hive_isp_css_kernel/csc/host \
@@ -259,12 +259,12 @@ DEFINES += -DUSE_INTERRUPTS
 DEFINES += -DPUNIT_CAMERA_BUSY
 DEFINES += -DUSE_KMEM_CACHE
 
-ifneq ($(CONFIG_VIDEO_ATOMISP_CSS20), )
-ifneq ($(CONFIG_ISP2401), )
+ifneq ($(CSS20), )
+ifneq ($(ISP2401), )
 DEFINES += -DSYSTEM_hive_isp_css_2401_system
-else ifneq ($(CONFIG_ISP2400B0), )
+else ifneq ($(ISP2400B0), )
 DEFINES += -DSYSTEM_hive_isp_css_2400_system
-else ifneq ($(CONFIG_ISP2400), )
+else ifneq ($(ISP2400), )
 DEFINES += -DSYSTEM_hive_isp_css_2400A0_system
 else
 $(error Undefined HIVE ISP CSS system version)

@@ -22,11 +22,11 @@
 #ifndef __ATOMISP_COMPAT_H__
 #define __ATOMISP_COMPAT_H__
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 #include "atomisp_compat_css20.h"
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 #include "atomisp_compat_css15.h"
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 #include <linux/atomisp.h>
 #include <media/videobuf-vmalloc.h>

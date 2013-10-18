@@ -32,12 +32,12 @@
 
 #include "atomisp_internal.h"
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 #include "ia_css_types.h"
 #include "ia_css.h"
-#else /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#else /* CSS20 */
 #include "sh_css_types.h"
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 struct atomisp_device;
 struct atomisp_css_frame;
@@ -279,7 +279,7 @@ int atomisp_shading_correction(struct atomisp_sub_device *asd, int flag,
 int atomisp_digital_zoom(struct atomisp_sub_device *asd, int flag,
 			 __s32 *value);
 
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
 					  struct atomisp_dvs_6axis_config
 					  *user_6axis_config);

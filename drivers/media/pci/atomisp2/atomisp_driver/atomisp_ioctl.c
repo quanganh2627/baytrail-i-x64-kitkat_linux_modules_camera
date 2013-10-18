@@ -39,9 +39,9 @@
 
 #include "sh_css_hrt.h"
 
-#ifndef CONFIG_VIDEO_ATOMISP_CSS20
+#ifndef CSS20
 #include "sh_css.h"
-#endif /* CONFIG_VIDEO_ATOMISP_CSS20 */
+#endif /* CSS20 */
 
 #include "gp_device.h"
 #include "device_access.h"
@@ -1474,7 +1474,7 @@ start_sensor:
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp, CSS_IRQ_INFO_CSS_RECEIVER_SOF,
 					true);
-#if !defined(CONFIG_VIDEO_ATOMISP_CSS15) || !defined(CONFIG_ISP2400)
+#if !defined(CSS15) || !defined(ISP2400)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
 #endif
@@ -2242,7 +2242,7 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 
 	case ATOMISP_IOC_S_DIS_VECTOR:
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 		err = atomisp_set_dvs_6axis_config(asd, arg);
 #else
 		err = atomisp_set_dis_vector(asd, arg);
