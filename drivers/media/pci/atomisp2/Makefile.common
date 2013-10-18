@@ -213,6 +213,12 @@ INCLUDES := -I$(srctree)/$(src)/atomisp_driver/include \
 	    -I$(src)/atomisp_driver/hrt \
 	    -I$(srctree)/drivers/staging/intel_media/bc_video
 
+# Includes for CSS host code, CSS 2.1 2401 new input system
+ifneq ($(ISP2401_NEW_INPUT_SYSTEM), )
+INCLUDES += -I$(srctree)/$(src)/css/css_2401_system \
+	    -I$(srctree)/$(src)/css/css_2401_system/host
+endif
+
 # Includes for CSS host code, all CSS versions
 INCLUDES += -I$(src)/css \
 	    -I$(srctree)/$(src)/css/hrt \
