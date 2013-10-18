@@ -1535,6 +1535,13 @@ static void __configure_output(struct atomisp_sub_device *asd,
 		.default_capture_config.mode = CSS_CAPTURE_MODE_PRIMARY;
 	}
 
+#ifdef ISP2401_NEW_INPUT_SYSTEM
+	if (pipe_id == IA_CSS_PIPE_ID_CAPTURE &&
+	    asd->stream_env.pipe_configs[pipe_id].default_capture_config.mode ==
+							CSS_CAPTURE_MODE_RAW)
+		asd->stream_env.pipe_configs[pipe_id].mode =
+						IA_CSS_PIPE_MODE_COPY;
+#endif
 	dev_dbg(isp->dev, "configuring pipe[%d] output info w=%d.h=%d.f=%d.\n",
 		pipe_id, width, height, format);
 }
