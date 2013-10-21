@@ -25,18 +25,6 @@
 */
 /*! \file */
 
-#ifndef __INLINE_INPUT_SYSTEM__
-#define __INLINE_INPUT_SYSTEM__
-#endif
-#ifndef __INLINE_IBUF_CTRL__
-#define __INLINE_IBUF_CTRL__
-#endif
-#ifndef __INLINE_CSI_RX__
-#define __INLINE_CSI_RX__
-#endif
-#ifndef __INLINE_PIXELGEN__
-#define __INLINE_PIXELGEN__
-#endif
 #ifndef __INLINE_STREAM2MMIO__
 #define __INLINE_STREAM2MMIO__
 #endif
