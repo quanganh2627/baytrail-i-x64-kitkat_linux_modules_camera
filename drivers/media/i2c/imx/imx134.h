@@ -215,14 +215,14 @@ static struct imx_reg const imx134_init_settings[] = {
 	adjust the gain for PO, need to
 	remove it after 3A can work
 	*/
-	{ IMX_8BIT, 0x0205, 0x60 },
-	{ IMX_8BIT, 0x020E, 0x06 },
+	{ IMX_8BIT, 0x0205, 0x00 },
+	{ IMX_8BIT, 0x020E, 0x01 },
 	{ IMX_8BIT, 0x020F, 0x00 },
-	{ IMX_8BIT, 0x0210, 0x06 },
+	{ IMX_8BIT, 0x0210, 0x01 },
 	{ IMX_8BIT, 0x0211, 0x00 },
-	{ IMX_8BIT, 0x0212, 0x06 },
+	{ IMX_8BIT, 0x0212, 0x01 },
 	{ IMX_8BIT, 0x0213, 0x00 },
-	{ IMX_8BIT, 0x0214, 0x06 },
+	{ IMX_8BIT, 0x0214, 0x01 },
 	{ IMX_8BIT, 0x0215, 0x00 },
 
 
