@@ -32,7 +32,6 @@ atomisp-$(postfix)-objs := \
 		atomisp_driver/hmm/hmm_dynamic_pool.o \
 		atomisp_driver/hrt/hive_isp_css_mm_hrt.o \
 		css/sh_css.o \
-		css/sh_css_binary.o \
 		css/sh_css_hrt.o \
 		css/sh_css_params.o \
 		css/sh_css_sp.o \
@@ -55,6 +54,7 @@ atomisp-$(postfix)-objs := \
 		css/ia_css_memory_access.o \
 		css/ia_css_device_access.o \
 		css/sh_css_param_dvs.o \
+		css/runtime/binary/src/binary.o \
 		css/runtime/debug/src/ia_css_debug.o \
 		css/runtime/isys/src/isys_init.o \
 		css/runtime/isys/src/rx.o \
@@ -248,6 +248,7 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/runtime/ifmtr/interface \
 	    -I$(srctree)/$(src)/css/runtime/isys/interface \
 	    -I$(srctree)/$(src)/css/runtime/rmgr/interface \
+	    -I$(srctree)/$(src)/css/runtime/binary/interface \
 	    -I$(srctree)/$(src)/css/runtime/pipeline/interface \
 	    -I$(srctree)/$(src)/css/runtime/event/interface \
 	    -I$(srctree)/$(src)/css/base/refcount/interface \
