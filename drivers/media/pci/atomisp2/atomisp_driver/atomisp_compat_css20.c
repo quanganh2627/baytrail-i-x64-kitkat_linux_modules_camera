@@ -776,12 +776,18 @@ int atomisp_css_irq_translate(struct atomisp_device *isp,
 
 void atomisp_css_rx_get_irq_info(unsigned int *infos)
 {
+#ifndef ISP2401_NEW_INPUT_SYSTEM
 	ia_css_rx_get_irq_info(infos);
+#else
+	*infos = 0;
+#endif
 }
 
 void atomisp_css_rx_clear_irq_info(unsigned int infos)
 {
+#ifndef ISP2401_NEW_INPUT_SYSTEM
 	ia_css_rx_clear_irq_info(infos);
+#endif
 }
 
 int atomisp_css_irq_enable(struct atomisp_device *isp,
