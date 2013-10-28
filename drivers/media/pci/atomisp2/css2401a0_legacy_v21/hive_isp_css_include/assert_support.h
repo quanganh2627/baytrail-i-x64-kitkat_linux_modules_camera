@@ -62,21 +62,9 @@
 
 #elif defined(__KERNEL__) /* a.o. Android builds */
 #include <linux/bug.h>
-#include "ia_css_debug.h"
 #define __symbol2value( x ) #x
 #define __symbol2string( x ) __symbol2value( x )
-#define assert(cnd)							\
-	do {								\
-		if (!(cnd)) {						\
-			ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "%s",	\
-				"Assertion failed: " #cnd		\
-				  ", file " __FILE__			\
-				  ", line " __symbol2string( __LINE__ )	\
-				  ".\n" );				\
-			BUG();						\
-		}							\
-	} while (0)
-
+#define assert(cnd) BUG_ON(!(cnd))
 #define OP___assert(cnd) assert(cnd)
 
 #elif defined(__FIST__)
