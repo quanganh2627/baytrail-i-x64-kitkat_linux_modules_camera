@@ -401,8 +401,13 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 			 "pipe_extra_config.enable_reduced_pipe:%d.\n",
 			 pe_config->enable_reduced_pipe);
 		dev_dbg(isp->dev,
-			 "pipe_extra_config.enable_dz:%d.\n",
-			 pe_config->enable_dz);
+			 "pipe_(extra_)config.enable_dz:%d.\n",
+#ifdef CSS21
+			 p_config
+#else
+			 pe_config
+#endif
+			 ->enable_dz);
 		dev_dbg(isp->dev,
 			 "pipe_extra_config.disable_vf_pp:%d.\n",
 			 pe_config->disable_vf_pp);
@@ -533,7 +538,11 @@ static void __apply_additional_pipe_config(
 		 * video_dz_2_min selected*/
 		asd->stream_env.pipe_extra_configs[pipe_id]
 		    .enable_reduced_pipe = true;
+#ifdef CSS21
+		asd->stream_env.pipe_configs[pipe_id]
+#else
 		asd->stream_env.pipe_extra_configs[pipe_id]
+#endif
 		    .enable_dz = false;
 		break;
 	case IA_CSS_PIPE_ID_PREVIEW:
@@ -1268,7 +1277,11 @@ void atomisp_css_enable_dz(struct atomisp_sub_device *asd, bool enable)
 {
 	int i;
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
+#ifdef CSS21
+		asd->stream_env.pipe_configs[i].enable_dz = enable;
+#else
 		asd->stream_env.pipe_extra_configs[i].enable_dz = enable;
+#endif
 }
 
 void atomisp_css_capture_set_mode(struct atomisp_sub_device *asd,
