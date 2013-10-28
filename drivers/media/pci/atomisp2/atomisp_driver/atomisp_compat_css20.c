@@ -2846,6 +2846,9 @@ int atomisp_css_load_acc_binary(struct atomisp_sub_device *asd,
 
 	pipe_config->acc_stages[index] = fw;
 	pipe_config->num_acc_stages = index + 1;
+#ifdef CSS21
+	pipe_config->acc_num_execs = 1;
+#endif
 
 	return 0;
 }
