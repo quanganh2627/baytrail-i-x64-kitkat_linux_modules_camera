@@ -2012,6 +2012,7 @@ static int imx_remove(struct i2c_client *client)
 		dev->platform_data->platform_deinit();
 
 	media_entity_cleanup(&dev->sd.entity);
+	v4l2_ctrl_handler_free(&dev->ctrl_handler);
 	dev->platform_data->csi_cfg(sd, 0);
 	v4l2_device_unregister_subdev(sd);
 	kfree(dev);
@@ -2019,7 +2020,7 @@ static int imx_remove(struct i2c_client *client)
 	return 0;
 }
 
-static void __imx_init_ctrl_handler(struct imx_device *dev)
+static int __imx_init_ctrl_handler(struct imx_device *dev)
 {
 	struct v4l2_ctrl_handler *hdl;
 
@@ -2031,19 +2032,25 @@ static void __imx_init_ctrl_handler(struct imx_device *dev)
 					    &imx_ctrl_ops,
 					    V4L2_CID_PIXEL_RATE,
 					    0, UINT_MAX, 1, 0);
-	dev->pixel_rate->flags |= V4L2_CTRL_FLAG_VOLATILE;
 
 	dev->h_blank = v4l2_ctrl_new_std(&dev->ctrl_handler,
 					  &imx_ctrl_ops,
 					  V4L2_CID_HBLANK, 0, SHRT_MAX, 1, 0);
-	dev->h_blank->flags |= V4L2_CTRL_FLAG_VOLATILE;
 
 	dev->v_blank = v4l2_ctrl_new_std(&dev->ctrl_handler,
 					  &imx_ctrl_ops,
 					  V4L2_CID_VBLANK, 0, SHRT_MAX, 1, 0);
-	dev->v_blank->flags |= V4L2_CTRL_FLAG_VOLATILE;
+
+	if (dev->ctrl_handler.error)
+		return dev->ctrl_handler.error;
 
 	dev->sd.ctrl_handler = hdl;
+
+	dev->pixel_rate->flags |= V4L2_CTRL_FLAG_VOLATILE;
+	dev->h_blank->flags |= V4L2_CTRL_FLAG_VOLATILE;
+	dev->v_blank->flags |= V4L2_CTRL_FLAG_VOLATILE;
+
+	return 0;
 }
 
 static int imx_probe(struct i2c_client *client,
@@ -2084,7 +2091,9 @@ static int imx_probe(struct i2c_client *client,
 		IMX_SUBDEV_PREFIX, dev->sensor_id,
 		i2c_adapter_id(client->adapter), client->addr);
 
-	__imx_init_ctrl_handler(dev);
+	ret = __imx_init_ctrl_handler(dev);
+	if (ret)
+		goto out_ctrl_handler_free;
 
 	dev->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	dev->pad.flags = MEDIA_PAD_FL_SOURCE;
@@ -2098,6 +2107,10 @@ static int imx_probe(struct i2c_client *client,
 		imx_remove(client);
 
 	return ret;
+
+out_ctrl_handler_free:
+	v4l2_ctrl_handler_free(&dev->ctrl_handler);
+
 out_free:
 	v4l2_device_unregister_subdev(&dev->sd);
 	kfree(dev);
