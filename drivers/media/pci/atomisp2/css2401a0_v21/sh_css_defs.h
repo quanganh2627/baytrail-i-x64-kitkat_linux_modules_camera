@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -26,28 +26,7 @@
 #include "isp.h"
 /*#include "vamem.h"*/ /* Cannot include for VAMEM properties this file is visible on ISP -> pipeline generator */
 
-/* System dependent versions
-   ia_css_types.h exports a system independent version. MW: Yeah, really...
-*/
-#if defined(HAS_VAMEM_VERSION_2)
-#define SH_CSS_ISP_GAMMA_TABLE_SIZE_LOG2     IA_CSS_VAMEM_2_GAMMA_TABLE_SIZE_LOG2
-#define SH_CSS_ISP_GAMMA_TABLE_SIZE          IA_CSS_VAMEM_2_GAMMA_TABLE_SIZE
-#define SH_CSS_ISP_XNR_TABLE_SIZE_LOG2       IA_CSS_VAMEM_2_XNR_TABLE_SIZE_LOG2
-#define SH_CSS_ISP_XNR_TABLE_SIZE            IA_CSS_VAMEM_2_XNR_TABLE_SIZE
-#define SH_CSS_ISP_RGB_GAMMA_TABLE_SIZE_LOG2 IA_CSS_VAMEM_2_RGB_GAMMA_TABLE_SIZE_LOG2
-#define SH_CSS_ISP_RGB_GAMMA_TABLE_SIZE      IA_CSS_VAMEM_2_RGB_GAMMA_TABLE_SIZE
-#elif defined(HAS_VAMEM_VERSION_1)
-#define SH_CSS_ISP_GAMMA_TABLE_SIZE_LOG2     IA_CSS_VAMEM_1_GAMMA_TABLE_SIZE_LOG2
-#define SH_CSS_ISP_GAMMA_TABLE_SIZE          IA_CSS_VAMEM_1_GAMMA_TABLE_SIZE
-#define SH_CSS_ISP_XNR_TABLE_SIZE_LOG2       IA_CSS_VAMEM_1_XNR_TABLE_SIZE_LOG2
-#define SH_CSS_ISP_XNR_TABLE_SIZE            IA_CSS_VAMEM_1_XNR_TABLE_SIZE
-#define SH_CSS_ISP_RGB_GAMMA_TABLE_SIZE_LOG2 IA_CSS_VAMEM_1_RGB_GAMMA_TABLE_SIZE_LOG2
-#define SH_CSS_ISP_RGB_GAMMA_TABLE_SIZE      IA_CSS_VAMEM_1_RGB_GAMMA_TABLE_SIZE
-#else
-#error "sh_css_defs: Unknown VAMEM version"
-#endif
-
-#include"math_support.h"	/* max(), min, etc etc */
+#include "math_support.h"	/* max(), min, etc etc */
 
 /* Digital Image Stabilization */
 #define SH_CSS_DIS_DECI_FACTOR_LOG2       6
@@ -191,6 +170,9 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 /* Each line of this table is aligned to the maximum line width. */
 #define SH_CSS_MAX_S3ATBL_WIDTH              SH_CSS_MAX_BQ_GRID_WIDTH
 
+/* Maximal metadata buffer size. */
+#define SH_CSS_MAX_METADATA_BUFFER_SIZE      256
+
 /* Rules: these implement logic shared between the host code and ISP firmware.
    The ISP firmware needs these rules to be applied at pre-processor time,
    that's why these are macros, not functions. */
@@ -228,7 +210,7 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 /* Some binaries put the vertical coefficients in DMEM instead
    of VMEM to save VMEM. */
 #define _SDIS_VER_COEF_TBL_USE_DMEM(mode, enable_sdis, isp_pipe_version) \
-	(mode == SH_CSS_BINARY_MODE_VIDEO \
+	(mode == IA_CSS_BINARY_MODE_VIDEO \
 	&& enable_sdis && isp_pipe_version == 1)
 
 /* For YUV upscaling, the internal size is used for DIS statistics */
@@ -308,12 +290,8 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 	(_ISP_BQS(in_width) >> deci_factor_log2)
 #define _ISP_S3ATBL_HEIGHT(in_height, deci_factor_log2) \
 	(_ISP_BQS(in_height) >> deci_factor_log2)
-
-#define _ISP_S3A_ELEMS_ISP_WIDTH(in_width, int_width, enable_hus, left_crop) \
-	(((enable_hus) ? (int_width) : (in_width)) \
-	 - ((left_crop) ? 2 * ISP_VEC_NELEMS : 0))
-#define _ISP_S3A_ELEMS_ISP_HEIGHT(in_height, int_height, enable_vus) \
-	((enable_vus) ? (int_height) : (in_height))
+#define _ISP_S3A_ELEMS_ISP_WIDTH(width, left_crop) \
+	(width - ((left_crop) ? 2 * ISP_VEC_NELEMS : 0))
 
 #define _ISP_S3ATBL_ISP_WIDTH(in_width, deci_factor_log2) \
 	CEIL_SHIFT(_ISP_BQS(in_width), deci_factor_log2)
@@ -321,7 +299,7 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 	CEIL_SHIFT(_ISP_BQS(in_height), deci_factor_log2)
 #define ISP_S3ATBL_VECTORS \
 	_ISP_VECS(SH_CSS_MAX_S3ATBL_WIDTH * \
-		  (sizeof(struct ia_css_3a_output)/sizeof(int)))
+		  (sizeof(struct ia_css_3a_output)/sizeof(int32_t)))
 #define ISP_S3ATBL_HI_LO_STRIDE \
 	(ISP_S3ATBL_VECTORS * ISP_VEC_NELEMS)
 #define ISP_S3ATBL_HI_LO_STRIDE_BYTES \
@@ -341,7 +319,7 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 	((out_height) >> (vf_log_ds))
 
 #define _ISP_LOG_VECTOR_STEP(mode) \
-	((mode) == SH_CSS_BINARY_MODE_CAPTURE_PP ? 2 : 1)
+	((mode) == IA_CSS_BINARY_MODE_CAPTURE_PP ? 2 : 1)
 
 /* Rules for computing the internal width. This is extremely complicated
  * and definitely needs to be commented and explained. */

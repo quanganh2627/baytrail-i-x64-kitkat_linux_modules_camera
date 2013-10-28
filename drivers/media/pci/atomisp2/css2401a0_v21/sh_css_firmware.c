@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -66,6 +66,41 @@ setup_sp(struct ia_css_fw_info *fw, const char *fw_data)
 }
 
 enum ia_css_err
+sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia_css_blob_descr *bd)
+{
+	const char *name;
+	const unsigned char *blob;
+	const struct ia_css_memory_offsets *mem_offsets;
+
+	assert(fw != NULL);
+	assert(bd != NULL);
+	
+	/* Special case: only one binary in fw */
+	if (bi == NULL) bi = (const struct ia_css_fw_info *)fw;
+
+	mem_offsets = (const struct ia_css_memory_offsets *)(fw + bi->blob.memory_offset);
+	name = (const char *)fw + bi->blob.prog_name_offset;
+	blob = (const unsigned char *)fw + bi->blob.offset;
+
+	/* sanity check */
+	if (bi->blob.size != bi->blob.text_size + bi->blob.icache_size + bi->blob.data_size + bi->blob.padding_size) {
+		/* sanity check, note the padding bytes added for section to DDR alignment */
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	}
+
+	if ((bi->blob.offset % (1UL<<(ISP_PMEM_WIDTH_LOG2-3))) != 0)
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
+	bd->blob = blob;
+	bd->header = *bi;
+	bd->name = name;
+	bd->mem_offsets = NULL;
+	if (bi->type == ia_css_isp_firmware)
+		bd->mem_offsets = mem_offsets;
+	return IA_CSS_SUCCESS;
+}
+
+enum ia_css_err
 sh_css_load_firmware(const char *fw_data,
 		     unsigned int fw_size)
 {
@@ -94,18 +129,14 @@ sh_css_load_firmware(const char *fw_data,
 
 	for (i = 0; i < sh_css_num_binaries; i++) {
 		struct ia_css_fw_info *bi = &binaries[i];
-		const char *name;
+		struct ia_css_blob_descr bd;
+		enum ia_css_err err;
 
-		name = (const char *)fw_data + bi->blob.prog_name_offset;
-
-		if (bi->blob.size != bi->blob.text_size + bi->blob.icache_size + bi->blob.data_size + bi->blob.padding_size) {
-			/* sanity check, note the padding bytes added for section to DDR alignment */
+		err = sh_css_load_blob_info (fw_data, bi, &bd);
+		if (err != IA_CSS_SUCCESS)
 			return IA_CSS_ERR_INTERNAL_ERROR;
-		}
+
 		if (bi->blob.offset + bi->blob.size > fw_size)
-			return IA_CSS_ERR_INTERNAL_ERROR;
-
-		if ((bi->blob.offset % (1UL<<(ISP_PMEM_WIDTH_LOG2-3))) != 0)
 			return IA_CSS_ERR_INTERNAL_ERROR;
 
 		if (bi->type == ia_css_sp_firmware) {
@@ -115,16 +146,11 @@ sh_css_load_firmware(const char *fw_data,
 			setup_sp(bi, fw_data);
 		} else {
 			/* All subsequent binaries (i>=1) are ISP firmware */
-			const unsigned char *blob =
-				(const unsigned char *)fw_data +
-				bi->blob.offset;
 			if (i == 0)
 				return IA_CSS_ERR_INTERNAL_ERROR;
 			if (bi->type != ia_css_isp_firmware)
 				return IA_CSS_ERR_INTERNAL_ERROR;
-			sh_css_blob_info[i-1].blob = blob;
-			sh_css_blob_info[i-1].header = *bi;
-			sh_css_blob_info[i-1].name = name;
+			sh_css_blob_info[i-1] = bd;
 		}
 	}
 	return IA_CSS_SUCCESS;
@@ -158,29 +184,4 @@ sh_css_load_blob(const unsigned char *blob, unsigned size)
 #endif
 	}
 	return target_addr;
-}
-
-enum ia_css_err
-sh_css_load_blob_info(const char *fw, struct ia_css_blob_descr *bd)
-{
-	const char *name;
-	const unsigned char *blob;
-	struct ia_css_fw_info *bi = (struct ia_css_fw_info *)fw;
-
-	assert(fw != NULL);
-	assert(bd != NULL);
-
-	name = fw + sizeof(*bi);
-	blob = (const unsigned char *)name + strlen(name)+1;
-
-	/* sanity check */
-	if (bi->header_size != sizeof(*bi))
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	if (bi->blob.size != bi->blob.text_size + bi->blob.icache_size + bi->blob.data_size)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	bd->blob = blob;
-	bd->header = *bi;
-	bd->name = name;
-	return IA_CSS_SUCCESS;
 }

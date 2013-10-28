@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -377,6 +377,14 @@ typedef enum {
 	CSI_RX_FRONTEND2_ID,		/* map to ISYS2401_CSI_RX_C */
 	N_CSI_RX_FRONTEND_ID
 } csi_rx_frontend_ID_t;
+
+typedef enum {
+	CSI_RX_DLANE0_ID = 0,		/* map to DLANE0 in CSI RX */
+	CSI_RX_DLANE1_ID,		/* map to DLANE1 in CSI RX */
+	CSI_RX_DLANE2_ID,		/* map to DLANE2 in CSI RX */
+	CSI_RX_DLANE3_ID,		/* map to DLANE3 in CSI RX */
+	N_CSI_RX_DLANE_ID
+} csi_rx_fe_dlane_ID_t;
 /** end of CSI-MIPI receiver */
 
 typedef enum {

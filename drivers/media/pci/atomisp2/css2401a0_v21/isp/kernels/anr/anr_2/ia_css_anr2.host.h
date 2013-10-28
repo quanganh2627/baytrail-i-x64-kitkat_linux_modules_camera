@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,7 +23,10 @@
 #ifndef __IA_CSS_ANR2_HOST_H
 #define __IA_CSS_ANR2_HOST_H
 
+#include "sh_css_params.h"
+
 #include "ia_css_anr2_types.h"
 #include "ia_css_anr2_param.h"
+#include "ia_css_anr2_table.host.h"
 
 #endif /* __IA_CSS_ANR2_HOST_H */

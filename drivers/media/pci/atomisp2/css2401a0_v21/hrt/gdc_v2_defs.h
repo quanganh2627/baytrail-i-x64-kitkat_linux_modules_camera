@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,7 +20,7 @@
  *
  */
 
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 #ifndef HRT_GDC_v2_defs_h_
 #define HRT_GDC_v2_defs_h_
 

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -62,4 +62,20 @@ struct csi_rx_frontend_cfg_s {
 	uint32_t active_lanes;
 };
 
+static const uint32_t N_SHORT_PACKET_LUT_ENTRIES[N_CSI_RX_BACKEND_ID] = {
+	4,	/* 4 entries at CSI_RX_BACKEND0_ID*/
+	4,	/* 4 entries at CSI_RX_BACKEND1_ID*/
+	4	/* 4 entries at CSI_RX_BACKEND2_ID*/
+};
+
+static const uint32_t N_LONG_PACKET_LUT_ENTRIES[N_CSI_RX_BACKEND_ID] = {
+	8,	/* 8 entries at CSI_RX_BACKEND0_ID*/
+	4,	/* 4 entries at CSI_RX_BACKEND1_ID*/
+	4	/* 4 entries at CSI_RX_BACKEND2_ID*/
+};
+static const uint32_t N_CSI_RX_FE_CTRL_DLANES[N_CSI_RX_FRONTEND_ID] = {
+	N_CSI_RX_DLANE_ID,	/* 4 dlanes for CSI_RX_FR0NTEND0_ID */
+	N_CSI_RX_DLANE_ID,	/* 4 dlanes for CSI_RX_FR0NTEND1_ID */
+	N_CSI_RX_DLANE_ID	/* 4 dlanes for CSI_RX_FR0NTEND2_ID */
+};
 #endif /* __CSI_RX_GLOBAL_H_INCLUDED__ */

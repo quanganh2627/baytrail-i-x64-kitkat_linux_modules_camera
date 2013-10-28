@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,6 +23,229 @@
 #ifndef __CSI_RX_PRIVATE_H_INCLUDED__
 #define __CSI_RX_PRIVATE_H_INCLUDED__
 
+#include "rx_csi_defs.h"
+#include "mipi_backend_defs.h"
 #include "csi_rx_public.h"
+
+#include "device_access.h"	/* ia_css_device_load_uint32 */
+
+#include "assert_support.h" /* assert */
+
+
+/*****************************************************
+ *
+ * Native command interface (NCI).
+ *
+ *****************************************************/
+/**
+ * @brief Get the csi rx fe state.
+ * Refer to "csi_rx_public.h" for details.
+ */
+STORAGE_CLASS_CSI_RX_C void csi_rx_fe_ctrl_get_state(
+		const csi_rx_frontend_ID_t ID,
+		csi_rx_fe_ctrl_state_t *state)
+{
+	uint32_t i;
+
+	state->enable =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_ENABLE_REG_IDX);
+	state->nof_enable_lanes =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_NOF_ENABLED_LANES_REG_IDX);
+	state->error_handling =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_ERROR_HANDLING_REG_IDX);
+	state->status =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_STATUS_REG_IDX);
+	state->status_dlane_hs =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_STATUS_DLANE_HS_REG_IDX);
+	state->status_dlane_lp =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_STATUS_DLANE_LP_REG_IDX);
+	state->clane.termen =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_DLY_CNT_TERMEN_CLANE_REG_IDX);
+	state->clane.settle =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_DLY_CNT_SETTLE_CLANE_REG_IDX);
+
+	/*
+	 * Get the values of the register-set per
+	 * dlane.
+	 */
+	for (i = 0; i < N_CSI_RX_FE_CTRL_DLANES[ID]; i++) {
+		csi_rx_fe_ctrl_get_dlane_state(
+				ID,
+				i,
+				&(state->dlane[i]));
+	}
+}
+
+/**
+ * @brief Get the state of the csi rx fe dlane process.
+ * Refer to "csi_rx_public.h" for details.
+ */
+STORAGE_CLASS_CSI_RX_C void csi_rx_fe_ctrl_get_dlane_state(
+		const csi_rx_frontend_ID_t ID,
+		const uint32_t lane,
+		csi_rx_fe_ctrl_lane_t *dlane_state)
+{
+
+	dlane_state->termen =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_DLY_CNT_TERMEN_DLANE_REG_IDX(lane));
+	dlane_state->settle =
+		csi_rx_fe_ctrl_reg_load(ID, _HRT_CSI_RX_DLY_CNT_SETTLE_DLANE_REG_IDX(lane));
+
+}
+
+/**
+ * @brief Get the csi rx be state.
+ * Refer to "csi_rx_public.h" for details.
+ */
+STORAGE_CLASS_CSI_RX_C void csi_rx_be_ctrl_get_state(
+		const csi_rx_backend_ID_t ID,
+		csi_rx_be_ctrl_state_t *state)
+{
+	uint32_t i;
+
+	state->enable =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_ENABLE_REG_IDX);
+
+	state->status =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_STATUS_REG_IDX);
+
+	for(i = 0; i <N_CSI_RX_BE_MIPI_COMP_FMT_REG ; i++) {
+		state->comp_format_reg[i] =
+			csi_rx_be_ctrl_reg_load(ID, 
+						_HRT_MIPI_BACKEND_COMP_FORMAT_REG0_IDX+i);
+	}
+
+	state->raw16 =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_RAW16_CONFIG_REG_IDX);
+
+	state->raw18 =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_RAW18_CONFIG_REG_IDX);
+	state->force_raw8 =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_FORCE_RAW8_REG_IDX);
+	state->irq_status =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_IRQ_STATUS_REG_IDX);
+#if 0 /* device access error for these registers */
+	state->custom_mode_enable =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_CUST_EN_REG_IDX);
+
+	state->custom_mode_data_state =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_CUST_DATA_STATE_REG_IDX);
+#endif
+	for(i = 0; i <N_CSI_RX_BE_MIPI_CUSTOM_PEC ; i++) {
+			csi_rx_be_ctrl_get_pec_state(ID,
+						i, 
+						_HRT_MIPI_BACKEND_CUST_PIX_EXT_S0P0_REG_IDX,
+						&(state->pec[i]));
+	}
+#if 0 /*Device access error for this register*/
+	state->custom_mode_valid_eop_config =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_CUST_PIX_VALID_EOP_REG_IDX);
+#endif
+	state->global_lut_disregard_reg =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_GLOBAL_LUT_DISREGARD_REG_IDX);
+	state->packet_status_stall =
+		csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_PKT_STALL_STATUS_REG_IDX);
+	/*
+	 * Get the values of the register-set per
+	 * lut.
+	 */
+	for (i = 0; i < N_SHORT_PACKET_LUT_ENTRIES[ID]; i++) {
+		state->short_packet_lut_entry[i] =
+			csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_SP_LUT_ENTRY_0_REG_IDX + i);
+	}
+	for (i = 0; i < N_LONG_PACKET_LUT_ENTRIES[ID]; i++) {
+		state->long_packet_lut_entry[i] =
+			csi_rx_be_ctrl_reg_load(ID, _HRT_MIPI_BACKEND_LP_LUT_ENTRY_0_REG_IDX + i);
+	}
+}
+
+/**
+ * @brief Get the state of the csi rx be custim pixel ext.
+ * Refer to "csi_rx_public.h" for details.
+ */
+STORAGE_CLASS_CSI_RX_C void csi_rx_be_ctrl_get_pec_state(
+		const csi_rx_backend_ID_t ID,
+		const uint32_t idx,
+		const uint32_t base_idx,
+		csi_rx_be_ctrl_pec_t *pec_state)
+{
+	uint32_t reg_idx;
+
+	reg_idx = base_idx + 
+		(idx * (sizeof(csi_rx_be_ctrl_pec_t) / sizeof(hrt_data)));
+
+	pec_state->custom_pec_p0 =
+		csi_rx_fe_ctrl_reg_load(ID, reg_idx + 0);
+	pec_state->custom_pec_p1 =
+		csi_rx_fe_ctrl_reg_load(ID, reg_idx + 1);
+	pec_state->custom_pec_p2 =
+		csi_rx_fe_ctrl_reg_load(ID, reg_idx + 2);
+	pec_state->custom_pec_p3 =
+		csi_rx_fe_ctrl_reg_load(ID, reg_idx + 3);
+
+}
+/* end of NCI */
+/*****************************************************
+ *
+ * Device level interface (DLI).
+ *
+ *****************************************************/
+/**
+ * @brief Load the register value.
+ * Refer to "csi_rx_public.h" for details.
+ */
+STORAGE_CLASS_CSI_RX_C hrt_data csi_rx_fe_ctrl_reg_load(
+	const csi_rx_frontend_ID_t ID,
+	const hrt_address reg)
+{
+	assert(ID < N_CSI_RX_FRONTEND_ID);
+	assert(CSI_RX_FE_CTRL_BASE[ID] != (hrt_address)-1);
+	return ia_css_device_load_uint32(CSI_RX_FE_CTRL_BASE[ID] + reg*sizeof(hrt_data));
+}
+
+
+/**
+ * @brief Store a value to the register.
+ * Refer to "ibuf_ctrl_public.h" for details.
+ */
+STORAGE_CLASS_CSI_RX_C void csi_rx_fe_ctrl_reg_store(
+	const csi_rx_frontend_ID_t ID,
+	const hrt_address reg,
+	const hrt_data value)
+{
+	assert(ID < N_CSI_RX_FRONTEND_ID);
+	assert(CSI_RX_FE_CTRL_BASE[ID] != (hrt_address)-1);
+
+	ia_css_device_store_uint32(CSI_RX_FE_CTRL_BASE[ID] + reg*sizeof(hrt_data), value);
+}
+/**
+ * @brief Load the register value.
+ * Refer to "csi_rx_public.h" for details.
+ */
+STORAGE_CLASS_CSI_RX_C hrt_data csi_rx_be_ctrl_reg_load(
+	const csi_rx_backend_ID_t ID,
+	const hrt_address reg)
+{
+	assert(ID < N_CSI_RX_BACKEND_ID);
+	assert(CSI_RX_BE_CTRL_BASE[ID] != (hrt_address)-1);
+	return ia_css_device_load_uint32(CSI_RX_BE_CTRL_BASE[ID] + reg*sizeof(hrt_data));
+}
+
+
+/**
+ * @brief Store a value to the register.
+ * Refer to "ibuf_ctrl_public.h" for details.
+ */
+STORAGE_CLASS_CSI_RX_C void csi_rx_be_ctrl_reg_store(
+	const csi_rx_backend_ID_t ID,
+	const hrt_address reg,
+	const hrt_data value)
+{
+	assert(ID < N_CSI_RX_BACKEND_ID);
+	assert(CSI_RX_BE_CTRL_BASE[ID] != (hrt_address)-1);
+
+	ia_css_device_store_uint32(CSI_RX_BE_CTRL_BASE[ID] + reg*sizeof(hrt_data), value);
+}
+/** end of DLI */
 
 #endif /* __CSI_RX_PRIVATE_H_INCLUDED__ */

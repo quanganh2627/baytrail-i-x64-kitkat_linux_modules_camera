@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -29,6 +29,16 @@
 
 #include "ia_css_gc2.host.h"
 
+const struct ia_css_cc_config default_yuv2rgb_cc_config = {
+	12,
+	{4096, -4096, 4096, 4096, 4096, 0, 4096, -4096, -4096}
+};
+
+const struct ia_css_cc_config default_rgb2yuv_cc_config = {
+	13,
+	{2449, 4809, 934, -1382, -2714, 4096, 4096, -3430, -666}
+};
+
 void
 ia_css_yuv2rgb_encode(struct sh_css_isp_csc_params *to,
 		  const struct ia_css_cc_config *from)
@@ -44,6 +54,27 @@ ia_css_rgb2yuv_encode(struct sh_css_isp_csc_params *to,
 }
 
 void
+ia_css_r_gamma_vamem_encode(struct sh_css_isp_rgb_gamma_vamem_params *to,
+		  const struct ia_css_rgb_gamma_table *from)
+{
+	memcpy (&to->gc,  &from->data, sizeof(to->gc));
+}
+
+void
+ia_css_g_gamma_vamem_encode(struct sh_css_isp_rgb_gamma_vamem_params *to,
+		  const struct ia_css_rgb_gamma_table *from)
+{
+	memcpy (&to->gc,  &from->data, sizeof(to->gc));
+}
+
+void
+ia_css_b_gamma_vamem_encode(struct sh_css_isp_rgb_gamma_vamem_params *to,
+		  const struct ia_css_rgb_gamma_table *from)
+{
+	memcpy (&to->gc,  &from->data, sizeof(to->gc));
+}
+
+void
 ia_css_yuv2rgb_dump(const struct sh_css_isp_csc_params *yuv2rgb,
 		    unsigned level)
 {
@@ -56,3 +87,11 @@ ia_css_rgb2yuv_dump(const struct sh_css_isp_csc_params *rgb2yuv,
 {
 	ia_css_cc_dump(rgb2yuv, level, "RGB to YUV Conversion");
 }
+
+void
+ia_css_rgb_gamma_table_debug_dtrace(const struct ia_css_rgb_gamma_table *config, unsigned level)
+{
+	(void)config;
+	(void)level;
+}
+

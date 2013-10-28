@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -104,7 +104,14 @@ void ia_css_rmgr_refcount_retain_vbuf(struct ia_css_rmgr_vbuf_handle **handle)
 				break;
 			}
 		}
-		assert(*handle != NULL);
+		/* if the loop dus not break and *handle == NULL this is an error
+		   handle and report it.
+		 */
+		if (*handle == NULL) {
+			ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR,
+				"ia_css_i_host_refcount_retain_vbuf() failed to find empty slot!\n");
+			return;
+		}
 		(*handle)->vptr = h->vptr;
 		(*handle)->size = h->size;
 	}
@@ -256,11 +263,26 @@ void rmgr_pop_handle(struct ia_css_rmgr_vbuf_pool *pool,
 void ia_css_rmgr_acq_vbuf(struct ia_css_rmgr_vbuf_pool *pool,
 			  struct ia_css_rmgr_vbuf_handle **handle)
 {
-	struct ia_css_rmgr_vbuf_handle h;
-	assert(pool != NULL);
+#ifdef __KLOCWORK__
+	/* KW sees the *handle = h; assignment about 20 lines down
+	   and thinks that we are assigning a local to a global.
+	   What it does not see is that in ia_css_i_host_rmgr_pop_handle
+	   a new value is assigned to handle.
+	   So this is a false positive KW issue.
+	   To fix that we make the struct static for KW so it will
+	   think that h remains alive; we do not want this in our
+	   production code though as it breaks reentrancy of the code
+	 */
 
+	static struct ia_css_rmgr_vbuf_handle h;
+#else /* __KLOCWORK__ */
+	struct ia_css_rmgr_vbuf_handle h;
+#endif /* __KLOCWORK__ */
+
+	assert(pool != NULL);
 	assert(handle != NULL);
 	assert(*handle != NULL);
+
 	if (pool->copy_on_write) {
 		/* only one reference, reuse (no new retain) */
 		if ((*handle)->count == 1)

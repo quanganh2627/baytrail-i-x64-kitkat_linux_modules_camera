@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -42,13 +42,31 @@
 
 #include "ia_css_types.h"
 #include "ia_css_acc_types.h"
-#include "sh_css_binary.h"
+
+//#include "sh_css_internal.h"
+#include "ia_css_binary.h"
 #include "sh_css_firmware.h"
 #include "sh_css_legacy.h"
 #include "sh_css_defs.h"
 #include "sh_css_uds.h"
 #include "dma.h"	/* N_DMA_CHANNEL_ID */
-#include "pipeline.h"
+
+
+/* TODO: Move to a more suitable place when sp pipeline design is done. */
+#define IA_CSS_NUM_CB_SEM_READ_RESOURCE 	2
+#define IA_CSS_NUM_CB_SEM_WRITE_RESOURCE	1
+#define IA_CSS_NUM_CBS						2
+#define IA_CSS_CB_MAX_ELEMS					2
+
+/* Use case specific. index limited to IA_CSS_NUM_CB_SEM_READ_RESOURCE or
+ * IA_CSS_NUM_CB_SEM_WRITE_RESOURCE for read and write respectively.
+ * TODO: Enforce the limitation above.
+*/
+#define IA_CSS_COPYSINK_SEM_INDEX 	0
+#define IA_CSS_TAGGER_SEM_INDEX 	1
+
+/* Force generation of output event. Used by acceleration pipe. */
+#define IA_CSS_POST_OUT_EVENT_FORCE		2
 
 #define SH_CSS_MAX_BINARY_NAME	32
 
@@ -84,7 +102,6 @@
 #endif
 #define NUM_MIPI_FRAMES		4
 
-#define NUM_OFFLINE_INIT_CONTINUOUS_FRAMES     3
 #define NUM_ONLINE_INIT_CONTINUOUS_FRAMES      2
 
 #define NUM_TNR_FRAMES		2
@@ -96,7 +113,7 @@
 #define SH_CSS_MAX_IF_CONFIGS	3 /* Must match with IA_CSS_NR_OF_CONFIGS (not defined yet).*/
 #define SH_CSS_IF_CONFIG_NOT_NEEDED	0xFF
 
-#if !defined (HIVE_ISP_CSS_IS_2400A0_SYSTEM)
+#if !defined (HIVE_ISP_CSS_IS_2400A0_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
 #define SH_CSS_ENABLE_METADATA
 #endif
 
@@ -147,7 +164,6 @@ enum sh_css_sp_event_type {
 struct sh_css_ddr_address_map {
 	hrt_vaddress isp_param;
 	hrt_vaddress isp_mem_param[SH_CSS_MAX_STAGES][IA_CSS_NUM_ISP_MEMORIES];
-	hrt_vaddress xnr_tbl;
 	hrt_vaddress macc_tbl;
 	hrt_vaddress fpn_tbl;
 	hrt_vaddress sc_tbl;
@@ -166,9 +182,6 @@ struct sh_css_ddr_address_map {
 	hrt_vaddress tetra_batr_x;
 	hrt_vaddress tetra_batr_y;
 	hrt_vaddress dvs_6axis_params_y;
-	hrt_vaddress r_gamma_tbl;
-	hrt_vaddress g_gamma_tbl;
-	hrt_vaddress b_gamma_tbl;
 	hrt_vaddress anr_thres;
 };
 #endif
@@ -178,7 +191,6 @@ struct sh_css_ddr_address_map {
 struct sh_css_ddr_address_map_size {
 	size_t isp_param;
 	size_t isp_mem_param[SH_CSS_MAX_STAGES][IA_CSS_NUM_ISP_MEMORIES];
-	size_t xnr_tbl;
 	size_t macc_tbl;
 	size_t fpn_tbl;
 	size_t sc_tbl;
@@ -197,9 +209,6 @@ struct sh_css_ddr_address_map_size {
 	size_t tetra_batr_x;
 	size_t tetra_batr_y;
 	size_t dvs_6axis_params_y;
-	size_t r_gamma_tbl;
-	size_t g_gamma_tbl;
-	size_t b_gamma_tbl;
 	size_t anr_thres;
 };
 #endif
@@ -329,8 +338,6 @@ struct sh_css_sp_input_formatter_set {
 
 /* SP configuration information */
 struct sh_css_sp_config {
-	uint8_t			is_offline;  /* Run offline, with continuous copy */
-	uint8_t			input_needs_raw_binning;
 	uint8_t			no_isp_sync; /* Signal host immediately after start */
 #if !defined(HAS_NO_INPUT_FORMATTER)
 	struct {
@@ -383,6 +390,29 @@ struct sh_css_sp_pipeline_io {
 	struct sh_css_sp_pipeline_terminal	output;
 };
 #endif
+enum sh_css_port_dir {
+	SH_CSS_PORT_INPUT  = 0,
+	SH_CSS_PORT_OUTPUT  = 1
+};
+
+enum sh_css_port_type {
+	SH_CSS_HOST_TYPE  = 0,
+	SH_CSS_COPYSINK_TYPE  = 1,
+	SH_CSS_TAGGERSINK_TYPE  = 2
+};
+
+/* Pipe inout settings: output port on 7-4bits, input port on 3-0bits */
+#define SH_CSS_PORT_FLD_WIDTH_IN_BITS (4)
+#define SH_CSS_PORT_TYPE_BIT_FLD(pt) (0x1 << (pt))
+#define SH_CSS_PORT_FLD(pd) ((pd) ? SH_CSS_PORT_FLD_WIDTH_IN_BITS : 0)
+#define SH_CSS_PIPE_PORT_CONFIG_ON(p,pd,pt) ( (p) |= (SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)) )
+#define SH_CSS_PIPE_PORT_CONFIG_OFF(p,pd,pt) ( (p) &= ~(SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)) )
+#define SH_CSS_PIPE_PORT_CONFIG_SET(p,pd,pt,val) ( (val)? SH_CSS_PIPE_PORT_CONFIG_ON(p,pd,pt):SH_CSS_PIPE_PORT_CONFIG_OFF(p,pd,pt) )
+#define SH_CSS_PIPE_PORT_CONFIG_GET(p,pd,pt) ( (p) & (SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)) )
+#define SH_CSS_PIPE_PORT_CONFIG_IS_CONTINUOUS(p)  (!(SH_CSS_PIPE_PORT_CONFIG_GET(p,SH_CSS_PORT_INPUT,SH_CSS_HOST_TYPE) && \
+					       SH_CSS_PIPE_PORT_CONFIG_GET(p,SH_CSS_PORT_OUTPUT,SH_CSS_HOST_TYPE)))
+
+#define IA_CSS_ACQUIRE_ISP_POS	31
 
 /* Information for a pipeline */
 struct sh_css_sp_pipeline {
@@ -390,22 +420,22 @@ struct sh_css_sp_pipeline {
 	uint32_t	pipe_num;	/* the dynamic pipe number */
 	uint32_t	thread_id;	/* the sp thread ID */
 	uint32_t	pipe_config;	/* the pipe config */
+	uint32_t    inout_port_config;
+	uint32_t	input_needs_raw_binning;
+	uint32_t	dvs_frame_delay;
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	uint32_t	input_system_mode;	/* enum ia_css_input_mode */
 	mipi_port_ID_t	port_id;	/* port_id for input system */
 #endif
-#if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
-        uint8_t         is_pipemodecopy;
-#endif
 	uint32_t	num_stages;		/* the pipe config */
 	uint32_t	running;	/* needed for pipe termination */
-	uint32_t	dvs_frame_delay;
 	hrt_vaddress	sp_stage_addr[SH_CSS_MAX_STAGES];
 	CSS_ALIGN(struct sh_css_sp_stage *stage, 8); /* Current stage for this pipeline */
-	int32_t         acc_num_execs; /* number of times to run if this is
+	int32_t         num_execs; /* number of times to run if this is
 					  an acceleration pipe. */
 #if defined (SH_CSS_ENABLE_METADATA)
-	uint32_t	process_metadata;  /* flag to process metadata. */
+	uint32_t		md_format;		/* Metadata format in hrt format. */
+	unsigned int	md_size;		/* Rounded up metadata size in bytes. */
 #endif
 	union {
 		struct {
@@ -593,8 +623,6 @@ struct sh_css_sp_stage {
 	/* unsigned char			padding[0]; */
 
 	struct sh_css_crop_pos		sp_out_crop_pos;
-	/* Indicate which buffers require an IRQ */
-	uint32_t					irq_buf_flags;
 	struct sh_css_sp_frames		frames;
 	struct ia_css_resolution	dvs_envelope;
 	struct sh_css_uds_info		uds;
@@ -837,14 +865,7 @@ void
 sh_css_capture_enable_bayer_downscaling(bool enable);
 
 void
-sh_css_binary_print(const struct sh_css_binary *binary);
-
-#if SP_DEBUG !=SP_DEBUG_NONE
-
-void
-sh_css_print_sp_debug_state(const struct sh_css_sp_debug_state *state);
-
-#endif
+sh_css_binary_print(const struct ia_css_binary *binary);
 
 void
 sh_css_frame_info_set_width(struct ia_css_frame_info *info,

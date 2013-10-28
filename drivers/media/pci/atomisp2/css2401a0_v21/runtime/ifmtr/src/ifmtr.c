@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -73,16 +73,15 @@ unsigned int ia_css_ifmtr_columns_needed_for_bayer_order(
 }
 
 enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
-				       bool input_needs_raw_binning,
-				       struct sh_css_binary *binary)
+				       struct ia_css_binary *binary)
 {
 	unsigned int start_line, start_column = 0,
-	    cropped_height, 
+	    cropped_height,
 	    cropped_width,
 	    num_vectors,
 	    buffer_height = 2,
 	    buffer_width,
-	    two_ppc, 
+	    two_ppc,
 	    vmem_increment = 0,
 	    deinterleaving = 0,
 	    deinterleaving_b = 0,
@@ -108,9 +107,9 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	assert(binary != NULL);
 	cropped_height = binary->in_frame_info.res.height,
 	cropped_width = binary->in_frame_info.res.width,
-	buffer_width = binary->info->max_input_width,
+	buffer_width = binary->info->sp.max_input_width,
 	input_format = binary->input_format;
-	two_ppc = (config->pixels_per_clock == 2 );
+	two_ppc = config->pixels_per_clock == 2;
 
 	if (config->mode == IA_CSS_INPUT_MODE_SENSOR
 	    || config->mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
@@ -124,13 +123,6 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 
 	assert(if_config_index <= SH_CSS_MAX_IF_CONFIGS
 	       || if_config_index == SH_CSS_IF_CONFIG_NOT_NEEDED);
-
-	if (input_needs_raw_binning && binary->info->enable.raw_binning) {
-		cropped_width *= 2;
-		cropped_width -= binary->info->left_cropping;
-		cropped_height *= 2;
-		cropped_height -= binary->info->left_cropping;
-	}
 
 	/* TODO: check to see if input is RAW and if current mode interprets
 	 * RAW data in any particular bayer order. copy binary with output
@@ -284,7 +276,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 			vmem_increment = 1;
 			deinterleaving = 2;
 			if (config->continuous &&
-			    binary->info->mode == SH_CSS_BINARY_MODE_COPY) {
+			    binary->info->sp.mode == IA_CSS_BINARY_MODE_COPY) {
 				/* No deinterleaving for sp copy */
 				deinterleaving = 1;
 			}
@@ -364,7 +356,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	vectors_per_buffer = buffer_height * buffer_width / ISP_VEC_NELEMS;
 
 	if (config->mode == IA_CSS_INPUT_MODE_TPG &&
-	    binary->info->mode == SH_CSS_BINARY_MODE_VIDEO) {
+	    binary->info->sp.mode == IA_CSS_BINARY_MODE_VIDEO) {
 		/* workaround for TPG in video mode */
 		start_line = 0;
 		start_column = 0;

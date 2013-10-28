@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,4 +20,9 @@
  *
  */
 
-#include "ctc/ctc_1.0/ia_css_ctc_param.h"
+#ifndef __IA_CSS_CTCX_PARAM_H
+#define __IA_CSS_CTCX_PARAM_H
+
+#include "ia_css_ctc2_param.h"
+
+#endif /* __IA_CSS_CTCX_PARAM_H */

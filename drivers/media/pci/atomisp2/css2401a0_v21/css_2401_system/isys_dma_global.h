@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -29,9 +29,9 @@
 #include <stdint.h>
 #endif
 
-#include "dma_v2_defs.h"		/* _DMA_V2_xxx */
-
-#include "input_system_2401_defs.h"	/* HIVE_ISYS2401_DMA_IBUF_DDR_CONN */
+#define HIVE_ISYS2401_DMA_IBUF_DDR_CONN	0
+#define _DMA_V2_ZERO_EXTEND		0
+#define _DMA_V2_SIGN_EXTEND		1
 
 #define _DMA_ZERO_EXTEND     _DMA_V2_ZERO_EXTEND
 #define _DMA_SIGN_EXTEND     _DMA_V2_SIGN_EXTEND

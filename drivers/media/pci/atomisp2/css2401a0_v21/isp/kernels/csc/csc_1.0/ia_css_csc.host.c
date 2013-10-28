@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,8 +23,14 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 #include "ia_css_csc.host.h"
+
+const struct ia_css_cc_config default_cc_config = {
+	8,
+	{255, 29, 120, 0, -374, -342, 0, -672, 301},
+};
 
 void
 ia_css_encode_cc(struct sh_css_isp_csc_params *to,
@@ -95,3 +101,21 @@ ia_css_csc_dump(const struct sh_css_isp_csc_params *csc, unsigned level)
 {
 	ia_css_cc_dump(csc, level, "Color Space Conversion");
 }
+
+void
+ia_css_cc_config_debug_dtrace(const struct ia_css_cc_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.m[0]=%d, "
+		"config.m[1]=%d, config.m[2]=%d, "
+		"config.m[3]=%d, config.m[4]=%d, "
+		"config.m[5]=%d, config.m[6]=%d, "
+		"config.m[7]=%d, config.m[8]=%d\n",
+		config->matrix[0],
+		config->matrix[1], config->matrix[2],
+		config->matrix[3], config->matrix[4],
+		config->matrix[5], config->matrix[6],
+		config->matrix[7], config->matrix[8]);
+}
+
+

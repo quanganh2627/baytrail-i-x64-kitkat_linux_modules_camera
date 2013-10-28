@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 #ifndef _IA_CSS_DEBUG_H_
 #define _IA_CSS_DEBUG_H_
 
@@ -26,6 +26,18 @@
 */
 /*! \file */
 
+#ifndef __INLINE_INPUT_SYSTEM__
+#define __INLINE_INPUT_SYSTEM__
+#endif
+#ifndef __INLINE_IBUF_CTRL__
+#define __INLINE_IBUF_CTRL__
+#endif
+#ifndef __INLINE_CSI_RX__
+#define __INLINE_CSI_RX__
+#endif
+#ifndef __INLINE_PIXELGEN__
+#define __INLINE_PIXELGEN__
+#endif
 #include "ia_css.h"
 #include "sh_css_internal.h"
 
@@ -135,13 +147,17 @@ extern void ia_css_debug_dump_sp_sw_debug_info(void);
 extern void ia_css_debug_dump_debug_info(
 	const char	*context);
 
+#if SP_DEBUG != SP_DEBUG_NONE
+extern void ia_css_debug_print_sp_debug_state(
+	const struct sh_css_sp_debug_state *state);
+#endif
 
 /*! \brief Dump all related binary info data
  * \param[in]  bi	Binary info struct.
  * \return	None
  */
 extern void ia_css_debug_binary_print(
-	const struct sh_css_binary *bi);
+	const struct ia_css_binary *bi);
 
 extern void
 ia_css_debug_sp_dump_mipi_fifo_high_water(void);

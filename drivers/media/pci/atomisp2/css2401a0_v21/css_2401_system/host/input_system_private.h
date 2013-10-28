@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,5 +25,51 @@
 
 #include "input_system_public.h"
 
+STORAGE_CLASS_INPUT_SYSTEM_C input_system_err_t input_system_get_state(
+	const input_system_ID_t	ID,
+	input_system_state_t *state)
+{
+	uint32_t i;
 
+	(void)(ID);
+
+	/*  get the states of all CSI RX frontend devices */
+	for (i = 0; i < N_CSI_RX_FRONTEND_ID; i++) {
+		csi_rx_fe_ctrl_get_state(
+				(csi_rx_frontend_ID_t)i,
+				&(state->csi_rx_fe_ctrl_state[i]));
+					
+	}
+
+	/*  get the states of all CIS RX backend devices */
+	for (i = 0; i < N_CSI_RX_BACKEND_ID; i++) {
+		csi_rx_be_ctrl_get_state(
+				(csi_rx_backend_ID_t)i,
+				&(state->csi_rx_be_ctrl_state[i]));
+	}
+
+	/* get the states of all pixelgen devices */
+	for (i = 0; i < N_PIXELGEN_ID; i++) {
+		pixelgen_ctrl_get_state(
+				(pixelgen_ID_t)i,
+				&(state->pixelgen_ctrl_state[i]));
+	}
+
+	/* TODO: get the states of all stream2mmio devices */
+	for (i = 0; i < N_STREAM2MMIO_ID; i++) {
+	}
+
+	/* get the states of all ibuf-controller devices */
+	for (i = 0; i < N_IBUF_CTRL_ID; i++) {
+		ibuf_ctrl_get_state(
+				(ibuf_ctrl_ID_t)i,
+				&(state->ibuf_ctrl_state[i]));
+	}
+
+	/* TODO: get the states of all ISYS2401 DMA devices  */
+	for (i = 0; i < N_ISYS2401_DMA_ID; i++) {
+	}
+
+	return INPUT_SYSTEM_ERR_NO_ERROR;
+}
 #endif /* __INPUT_SYSTEM_PRIVATE_H_INCLUDED__ */

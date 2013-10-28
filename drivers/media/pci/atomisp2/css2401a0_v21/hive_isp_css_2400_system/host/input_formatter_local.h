@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -33,9 +33,6 @@ typedef struct input_formatter_bin_state_s		input_formatter_bin_state_t;
 
 #define HIVE_IF_FSM_SYNC_STATUS                 0x100
 #define HIVE_IF_FSM_SYNC_COUNTER                0x104
-#define HIVE_IF_FSM_CROP_STATUS                 0x108
-#define HIVE_IF_FSM_CROP_LINE_COUNTER           0x10C
-#define HIVE_IF_FSM_CROP_PIXEL_COUNTER          0x110
 #define HIVE_IF_FSM_DEINTERLEAVING_IDX          0x114
 #define HIVE_IF_FSM_DECIMATION_H_COUNTER        0x118
 #define HIVE_IF_FSM_DECIMATION_V_COUNTER        0x11C
