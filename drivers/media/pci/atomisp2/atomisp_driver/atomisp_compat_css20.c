@@ -574,7 +574,9 @@ static int __create_pipe(struct atomisp_sub_device *asd)
 	ia_css_pipe_extra_config_defaults(&extra_config);
 	if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
 		extra_config.enable_dvs_6axis = true;
+#ifndef CSS21
 		extra_config.enable_dz = false;
+#endif
 	}
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
 		if (!asd->stream_env.pipe_configs[i].output_info.res.width)
