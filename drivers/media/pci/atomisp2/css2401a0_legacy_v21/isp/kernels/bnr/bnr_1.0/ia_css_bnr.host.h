@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,13 +23,15 @@
 #ifndef __IA_CSS_BNR_HOST_H
 #define __IA_CSS_BNR_HOST_H
 
+#include "sh_css_params.h"
+
 #include "ynr/ynr_1.0/ia_css_ynr_types.h"
 #include "ia_css_bnr_param.h"
 
 void
 ia_css_bnr_encode(struct sh_css_isp_bnr_params *to,
 		  const struct ia_css_nr_config *from);
-
+		  
 void
 ia_css_bnr_dump(const struct sh_css_isp_bnr_params *bnr, unsigned level);
 

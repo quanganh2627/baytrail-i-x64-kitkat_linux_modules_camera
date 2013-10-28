@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -22,6 +22,8 @@
 
 #ifndef __IA_CSS_FPN_HOST_H
 #define __IA_CSS_FPN_HOST_H
+
+#include "sh_css_params.h"
 
 #include "ia_css_fpn_types.h"
 #include "ia_css_fpn_param.h"

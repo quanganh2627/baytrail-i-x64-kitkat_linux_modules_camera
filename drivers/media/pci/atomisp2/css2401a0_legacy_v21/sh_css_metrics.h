@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -76,7 +76,7 @@ struct sh_css_metrics {
 
 extern struct sh_css_metrics sh_css_metrics;
 
-/* includes sh_css_binary.h, which depends on sh_css_metrics.h */
+/* includes ia_css_binary.h, which depends on sh_css_metrics.h */
 #include "ia_css_types.h"
 
 /* Sample ISP and SP pc and add to histogram */

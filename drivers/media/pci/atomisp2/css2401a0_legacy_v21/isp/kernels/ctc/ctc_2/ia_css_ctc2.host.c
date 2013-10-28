@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,6 +25,7 @@
 #include "ia_css_debug.h"
 #include "assert_support.h"
 
+#include "ctc/ctc_1.0/ia_css_ctc.host.h"
 #include "ia_css_ctc2.host.h"
 
 static void ctc_gradient(
@@ -48,7 +49,7 @@ static void ctc_gradient(
 	assert(shift != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ctc_gradient() enter:\n");
-	
+
 	/* search "sft" which meets this condition:
 		   (1 << (IA_CSS_CTC_COEF_SHIFT - 1))
 		<= (((float)dy / (float)dx) * (1 << sft))

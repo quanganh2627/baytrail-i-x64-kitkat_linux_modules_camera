@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -24,9 +24,20 @@
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
+#include "assert_support.h"
 #include "vamem.h"
 
 #include "ia_css_gc.host.h"
+
+const struct ia_css_gc_config default_gc_config = {
+	0,
+	0
+};
+
+const struct ia_css_ce_config default_ce_config = {
+	0,
+	255
+};
 
 void
 ia_css_gc_encode(struct sh_css_isp_gc_params *to,
@@ -73,5 +84,21 @@ ia_css_ce_dump(const struct sh_css_isp_ce_params *ce, unsigned level)
 			"ce_uv_level_min", ce->uv_level_min);
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"ce_uv_level_max", ce->uv_level_max);
+}
+
+void
+ia_css_gc_debug_dtrace(const struct ia_css_gc_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.gain_k1=%d, config.gain_k2=%d\n",
+		config->gain_k1, config->gain_k2);
+}
+
+void
+ia_css_ce_debug_dtrace(const struct ia_css_ce_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.uv_level_min=%d, config.uv_level_max=%d\n",
+		config->uv_level_min, config->uv_level_max);
 }
 

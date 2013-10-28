@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -41,6 +41,13 @@ static void frame_init_single_plane(struct ia_css_frame *frame,
 	unsigned int height,
 	unsigned int subpixels_per_line,
 	unsigned int bytes_per_pixel);
+
+static void frame_init_raw_single_plane(
+       struct ia_css_frame *frame,
+       struct ia_css_frame_plane *plane,
+       unsigned int height,
+       unsigned int subpixels_per_line,
+       unsigned int bits_per_pixel);
 
 static void frame_init_mipi_plane(struct ia_css_frame *frame,
 	struct ia_css_frame_plane *plane,
@@ -319,6 +326,12 @@ enum ia_css_err ia_css_frame_init_planes(struct ia_css_frame *frame)
 			frame->info.padded_width,
 			frame->info.raw_bit_depth <= 8 ? 1 : 2);
 		break;
+	case IA_CSS_FRAME_FORMAT_RAW_PACKED:
+		frame_init_raw_single_plane(frame, &frame->planes.raw,
+			frame->info.res.height,
+			frame->info.padded_width,
+			frame->info.raw_bit_depth);
+		break;
 	case IA_CSS_FRAME_FORMAT_RAW:
 		frame_init_single_plane(frame, &frame->planes.raw,
 			frame->info.res.height,
@@ -426,7 +439,8 @@ void ia_css_frame_info_set_width(struct ia_css_frame_info *info,
 		    CEIL_MUL(width, 2 * HIVE_ISP_DDR_WORD_BYTES);
 	else if (info->format == IA_CSS_FRAME_FORMAT_YUV_LINE)
 		info->padded_width = CEIL_MUL(width, 2 * ISP_VEC_NELEMS);
-	else if (info->format == IA_CSS_FRAME_FORMAT_RAW)
+	else if (info->format == IA_CSS_FRAME_FORMAT_RAW ||
+		 info->format == IA_CSS_FRAME_FORMAT_RAW_PACKED)
 		info->padded_width = CEIL_MUL(width, 2 * ISP_VEC_NELEMS);
 	else {
 		info->padded_width = CEIL_MUL(width, HIVE_ISP_DDR_WORD_BYTES);
@@ -571,6 +585,24 @@ static void frame_init_single_plane(struct ia_css_frame *frame,
 	unsigned int stride;
 
 	stride = subpixels_per_line * bytes_per_pixel;
+	frame->data_bytes = stride * height;
+	frame_init_plane(plane, subpixels_per_line, stride, height, 0);
+	return;
+}
+
+static void frame_init_raw_single_plane(
+       struct ia_css_frame *frame,
+       struct ia_css_frame_plane *plane,
+       unsigned int height,
+       unsigned int subpixels_per_line,
+       unsigned int bits_per_pixel)
+{
+	unsigned int stride;
+	assert(frame != NULL);
+	
+	stride = HIVE_ISP_DDR_WORD_BYTES *
+			CEIL_DIV(subpixels_per_line,
+				HIVE_ISP_DDR_WORD_BITS / bits_per_pixel);
 	frame->data_bytes = stride * height;
 	frame_init_plane(plane, subpixels_per_line, stride, height, 0);
 	return;

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,6 +25,9 @@
 
 /*! \file */
 
+/* Forward declaration to break mutual dependency */
+struct ia_css_isp_parameters;
+
 #include "ia_css_types.h"
 #include "ia_css.h"
 #include "sh_css_internal.h"
@@ -32,22 +35,36 @@
 #if defined(IS_ISP_2500_SYSTEM)
 #include "product_specific.host.h"
 #endif
-#include "pipeline.h" /* struct sh_css_isp_params */
+#include "sh_css_defs.h"	/* SH_CSS_MAX_STAGES */
 #include "ia_css_pipeline.h"
+#include HRTSTR(ia_css_isp_params.SYSTEM.h)
+
+#include "ob/ob_1.0/ia_css_ob_param.h"
+#include "uds/uds_1.0/ia_css_uds_param.h"
+
+/* Isp configurations per stream */
+struct sh_css_isp_param_configs {
+	/* OB (Optical Black) */
+	struct sh_css_isp_ob_stream_config ob;
+};
 
 /* Isp parameters per stream */
 struct ia_css_isp_parameters {
-	struct sh_css_isp_params    isp_parameters;
+	/* UDS */
+	struct sh_css_sp_uds_params uds[SH_CSS_MAX_STAGES];
 #if !defined(IS_ISP_2500_SYSTEM)
 	struct sh_css_isp_param_configs stream_configs;
+#else
+	struct sh_css_isp_params    isp_parameters;
 #endif
 
-	struct ia_css_fpn_table     fpn_table;
-	struct ia_css_vector	motion_config;
+	struct ia_css_fpn_table     fpn_config;
+	struct ia_css_vector	    motion_config;
 	const struct ia_css_morph_table   *morph_table;
 	const struct ia_css_shading_table *sc_table;
+	struct ia_css_shading_table *sc_config;
 	struct ia_css_macc_table    macc_table;
-	struct ia_css_gamma_table   gamma_table;
+	struct ia_css_gamma_table   gc_table;
 	struct ia_css_ctc_table     ctc_table;
 	struct ia_css_xnr_table     xnr_table;
 
@@ -71,12 +88,14 @@ struct ia_css_isp_parameters {
 	
 	struct ia_css_ecd_config    ecd_config;
 	struct ia_css_ynr_config    ynr_config;
+	struct ia_css_yee_config    yee_config;
 	struct ia_css_fc_config     fc_config;
 	struct ia_css_cnr_config    cnr_config;
 	struct ia_css_macc_config   macc_config;
 	struct ia_css_ctc_config    ctc_config;
 	struct ia_css_aa_config     aa_config;
-	struct ia_css_aa_config     baa_config;
+	struct ia_css_aa_config     raw_config;
+	struct ia_css_aa_config     raa_config;
 	struct ia_css_rgb_gamma_table     r_gamma_table;
 	struct ia_css_rgb_gamma_table     g_gamma_table;
 	struct ia_css_rgb_gamma_table     b_gamma_table;
@@ -86,44 +105,16 @@ struct ia_css_isp_parameters {
 	bool isp_mem_params_changed
 		[IA_CSS_PIPE_ID_NUM][SH_CSS_MAX_STAGES]
 		[IA_CSS_NUM_ISP_MEMORIES];
-	bool fpn_table_changed;
 	bool dz_config_changed;
 	bool motion_config_changed;
 	bool dis_coef_table_changed;
 	bool dvs2_coef_table_changed;
 	bool morph_table_changed;
 	bool sc_table_changed;
-	bool macc_table_changed;
-	bool gamma_table_changed;
-	bool ctc_table_changed;
-	bool xnr_table_changed;
-	bool s3a_config_changed;
-	bool wb_config_changed;
-	bool csc_config_changed;
-	bool yuv2rgb_config_changed;
-	bool rgb2yuv_config_changed;
-	bool tnr_config_changed;
-	bool ob_config_changed;
-	bool dp_config_changed;
-	bool nr_config_changed;
-	bool ee_config_changed;
-	bool de_config_changed;
-	bool gc_config_changed;
-	bool anr_config_changed;
-	bool ce_config_changed;
-	bool dvs_6axis_config_changed;
-	bool ecd_config_changed;
-	bool ynr_config_changed;
-	bool fc_config_changed;
-	bool cnr_config_changed;
-	bool macc_config_changed;
-	bool ctc_config_changed;
-	bool aa_config_changed;
-	bool baa_config_changed;
-	bool r_gamma_table_changed;
-	bool g_gamma_table_changed;
-	bool b_gamma_table_changed;
 	bool anr_thres_changed;
+	bool dvs_6axis_config_changed;
+
+	bool config_changed[IA_CSS_NUM_PARAMETER_IDS];
 
 	unsigned int sensor_binning;
 	/* local buffers, used to re-order the 3a statistics in vmem-format */

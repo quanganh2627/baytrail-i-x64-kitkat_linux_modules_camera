@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,9 +20,13 @@
  *
  */
 
-#ifndef __PIPELINE_LOCAL_H_INCLUDED__
-#define __PIPELINE_LOCAL_H_INCLUDED__
+#ifndef __IA_CSS_CTC_TABLE_HOST_H
+#define __IA_CSS_CTC_TABLE_HOST_H
 
-#include "pipeline_global.h"
+#include "ia_css_ctc_types.h"
 
-#endif /* __PIPELINE_LOCAL_H_INCLUDED__ */
+extern struct ia_css_ctc_table default_ctc_table;
+
+void ia_css_config_ctc_table(void);
+
+#endif /* __IA_CSS_CTC_TABLE_HOST_H */

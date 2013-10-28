@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -30,10 +30,17 @@
 #endif
 
 #ifndef PIPE_GENERATION
+#ifdef __ISP
+#define __INLINE_VAMEM__
+#endif
+#include "vamem.h"
+
 #if defined(IS_VAMEM_VERSION_1)
-#define SH_CSS_ISP_GC_TABLE_SIZE IA_CSS_VAMEM_1_GAMMA_TABLE_SIZE
+#define SH_CSS_ISP_GAMMA_TABLE_SIZE_LOG2 IA_CSS_VAMEM_1_GAMMA_TABLE_SIZE_LOG2
+#define SH_CSS_ISP_GC_TABLE_SIZE	 IA_CSS_VAMEM_1_GAMMA_TABLE_SIZE
 #elif defined(IS_VAMEM_VERSION_2)
-#define SH_CSS_ISP_GC_TABLE_SIZE IA_CSS_VAMEM_2_GAMMA_TABLE_SIZE
+#define SH_CSS_ISP_GAMMA_TABLE_SIZE_LOG2 IA_CSS_VAMEM_2_GAMMA_TABLE_SIZE_LOG2
+#define SH_CSS_ISP_GC_TABLE_SIZE	 IA_CSS_VAMEM_2_GAMMA_TABLE_SIZE
 #else
 #error "Undefined vamem version"
 #endif

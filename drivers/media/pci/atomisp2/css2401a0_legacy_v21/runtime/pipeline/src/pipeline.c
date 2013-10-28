@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -131,9 +131,9 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 	      pipe_id, pipeline);
 	pipeline->pipe_id = pipe_id;
 	sh_css_sp_init_pipeline(pipeline, pipe_id, pipe_num,
-				false, false, false, false, true, false, false,
+				false, false, false, true, false,
 				SH_CSS_PIPE_CONFIG_OVRD_NO_OVRD,
-				IA_CSS_INPUT_MODE_MEMORY
+				IA_CSS_INPUT_MODE_MEMORY, NULL
 #if !defined(HAS_NO_INPUT_SYSTEM)
 				, (mipi_port_ID_t) 0
 #endif
@@ -190,14 +190,6 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 		      "ia_css_pipeline_request_stop() leave: return_err=%d\n",
 		      err);
 	return err;
-}
-
-void ia_css_pipeline_restart(struct ia_css_pipeline *pipeline)
-{
-	assert(pipeline != NULL);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_pipeline_restart() enter:\n");
-	pipeline->current_stage = NULL;
 }
 
 void ia_css_pipeline_clean(struct ia_css_pipeline *pipeline)
@@ -341,7 +333,7 @@ enum ia_css_err ia_css_pipeline_get_output_stage(
 	/* First find acceleration firmware at end of pipe */
 	for (s = pipeline->stages; s; s = s->next) {
 		if (s->firmware && s->mode == mode &&
-		    s->firmware->info.isp.enable.output)
+		    s->firmware->info.isp.sp.enable.output)
 			*stage = s;
 	}
 	if (*stage)
@@ -473,7 +465,7 @@ static enum ia_css_err pipeline_stage_create(
 	struct ia_css_pipeline_stage **new_stage)
 {
 	struct ia_css_pipeline_stage *stage;
-	struct sh_css_binary *binary;
+	struct ia_css_binary *binary;
 	struct ia_css_frame *vf_frame;
 	struct ia_css_frame *out_frame;
 	const struct ia_css_fw_info *firmware;
@@ -490,6 +482,8 @@ static enum ia_css_err pipeline_stage_create(
 	out_frame = stage_desc->out_frame;
 
 	stage = sh_css_malloc(sizeof(*stage));
+	memset(stage, 0, sizeof(*stage));
+
 	if (!stage)
 		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 
@@ -505,30 +499,23 @@ static enum ia_css_err pipeline_stage_create(
 		else
 			stage->binary_info = NULL;
 	}
-	
+
 	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
-		if (stage->binary_info) {
-			size_t size = stage->binary_info->mem_initializers[mem].size;
-			stage->isp_mem_params[mem].size = size;
-			stage->isp_mem_params[mem].address = NULL;
-			if (!size) continue;
-			stage->isp_mem_params[mem].address = sh_css_malloc(size);
-		}
-		else {
-			/* Init. to zero to avoid freeing junk addresses
-			   during stage destroy */
-			stage->isp_mem_params[mem].size = 0;
-			stage->isp_mem_params[mem].address = NULL;
-		}
+		size_t size = 0;
+		if (stage->binary_info)
+			size = stage->binary_info->mem_initializers[mem].size;
+		stage->isp_mem_params[mem].size = size;
+		stage->isp_mem_params[mem].address = NULL;
+		if (!size) continue;
+		stage->isp_mem_params[mem].address = sh_css_malloc(size);
 	}
-	
+
 	stage->firmware = firmware;
 	stage->sp_func = stage_desc->sp_func;
 	stage->max_input_width = stage_desc->max_input_width;
 	stage->mode = stage_desc->mode;
 	stage->out_frame_allocated = false;
 	stage->vf_frame_allocated = false;
-	stage->irq_buf_flags = 0x0;
 	stage->next = NULL;
 	sh_css_binary_args_reset(&stage->args);
 
@@ -548,7 +535,7 @@ static enum ia_css_err pipeline_stage_create(
 	 */
 	if (!vf_frame) {
 		if ((binary && binary->vf_frame_info.res.width) ||
-		    (firmware && firmware->info.isp.enable.vf_veceven)
+		    (firmware && firmware->info.isp.sp.enable.vf_veceven)
 		    ) {
 			enum ia_css_err ret =
 			    ia_css_frame_allocate_from_info(&vf_frame,
@@ -587,9 +574,10 @@ static void pipeline_init_defaults(struct ia_css_pipeline *pipeline,
 	pipeline->pipe_id = pipe_id;
 	pipeline->stages = NULL;
 	pipeline->stop_requested = false;
-	pipeline->reload = true;
 	pipeline->current_stage = NULL;
 	pipeline->in_frame = init_frame;
 	pipeline->out_frame = init_frame;
 	pipeline->vf_frame = init_frame;
+	pipeline->num_execs = -1;
+	pipeline->acquire_isp_each_stage = true;
 }

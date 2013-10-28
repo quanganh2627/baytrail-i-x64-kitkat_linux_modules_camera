@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -43,10 +43,8 @@ struct ia_css_pipe_extra_config {
 	bool enable_high_speed;
 	bool enable_dvs_6axis;
 	bool enable_reduced_pipe;
-	bool enable_dz;
 	bool enable_fractional_ds;
 	bool disable_vf_pp;
-	bool disable_capture_pp;
 };
 
 enum ia_css_err
@@ -61,24 +59,6 @@ enum ia_css_err
 ia_css_temp_pipe_to_pipe_id(const struct ia_css_pipe *pipe,
 			    enum ia_css_pipe_id *pipe_id);
 
-/** @brief Return the value of a SW interrupt.
- *
- * @param[in] irq	The software interrupt id.
- * @return		The value for the software interrupt.
- */
-unsigned int
-sh_css_get_sw_interrupt_value(unsigned int irq);
-
-/** @brief Return whether UV range starts at 0.
- *
- * @param[out]	uv_offset_is_zero	Pointer to the result value.
-
- *  Return true if UV values range from 0 to 255 and false if UV values
- *  range from -127 to 128.
- */
-void
-sh_css_uv_offset_is_zero(bool *uv_offset_is_zero);
-
 /** @brief Enable cont_capt mode (continuous preview+capture running together).
  *
  * @param	enable	Enabling value.
@@ -87,17 +67,6 @@ sh_css_uv_offset_is_zero(bool *uv_offset_is_zero);
  */
 void
 sh_css_enable_cont_capt(bool enable, bool stop_copy_preview);
-
-/** @brief Initialize the buffer queues in SP dmem
- *
- */
-void
-sh_css_init_buffer_queues(void);
-
-enum ia_css_err
-ia_css_pipe_id_set_irq_mask(enum ia_css_pipe_id pipe_id,
-			    unsigned int or_mask,
-			    unsigned int and_mask);
 
 /* DEPRECATED. FPN is not supported. */
 enum ia_css_err

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,12 +20,22 @@
  *
  */
 
+
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
+#include "assert_support.h"
 
 #include "ia_css_wb.host.h"
+
+const struct ia_css_wb_config default_wb_config = {
+	1,
+	32768,
+	32768,
+	32768,
+	32768
+};
 
 void
 ia_css_wb_encode(struct sh_css_isp_wb_params *to,
@@ -61,4 +71,16 @@ ia_css_wb_dump(const struct sh_css_isp_wb_params *wb, unsigned level)
 			"wb_gain_b", wb->gain_b);
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"wb_gain_gb", wb->gain_gb);
+}
+
+void
+ia_css_wb_debug_dtrace(const struct ia_css_wb_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.integer_bits=%d, "
+		"config.gr=%d, config.r=%d, "
+		"config.b=%d, config.gb=%d\n",
+		config->integer_bits,
+		config->gr, config->r,
+		config->b, config->gb);
 }

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,12 +23,38 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 #include "ia_css_sc.host.h"
 
 void
 ia_css_sc_encode(struct sh_css_isp_sc_params *to,
-		 const struct ia_css_shading_table *from);
+		 struct ia_css_shading_table **from)
+{
+	to->gain_shift = (*from)->fraction_bits;
+}
+
+#if 0
+void
+ia_css_process_sc(unsigned pipe_id,
+		  const struct ia_css_pipeline_stage *stage,
+		  struct ia_css_isp_parameters *params)
+{
+	short dmem_offset = stage->binary->info->mem_offsets->dmem.sc;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sc() enter:\n");
+
+	if (dmem_offset >= 0) {
+		ia_css_sc_encode((struct sh_css_isp_sc_params *)
+				&stage->isp_mem_params[IA_CSS_ISP_DMEM0].address[dmem_offset],
+				params->tmp_sc_table);
+		params->isp_params_changed = true;
+		params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM0] = true;
+	}
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sc() leave:\n");
+}
+#endif
 
 void
 ia_css_sc_dump(const struct sh_css_isp_sc_params *sc, unsigned level)

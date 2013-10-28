@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,8 +23,19 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 #include "ia_css_ob.host.h"
+
+const struct ia_css_ob_config default_ob_config = {
+	IA_CSS_OB_MODE_NONE,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0
+};
 
 /* TODO: include ob.isp.h to get isp knowledge and
    add assert on platform restrictions */
@@ -84,23 +95,32 @@ ia_css_ob_encode(struct sh_css_isp_ob_params *to,
 
 void
 ia_css_ob_vmem_encode(struct sh_css_isp_ob_vmem_params *to,
-		      const struct sh_css_isp_ob_params *ob)
+		 const struct ia_css_ob_config *from,
+		 const struct sh_css_isp_ob_stream_config *config)
 {
-	unsigned i;
-	unsigned sp_obarea_start_bq  = ob->area_start_bq;
-	unsigned sp_obarea_length_bq = ob->area_length_bq;
-	unsigned low = sp_obarea_start_bq;
-	unsigned high = low + sp_obarea_length_bq;
-	unsigned all_ones = ~0;
-	
-	for (i = 0; i < OBAREA_MASK_SIZE; i++) {
-		to->vmask[i/ISP_NWAY][i%ISP_NWAY] = (i >= low && i < high) * all_ones;
+	struct sh_css_isp_ob_params tmp;
+	struct sh_css_isp_ob_params *ob = &tmp;
+
+	ia_css_ob_encode(&tmp, from, config);
+
+	{
+		unsigned i;
+		unsigned sp_obarea_start_bq  = ob->area_start_bq;
+		unsigned sp_obarea_length_bq = ob->area_length_bq;
+		unsigned low = sp_obarea_start_bq;
+		unsigned high = low + sp_obarea_length_bq;
+		unsigned all_ones = ~0;
+
+		for (i = 0; i < OBAREA_MASK_SIZE; i++) {
+			to->vmask[i/ISP_NWAY][i%ISP_NWAY] = (i >= low && i < high) * all_ones;
+		}
 	}
 }
 
 void
 ia_css_ob_dump(const struct sh_css_isp_ob_params *ob, unsigned level)
 {
+	if (!ob) return;
 	ia_css_debug_dtrace(level, "Optical Black:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 		"ob_blacklevel_gr", ob->blacklevel_gr);
@@ -117,5 +137,20 @@ ia_css_ob_dump(const struct sh_css_isp_ob_params *ob, unsigned level)
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 		"obarea_length_bq_inverse",
 		ob->area_length_bq_inverse);
+}
+
+
+void
+ia_css_ob_debug_dtrace(const struct ia_css_ob_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.mode=%d, "
+		"config.level_gr=%d, config.level_r=%d, "
+		"config.level_b=%d,  config.level_gb=%d, "
+		"config.start_position=%d, config.end_position=%d\n",
+		config->mode,
+		config->level_gr, config->level_r,
+		config->level_b, config->level_gb,
+		config->start_position, config->end_position);
 }
 

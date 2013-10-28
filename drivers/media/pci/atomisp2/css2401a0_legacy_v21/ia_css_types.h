@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -205,7 +205,6 @@ enum ia_css_capture_mode {
 struct ia_css_capture_config {
 	enum ia_css_capture_mode mode; /**< Still capture mode */
 	uint32_t enable_xnr;	       /**< Enable/disable XNR */
-	uint32_t enable_capture_pp;    /**< Enable/disable the post-processing binary*/
 	uint32_t enable_raw_output;
 };
 
@@ -294,7 +293,20 @@ struct ia_css_isp_config {
 
 	struct ia_css_2500_lin_kernel_config     *lin_2500_config;       /**< Skylake: Linearization config */
 	struct ia_css_2500_obgrid_kernel_config  *obgrid_2500_config;    /**< Skylake: OBGRID config */
+	struct ia_css_2500_bnr_kernel_config     *bnr_2500_config;       /**< Skylake: bayer denoise config */
+	struct ia_css_2500_shd_kernel_config     *shd_2500_config;       /**< Skylake: shading config */
+	struct ia_css_2500_dm_kernel_config      *dm_2500_config;        /**< Skylake: demosaic config */
+	struct ia_css_2500_rgbpp_kernel_config   *rgbpp_2500_config;     /**< Skylake: RGBPP config */
+	struct ia_css_2500_yuvp1_kernel_config   *yuvp1_2500_config;     /**< Skylake: yuvp1 config */
+	struct ia_css_2500_yuvp2_kernel_config   *yuvp2_2500_config;     /**< Skylake: yuvp2 config */
 	struct ia_css_2500_tnr_kernel_config     *tnr_2500_config;       /**< Skylake: TNR config */
+	struct ia_css_2500_dpc_kernel_config     *dpc_2500_config;       /**< Skylake: DPC config */
+	struct ia_css_2500_awb_kernel_config     *awb_2500_config;       /**< Skylake: auto white balance config */
+	struct ia_css_2500_awb_fr_kernel_config  *awb_fr_2500_config;    /**< Skylake: auto white balance filter response config */
+	struct ia_css_2500_anr_kernel_config     *anr_2500_config;       /**< Skylake: ANR config */
+	struct ia_css_2500_af_kernel_config      *af_2500_config;        /**< Skylake: auto focus config */
+	struct ia_css_2500_ae_kernel_config      *ae_2500_config;        /**< Skylake: auto exposure config */
+	struct ia_css_2500_bds_kernel_config     *bds_2500_config;       /**< Skylake: bayer downscaler config */
 };
 
 /** DVS 1.0 Coefficients.

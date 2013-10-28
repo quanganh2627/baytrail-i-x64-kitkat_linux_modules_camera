@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 #ifndef _IA_CSS_INPUTFIFO_H
 #define _IA_CSS_INPUTFIFO_H
 
@@ -50,6 +50,12 @@ void ia_css_inputfifo_send_line(
 	unsigned int	width,
 	const unsigned short	*data2,
 	unsigned int	width2);
+
+void ia_css_inputfifo_send_embedded_line(
+	unsigned int	ch_id,
+	enum ia_css_stream_format	data_type,
+	const unsigned short	*data,
+	unsigned int	width);
 
 void ia_css_inputfifo_end_frame(
 	unsigned int	ch_id);

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -24,8 +24,15 @@
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
+#include "assert_support.h"
 
 #include "ia_css_de.host.h"
+
+const struct ia_css_de_config default_de_config = {
+	0,
+	0,
+	0
+};
 
 void
 ia_css_de_encode(struct sh_css_isp_de_params *to,
@@ -54,3 +61,14 @@ ia_css_de_dump(const struct sh_css_isp_de_params *de, unsigned level)
 			"de_c2_coring_threshold",
 			de->c2_coring_threshold);
 }
+
+void
+ia_css_de_debug_dtrace(const struct ia_css_de_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.pixelnoise=%d, "
+		"config.c1_coring_threshold=%d, config.c2_coring_threshold=%d\n",
+		config->pixelnoise,
+		config->c1_coring_threshold, config->c2_coring_threshold);
+}
+
