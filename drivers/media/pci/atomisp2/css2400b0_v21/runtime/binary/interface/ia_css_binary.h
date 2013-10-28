@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,32 +20,32 @@
  *
  */
 
-#ifndef _SH_CSS_BINARY_H_
-#define _SH_CSS_BINARY_H_
+#ifndef _IA_CSS_BINARY_H_
+#define _IA_CSS_BINARY_H_
 
 /* The binary mode is used in pre-processor expressions so we cannot
  * use an enum here. */
-#define SH_CSS_BINARY_MODE_COPY       0
-#define SH_CSS_BINARY_MODE_PREVIEW    1
-#define SH_CSS_BINARY_MODE_PRIMARY    2
-#define SH_CSS_BINARY_MODE_VIDEO      3
-#define SH_CSS_BINARY_MODE_PRE_ISP    4
-#define SH_CSS_BINARY_MODE_GDC        5
-#define SH_CSS_BINARY_MODE_POST_ISP   6
-#define SH_CSS_BINARY_MODE_ANR        7
-#define SH_CSS_BINARY_MODE_CAPTURE_PP 8
-#define SH_CSS_BINARY_MODE_VF_PP      9
-#define SH_CSS_BINARY_MODE_PRE_DE     10
-#define SH_CSS_BINARY_NUM_MODES       11
+#define IA_CSS_BINARY_MODE_COPY       0
+#define IA_CSS_BINARY_MODE_PREVIEW    1
+#define IA_CSS_BINARY_MODE_PRIMARY    2
+#define IA_CSS_BINARY_MODE_VIDEO      3
+#define IA_CSS_BINARY_MODE_PRE_ISP    4
+#define IA_CSS_BINARY_MODE_GDC        5
+#define IA_CSS_BINARY_MODE_POST_ISP   6
+#define IA_CSS_BINARY_MODE_ANR        7
+#define IA_CSS_BINARY_MODE_CAPTURE_PP 8
+#define IA_CSS_BINARY_MODE_VF_PP      9
+#define IA_CSS_BINARY_MODE_PRE_DE     10
+#define IA_CSS_BINARY_NUM_MODES       11
 
 /* Indicate where binaries can read input from */
-#define SH_CSS_BINARY_INPUT_SENSOR   0
-#define SH_CSS_BINARY_INPUT_MEMORY   1
-#define SH_CSS_BINARY_INPUT_VARIABLE 2
+#define IA_CSS_BINARY_INPUT_SENSOR   0
+#define IA_CSS_BINARY_INPUT_MEMORY   1
+#define IA_CSS_BINARY_INPUT_VARIABLE 2
 
 /* enumeration of the bayer downscale factors. When a binary supports multiple
- * factors, the OR of these defines is used to build the mask of supported factors.
- * the BDS factor is used in pre-processor expressions so we cannot
+ * factors, the OR of these defines is used to build the mask of supported
+ * factors. The BDS factor is used in pre-processor expressions so we cannot
  * use an enum here. */
 /* THIS SHOULD BE MOVED TO THE PUBLIC INTERFACE OF THE BDS KERNEL */
 #define SH_CSS_BDS_FACTOR_1_00 (1<<0)
@@ -61,11 +61,16 @@
 #define SH_CSS_BDS_FACTOR_6_00 (1<<10)
 #define SH_CSS_BDS_FACTOR_8_00 (1<<11)
 
+struct sh_css_bds_factor {
+	unsigned numerator;
+	unsigned denominator;
+	unsigned int bds_factor;
+};
 
 #include "ia_css.h"
 #include "sh_css_metrics.h"
 
-struct sh_css_binary_descr {
+struct ia_css_binary_descr {
 	int mode;
 	bool online;
 	bool continuous;
@@ -79,14 +84,15 @@ struct sh_css_binary_descr {
 	struct ia_css_resolution dvs_env;
 	enum ia_css_stream_format stream_format;
 	struct ia_css_frame_info *in_info;
+	struct ia_css_frame_info *bds_out_info;
 	struct ia_css_frame_info *out_info;
 	struct ia_css_frame_info *vf_info;
 	unsigned int isp_pipe_version;
 	unsigned int required_bds_factor;
 };
 
-struct sh_css_binary {
-	const struct ia_css_binary_info *info;
+struct ia_css_binary {
+	const struct ia_css_binary_xinfo *info;
 	enum ia_css_stream_format input_format;
 	struct ia_css_frame_info in_frame_info;
 	struct ia_css_frame_info internal_frame_info;
@@ -126,7 +132,7 @@ struct sh_css_binary {
 	struct sh_css_binary_metrics metrics;
 };
 
-#define DEFAULT_FRAME_INFO \
+#define IA_CSS_BINARY_DEFAULT_FRAME_INFO \
 { \
 	{0,                      /* width */ \
 	 0},                     /* height */ \
@@ -136,76 +142,75 @@ struct sh_css_binary {
 	IA_CSS_BAYER_ORDER_NUM   /* raw_bayer_order */ \
 }
 
-#define DEFAULT_BINARY_SETTINGS \
+#define IA_CSS_BINARY_DEFAULT_SETTINGS \
 { \
 	NULL, \
 	IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY, \
-	DEFAULT_FRAME_INFO, \
-	DEFAULT_FRAME_INFO, \
-	DEFAULT_FRAME_INFO, \
-	DEFAULT_FRAME_INFO, \
-	0,	/* input_buf_vectors */  		\
-	0,	/* deci_factor_log2 */  		\
-	0,	/* dis_deci_factor_log2 */  		\
-	0,	/* vf_downscale_log2 */ 		\
-	0,	/* s3atbl_width */  			\
-	0,	/* s3atbl_height */  			\
-	0,	/* s3atbl_isp_width */  		\
-	0,	/* s3atbl_isp_height */  		\
-	0,	/* morph_tbl_width */  			\
-	0,	/* morph_tbl_aligned_width */  		\
-	0,	/* morph_tbl_height */  		\
-	0,	/* sctbl_width_per_color */  		\
-	0,	/* sctbl_aligned_width_per_color */  	\
-	0,	/* sctbl_height */  			\
-	0,	/* dis_hor_grid_num_3a */  		\
-	0,	/* dis_ver_grid_num_3a */  		\
-	0,	/* dis_hor_grid_num_isp */  		\
-	0,	/* dis_ver_grid_num_isp */  		\
-	0,	/* dis_hor_coef_num_3a */  		\
-	0,	/* dis_ver_coef_num_3a */ 		\
-	0,	/* dis_hor_coef_num_isp */ 		\
-	0,	/* dis_ver_coef_num_isp */ 		\
-	0,	/* dis_hor_proj_num_3a */ 		\
-	0,	/* dis_ver_proj_num_3a */ 		\
-	0,	/* dis_hor_proj_num_isp */ 		\
-	0,	/* dis_ver_proj_num_isp */ 		\
-	{ 0,0 },		/* dvs_envelope_info */			\
-	false,			/* online */				\
-	0, 			/* uds_xc */				\
-	0, 			/* uds_yc */				\
-	0, 			/* left_padding */			\
-	DEFAULT_BINARY_METRICS	/* metrics */				\
+	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
+	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
+	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
+	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
+	0,	/* input_buf_vectors */ \
+	0,	/* deci_factor_log2 */ \
+	0,	/* dis_deci_factor_log2 */ \
+	0,	/* vf_downscale_log2 */ \
+	0,	/* s3atbl_width */ \
+	0,	/* s3atbl_height */ \
+	0,	/* s3atbl_isp_width */ \
+	0,	/* s3atbl_isp_height */ \
+	0,	/* morph_tbl_width */ \
+	0,	/* morph_tbl_aligned_width */ \
+	0,	/* morph_tbl_height */ \
+	0,	/* sctbl_width_per_color */ \
+	0,	/* sctbl_aligned_width_per_color */ \
+	0,	/* sctbl_height */ \
+	0,	/* dis_hor_grid_num_3a */ \
+	0,	/* dis_ver_grid_num_3a */ \
+	0,	/* dis_hor_grid_num_isp */ \
+	0,	/* dis_ver_grid_num_isp */ \
+	0,	/* dis_hor_coef_num_3a */ \
+	0,	/* dis_ver_coef_num_3a */ \
+	0,	/* dis_hor_coef_num_isp */ \
+	0,	/* dis_ver_coef_num_isp */ \
+	0,	/* dis_hor_proj_num_3a */ \
+	0,	/* dis_ver_proj_num_3a */ \
+	0,	/* dis_hor_proj_num_isp */ \
+	0,	/* dis_ver_proj_num_isp */ \
+	{ 0, 0 },/* dvs_envelope_info */ \
+	false,	/* online */ \
+	0,	/* uds_xc */ \
+	0,	/* uds_yc */ \
+	0,	/* left_padding */ \
+	DEFAULT_BINARY_METRICS	/* metrics */ \
 }
 
 enum ia_css_err
-sh_css_init_binary_infos(void);
+ia_css_binary_init_infos(void);
 
 enum ia_css_err
-sh_css_binary_uninit(void);
+ia_css_binary_uninit(void);
 
 enum ia_css_err
-sh_css_fill_binary_info(const struct ia_css_binary_info *info,
+ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		 bool online,
 		 bool two_ppc,
 		 enum ia_css_stream_format stream_format,
 		 const struct ia_css_frame_info *in_info,
+		 const struct ia_css_frame_info *bds_out_info,
 		 const struct ia_css_frame_info *out_info,
 		 const struct ia_css_frame_info *vf_info,
-		 struct sh_css_binary *binary,
+		 struct ia_css_binary *binary,
 		 struct ia_css_resolution *dvs_env);
 
 enum ia_css_err
-sh_css_binary_find(struct sh_css_binary_descr *descr,
-		   struct sh_css_binary *binary);
+ia_css_binary_find(struct ia_css_binary_descr *descr,
+		   struct ia_css_binary *binary);
 
 void
-sh_css_binary_grid_info(const struct sh_css_binary *binary,
+ia_css_binary_grid_info(const struct ia_css_binary *binary,
 			struct ia_css_grid_info *info);
 
 unsigned
-sh_css_max_vf_width(void);
+ia_css_binary_max_vf_width(void);
 
-void sh_css_binary_init(struct sh_css_binary *binary);
-
-#endif /* _SH_CSS_BINARY_H_ */
+#endif /* _IA_CSS_BINARY_H_ */

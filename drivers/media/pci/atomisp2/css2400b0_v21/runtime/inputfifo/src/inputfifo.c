@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -164,7 +164,7 @@ static void inputfifo_send_sol(void)
 		1 << HIVE_STR_TO_MIPI_SOL_BIT);
 
 	_sh_css_fifo_snd(token);
-return;
+	return;
 }
 
 
@@ -187,7 +187,7 @@ static void inputfifo_send_sof(void)
 		1 << HIVE_STR_TO_MIPI_SOF_BIT);
 
 	_sh_css_fifo_snd(token);
-return;
+	return;
 }
 
 
@@ -198,7 +198,7 @@ static void inputfifo_send_eof(void)
 	hrt_data	token = inputfifo_wrap_marker(
 		1 << HIVE_STR_TO_MIPI_EOF_BIT);
 	_sh_css_fifo_snd(token);
-return;
+	return;
 }
 
 
@@ -215,7 +215,7 @@ static void inputfifo_send_ch_id(
 	 */
 	token = inputfifo_wrap_marker(0);
 	_sh_css_fifo_snd(token);
-return;
+	return;
 }
 
 static void inputfifo_send_fmt_type(
@@ -229,7 +229,7 @@ static void inputfifo_send_fmt_type(
 	 */
 	token = inputfifo_wrap_marker(0);
 	_sh_css_fifo_snd(token);
-return;
+	return;
 }
 #endif /*  __ON__ */
 
@@ -249,7 +249,7 @@ void inputfifo_send_ch_id_and_fmt_type( */
 	 */
 	token = inputfifo_wrap_marker(0);
 	_sh_css_fifo_snd(token);
-return;
+	return;
 }
 
 
@@ -259,7 +259,7 @@ static void inputfifo_send_empty_token(void)
 {
 	hrt_data	token = inputfifo_wrap_marker(0);
 	_sh_css_fifo_snd(token);
-return;
+	return;
 }
 
 
@@ -271,7 +271,7 @@ static void inputfifo_start_frame(
 {
 	inputfifo_send_ch_id_and_fmt_type(ch_id, fmt_type);
 	inputfifo_send_sof();
-return;
+	return;
 }
 
 
@@ -283,7 +283,7 @@ static void inputfifo_end_frame(
 	for (i = 0; i < marker_cycles; i++)
 		inputfifo_send_empty_token();
 	inputfifo_send_eof();
-return;
+	return;
 }
 
 
@@ -373,7 +373,7 @@ static void inputfifo_send_line2(
 	for (i = 0; i < hblank_cycles; i++)
 		inputfifo_send_empty_token();
 	inputfifo_send_eol();
-return;
+	return;
 }
 
 
@@ -456,7 +456,7 @@ static void inputfifo_send_frame(
 		}
 	}
 	inputfifo_end_frame(marker_cycles);
-return;
+	return;
 }
 
 
@@ -479,7 +479,7 @@ static enum inputfifo_mipi_data_type inputfifo_determine_type(
 		type =
 			inputfifo_mipi_data_type_rgb;
 	}
-return type;
+	return type;
 }
 
 
@@ -487,7 +487,7 @@ return type;
 static struct inputfifo_instance *inputfifo_get_inst(
 	unsigned int ch_id)
 {
-return &inputfifo_inst_admin[ch_id];
+	return &inputfifo_inst_admin[ch_id];
 }
 
 void ia_css_inputfifo_send_input_frame(
@@ -536,7 +536,7 @@ void ia_css_inputfifo_start_frame(
 	s2mi->streaming = true;
 
 	inputfifo_start_frame(ch_id, s2mi->fmt_type);
-return;
+	return;
 }
 
 
@@ -567,6 +567,27 @@ void ia_css_inputfifo_send_line(
 }
 
 
+void ia_css_inputfifo_send_embedded_line(
+	unsigned int	ch_id,
+	enum ia_css_stream_format	data_type,
+	const unsigned short	*data,
+	unsigned int	width)
+{
+	struct inputfifo_instance *s2mi;
+	unsigned int fmt_type;
+
+	assert(data != NULL);
+	s2mi = inputfifo_get_inst(ch_id);
+	ia_css_isys_convert_stream_format_to_mipi_format(data_type,
+			MIPI_PREDICTOR_NONE, &fmt_type);
+
+	/* Set format_type for metadata line. */
+	inputfifo_curr_fmt_type = fmt_type & _HIVE_ISP_FMT_TYPE_MASK;
+
+	inputfifo_send_line(data, width, s2mi->hblank_cycles, s2mi->marker_cycles,
+			s2mi->two_ppc, inputfifo_mipi_data_type_regular);
+}
+
 
 void ia_css_inputfifo_end_frame(
 	unsigned int	ch_id)
@@ -582,6 +603,6 @@ void ia_css_inputfifo_end_frame(
 	inputfifo_end_frame(s2mi->marker_cycles);
 
 	s2mi->streaming = false;
-return;
+	return;
 }
 #endif /* #if !defined(HAS_NO_INPUT_SYSTEM) */

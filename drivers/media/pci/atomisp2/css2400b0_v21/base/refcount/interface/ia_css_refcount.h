@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -26,7 +26,7 @@
 #define _IA_CSS_REFCOUNT_H_
 
 #include "ia_css.h"
-#include "sh_css_binary.h"
+#include "ia_css_binary.h"
 #include "sh_css_internal.h"
 
 typedef void (*clear_func)(hrt_vaddress ptr);

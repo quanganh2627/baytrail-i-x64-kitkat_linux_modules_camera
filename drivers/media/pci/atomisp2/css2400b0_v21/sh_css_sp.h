@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -28,7 +28,7 @@
 #include "input_formatter.h"
 #endif
 
-#include "sh_css_binary.h"
+#include "ia_css_binary.h"
 #include "sh_css_internal.h"
 #include "ia_css_types.h"
 #include "ia_css_pipeline.h"
@@ -66,15 +66,14 @@ void
 sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			enum ia_css_pipe_id id,
 			uint8_t pipe_num,
-			bool preview_mode,
 			bool xnr,
 			bool two_ppc,
 			bool continuous,
 			bool offline,
 			bool input_needs_raw_binning,
-			bool process_metadata,
 			enum sh_css_pipe_config_override copy_ovrd,
-			enum ia_css_input_mode input_mode
+			enum ia_css_input_mode input_mode,
+			const struct ia_css_metadata_config *md_config
 #if !defined(IS_ISP_2500_SYSTEM)
 			, const mipi_port_ID_t port_id
 #endif

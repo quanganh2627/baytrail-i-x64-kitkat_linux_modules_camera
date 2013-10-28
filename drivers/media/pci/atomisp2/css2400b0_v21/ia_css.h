@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -191,10 +191,11 @@ enum ia_css_frame_format {
 					     height to 1 and the width to the
 					     number of allocated bytes. */
 	IA_CSS_FRAME_FORMAT_MIPI,	/**< MIPI frame, 1 plane */
+	IA_CSS_FRAME_FORMAT_RAW_PACKED, /**< RAW, 1 plane, packed */
 };
 /* This one is hardcoded because the ISP firmware requires it known at
  * compile time (preprocessor time in fact). */
-#define IA_CSS_FRAME_FORMAT_NUM 21
+#define IA_CSS_FRAME_FORMAT_NUM 23
 
 /* We include acc_types.h here because it uses the frame_format enum above.
  * This needs to be fixed, we do not want to have #include statements halfway
@@ -340,8 +341,8 @@ struct ia_css_metadata_config {
 			data. The default value is IA_CSS_STREAM_FORMAT_EMBEDDED. For
 			certain sensors, user can choose non-default data type for embedded
 			data. */
-	unsigned int	size;        /**< Size of metadata in bytes. Set to 0 for
-			no metadata. */
+	unsigned int	size;       /**< Size of metadata in bytes. Set to 0 for no
+			metadata. Currently supported metadata size is up to 256 bytes. */
 };
 
 /** Input stream description. This describes how input will flow into the
@@ -378,8 +379,11 @@ struct ia_css_stream_config {
 					    1, 2 or 4. 0 is used as legacy support. */
 	bool online; /**< offline will activate RAW copy on SP, use this for
 		          continuous capture. */
-	unsigned init_num_cont_raw_buf;
-	unsigned target_num_cont_raw_buf;
+	unsigned init_num_cont_raw_buf; /**< initial number of raw buffers to
+					     allocate */
+	unsigned target_num_cont_raw_buf; /**< total number of raw buffers to
+					     allocate */
+	bool pack_raw_pixels; /**< Pack pixels in the raw buffers */
 	bool continuous; /**< Use SP copy feature to continuously capture frames
 			      to system memory and run pipes in offline mode */
 	int32_t flash_gpio_pin; /**< pin on which the flash is connected, -1 for no flash */
@@ -590,9 +594,11 @@ struct ia_css_pipe_config {
 	/**< mode, indicates which mode the pipe should use. */
 	unsigned int isp_pipe_version;
 	/**< pipe version, indicates which imaging pipeline the pipe should use. */
-	struct ia_css_resolution bin_out_res;
-	/**< binning, used in continuous capture */
 	struct ia_css_resolution bayer_ds_out_res;
+	/**< bayer down scaling */
+	struct ia_css_resolution capt_pp_in_res;
+	/**< bayer down scaling */
+	struct ia_css_resolution vf_pp_in_res;
 	/**< bayer down scaling */
 	struct ia_css_resolution dvs_crop_out_res;
 	/**< dvs crop, video only, not in use yet. Use dvs_envelope below. */
@@ -615,6 +621,10 @@ struct ia_css_pipe_config {
 	/**< For acceleration pipes only: determine how many times the pipe
 	     should be run. Setting this to -1 means it will run until
 	     stopped. */
+	bool enable_dz;
+	/**< Disabling digital zoom for a pipeline, if this is set to false,
+	     then setting a zoom factor will have no effect.
+	     In some use cases this provides better performance. */
 };
 #else
 struct ia_css_pipe_config;
@@ -667,6 +677,13 @@ struct ia_css_fw {
 	unsigned int bytes; /**< length in bytes of firmware data */
 };
 
+enum ia_css_3a_tables {
+	IA_CSS_S3A_TBL_HI,
+	IA_CSS_S3A_TBL_LO,
+	IA_CSS_RGBY_TBL,
+	IA_CSS_NUM_3A_TABLES
+};
+
 /** Structure that holds 3A statistics in the ISP internal
  * format. Use ia_css_get_3a_statistics() to translate
  * this to the format used on the host (3A library).
@@ -684,6 +701,12 @@ struct ia_css_isp_3a_statistics {
 	struct {
 		ia_css_ptr rgby_tbl;
 	} data_hmem;
+};
+
+enum ia_css_dvs_tables {
+	IA_CSS_DVS_HOR_PROJ,
+	IA_CSS_DVS_VER_PROJ,
+	IA_CSS_NUM_DVS_TABLES
 };
 
 /** Structure that holds DVS statistics in the ISP internal
@@ -1654,6 +1677,26 @@ ia_css_stream_send_input_line(const struct ia_css_stream *stream,
 			      const unsigned short *data2,
 			      unsigned int width2);
 
+/** @brief Send a line of input embedded data into the CSS input FIFO.
+ *
+ * @param[in]	stream     Pointer of the stream.
+ * @param[in]	format     Format of the embedded data.
+ * @param[in]	data       Pointer of the embedded data line.
+ * @param[in]	width      The width (in pixels) of the line.
+ *
+ * Sends one embedded data line to input fifo. Start with SoL followed by
+ * width bytes of data, and followed by and EoL.
+ * It will use the two_pixels_per_clock settings as provided with the
+ * ia_css_stream_start_input_frame function call.
+ *
+ * This function blocks until the entire line has been written into the
+ * input FIFO.
+ */
+void
+ia_css_stream_send_input_embedded_line(const struct ia_css_stream *stream,
+			      enum ia_css_stream_format format,
+			      const unsigned short *data,
+			      unsigned int width);
 
 /** @brief End an input frame on the CSS input FIFO.
  *
@@ -1705,6 +1748,8 @@ ia_css_stream_request_flash(struct ia_css_stream *stream);
 /** @brief Configure a stream with filter coefficients.
  *
  * @param[in]	config	The set of filter coefficients.
+ * @param[in]   pipe Pipe to be updated when set isp config, NULL means to
+ *                   update all pipes in the stream. 
  * @return		IA_CSS_SUCCESS or error code upon error.
  *
  * This function configures the filter coefficients for an image
@@ -1715,8 +1760,27 @@ ia_css_stream_request_flash(struct ia_css_stream *stream);
  * resource locking and double buffering is in place to allow for this.
  */
 void
-ia_css_stream_set_isp_config(struct ia_css_stream *stream,
-			     const struct ia_css_isp_config *config);
+ia_css_stream_set_isp_config_on_pipe(struct ia_css_stream *stream,
+			     const struct ia_css_isp_config *config,
+			     struct ia_css_pipe *pipe);
+
+/** @brief Configure a stream with filter coefficients.
+ *
+ * @param[in]	config	The set of filter coefficients.
+ * @return		IA_CSS_SUCCESS or error code upon error.
+ *
+ * This function configures the filter coefficients for an image
+ * stream. For image pipes that do not execute any ISP filters, this
+ * function will have no effect. All pipes of a stream will be updated.
+ * See ::ia_css_stream_set_isp_config_on_pipe() for the per-pipe alternative.
+ * It is safe to call this function while the image stream is running,
+ * in fact this is the expected behavior most of the time. Proper
+ * resource locking and double buffering is in place to allow for this.
+ */
+void
+ia_css_stream_set_isp_config(
+	struct ia_css_stream *stream,
+	const struct ia_css_isp_config *config);
 
 /** @brief Get selected configuration settings
  */

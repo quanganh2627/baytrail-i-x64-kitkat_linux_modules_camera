@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -31,7 +31,7 @@
 /* Pipeline stage to be executed on SP/ISP */
 struct ia_css_pipeline_stage {
 	unsigned int stage_num;
-	struct sh_css_binary *binary;	/* built-in binary */
+	struct ia_css_binary *binary;	/* built-in binary */
 	struct ia_css_binary_info *binary_info;
 	const struct ia_css_fw_info *firmware;	/* acceleration binary */
 	/* SP function for SP stage */
@@ -41,8 +41,6 @@ struct ia_css_pipeline_stage {
 	int mode;
 	bool out_frame_allocated;
 	bool vf_frame_allocated;
-	/* Indicate which buffers require an IRQ */
-	unsigned int irq_buf_flags;
 	/* Parameters for isp memeories, host memory pointers */
 	struct ia_css_host_data isp_mem_params[IA_CSS_NUM_ISP_MEMORIES];
 	struct ia_css_pipeline_stage *next;
@@ -54,19 +52,20 @@ struct ia_css_pipeline {
 	uint8_t pipe_num;
 	bool stop_requested;
 	struct ia_css_pipeline_stage *stages;
-	bool reload;
 	struct ia_css_pipeline_stage *current_stage;
 	unsigned num_stages;
 	struct ia_css_frame in_frame;
 	struct ia_css_frame out_frame;
 	struct ia_css_frame vf_frame;
 	enum ia_css_frame_delay dvs_frame_delay;
-	int acc_num_execs;
+	unsigned inout_port_config;
+	int num_execs;
+	bool acquire_isp_each_stage;
 };
 
 /* Stage descriptor used to create a new stage in the pipeline */
 struct ia_css_pipeline_stage_desc {
-	struct sh_css_binary *binary;
+	struct ia_css_binary *binary;
 	const struct ia_css_fw_info *firmware;
 	enum ia_css_pipeline_stage_sp_func sp_func;
 	unsigned max_input_width;
@@ -132,14 +131,6 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline);
  *
  */
 bool ia_css_pipeline_has_stopped(struct ia_css_pipeline *pipe);
-
-/** @brief restart a pipeline
- *
- * @param[in] pipeline
- * @return    None
- *
- */
-void ia_css_pipeline_restart(struct ia_css_pipeline *pipeline);
 
 /** @brief clean all the stages pipeline and make it as new
  *

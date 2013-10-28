@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,11 +20,16 @@
  *
  */
 
+
 #ifndef __IA_CSS_DP_HOST_H
 #define __IA_CSS_DP_HOST_H
 
+#include "sh_css_params.h"
+
 #include "ia_css_dp_types.h"
 #include "ia_css_dp_param.h"
+
+extern const struct ia_css_dp_config default_dp_config;
 
 void
 ia_css_dp_encode(struct sh_css_isp_dp_params *to,
@@ -32,5 +37,8 @@ ia_css_dp_encode(struct sh_css_isp_dp_params *to,
 
 void
 ia_css_dp_dump(const struct sh_css_isp_dp_params *dp, unsigned level);
+
+void
+ia_css_dp_debug_dtrace(const struct ia_css_dp_config *config, unsigned level);
 
 #endif /* __IA_CSS_DP_HOST_H */

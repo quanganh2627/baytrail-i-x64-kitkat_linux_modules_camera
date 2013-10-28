@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -44,6 +44,8 @@ struct ia_css_fpn_table {
 					This is the input frame height. */
 	uint32_t shift;		/**< Common exponent of table content.
 					u8.0, [0,13] */
+	uint32_t enabled;	/**< Fpn is enabled.
+					bool */
 };
 
 #endif /* __IA_CSS_FPN_TYPES_H */

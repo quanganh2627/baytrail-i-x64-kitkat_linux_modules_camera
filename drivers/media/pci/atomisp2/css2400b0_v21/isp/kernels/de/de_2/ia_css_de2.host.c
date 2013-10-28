@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,8 +23,15 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 #include "ia_css_de2.host.h"
+
+const struct ia_css_ecd_config default_ecd_config = {
+	(1 << (ISP_VEC_ELEMBITS - 1)) * 2 / 3,	/* 2/3 */
+	(1 << (ISP_VEC_ELEMBITS - 1)) - 1,	/* 1.0 */
+	0,					/* 0.0 */
+};
 
 void
 ia_css_ecd_encode(struct sh_css_isp_ecd_params *to,
@@ -37,3 +44,13 @@ ia_css_ecd_encode(struct sh_css_isp_ecd_params *to,
 
 void
 ia_css_ecd_dump(const struct sh_css_isp_ecd_params *ecd, unsigned level);
+
+void
+ia_css_ecd_debug_dtrace(const struct ia_css_ecd_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.zip_strength=%d, "
+		"config.fc_strength=%d, config.fc_debias=%d\n",
+		config->zip_strength,
+		config->fc_strength, config->fc_debias);
+}

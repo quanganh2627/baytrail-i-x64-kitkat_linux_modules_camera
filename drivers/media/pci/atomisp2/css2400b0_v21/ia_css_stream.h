@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -45,12 +45,13 @@ struct ia_css_stream {
 	struct ia_css_isp_parameters  *isp_params_configs;
 	bool                           continuous;
 	bool                           cont_capt;
+	bool						   started;
 };
 
-struct sh_css_binary *
+struct ia_css_binary *
 ia_css_stream_get_dvs_binary(const struct ia_css_stream *stream);
 
-struct sh_css_binary *
+struct ia_css_binary *
 ia_css_stream_get_3a_binary(const struct ia_css_stream *stream);
 
 unsigned int 
@@ -60,7 +61,7 @@ bool
 sh_css_params_set_binning_factor(struct ia_css_stream *stream, unsigned int sensor_binning);
 
 void
-sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit);
+sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct ia_css_pipe *pipe);
 
 void
 sh_css_invalidate_params(struct ia_css_stream *stream);
@@ -71,9 +72,6 @@ ia_css_get_fpn_table(struct ia_css_stream *stream);
 
 struct ia_css_shading_table *
 ia_css_get_shading_table(struct ia_css_stream *stream);
-
-const struct sh_css_isp_params *
-ia_css_get_isp_params(struct ia_css_stream *stream);
 
 void
 ia_css_get_isp_dis_coefficients(struct ia_css_stream *stream,

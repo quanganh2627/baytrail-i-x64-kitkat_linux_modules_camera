@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,8 +23,12 @@
 #ifndef __IA_CSS_OB_HOST_H
 #define __IA_CSS_OB_HOST_H
 
+#include "sh_css_params.h"
+
 #include "ia_css_ob_types.h"
 #include "ia_css_ob_param.h"
+
+extern const struct ia_css_ob_config default_ob_config;
 
 void
 ia_css_ob_configure(struct sh_css_isp_ob_stream_config *config,
@@ -38,9 +42,14 @@ ia_css_ob_encode(struct sh_css_isp_ob_params *to,
 
 void
 ia_css_ob_vmem_encode(struct sh_css_isp_ob_vmem_params *to,
-		      const struct sh_css_isp_ob_params *ob);
+		 const struct ia_css_ob_config *from,
+		 const struct sh_css_isp_ob_stream_config *config);
 
 void
 ia_css_ob_dump(const struct sh_css_isp_ob_params *ob, unsigned level);
+
+void
+ia_css_ob_debug_dtrace(const struct ia_css_ob_config *config, unsigned level)
+;
 
 #endif /* __IA_CSS_OB_HOST_H */

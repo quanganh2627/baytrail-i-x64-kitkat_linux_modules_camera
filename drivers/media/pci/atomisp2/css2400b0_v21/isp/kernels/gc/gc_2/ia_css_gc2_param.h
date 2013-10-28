@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -30,6 +30,26 @@
 #endif
 
 /* Extend GC1 */
-#include "../gc_1.0/ia_css_gc_param.h"
+#include "gc/gc_1.0/ia_css_gc_param.h"
+#include "csc/csc_1.0/ia_css_csc_param.h"
+
+#ifndef PIPE_GENERATION
+#if defined(IS_VAMEM_VERSION_1)
+#define SH_CSS_ISP_RGB_GAMMA_TABLE_SIZE IA_CSS_VAMEM_1_RGB_GAMMA_TABLE_SIZE
+#elif defined(IS_VAMEM_VERSION_2)
+#define SH_CSS_ISP_RGB_GAMMA_TABLE_SIZE IA_CSS_VAMEM_2_RGB_GAMMA_TABLE_SIZE
+#else
+#error "Undefined vamem version"
+#endif
+
+#else
+/* For pipe generation, the size is not relevant */
+#define SH_CSS_ISP_RGB_GAMMA_TABLE_SIZE 0
+#endif
+
+/* This should be vamem_data_t, but that breaks the pipe generator */
+struct sh_css_isp_rgb_gamma_vamem_params {
+	uint16_t gc[SH_CSS_ISP_RGB_GAMMA_TABLE_SIZE];
+};
 
 #endif /* __IA_CSS_GC2_PARAM_H */

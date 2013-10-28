@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,8 +23,20 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 #include "ia_css_cnr2.host.h"
+
+const struct ia_css_cnr_config default_cnr_config = {
+	0,
+	0,
+	100,
+	100,
+	100,
+	50,
+	50,
+	50
+};
 
 void
 ia_css_cnr_encode(struct sh_css_isp_cnr_params *to,
@@ -43,3 +55,16 @@ ia_css_cnr_encode(struct sh_css_isp_cnr_params *to,
 void
 ia_css_cnr_dump(const struct sh_css_isp_cnr_params *cnr, unsigned level);
 
+void
+ia_css_cnr_debug_dtrace(const struct ia_css_cnr_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.coring_u=%d, config.coring_v=%d, "
+		"config.sense_gain_vy=%d, config.sense_gain_hy=%d, "
+		"config.sense_gain_vu=%d, config.sense_gain_hu=%d, "
+		"config.sense_gain_vv=%d, config.sense_gain_hv=%d\n",
+		config->coring_u, config->coring_v,
+		config->sense_gain_vy, config->sense_gain_hy,
+		config->sense_gain_vu, config->sense_gain_hu,
+		config->sense_gain_vv, config->sense_gain_hv);
+}

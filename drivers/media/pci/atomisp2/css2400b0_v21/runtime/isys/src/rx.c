@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -272,12 +272,14 @@ enum ia_css_err ia_css_isys_convert_stream_format_to_mipi_format(
 	case IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY:
 		*fmt_type = MIPI_FORMAT_YUV420_8_LEGACY;
 		break;
+#ifndef USE_INPUT_SYSTEM_VERSION_2401
 	case IA_CSS_STREAM_FORMAT_RAW_16:
 		/* This is not specified by Arasan, so we use
 		 * 17 for now.
 		 */
 		*fmt_type = MIPI_FORMAT_RAW16;
 		break;
+#endif
 #if defined(HAS_RX_VERSION_2)
 	default:
 		if (input_format > (enum ia_css_stream_format)N_MIPI_FORMAT)
