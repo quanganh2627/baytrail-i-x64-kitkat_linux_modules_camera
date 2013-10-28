@@ -378,8 +378,13 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 			 "pipe_config.default_capture_config.capture_mode=%d.\n",
 			 p_config->default_capture_config.mode);
 		dev_dbg(isp->dev,
+#ifndef CSS21
 			 "pipe_config.default_capture_config.enable_capture_pp=%d.\n",
 			 p_config->default_capture_config.enable_capture_pp);
+#else
+			 "pipe_config.enable_dz=%d.\n",
+			 p_config->enable_dz);
+#endif
 		dev_dbg(isp->dev,
 			 "pipe_config.default_capture_config.enable_xnr=%d.\n",
 			 p_config->default_capture_config.enable_xnr);
@@ -411,9 +416,11 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 		dev_dbg(isp->dev,
 			 "pipe_extra_config.disable_vf_pp:%d.\n",
 			 pe_config->disable_vf_pp);
+#ifndef CSS21
 		dev_dbg(isp->dev,
 			 "pipe_extra_config.disable_capture_pp:%d.\n",
 			 pe_config->disable_capture_pp);
+#endif
 	}
 }
 
@@ -526,12 +533,16 @@ static void __apply_additional_pipe_config(
 	/* apply isp 2.2 specific config for baytrail*/
 	switch (pipe_id) {
 	case IA_CSS_PIPE_ID_CAPTURE:
-		/* enable capture pp manually or digital zoom would
+		/* enable capture pp/dz manually or digital zoom would
 		 * fail*/
 		if (asd->stream_env.pipe_configs[pipe_id].
 			default_capture_config.mode != CSS_CAPTURE_MODE_RAW)
 			asd->stream_env.pipe_configs[pipe_id]
+#ifndef CSS21
 			    .default_capture_config.enable_capture_pp = true;
+#else
+			    .enable_dz = true;
+#endif
 		break;
 	case IA_CSS_PIPE_ID_VIDEO:
 		/* enable reduced pipe to have binary
