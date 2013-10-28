@@ -341,10 +341,21 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 			 "pipe_config.output_info w=%d, h=%d.\n",
 			 p_config->output_info.res.width,
 			 p_config->output_info.res.height);
+#ifndef CSS21
 		dev_dbg(isp->dev,
 			 "pipe_config.bin_out w=%d, h=%d.\n",
 			 p_config->bin_out_res.width,
 			 p_config->bin_out_res.height);
+#else
+		dev_dbg(isp->dev,
+			 "pipe_config.vf_pp_in_res w=%d, h=%d.\n",
+			 p_config->vf_pp_in_res.width,
+			 p_config->vf_pp_in_res.height);
+		dev_dbg(isp->dev,
+			 "pipe_config.capt_pp_in_res w=%d, h=%d.\n",
+			 p_config->capt_pp_in_res.width,
+			 p_config->capt_pp_in_res.height);
+#endif /* CSS21 */
 		dev_dbg(isp->dev,
 			 "pipe_config.output.padded w=%d.\n",
 			 p_config->output_info.padded_width);
@@ -1233,6 +1244,7 @@ void atomisp_css_enable_raw_binning(struct atomisp_sub_device *asd,
 	    enable_raw_binning = !!enable;
 	asd->stream_env.update_pipe[IA_CSS_PIPE_ID_PREVIEW] = true;
 	if (enable) {
+#ifndef CSS21
 		asd->stream_env.
 		    pipe_configs[IA_CSS_PIPE_ID_PREVIEW].
 		    bin_out_res.width =
@@ -1243,6 +1255,7 @@ void atomisp_css_enable_raw_binning(struct atomisp_sub_device *asd,
 		    bin_out_res.height =
 		    asd->stream_env.stream_config.
 		    effective_res.height;
+#endif /* CSS21 */
 		asd->stream_env.
 		    pipe_configs[IA_CSS_PIPE_ID_PREVIEW].
 		    output_info.padded_width =
