@@ -1368,6 +1368,9 @@ void atomisp_css_enable_continuous(struct atomisp_sub_device *asd,
 
 	if (asd->stream_env.stream_config.continuous != !!enable) {
 		asd->stream_env.stream_config.continuous = !!enable;
+#ifdef CSS21
+		asd->stream_env.stream_config.pack_raw_pixels = true;
+#endif
 		for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
 			asd->stream_env.update_pipe[i] = true;
 	}
