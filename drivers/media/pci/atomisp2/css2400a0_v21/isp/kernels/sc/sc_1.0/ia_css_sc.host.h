@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,12 +23,14 @@
 #ifndef __IA_CSS_SC_HOST_H
 #define __IA_CSS_SC_HOST_H
 
+#include "sh_css_params.h"
+
 #include "ia_css_sc_types.h"
 #include "ia_css_sc_param.h"
 
 void
 ia_css_sc_encode(struct sh_css_isp_sc_params *to,
-		 const struct ia_css_shading_table *from);
+		 struct ia_css_shading_table **from);
 
 void
 ia_css_sc_dump(const struct sh_css_isp_sc_params *sc, unsigned level);

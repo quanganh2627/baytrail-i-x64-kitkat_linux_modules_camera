@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,11 +20,16 @@
  *
  */
 
+
 #ifndef __IA_CSS_S3A_HOST_H
 #define __IA_CSS_S3A_HOST_H
 
+#include "sh_css_params.h"
+
 #include "ia_css_s3a_types.h"
 #include "ia_css_s3a_param.h"
+
+extern const struct ia_css_3a_config default_3a_config;
 
 void
 ia_css_s3a_configure(unsigned int raw_bit_depth);
@@ -44,5 +49,8 @@ ia_css_af_dump(const struct sh_css_isp_af_params *af, unsigned level);
 
 void
 ia_css_s3a_dump(const struct sh_css_isp_s3a_params *s3a, unsigned level);
+
+void
+ia_css_3a_config_debug_dtrace(const struct ia_css_3a_config *config, unsigned level);
 
 #endif /* __IA_CSS_S3A_HOST_H */

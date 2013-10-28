@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,8 +23,19 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 #include "ia_css_aa2.host.h"
+
+/* YUV Anti-Aliasing configuration. */
+const struct ia_css_aa_config default_aa_config = {
+	8191 /* default should be 0 */
+};
+
+/* Bayer Anti-Aliasing configuration. */
+const struct ia_css_aa_config default_baa_config = {
+	8191 /* default should be 0 */
+};
 
 void
 ia_css_aa_encode(struct sh_css_isp_aa_params *to,
@@ -35,3 +46,12 @@ ia_css_aa_encode(struct sh_css_isp_aa_params *to,
 
 void
 ia_css_aa_dump(const struct sh_css_isp_aa_params *aa, unsigned level);
+
+void
+ia_css_aa_debug_dtrace(const struct ia_css_aa_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.strength=%d\n",
+		config->strength);
+}
+

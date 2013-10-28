@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,12 +23,17 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 #include "ia_css_fpn.host.h"
 
 void
 ia_css_fpn_encode(struct sh_css_isp_fpn_params *to,
-		 const struct ia_css_fpn_table *from);
+		 const struct ia_css_fpn_table *from)
+{
+	to->shift = from->shift;
+	to->enabled = from->data != NULL;
+}
 
 void
 ia_css_fpn_dump(const struct sh_css_isp_fpn_params *fpn, unsigned level)

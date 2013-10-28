@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -24,12 +24,19 @@
 #define _SH_CSS_PARAMS_SHADING_H_
 
 #include "ia_css.h"
-#include "sh_css_binary.h"
+#include "ia_css_binary.h"
 
 void
 prepare_shading_table(const struct ia_css_shading_table *in_table,
 		      unsigned int sensor_binning,
 		      struct ia_css_shading_table **target_table,
-		      const struct sh_css_binary *binary);
+		      const struct ia_css_binary *binary);
 
-#endif
+struct ia_css_shading_table *
+ia_css_shading_table_alloc(unsigned int width, unsigned int height);
+	
+void
+ia_css_shading_table_free(struct ia_css_shading_table *table);
+
+#endif /* _SH_CSS_PARAMS_SHADING_H_ */
+

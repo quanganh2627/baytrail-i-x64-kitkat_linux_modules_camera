@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -48,16 +48,18 @@
 #define IA_CSS_VAMEM_2_XNR_TABLE_SIZE_LOG2      6
 #define IA_CSS_VAMEM_2_XNR_TABLE_SIZE	        (1U<<IA_CSS_VAMEM_2_XNR_TABLE_SIZE_LOG2)
 
+/**< IA_CSS_VAMEM_TYPE_1(ISP2300) or
+     IA_CSS_VAMEM_TYPE_2(ISP2400) */
+union ia_css_xnr_data {
+	uint16_t vamem_1[IA_CSS_VAMEM_1_XNR_TABLE_SIZE];
+	/**< Coefficients table on vamem type1. u0.12, [0,4095] */
+	uint16_t vamem_2[IA_CSS_VAMEM_2_XNR_TABLE_SIZE];
+	/**< Coefficients table on vamem type2. u0.12, [0,4095] */
+};
+
 struct ia_css_xnr_table {
 	enum ia_css_vamem_type vamem_type;
-		/**< IA_CSS_VAMEM_TYPE_1(ISP2300) or
-		     IA_CSS_VAMEM_TYPE_2(ISP2400) */
-	union {
-		uint16_t vamem_1[IA_CSS_VAMEM_1_XNR_TABLE_SIZE];
-		/**< Coefficients table on vamem type1. u0.12, [0,4095] */
-		uint16_t vamem_2[IA_CSS_VAMEM_2_XNR_TABLE_SIZE];
-		/**< Coefficients table on vamem type2. u0.12, [0,4095] */
-	} data;
+	union ia_css_xnr_data data;
 };
 
 /** eXtra Noise Reduction configuration.

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -48,6 +48,6 @@ void sh_css_unload_firmware(void);
 hrt_vaddress sh_css_load_blob(const unsigned char *blob, unsigned size);
 
 enum ia_css_err
-sh_css_load_blob_info(const char *fw, struct ia_css_blob_descr *bd);
+sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia_css_blob_descr *bd);
 
 #endif /* _SH_CSS_FIRMWARE_H_ */

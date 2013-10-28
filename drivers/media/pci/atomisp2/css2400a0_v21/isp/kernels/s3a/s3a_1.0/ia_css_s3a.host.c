@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -24,8 +24,21 @@
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
+#include "assert_support.h"
 
+#include "bh/bh_2/ia_css_bh.host.h"
 #include "ia_css_s3a.host.h"
+
+const struct ia_css_3a_config default_3a_config = {
+	25559,
+	32768,
+	7209,
+	65535,
+	0,
+	65535,
+	{-3344, -6104, -19143, 19143, 6104, 3344, 0},
+	{1027, 0, -9219, 16384, -9219, 1027, 0}
+};
 
 static unsigned int s3a_raw_bit_depth;
 
@@ -86,6 +99,31 @@ ia_css_s3a_encode(struct sh_css_isp_s3a_params *to,
 	ia_css_awb_encode(&to->awb, from);
 	ia_css_af_encode(&to->af,  from);
 }
+
+#if 0
+void
+ia_css_process_s3a(unsigned pipe_id,
+		  const struct ia_css_pipeline_stage *stage,
+		  struct ia_css_isp_parameters *params)
+{
+	short dmem_offset = stage->binary->info->mem_offsets->dmem.s3a;
+
+	assert(params != NULL);
+
+	if (dmem_offset >= 0) {
+		ia_css_s3a_encode((struct sh_css_isp_s3a_params *)
+				&stage->isp_mem_params[IA_CSS_ISP_DMEM0].address[dmem_offset],
+				&params->s3a_config);
+		ia_css_bh_encode((struct sh_css_isp_bh_params *)
+				&stage->isp_mem_params[IA_CSS_ISP_DMEM0].address[dmem_offset],
+				&params->s3a_config);
+		params->isp_params_changed = true;
+		params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM0] = true;
+	}
+
+	params->isp_params_changed = true;
+}
+#endif
 
 void
 ia_css_ae_dump(const struct sh_css_isp_ae_params *ae, unsigned level)
@@ -150,3 +188,16 @@ ia_css_s3a_dump(const struct sh_css_isp_s3a_params *s3a, unsigned level)
 	ia_css_awb_dump (&s3a->awb, level);
 	ia_css_af_dump  (&s3a->af, level);
 }
+
+void
+ia_css_3a_config_debug_dtrace(const struct ia_css_3a_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.ae_y_coef_r=%d, config.ae_y_coef_g=%d, "
+		"config.ae_y_coef_b=%d, config.awb_lg_high_raw=%d, "
+		"config.awb_lg_low=%d, config.awb_lg_high=%d\n",
+		config->ae_y_coef_r, config->ae_y_coef_g,
+		config->ae_y_coef_b, config->awb_lg_high_raw,
+		config->awb_lg_low, config->awb_lg_high);
+}
+

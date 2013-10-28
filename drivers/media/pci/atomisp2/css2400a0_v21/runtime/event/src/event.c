@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -26,7 +26,7 @@
 #include "dma.h"	/* N_DMA_CHANNEL_ID */
 
 #include "ia_css.h"
-#include "sh_css_binary.h"
+#include "ia_css_binary.h"
 #include "sh_css_sp_start.h"
 #include "sh_css_hrt.h"
 #include "sh_css_defs.h"

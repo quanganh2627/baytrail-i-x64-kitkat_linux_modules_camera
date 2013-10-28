@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -24,11 +24,27 @@
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
+#include "assert_support.h"
 
+#include "bnr/bnr_1.0/ia_css_bnr.host.h"
 #include "ia_css_ynr.host.h"
 
+const struct ia_css_nr_config default_nr_config = {
+	16384,
+	8192,
+	1280,
+	0,
+	0
+};
+
+const struct ia_css_ee_config default_ee_config = {
+	8192,
+	128,
+	2048
+};
+
 void
-ia_css_ynr_encode(struct sh_css_isp_ynr_params *to,
+ia_css_nr_encode(struct sh_css_isp_ynr_params *to,
 		  const struct ia_css_nr_config *from)
 {
 	/* YNR (Y Noise Reduction) */
@@ -93,7 +109,7 @@ ia_css_yee_encode(struct sh_css_isp_yee_params *to,
 }
 
 void
-ia_css_ynr_dump(const struct sh_css_isp_ynr_params *ynr, unsigned level)
+ia_css_nr_dump(const struct sh_css_isp_ynr_params *ynr, unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"Y Noise Reduction:\n");
@@ -158,4 +174,25 @@ ia_css_yee_dump(const struct sh_css_isp_yee_params *yee, unsigned level)
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"ynryee_Yclip",
 			yee->Yclip);
+}
+
+void
+ia_css_nr_debug_dtrace(const struct ia_css_nr_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.direction=%d, "
+		"config.bnr_gain=%d, config.ynr_gain=%d, "
+		"config.threshold_cb=%d, config.threshold_cr=%d\n",
+		config->direction,
+		config->bnr_gain, config->ynr_gain,
+		config->threshold_cb, config->threshold_cr);
+}
+
+void
+ia_css_ee_debug_dtrace(const struct ia_css_ee_config *config, unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.gain=%d, config.detail_gain=%d\n",
+		config->threshold,
+		config->gain, config->detail_gain);
 }

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -38,17 +38,19 @@
 #define IA_CSS_VAMEM_2_RGB_GAMMA_TABLE_SIZE_LOG2    8
 #define IA_CSS_VAMEM_2_RGB_GAMMA_TABLE_SIZE     ((1U<<IA_CSS_VAMEM_2_RGB_GAMMA_TABLE_SIZE_LOG2) + 1)
 
+/**< IA_CSS_VAMEM_TYPE_1(ISP2300) or
+     IA_CSS_VAMEM_TYPE_2(ISP2400) */
+union ia_css_rgb_gamma_data {
+	uint16_t vamem_1[IA_CSS_VAMEM_1_RGB_GAMMA_TABLE_SIZE];
+	/**< RGB Gamma table on vamem type1. This table is not used,
+		because sRGB Gamma Correction is not implemented for ISP2300. */
+	uint16_t vamem_2[IA_CSS_VAMEM_2_RGB_GAMMA_TABLE_SIZE];
+		/**< RGB Gamma table on vamem type2. u0.12, [0,4095] */
+};
+
 struct ia_css_rgb_gamma_table {
 	enum ia_css_vamem_type vamem_type;
-		/**< IA_CSS_VAMEM_TYPE_1(ISP2300) or
-		     IA_CSS_VAMEM_TYPE_2(ISP2400) */
-	union {
-		uint16_t vamem_1[IA_CSS_VAMEM_1_RGB_GAMMA_TABLE_SIZE];
-		/**< RGB Gamma table on vamem type1. This table is not used,
-			because sRGB Gamma Correction is not implemented for ISP2300. */
-		uint16_t vamem_2[IA_CSS_VAMEM_2_RGB_GAMMA_TABLE_SIZE];
-		/**< RGB Gamma table on vamem type2. u0.12, [0,4095] */
-	} data;
+	union ia_css_rgb_gamma_data data;
 };
 
 #endif /* __IA_CSS_GC2_TYPES_H */

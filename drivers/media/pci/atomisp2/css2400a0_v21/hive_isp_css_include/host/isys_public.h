@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -24,21 +24,9 @@
 #define __ISYS_PUBLIC_H_INCLUDED__
 
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
-/*
-STORAGE_CLASS_INPUT_SYSTEM_H input_system_err_t input_system_channel_create(
-	input_system_cfg_t	*cfg,
-	input_system_channel_t	*me);
-
-STORAGE_CLASS_INPUT_SYSTEM_H void input_system_channel_destroy(
-	input_system_channel_t	*me);
-
-STORAGE_CLASS_INPUT_SYSTEM_H input_system_err_t input_system_input_port_create(
-	input_system_cfg_t		*cfg,
-	input_system_input_port_t	*me);
-
-STORAGE_CLASS_INPUT_SYSTEM_H void input_system_input_port_destroy(
-	input_system_input_port_t	*me);
-*/
+STORAGE_CLASS_INPUT_SYSTEM_H input_system_err_t input_system_get_state(
+	const input_system_ID_t	ID,
+	input_system_state_t *state);
 #endif /* USE_INPUT_SYSTEM_VERSION_2401 */
 
 #endif /* __ISYS_PUBLIC_H_INCLUDED__ */

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -70,6 +70,7 @@
 struct ia_css_blob_info {
 	/**< Static blob data */
 	uint32_t offset;		/**< Blob offset in fw file */
+	uint32_t memory_offset;  /**< offset wrt hdr in bytes */
 	uint32_t prog_name_offset;  /**< offset wrt hdr in bytes */
 	uint32_t size;			/**< Size of blob */
 	uint32_t padding_size;	/**< total cummulative of bytes added due to section alignment */
@@ -122,6 +123,10 @@ enum ia_css_isp_memories {
 	N_IA_CSS_ISP_MEMORIES
 };
 
+/* Short hands */
+#define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
+#define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
+
 #define IA_CSS_NUM_ISP_MEMORIES 7
 
 #elif defined(IS_ISP_2500_SYSTEM)
@@ -160,6 +165,11 @@ struct ia_css_host_data {
 
 struct ia_css_blob_descr;
 
+/** Offsets for ISP kernel parameters per isp memory.
+ * Only relevant for standard ISP binaries, not ACC or SP.
+ */
+struct ia_css_memory_offsets;
+
 struct ia_css_channel_descr {
 	uint8_t		channel;  /* Dma channel used */
 	uint8_t		height;   /* Buffer height */
@@ -169,14 +179,13 @@ struct ia_css_channel_descr {
 /** Structure describing an ISP binary.
  * It describes the capabilities of a binary, like the maximum resolution,
  * support features, dma channels, uds features, etc.
+ * This part is to be used by the SP.
+ * Future refactoring should move binary properties to ia_css_binary_xinfo,
+ * thereby making the SP code more binary independent.
  */
 struct ia_css_binary_info {
 	CSS_ALIGN(uint32_t	id, 8); /* IA_CSS_BINARY_ID_* */
 	uint32_t		mode;
-	enum ia_css_acc_type	 type;
-	CSS_ALIGN(const struct ia_css_blob_descr   *blob, 8);
-	CSS_ALIGN(int32_t  num_output_formats, 8);
-	enum ia_css_frame_format output_formats[IA_CSS_FRAME_FORMAT_NUM];
 	uint32_t		supported_bds_factors;
 	uint32_t		min_input_width;
 	uint32_t		min_input_height;
@@ -198,54 +207,42 @@ struct ia_css_binary_info {
 	uint32_t		left_cropping;
 	uint32_t		s3atbl_use_dmem;
 	int32_t			input;
-	ia_css_ptr		xmem_addr;
 	uint32_t		c_subsampling;
 	uint32_t		output_num_chunks;
 	uint32_t		num_stripes;
 	uint32_t		pipelining;
 	uint32_t		fixed_s3a_deci_log;
-	uint32_t		isp_addresses; /* Address in ISP dmem */
-	uint32_t		main_entry;    /* Address of entry fct */
-	uint32_t		in_frame;  /* Address in ISP dmem */
-	uint32_t		out_frame; /* Address in ISP dmem */
-	uint32_t		in_data;  /* Address in ISP dmem */
-	uint32_t		out_data; /* Address in ISP dmem */
-	uint8_t			block_width;
-	uint8_t			block_height;
-	uint8_t			output_block_height;
-	uint8_t			num_output_pins;
+	uint32_t		isp_addresses;	/* Address in ISP dmem */
+	uint32_t		main_entry;	/* Address of entry fct */
+	uint32_t		in_frame;	/* Address in ISP dmem */
+	uint32_t		out_frame;	/* Address in ISP dmem */
+	uint32_t		in_data;	/* Address in ISP dmem */
+	uint32_t		out_data;	/* Address in ISP dmem */
+	uint32_t		block_width;
+	uint32_t		block_height;
+	uint32_t		output_block_height;
 	uint32_t		dvs_in_block_width;
 	uint32_t		dvs_in_block_height;
 	struct ia_css_isp_data	mem_initializers[IA_CSS_NUM_ISP_MEMORIES];
 	uint32_t		sh_dma_cmd_ptr;     /* In ISP dmem */
 	uint32_t		isp_pipe_version;
-	struct {
-		uint8_t	xnr;   /* enum sh_css_isp_memories */
-		uint8_t	r_gamma; /* enum sh_css_isp_memories */
-		uint8_t	g_gamma; /* enum sh_css_isp_memories */
-		uint8_t	b_gamma; /* enum sh_css_isp_memories */
-		uint8_t	rgby; /* enum sh_css_isp_memories */
-	} memories;
-	struct {
-		uint16_t ob;   /* offset in isp_vmem_parameters */
-	} vmem_offsets;
-	struct {
-		uint16_t ctc;   /* offset in isp_vamem0_parameters */
-	} vamem0_offsets;
-	struct {
-		uint16_t gc;   /* offset in isp_vamem1_parameters */
-	} vamem1_offsets;
 /* MW: Packing (related) bools in an integer ?? */
 	struct {
 #if defined(IS_ISP_2500_SYSTEM)
+		uint8_t	input_feeder;
 		uint8_t	obgrid;
 		uint8_t	lin;
+		uint8_t	dpc_acc;
+		uint8_t	dpc_ff;
+		uint8_t	bds_acc;
 		uint8_t	shd_acc;
 		uint8_t	shd_ff;
 		uint8_t	stats_3a_raw_buffer;
 		uint8_t	acc_bayer_denoise;
 		uint8_t	bnr_ff;
 		uint8_t	awb_acc;
+		uint8_t	awb_fr_acc;
+		uint8_t	anr_acc;
 		uint8_t	rgbpp_acc;
 		uint8_t	demosaic_acc;
 		uint8_t	demosaic_ff;
@@ -258,6 +255,7 @@ struct ia_css_binary_info {
 		uint8_t	high_quality;
 		uint8_t	kerneltest;
 		uint8_t	bayer_output;
+		uint8_t	routing_bnr_to_anr;
 #endif
 		uint8_t	reduced_pipe;
 		uint8_t	vf_veceven;
@@ -277,7 +275,6 @@ struct ia_css_binary_info {
 		uint8_t	sc;
 		uint8_t	dis_crop;
 		uint8_t	macc;
-		uint8_t	ss;
 		uint8_t	output;
 		uint8_t	ref_frame;
 		uint8_t	tnr;
@@ -292,7 +289,7 @@ struct ia_css_binary_info {
 		uint8_t	out_frame;
 		uint8_t	high_speed;
 		uint8_t	input_chunking;
-		uint8_t padding[1];
+		uint8_t padding[2];
 	} enable;
 	struct {
 /* DMA channel ID: [0,...,HIVE_ISP_NUM_DMA_CHANNELS> */
@@ -330,8 +327,26 @@ struct ia_css_binary_info {
 		uint16_t	vmem_gdc_in_block_height_c;
 		/* uint16_t padding; */
 	} uds;
-	uint32_t	blob_index;
-	CSS_ALIGN(struct ia_css_binary_info *next, 8);
+};
+
+/** Structure describing an ISP binary.
+ * It describes the capabilities of a binary, like the maximum resolution,
+ * support features, dma channels, uds features, etc.
+ */
+struct ia_css_binary_xinfo {
+	/* Part that is of interest to the SP. */
+	struct ia_css_binary_info    sp;
+	
+	/* Rest of the binary info, only interesting to the host. */
+	enum ia_css_acc_type	     type;
+	CSS_ALIGN(int32_t	     num_output_formats, 8);
+	enum ia_css_frame_format     output_formats[IA_CSS_FRAME_FORMAT_NUM];
+	uint8_t			     num_output_pins;
+	ia_css_ptr		     xmem_addr;
+	CSS_ALIGN(const struct ia_css_blob_descr *blob,  8);
+	uint32_t		     blob_index;
+	const struct ia_css_memory_offsets *mem_offsets;
+	CSS_ALIGN(struct ia_css_binary_xinfo *next, 8);
 };
 
 /** Structure describing the SP binary.
@@ -351,8 +366,6 @@ struct ia_css_sp_info {
 	uint32_t sleep_mode;  /**< different mode to halt SP */
 	uint32_t invalidate_tlb;		/**< inform SP to invalidate mmu TLB */
 	uint32_t stop_copy_preview;	/**< suspend copy and preview pipe when capture */
-	uint32_t copy_pack;	/**< use packed memory layout for raw data */
-	uint32_t pack_bits;	/**< use packed memory layout for raw data */
 	uint32_t debug_buffer_ddr_address;	/**< inform SP the address
 	of DDR debug queue */
 	uint32_t perf_counter_input_system_error; /**< input system perf
@@ -379,7 +392,7 @@ struct ia_css_acc_info {
 /** Firmware information.
  */
 union ia_css_fw_union {
-	struct ia_css_binary_info	isp; /**< ISP info */
+	struct ia_css_binary_xinfo	isp; /**< ISP info */
 	struct ia_css_sp_info		sp;  /**< SP info */
 	struct ia_css_sp_info		sp1;  /**< SP info */
 	struct ia_css_acc_info		acc; /**< Accelerator info */
@@ -407,6 +420,7 @@ struct ia_css_blob_descr {
 	const unsigned char  *blob;
 	struct ia_css_fw_info header;
 	const char	     *name;
+	const struct ia_css_memory_offsets *mem_offsets;
 };
 
 struct ia_css_acc_fw;
@@ -477,7 +491,9 @@ struct ia_css_acc_fw {
 #define IA_CSS_ACC_ISP_SIZE(f)     ((f)->header.isp_size)
 
 /* Binary name follows header immediately */
-#define IA_CSS_EXT_ISP_PROG_NAME(f) ((const char *)(f)+sizeof(*f))
+#define IA_CSS_EXT_ISP_PROG_NAME(f)   ((const char *)(f)+(f)->blob.prog_name_offset)
+#define IA_CSS_EXT_ISP_MEM_OFFSETS(f) \
+	((const struct ia_css_memory_offsets *)((const char *)(f)+(f)->blob.mem_offsets))
 
 /** Structure to encapsulate required arguments for
  * initialization of SP DMEM using the SP itself

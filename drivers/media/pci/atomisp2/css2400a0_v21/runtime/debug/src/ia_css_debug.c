@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -31,6 +31,8 @@
 #include "ia_css_pipeline.h"
 #include "sh_css_params.h"
 
+#include HRTSTR(ia_css_isp_params.SYSTEM.h)
+
 #include "assert_support.h"
 #include "print_support.h"
 #if !defined(__KERNEL__) && !defined(_MSC_VER)
@@ -47,7 +49,7 @@
 #include "sp.h"
 #include "isp.h"
 #include "mmu_device.h"
-#if defined(HAS_INPUT_FORMATTER_VERSION_2)
+#if defined(HAS_INPUT_FORMATTER_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 #include "input_system.h"	/* input_formatter_reg_load */
 #include "gp_device.h"		/* gp_device_reg_load */
 #endif
@@ -58,7 +60,6 @@
 #include "ia_css_isys.h"
 #endif
 #include "sh_css_sp.h"		/* sh_css_sp_get_debug_state() */
-#include "pipeline.h"
 
 /* Include all kernel host interfaces for ISP1 */
 #include "anr/anr_1.0/ia_css_anr.host.h"
@@ -115,7 +116,9 @@ static const char *format2str[] = {
 	/*[IA_CSS_FRAME_FORMAT_RGBA888]       = */ "RGBA888",
 	/*[IA_CSS_FRAME_FORMAT_QPLANE6]       = */ "QPLANE6",
 	/*[IA_CSS_FRAME_FORMAT_BINARY_8]      = */ "BINARY_8",
-	/*[N_IA_CSS_FRAME_FORMAT]             =*/ "INVALID"
+	/*[IA_CSS_FRAME_FORMAT_MIPI]          = */ "MIPI",
+	/*[IA_CSS_FRAME_FORMAT_RAW_PACKED]    = */ "RAW_PACKED",
+	/*[N_IA_CSS_FRAME_FORMAT]             = */ "INVALID"
 };
 
 /* Assumes that IA_CSS_STREAM_FORMAT_BINARY_8 is last */
@@ -996,29 +999,29 @@ void ia_css_debug_dump_all_fifo_state(void)
 	return;
 }
 
-static void debug_binary_info_print(const struct ia_css_binary_info *info)
+static void debug_binary_info_print(const struct ia_css_binary_xinfo *info)
 {
 	assert(info != NULL);
-	ia_css_debug_dtrace(2, "id = %d\n", info->id);
-	ia_css_debug_dtrace(2, "mode = %d\n", info->mode);
-	ia_css_debug_dtrace(2, "max_input_width = %d\n", info->max_input_width);
+	ia_css_debug_dtrace(2, "id = %d\n", info->sp.id);
+	ia_css_debug_dtrace(2, "mode = %d\n", info->sp.mode);
+	ia_css_debug_dtrace(2, "max_input_width = %d\n", info->sp.max_input_width);
 	ia_css_debug_dtrace(2, "min_output_width = %d\n",
-			    info->min_output_width);
+			    info->sp.min_output_width);
 	ia_css_debug_dtrace(2, "max_output_width = %d\n",
-			    info->max_output_width);
-	ia_css_debug_dtrace(2, "top_cropping = %d\n", info->top_cropping);
-	ia_css_debug_dtrace(2, "left_cropping = %d\n", info->left_cropping);
+			    info->sp.max_output_width);
+	ia_css_debug_dtrace(2, "top_cropping = %d\n", info->sp.top_cropping);
+	ia_css_debug_dtrace(2, "left_cropping = %d\n", info->sp.left_cropping);
 	ia_css_debug_dtrace(2, "xmem_addr = %d\n", info->xmem_addr);
 	ia_css_debug_dtrace(2, "enable_vf_veceven = %d\n",
-			    info->enable.vf_veceven);
-	ia_css_debug_dtrace(2, "enable_dis = %d\n", info->enable.dis);
-	ia_css_debug_dtrace(2, "enable_uds = %d\n", info->enable.uds);
-	ia_css_debug_dtrace(2, "enable ds = %d\n", info->enable.ds);
-	ia_css_debug_dtrace(2, "s3atbl_use_dmem = %d\n", info->s3atbl_use_dmem);
+			    info->sp.enable.vf_veceven);
+	ia_css_debug_dtrace(2, "enable_dis = %d\n", info->sp.enable.dis);
+	ia_css_debug_dtrace(2, "enable_uds = %d\n", info->sp.enable.uds);
+	ia_css_debug_dtrace(2, "enable ds = %d\n", info->sp.enable.ds);
+	ia_css_debug_dtrace(2, "s3atbl_use_dmem = %d\n", info->sp.s3atbl_use_dmem);
 	return;
 }
 
-void ia_css_debug_binary_print(const struct sh_css_binary *bi)
+void ia_css_debug_binary_print(const struct ia_css_binary *bi)
 {
 	debug_binary_info_print(bi->info);
 	ia_css_debug_dtrace(2,
@@ -1112,6 +1115,10 @@ void ia_css_debug_frame_print(const struct ia_css_frame *frame,
 				    data + frame->planes.yuv.u.offset);
 		ia_css_debug_dtrace(2, "  V = %p\n",
 				    data + frame->planes.yuv.v.offset);
+		break;
+	case IA_CSS_FRAME_FORMAT_RAW_PACKED:
+		ia_css_debug_dtrace(2, "  RAW PACKED = %p\n",
+				    data + frame->planes.raw.offset);
 		break;
 	case IA_CSS_FRAME_FORMAT_RAW:
 		ia_css_debug_dtrace(2, "  RAW = %p\n",
@@ -1318,14 +1325,14 @@ void ia_css_debug_print_sp_debug_state(const struct sh_css_sp_debug_state
 				    state->if_cropped_width);
 	}
 
-	if ((last_index + SH_CSS_SP_DEBUG_TRACE_DEPTH) < sp_index) {
+	if ((last_index + SH_CSS_SP_DBG_TRACE_DEPTH) < sp_index) {
 		/* last index can be multiple rounds behind */
-		/* while trace size is only SH_CSS_SP_DEBUG_TRACE_DEPTH */
-		last_index = sp_index - SH_CSS_SP_DEBUG_TRACE_DEPTH;
+		/* while trace size is only SH_CSS_SP_DBG_TRACE_DEPTH */
+		last_index = sp_index - SH_CSS_SP_DBG_TRACE_DEPTH;
 	}
 
 	for (n = last_index; n < sp_index; n++) {
-		int i = n % SH_CSS_SP_DEBUG_TRACE_DEPTH;
+		int i = n % SH_CSS_SP_DBG_TRACE_DEPTH;
 		if (state->trace[i].frame != 0) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
 					    "copy-trace: frame=%d, line=%d, "
@@ -1362,26 +1369,26 @@ void ia_css_debug_print_sp_debug_state(const struct sh_css_sp_debug_state
 	};
 
 #if 1
-	/* Example SH_CSS_SP_DEBUG_NR_OF_TRACES==1 */
+	/* Example SH_CSS_SP_DBG_NR_OF_TRACES==1 */
 	/* Adjust this to your trace case */
-	static char const *trace_name[SH_CSS_SP_DEBUG_NR_OF_TRACES] = {
+	static char const *trace_name[SH_CSS_SP_DBG_NR_OF_TRACES] = {
 		"default"
 	};
 #else
-	/* Example SH_CSS_SP_DEBUG_NR_OF_TRACES==4 */
+	/* Example SH_CSS_SP_DBG_NR_OF_TRACES==4 */
 	/* Adjust this to your trace case */
-	static char const *trace_name[SH_CSS_SP_DEBUG_NR_OF_TRACES] = {
+	static char const *trace_name[SH_CSS_SP_DBG_NR_OF_TRACES] = {
 		"copy", "preview/video", "capture", "acceleration"
 	};
 #endif
 
 	/* Remember host_index_last because we only want to print new entries */
-	static int host_index_last[SH_CSS_SP_DEBUG_NR_OF_TRACES] = { 0 };
+	static int host_index_last[SH_CSS_SP_DBG_NR_OF_TRACES] = { 0 };
 	int t, n;
 
 	assert(state != NULL);
 
-	for (t = 0; t < SH_CSS_SP_DEBUG_NR_OF_TRACES; t++) {
+	for (t = 0; t < SH_CSS_SP_DBG_NR_OF_TRACES; t++) {
 		int sp_index_last = state->index_last[t];
 
 		if (sp_index_last < host_index_last[t]) {
@@ -1389,28 +1396,28 @@ void ia_css_debug_print_sp_debug_state(const struct sh_css_sp_debug_state
 			host_index_last[t] = 0;
 		}
 
-		if ((host_index_last[t] + SH_CSS_SP_DEBUG_TRACE_DEPTH) <
+		if ((host_index_last[t] + SH_CSS_SP_DBG_TRACE_DEPTH) <
 		    sp_index_last) {
 			/* last index can be multiple rounds behind */
-			/* while trace size is only SH_CSS_SP_DEBUG_TRACE_DEPTH */
+			/* while trace size is only SH_CSS_SP_DBG_TRACE_DEPTH */
 			ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
 					    "Warning: trace %s has gap of %d "
 					    "traces\n",
 					    trace_name[t],
 					    (sp_index_last -
 					     (host_index_last[t] +
-					      SH_CSS_SP_DEBUG_TRACE_DEPTH)));
+					      SH_CSS_SP_DBG_TRACE_DEPTH)));
 
 			host_index_last[t] =
-			    sp_index_last - SH_CSS_SP_DEBUG_TRACE_DEPTH;
+			    sp_index_last - SH_CSS_SP_DBG_TRACE_DEPTH;
 		}
 
 		for (n = host_index_last[t]; n < sp_index_last; n++) {
-			int i = n % SH_CSS_SP_DEBUG_TRACE_DEPTH;
+			int i = n % SH_CSS_SP_DBG_TRACE_DEPTH;
 			int l = state->trace[t][i].location &
-			    ((1 << SH_CSS_SP_DEBUG_TRACE_FILE_ID_BIT_POS) - 1);
+			    ((1 << SH_CSS_SP_DBG_TRACE_FILE_ID_BIT_POS) - 1);
 			int fid = state->trace[t][i].location >>
-			    SH_CSS_SP_DEBUG_TRACE_FILE_ID_BIT_POS;
+			    SH_CSS_SP_DBG_TRACE_FILE_ID_BIT_POS;
 			int ts = state->trace[t][i].time_stamp;
 
 			if (ts) {
@@ -1663,7 +1670,7 @@ void ia_css_debug_dump_sp_sw_debug_info(void)
 	struct sh_css_sp_debug_state state;
 
 	sh_css_sp_get_debug_state(&state);
-	sh_css_print_sp_debug_state(&state);
+	ia_css_debug_print_sp_debug_state(&state);
 #endif
 	return;
 }
@@ -1928,6 +1935,13 @@ void ia_css_debug_dump_isys_state(void)
 	return;
 }
 #endif
+#if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
+void ia_css_debug_dump_isys_state(void)
+{
+	input_system_state_t state;
+	input_system_get_state(INPUT_SYSTEM0_ID, &state);
+}
+#endif
 
 void ia_css_debug_dump_debug_info(const char *context)
 {
@@ -1982,6 +1996,9 @@ void ia_css_debug_dump_debug_info(const char *context)
 				    state.irq_level_not_pulse);
 	}
 #endif
+#if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
+	ia_css_debug_dump_isys_state();
+#endif
 	return;
 }
 
@@ -2010,109 +2027,129 @@ void ia_css_debug_wake_up_sp(void)
 	sp_ctrl_setbit(SP0_ID, SP_SC_REG, SP_START_BIT);
 }
 
+#if !defined(IS_ISP_2500_SYSTEM)
+#define FIND_DMEM_PARAMS_TYPE(stream, kernel, type) \
+  (struct HRTCAT(HRTCAT(sh_css_isp_,type),_params) *) \
+  findf_dmem_params(stream, offsetof(struct ia_css_memory_offsets, dmem.kernel))
+
+#define FIND_DMEM_PARAMS(stream, kernel) \
+  FIND_DMEM_PARAMS_TYPE(stream, kernel, kernel)
+
+/* Find a stage that support the kernel and return the parameters for that kernel */
+static char *
+findf_dmem_params(struct ia_css_stream *stream, short idx)
+{
+	int i;
+	for (i = 0; i < stream->num_pipes; i++) {
+		struct ia_css_pipe *pipe = stream->pipes[i];
+		struct ia_css_pipeline *pipeline = ia_css_pipe_get_pipeline(pipe);
+		struct ia_css_pipeline_stage *stage;
+		for (stage = pipeline->stages; stage; stage = stage->next) {
+			short *offsets = (short*)&stage->binary->info->mem_offsets->dmem;
+			short dmem_offset = offsets[idx];
+			if (dmem_offset < 0) continue;
+			return &stage->isp_mem_params[IA_CSS_ISP_DMEM0].address[dmem_offset];
+		}
+	}
+	return NULL;
+}
+#endif
+
 void ia_css_debug_dump_isp_params(struct ia_css_stream *stream,
 				  unsigned int enable)
 {
-#if !defined(IS_ISP_2500_SYSTEM)
-	const struct sh_css_isp_params *isp_params =
-	    ia_css_get_isp_params(stream);
-#else
+#if defined(IS_ISP_2500_SYSTEM)
 	(void)enable;
 	(void)stream;
 #endif
 
 	assert(stream != NULL);
-#if !defined(IS_ISP_2500_SYSTEM)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "ISP PARAMETERS:\n");
+#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_FPN)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
-				    "Fixed Pattern Noise Reduction:\n");
-		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "\t%-32s = %d\n",
-				    "fpn_shift", isp_params->fpn.shift);
-		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "\t%-32s = %d\n",
-				    "fpn_enabled", isp_params->fpn.enabled);
+		ia_css_fpn_dump(FIND_DMEM_PARAMS(stream, fpn), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_OB)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_ob_dump(&isp_params->ob, IA_CSS_DEBUG_VERBOSE);
+		ia_css_ob_dump(FIND_DMEM_PARAMS(stream, ob), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_SC)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_sc_dump(&isp_params->sc, IA_CSS_DEBUG_VERBOSE);
+		ia_css_sc_dump(FIND_DMEM_PARAMS(stream, sc), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_WB)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_wb_dump(&isp_params->wb, IA_CSS_DEBUG_VERBOSE);
+		ia_css_wb_dump(FIND_DMEM_PARAMS(stream, wb), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_DP)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_dp_dump(&isp_params->dp, IA_CSS_DEBUG_VERBOSE);
+		ia_css_dp_dump(FIND_DMEM_PARAMS(stream, dp), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_BNR)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_bnr_dump(&isp_params->bnr, IA_CSS_DEBUG_VERBOSE);
+		ia_css_bnr_dump(FIND_DMEM_PARAMS(stream, bnr), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_S3A)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_s3a_dump(&isp_params->s3a, IA_CSS_DEBUG_VERBOSE);
+		ia_css_s3a_dump(FIND_DMEM_PARAMS(stream, s3a), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_DE)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_de_dump(&isp_params->de, IA_CSS_DEBUG_VERBOSE);
+		ia_css_de_dump(FIND_DMEM_PARAMS(stream, de), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_YNR)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_ynr_dump(&isp_params->ynr, IA_CSS_DEBUG_VERBOSE);
-		ia_css_yee_dump(&isp_params->yee, IA_CSS_DEBUG_VERBOSE);
+		ia_css_nr_dump(FIND_DMEM_PARAMS_TYPE(stream, nr, ynr),  IA_CSS_DEBUG_VERBOSE);
+		ia_css_yee_dump(FIND_DMEM_PARAMS(stream, yee), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_CSC)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_csc_dump(&isp_params->csc, IA_CSS_DEBUG_VERBOSE);
-		ia_css_yuv2rgb_dump(&isp_params->yuv2rgb, IA_CSS_DEBUG_VERBOSE);
-		ia_css_rgb2yuv_dump(&isp_params->rgb2yuv, IA_CSS_DEBUG_VERBOSE);
+		ia_css_csc_dump(FIND_DMEM_PARAMS(stream, csc), IA_CSS_DEBUG_VERBOSE);
+		ia_css_yuv2rgb_dump(FIND_DMEM_PARAMS_TYPE(stream, yuv2rgb, csc), IA_CSS_DEBUG_VERBOSE);
+		ia_css_rgb2yuv_dump(FIND_DMEM_PARAMS_TYPE(stream, rgb2yuv, csc), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_GC)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_gc_dump(&isp_params->gc, IA_CSS_DEBUG_VERBOSE);
+		ia_css_gc_dump(FIND_DMEM_PARAMS(stream, gc), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_TNR)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_tnr_dump(&isp_params->tnr, IA_CSS_DEBUG_VERBOSE);
+		ia_css_tnr_dump(FIND_DMEM_PARAMS(stream, tnr), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_ANR)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_anr_dump(&isp_params->anr, IA_CSS_DEBUG_VERBOSE);
+		ia_css_anr_dump(FIND_DMEM_PARAMS(stream, anr), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_CE)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
-		ia_css_ce_dump(&isp_params->ce, IA_CSS_DEBUG_VERBOSE);
+		ia_css_ce_dump(FIND_DMEM_PARAMS(stream, ce), IA_CSS_DEBUG_VERBOSE);
 	}
 #endif
 }
@@ -2152,8 +2189,8 @@ void ia_css_debug_dump_isp_binary(void)
 {
 	const struct ia_css_fw_info *fw;
 	unsigned int HIVE_ADDR_pipeline_sp_curr_binary_id;
-	int32_t curr_binary_id;
-	static int32_t prev_binary_id = -1;
+	uint32_t curr_binary_id;
+	static uint32_t prev_binary_id = 0xFFFFFFFF;
 	static uint32_t sample_count = 0;
 
 	fw = &sh_css_sp_fw;
@@ -2182,22 +2219,22 @@ void ia_css_debug_dump_isp_binary(void)
 
 void ia_css_debug_dump_perf_counters(void)
 {
-#if !defined(HAS_NO_INPUT_SYSTEM)
+#if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
 	const struct ia_css_fw_info *fw;
 	int i;
-	unsigned int HIVE_ADDR_ia_css_isys_sp_token_error_cnt;
+	unsigned int HIVE_ADDR_ia_css_isys_sp_error_cnt;
 	int32_t ia_css_sp_input_system_error_cnt[N_MIPI_PORT_ID];
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "Input System Error Counters:\n");
 
 	fw = &sh_css_sp_fw;
-	HIVE_ADDR_ia_css_isys_sp_token_error_cnt =
+	HIVE_ADDR_ia_css_isys_sp_error_cnt =
 	    fw->info.sp.perf_counter_input_system_error;
 
-	(void)HIVE_ADDR_ia_css_isys_sp_token_error_cnt;
+	(void)HIVE_ADDR_ia_css_isys_sp_error_cnt;
 
 	sp_dmem_load(SP0_ID,
-		     (unsigned int)sp_address_of(ia_css_isys_sp_token_error_cnt),
+		     (unsigned int)sp_address_of(ia_css_isys_sp_error_cnt),
 		     &ia_css_sp_input_system_error_cnt,
 		     sizeof(ia_css_sp_input_system_error_cnt));
 
@@ -2524,8 +2561,8 @@ ia_css_debug_pipe_graph_dump_stage(
 
 	if (stage->binary) {
 		bin_type = "binary";
-		if (stage->binary_info->blob)
-			blob_name = stage->binary_info->blob->name;
+		if (stage->binary->info->blob)
+			blob_name = stage->binary->info->blob->name;
 	} else if (stage->firmware) {
 		bin_type = "firmware";
 		blob_name =
@@ -2564,9 +2601,8 @@ ia_css_debug_pipe_graph_dump_stage(
 			);
 
 		snprintf( enable_info2, sizeof(enable_info2),
-			"%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+			"%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 			bi->enable.macc ?		"macc," : "",
-			bi->enable.ss ?			"ss," : "",
 			bi->enable.output ?		"outp," : "",
 			bi->enable.ref_frame ?		"reff," : "",
 			bi->enable.tnr ?		"tnr," : "",

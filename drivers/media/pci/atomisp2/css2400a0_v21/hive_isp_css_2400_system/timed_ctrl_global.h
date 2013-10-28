@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131001_0952 */
+/* Release Version: ci_master_20131024_0113 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -27,7 +27,13 @@
 
 #include <timed_controller_defs.h>
 
-/* order of the input bits for the timed controller */
+/**
+ * Order of the input bits for the timed controller taken from
+ * ISP_CSS_2401 System Architecture Description valid for
+ * 2400, 2400A0 and 2401.
+ *
+ * Check for other systems.
+ */
 #define HIVE_TIMED_CTRL_GPIO_PIN_0_BIT_ID                       0
 #define HIVE_TIMED_CTRL_GPIO_PIN_1_BIT_ID                       1
 #define HIVE_TIMED_CTRL_GPIO_PIN_2_BIT_ID                       2
@@ -38,22 +44,21 @@
 #define HIVE_TIMED_CTRL_GPIO_PIN_7_BIT_ID                       7
 #define HIVE_TIMED_CTRL_GPIO_PIN_8_BIT_ID                       8
 #define HIVE_TIMED_CTRL_GPIO_PIN_9_BIT_ID                       9
-#define HIVE_TIMED_CTRL_SP_BIT_ID                              10
-#define HIVE_TIMED_CTRL_ISP_BIT_ID                             11
-#define HIVE_TIMED_CTRL_MIPI_RCV_IRQ_BIT_ID                    12
-#define HIVE_TIMED_CTRL_IFMT_BIT_ID                            13
-#define HIVE_TIMED_CTRL_IFMT_B_BIT_ID                          14
-#define HIVE_TIMED_CTRL_IFMT_SEC_BIT_ID                        15
-#define HIVE_TIMED_CTRL_MEM_CPY_BIT_ID                         16
-#define HIVE_TIMED_CTRL_MIPI_FIFO_FULL_BIT_ID                  17
-#define HIVE_TIMED_CTRL_MIPI_SOF_BIT_ID                        18
-#define HIVE_TIMED_CTRL_MIPI_EOF_BIT_ID                        19
-#define HIVE_TIMED_CTRL_MIPI_SOL_BIT_ID                        20
-#define HIVE_TIMED_CTRL_MIPI_EOL_BIT_ID                        21
-#define HIVE_TIMED_CTRL_SYNC_GEN_SOF_BIT_ID                    22
-#define HIVE_TIMED_CTRL_SYNC_GEN_EOF_BIT_ID                    23
-#define HIVE_TIMED_CTRL_SYNC_GEN_SOL_BIT_ID                    24
-#define HIVE_TIMED_CTRL_SYNC_GEN_EOL_BIT_ID                    25
+#define HIVE_TIMED_CTRL_GPIO_PIN_10_BIT_ID                      10
+#define HIVE_TIMED_CTRL_GPIO_PIN_11_BIT_ID                      11
+#define HIVE_TIMED_CTRL_IRQ_SP_BIT_ID                           12
+#define HIVE_TIMED_CTRL_IRQ_ISP_BIT_ID                          13
+#define HIVE_TIMED_CTRL_IRQ_INPUT_SYSTEM_BIT_ID                 14
+#define HIVE_TIMED_CTRL_IRQ_INPUT_SELECTOR_BIT_ID               15
+#define HIVE_TIMED_CTRL_IRQ_IF_BLOCK_BIT_ID                     16
+#define HIVE_TIMED_CTRL_IRQ_GP_TIMER_0_BIT_ID                   17
+#define HIVE_TIMED_CTRL_IRQ_GP_TIMER_1_BIT_ID                   18
+#define HIVE_TIMED_CTRL_CSI_SOL_BIT_ID                          19
+#define HIVE_TIMED_CTRL_CSI_EOL_BIT_ID                          20
+#define HIVE_TIMED_CTRL_CSI_SOF_BIT_ID                          21
+#define HIVE_TIMED_CTRL_CSI_EOF_BIT_ID                          22
+#define HIVE_TIMED_CTRL_IRQ_IS_STREAMING_MONITOR_BIT_ID         23
+
 
 
 #endif /* __TIMED_CTRL_GLOBAL_H_INCLUDED__ */
