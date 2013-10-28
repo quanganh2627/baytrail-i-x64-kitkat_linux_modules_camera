@@ -1938,8 +1938,15 @@ void ia_css_debug_dump_isys_state(void)
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
 void ia_css_debug_dump_isys_state(void)
 {
-	input_system_state_t state;
-	input_system_get_state(INPUT_SYSTEM0_ID, &state);
+	input_system_state_t *state;
+
+	state = sh_css_malloc(sizeof(*state));
+	if (!state) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "out of memory\n");
+		return;
+	}
+	input_system_get_state(INPUT_SYSTEM0_ID, state);
+	sh_css_free(state);
 }
 #endif
 
