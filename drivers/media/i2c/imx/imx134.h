@@ -233,6 +233,8 @@ static struct imx_reg const imx134_init_settings[] = {
 /* 4 lane 3280x2464 8M 30fps, vendor provide */
 static struct imx_reg const imx134_8M_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* clock setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -355,6 +357,8 @@ static struct imx_reg const imx134_8M_30fps[] = {
 /* 4 lane, 1/2 binning 30fps 1640x1232, vendor provide */
 static struct imx_reg const imx134_1640_1232_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -477,6 +481,8 @@ static struct imx_reg const imx134_1640_1232_30fps[] = {
 /* 4 lane, 1/4 binning 30fps 820x616, vendor provide */
 static struct imx_reg const imx134_820_616_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -599,6 +605,8 @@ static struct imx_reg const imx134_820_616_30fps[] = {
 /* 4 lane, 1/4 binning 30fps 720x592 */
 static struct imx_reg const imx134_720_592_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -721,6 +729,8 @@ static struct imx_reg const imx134_720_592_30fps[] = {
 /* 4 lane 2336x1312, 30fps, for 1080p dvs,  vendor provide */
 static struct imx_reg const imx134_2336_1312_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -843,6 +853,8 @@ static struct imx_reg const imx134_2336_1312_30fps[] = {
 /* 4 lane 1920x1080, 30fps, for 720p still capture */
 static struct imx_reg const imx134_1936_1096_30fps_v1[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -965,6 +977,8 @@ static struct imx_reg const imx134_1936_1096_30fps_v1[] = {
 /* 4 lane 1920x1080, 30fps, for 720p still capture,  vendor provide */
 static struct imx_reg const imx134_1936_1096_30fps_v2[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -1087,6 +1101,8 @@ static struct imx_reg const imx134_1936_1096_30fps_v2[] = {
 /* 4 lane 1920x1080, 30fps,  vendor provide */
 static struct imx_reg const imx134_1080p_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -1209,6 +1225,8 @@ static struct imx_reg const imx134_1080p_30fps[] = {
 /* 4 lane 1280x720, 30fps,  vendor provide */
 static struct imx_reg const imx134_720p_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -1331,6 +1349,8 @@ static struct imx_reg const imx134_720p_30fps[] = {
 /* 4 lane 1296x736, 30fps, for 720p still capture,  vendor provide */
 static struct imx_reg const imx134_1296_736_30fps_v2[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -1453,6 +1473,8 @@ static struct imx_reg const imx134_1296_736_30fps_v2[] = {
 /* 4 lane 1280x720, 30fps, for 720p dvs,  vendor provide */
 static struct imx_reg const imx134_1568_880_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
