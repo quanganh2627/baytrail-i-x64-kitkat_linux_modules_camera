@@ -1113,7 +1113,6 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED:
 	case ATOMISP_PCI_DEVICE_SOC_BYT:
-	case ATOMISP_PCI_DEVICE_SOC_ANN:
 		isp->media_dev.hw_revision =
 			(ATOMISP_HW_REVISION_ISP2400
 			 << ATOMISP_HW_REVISION_SHIFT) |
@@ -1122,6 +1121,17 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 #else
 			ATOMISP_HW_STEPPING_B0;
 #endif
+		atomisp_hmm_is_2400 = true;
+		break;
+	case ATOMISP_PCI_DEVICE_SOC_ANN:
+		isp->media_dev.hw_revision = (
+#ifdef ISP2401_NEW_INPUT_SYSTEM
+			 ATOMISP_HW_REVISION_ISP2401
+#else
+			 ATOMISP_HW_REVISION_ISP2401_LEGACY
+#endif
+			 << ATOMISP_HW_REVISION_SHIFT) |
+			ATOMISP_HW_STEPPING_A0;
 		atomisp_hmm_is_2400 = true;
 		break;
 	default:
