@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -359,6 +359,13 @@ bool ia_css_pipeline_has_stopped(struct ia_css_pipeline *pipeline)
 	return sp_group.pipe[thread_id].num_stages == 0;
 }
 
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void)
+{
+	return(&sh_css_sp_group.pipe_io_status);
+}
+#endif
+
 /*******************************************************
 *** Static functions
 ********************************************************/
@@ -387,9 +394,12 @@ static void pipeline_stage_destroy(struct ia_css_pipeline_stage *pipeline)
 		pipeline->args.out_vf_frame = NULL;
 	}
 	for (mem = 0; mem < IA_CSS_NUM_ISP_MEMORIES; mem++) {
-		if (!pipeline->isp_mem_params[mem].size) continue;
-		if (!pipeline->isp_mem_params[mem].address) continue;
-		sh_css_free(pipeline->isp_mem_params[mem].address);
+		if (pipeline->isp_mem_params[mem].address)
+			sh_css_free(pipeline->isp_mem_params[mem].address);
+		if (pipeline->isp_mem_configs[mem].address)
+			sh_css_free(pipeline->isp_mem_configs[mem].address);
+		if (pipeline->isp_css_configs[mem].address)
+			mmgr_free(pipeline->isp_css_configs[mem].address);
 	}
 	sh_css_free(pipeline);
 }
@@ -506,8 +516,20 @@ static enum ia_css_err pipeline_stage_create(
 			size = stage->binary_info->mem_initializers[mem].size;
 		stage->isp_mem_params[mem].size = size;
 		stage->isp_mem_params[mem].address = NULL;
-		if (!size) continue;
-		stage->isp_mem_params[mem].address = sh_css_malloc(size);
+		if (size)
+			stage->isp_mem_params[mem].address = sh_css_malloc(size);
+	}
+
+	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
+		size_t size = 0;
+		if (stage->binary_info)
+			size = stage->binary_info->conf_mem_initializers[mem].size;
+		stage->isp_mem_configs[mem].size = size;
+		stage->isp_mem_configs[mem].address = NULL;
+		if (size) {
+			stage->isp_mem_configs[mem].address = sh_css_malloc(size);
+			stage->isp_css_configs[mem].address = mmgr_malloc(size);
+		}
 	}
 
 	stage->firmware = firmware;
