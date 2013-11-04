@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -292,7 +292,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 			isp_tmp_internal_height = in_info->res.height
 				+ info->top_cropping + dvs_env_height;
 		}
-	} else if ((bds_out_info != NULL) &&
+	} else if ((bds_out_info != NULL) && (out_info != NULL) &&
 				/* TODO: hack to make video_us case work. this should be reverted after
 				a nice solution in ISP */
 				(bds_out_info->res.width >= out_info->res.width)) {
@@ -380,13 +380,13 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	binary->vf_frame_info.format = IA_CSS_FRAME_FORMAT_YUV_LINE;
 	if (vf_info != NULL) {
 		unsigned int vf_out_vecs, vf_out_width, vf_out_height;
+		if (out_info == NULL)
+			return IA_CSS_ERR_INTERNAL_ERROR;
 		vf_out_vecs = __ISP_VF_OUTPUT_WIDTH_VECS(out_info->padded_width,
 			vf_log_ds);
 		vf_out_width = _ISP_VF_OUTPUT_WIDTH(vf_out_vecs);
 		vf_out_height = _ISP_VF_OUTPUT_HEIGHT(out_info->res.height,
 			vf_log_ds);
-		if (out_info == NULL)
-			return IA_CSS_ERR_INTERNAL_ERROR;
 
 		/* For preview mode, output pin is used instead of vf. */
 		if (info->mode == IA_CSS_BINARY_MODE_PREVIEW) {

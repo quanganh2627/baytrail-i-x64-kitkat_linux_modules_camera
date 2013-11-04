@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -71,6 +71,7 @@ struct ia_css_blob_info {
 	/**< Static blob data */
 	uint32_t offset;		/**< Blob offset in fw file */
 	uint32_t memory_offset;  /**< offset wrt hdr in bytes */
+	uint32_t conf_memory_offset;  /**< offset wrt hdr in bytes */
 	uint32_t prog_name_offset;  /**< offset wrt hdr in bytes */
 	uint32_t size;			/**< Size of blob */
 	uint32_t padding_size;	/**< total cummulative of bytes added due to section alignment */
@@ -169,6 +170,7 @@ struct ia_css_blob_descr;
  * Only relevant for standard ISP binaries, not ACC or SP.
  */
 struct ia_css_memory_offsets;
+struct ia_css_config_memory_offsets;
 
 struct ia_css_channel_descr {
 	uint8_t		channel;  /* Dma channel used */
@@ -224,6 +226,7 @@ struct ia_css_binary_info {
 	uint32_t		dvs_in_block_width;
 	uint32_t		dvs_in_block_height;
 	struct ia_css_isp_data	mem_initializers[IA_CSS_NUM_ISP_MEMORIES];
+	struct ia_css_isp_data	conf_mem_initializers[IA_CSS_NUM_ISP_MEMORIES];
 	uint32_t		sh_dma_cmd_ptr;     /* In ISP dmem */
 	uint32_t		isp_pipe_version;
 /* MW: Packing (related) bools in an integer ?? */
@@ -346,6 +349,7 @@ struct ia_css_binary_xinfo {
 	CSS_ALIGN(const struct ia_css_blob_descr *blob,  8);
 	uint32_t		     blob_index;
 	const struct ia_css_memory_offsets *mem_offsets;
+	const struct ia_css_config_memory_offsets *conf_mem_offsets;
 	CSS_ALIGN(struct ia_css_binary_xinfo *next, 8);
 };
 
@@ -421,6 +425,7 @@ struct ia_css_blob_descr {
 	struct ia_css_fw_info header;
 	const char	     *name;
 	const struct ia_css_memory_offsets *mem_offsets;
+	const struct ia_css_config_memory_offsets *conf_mem_offsets;
 };
 
 struct ia_css_acc_fw;

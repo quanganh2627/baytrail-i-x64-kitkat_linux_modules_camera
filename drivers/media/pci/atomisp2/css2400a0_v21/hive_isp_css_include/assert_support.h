@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -62,9 +62,19 @@
 
 #elif defined(__KERNEL__) /* a.o. Android builds */
 #include <linux/bug.h>
-#define __symbol2value( x ) #x
-#define __symbol2string( x ) __symbol2value( x )
-#define assert(cnd) BUG_ON(!(cnd))
+
+/*Workaround: removed ia_css_debug_dtrace
+ *to avoid circular dependency of ia_css_debug.h
+ *need to find a better solution
+ */
+
+#define assert(cnd)							\
+	do {								\
+		if (!(cnd)) {						\
+			BUG();						\
+		}							\
+	} while (0)
+
 #define OP___assert(cnd) assert(cnd)
 
 #elif defined(__FIST__)

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -71,14 +71,16 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 	const char *name;
 	const unsigned char *blob;
 	const struct ia_css_memory_offsets *mem_offsets;
+	const struct ia_css_config_memory_offsets *conf_offsets;
 
 	assert(fw != NULL);
 	assert(bd != NULL);
-	
+
 	/* Special case: only one binary in fw */
 	if (bi == NULL) bi = (const struct ia_css_fw_info *)fw;
 
 	mem_offsets = (const struct ia_css_memory_offsets *)(fw + bi->blob.memory_offset);
+	conf_offsets = (const struct ia_css_config_memory_offsets *)(fw + bi->blob.conf_memory_offset);
 	name = (const char *)fw + bi->blob.prog_name_offset;
 	blob = (const unsigned char *)fw + bi->blob.offset;
 
@@ -95,8 +97,11 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 	bd->header = *bi;
 	bd->name = name;
 	bd->mem_offsets = NULL;
-	if (bi->type == ia_css_isp_firmware)
+	bd->conf_mem_offsets = NULL;
+	if (bi->type == ia_css_isp_firmware) {
 		bd->mem_offsets = mem_offsets;
+		bd->conf_mem_offsets = conf_offsets;
+	}
 	return IA_CSS_SUCCESS;
 }
 

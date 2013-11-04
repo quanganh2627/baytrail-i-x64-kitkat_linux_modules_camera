@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,7 +20,7 @@
  *
  */
 
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 #ifndef _hive_isp_css_defs_h__
 #define _hive_isp_css_defs_h__
 

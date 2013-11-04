@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -389,6 +389,12 @@ struct sh_css_sp_pipeline_io {
 	struct sh_css_sp_pipeline_terminal	input;
 	struct sh_css_sp_pipeline_terminal	output;
 };
+
+struct sh_css_sp_pipeline_io_status {
+	uint32_t	active[N_INPUT_SYSTEM_CSI_PORT];
+	uint32_t	running[N_INPUT_SYSTEM_CSI_PORT];
+};
+
 #endif
 enum sh_css_port_dir {
 	SH_CSS_PORT_INPUT  = 0,
@@ -652,6 +658,7 @@ struct sh_css_sp_group {
 	struct sh_css_sp_pipeline	pipe[SH_CSS_MAX_SP_THREADS];
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
 	struct sh_css_sp_pipeline_io	pipe_io[SH_CSS_MAX_SP_THREADS];
+	struct sh_css_sp_pipeline_io_status	pipe_io_status;
 #endif
 	struct sh_css_sp_debug_command	debug;
 };
