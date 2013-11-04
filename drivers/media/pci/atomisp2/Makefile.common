@@ -101,7 +101,11 @@ atomisp-$(postfix)-objs := \
 
 ifneq ($(ISP2401_NEW_INPUT_SYSTEM), )
 atomisp-$(postfix)-objs += \
-	css/runtime/isys/src/virtual_isys.o
+	css/runtime/isys/src/virtual_isys.o \
+	css/runtime/isys/src/csi_rx_rmgr.o \
+	css/runtime/isys/src/ibuf_ctrl_rmgr.o \
+	css/runtime/isys/src/isys_dma_rmgr.o \
+	css/runtime/isys/src/isys_stream2mmio_rmgr.o
 else
 atomisp-$(postfix)-objs += \
 	css/$(css_platform_folder)/host/input_formatter.o \
