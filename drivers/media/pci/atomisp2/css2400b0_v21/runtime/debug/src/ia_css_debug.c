@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -22,10 +22,10 @@
 * 02110-1301, USA.
 *
 */
-#include "ia_css_debug.h"
 #include "debug.h"
 #include "memory_access.h"
 
+#include "ia_css_debug.h"
 #include "ia_css_debug_pipe.h"
 #include "ia_css_stream.h"
 #include "ia_css_pipeline.h"

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -97,9 +97,28 @@ input_system_error_t ia_css_isys_init(void)
 #elif defined(USE_INPUT_SYSTEM_VERSION_2401)
 input_system_error_t ia_css_isys_init(void)
 {
-	/* TOOD: CSI2+ */
 	input_system_error_t error = INPUT_SYSTEM_ERR_NO_ERROR;
+
+	ia_css_isys_csi_rx_lut_rmgr_init();
+	ia_css_isys_ibuf_rmgr_init();
+	ia_css_isys_dma_channel_rmgr_init();
+	ia_css_isys_stream2mmio_sid_rmgr_init();
+
 	return error;
+}
+#endif
+
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
+void ia_css_isys_uninit(void)
+{
+}
+#elif defined(USE_INPUT_SYSTEM_VERSION_2401)
+void ia_css_isys_uninit(void)
+{
+	ia_css_isys_csi_rx_lut_rmgr_uninit();
+	ia_css_isys_ibuf_rmgr_uninit();
+	ia_css_isys_dma_channel_rmgr_uninit();
+	ia_css_isys_stream2mmio_sid_rmgr_uninit();
 }
 #endif
 
