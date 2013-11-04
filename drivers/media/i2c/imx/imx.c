@@ -267,6 +267,40 @@ static int imx_write_reg_array(struct i2c_client *client,
 	return __imx_flush_reg_array(client, &ctrl);
 }
 
+static int __imx_min_fps_diff(int fps, const struct imx_fps_setting *fps_list)
+{
+	int diff = INT_MAX;
+	int i;
+
+	if (fps == 0)
+		return 0;
+
+	for (i = 0; i < MAX_FPS_OPTIONS_SUPPORTED; i++) {
+		if (!fps_list[i].fps)
+			break;
+		if (abs(fps_list[i].fps - fps) < diff)
+			diff = abs(fps_list[i].fps - fps);
+	}
+
+	return diff;
+}
+
+static int __imx_nearest_fps_index(int fps,
+					const struct imx_fps_setting *fps_list)
+{
+	int fps_index = 0;
+	int i;
+
+	for (i = 0; i < MAX_FPS_OPTIONS_SUPPORTED; i++) {
+		if (!fps_list[i].fps)
+			break;
+		if (abs(fps_list[i].fps - fps)
+		    < abs(fps_list[fps_index].fps - fps))
+			fps_index = i;
+	}
+	return fps_index;
+}
+
 static int __imx_get_max_fps_index(
 				const struct imx_fps_setting *fps_settings)
 {
@@ -1248,6 +1282,8 @@ static int nearest_resolution_index(struct v4l2_subdev *sd, int w, int h)
 	int i;
 	int idx = -1;
 	int dist;
+	int fps_diff;
+	int min_fps_diff = INT_MAX;
 	int min_dist = INT_MAX;
 	const struct imx_resolution *tmp_res = NULL;
 	struct imx_device *dev = to_imx_sensor(sd);
@@ -1261,25 +1297,17 @@ static int nearest_resolution_index(struct v4l2_subdev *sd, int w, int h)
 			min_dist = dist;
 			idx = i;
 		}
+		if (dist == min_dist) {
+			fps_diff = __imx_min_fps_diff(dev->fps,
+						tmp_res->fps_options);
+			if (fps_diff < min_fps_diff) {
+				min_fps_diff = fps_diff;
+				idx = i;
+			}
+		}
 	}
 
 	return idx;
-}
-
-static int get_resolution_index(struct v4l2_subdev *sd, int w, int h)
-{
-	int i;
-	struct imx_device *dev = to_imx_sensor(sd);
-
-	for (i = 0; i < dev->entries_curr_table; i++) {
-		if (w != dev->curr_res_table[i].width)
-			continue;
-		if (h != dev->curr_res_table[i].height)
-			continue;
-		/* Found it */
-		return i;
-	}
-	return -1;
 }
 
 static int imx_try_mbus_fmt(struct v4l2_subdev *sd,
@@ -1356,41 +1384,36 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 			      struct v4l2_mbus_framefmt *fmt)
 {
 	struct imx_device *dev = to_imx_sensor(sd);
-	const struct imx_reg *imx_def_reg;
 	struct camera_mipi_info *imx_info = NULL;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	const struct imx_resolution *res;
 	int ret;
 	u16 val;
 
 	imx_info = v4l2_get_subdev_hostdata(sd);
 	if (imx_info == NULL)
 		return -EINVAL;
-
 	ret = imx_try_mbus_fmt(sd, fmt);
 	if (ret)
 		return ret;
 
 	mutex_lock(&dev->input_lock);
 
-	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
+	dev->fmt_idx = nearest_resolution_index(sd, fmt->width, fmt->height);
+	if (dev->fmt_idx == -1)
+		return -EINVAL;
+	res = &dev->curr_res_table[dev->fmt_idx];
 
-	/* Sanity check */
-	if (unlikely(dev->fmt_idx == -1)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	/* Adjust the FPS selection based on the resolution selected */
+	dev->fps_index = __imx_nearest_fps_index(dev->fps, res->fps_options);
 
-	imx_def_reg = dev->curr_res_table[dev->fmt_idx].regs;
-
-	ret = imx_write_reg_array(client, imx_def_reg);
+	ret = imx_write_reg_array(client, res->regs);
 	if (ret)
 		goto out;
 
-	dev->fps = dev->curr_res_table[dev->fmt_idx].fps_options[dev->fps_index].fps;
-	dev->pixels_per_line =
-		dev->curr_res_table[dev->fmt_idx].fps_options[dev->fps_index].pixels_per_line;
-	dev->lines_per_frame =
-		dev->curr_res_table[dev->fmt_idx].fps_options[dev->fps_index].lines_per_frame;
+	dev->fps = res->fps_options[dev->fps_index].fps;
+	dev->pixels_per_line = res->fps_options[dev->fps_index].pixels_per_line;
+	dev->lines_per_frame = res->fps_options[dev->fps_index].lines_per_frame;
 
 	/* dbg h/v blank time */
 	mutex_lock(dev->ctrl_handler.lock);
@@ -1406,7 +1429,7 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	if (ret)
 		goto out;
 
-	ret = imx_get_intg_factor(client, imx_info, imx_def_reg);
+	ret = imx_get_intg_factor(client, imx_info, res->regs);
 	if (ret)
 		goto out;
 
@@ -1492,7 +1515,6 @@ static void __imx_print_timing(struct v4l2_subdev *sd)
 	dev_dbg(&client->dev, "VBlank: %d uS:\n",
 			(dev->lines_per_frame - height) * dev->pixels_per_line /
 			(dev->vt_pix_clk_freq_mhz / 1000000));
-
 }
 
 /*
@@ -1523,6 +1545,7 @@ static int imx_s_stream(struct v4l2_subdev *sd, int enable)
 		}
 		dev->streaming = 0;
 		dev->fps_index = 0;
+		dev->fps = 0;
 	}
 	mutex_unlock(&dev->input_lock);
 
@@ -1851,9 +1874,11 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	struct imx_device *dev = to_imx_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	const struct imx_resolution *res =
-		res = &dev->curr_res_table[dev->fmt_idx];
+				&dev->curr_res_table[dev->fmt_idx];
 	struct camera_mipi_info *imx_info = NULL;
-	int i, fps, ret;
+	int ret = 0;
+	int fps;
+
 
 	imx_info = v4l2_get_subdev_hostdata(sd);
 	if (imx_info == NULL)
@@ -1867,19 +1892,17 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	if (fps == res->fps_options[dev->fps_index].fps)
 		return 0;
 
-	dev->fps_index = 0;
-
-	/* Go through the supported FPS list */
-	for (i = 0; i < MAX_FPS_OPTIONS_SUPPORTED; i++) {
-		if (!res->fps_options[i].fps)
-			break;
-		if (abs(res->fps_options[i].fps - fps)
-		    < abs(res->fps_options[dev->fps_index].fps - fps))
-			dev->fps_index = i;
+	/* No need to proceed further if we are not streaming */
+	if (!dev->streaming) {
+		/* Save the new FPS and use it while selecting setting */
+		dev->fps = fps;
+		goto out;
 	}
 
-	/* Get the new Frame timing values for new exposure */
+	dev->fps_index = __imx_nearest_fps_index(fps, res->fps_options);
 	dev->fps = res->fps_options[dev->fps_index].fps;
+
+	/* Update the new frametimings based on FPS */
 	dev->pixels_per_line =
 		res->fps_options[dev->fps_index].pixels_per_line;
 	dev->lines_per_frame =
@@ -1887,7 +1910,7 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 
 	/* Update the new values so that user side knows the current settings */
 	ret = __imx_update_exposure_timing(client,
-			dev->coarse_itg, dev->pixels_per_line, dev->lines_per_frame);
+		dev->coarse_itg, dev->pixels_per_line, dev->lines_per_frame);
 	if (ret)
 		return ret;
 
@@ -1896,6 +1919,7 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	if (ret)
 		return ret;
 
+out:
 	interval->interval.denominator = res->fps_options[dev->fps_index].fps;
 	interval->interval.numerator = 1;
 
