@@ -22,7 +22,7 @@
 
 
 #include "assert_support.h"
-#include <string.h>		/* memset() */
+#include <linux/string.h>		/* memset() */
 #include "ia_css_isys.h"
 #include "bitop_support.h"
 #include "ia_css_pipeline.h"	/* ia_css_pipeline_get_pipe_io_status() */

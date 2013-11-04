@@ -22,7 +22,7 @@
 
 
 #include "assert_support.h"
-#include <string.h>		/* memset() */
+#include <linux/string.h>		/* memset() */
 #include "ia_css_isys.h"
 #include "ibuf_ctrl_rmgr.h"
 
