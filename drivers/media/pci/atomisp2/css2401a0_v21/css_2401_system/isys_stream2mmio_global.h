@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -32,6 +32,13 @@
 typedef struct stream2mmio_cfg_s stream2mmio_cfg_t;
 struct stream2mmio_cfg_s {
 	uint32_t				bits_per_pixel;
+};
+
+/* Stream2MMIO limits  per ID*/
+static const stream2mmio_sid_ID_t N_STREAM2MMIO_SID_PROCS[N_STREAM2MMIO_ID] = {
+	N_STREAM2MMIO_SID_ID,
+	STREAM2MMIO_SID4_ID,
+	STREAM2MMIO_SID4_ID
 };
 
 #endif /* __ISYS_STREAM2MMIO_GLOBAL_H_INCLUDED__ */

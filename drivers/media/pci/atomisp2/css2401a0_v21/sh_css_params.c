@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -3614,22 +3614,6 @@ sh_css_params_write_to_ddr_internal(
 
 	stage_num = stage->stage_num;
 
-	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
-		if (!binary->info->sp.mem_initializers[mem].size) continue;
-		buff_realloced = reallocate_buffer(&ddr_map->isp_mem_param[stage_num][mem],
-			&ddr_map_size->isp_mem_param[stage_num][mem],
-			binary->info->sp.mem_initializers[mem].size,
-			params->isp_mem_params_changed[pipe_id][stage_num][mem],
-			&err);
-		if (err != IA_CSS_SUCCESS)
-			return err;
-		if (params->isp_mem_params_changed[pipe_id][stage_num][mem] || buff_realloced) {
-			sh_css_update_isp_mem_params_to_ddr(&stage->isp_mem_params[mem],
-				ddr_map->isp_mem_param[stage_num][mem],
-				ddr_map_size->isp_mem_param[stage_num][mem]);
-		}
-	}
-
 	if (binary->info->sp.enable.fpnr) {
 		buff_realloced = reallocate_buffer(&ddr_map->fpn_tbl,
 			&ddr_map_size->fpn_tbl,
@@ -3882,6 +3866,23 @@ sh_css_params_write_to_ddr_internal(
 			}
 			if (id_table != NULL)
 				ia_css_morph_table_free(id_table);
+		}
+	}
+
+	/* After special cases like SC, FPN since they may change parameters */
+	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
+		if (!binary->info->sp.mem_initializers[mem].size) continue;
+		buff_realloced = reallocate_buffer(&ddr_map->isp_mem_param[stage_num][mem],
+			&ddr_map_size->isp_mem_param[stage_num][mem],
+			binary->info->sp.mem_initializers[mem].size,
+			params->isp_mem_params_changed[pipe_id][stage_num][mem],
+			&err);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+		if (params->isp_mem_params_changed[pipe_id][stage_num][mem] || buff_realloced) {
+			sh_css_update_isp_mem_params_to_ddr(&stage->isp_mem_params[mem],
+				ddr_map->isp_mem_param[stage_num][mem],
+				ddr_map_size->isp_mem_param[stage_num][mem]);
 		}
 	}
 #endif

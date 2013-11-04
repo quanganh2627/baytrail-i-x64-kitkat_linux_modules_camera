@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -414,5 +414,23 @@ typedef enum {
 
 	N_INPUT_SYSTEM_INPUT_PORT_ID
 } input_system_input_port_ID_t;
+
+#define N_INPUT_SYSTEM_CSI_PORT	3
+
+typedef enum {
+	ISYS2401_DMA_CHANNEL_0 = 0,
+	ISYS2401_DMA_CHANNEL_1,
+	ISYS2401_DMA_CHANNEL_2,
+	ISYS2401_DMA_CHANNEL_3,
+	ISYS2401_DMA_CHANNEL_4,
+	ISYS2401_DMA_CHANNEL_5,
+	ISYS2401_DMA_CHANNEL_6,
+	ISYS2401_DMA_CHANNEL_7,
+	ISYS2401_DMA_CHANNEL_8,
+	ISYS2401_DMA_CHANNEL_9,
+	ISYS2401_DMA_CHANNEL_10,
+	ISYS2401_DMA_CHANNEL_11,
+	N_ISYS2401_DMA_CHANNEL
+} isys2401_dma_channel;
 
 #endif /* __SYSTEM_GLOBAL_H_INCLUDED__ */

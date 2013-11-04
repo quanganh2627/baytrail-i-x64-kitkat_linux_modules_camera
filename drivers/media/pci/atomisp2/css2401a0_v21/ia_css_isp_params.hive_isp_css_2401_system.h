@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -22,8 +22,8 @@
 
 /* Generated code: do not edit or commmit. */
 
-#ifndef _IA_CSS_ISP_PARAMS_H
-#define _IA_CSS_ISP_PARAMS_H
+#ifndef _IA_CSS_ISP_PARAM_H
+#define _IA_CSS_ISP_PARAM_H
 
 enum ia_css_parameter_ids {
 	IA_CSS_BH_ID,
@@ -221,6 +221,6 @@ void
 ia_css_set_configs(struct ia_css_isp_parameters *params,
 		const struct ia_css_isp_config *config)
 ;
-#endif /* IA_CSS_INCLUDE_PARAMETERS */
+#endif /* IA_CSS_INCLUDE_PARAMETER */
 
-#endif /* _IA_CSS_ISP_PARAMS_H */
+#endif /* _IA_CSS_ISP_PARAM_H */

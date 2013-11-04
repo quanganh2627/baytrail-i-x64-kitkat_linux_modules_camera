@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -41,8 +41,12 @@ struct ia_css_pipeline_stage {
 	int mode;
 	bool out_frame_allocated;
 	bool vf_frame_allocated;
-	/* Parameters for isp memeories, host memory pointers */
+	/* Parameters for isp memories, host memory pointers */
 	struct ia_css_host_data isp_mem_params[IA_CSS_NUM_ISP_MEMORIES];
+	/* Configurations for isp memories, host memory pointers */
+	struct ia_css_host_data isp_mem_configs[IA_CSS_NUM_ISP_MEMORIES];
+	/* Configurations for isp memories, css memory pointers */
+	struct ia_css_data isp_css_configs[IA_CSS_NUM_ISP_MEMORIES];
 	struct ia_css_pipeline_stage *next;
 };
 
@@ -206,4 +210,14 @@ bool ia_css_pipeline_uses_params(struct ia_css_pipeline *pipeline);
  */
 bool ia_css_pipeline_get_sp_thread_id(unsigned int key, unsigned int *val);
 
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+/**
+ * @brief Get the pipeline io status
+ *
+ * @param[in] None
+ * @return
+ *	Pointer to pipe_io_status
+ */
+struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void);
+#endif
 #endif /*__IA_CSS_PIPELINE_H__*/

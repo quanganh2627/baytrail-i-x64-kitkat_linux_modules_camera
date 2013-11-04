@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -1492,6 +1492,56 @@ sh_css_config_input_network(struct ia_css_pipe *pipe,
 
 	return IA_CSS_SUCCESS;
 }
+
+static enum ia_css_err stream_register_with_csi_rx(
+	struct ia_css_stream *stream)
+{
+	bool rc;
+	enum ia_css_err retval = IA_CSS_ERR_INTERNAL_ERROR;
+	unsigned int	sp_thread_id;
+
+	if (stream && (stream->last_pipe != NULL)) {
+		if ((stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) &&
+	   	    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY)) {
+			rc = ia_css_pipeline_get_sp_thread_id(
+				ia_css_pipe_get_pipe_num(stream->last_pipe),
+				&sp_thread_id);
+			if (rc == true) {
+				retval = ia_css_isys_csi_rx_register_stream(
+					stream->config.source.port.port,
+					sp_thread_id);
+			}
+		}
+	}
+	return retval;
+}
+
+static enum ia_css_err stream_unregister_with_csi_rx(
+	struct ia_css_stream *stream)
+{
+	bool rc;
+	enum ia_css_err retval = IA_CSS_ERR_INTERNAL_ERROR;
+	unsigned int	sp_thread_id;
+	struct ia_css_pipeline *me = NULL;
+
+	if (stream && stream->last_pipe) {
+		me = &stream->last_pipe->pipeline;
+		if ((stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) &&
+	   	    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY) &&
+		    (me->num_stages == 1) &&
+		    (me->stages && me->stages->sp_func == IA_CSS_PIPELINE_ISYS_COPY)) {
+			rc = ia_css_pipeline_get_sp_thread_id(
+				ia_css_pipe_get_pipe_num(stream->last_pipe),
+				&sp_thread_id);
+			if (rc == true) {
+				retval = ia_css_isys_csi_rx_unregister_stream(
+					stream->config.source.port.port,
+					sp_thread_id);
+			}
+		}
+	}
+	return retval;
+}
 #endif
 
 #if WITH_PC_MONITORING
@@ -2009,7 +2059,7 @@ ia_css_init(const struct ia_css_env *env,
 #endif
 #endif
 
-#ifdef USE_INPUT_SYSTEM_VERSION_2
+#if !defined(HAS_NO_INPUT_SYSTEM)
 	if(ia_css_isys_init() != INPUT_SYSTEM_ERR_NO_ERROR)
 		err = IA_CSS_ERR_INVALID_ARGUMENTS;
 #endif
@@ -2258,6 +2308,11 @@ ia_css_uninit(void)
 	free_mipi_frames(NULL, true);
 
 	sh_css_sp_reset_global_vars();
+
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	ia_css_isys_uninit();
+#endif
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_uninit() leave: return_void\n");
 }
 
@@ -3242,7 +3297,7 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 	}
 	need_vf_pp |= pipe->config.enable_dz;
 	need_vf_pp |= pipe->output_info.format != IA_CSS_FRAME_FORMAT_YUV_LINE &&
-		      pipe->output_info.format != IA_CSS_FRAME_FORMAT_NV21;
+		      pipe->output_info.format != IA_CSS_FRAME_FORMAT_NV12;
 
 	/* Preview */
 	if (pipe->vf_yuv_ds_input_info.res.width)
@@ -7391,6 +7446,11 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	if (pipes == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
+	/* We don't support metadata for JPEG stream, since they both use str2mem */
+	if (stream_config->format == IA_CSS_STREAM_FORMAT_BINARY_8
+			&& stream_config->metadata_config.size > 0)
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	ia_css_debug_pipe_graph_dump_stream_config(stream_config);
 
@@ -7469,6 +7529,10 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: mode port\n");
 		/* CSI RX configuration */
 		ia_css_stream_configure_rx(curr_stream);
+
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+		stream_register_with_csi_rx(curr_stream);
+#endif
 #endif
 		break;
 	case IA_CSS_INPUT_MODE_TPG:
@@ -7647,6 +7711,10 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 	assert(stream != NULL);
 
 	ia_css_stream_isp_parameters_uninit(stream);
+
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+	stream_unregister_with_csi_rx(stream);
+#endif
 
 	/* remove references from pipes to stream */
 	for (i = 0; i < stream->num_pipes; i++) {

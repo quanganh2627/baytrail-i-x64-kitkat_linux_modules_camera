@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,23 +20,15 @@
  *
  */
 
-#include "input_system.h"
 #include "ia_css_isys.h"
-
-/* cmd for storing a number of packets indicated by reg _STREAM2MMIO_NUM_ITEMS*/
-#define _STREAM2MMIO_CMD_TOKEN_STORE_PACKETS	1
-
-/* command for waiting for a frame start */
-#define _STREAM2MMIO_CMD_TOKEN_SYNC_FRAME	2
+#include "math_support.h"
+#include "virtual_isys.h"
 
 /*************************************************
  *
  * Forwarded Declaration
  *
  *************************************************/
-#ifndef ceil_div
-#define ceil_div(a,b)       (((a)+(b)-1)/(b))
-#endif
 
 static bool create_input_system_channel(
 	input_system_cfg_t	*cfg,
@@ -82,10 +74,12 @@ static void release_ib_buffer(
 	ib_buffer_t *buf);
 
 static bool acquire_dma_channel(
-	isys2401_dma_channel *channel);
+	isys2401_dma_ID_t	dma_id,
+	isys2401_dma_channel	*channel);
 
 static void release_dma_channel(
-	isys2401_dma_channel *channel);
+	isys2401_dma_ID_t	dma_id,
+	isys2401_dma_channel	*channel);
 
 static bool acquire_be_lut_entry(
 	csi_rx_backend_ID_t		backend,
@@ -161,14 +155,12 @@ bool ia_css_virtual_isys_create(
 {
 	bool rc;
 
-	if (cfg == NULL || me == NULL) {
+	if (cfg == NULL || me == NULL)
 		return	false;
-	}
 
 	rc = create_input_system_input_port(cfg, &(me->input_port));
-	if (rc == false) {
+	if (rc == false)
 		return false;
-	}
 
 	rc = create_input_system_channel(cfg, &(me->channel));
 	if (rc == false) {
@@ -274,7 +266,7 @@ static bool create_input_system_channel(
 		return false;
 	}
 
-	if (!acquire_dma_channel(&(me->dma_channel))) {
+	if (!acquire_dma_channel(me->dma_id, &(me->dma_channel))) {
 		release_sid(me->stream2mmio_id,
 			&(me->stream2mmio_sid_id));
 
@@ -293,7 +285,7 @@ static void destroy_input_system_channel(
 
 	release_ib_buffer(&(me->ib_buffer));
 
-	release_dma_channel(&(me->dma_channel));
+	release_dma_channel(me->dma_id, &(me->dma_channel));
 }
 
 static bool create_input_system_input_port(
@@ -473,30 +465,14 @@ static bool acquire_sid(
 	stream2mmio_ID_t	stream2mmio,
 	stream2mmio_sid_ID_t	*sid)
 {
-	/*
-	 * zhengjie.lu@intel.com:
-	 * implment this interface after the 1st stage.
-	 */
-	(void)(stream2mmio);
-
-	/* TODO: acquire the resource */
-
-	*sid = STREAM2MMIO_SID0_ID;
-	return true;
+	return ia_css_isys_stream2mmio_sid_rmgr_acquire(stream2mmio, sid);
 }
 
 static void release_sid(
 	stream2mmio_ID_t	stream2mmio,
 	stream2mmio_sid_ID_t	*sid)
 {
-	/*
-	 * zhengjie.lu@intel.com:
-	 * implment this interface after the 1st stage.
-	 */
-	(void)(stream2mmio);
-	(void)(sid);
-
-	/* TODO: release the resource */
+	ia_css_isys_stream2mmio_sid_rmgr_release(stream2mmio, sid);
 }
 
 static bool acquire_ib_buffer(
@@ -513,56 +489,30 @@ static bool acquire_ib_buffer(
 	bytes_per_line  = bytes_per_pixel * pixels_per_line;
 
 	buf->stride = bytes_per_line;
-
-	/*
-	 * zhengjie.lu@intel.com:
-	 * implment this interface after the 1st stage.
-	 */
-
-	/* TODO: acquire the resource */
-	(void)lines_per_frame;
-
-	buf->start_addr = 0;
 	buf->lines = 2; /* ISYS2401 hardware can handle at most 4 lines */
 
-	return true;
+	(void)(lines_per_frame);
+	return ia_css_isys_ibuf_rmgr_acquire(buf->stride * buf->lines, &buf->start_addr);
 }
 
 static void release_ib_buffer(
 	ib_buffer_t *buf)
 {
-	/*
-	 * zhengjie.lu@intel.com:
-	 * implment this interface after the 1st stage.
-	 */
-
-	/* TODO: release the resource */
-	(void)buf;
+	ia_css_isys_ibuf_rmgr_release(&buf->start_addr);
 }
 
 static bool acquire_dma_channel(
-	isys2401_dma_channel *channel)
+	isys2401_dma_ID_t	dma_id,
+	isys2401_dma_channel	*channel)
 {
-	/*
-	 * zhengjie.lu@intel.com:
-	 * implment this interface after the 1st stage.
-	 */
-	
-	/* TODO: acquire the resource */
-	
-	*channel = 0;
-	return true;
+	return ia_css_isys_dma_channel_rmgr_acquire(dma_id, channel);
 }
 
 static void release_dma_channel(
-	isys2401_dma_channel *channel)
+	isys2401_dma_ID_t	dma_id,
+	isys2401_dma_channel	*channel)
 {
-	/*
-	 * zhengjie.lu@intel.com:
-	 * implment this interface after the 1st stage.
-	 */
-	(void)(channel);
-	/* TODO: release the resource */
+	ia_css_isys_dma_channel_rmgr_release(dma_id, channel);
 }
 
 static bool acquire_be_lut_entry(
@@ -570,19 +520,7 @@ static bool acquire_be_lut_entry(
 	csi_mipi_packet_type_t		packet_type,
 	csi_rx_backend_lut_entry_t	*entry)
 {
-	/*
-	 * zhengjie.lu@intel.com:
-	 * implment this interface after the 1st stage.
-	 */
-
-	/* TODO: acquire the resource */
-	entry->long_packet_entry = 0;
-	entry->short_packet_entry = 0;
-
-	(void)(backend);
-	(void)(packet_type);
-
-	return true;
+	return ia_css_isys_csi_rx_lut_rmgr_acquire(backend, packet_type, entry);
 }
 
 static void release_be_lut_entry(
@@ -590,15 +528,7 @@ static void release_be_lut_entry(
 	csi_mipi_packet_type_t		packet_type,
 	csi_rx_backend_lut_entry_t	*entry)
 {
-	/*
-	 * zhengjie.lu@intel.com:
-	 * implment this interface after the 1st stage.
-	 */
-
-	/* TODO: release the resource */
-	(void)backend;
-	(void)packet_type;
-	(void)entry;
+	ia_css_isys_csi_rx_lut_rmgr_release(backend, packet_type, entry);
 }
 
 static bool calculate_tpg_cfg(
@@ -611,8 +541,8 @@ static bool calculate_tpg_cfg(
 	(void)input_port;
 
 	memcpy(
-		(void*)cfg,
-		(void*)(&(isys_cfg->tpg_port_attr)),
+		(void *)cfg,
+		(void *)(&(isys_cfg->tpg_port_attr)),
 		sizeof(pixelgen_tpg_cfg_t));
 
 	return true;
@@ -812,13 +742,12 @@ static csi_mipi_packet_type_t get_csi_mipi_packet_type(
 {
 	csi_mipi_packet_type_t packet_type;
 
-	if (data_type >= 0 && data_type <= 15) {
+	if (data_type >= 0 && data_type <= 15)
 		packet_type = CSI_MIPI_PACKET_TYPE_SHORT;
-	} else if (data_type >= 16 && data_type <= 55) {
+	else if (data_type >= 16 && data_type <= 55)
 		packet_type = CSI_MIPI_PACKET_TYPE_LONG;
-	} else {
+	else
 		packet_type = CSI_MIPI_PACKET_TYPE_RESERVED;
-	}
 
 	return packet_type;
 }

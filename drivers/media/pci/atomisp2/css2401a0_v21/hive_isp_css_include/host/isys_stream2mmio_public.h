@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -21,7 +21,7 @@
  */
 
 #ifndef __ISYS_STREAM2MMIO_PUBLIC_H_INCLUDED__
-#define __STREAM2MMIO_PUBLIC_H_INCLUDED__
+#define __ISYS_STREAM2MMIO_PUBLIC_H_INCLUDED__
 
 
-#endif /* __STREAM2MMIO_PUBLIC_H_INCLUDED__ */
+#endif /* __ISYS_STREAM2MMIO_PUBLIC_H_INCLUDED__ */

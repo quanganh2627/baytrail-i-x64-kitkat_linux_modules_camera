@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131024_0113 */
+/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -84,8 +84,6 @@ typedef enum {
   isys2401_dma_sign_extension = _DMA_SIGN_EXTEND
 } isys2401_dma_extension;
 
-typedef uint32_t isys2401_dma_channel;
-
 typedef struct isys2401_dma_cfg_s isys2401_dma_cfg_t;
 struct isys2401_dma_cfg_s {
 	isys2401_dma_channel	channel;
@@ -94,5 +92,10 @@ struct isys2401_dma_cfg_s {
 	uint32_t		height;
 };
 /** end of DMA Device */
+
+/* isys2401_dma_channel limits per DMA ID */
+static const isys2401_dma_channel N_ISYS2401_DMA_CHANNEL_PROCS[N_ISYS2401_DMA_ID] = {
+	N_ISYS2401_DMA_CHANNEL
+};
 
 #endif /* __ISYS_DMA_GLOBAL_H_INCLUDED__ */
