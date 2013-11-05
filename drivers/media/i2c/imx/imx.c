@@ -2065,8 +2065,10 @@ static int __imx_init_ctrl_handler(struct imx_device *dev)
 					  &imx_ctrl_ops,
 					  V4L2_CID_VBLANK, 0, SHRT_MAX, 1, 0);
 
-	if (dev->ctrl_handler.error)
+	if (dev->ctrl_handler.error || dev->pixel_rate == NULL
+		|| dev->h_blank == NULL || dev->v_blank == NULL) {
 		return dev->ctrl_handler.error;
+	}
 
 	dev->sd.ctrl_handler = hdl;
 
