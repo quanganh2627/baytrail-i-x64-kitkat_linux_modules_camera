@@ -1888,9 +1888,6 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 		interval->interval.numerator = 1;
 
 	fps = interval->interval.denominator / interval->interval.numerator;
-	/* Ignore if we are already using the required FPS. */
-	if (fps == res->fps_options[dev->fps_index].fps)
-		return 0;
 
 	/* No need to proceed further if we are not streaming */
 	if (!dev->streaming) {
@@ -1898,6 +1895,10 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 		dev->fps = fps;
 		goto out;
 	}
+
+	 /* Ignore if we are already using the required FPS. */
+	if (fps == res->fps_options[dev->fps_index].fps)
+		return 0;
 
 	dev->fps_index = __imx_nearest_fps_index(fps, res->fps_options);
 	dev->fps = res->fps_options[dev->fps_index].fps;
