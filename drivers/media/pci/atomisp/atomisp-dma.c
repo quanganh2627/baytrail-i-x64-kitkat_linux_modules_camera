@@ -286,8 +286,8 @@ static int atomisp_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 
 	for_each_sg(sglist, sg, nents, i) {
 		dev_info(dev,
-			 "mapping entry %d: iova 0x%8.8x, physical 0x%8.8lu\n",
-			 i, iova_addr << PAGE_SHIFT, sg_dma_address(sg));
+			 "mapping entry %d: iova 0x%8.8x, physical 0x%8.8x\n",
+			 i, iova_addr << PAGE_SHIFT, page_to_phys(sg_page(sg)));
 		rval = iommu_map(mmu->dmap->domain, iova_addr << PAGE_SHIFT,
 				 page_to_phys(sg_page(sg)),
 				 PAGE_ALIGN(sg->length), 0);
