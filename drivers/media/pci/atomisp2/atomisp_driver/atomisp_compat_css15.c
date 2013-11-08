@@ -789,7 +789,7 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 
 	if (ret != sh_css_success) {
 		dev_err(asd->isp->dev, "stop css fatal error.\n");
-		return -EINVAL;
+		return ret == sh_css_err_internal_error ? -EIO : -EINVAL;
 	}
 
 	return 0;

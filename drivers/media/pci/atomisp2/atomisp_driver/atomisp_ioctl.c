@@ -1614,8 +1614,11 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 
 	css_pipe_id = atomisp_get_css_pipe_id(asd);
 	ret = atomisp_css_stop(asd, css_pipe_id, false);
-	if (ret)
-		return ret;
+#ifndef CSS20
+	/* Workaround to avoid system wide crash */
+	if (ret == -EIO)
+		isp->isp_timeout = true;
+#endif
 
 	/* cancel work queue*/
 	if (asd->video_out_capture.users) {
@@ -1680,9 +1683,13 @@ stopsensor:
 	 * ISP work around, need to reset isp
 	 * Is it correct time to reset ISP when first node does streamoff?
 	 */
-	if (isp->sw_contex.power_state == ATOM_ISP_POWER_UP)
+	if (isp->sw_contex.power_state == ATOM_ISP_POWER_UP) {
+		if (isp->isp_timeout)
+			dev_err(isp->dev, "%s: Resetting with WA activated",
+				__func__);
 		atomisp_reset(isp);
-
+		isp->isp_timeout = false;
+	}
 	return ret;
 }
 
