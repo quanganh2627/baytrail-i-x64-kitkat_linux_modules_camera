@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -70,7 +69,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			bool two_ppc,
 			bool continuous,
 			bool offline,
-			bool input_needs_raw_binning,
+			unsigned int required_bds_factor,
 			enum sh_css_pipe_config_override copy_ovrd,
 			enum ia_css_input_mode input_mode,
 			const struct ia_css_metadata_config *md_config

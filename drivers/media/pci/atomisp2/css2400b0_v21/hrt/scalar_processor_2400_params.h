@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,7 +19,6 @@
  *
  */
 
-/* Release Version: ci_master_20131030_2214 */
 #ifndef _scalar_processor_2400_params_h
 #define _scalar_processor_2400_params_h
 

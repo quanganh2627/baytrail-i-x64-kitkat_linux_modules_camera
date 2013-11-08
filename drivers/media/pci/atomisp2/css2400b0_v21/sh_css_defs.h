@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -98,8 +97,10 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 /* Left cropping only applicable for sufficiently large nway */
 #if ISP_VEC_NELEMS == 16
 #define SH_CSS_MAX_LEFT_CROPPING          0
+#define SH_CSS_MAX_TOP_CROPPING           0
 #else
 #define SH_CSS_MAX_LEFT_CROPPING          12
+#define SH_CSS_MAX_TOP_CROPPING           12
 #endif
 
 #define	SH_CSS_SP_MAX_WIDTH               1280
@@ -109,7 +110,7 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 #define SH_CSS_MAX_BQ_GRID_WIDTH          80
 #define SH_CSS_MAX_BQ_GRID_HEIGHT         60
 
-/* The minimum dvs envelope is 8x8 to make sure the invalid rows/columns
+/* The minimum dvs envelope is 12x12 to make sure the invalid rows/columns
    that result from filter initialization are skipped. */
 #define SH_CSS_MIN_DVS_ENVELOPE           12U
 

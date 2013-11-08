@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -119,6 +118,9 @@ hrt_vaddress ia_css_refcount_increment(int32_t id, hrt_vaddress ptr)
 {
 	struct ia_css_refcount_entry *entry;
 
+	if (ptr == mmgr_NULL)
+		return ptr;
+
 	entry = refcount_find_entry(ptr, false);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -127,8 +129,9 @@ hrt_vaddress ia_css_refcount_increment(int32_t id, hrt_vaddress ptr)
 	if (!entry) {
 		entry = refcount_find_entry(ptr, true);
 		assert(entry != NULL);
-		if (entry)
-			entry->id = id;
+		if (entry == NULL)
+			return mmgr_NULL;
+		entry->id = id;
 	}
 
 	assert(entry->id == id);
@@ -171,7 +174,9 @@ bool ia_css_refcount_decrement(int32_t id, hrt_vaddress ptr)
 		}
 	}
 
-	/* SHOULD NOT HAPPEN: ptr not managed by refcount, or not valid anymore */
+	/* SHOULD NOT HAPPEN: ptr not managed by refcount, or not
+	   valid anymore */
+
 	assert(false);
 
 	return false;

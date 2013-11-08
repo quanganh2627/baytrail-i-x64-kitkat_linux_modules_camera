@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -61,6 +60,17 @@
  * in the kernel and HAL.
 */
 
+/* Explicit member numbering to avoid fish type checker bug */
+enum ia_css_param_class {
+	IA_CSS_PARAM_CLASS_PARAM  = 0,	/* Late binding parameters, like 3A */
+	IA_CSS_PARAM_CLASS_CONFIG = 1,	/* Pipe config time parameters, like resolution */
+	/* Not yet implemented
+	IA_CSS_PARAM_CLASS_FRAME	  = 2,    // Frame time parameters, like output buffer
+	IA_CSS_PARAM_CLASS_STATE	  = 3,    // State parameters, like tnr buffer index
+	*/
+};
+#define IA_CSS_NUM_PARAM_CLASSES (IA_CSS_PARAM_CLASS_CONFIG + 1)
+
 /** Blob descriptor.
  * This structure describes an SP or ISP blob.
  * It describes the test, data and bss sections as well as position in a
@@ -70,8 +80,7 @@
 struct ia_css_blob_info {
 	/**< Static blob data */
 	uint32_t offset;		/**< Blob offset in fw file */
-	uint32_t memory_offset;  /**< offset wrt hdr in bytes */
-	uint32_t conf_memory_offset;  /**< offset wrt hdr in bytes */
+	uint32_t memory_offsets[IA_CSS_NUM_PARAM_CLASSES];  /**< offset wrt hdr in bytes */
 	uint32_t prog_name_offset;  /**< offset wrt hdr in bytes */
 	uint32_t size;			/**< Size of blob */
 	uint32_t padding_size;	/**< total cummulative of bytes added due to section alignment */
@@ -169,8 +178,15 @@ struct ia_css_blob_descr;
 /** Offsets for ISP kernel parameters per isp memory.
  * Only relevant for standard ISP binaries, not ACC or SP.
  */
-struct ia_css_memory_offsets;
-struct ia_css_config_memory_offsets;
+union ia_css_all_memory_offsets {
+	struct {
+		CSS_ALIGN(struct ia_css_memory_offsets	    *param, 8);
+		CSS_ALIGN(struct ia_css_config_memory_offsets *config, 8);
+	} offsets;
+	struct {
+		CSS_ALIGN(void * ptr, 8);
+	} array[IA_CSS_NUM_PARAM_CLASSES];
+};
 
 struct ia_css_channel_descr {
 	uint8_t		channel;  /* Dma channel used */
@@ -212,6 +228,8 @@ struct ia_css_binary_info {
 	uint32_t		c_subsampling;
 	uint32_t		output_num_chunks;
 	uint32_t		num_stripes;
+	uint32_t		row_stripes_height;
+	uint32_t		row_stripes_overlap_lines;
 	uint32_t		pipelining;
 	uint32_t		fixed_s3a_deci_log;
 	uint32_t		isp_addresses;	/* Address in ISP dmem */
@@ -225,8 +243,7 @@ struct ia_css_binary_info {
 	uint32_t		output_block_height;
 	uint32_t		dvs_in_block_width;
 	uint32_t		dvs_in_block_height;
-	struct ia_css_isp_data	mem_initializers[IA_CSS_NUM_ISP_MEMORIES];
-	struct ia_css_isp_data	conf_mem_initializers[IA_CSS_NUM_ISP_MEMORIES];
+	struct ia_css_isp_data	mem_initializers[IA_CSS_NUM_PARAM_CLASSES][IA_CSS_NUM_ISP_MEMORIES];
 	uint32_t		sh_dma_cmd_ptr;     /* In ISP dmem */
 	uint32_t		isp_pipe_version;
 /* MW: Packing (related) bools in an integer ?? */
@@ -339,17 +356,16 @@ struct ia_css_binary_info {
 struct ia_css_binary_xinfo {
 	/* Part that is of interest to the SP. */
 	struct ia_css_binary_info    sp;
-	
+
 	/* Rest of the binary info, only interesting to the host. */
 	enum ia_css_acc_type	     type;
 	CSS_ALIGN(int32_t	     num_output_formats, 8);
 	enum ia_css_frame_format     output_formats[IA_CSS_FRAME_FORMAT_NUM];
 	uint8_t			     num_output_pins;
 	ia_css_ptr		     xmem_addr;
-	CSS_ALIGN(const struct ia_css_blob_descr *blob,  8);
-	uint32_t		     blob_index;
-	const struct ia_css_memory_offsets *mem_offsets;
-	const struct ia_css_config_memory_offsets *conf_mem_offsets;
+	CSS_ALIGN(const struct ia_css_blob_descr *blob, 8);
+	CSS_ALIGN(uint32_t blob_index, 8);
+	CSS_ALIGN(union ia_css_all_memory_offsets mem_offsets, 8);
 	CSS_ALIGN(struct ia_css_binary_xinfo *next, 8);
 };
 
@@ -424,8 +440,9 @@ struct ia_css_blob_descr {
 	const unsigned char  *blob;
 	struct ia_css_fw_info header;
 	const char	     *name;
-	const struct ia_css_memory_offsets *mem_offsets;
-	const struct ia_css_config_memory_offsets *conf_mem_offsets;
+	struct {
+	  CSS_ALIGN(void * ptr, 8);
+	} mem_offsets[IA_CSS_NUM_PARAM_CLASSES];
 };
 
 struct ia_css_acc_fw;

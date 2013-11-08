@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -51,6 +50,13 @@
 /* This should be vamem_data_t, but that breaks the pipe generator */
 struct sh_css_isp_xnr_vamem_params {
 	uint16_t xnr[SH_CSS_ISP_XNR_TABLE_SIZE];
+};
+
+struct sh_css_isp_xnr_params {
+	/** XNR threshold.
+	 * type:u0.16 valid range:[0,65535]
+	 * default: 25 */
+	uint16_t threshold;
 };
 
 #endif /* __IA_CSS_XNR_PARAM_H */

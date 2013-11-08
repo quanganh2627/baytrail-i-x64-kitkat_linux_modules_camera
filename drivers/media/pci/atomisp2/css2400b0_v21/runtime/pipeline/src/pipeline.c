@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -131,7 +130,7 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 	      pipe_id, pipeline);
 	pipeline->pipe_id = pipe_id;
 	sh_css_sp_init_pipeline(pipeline, pipe_id, pipe_num,
-				false, false, false, true, false,
+				false, false, false, true, SH_CSS_BDS_FACTOR_1_00,
 				SH_CSS_PIPE_CONFIG_OVRD_NO_OVRD,
 				IA_CSS_INPUT_MODE_MEMORY, NULL
 #if !defined(HAS_NO_INPUT_SYSTEM)
@@ -344,8 +343,13 @@ enum ia_css_err ia_css_pipeline_get_output_stage(
 
 bool ia_css_pipeline_has_stopped(struct ia_css_pipeline *pipeline)
 {
+	/* Android compilation files if made an local variable
+	stack size on android is limited to 2k and this structure
+	is around 2.5K, in place of static malloc can be done but
+	if this call is made too often it will lead to fragment memory
+	versus a fixed allocation */
+	static struct sh_css_sp_group sp_group;
 	unsigned int thread_id;
-	struct sh_css_sp_group sp_group;
 	const struct ia_css_fw_info *fw;
 	unsigned int HIVE_ADDR_sp_group;
 
@@ -474,17 +478,20 @@ static enum ia_css_err pipeline_stage_create(
 	struct ia_css_pipeline_stage_desc *stage_desc,
 	struct ia_css_pipeline_stage **new_stage)
 {
-	struct ia_css_pipeline_stage *stage;
+	enum ia_css_err err = IA_CSS_SUCCESS;
+	struct ia_css_pipeline_stage *stage = NULL;
 	struct ia_css_binary *binary;
 	struct ia_css_frame *vf_frame;
 	struct ia_css_frame *out_frame;
 	const struct ia_css_fw_info *firmware;
-	unsigned mem;
+	unsigned mem, pclass;
 
 	/* Verify input parameters*/
 	if (!(stage_desc->in_frame) && !(stage_desc->firmware)
-	    && (stage_desc->binary) && !(stage_desc->binary->online))
-		return IA_CSS_ERR_INTERNAL_ERROR;
+	    && (stage_desc->binary) && !(stage_desc->binary->online)) {
+	    err = IA_CSS_ERR_INTERNAL_ERROR;
+		goto ERR;
+	}
 
 	binary = stage_desc->binary;
 	firmware = stage_desc->firmware;
@@ -492,10 +499,11 @@ static enum ia_css_err pipeline_stage_create(
 	out_frame = stage_desc->out_frame;
 
 	stage = sh_css_malloc(sizeof(*stage));
+	if (stage == NULL) {
+		err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+		goto ERR;
+	}
 	memset(stage, 0, sizeof(*stage));
-
-	if (!stage)
-		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 
 	if (firmware) {
 		stage->binary = NULL;
@@ -510,25 +518,37 @@ static enum ia_css_err pipeline_stage_create(
 			stage->binary_info = NULL;
 	}
 
+	pclass = IA_CSS_PARAM_CLASS_PARAM;
 	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
 		size_t size = 0;
 		if (stage->binary_info)
-			size = stage->binary_info->mem_initializers[mem].size;
+			size = stage->binary_info->mem_initializers[pclass][mem].size;
 		stage->isp_mem_params[mem].size = size;
 		stage->isp_mem_params[mem].address = NULL;
-		if (size)
+		if (size) {
 			stage->isp_mem_params[mem].address = sh_css_malloc(size);
+			if (stage->isp_mem_params[mem].address == NULL) {
+				err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+				goto ERR;
+			}
+		}
 	}
 
+	pclass = IA_CSS_PARAM_CLASS_CONFIG;
 	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
 		size_t size = 0;
 		if (stage->binary_info)
-			size = stage->binary_info->conf_mem_initializers[mem].size;
+			size = stage->binary_info->mem_initializers[pclass][mem].size;
 		stage->isp_mem_configs[mem].size = size;
 		stage->isp_mem_configs[mem].address = NULL;
 		if (size) {
 			stage->isp_mem_configs[mem].address = sh_css_malloc(size);
 			stage->isp_css_configs[mem].address = mmgr_malloc(size);
+		    if (stage->isp_mem_params[mem].address == NULL ||
+				stage->isp_css_configs[mem].address == mmgr_NULL) {
+					err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+					goto ERR;
+			}
 		}
 	}
 
@@ -543,13 +563,10 @@ static enum ia_css_err pipeline_stage_create(
 
 	if (!(out_frame) && (binary)
 	    && (binary->out_frame_info.res.width)) {
-		enum ia_css_err ret =
-		    ia_css_frame_allocate_from_info(&out_frame,
-						    &binary->out_frame_info);
-		if (ret != IA_CSS_SUCCESS) {
-			sh_css_free(stage);
-			return ret;
-		}
+		err = ia_css_frame_allocate_from_info(&out_frame,
+							&binary->out_frame_info);
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
 		stage->out_frame_allocated = true;
 	}
 	/* VF frame is not needed in case of need_pp
@@ -559,18 +576,10 @@ static enum ia_css_err pipeline_stage_create(
 		if ((binary && binary->vf_frame_info.res.width) ||
 		    (firmware && firmware->info.isp.sp.enable.vf_veceven)
 		    ) {
-			enum ia_css_err ret =
-			    ia_css_frame_allocate_from_info(&vf_frame,
-							    &binary->
-							    vf_frame_info);
-			if (ret != IA_CSS_SUCCESS) {
-				if (stage->out_frame_allocated) {
-					ia_css_frame_free(out_frame);
-					out_frame = NULL;
-				}
-				sh_css_free(stage);
-				return ret;
-			}
+			err = ia_css_frame_allocate_from_info(&vf_frame,
+							&binary->vf_frame_info);
+			if (err != IA_CSS_SUCCESS)
+				goto ERR;
 			stage->vf_frame_allocated = true;
 		}
 	} else if (vf_frame && binary && binary->vf_frame_info.res.width) {
@@ -584,7 +593,11 @@ static enum ia_css_err pipeline_stage_create(
 	stage->args.out_frame = out_frame;
 	stage->args.out_vf_frame = vf_frame;
 	*new_stage = stage;
-	return IA_CSS_SUCCESS;
+	return err;
+ERR:
+	if (stage != NULL)
+		pipeline_stage_destroy(stage);
+	return err;
 }
 
 static void pipeline_init_defaults(struct ia_css_pipeline *pipeline,

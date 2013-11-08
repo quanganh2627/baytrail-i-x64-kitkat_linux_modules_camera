@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -30,7 +29,7 @@
 
 /* This is for the firmware loaded from user space */
 struct  sh_css_fw_bi_file_h {
-	int version;			/* Date in the form YYYYMMDD */
+	char version[64];		/* branch tag + week day + time */
 	int binary_nr;			/* Number of binaries */
 	unsigned int h_size;		/* sizeof(struct sh_css_fw_bi_file_h) */
 };

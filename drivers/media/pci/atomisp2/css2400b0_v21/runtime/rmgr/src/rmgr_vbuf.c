@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -104,8 +103,8 @@ void ia_css_rmgr_refcount_retain_vbuf(struct ia_css_rmgr_vbuf_handle **handle)
 				break;
 			}
 		}
-		/* if the loop dus not break and *handle == NULL this is an error
-		   handle and report it.
+		/* if the loop dus not break and *handle == NULL
+		   this is an error handle and report it.
 		 */
 		if (*handle == NULL) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR,
@@ -143,13 +142,14 @@ void ia_css_rmgr_refcount_release_vbuf(struct ia_css_rmgr_vbuf_handle **handle)
  *
  * @param pool	The pointer to the pool
  */
-void ia_css_rmgr_init_vbuf(struct ia_css_rmgr_vbuf_pool *pool)
+enum ia_css_err ia_css_rmgr_init_vbuf(struct ia_css_rmgr_vbuf_pool *pool)
 {
+	enum ia_css_err err = IA_CSS_SUCCESS;
 	size_t bytes_needed;
 	rmgr_refcount_init_vbuf();
 	assert(pool != NULL);
 	if (pool == NULL)
-		return;
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	/* initialize the recycle pool if used */
 	if (pool->recycle && pool->size) {
 		/* allocate memory for storing the handles */
@@ -157,12 +157,16 @@ void ia_css_rmgr_init_vbuf(struct ia_css_rmgr_vbuf_pool *pool)
 		    sizeof(struct ia_css_i_host_rmgr_vbuf_handle *) *
 		    pool->size;
 		pool->handles = sh_css_malloc(bytes_needed);
-		memset(pool->handles, 0, bytes_needed);
+		if (pool->handles != NULL)
+			memset(pool->handles, 0, bytes_needed);
+		else
+			err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 	} else {
 		/* just in case, set the size to 0 */
 		pool->size = 0;
 		pool->handles = NULL;
 	}
+	return err;
 }
 
 /**

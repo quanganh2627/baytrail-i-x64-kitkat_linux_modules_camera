@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 #ifndef _IA_CSS_DEBUG_H_
 #define _IA_CSS_DEBUG_H_
 
@@ -37,6 +36,9 @@
 #endif
 #ifndef __INLINE_PIXELGEN__
 #define __INLINE_PIXELGEN__
+#endif
+#ifndef __INLINE_STREAM2MMIO__
+#define __INLINE_STREAM2MMIO__
 #endif
 #include "ia_css.h"
 #include "sh_css_internal.h"
