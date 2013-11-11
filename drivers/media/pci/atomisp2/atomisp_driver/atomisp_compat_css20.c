@@ -40,6 +40,7 @@
 
 #ifdef CSS21
 #include "ia_css_debug.h"
+#include "ia_css_isp_param.h"
 #else /* CSS21 */
 #include "ia_css_accelerate.h"
 #include "sh_css_debug.h"
@@ -2915,10 +2916,10 @@ int atomisp_css_set_acc_parameters(struct atomisp_acc_fw *acc_fw)
 			!= IA_CSS_SUCCESS)
 			return -EIO;
 #else /* !CSS21 */
-		acc_fw->fw->mem_initializers[mem].address =
-						acc_fw->args[mem].css_ptr;
-		acc_fw->fw->mem_initializers[mem].size =
-						acc_fw->args[mem].length;
+		ia_css_isp_param_set_css_mem_init(&acc_fw->fw->mem_initializers,
+						IA_CSS_PARAM_CLASS_PARAM, mem,
+						acc_fw->args[mem].css_ptr,
+						acc_fw->args[mem].length);
 #endif /* !CSS21 */
 	}
 
