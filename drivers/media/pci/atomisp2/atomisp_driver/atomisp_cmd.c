@@ -342,7 +342,10 @@ int atomisp_reset(struct atomisp_device *isp)
 		if (ret < 0)
 			dev_err(isp->dev, "can not enable ISP power\n");
 	}
-	atomisp_css_resume(isp);
+	ret = atomisp_css_resume(isp);
+	if (ret)
+		isp->isp_fatal_error = true;
+
 	return ret;
 }
 

@@ -779,6 +779,11 @@ static int atomisp_s_fmt_cap(struct file *file, void *fh,
 	int ret;
 
 	mutex_lock(&isp->mutex);
+	if (isp->isp_fatal_error) {
+		ret = -EIO;
+		mutex_unlock(&isp->mutex);
+		return ret;
+	}
 	ret = atomisp_set_fmt(vdev, f);
 	mutex_unlock(&isp->mutex);
 	return ret;
@@ -1339,6 +1344,11 @@ static int atomisp_streamon(struct file *file, void *fh,
 	}
 
 	mutex_lock(&isp->mutex);
+	if (isp->isp_fatal_error) {
+		ret = -EIO;
+		goto out;
+	}
+
 	if (asd->streaming == ATOMISP_DEVICE_STREAMING_STOPPING) {
 		ret = -EBUSY;
 		goto out;
