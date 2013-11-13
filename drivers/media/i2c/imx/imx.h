@@ -585,7 +585,7 @@ struct imx_otp imx_otps[] = {
 		.size = DEFAULT_OTP_SIZE,
 	},
 	[IMX135_SALTBAY] = {
-		.otp_read = imx_otp_read,
+		.otp_read = e2prom_otp_read,
 		.dev_addr = E2PROM_ADDR,
 		.start_addr = 0,
 		.size = DEFAULT_OTP_SIZE,
