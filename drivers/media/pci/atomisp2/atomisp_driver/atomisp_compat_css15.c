@@ -1591,3 +1591,8 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 
 	return 0;
 }
+
+bool atomisp_css_valid_sof(struct atomisp_device *isp)
+{
+	return true;
+}

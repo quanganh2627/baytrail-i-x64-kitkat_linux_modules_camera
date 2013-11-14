@@ -21,6 +21,7 @@
 
 #include <media/videobuf-vmalloc.h>
 #include <media/v4l2-dev.h>
+#include <media/v4l2-event.h>
 
 #include "mmu/isp_mmu.h"
 #include "mmu/sh_mmu_mrfld.h"
@@ -3810,6 +3811,42 @@ static struct atomisp_sub_device *__get_atomisp_subdev(
 	return NULL;
 }
 
+static struct atomisp_sub_device *
+	__get_asd_from_port(struct atomisp_device *isp, int port)
+{
+	struct atomisp_sub_device *asd = NULL;
+	int i;
+
+	/* Check which isp subdev to send eof */
+	for (i = 0; i < MAX_STREAM_NUM; i++) {
+		if (isp->asd[i].streaming == ATOMISP_DEVICE_STREAMING_ENABLED &&
+		    isp->asd[i].input_curr == port) {
+			asd = &isp->asd[i];
+			break;
+		}
+	}
+
+	return asd;
+}
+
+static void atomisp_eof_event(struct atomisp_device *isp, int port)
+{
+	struct atomisp_sub_device *asd = NULL;
+	struct v4l2_event event = {0};
+
+	asd = __get_asd_from_port(isp, port);
+
+	if (asd == NULL) {
+		dev_err(isp->dev, "%s:invalid eof port:%d",  __func__, port);
+		return;
+	}
+
+	event.type = V4L2_EVENT_FRAME_END;
+	event.u.frame_sync.frame_sequence = atomic_inc_return(&asd->eof_count);
+
+	v4l2_event_queue(asd->subdev.devnode, &event);
+}
+
 int atomisp_css_isr_thread(struct atomisp_device *isp,
 			   bool *frame_done_found,
 			   bool *css_pipe_done,
@@ -3821,16 +3858,18 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 
 	while (!atomisp_css_dequeue_event(&current_event)) {
 		atomisp_css_temp_pipe_to_pipe_id(asd, &current_event);
-		asd = __get_atomisp_subdev(current_event.event.pipe,
-						  isp, &stream_id);
+
+		/* EOF Event does not have the css_pipe returned */
+		if (current_event.event.type == IA_CSS_EVENT_TYPE_PORT_EOF)
+			asd = __get_asd_from_port(isp,
+					current_event.event.port);
+		else
+			asd = __get_atomisp_subdev(current_event.event.pipe,
+					isp, &stream_id);
 		if (!asd) {
-			/* EOF Event does not have the css_pipe returned */
-			if (current_event.event.type !=
-			    IA_CSS_EVENT_TYPE_PORT_EOF) {
-				dev_err(isp->dev, "%s:no subdev. event:%d",
-					 __func__, current_event.event.type);
-				return -EINVAL;
-			}
+			dev_err(isp->dev, "%s:no subdev. event:%d",  __func__,
+					current_event.event.type);
+			return -EINVAL;
 		}
 
 		switch (current_event.event.type) {
@@ -3868,6 +3907,29 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			css_pipe_done[asd->index] = true;
 			break;
 		case CSS_EVENT_PORT_EOF:
+			atomisp_eof_event(isp, current_event.event.port);
+			/*
+			 * If sequence_temp and sequence are the same
+			 * there was no frame lost so we can increase
+			 * sequence_temp. If not then processing of frame is
+			 * still in progress and driver needs to keep old
+			 * sequence_temp value.
+			 * NOTE: There is assumption here that ISP will not
+			 * start processing next frame from sensor before old
+			 * one is completely done.
+			 */
+			if (atomic_read(&asd->sequence) ==
+					atomic_read(&asd->sequence_temp))
+				atomic_set(&asd->sequence_temp,
+						atomic_read(&asd->eof_count));
+
+			/* signal streamon after delayed init is done */
+			if (asd->delayed_init ==
+					ATOMISP_DELAYED_INIT_WORK_DONE) {
+				asd->delayed_init = ATOMISP_DELAYED_INIT_DONE;
+				complete(&asd->init_done);
+			}
+
 			break;
 		default:
 			dev_err(isp->dev, "unhandled css stored event: 0x%x\n",
@@ -3881,4 +3943,23 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 void atomisp_set_stop_timeout(unsigned int timeout)
 {
 	return;
+}
+
+bool atomisp_css_valid_sof(struct atomisp_device *isp)
+{
+	unsigned int i, j;
+
+	/* Loop for each css stream */
+	for (i = 0; i < MAX_STREAM_NUM; i++) {
+		struct atomisp_sub_device *asd = &isp->asd[i];
+		/* Loop for each css vc stream */
+		for (j = 0; j < ATOMISP_INPUT_STREAM_NUM; j++) {
+			if (asd->stream_env[j].stream &&
+				asd->stream_env[j].stream_config.mode ==
+				IA_CSS_INPUT_MODE_BUFFERED_SENSOR)
+				return false;
+		}
+	}
+
+	return true;
 }

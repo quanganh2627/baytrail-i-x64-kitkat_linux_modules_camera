@@ -574,4 +574,6 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			   bool *css_pipe_done,
 			   bool *reset_wdt_timer);
 void atomisp_set_stop_timeout(unsigned int timeout);
+
+bool atomisp_css_valid_sof(struct atomisp_device *isp);
 #endif

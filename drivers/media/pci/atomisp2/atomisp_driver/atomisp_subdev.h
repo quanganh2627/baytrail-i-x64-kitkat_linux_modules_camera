@@ -302,6 +302,7 @@ struct atomisp_sub_device {
 	int sensor_curr;
 
 	atomic_t sof_count;
+	atomic_t eof_count;
 	atomic_t sequence;      /* Sequence value that is assigned to buffer. */
 	atomic_t sequence_temp;
 
