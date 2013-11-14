@@ -97,7 +97,7 @@ int atomisp_css_init(struct atomisp_device *isp)
 
 	/* CSS has default zoom factor of 61x61, we want no zoom
 	   because the zoom binary for capture is broken (XNR). */
-	if (IS_ISP2400(isp))
+	if (IS_ISP24XX(isp))
 		sh_css_set_zoom_factor(MRFLD_MAX_ZOOM_FACTOR,
 					MRFLD_MAX_ZOOM_FACTOR);
 	else

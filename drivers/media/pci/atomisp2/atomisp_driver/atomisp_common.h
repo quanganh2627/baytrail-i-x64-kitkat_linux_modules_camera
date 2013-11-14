@@ -48,9 +48,9 @@ extern int pad_h;
 #define MFLD_MAX_ZOOM_FACTOR	64
 #define MRFLD_MAX_ZOOM_FACTOR	1024
 
-#define IS_ISP2400(isp)							\
+#define IS_ISP24XX(isp)							\
 	(((isp)->media_dev.hw_revision & ATOMISP_HW_REVISION_MASK)	\
-	 == (ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT))
+	 >= (ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT))
 
 struct atomisp_format_bridge {
 	unsigned int pixelformat;

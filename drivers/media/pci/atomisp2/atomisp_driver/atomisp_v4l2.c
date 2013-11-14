@@ -164,7 +164,7 @@ static int atomisp_save_iunit_reg(struct atomisp_device *isp)
 	pci_read_config_dword(dev, PCI_INTERRUPT_CTRL,
 			      &isp->saved_regs.interrupt_control);
 
-	if (IS_ISP2400(isp)) {
+	if (IS_ISP24XX(isp)) {
 		pci_read_config_dword(dev, MRFLD_PCI_PMCS,
 				      &isp->saved_regs.pmcs);
 		/* Ensure read/write combining is enabled. */
@@ -240,7 +240,7 @@ static int atomisp_restore_iunit_reg(struct atomisp_device *isp)
 	pci_write_config_dword(dev, PCI_I_CONTROL,
 					isp->saved_regs.i_control);
 
-	if (IS_ISP2400(isp)) {
+	if (IS_ISP24XX(isp)) {
 		pci_write_config_dword(dev, MRFLD_PCI_PMCS,
 						isp->saved_regs.pmcs);
 		pci_write_config_dword(dev, MRFLD_PCI_CSI_ACCESS_CTRL_VIOL,
@@ -428,7 +428,7 @@ static int atomisp_runtime_suspend(struct device *dev)
 		dev_get_drvdata(dev);
 	int ret;
 
-	if (IS_ISP2400(isp)) {
+	if (IS_ISP24XX(isp)) {
 		ret = atomisp_mrfld_pre_power_down(isp);
 		if (ret)
 			return ret;
@@ -471,7 +471,7 @@ static int atomisp_runtime_resume(struct device *dev)
 	if (isp->saved_regs.pcicmdsts)
 		atomisp_restore_iunit_reg(isp);
 
-	if (IS_ISP2400(isp))
+	if (IS_ISP24XX(isp))
 		atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
 
 	return 0;
@@ -502,7 +502,7 @@ static int atomisp_suspend(struct device *dev)
 	spin_unlock_irqrestore(&isp->lock, flags);
 
 	/* Prepare for MRFLD IUNIT power down */
-	if (IS_ISP2400(isp)) {
+	if (IS_ISP24XX(isp)) {
 		ret = atomisp_mrfld_pre_power_down(isp);
 		if (ret)
 			return ret;
@@ -546,7 +546,7 @@ static int atomisp_resume(struct device *dev)
 	if (isp->saved_regs.pcicmdsts)
 		atomisp_restore_iunit_reg(isp);
 
-	if (IS_ISP2400(isp))
+	if (IS_ISP24XX(isp))
 		atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
 
 	return 0;
@@ -726,7 +726,7 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 	if (!isp->inputs[0].camera)
 		dev_warn(isp->dev, "no camera attached or fail to detect\n");
 
-	if (IS_ISP2400(isp))
+	if (IS_ISP24XX(isp))
 		return mrfld_csi_lane_config(isp);
 
 	return 0;
@@ -1200,7 +1200,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	pm_qos_add_request(&isp->pm_qos, PM_QOS_CPU_DMA_LATENCY,
 			   PM_QOS_DEFAULT_VALUE);
 
-	if (IS_ISP2400(isp)) {
+	if (IS_ISP24XX(isp)) {
 		/*
 		 * for MRFLD, Software/firmware needs to write a 1 to bit 0 of
 		 * the register at CSI_RECEIVER_SELECTION_REG to enable SH CSI

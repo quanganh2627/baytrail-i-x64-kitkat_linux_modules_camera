@@ -1413,7 +1413,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 	}
 
 #ifdef PUNIT_CAMERA_BUSY
-	if (!IS_ISP2400(isp) && isp->need_gfx_throttle) {
+	if (!IS_ISP24XX(isp) && isp->need_gfx_throttle) {
 		/*
 		 * As per h/w architect and ECO 697611 we need to throttle the
 		 * GFX performance (freq) while camera is up to prevent peak
@@ -1490,11 +1490,11 @@ start_sensor:
 #endif
 		atomisp_set_term_en_count(isp);
 
-		if (IS_ISP2400(isp) &&
+		if (IS_ISP24XX(isp) &&
 			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	} else {
-		if (IS_ISP2400(isp) &&
+		if (IS_ISP24XX(isp) &&
 			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	}
@@ -1679,7 +1679,7 @@ stopsensor:
 	}
 
 #ifdef PUNIT_CAMERA_BUSY
-	if (!IS_ISP2400(isp) && isp->need_gfx_throttle) {
+	if (!IS_ISP24XX(isp) && isp->need_gfx_throttle) {
 		/* Free camera_busy bit */
 		msg_ret = intel_mid_msgbus_read32(PUNIT_PORT, MFLD_OR1);
 		msg_ret &= ~0x100;
@@ -1687,7 +1687,7 @@ stopsensor:
 	}
 #endif
 
-	if (IS_ISP2400(isp) && atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW))
+	if (IS_ISP24XX(isp) && atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW))
 		dev_warn(isp->dev, "DFS failed.\n");
 	/*
 	 * ISP work around, need to reset isp
