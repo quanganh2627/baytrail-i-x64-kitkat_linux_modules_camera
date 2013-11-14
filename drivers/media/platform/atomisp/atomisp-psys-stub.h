@@ -31,9 +31,24 @@
 struct cdev;
 struct list;
 struct device;
+struct atomisp_event;
+
+struct atomisp_bufmap {
+	void *userptr;
+	struct list_head list;
+};
+
+struct atomisp_eventq {
+	struct atomisp_event *ev;
+	struct list_head list;
+};
 
 struct atomisp_fh {
+	struct device *dev;
+	wait_queue_head_t wait;
 	struct list_head list;
+	struct list_head bufmap;
+	struct list_head eventq;
 };
 
 struct atomisp_device {

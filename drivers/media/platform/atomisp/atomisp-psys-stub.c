@@ -19,13 +19,18 @@
 
 #include <linux/cdev.h>
 #include <linux/device.h>
-#include <linux/interrupt.h>
 #include <linux/fs.h>
+#include <linux/interrupt.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/poll.h>
+#include <linux/sched.h>
 #include <linux/slab.h>
+#include <linux/wait.h>
 
 #include "atomisp-psys-stub.h"
+#include "atomisp-psys.h"
+#include "psysstub.h"
 
 #define ATOMISP_NUM_DEVICES	4
 
@@ -46,6 +51,11 @@ static int atomisp_open(struct inode *inode, struct file *file)
 	if (!fh)
 		return -ENOMEM;
 
+	init_waitqueue_head(&fh->wait);
+	INIT_LIST_HEAD(&fh->bufmap);
+	INIT_LIST_HEAD(&fh->eventq);
+
+	fh->dev = &isp->dev;
 	file->private_data = fh;
 
 	mutex_lock(&isp->mutex);
@@ -55,13 +65,193 @@ static int atomisp_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
+static const struct atomisp_capability caps = {
+	.version = 1,
+	.driver = "atomisp-psys-stub",
+};
+
+static long atomisp_ioctl_mapbuf(struct file *file, struct atomisp_buffer __user *arg)
+{
+	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_bufmap *bufmap;
+	struct atomisp_buffer buf;
+	int err = 0;
+
+	if (copy_from_user(&buf, arg, sizeof buf))
+		return -EFAULT;
+	bufmap = kzalloc(sizeof(*bufmap), GFP_KERNEL);
+	if (!bufmap) {
+		err = -ENOMEM;
+		goto out;
+	}
+	bufmap->userptr = buf.m.userptr;
+	dev_dbg(fh->dev, "IOC_MAPBUF: userptr %p to %p\n", buf.m.userptr, bufmap);
+	list_add_tail(&bufmap->list, &fh->bufmap);
+
+out:
+	return err;
+}
+
+static long atomisp_ioctl_unmapbuf(struct file *file, struct atomisp_buffer __user *arg)
+{
+	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_bufmap *bufmap = NULL;
+	struct atomisp_buffer buf;
+	int err = 0;
+
+	if (copy_from_user(&buf, arg, sizeof buf))
+		return -EFAULT;
+	list_for_each_entry(bufmap, &fh->bufmap, list) {
+		if (bufmap->userptr == buf.m.userptr)
+			break;
+	}
+	if (bufmap) {
+		list_del(&bufmap->list);
+		kfree(bufmap);
+		dev_dbg(fh->dev, "IOC_UNMAPBUF: buffer %p\n", buf.m.userptr);
+	}
+	return err;
+}
+
+static int atomisp_queue_event(struct atomisp_fh *fh, struct atomisp_event *e)
+{
+	struct atomisp_eventq *eventq;
+	struct atomisp_event *ev;
+
+	eventq = kzalloc(sizeof(*eventq), GFP_KERNEL);
+	if (!eventq)
+		return -ENOMEM;
+	ev = kzalloc(sizeof(*ev), GFP_KERNEL);
+	if (!ev)
+		goto out;
+	*ev = *e;
+	eventq->ev = ev;
+	dev_dbg(fh->dev, "queue event %u (%p)\n", ev->type, ev);
+	list_add_tail(&eventq->list, &fh->eventq);
+	wake_up_interruptible(&fh->wait);
+	return 0;
+out:
+	kfree(eventq);
+	return -ENOMEM;
+}
+
+/**
+ * This should be moved to a separate file as this part will be
+ * replaced by the actual PSYS hardware API.
+ */
+static int psysstub_command(struct atomisp_fh *fh, struct atomisp_command *command)
+{
+	struct atomisp_event ev;
+	int err = 0;
+
+	switch(command->id) {
+	case ATOMISP_PSYS_STUB_PREVIEW:
+		/* TODO: add some fake processing to the data buffers
+		   passed */
+		ev.type = ATOMISP_EVENT_TYPE_CMD_COMPLETE;
+		ev.ev.cmd_done.id = command->id;
+		atomisp_queue_event(fh, &ev);
+		break;
+	default:
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
+static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user *arg)
+{
+	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_command command;
+
+	if (copy_from_user(&command, arg, sizeof command))
+		return -EFAULT;
+
+	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", command.bufcount);
+
+	return psysstub_command(fh, &command);
+}
+
+static long atomisp_ioctl_dqevent(struct file *file, struct atomisp_event __user *arg)
+{
+	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_eventq *evq;
+	struct atomisp_event *ev;
+
+	dev_dbg(fh->dev, "IOC_DQEVENT\n");
+
+	/* TODO: eventq accesses must be serialized */
+	/* TODO: should be able to block on this */
+
+	if (list_empty(&fh->eventq))
+		return -EINVAL;
+
+	evq = list_first_entry(&fh->eventq, struct atomisp_eventq, list);
+	ev = evq->ev;
+
+	if (copy_to_user(arg, ev, sizeof *ev))
+		return -EFAULT;
+
+	list_del(&evq->list);
+	kfree(evq);
+	kfree(ev);
+
+	return 0;
+}
+
+static long atomisp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	int err = 0;
+	void __user *argp = (void __user*)arg;
+
+	switch (cmd) {
+	case ATOMISP_IOC_QUERYCAP:
+		return copy_to_user((void __user*)arg,
+				&caps, sizeof caps);
+	case ATOMISP_IOC_MAPBUF:
+		return atomisp_ioctl_mapbuf(file, argp);
+	case ATOMISP_IOC_UNMAPBUF:
+		return atomisp_ioctl_unmapbuf(file, argp);
+	case ATOMISP_IOC_QCMD:
+		return atomisp_ioctl_qcmd(file, argp);
+	case ATOMISP_IOC_DQEVENT:
+		return atomisp_ioctl_dqevent(file, argp);
+	default:
+		err = -ENOTTY;
+	}
+	return err;
+}
+
+static unsigned int atomisp_poll(struct file *file, struct poll_table_struct *wait)
+{
+	struct atomisp_fh *fh = file->private_data;
+	unsigned int res = 0;
+
+	dev_dbg(fh->dev, "atomisp poll\n");
+
+	poll_wait(file, &fh->wait, wait);
+
+	if (!list_empty(&fh->eventq))
+		res = POLLIN;
+
+	dev_dbg(fh->dev, "atomisp poll res %u\n", res);
+
+	return res;
+}
+
+
 static int atomisp_release(struct inode *inode, struct file *file)
 {
 	struct atomisp_device *isp = inode_to_atomisp_device(inode);
 	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_bufmap *bm, *bm0;
 
 	mutex_lock(&isp->mutex);
 	list_del(&fh->list);
+	list_for_each_entry_safe(bm, bm0, &fh->bufmap, list) {
+		list_del(&bm->list);
+		kfree(bm);
+	}
 	mutex_unlock(&isp->mutex);
 	kfree(fh);
 
@@ -71,6 +261,8 @@ static int atomisp_release(struct inode *inode, struct file *file)
 static const struct file_operations atomisp_fops = {
 	.open = atomisp_open,
 	.release = atomisp_release,
+	.unlocked_ioctl = atomisp_ioctl,
+	.poll = atomisp_poll,
 	.owner = THIS_MODULE,
 };
 
