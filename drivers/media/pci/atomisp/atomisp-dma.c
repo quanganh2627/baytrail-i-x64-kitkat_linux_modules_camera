@@ -317,7 +317,7 @@ static void atomisp_dma_sync_sg_for_cpu(
 		clflush_cache_range(sg_page(sg), sg->length);
 }
 
-const struct dma_map_ops atomisp_dma_ops = {
+struct dma_map_ops atomisp_dma_ops = {
 	.alloc = atomisp_dma_alloc,
 	.free = atomisp_dma_free,
 	.map_sg = atomisp_dma_map_sg,

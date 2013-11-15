@@ -30,6 +30,6 @@ struct atomisp_dma_mapping {
 	struct kref ref;
 };
 
-extern const struct dma_map_ops atomisp_dma_ops;
+extern struct dma_map_ops atomisp_dma_ops;
 
 #endif /* ATOMISP_DMA_H */

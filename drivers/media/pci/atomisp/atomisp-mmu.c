@@ -372,7 +372,7 @@ static void atomisp_mmu_remove_device(struct device *dev)
 	kref_put(&mmu->dmap->ref, &free_dma_mapping);
 }
 
-const struct iommu_ops atomisp_iommu_ops = {
+struct iommu_ops atomisp_iommu_ops = {
 	.domain_init	= atomisp_mmu_domain_init,
 	.domain_destroy	= atomisp_mmu_domain_destroy,
 	.attach_dev	= atomisp_mmu_attach_dev,
