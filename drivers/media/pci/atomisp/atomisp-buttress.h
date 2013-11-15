@@ -17,28 +17,14 @@
  *
  */
 
-#ifndef ATOMISP_PDATA_H
-#define ATOMISP_PDATA_H
+#ifndef ATOMISP_BUTTRESS_H
+#define ATOMISP_BUTTRESS_H
 
-#define ATOMISP_MMU_NAME ATOMISP_NAME "-mmu"
-#define ATOMISP_CSI2_NAME ATOMISP_NAME "-csi2"
-#define ATOMISP_ISYS_NAME ATOMISP_NAME "-isys"
-#define ATOMISP_PSYS_NAME ATOMISP_NAME "-psys"
+#include "atomisp.h"
+#include "atomisp-pdata.h"
 
-struct atomisp_mmu_pdata {
-	void __iomem *base;
+struct atomisp_buttress_device {
+	struct atomisp_buttress_pdata *pdata;
 };
 
-struct atomisp_csi2_pdata {
-	void __iomem *base;
-};
-
-struct atomisp_isys_pdata {
-	void __iomem *base;
-};
-
-struct atomisp_psys_pdata {
-	void __iomem *base;
-};
-
-#endif
+#endif /* ATOMISP_BUTTRESS_H */
