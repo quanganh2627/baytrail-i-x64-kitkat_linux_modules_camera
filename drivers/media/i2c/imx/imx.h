@@ -415,6 +415,7 @@ struct imx_device {
 	struct imx_otp *otp_driver;
 	const struct imx_resolution *curr_res_table;
 	int entries_curr_table;
+	const struct firmware *fw;
 
 	/* used for h/b blank tuning */
 	struct v4l2_ctrl_handler ctrl_handler;

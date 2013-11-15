@@ -18,6 +18,8 @@
  * 02110-1301, USA.
  *
  */
+#include <asm/intel-mid.h>
+#include <linux/atomisp_platform.h>
 #include <linux/bitops.h>
 #include <linux/device.h>
 #include <linux/delay.h>
@@ -28,6 +30,7 @@
 #include <linux/i2c.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
+#include <linux/libmsrlisthelper.h>
 #include <linux/mm.h>
 #include <linux/kmod.h>
 #include <linux/module.h>
@@ -36,10 +39,10 @@
 #include <linux/slab.h>
 #include <linux/types.h>
 #include <media/v4l2-chip-ident.h>
+#include <media/v4l2-ctrls.h>
 #include <media/v4l2-device.h>
-#include <asm/intel-mid.h>
 #include "imx.h"
-#include <asm/intel-mid.h>
+
 
 static enum atomisp_bayer_order imx_bayer_order_mapping[] = {
 	atomisp_bayer_order_rggb,
@@ -1516,6 +1519,16 @@ static int imx_s_stream(struct v4l2_subdev *sd, int enable)
 
 	mutex_lock(&dev->input_lock);
 	if (enable) {
+		/* Noise reduction & dead pixel applied before streaming */
+		if (dev->fw == NULL) {
+			dev_warn(&client->dev, "No MSR loaded from library");
+		} else {
+			ret = apply_msr_data(client, dev->fw);
+			if (ret) {
+				mutex_unlock(&dev->input_lock);
+				return ret;
+			}
+		}
 		__imx_print_timing(sd);
 		ret = imx_write_reg_array(client, imx_streaming);
 		if (ret != 0) {
@@ -2022,6 +2035,7 @@ static int imx_remove(struct i2c_client *client)
 	v4l2_ctrl_handler_free(&dev->ctrl_handler);
 	dev->platform_data->csi_cfg(sd, 0);
 	v4l2_device_unregister_subdev(sd);
+	release_msr_list(client, dev->fw);
 	kfree(dev);
 
 	return 0;
@@ -2068,6 +2082,7 @@ static int imx_probe(struct i2c_client *client,
 	struct imx_device *dev;
 	struct camera_mipi_info *imx_info = NULL;
 	int ret;
+	char *msr_file_name;
 
 	/* allocate sensor device & init sub device */
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
@@ -2113,9 +2128,22 @@ static int imx_probe(struct i2c_client *client,
 	dev->sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV_SENSOR;
 
 	ret = media_entity_init(&dev->sd.entity, 1, &dev->pad, 0);
-	if (ret)
+	if (ret) {
 		imx_remove(client);
+		return ret;
+	}
 
+	/* Load the Noise reduction, Dead pixel registers from cpf file*/
+	if (dev->platform_data->msr_file_name == NULL) {
+		dev_warn(&client->dev, "Drvb file not present");
+	} else {
+		msr_file_name = dev->platform_data->msr_file_name();
+		ret = load_msr_list(client, msr_file_name, &dev->fw);
+		if (ret) {
+			imx_remove(client);
+			return ret;
+		}
+	}
 	return ret;
 
 out_ctrl_handler_free:
