@@ -68,8 +68,8 @@ static void atomisp_msi_irq_uninit(struct atomisp_device *isp)
 
 #define ATOMISP_PCI_BAR		0
 
-static struct device *atomisp_mmu_init(struct pci_dev *pdev,
-				       void __iomem *base, unsigned int nr)
+static struct atomisp_bus_device *atomisp_mmu_init(
+	struct pci_dev *pdev, void __iomem *base, unsigned int nr)
 {
 	struct atomisp_mmu_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -82,8 +82,8 @@ static struct device *atomisp_mmu_init(struct pci_dev *pdev,
 	return atomisp_bus_add_device(pdev, pdata, NULL, ATOMISP_MMU_NAME, nr);
 }
 
-static struct device *atomisp_isys_init(struct pci_dev *pdev, void *iommu,
-					void __iomem *base, unsigned int nr)
+static struct atomisp_bus_device *atomisp_isys_init(
+	struct pci_dev *pdev, void *iommu, void __iomem *base, unsigned int nr)
 {
 	struct atomisp_isys_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -147,9 +147,9 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	}
 
 	pr_info("mmu %p\n", isp->iommu);
-	pr_info("a %p\n", isp->iommu->archdata.iommu);
+	pr_info("a %p\n", isp->iommu->dev.archdata.iommu);
 
-	isp->isys = atomisp_isys_init(pdev, isp->iommu, base, 0); /* fixme */
+	isp->isys = atomisp_isys_init(pdev, &isp->iommu->dev, base, 0);
 	rval = PTR_ERR(isp->isys);
 	if (IS_ERR(isp->isys))
 		goto out_atomisp_bus_del_devices;

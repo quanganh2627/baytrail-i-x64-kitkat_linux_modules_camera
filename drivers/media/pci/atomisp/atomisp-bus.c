@@ -85,8 +85,9 @@ static void atomisp_bus_release(struct device *dev)
 	kfree(adev);
 }
 
-struct device *atomisp_bus_add_device(struct pci_dev *pdev, void *pdata,
-				      void *iommu, char *name, unsigned int nr)
+struct atomisp_bus_device *atomisp_bus_add_device(
+	struct pci_dev *pdev, void *pdata, void *iommu, char *name,
+	unsigned int nr)
 {
 	struct atomisp_bus_device *adev;
 	struct atomisp_device *isp = pci_get_drvdata(pdev);
@@ -114,7 +115,7 @@ struct device *atomisp_bus_add_device(struct pci_dev *pdev, void *pdata,
 	list_add(&adev->list, &isp->devices);
 	mutex_unlock(&atomisp_bus_mutex);
 
-	return &adev->dev;
+	return adev;
 }
 
 void atomisp_bus_del_devices(struct pci_dev *pdev)
