@@ -25,9 +25,6 @@
 #include <linux/pm_runtime.h>
 #include <linux/timer.h>
 
-#include <asm/intel-mid.h>
-#include <linux/intel_mid_pm.h>
-
 #include "atomisp.h"
 #include "atomisp-pdata.h"
 #include "atomisp-bus.h"
