@@ -82,10 +82,10 @@ static struct device *atomisp_mmu_init(struct pci_dev *pdev,
 	return atomisp_bus_add_device(pdev, pdata, NULL, ATOMISP_MMU_NAME, nr);
 }
 
-static struct device *atomisp_csi2_init(struct pci_dev *pdev, void *iommu,
+static struct device *atomisp_isys_init(struct pci_dev *pdev, void *iommu,
 					void __iomem *base, unsigned int nr)
 {
-	struct atomisp_csi2_pdata *pdata =
+	struct atomisp_isys_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
 
 	if (!pdata)
@@ -93,7 +93,7 @@ static struct device *atomisp_csi2_init(struct pci_dev *pdev, void *iommu,
 
 	pdata->base = base;
 
-	return atomisp_bus_add_device(pdev, pdata, iommu, ATOMISP_CSI2_NAME,
+	return atomisp_bus_add_device(pdev, pdata, iommu, ATOMISP_ISYS_NAME,
 				      nr);
 }
 
@@ -108,7 +108,6 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	struct atomisp_device *isp;
 	phys_addr_t phys;
 	void __iomem *base;
-	struct device *iommu_dev, *dev_tmp;
 	int rval;
 
 	rval = pcim_enable_device(pdev);
@@ -140,19 +139,19 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	INIT_LIST_HEAD(&isp->devices);
 	pci_set_drvdata(pdev, isp);
 
-	iommu_dev = atomisp_mmu_init(pdev, base + 0x00070000, 0);
-	rval = PTR_ERR(iommu_dev);
-	if (IS_ERR(iommu_dev)) {
+	isp->iommu = atomisp_mmu_init(pdev, base + 0x00070000, 0);
+	rval = PTR_ERR(isp->iommu);
+	if (IS_ERR(isp->iommu)) {
 		dev_err(&pdev->dev, "can't create iommu device\n");
 		return -ENOMEM;
 	}
 
-	pr_info("mmu %p\n", iommu_dev);
-	pr_info("a %p\n", iommu_dev->archdata.iommu);
+	pr_info("mmu %p\n", isp->iommu);
+	pr_info("a %p\n", isp->iommu->archdata.iommu);
 
-	dev_tmp = atomisp_csi2_init(pdev, iommu_dev, base, 0); /* fixme */
-	rval = PTR_ERR(dev_tmp);
-	if (IS_ERR(dev_tmp))
+	isp->isys = atomisp_isys_init(pdev, isp->iommu, base, 0); /* fixme */
+	rval = PTR_ERR(isp->isys);
+	if (IS_ERR(isp->isys))
 		goto out_atomisp_bus_del_devices;
 
 	pci_set_master(pdev);
