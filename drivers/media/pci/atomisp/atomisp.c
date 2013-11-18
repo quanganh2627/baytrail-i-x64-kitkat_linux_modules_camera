@@ -30,42 +30,6 @@
 #include "atomisp-bus.h"
 #include "atomisp-regs.h"
 
-static void atomisp_msi_irq_init(struct atomisp_device *isp)
-{
-	u32 msg32;
-	u16 msg16;
-
-	pci_read_config_dword(isp->pdev, PCI_MSI_CAPID, &msg32);
-	msg32 |= PCI_MSI_CAPID_ENABLE;
-	pci_write_config_dword(isp->pdev, PCI_MSI_CAPID, msg32);
-
-	pci_write_config_dword(isp->pdev, PCI_INTERRUPT_CTRL,
-			       PCI_INTERRUPT_CTRL_IER | PCI_INTERRUPT_CTRL_IIR);
-
-	pci_read_config_word(isp->pdev, PCI_COMMAND, &msg16);
-	msg16 |= PCI_COMMAND_MEMORY |
-		PCI_COMMAND_MASTER |
-		PCI_COMMAND_INTX_DISABLE;
-	pci_write_config_word(isp->pdev, PCI_COMMAND, msg16);
-}
-
-static void atomisp_msi_irq_uninit(struct atomisp_device *isp)
-{
-	u32 msg32;
-	u16 msg16;
-
-	pci_read_config_dword(isp->pdev, PCI_MSI_CAPID, &msg32);
-	msg32 &=  PCI_MSI_CAPID_ENABLE;
-	pci_write_config_dword(isp->pdev, PCI_MSI_CAPID, msg32);
-
-	pci_write_config_dword(isp->pdev, PCI_INTERRUPT_CTRL, 0);
-
-	pci_read_config_word(isp->pdev, PCI_COMMAND, &msg16);
-	msg16 &= ~(PCI_COMMAND_MASTER |
-		   PCI_COMMAND_INTX_DISABLE);
-	pci_write_config_word(isp->pdev, PCI_COMMAND, msg16);
-}
-
 #define ATOMISP_PCI_BAR		0
 
 static struct atomisp_bus_device *atomisp_mmu_init(
@@ -185,8 +149,6 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 		goto out_atomisp_bus_del_devices;
 	}
 
-	atomisp_msi_irq_init(isp);
-
 	pm_runtime_put_noidle(&pdev->dev);
 	pm_runtime_allow(&pdev->dev);
 
@@ -206,8 +168,6 @@ static void atomisp_pci_remove(struct pci_dev *pdev)
 
 	pm_runtime_forbid(&pdev->dev);
 	pm_runtime_get_noresume(&pdev->dev);
-
-	atomisp_msi_irq_uninit(isp);
 }
 
 static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
