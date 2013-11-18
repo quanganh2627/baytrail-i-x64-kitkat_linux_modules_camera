@@ -45,10 +45,15 @@ static int atomisp_bus_probe(struct device *dev)
 {
 	struct atomisp_bus_device *adev = to_atomisp_bus_device(dev);
 	struct atomisp_bus_driver *adrv = to_atomisp_bus_driver(dev->driver);
-	int rval = adrv->probe ? adrv->probe(adev) : -ENODEV;
+	int rval;
 
-	if (rval)
+	adev->adrv = adrv;
+	rval = adrv->probe ? adrv->probe(adev) : -ENODEV;
+
+	if (rval) {
 		atomisp_bus_set_drvdata(adev, NULL);
+		adev->adrv = NULL;
+	}
 
 	return rval;
 }

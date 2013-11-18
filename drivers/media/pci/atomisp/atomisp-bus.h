@@ -35,6 +35,7 @@ struct atomisp_bus_device {
 	struct device dev;
 	struct list_head list;
 	void *pdata;
+	struct atomisp_bus_driver *adrv;
 };
 
 #define to_atomisp_bus_device(_dev) \
