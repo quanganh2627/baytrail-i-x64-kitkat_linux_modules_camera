@@ -27,6 +27,4 @@ struct atomisp_psys_device {
 	struct atomisp_psys_pdata *pdata;
 };
 
-irqreturn_t atomisp_psys_isr(int irq, struct atomisp_bus_device *adev);
-
 #endif /* ATOMISP_ISYS_H */

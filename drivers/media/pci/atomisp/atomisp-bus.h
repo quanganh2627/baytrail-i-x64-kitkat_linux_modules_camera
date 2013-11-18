@@ -46,6 +46,7 @@ struct atomisp_bus_driver {
 	char			wanted[20];
 	int			(*probe)(struct atomisp_bus_device *adev);
 	void			(*remove)(struct atomisp_bus_device *adev);
+	void			(*isr)(struct atomisp_bus_device *adev);
 };
 
 

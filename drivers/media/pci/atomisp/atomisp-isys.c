@@ -49,9 +49,17 @@ static void atomisp_isys_remove(struct atomisp_bus_device *adev)
 	dev_info(&adev->dev, "removed\n");
 }
 
+static void atomisp_isys_isr(struct atomisp_bus_device *adev)
+{
+	struct atomisp_isys_device *isys = atomisp_bus_get_drvdata(adev);
+
+	dev_info(&adev->dev, "Yeah!\n");
+}
+
 static struct atomisp_bus_driver atomisp_isys_driver = {
 	.probe = atomisp_isys_probe,
 	.remove = atomisp_isys_remove,
+	.isr = atomisp_isys_isr,
 	.wanted = ATOMISP_ISYS_NAME,
 	.drv = {
 		.name = ATOMISP_ISYS_NAME,

@@ -49,11 +49,6 @@
 
 /* end: Taken from isp_mmu.h */
 
-irqreturn_t atomisp_mmu_isr(int irq, struct atomisp_mmu_device *adev)
-{
-	return IRQ_HANDLED;
-}
-
 static void page_table_dump(struct atomisp_mmu_domain *adom)
 {
 	uint32_t l1_idx;
@@ -421,9 +416,17 @@ static void atomisp_mmu_remove(struct atomisp_bus_device *adev)
 	dev_info(&adev->dev, "removed\n");
 }
 
+static void atomisp_mmu_isr(struct atomisp_bus_device *adev)
+{
+	struct atomisp_mmu_device *mmu = atomisp_bus_get_drvdata(adev);
+
+	dev_info(&adev->dev, "Yeah!\n");
+}
+
 static struct atomisp_bus_driver atomisp_mmu_driver = {
 	.probe = atomisp_mmu_probe,
 	.remove = atomisp_mmu_remove,
+	.isr = atomisp_mmu_isr,
 	.wanted = ATOMISP_MMU_NAME,
 	.drv = {
 		.name = ATOMISP_MMU_NAME,

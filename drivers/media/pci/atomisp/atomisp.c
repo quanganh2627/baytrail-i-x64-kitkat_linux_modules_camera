@@ -97,8 +97,24 @@ static struct atomisp_bus_device *atomisp_isys_init(
 				      nr);
 }
 
+static inline void atomisp_call_isr(struct atomisp_bus_device *adev)
+{
+	if (!adev || !adev->adrv || !adev->adrv->isr)
+		return;
+
+	adev->adrv->isr(adev);
+}
+
 static irqreturn_t atomisp_isr(int irq, void *priv)
 {
+	struct atomisp_device *isp = priv;
+
+	switch (isp->pdev->device) {
+	case ATOMISP_HW_BXT_PSS_1:
+		atomisp_call_isr(isp->isys);
+		break;
+	}
+
 	return IRQ_HANDLED;
 }
 

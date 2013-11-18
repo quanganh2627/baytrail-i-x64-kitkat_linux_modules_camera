@@ -53,6 +53,4 @@ struct atomisp_mmu_device {
 	struct atomisp_dma_mapping *dmap;
 };
 
-irqreturn_t atomisp_mmu_isr(int irq, struct atomisp_mmu_device *adev);
-
 #endif
