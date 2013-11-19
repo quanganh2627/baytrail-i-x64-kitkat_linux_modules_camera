@@ -569,6 +569,7 @@ static unsigned int atomisp_subdev_streaming_count(
 {
 	return asd->video_out_preview.capq.streaming
 		+ asd->video_out_capture.capq.streaming
+		+ asd->video_out_video_capture.capq.streaming
 		+ asd->video_in.capq.streaming;
 }
 
@@ -1524,6 +1525,7 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 	struct atomisp_video_pipe *capture_pipe = NULL;
 	struct atomisp_video_pipe *vf_pipe = NULL;
 	struct atomisp_video_pipe *preview_pipe = NULL;
+	struct atomisp_video_pipe *video_pipe = NULL;
 	struct videobuf_buffer *vb, *_vb;
 	enum atomisp_css_pipe_id css_pipe_id;
 	int ret;
@@ -1647,6 +1649,10 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 	if (asd->video_out_preview.users) {
 		preview_pipe = &asd->video_out_preview;
 		wake_up_interruptible(&preview_pipe->capq.wait);
+	}
+	if (asd->video_out_video_capture.users) {
+		video_pipe = &asd->video_out_video_capture;
+		wake_up_interruptible(&video_pipe->capq.wait);
 	}
 	ret = videobuf_streamoff(&pipe->capq);
 	if (ret)

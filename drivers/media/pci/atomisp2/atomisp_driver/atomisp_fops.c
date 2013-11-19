@@ -191,6 +191,7 @@ static int atomisp_get_css_buf_type(struct atomisp_sub_device *asd,
 {
 	if (pipe_id == CSS_PIPE_ID_COPY ||
 	    source_pad == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE ||
+	    source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VIDEO ||
 	    (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW &&
 	     asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO))
 		return CSS_BUFFER_TYPE_OUTPUT_FRAME;
@@ -212,13 +213,13 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 			    asd->fmt[asd->capture_pad].fmt.code);
 
 	if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
-		preview_pipe = &asd->video_out_capture;
+		preview_pipe = &asd->video_out_video_capture;
 		css_preview_pipe_id = CSS_PIPE_ID_VIDEO;
 	} else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_LOWLAT) {
 		preview_pipe = &asd->video_out_capture;
 		css_preview_pipe_id = CSS_PIPE_ID_CAPTURE;
 	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
-		capture_pipe = &asd->video_out_capture;
+		capture_pipe = &asd->video_out_video_capture;
 		preview_pipe = &asd->video_out_preview;
 		css_capture_pipe_id = CSS_PIPE_ID_VIDEO;
 		css_preview_pipe_id = CSS_PIPE_ID_VIDEO;
@@ -465,6 +466,7 @@ unsigned int atomisp_subdev_users(struct atomisp_sub_device *asd)
 	return asd->video_out_preview.users +
 	       asd->video_out_vf.users +
 	       asd->video_out_capture.users +
+	       asd->video_out_video_capture.users +
 	       asd->video_in.users;
 }
 
