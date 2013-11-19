@@ -583,6 +583,12 @@ static int __create_stream(struct atomisp_sub_device *asd,
 	if (ia_css_stream_create(&stream_env->stream_config,
 	    pipe_index, multi_pipes, &stream_env->stream) != IA_CSS_SUCCESS)
 		return -EINVAL;
+	if (ia_css_stream_get_info(stream_env->stream,
+				&stream_env->stream_info) != IA_CSS_SUCCESS) {
+		ia_css_stream_destroy(stream_env->stream);
+		stream_env->stream = NULL;
+		return -EINVAL;
+	}
 
 	stream_env->stream_state = CSS_STREAM_CREATED;
 	return 0;
@@ -1062,6 +1068,26 @@ int atomisp_q_video_buffer_to_css(struct atomisp_sub_device *asd,
 	return 0;
 }
 
+int atomisp_q_metadata_buffer_to_css(struct atomisp_sub_device *asd,
+			struct atomisp_metadata_buf *metadata_buf,
+			enum atomisp_input_stream_id stream_id,
+			enum atomisp_css_pipe_id css_pipe_id)
+{
+	struct atomisp_stream_env *stream_env = &asd->stream_env[stream_id];
+	struct ia_css_buffer buffer = {0};
+	struct atomisp_device *isp = asd->isp;
+
+	buffer.type = IA_CSS_BUFFER_TYPE_METADATA;
+	buffer.data.metadata = metadata_buf->metadata;
+	if (ia_css_pipe_enqueue_buffer(stream_env->pipes[css_pipe_id],
+				&buffer)) {
+		dev_err(isp->dev, "failed to q meta data buffer\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int atomisp_q_s3a_buffer_to_css(struct atomisp_sub_device *asd,
 			struct atomisp_s3a_buf *s3a_buf,
 			enum atomisp_input_stream_id stream_id,
@@ -1313,9 +1339,10 @@ int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
 	return 0;
 }
 
-int atomisp_css_allocate_3a_dis_bufs(struct atomisp_sub_device *asd,
-				struct atomisp_s3a_buf *s3a_buf,
-				struct atomisp_dis_buf *dis_buf)
+int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
+				      struct atomisp_s3a_buf      *s3a_buf,
+				      struct atomisp_dis_buf      *dis_buf,
+				      struct atomisp_metadata_buf *md_buf)
 {
 	struct atomisp_device *isp = asd->isp;
 	if (asd->params.curr_grid_info.s3a_grid.enable) {
@@ -1337,23 +1364,41 @@ int atomisp_css_allocate_3a_dis_bufs(struct atomisp_sub_device *asd,
 		}
 	}
 
+	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.
+			metadata_info.size) {
+		md_buf->metadata = ia_css_metadata_allocate(
+			&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.metadata_info);
+		if (!md_buf->metadata) {
+			ia_css_isp_3a_statistics_free(s3a_buf->s3a_data);
+			ia_css_isp_dvs2_statistics_free(dis_buf->dis_data);
+			dev_err(isp->dev, "metadata buf allocation failed.\n");
+			return -EINVAL;
+		}
+	}
+
 	return 0;
 }
 
-void atomisp_css_free_3a_buffers(struct atomisp_s3a_buf *s3a_buf)
+void atomisp_css_free_3a_buffer(struct atomisp_s3a_buf *s3a_buf)
 {
 	ia_css_isp_3a_statistics_free(s3a_buf->s3a_data);
 }
 
-void atomisp_css_free_dis_buffers(struct atomisp_dis_buf *dis_buf)
+void atomisp_css_free_dis_buffer(struct atomisp_dis_buf *dis_buf)
 {
 	ia_css_isp_dvs2_statistics_free(dis_buf->dis_data);
 }
 
-void atomisp_css_free_3a_dis_buffers(struct atomisp_sub_device *asd)
+void atomisp_css_free_metadata_buffer(struct atomisp_metadata_buf *metadata_buf)
+{
+	ia_css_metadata_free(metadata_buf->metadata);
+}
+
+void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 {
 	struct atomisp_s3a_buf *s3a_buf, *_s3a_buf;
 	struct atomisp_dis_buf *dis_buf, *_dis_buf;
+	struct atomisp_metadata_buf *md_buf, *_md_buf;
 
 	/* 3A statistics use vmalloc, DIS use kmalloc */
 	if (asd->params.curr_grid_info.dvs_grid.enable) {
@@ -1389,6 +1434,20 @@ void atomisp_css_free_3a_dis_buffers(struct atomisp_sub_device *asd)
 	if (asd->params.dvs_6axis) {
 		ia_css_dvs2_6axis_config_free(asd->params.dvs_6axis);
 		asd->params.dvs_6axis = NULL;
+	}
+
+	if (asd->params.metadata_allocated) {
+
+		atomisp_kernel_free(asd->params.metadata_user);
+		asd->params.metadata_allocated = false;
+		asd->params.metadata_user = NULL;
+		asd->params.metadata_buf_data_valid = false;
+		list_for_each_entry_safe(md_buf, _md_buf,
+				&asd->metadata, list) {
+			ia_css_metadata_free(md_buf->metadata);
+			list_del(&md_buf->list);
+			kfree(md_buf);
+		}
 	}
 }
 
@@ -1495,6 +1554,21 @@ int atomisp_alloc_dis_coef_buf(struct atomisp_sub_device *asd)
 	return 0;
 }
 
+int atomisp_alloc_metadata_output_buf(struct atomisp_sub_device *asd)
+{
+	/* We allocate the cpu-side buffer used for communication with user
+	 * space */
+	asd->params.metadata_user = atomisp_kernel_malloc(
+				asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+				stream_info.metadata_info.size);
+	if (!asd->params.metadata_user)
+		return -ENOMEM;
+	asd->params.metadata_buf_data_valid = false;
+	asd->params.metadata_allocated = true;
+
+	return 0;
+}
+
 int atomisp_css_get_3a_statistics(struct atomisp_sub_device *asd,
 				  struct atomisp_css_buffer *isp_css_buffer)
 {
@@ -1506,6 +1580,20 @@ int atomisp_css_get_3a_statistics(struct atomisp_sub_device *asd,
 	}
 
 	return 0;
+}
+
+void atomisp_css_get_metadata(struct atomisp_sub_device *asd,
+			      struct atomisp_css_buffer *isp_css_buffer)
+{
+	int md_size = asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+		stream_info.metadata_info.size;
+
+	if (asd->params.metadata_user && md_size) {
+		atomisp_css2_mm_load(
+			isp_css_buffer->css_buffer.data.metadata->address,
+			asd->params.metadata_user, md_size);
+		asd->params.metadata_buf_data_valid = true;
+	}
 }
 
 void atomisp_css_get_dis_statistics(struct atomisp_sub_device *asd,
@@ -1785,11 +1873,15 @@ void atomisp_css_enable_cont_capt(bool enable, bool stop_copy_preview)
 	sh_css_enable_cont_capt(enable, stop_copy_preview);
 }
 
-int atomisp_css_input_configure_port(struct atomisp_sub_device *asd,
-					mipi_port_ID_t port,
-					unsigned int num_lanes,
-					unsigned int timeout,
-					unsigned int mipi_freq)
+int atomisp_css_input_configure_port(
+		struct atomisp_sub_device *asd,
+		mipi_port_ID_t port,
+		unsigned int num_lanes,
+		unsigned int timeout,
+		unsigned int mipi_freq,
+		enum atomisp_css_stream_format metadata_format,
+		unsigned int metadata_width,
+		unsigned int metadata_height)
 {
 	int i;
 	struct atomisp_stream_env *stream_env;
@@ -1815,6 +1907,13 @@ int atomisp_css_input_configure_port(struct atomisp_sub_device *asd,
 		if (mipi_freq)
 			stream_env->stream_config.source.port.rxcount = rxcount;
 	}
+
+	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_config.
+		metadata_config.data_type = metadata_format;
+	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_config.
+		metadata_config.resolution.width = metadata_width;
+	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_config.
+		metadata_config.resolution.height = metadata_height;
 
 	return 0;
 }
@@ -3745,6 +3844,12 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 		case CSS_EVENT_3A_STATISTICS_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_3A_STATISTICS,
+					 current_event.pipe,
+					 css_pipe_done[asd->index], stream_id);
+			break;
+		case CSS_EVENT_METADATA_DONE:
+			atomisp_buf_done(asd, 0,
+					 CSS_BUFFER_TYPE_METADATA,
 					 current_event.pipe,
 					 css_pipe_done[asd->index], stream_id);
 			break;

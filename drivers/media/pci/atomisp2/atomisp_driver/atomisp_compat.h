@@ -73,7 +73,9 @@
 #define CSS_EVENT_3A_STATISTICS_DONE	CSS_EVENT(3A_STATISTICS_DONE)
 #define CSS_EVENT_DIS_STATISTICS_DONE	CSS_EVENT(DIS_STATISTICS_DONE)
 #define CSS_EVENT_PIPELINE_DONE		CSS_EVENT(PIPELINE_DONE)
+#define CSS_EVENT_METADATA_DONE		CSS_EVENT(METADATA_DONE)
 
+#define CSS_BUFFER_TYPE_METADATA	CSS_ID(CSS_BUFFER_TYPE_METADATA)
 #define CSS_BUFFER_TYPE_3A_STATISTICS	CSS_ID(CSS_BUFFER_TYPE_3A_STATISTICS)
 #define CSS_BUFFER_TYPE_DIS_STATISTICS	CSS_ID(CSS_BUFFER_TYPE_DIS_STATISTICS)
 #define CSS_BUFFER_TYPE_INPUT_FRAME	CSS_ID(CSS_BUFFER_TYPE_INPUT_FRAME)
@@ -122,6 +124,11 @@ struct atomisp_sub_device;
 struct video_device;
 enum atomisp_input_stream_id;
 
+struct atomisp_metadata_buf {
+	struct ia_css_metadata *metadata;
+	struct list_head list;
+};
+
 void atomisp_css_debug_dump_sp_sw_debug_info(void);
 void atomisp_css_debug_dump_debug_info(const char *context);
 void atomisp_css_debug_set_dtrace_level(const unsigned int trace_level);
@@ -160,6 +167,11 @@ int atomisp_q_s3a_buffer_to_css(struct atomisp_sub_device *asd,
 			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_pipe_id css_pipe_id);
 
+int atomisp_q_metadata_buffer_to_css(struct atomisp_sub_device *asd,
+			struct atomisp_metadata_buf *metadata_buf,
+			enum atomisp_input_stream_id stream_id,
+			enum atomisp_css_pipe_id css_pipe_id);
+
 int atomisp_q_dis_buffer_to_css(struct atomisp_sub_device *asd,
 			struct atomisp_dis_buf *dis_buf,
 			enum atomisp_input_stream_id stream_id,
@@ -188,15 +200,18 @@ int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
 				enum atomisp_css_buffer_type buf_type,
 				struct atomisp_css_buffer *isp_css_buffer);
 
-int atomisp_css_allocate_3a_dis_bufs(struct atomisp_sub_device *asd,
-				struct atomisp_s3a_buf *s3a_buf,
-				struct atomisp_dis_buf *dis_buf);
+int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device *asd,
+				      struct atomisp_s3a_buf *s3a_buf,
+				      struct atomisp_dis_buf *dis_buf,
+				      struct atomisp_metadata_buf *md_buf);
 
-void atomisp_css_free_3a_buffers(struct atomisp_s3a_buf *s3a_buf);
+void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd);
 
-void atomisp_css_free_dis_buffers(struct atomisp_dis_buf *dis_buf);
+void atomisp_css_free_3a_buffer(struct atomisp_s3a_buf *s3a_buf);
 
-void atomisp_css_free_3a_dis_buffers(struct atomisp_sub_device *asd);
+void atomisp_css_free_dis_buffer(struct atomisp_dis_buf *dis_buf);
+
+void atomisp_css_free_metadata_buffer(struct atomisp_metadata_buf *metadata_buf);
 
 int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
 				enum atomisp_css_pipe_id pipe_id,
@@ -206,8 +221,13 @@ int atomisp_alloc_3a_output_buf(struct atomisp_sub_device *asd);
 
 int atomisp_alloc_dis_coef_buf(struct atomisp_sub_device *asd);
 
+int atomisp_alloc_metadata_output_buf(struct atomisp_sub_device *asd);
+
 int atomisp_css_get_3a_statistics(struct atomisp_sub_device *asd,
 				  struct atomisp_css_buffer *isp_css_buffer);
+
+void atomisp_css_get_metadata(struct atomisp_sub_device *asd,
+			      struct atomisp_css_buffer *isp_css_buffer);
 
 void atomisp_css_get_dis_statistics(struct atomisp_sub_device *asd,
 				    struct atomisp_css_buffer *isp_css_buffer);
@@ -269,10 +289,13 @@ void atomisp_css_enable_continuous(struct atomisp_sub_device *asd,
 void atomisp_css_enable_cont_capt(bool enable, bool stop_copy_preview);
 
 int atomisp_css_input_configure_port(struct atomisp_sub_device *asd,
-					mipi_port_ID_t port,
-					unsigned int num_lanes,
-					unsigned int timeout,
-					unsigned int mipi_freq);
+				mipi_port_ID_t port,
+				unsigned int num_lanes,
+				unsigned int timeout,
+				unsigned int mipi_freq,
+				enum atomisp_css_stream_format metadata_format,
+				unsigned int metadata_width,
+				unsigned int metadata_height);
 
 int atomisp_css_frame_allocate(struct atomisp_css_frame **frame,
 				unsigned int width, unsigned int height,

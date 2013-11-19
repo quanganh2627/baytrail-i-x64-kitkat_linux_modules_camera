@@ -895,11 +895,15 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 {
 	struct atomisp_s3a_buf *s3a_buf = NULL, *_s3a_buf;
 	struct atomisp_dis_buf *dis_buf = NULL, *_dis_buf;
+	struct atomisp_metadata_buf *md_buf = NULL, *_md_buf;
+
 	/* 2 css pipes consuming 3a buffers */
 	int count = ATOMISP_CSS_Q_DEPTH * 2;
 	struct atomisp_device *isp = asd->isp;
 
-	if (!list_empty(&asd->s3a_stats) && !list_empty(&asd->dis_stats))
+	if (!list_empty(&asd->s3a_stats) &&
+	    !list_empty(&asd->dis_stats) &&
+	    !list_empty(&asd->metadata))
 		return 0;
 
 	dev_dbg(isp->dev, "allocating %d 3a & dis buffers\n", count);
@@ -918,14 +922,25 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 			goto error;
 		}
 
-		if (atomisp_css_allocate_3a_dis_bufs(asd, s3a_buf, dis_buf)) {
+		md_buf = kzalloc(sizeof(struct atomisp_metadata_buf),
+				 GFP_KERNEL);
+		if (!md_buf) {
+			dev_err(isp->dev, "metadata buf alloc failed\n");
 			kfree(s3a_buf);
 			kfree(dis_buf);
 			goto error;
 		}
 
+		if (atomisp_css_allocate_stat_buffers(
+					asd, s3a_buf, dis_buf, md_buf)) {
+			kfree(s3a_buf);
+			kfree(dis_buf);
+			kfree(md_buf);
+			goto error;
+		}
 		list_add_tail(&s3a_buf->list, &asd->s3a_stats);
 		list_add_tail(&dis_buf->list, &asd->dis_stats);
+		list_add_tail(&md_buf->list, &asd->metadata);
 	}
 
 	return 0;
@@ -934,15 +949,21 @@ error:
 	dev_err(isp->dev, "failed to allocate statistics buffers\n");
 
 	list_for_each_entry_safe(dis_buf, _dis_buf, &asd->dis_stats, list) {
-		atomisp_css_free_dis_buffers(dis_buf);
+		atomisp_css_free_dis_buffer(dis_buf);
 		list_del(&dis_buf->list);
 		kfree(dis_buf);
 	}
 
 	list_for_each_entry_safe(s3a_buf, _s3a_buf, &asd->s3a_stats, list) {
-		atomisp_css_free_3a_buffers(s3a_buf);
+		atomisp_css_free_3a_buffer(s3a_buf);
 		list_del(&s3a_buf->list);
 		kfree(s3a_buf);
+	}
+
+	list_for_each_entry_safe(md_buf, _md_buf, &asd->metadata, list) {
+		atomisp_css_free_metadata_buffer(md_buf);
+		list_del(&md_buf->list);
+		kfree(md_buf);
 	}
 
 	return -ENOMEM;

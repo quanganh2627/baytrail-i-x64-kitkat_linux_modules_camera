@@ -142,6 +142,7 @@ enum atomisp_css_stream_state {
 struct atomisp_stream_env {
 	struct ia_css_stream *stream;
 	struct ia_css_stream_config stream_config;
+	struct ia_css_stream_info stream_info;
 	struct ia_css_pipe *pipes[IA_CSS_PIPE_ID_NUM];
 	struct ia_css_pipe *multi_pipes[IA_CSS_PIPE_ID_NUM];
 	struct ia_css_pipe_config pipe_configs[IA_CSS_PIPE_ID_NUM];

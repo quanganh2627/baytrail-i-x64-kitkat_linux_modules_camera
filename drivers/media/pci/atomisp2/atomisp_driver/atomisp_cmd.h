@@ -202,6 +202,12 @@ int atomisp_set_dis_vector(struct atomisp_sub_device *asd,
 int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 		    struct atomisp_3a_statistics *config);
 
+/*
+ * Function to get metadata from isp
+ */
+int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
+			 struct atomisp_metadata *config);
+
 int atomisp_set_parameters(struct atomisp_sub_device *asd,
 		struct atomisp_parameters *arg);
 
@@ -315,7 +321,6 @@ int atomisp_exif_makernote(struct atomisp_sub_device *asd,
 			   struct atomisp_makernote_info *config);
 
 void atomisp_free_internal_buffers(struct atomisp_sub_device *asd);
-void atomisp_free_3a_dis_buffers(struct atomisp_sub_device *asd);
 
 int  atomisp_flash_enable(struct atomisp_sub_device *asd,
 			  int num_frames);

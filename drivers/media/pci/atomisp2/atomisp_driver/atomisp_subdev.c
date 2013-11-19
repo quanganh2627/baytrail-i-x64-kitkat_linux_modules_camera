@@ -163,7 +163,8 @@ static int isp_subdev_subscribe_event(struct v4l2_subdev *sd,
 	struct v4l2_fh *fh, struct v4l2_event_subscription *sub)
 {
 	if (sub->type != V4L2_EVENT_FRAME_SYNC &&
-	    sub->type != V4L2_EVENT_ATOMISP_3A_STATS_READY)
+	    sub->type != V4L2_EVENT_ATOMISP_3A_STATS_READY &&
+	    sub->type != V4L2_EVENT_ATOMISP_METADATA_READY)
 		return -EINVAL;
 
 	return v4l2_event_subscribe(fh, sub, 16, NULL);
@@ -636,6 +637,7 @@ static void isp_subdev_init_params(struct atomisp_sub_device *asd)
 	/* parameters initialization */
 	INIT_LIST_HEAD(&asd->s3a_stats);
 	INIT_LIST_HEAD(&asd->dis_stats);
+	INIT_LIST_HEAD(&asd->metadata);
 }
 
 /*

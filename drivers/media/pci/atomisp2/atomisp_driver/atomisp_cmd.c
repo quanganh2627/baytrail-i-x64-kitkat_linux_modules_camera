@@ -433,6 +433,16 @@ static void atomisp_3a_stats_ready_event(struct atomisp_sub_device *asd)
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }
 
+static void atomisp_metadata_ready_event(struct atomisp_sub_device *asd)
+{
+	struct v4l2_event event = {0};
+
+	event.type = V4L2_EVENT_ATOMISP_METADATA_READY;
+	event.u.frame_sync.frame_sequence = atomic_read(&asd->sequence);
+
+	v4l2_event_queue(asd->subdev.devnode, &event);
+}
+
 static void print_csi_rx_errors(struct atomisp_device *isp)
 {
 	u32 infos = 0;
@@ -586,6 +596,7 @@ out_nowake:
 void atomisp_clear_css_buffer_counters(struct atomisp_sub_device *asd)
 {
 	memset(asd->s3a_bufs_in_css, 0, sizeof(asd->s3a_bufs_in_css));
+	memset(asd->metadata_bufs_in_css, 0, sizeof(asd->metadata_bufs_in_css));
 	asd->dis_bufs_in_css = 0;
 	asd->video_out_capture.buffers_in_css = 0;
 	asd->video_out_vf.buffers_in_css = 0;
@@ -764,7 +775,9 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 	struct atomisp_css_frame *frame = NULL;
 	struct atomisp_device *isp = asd->isp;
 
-	if (buf_type != CSS_BUFFER_TYPE_3A_STATISTICS &&
+	if (
+	    buf_type != CSS_BUFFER_TYPE_METADATA &&
+	    buf_type != CSS_BUFFER_TYPE_3A_STATISTICS &&
 	    buf_type != CSS_BUFFER_TYPE_DIS_STATISTICS &&
 	    buf_type != CSS_BUFFER_TYPE_OUTPUT_FRAME &&
 	    buf_type != CSS_BUFFER_TYPE_RAW_OUTPUT_FRAME &&
@@ -806,6 +819,15 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			asd->s3a_bufs_in_css[css_pipe_id]--;
 
 			atomisp_3a_stats_ready_event(asd);
+			break;
+		case CSS_BUFFER_TYPE_METADATA:
+			/* update the metadata from ISP */
+			if (!error)
+				atomisp_css_get_metadata(asd, &buffer);
+
+			asd->metadata_bufs_in_css[css_pipe_id]--;
+
+			atomisp_metadata_ready_event(asd);
 			break;
 		case CSS_BUFFER_TYPE_DIS_STATISTICS:
 			/* ignore error in case of dis statistics for now */
@@ -1174,19 +1196,30 @@ void atomisp_wdt_work(struct work_struct *work)
 			dev_err(isp->dev,
 				"%s, s3a buffers in css preview pipe:%d\n",
 				__func__,
-				asd->
-				s3a_bufs_in_css[CSS_PIPE_ID_PREVIEW]);
+				asd->s3a_bufs_in_css[CSS_PIPE_ID_PREVIEW]);
 			dev_err(isp->dev,
 				"%s, s3a buffers in css capture pipe:%d\n",
-				__func__, asd->
-				s3a_bufs_in_css[CSS_PIPE_ID_CAPTURE]);
+				__func__,
+				asd->s3a_bufs_in_css[CSS_PIPE_ID_CAPTURE]);
 			dev_err(isp->dev,
 				"%s, s3a buffers in css video pipe:%d\n",
-				__func__, asd->
-				s3a_bufs_in_css[CSS_PIPE_ID_VIDEO]);
+				__func__,
+				asd->s3a_bufs_in_css[CSS_PIPE_ID_VIDEO]);
 			dev_err(isp->dev,
 				"%s, dis buffers in css: %d\n",
 				__func__, asd->dis_bufs_in_css);
+			dev_err(isp->dev,
+				"%s, metadata buffers in css preview pipe:%d\n",
+				__func__,
+				asd->metadata_bufs_in_css[CSS_PIPE_ID_PREVIEW]);
+			dev_err(isp->dev,
+				"%s, metadata buffers in css capture pipe:%d\n",
+				__func__,
+				asd->metadata_bufs_in_css[CSS_PIPE_ID_CAPTURE]);
+			dev_err(isp->dev,
+				"%s, metadata buffers in css video pipe:%d\n",
+				__func__,
+				asd->metadata_bufs_in_css[CSS_PIPE_ID_VIDEO]);
 		}
 
 		/*sh_css_dump_sp_state();*/
@@ -1747,11 +1780,6 @@ void atomisp_free_internal_buffers(struct atomisp_sub_device *asd)
 	}
 }
 
-void atomisp_free_3a_dis_buffers(struct atomisp_sub_device *asd)
-{
-	atomisp_css_free_3a_dis_buffers(asd);
-}
-
 static void atomisp_update_grid_info(struct atomisp_sub_device *asd,
 				enum atomisp_css_pipe_id pipe_id, int source_pad)
 {
@@ -1763,35 +1791,42 @@ static void atomisp_update_grid_info(struct atomisp_sub_device *asd,
 
 	/* We must free all buffers because they no longer match
 	   the grid size. */
-	atomisp_free_3a_dis_buffers(asd);
+	atomisp_css_free_stat_buffers(asd);
 
 	err = atomisp_alloc_css_stat_bufs(asd);
 	if (err) {
 		dev_err(isp->dev, "stat_buf allocate error\n");
-		goto err_3a;
+		goto err;
 	}
 
-	if (atomisp_alloc_3a_output_buf(asd))
-		goto err_3a;
-
-	if (atomisp_alloc_dis_coef_buf(asd))
-		goto err_dis;
-
-	return;
-
-	/* Failure for 3A buffers does not influence DIS buffers */
-err_3a:
-	if (asd->params.s3a_output_bytes != 0) {
+	if (atomisp_alloc_3a_output_buf(asd)){
+		/* Failure for 3A buffers does not influence DIS buffers */
+		if (asd->params.s3a_output_bytes != 0) {
 		/* For SOC sensor happens s3a_output_bytes == 0,
 		*  using if condition to exclude false error log */
-		dev_err(isp->dev, "Failed allocate memory for 3A statistics\n");
+			dev_err(isp->dev, "Failed to allocate memory for 3A"
+					" statistics\n");
+		}
+		goto err;
 	}
-	atomisp_free_3a_dis_buffers(asd);
+
+	if (atomisp_alloc_dis_coef_buf(asd)) {
+		dev_err(isp->dev,
+			"Failed to allocate memory for DIS statistics\n");
+		goto err;
+	}
+
+	if (atomisp_alloc_metadata_output_buf(asd)){
+		dev_err(isp->dev,
+			"Failed to allocate memory for metadata\n");
+		goto err;
+	}
+
 	return;
 
-err_dis:
-	dev_err(isp->dev, "Failed allocate memory for DIS statistics\n");
-	atomisp_free_3a_dis_buffers(asd);
+err:
+	atomisp_css_free_stat_buffers(asd);
+	return;
 }
 
 static void atomisp_curr_user_grid_info(struct atomisp_sub_device *asd,
@@ -2085,6 +2120,53 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 #endif /* CSS20 */
 	if (ret) {
 		dev_err(isp->dev, "copy to user failed: copied %lu bytes\n",
+				ret);
+		return -EFAULT;
+	}
+	return 0;
+}
+
+int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
+			 struct atomisp_metadata *md)
+{
+	struct atomisp_device *isp = asd->isp;
+	struct ia_css_stream_config *stream_config;
+	struct ia_css_stream_info *stream_info;
+	int ret = -EFAULT;
+
+	if (flag != 0)
+		return -EINVAL;
+
+	stream_config = &asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+		stream_config;
+	stream_info = &asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+		stream_info;
+
+	/* We always return the resolution and stride even if there is
+	 * no valid metadata. This allows the caller to get the information
+	 * needed to allocate user-space buffers. */
+	md->width  = stream_info->metadata_info.resolution.width;
+	md->height = stream_info->metadata_info.resolution.height;
+	md->stride = stream_info->metadata_info.stride;
+
+	/* sanity check to avoid writing into unallocated memory.
+	 * This does not return an error because it is a valid way
+	 * for applications to detect that metadata is not enabled. */
+	if (md->width == 0 || md->height == 0 || !md->data)
+		return 0;
+
+	/* This is done in the atomisp_metadata_buf_done() */
+	if (!asd->params.metadata_buf_data_valid) {
+		dev_err(isp->dev, "Metadata is not valid.\n");
+		return -EAGAIN;
+	}
+
+	md->exp_id = 0; /* TODO: set this to the correct value once the FW
+			   supports it */
+	ret = copy_to_user(md->data, asd->params.metadata_user,
+			   stream_info->metadata_info.size);
+	if (ret) {
+		dev_err(isp->dev, "copy to user failed: copied %d bytes\n",
 				ret);
 		return -EFAULT;
 	}
@@ -3272,10 +3354,14 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 		atomisp_css_input_set_format(asd, stream_id,
 						mipi_info->input_format);
 	}
-	atomisp_css_input_configure_port(asd, __get_mipi_port(asd->isp,
-							mipi_info->port),
-					mipi_info->num_lanes,
-					0xffff4, mipi_freq);
+
+	atomisp_css_input_configure_port(asd,
+				__get_mipi_port(asd->isp, mipi_info->port),
+				mipi_info->num_lanes,
+				0xffff4, mipi_freq,
+				mipi_info->metadata_format,
+				mipi_info->metadata_width,
+				mipi_info->metadata_height);
 }
 
 static int __enable_continuous_mode(struct atomisp_sub_device *asd,
@@ -4126,8 +4212,8 @@ int atomisp_set_fmt_file(struct video_device *vdev, struct v4l2_format *f)
 	pipe->pix = f->fmt.pix;
 	atomisp_css_input_set_mode(asd, CSS_INPUT_MODE_FIFO);
 	atomisp_css_input_configure_port(asd,
-		__get_mipi_port(isp, ATOMISP_CAMERA_PORT_PRIMARY), 2, 0xffff4, 0);
-
+		__get_mipi_port(isp, ATOMISP_CAMERA_PORT_PRIMARY), 2, 0xffff4,
+		0, 0, 0, 0);
 	ffmt.width = f->fmt.pix.width;
 	ffmt.height = f->fmt.pix.height;
 	ffmt.code = format_bridge->mbus_code;

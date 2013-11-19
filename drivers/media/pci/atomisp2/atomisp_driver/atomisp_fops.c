@@ -133,6 +133,32 @@ int atomisp_q_video_buffers_to_css(struct atomisp_sub_device *asd,
 	return 0;
 }
 
+static int atomisp_q_metadata_buffers_to_css(struct atomisp_sub_device *asd,
+		enum atomisp_input_stream_id stream_id,
+		enum atomisp_css_pipe_id css_pipe_id)
+{
+	struct atomisp_metadata_buf *metadata_buf;
+
+	if (list_empty(&asd->metadata)) {
+		dev_warn(asd->isp->dev, "%s: No metadata buffers available!\n", __func__);
+		return -EINVAL;
+	}
+
+	while (asd->metadata_bufs_in_css[css_pipe_id] < ATOMISP_CSS_Q_DEPTH) {
+		metadata_buf = list_entry(asd->metadata.next,
+				struct atomisp_metadata_buf, list);
+		list_move_tail(&metadata_buf->list, &asd->metadata);
+
+		if (atomisp_q_metadata_buffer_to_css(asd, metadata_buf,
+					stream_id, css_pipe_id))
+			return -EINVAL;
+
+		asd->metadata_bufs_in_css[css_pipe_id]++;
+	}
+
+	return 0;
+}
+
 int atomisp_q_s3a_buffers_to_css(struct atomisp_sub_device *asd,
 				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_pipe_id css_pipe_id)
@@ -329,6 +355,18 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 			atomisp_q_s3a_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
 					css_video_pipe_id);
+	}
+
+	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.
+			metadata_info.size) {
+		if (css_capture_pipe_id < CSS_PIPE_ID_NUM)
+			atomisp_q_metadata_buffers_to_css(asd,
+					ATOMISP_INPUT_STREAM_GENERAL,
+					css_capture_pipe_id);
+		if (css_preview_pipe_id < CSS_PIPE_ID_NUM)
+			atomisp_q_metadata_buffers_to_css(asd,
+					ATOMISP_INPUT_STREAM_GENERAL,
+					css_preview_pipe_id);
 	}
 
 	if (asd->params.curr_grid_info.dvs_grid.enable)
@@ -673,7 +711,7 @@ static int atomisp_release(struct file *file)
 					ATOMISP_SUBDEV_PAD_SINK, &isp_sink_fmt);
 	}
 
-	atomisp_free_3a_dis_buffers(asd);
+	atomisp_css_free_stat_buffers(asd);
 	atomisp_free_internal_buffers(asd);
 
 	/* Don't turn off the sensor if some other sub device is using it. */

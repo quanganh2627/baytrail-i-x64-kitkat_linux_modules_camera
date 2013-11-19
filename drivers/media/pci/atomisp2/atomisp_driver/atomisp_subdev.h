@@ -129,6 +129,7 @@ struct atomisp_css_params {
 
 	int s3a_output_bytes;
 	bool s3a_buf_data_valid;
+	bool metadata_buf_data_valid;
 
 	bool dis_proj_data_valid;
 
@@ -157,8 +158,8 @@ struct atomisp_css_params {
 	struct atomisp_css_gamma_table gamma_table;
 	struct atomisp_css_ctc_table   ctc_table;
 	struct atomisp_css_macc_table  macc_table;
-
 #ifdef CSS20
+	bool metadata_allocated;
 	struct atomisp_css_ctc_config	ctc_config;
 	struct atomisp_css_cnr_config	cnr_config;
 	struct atomisp_css_macc_config	macc_config;
@@ -197,6 +198,8 @@ struct atomisp_css_params {
 	   CSS and user space. These are needed to perform the
 	   copy_to_user. */
 	struct ia_css_3a_statistics *s3a_user_stat;
+	void *metadata_user;
+
 	struct ia_css_dvs2_coefficients *dvs_coeff;
 	struct ia_css_dvs2_statistics *dvs_stat;
 	struct ia_css_dvs_6axis_config *dvs_6axis;
@@ -279,6 +282,9 @@ struct atomisp_sub_device {
 	struct v4l2_pix_format dvs_envelop;
 	unsigned int s3a_bufs_in_css[CSS_PIPE_ID_NUM];
 	unsigned int dis_bufs_in_css;
+
+	unsigned int metadata_bufs_in_css[CSS_PIPE_ID_NUM];
+	struct list_head metadata;
 
 	struct list_head s3a_stats;
 	struct list_head dis_stats;

@@ -358,9 +358,10 @@ int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
 	return 0;
 }
 
-int atomisp_css_allocate_3a_dis_bufs(struct atomisp_sub_device *asd,
-				struct atomisp_s3a_buf *s3a_buf,
-				struct atomisp_dis_buf *dis_buf)
+int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device *asd,
+				      struct atomisp_s3a_buf *s3a_buf,
+				      struct atomisp_dis_buf *dis_buf,
+				      struct atomisp_metadata_buf *md_buf)
 {
 	if (sh_css_allocate_stat_buffers_from_info(&s3a_buf->s3a_data,
 			&dis_buf->dis_data, &asd->params.curr_grid_info)
@@ -369,20 +370,25 @@ int atomisp_css_allocate_3a_dis_bufs(struct atomisp_sub_device *asd,
 		return -EINVAL;
 	}
 
+	/* Metadata not supported on CSS 1.5 */
 	return 0;
 }
 
-void atomisp_css_free_3a_buffers(struct atomisp_s3a_buf *s3a_buf)
+void atomisp_css_free_3a_buffer(struct atomisp_s3a_buf *s3a_buf)
 {
 	sh_css_free_stat_buffers(&s3a_buf->s3a_data, NULL);
 }
 
-void atomisp_css_free_dis_buffers(struct atomisp_dis_buf *dis_buf)
+void atomisp_css_free_dis_buffer(struct atomisp_dis_buf *dis_buf)
 {
 	sh_css_free_stat_buffers(NULL, &dis_buf->dis_data);
 }
 
-void atomisp_css_free_3a_dis_buffers(struct atomisp_sub_device *asd)
+void atomisp_css_free_metadata_buffer(struct atomisp_metadata_buf *metadata_buf)
+{
+}
+
+void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 {
 	struct atomisp_s3a_buf *s3a_buf, *_s3a_buf;
 	struct atomisp_dis_buf *dis_buf, *_dis_buf;
@@ -550,6 +556,11 @@ int atomisp_alloc_dis_coef_buf(struct atomisp_sub_device *asd)
 	return 0;
 }
 
+int atomisp_alloc_metadata_output_buf(struct atomisp_sub_device *asd)
+{
+	return 0;
+}
+
 int atomisp_css_get_3a_statistics(struct atomisp_sub_device *asd,
 				  struct atomisp_css_buffer *isp_css_buffer)
 {
@@ -704,11 +715,15 @@ void atomisp_css_enable_cont_capt(bool enable, bool stop_copy_preview)
 }
 
 int atomisp_css_input_configure_port(struct atomisp_sub_device *asd,
-					mipi_port_ID_t port,
-					unsigned int num_lanes,
-					unsigned int timeout,
-					unsigned int mipi_freq)
+				mipi_port_ID_t port,
+				unsigned int num_lanes,
+				unsigned int timeout,
+				unsigned int mipi_freq,
+				enum atomisp_css_stream_format metadata_format,
+				unsigned int metadata_width,
+				unsigned int metadata_height)
 {
+
 	if (sh_css_input_configure_port(port, num_lanes, timeout)
 	    != sh_css_success)
 		return -EINVAL;
