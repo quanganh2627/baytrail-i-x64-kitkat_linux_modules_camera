@@ -177,6 +177,17 @@ static int atomisp_save_iunit_reg(struct atomisp_device *isp)
 				      &isp->saved_regs.csi_access_viol);
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_RCOMP_CONTROL,
 				      &isp->saved_regs.csi_rcomp_config);
+		/*
+		 * Anniedale hardware workaround:
+		 * RCOMP updates do not happen when using CSI2+ path and sensor
+		 * sending "continuous clock" (that is, not gating clock
+		 * in-between HS transactions. This can allow input
+		 * impedance on CSI pins to go out of spec.
+		 * Set CSI_HS_OVR_CLK_GATE_ON_UPDATE to work around.
+		 */
+		if (isp->media_dev.hw_revision == ATOMISP_HW_REVISION_ISP2401)
+			isp->saved_regs.csi_rcomp_config |=
+				MRFLD_PCI_CSI_HS_OVR_CLK_GATE_ON_UPDATE;
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_TRIM_CONTROL,
 				      &isp->saved_regs.csi_afe_dly);
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_CONTROL,
