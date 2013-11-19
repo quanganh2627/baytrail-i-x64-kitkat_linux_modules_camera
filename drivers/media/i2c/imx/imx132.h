@@ -152,7 +152,7 @@ static struct imx_reg imx132_1456x1096_30fps[] = {
 	{IMX_8BIT, 0x312D, 0x13},
 	/* PLL setting */
 	{IMX_8BIT, 0x0305, 0x02},
-	{IMX_8BIT, 0x0307, 0x48},
+	{IMX_8BIT, 0x0307, 0x50},
 	{IMX_8BIT, 0x30A4, 0x02},
 	{IMX_8BIT, 0x303C, 0x3C},
 	/* Mode setting */
@@ -259,7 +259,7 @@ static struct imx_reg imx132_1636x1096_30fps[] = {
 	{IMX_8BIT, 0x312D, 0x13},
 	/* PLL setting */
 	{IMX_8BIT, 0x0305, 0x02},
-	{IMX_8BIT, 0x0307, 0x48},
+	{IMX_8BIT, 0x0307, 0x50},
 	{IMX_8BIT, 0x30A4, 0x02},
 	{IMX_8BIT, 0x303C, 0x3C},
 	/* Mode setting */
@@ -366,7 +366,7 @@ static struct imx_reg imx132_1336x1096_30fps[] = {
 	{IMX_8BIT, 0x312D, 0x13},
 	/* PLL setting */
 	{IMX_8BIT, 0x0305, 0x02},
-	{IMX_8BIT, 0x0307, 0x48},
+	{IMX_8BIT, 0x0307, 0x50},
 	{IMX_8BIT, 0x30A4, 0x02},
 	{IMX_8BIT, 0x303C, 0x3C},
 	/* Mode setting */
