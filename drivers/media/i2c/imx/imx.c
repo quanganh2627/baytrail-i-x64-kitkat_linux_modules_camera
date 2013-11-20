@@ -1893,7 +1893,7 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	if (!dev->streaming) {
 		/* Save the new FPS and use it while selecting setting */
 		dev->fps = fps;
-		goto out;
+		return 0;
 	}
 
 	 /* Ignore if we are already using the required FPS. */
@@ -1920,7 +1920,6 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	if (ret)
 		return ret;
 
-out:
 	interval->interval.denominator = res->fps_options[dev->fps_index].fps;
 	interval->interval.numerator = 1;
 
