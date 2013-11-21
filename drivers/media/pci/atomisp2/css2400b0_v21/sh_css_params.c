@@ -4821,6 +4821,7 @@ ia_css_dvs2_coefficients_allocate(const struct ia_css_dvs_grid_info *grid)
 	if (!me)
 		goto err;
 
+	memset(me, 0, sizeof(*me));
 	me->grid = *grid;
 
 	me->hor_coefs.odd_real = sh_css_malloc(grid->num_hor_coefs *
