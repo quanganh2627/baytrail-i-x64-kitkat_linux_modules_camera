@@ -342,7 +342,10 @@ int atomisp_reset(struct atomisp_device *isp)
 		if (ret < 0)
 			dev_err(isp->dev, "can not enable ISP power\n");
 	}
-	atomisp_css_resume(isp);
+	ret = atomisp_css_resume(isp);
+	if (ret)
+		isp->isp_fatal_error = true;
+
 	return ret;
 }
 
@@ -614,7 +617,7 @@ void atomisp_set_term_en_count(struct atomisp_device *isp)
 	int pwn_b0 = 0;
 
 	/* For MRFLD, there is no Tescape-clock cycles control. */
-	if (IS_ISP2400(isp))
+	if (IS_ISP24XX(isp))
 		return;
 
 	if (IS_MFLD && isp->pdev->device == 0x0148 &&
@@ -859,7 +862,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 
 			if (asd->params.flash_state ==
 			    ATOMISP_FLASH_ONGOING &&
-			    !IS_ISP2400(isp)) {
+			    !IS_ISP24XX(isp)) {
 				if (frame->flash_state
 				    == CSS_FRAME_FLASH_STATE_PARTIAL)
 					dev_dbg(isp->dev, "%s thumb partially "
@@ -901,7 +904,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 
 			if (asd->params.flash_state ==
 			    ATOMISP_FLASH_ONGOING &&
-			    !IS_ISP2400(isp)) {
+			    !IS_ISP24XX(isp)) {
 				if (frame->flash_state
 				    == CSS_FRAME_FLASH_STATE_PARTIAL) {
 					asd->frame_status[vb->i] =
@@ -932,7 +935,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 						ATOMISP_FLASH_DONE;
 			} else if (asd->params.flash_state ==
 				  ATOMISP_FLASH_ONGOING &&
-				  IS_ISP2400(isp)) {
+				  IS_ISP24XX(isp)) {
 				flash_num_ptr =
 					&asd->params.frame_num_since_flash;
 
@@ -1133,11 +1136,11 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 
 		atomisp_set_term_en_count(isp);
 
-		if (IS_ISP2400(isp) &&
+		if (IS_ISP24XX(isp) &&
 		    atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	} else {
-		if (IS_ISP2400(isp) &&
+		if (IS_ISP24XX(isp) &&
 		    atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	}
@@ -1316,7 +1319,7 @@ void atomisp_setup_flash(struct atomisp_sub_device *asd)
 			dev_err(isp->dev, "flash timeout configure failed\n");
 			return;
 		}
-		if (IS_ISP2400(isp)) {
+		if (IS_ISP24XX(isp)) {
 			ctrl.id = V4L2_CID_FLASH_STROBE;
 			ctrl.value = 1;
 
@@ -1332,7 +1335,7 @@ void atomisp_setup_flash(struct atomisp_sub_device *asd)
 		asd->params.flash_state = ATOMISP_FLASH_ONGOING;
 	} else {
 		/* Flashing all frames is done */
-		if (IS_ISP2400(isp)) {
+		if (IS_ISP24XX(isp)) {
 			ctrl.id = V4L2_CID_FLASH_STROBE;
 			ctrl.value = 0;
 
@@ -3103,7 +3106,7 @@ int atomisp_digital_zoom(struct atomisp_sub_device *asd, int flag,
 	struct atomisp_device *isp = asd->isp;
 
 	unsigned int max_zoom =
-		IS_ISP2400(isp) ? MRFLD_MAX_ZOOM_FACTOR : MFLD_MAX_ZOOM_FACTOR;
+		IS_ISP24XX(isp) ? MRFLD_MAX_ZOOM_FACTOR : MFLD_MAX_ZOOM_FACTOR;
 
 	if (flag == 0) {
 		atomisp_css_get_zoom_factor(asd, &zoom);
@@ -3366,14 +3369,14 @@ static int css_input_resolution_changed(struct atomisp_device *isp,
 		/*
 		 * Enable only if resolution is >= 3M for ISP2400
 		 */
-		if (IS_ISP2400(isp) && (ffmt->width >= 2048
+		if (IS_ISP24XX(isp) && (ffmt->width >= 2048
 						|| ffmt->height >= 1536)) {
 			atomisp_css_enable_raw_binning(asd, true);
 			atomisp_css_input_set_two_pixels_per_clock(asd,
 								false);
 		}
 
-		if (!IS_ISP2400(isp)) {
+		if (!IS_ISP24XX(isp)) {
 			/* enable raw binning for >= 5M */
 			if (ffmt->width >= 2560 || ffmt->height >= 1920)
 				atomisp_css_enable_raw_binning(asd, true);
@@ -3515,19 +3518,19 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		configure_pp_input = atomisp_css_preview_configure_pp_input;
 		pipe_id = CSS_PIPE_ID_PREVIEW;
 	} else {
-		if (format->sh_fmt == CSS_FRAME_FORMAT_RAW) {
-			atomisp_css_capture_set_mode(asd, CSS_CAPTURE_MODE_RAW);
-			atomisp_css_enable_dz(asd, false);
-		} else {
-			atomisp_update_capture_mode(asd);
-		}
-
 		/* CSS doesn't support low light mode on SOC cameras, so disable
 		 * it. FIXME: if this is done elsewhere, it gives corrupted
 		 * colors into thumbnail image.
 		 */
 		if (isp->inputs[asd->input_curr].type == SOC_CAMERA)
 			asd->params.low_light = false;
+
+		if (format->sh_fmt == CSS_FRAME_FORMAT_RAW) {
+			atomisp_css_capture_set_mode(asd, CSS_CAPTURE_MODE_RAW);
+			atomisp_css_enable_dz(asd, false);
+		} else {
+			atomisp_update_capture_mode(asd);
+		}
 
 		if (!asd->continuous_mode->val)
 			/* in case of ANR, force capture pipe to offline mode */
@@ -4137,7 +4140,7 @@ int atomisp_ospm_dphy_down(struct atomisp_device *isp)
 	isp->sw_contex.power_state = ATOM_ISP_POWER_DOWN;
 	spin_unlock_irqrestore(&isp->lock, flags);
 done:
-	if (IS_ISP2400(isp)) {
+	if (IS_ISP24XX(isp)) {
 		/*
 		 * MRFLD IUNIT DPHY is located in an always-power-on island
 		 * MRFLD HW design need all CSI ports are disabled before
@@ -4166,7 +4169,7 @@ int atomisp_ospm_dphy_up(struct atomisp_device *isp)
 	dev_dbg(isp->dev, "%s\n", __func__);
 
 	/* MRFLD IUNIT DPHY is located in an always-power-on island */
-	if (!IS_ISP2400(isp)) {
+	if (!IS_ISP24XX(isp)) {
 		/* power on DPHY */
 		pwr_cnt = intel_mid_msgbus_read32(MFLD_IUNITPHY_PORT,
 							MFLD_CSI_CONTROL);

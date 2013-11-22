@@ -779,6 +779,11 @@ static int atomisp_s_fmt_cap(struct file *file, void *fh,
 	int ret;
 
 	mutex_lock(&isp->mutex);
+	if (isp->isp_fatal_error) {
+		ret = -EIO;
+		mutex_unlock(&isp->mutex);
+		return ret;
+	}
 	ret = atomisp_set_fmt(vdev, f);
 	mutex_unlock(&isp->mutex);
 	return ret;
@@ -1339,6 +1344,11 @@ static int atomisp_streamon(struct file *file, void *fh,
 	}
 
 	mutex_lock(&isp->mutex);
+	if (isp->isp_fatal_error) {
+		ret = -EIO;
+		goto out;
+	}
+
 	if (asd->streaming == ATOMISP_DEVICE_STREAMING_STOPPING) {
 		ret = -EBUSY;
 		goto out;
@@ -1403,7 +1413,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 	}
 
 #ifdef PUNIT_CAMERA_BUSY
-	if (!IS_ISP2400(isp) && isp->need_gfx_throttle) {
+	if (!IS_ISP24XX(isp) && isp->need_gfx_throttle) {
 		/*
 		 * As per h/w architect and ECO 697611 we need to throttle the
 		 * GFX performance (freq) while camera is up to prevent peak
@@ -1480,11 +1490,11 @@ start_sensor:
 #endif
 		atomisp_set_term_en_count(isp);
 
-		if (IS_ISP2400(isp) &&
+		if (IS_ISP24XX(isp) &&
 			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	} else {
-		if (IS_ISP2400(isp) &&
+		if (IS_ISP24XX(isp) &&
 			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	}
@@ -1614,8 +1624,11 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 
 	css_pipe_id = atomisp_get_css_pipe_id(asd);
 	ret = atomisp_css_stop(asd, css_pipe_id, false);
-	if (ret)
-		return ret;
+#ifndef CSS20
+	/* Workaround to avoid system wide crash */
+	if (ret == -EIO)
+		isp->isp_timeout = true;
+#endif
 
 	/* cancel work queue*/
 	if (asd->video_out_capture.users) {
@@ -1666,7 +1679,7 @@ stopsensor:
 	}
 
 #ifdef PUNIT_CAMERA_BUSY
-	if (!IS_ISP2400(isp) && isp->need_gfx_throttle) {
+	if (!IS_ISP24XX(isp) && isp->need_gfx_throttle) {
 		/* Free camera_busy bit */
 		msg_ret = intel_mid_msgbus_read32(PUNIT_PORT, MFLD_OR1);
 		msg_ret &= ~0x100;
@@ -1674,15 +1687,19 @@ stopsensor:
 	}
 #endif
 
-	if (IS_ISP2400(isp) && atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW))
+	if (IS_ISP24XX(isp) && atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW))
 		dev_warn(isp->dev, "DFS failed.\n");
 	/*
 	 * ISP work around, need to reset isp
 	 * Is it correct time to reset ISP when first node does streamoff?
 	 */
-	if (isp->sw_contex.power_state == ATOM_ISP_POWER_UP)
+	if (isp->sw_contex.power_state == ATOM_ISP_POWER_UP) {
+		if (isp->isp_timeout)
+			dev_err(isp->dev, "%s: Resetting with WA activated",
+				__func__);
 		atomisp_reset(isp);
-
+		isp->isp_timeout = false;
+	}
 	return ret;
 }
 

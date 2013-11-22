@@ -1600,6 +1600,14 @@ static void __configure_output(struct atomisp_sub_device *asd,
 		pipe_id, width, height, format);
 }
 
+/*
+ * CSS2.1 and Old CSS2.0 has different parameters for pp input configuration.
+ */
+#ifndef CSS21
+/*
+ * For old CSS2.0, preview pipe and capture pipe all use bayer_ds_out_res to
+ * configure YUV Downscaling input resolution
+ */
 static void __configure_pp_input(struct atomisp_sub_device *asd,
 				 unsigned int width, unsigned int height,
 				 enum ia_css_pipe_id pipe_id)
@@ -1628,6 +1636,160 @@ static void __configure_pp_input(struct atomisp_sub_device *asd,
 	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
 		pipe_id, width, height);
 }
+#else
+/*
+ * For CSS2.1, capture pipe uses capture_pp_in_res to configure yuv
+ * downscaling input resolution.
+ */
+static void __configure_capture_pp_input(struct atomisp_sub_device *asd,
+				 unsigned int width, unsigned int height,
+				 enum ia_css_pipe_id pipe_id)
+{
+	struct atomisp_device *isp = asd->isp;
+	struct atomisp_stream_env *stream_env = &asd->stream_env;
+	struct ia_css_stream_config *stream_config = &stream_env->stream_config;
+	struct ia_css_pipe_config *pipe_configs =
+		&stream_env->pipe_configs[pipe_id];
+	struct ia_css_pipe_extra_config *pipe_extra_configs =
+		&stream_env->pipe_extra_configs[pipe_id];
+
+	if (width == 0 && height == 0)
+		return;
+
+	if (width * 9 / 10 < pipe_configs->output_info.res.width ||
+	    height * 9 / 10 < pipe_configs->output_info.res.height)
+		return;
+
+	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
+	stream_env->update_pipe[pipe_id] = true;
+
+	pipe_extra_configs->enable_yuv_ds = true;
+	pipe_configs->capt_pp_in_res.width = stream_config->effective_res.width;
+	pipe_configs->capt_pp_in_res.height =
+		stream_config->effective_res.height;
+	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
+		pipe_id, width, height);
+}
+
+/*
+ * For CSS2.1, preview pipe could support bayer decimation, yuv decimation and
+ * yuv downscaling, which needs addtional configurations.
+ */
+static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
+				 unsigned int width, unsigned int height,
+				 enum ia_css_pipe_id pipe_id)
+{
+	struct atomisp_device *isp = asd->isp;
+	int out_width, out_height, yuv_ds_in_width, yuv_ds_in_height;
+	struct atomisp_stream_env *stream_env = &asd->stream_env;
+	struct ia_css_stream_config *stream_config = &stream_env->stream_config;
+	struct ia_css_pipe_config *pipe_configs =
+		&stream_env->pipe_configs[pipe_id];
+	struct ia_css_pipe_extra_config *pipe_extra_configs =
+		&stream_env->pipe_extra_configs[pipe_id];
+	struct ia_css_resolution *bayer_ds_out_res =
+		&pipe_configs->bayer_ds_out_res;
+	struct ia_css_resolution *vf_pp_in_res =
+		&pipe_configs->vf_pp_in_res;
+	struct ia_css_resolution  *effective_res =
+		&stream_config->effective_res;
+
+	if (width == 0 && height == 0)
+		return;
+
+	if (width * 9 / 10 < pipe_configs->output_info.res.width ||
+	    height * 9 / 10 < pipe_configs->output_info.res.height)
+		return;
+	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
+	stream_env->update_pipe[pipe_id] = true;
+
+	pipe_extra_configs->enable_yuv_ds = true;
+
+	out_width = pipe_configs->output_info.res.width;
+	out_height = pipe_configs->output_info.res.height;
+
+	/*
+	 * The ISP could do bayer decimation, yuv decimation and yuv
+	 * downscaling:
+	 * 1: Bayer Decimimation: between effective resolution and
+	 * bayer_ds_res_out;
+	 * 2: YUV Decimation: between bayer_ds_res_out and vf_pp_in_res;
+	 * 3: YUV downscaling: between vf_pp_in_res and final vf output
+	 *
+	 * Rule for Bayer Decimation: support factor 2, 1.5 and 1.25
+	 * Rule for YUV Decimation: support factor 1,2,4
+	 * Rule for YUV Downscaling: arbitary value below 2
+	 *
+	 * General rule of factor distribution among these stages:
+	 * 1: try to do 2, 1.5, 1.25 in order for Bayer decimation if not in
+	 * online mode.
+	 * 2: try to do maximum of 2 for YUV downscaling
+	 * 3: the remainling for YUV decimation
+	 *
+	 * Note:
+	 * Do not configure bayer_ds_out_res if:
+	 * online == 1 or continuous == 0 or raw_binning = 0
+	 */
+
+	/*
+	 * calculate bayer decimate factor:
+	 * 1: only 2, 1.5, 1.25 get supported
+	 * 2: Do not configure bayer_ds_out_res if:
+	 * online == 1 or continuous == 0 or raw_binning = 0
+	 */
+	if (stream_config->online || !stream_config->continuous ||
+			!pipe_extra_configs-> enable_raw_binning) {
+		bayer_ds_out_res->width = 0;
+		bayer_ds_out_res->height = 0;
+	} else if (effective_res->width > out_width * 2 &&
+			effective_res->height > out_height * 2) {
+		bayer_ds_out_res->width = effective_res->width / 2;
+		bayer_ds_out_res->height = effective_res->height / 2;
+	} else if (effective_res->width > out_width * 3 / 2 &&
+			effective_res->height > out_height * 3 / 2) {
+		bayer_ds_out_res->width = effective_res->width * 2 / 3;
+		bayer_ds_out_res->height = effective_res->height * 2 / 3;
+	} else if (effective_res->width > out_width * 5 / 4 &&
+			effective_res->height > out_height * 5 / 4) {
+		bayer_ds_out_res->width = effective_res->width * 4 / 5;
+		bayer_ds_out_res->height = effective_res->height * 4 / 5;
+	} else {
+		bayer_ds_out_res->width = effective_res->width;
+		bayer_ds_out_res->height = effective_res->height;
+	}
+
+	/*
+	 * calculate YUV Decimation, YUV downscaling facor:
+	 * YUV Downscaling factor must not exceed 2.
+	 * YUV Decimation factor could be 1, 2 ,4.
+	 */
+	/* first decide the yuv_ds input resolution */
+	if (bayer_ds_out_res->width == 0) {
+		yuv_ds_in_width = effective_res->width;
+		yuv_ds_in_height = effective_res->height;
+	} else {
+		yuv_ds_in_width = bayer_ds_out_res->width;
+		yuv_ds_in_height = bayer_ds_out_res->height;
+	}
+	if (yuv_ds_in_width > out_width * 4 &&
+			yuv_ds_in_height > out_height * 4) {
+		/* YUV Decimation factor 4 */
+		vf_pp_in_res->width = yuv_ds_in_width / 4;
+		vf_pp_in_res->height = yuv_ds_in_height / 4;
+	} else 	if (yuv_ds_in_width > out_width * 2 &&
+			yuv_ds_in_height > out_height * 2) {
+		/* YUV Decimation factor 2 */
+		vf_pp_in_res->width = yuv_ds_in_width / 2;
+		vf_pp_in_res->height = yuv_ds_in_height / 2;
+	} else {
+		/* YUV Decimation not needed */
+		vf_pp_in_res->width = yuv_ds_in_width;
+		vf_pp_in_res->height = yuv_ds_in_height;
+	}
+	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
+		pipe_id, width, height);
+}
+#endif
 
 static void __configure_vf_output(struct atomisp_sub_device *asd,
 				  unsigned int width, unsigned int height,
@@ -1851,6 +2013,15 @@ int atomisp_css_preview_configure_pp_input(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height)
 {
+#ifdef CSS21
+	__configure_preview_pp_input(asd, width, height,
+			IA_CSS_PIPE_ID_PREVIEW);
+
+	if (width > asd->stream_env.pipe_configs[IA_CSS_PIPE_ID_CAPTURE].
+					capt_pp_in_res.width)
+		__configure_capture_pp_input(asd,
+				     width, height, IA_CSS_PIPE_ID_CAPTURE);
+#else
 	if (asd->stream_env.pipe_extra_configs[IA_CSS_PIPE_ID_PREVIEW].
 					enable_raw_binning == false)
 		__configure_pp_input(asd, width, height,
@@ -1860,7 +2031,7 @@ int atomisp_css_preview_configure_pp_input(
 					bayer_ds_out_res.width)
 		__configure_pp_input(asd,
 				     width, height, IA_CSS_PIPE_ID_CAPTURE);
-
+#endif
 	return 0;
 }
 
@@ -1868,7 +2039,11 @@ int atomisp_css_capture_configure_pp_input(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height)
 {
+#ifdef CSS21
+	__configure_capture_pp_input(asd, width, height, IA_CSS_PIPE_ID_CAPTURE);
+#else
 	__configure_pp_input(asd, width, height, IA_CSS_PIPE_ID_CAPTURE);
+#endif
 	return 0;
 }
 
@@ -2852,12 +3027,12 @@ void atomisp_css_destroy_acc_pipe(struct atomisp_sub_device *asd)
 	atomisp_freq_scaling(asd->isp, ATOMISP_DFS_MODE_LOW);
 
 	/* Force power cycling when binary finished */
-	ia_css_suspend();
+	atomisp_css_suspend();
 	if (pm_runtime_put_sync(asd->isp->dev) < 0)
 		dev_err(asd->isp->dev, "can not disable ISP power\n");
 	else if (pm_runtime_get_sync(asd->isp->dev) < 0)
 		dev_err(asd->isp->dev, "can not enable ISP power\n");
-	ia_css_resume();
+	atomisp_css_resume(asd->isp);
 }
 
 int atomisp_css_load_acc_binary(struct atomisp_sub_device *asd,

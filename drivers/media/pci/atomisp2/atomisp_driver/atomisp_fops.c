@@ -375,7 +375,7 @@ static void atomisp_dev_init_struct(struct atomisp_device *isp)
 	 * After boot-up, the default frequency is 200MHz.
 	 * For Medfield/Clovertrail, all running at 320MHz
 	 */
-	if (IS_ISP2400(isp))
+	if (IS_ISP24XX(isp))
 		isp->sw_contex.running_freq = ISP_FREQ_200MHZ;
 	else
 		isp->sw_contex.running_freq = ISP_FREQ_320MHZ;
@@ -591,7 +591,7 @@ static int atomisp_release(struct file *file)
 	del_timer_sync(&isp->wdt);
 	atomisp_acc_release(isp);
 	atomisp_free_all_shading_tables(isp);
-#ifdef CONFIG_VIDEO_ATOMISP_CSS20
+#ifdef CSS20
 	if (asd->stream_env.stream)
 		atomisp_destroy_pipes_stream_force(asd);
 #endif
