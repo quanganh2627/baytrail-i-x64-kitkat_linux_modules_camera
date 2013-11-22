@@ -4309,6 +4309,8 @@ static enum sh_css_err sh_css_pipeline_stop(
 		hrt_sleep();
 	}
 	if (timeout == 0) {
+		sh_css_dump_debug_info("sh_css_pipeline_stop point1");
+		sh_css_dump_sp_sw_debug_info();
 #ifdef __KERNEL__
 		printk(KERN_ERR "%s poll timeout point 1!!!\n", __func__);
 #endif
@@ -4316,11 +4318,13 @@ static enum sh_css_err sh_css_pipeline_stop(
 #ifdef __KERNEL__
 	printk("STOP_FUNC: reach point 2\n");
 #endif
-	while (timeout && !isp_ctrl_getbit(ISP0_ID, ISP_SC_REG, ISP_IDLE_BIT)) {
+	while (!isp_ctrl_getbit(ISP0_ID, ISP_SC_REG, ISP_IDLE_BIT) && timeout) {
 		timeout--;
 		hrt_sleep();
 	}
 	if (timeout == 0) {
+		sh_css_dump_debug_info("sh_css_pipeline_stop point2");
+		sh_css_dump_sp_sw_debug_info();
 #ifdef __KERNEL__
 		printk(KERN_ERR "%s poll timeout point 2!!!\n", __func__);
 #endif
@@ -4343,9 +4347,6 @@ static enum sh_css_err sh_css_pipeline_stop(
 
 	my_css.curr_pipe = NULL;
 	my_css.start_sp_copy = false;
-
-	if (timeout == 0)
-		return sh_css_err_internal_error;
 
 	return sh_css_success;
 }
