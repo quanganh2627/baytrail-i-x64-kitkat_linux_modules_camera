@@ -25,6 +25,7 @@
 
 /********************** registers define ********************************/
 #define IMX132_PLL_MULTIPLIER			0x0306
+#define IMX132_VT_RGPLTD			0x30A4
 
 /********************** settings for imx from vendor*********************/
 static struct imx_reg imx132_1080p_30fps[] = {

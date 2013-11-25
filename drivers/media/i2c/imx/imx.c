@@ -623,8 +623,6 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	u32 vt_sys_clk_div;
 	u32 pre_pll_clk_div;
 	u32 pll_multiplier;
-	u32 op_pix_clk_div;
-	u32 op_sys_clk_div;
 
 	const int ext_clk_freq_hz = 19200000;
 	struct atomisp_sensor_mode_data *buf = &info->data;
@@ -634,8 +632,6 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	u32 vt_pix_clk_freq_mhz;
 	u32 coarse_integration_time_min;
 	u32 coarse_integration_time_max_margin;
-	u32 frame_length_lines;
-	u32 line_length_pck;
 	u32 read_mode;
 	u32 div;
 
@@ -648,7 +644,10 @@ static int imx_get_intg_factor(struct i2c_client *client,
 		return ret;
 	vt_pix_clk_div = data[0] & IMX_MASK_5BIT;
 
-	ret = imx_read_reg(client, 1, IMX_VT_SYS_CLK_DIV, data);
+	if (dev->sensor_id == IMX132_ID)
+		ret = imx_read_reg(client, 1, IMX132_VT_RGPLTD, data);
+	else
+		ret = imx_read_reg(client, 1, IMX_VT_SYS_CLK_DIV, data);
 	if (ret)
 		return ret;
 	vt_sys_clk_div = data[0] & IMX_MASK_2BIT;
@@ -662,21 +661,6 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	if (ret)
 		return ret;
 	pll_multiplier = data[0] & IMX_MASK_11BIT;
-	ret = imx_read_reg(client, 1, IMX_OP_PIX_DIV, data);
-	if (ret)
-		return ret;
-	op_pix_clk_div = data[0] & IMX_MASK_5BIT;
-	ret = imx_read_reg(client, 1, IMX_OP_SYS_DIV, data);
-	if (ret)
-		return ret;
-	op_sys_clk_div = data[0] & IMX_MASK_2BIT;
-
-	memset(data, 0, IMX_INTG_BUF_COUNT * sizeof(u16));
-	ret = imx_read_reg(client, 4, IMX_FRAME_LENGTH_LINES, data);
-	if (ret)
-		return ret;
-	frame_length_lines = data[0];
-	line_length_pck = data[1];
 
 	memset(data, 0, IMX_INTG_BUF_COUNT * sizeof(u16));
 	ret = imx_read_reg(client, 4, IMX_COARSE_INTG_TIME_MIN, data);
@@ -743,8 +727,8 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	buf->fine_integration_time_min = IMX_FINE_INTG_TIME;
 	buf->fine_integration_time_max_margin = IMX_FINE_INTG_TIME;
 	buf->fine_integration_time_def = IMX_FINE_INTG_TIME;
-	buf->frame_length_lines = frame_length_lines;
-	buf->line_length_pck = line_length_pck;
+	buf->frame_length_lines = dev->lines_per_frame;
+	buf->line_length_pck = dev->pixels_per_line;
 	buf->read_mode = read_mode;
 
 	if (dev->sensor_id == IMX132_ID) {
@@ -1454,10 +1438,11 @@ static int imx_g_mbus_fmt(struct v4l2_subdev *sd,
 	if (!fmt)
 		return -EINVAL;
 
+	mutex_lock(&dev->input_lock);
 	fmt->width = dev->curr_res_table[dev->fmt_idx].width;
 	fmt->height = dev->curr_res_table[dev->fmt_idx].height;
 	fmt->code = dev->format.code;
-
+	mutex_unlock(&dev->input_lock);
 	return 0;
 }
 
@@ -1561,14 +1546,17 @@ static int imx_enum_framesizes(struct v4l2_subdev *sd,
 	unsigned int index = fsize->index;
 	struct imx_device *dev = to_imx_sensor(sd);
 
-	if (index >= dev->entries_curr_table)
+	mutex_lock(&dev->input_lock);
+	if (index >= dev->entries_curr_table) {
+		mutex_unlock(&dev->input_lock);
 		return -EINVAL;
+	}
 
 	fsize->type = V4L2_FRMSIZE_TYPE_DISCRETE;
 	fsize->discrete.width = dev->curr_res_table[index].width;
 	fsize->discrete.height = dev->curr_res_table[index].height;
 	fsize->reserved[0] = dev->curr_res_table[index].used;
-
+	mutex_unlock(&dev->input_lock);
 	return 0;
 }
 
@@ -1579,6 +1567,7 @@ static int imx_enum_frameintervals(struct v4l2_subdev *sd,
 	int i;
 	struct imx_device *dev = to_imx_sensor(sd);
 
+	mutex_lock(&dev->input_lock);
 	/* since the isp will donwscale the resolution to the right size,
 	  * find the nearest one that will allow the isp to do so
 	  * important to ensure that the resolution requested is padded
@@ -1588,19 +1577,21 @@ static int imx_enum_frameintervals(struct v4l2_subdev *sd,
 	i = nearest_resolution_index(sd, fival->width, fival->height);
 
 	if (i == -1)
-		return -EINVAL;
+		goto out;
 
 	/* Check if this index is supported */
 	if (index > __imx_get_max_fps_index(dev->curr_res_table[i].fps_options))
-		return -EINVAL;
-
+		goto out;
 	fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
 	fival->width = dev->curr_res_table[i].width;
 	fival->height = dev->curr_res_table[i].height;
 	fival->discrete.numerator = 1;
 	fival->discrete.denominator = dev->curr_res_table[i].fps_options[index].fps;
-
+	mutex_unlock(&dev->input_lock);
 	return 0;
+out:
+	mutex_unlock(&dev->input_lock);
+	return -EINVAL;
 }
 
 static int imx_enum_mbus_fmt(struct v4l2_subdev *sd, unsigned int index,
@@ -1609,7 +1600,10 @@ static int imx_enum_mbus_fmt(struct v4l2_subdev *sd, unsigned int index,
 	struct imx_device *dev = to_imx_sensor(sd);
 	if (index >= MAX_FMTS)
 		return -EINVAL;
+
+	mutex_lock(&dev->input_lock);
 	*code = dev->format.code;
+	mutex_unlock(&dev->input_lock);
 	return 0;
 }
 
@@ -1737,7 +1731,10 @@ imx_enum_mbus_code(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
 	struct imx_device *dev = to_imx_sensor(sd);
 	if (code->index >= MAX_FMTS)
 		return -EINVAL;
+
+	mutex_lock(&dev->input_lock);
 	code->code = dev->format.code;
+	mutex_unlock(&dev->input_lock);
 	return 0;
 }
 
@@ -1748,14 +1745,17 @@ imx_enum_frame_size(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
 	int index = fse->index;
 	struct imx_device *dev = to_imx_sensor(sd);
 
-	if (index >= dev->entries_curr_table)
+	mutex_lock(&dev->input_lock);
+	if (index >= dev->entries_curr_table) {
+		mutex_unlock(&dev->input_lock);
 		return -EINVAL;
+	}
 
 	fse->min_width = dev->curr_res_table[index].width;
 	fse->min_height = dev->curr_res_table[index].height;
 	fse->max_width = dev->curr_res_table[index].width;
 	fse->max_height = dev->curr_res_table[index].height;
-
+	mutex_unlock(&dev->input_lock);
 	return 0;
 }
 
@@ -1828,43 +1828,13 @@ imx_g_frame_interval(struct v4l2_subdev *sd,
 				struct v4l2_subdev_frame_interval *interval)
 {
 	struct imx_device *dev = to_imx_sensor(sd);
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	u16 lines_per_frame;
-	/*
-	 * if no specific information to calculate the fps,
-	 * just used the value in sensor settings
-	 */
+	const struct imx_resolution *res =
+				&dev->curr_res_table[dev->fmt_idx];
 
-	if (!dev->pixels_per_line || !dev->lines_per_frame) {
-		interval->interval.numerator = 1;
-		interval->interval.denominator = dev->fps;
-		return 0;
-	}
-
-	/*
-	 * DS: if coarse_integration_time is set larger than
-	 * lines_per_frame the frame_size will be expanded to
-	 * coarse_integration_time+1
-	 */
-	if (dev->coarse_itg > dev->lines_per_frame) {
-		if ((dev->coarse_itg + 4) < dev->coarse_itg) {
-			/*
-			 * we can not add 4 according to ds, as this will
-			 * cause over flow
-			 */
-			v4l2_warn(client, "%s: abnormal coarse_itg:0x%x\n",
-				  __func__, dev->coarse_itg);
-			lines_per_frame = dev->coarse_itg;
-		} else {
-			lines_per_frame = dev->coarse_itg + 4;
-		}
-	} else {
-		lines_per_frame = dev->lines_per_frame;
-	}
-	interval->interval.numerator = dev->pixels_per_line *
-					lines_per_frame;
-	interval->interval.denominator = dev->vt_pix_clk_freq_mhz;
-
+	mutex_lock(&dev->input_lock);
+	interval->interval.denominator = res->fps_options[dev->fps_index].fps;
+	interval->interval.numerator = 1;
+	mutex_unlock(&dev->input_lock);
 	return 0;
 }
 
@@ -1922,6 +1892,7 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 
 	interval->interval.denominator = res->fps_options[dev->fps_index].fps;
 	interval->interval.numerator = 1;
+	__imx_print_timing(sd);
 
 	return ret;
 }
