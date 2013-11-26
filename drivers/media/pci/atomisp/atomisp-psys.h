@@ -23,7 +23,7 @@
 #include "atomisp.h"
 #include "atomisp-pdata.h"
 
-struct atomisp_psys_device {
+struct atomisp_psys {
 	struct atomisp_psys_pdata *pdata;
 };
 

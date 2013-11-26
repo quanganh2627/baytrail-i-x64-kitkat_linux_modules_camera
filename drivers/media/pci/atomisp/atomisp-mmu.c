@@ -326,7 +326,7 @@ static void free_dma_mapping(struct kref *ref)
 
 static int atomisp_mmu_add_device(struct device *dev)
 {
-	struct atomisp_mmu_device *mmu = dev_get_drvdata(dev->archdata.iommu);
+	struct atomisp_mmu *mmu = dev_get_drvdata(dev->archdata.iommu);
 	struct atomisp_dma_mapping *dmap;
 	struct atomisp_mmu_domain *adom;
 	int rval;
@@ -362,7 +362,7 @@ static int atomisp_mmu_add_device(struct device *dev)
 
 static void atomisp_mmu_remove_device(struct device *dev)
 {
-	struct atomisp_mmu_device *mmu = dev_get_drvdata(dev->archdata.iommu);
+	struct atomisp_mmu *mmu = dev_get_drvdata(dev->archdata.iommu);
 
 	kref_put(&mmu->dmap->ref, &free_dma_mapping);
 }
@@ -384,7 +384,7 @@ struct iommu_ops atomisp_iommu_ops = {
 
 static int atomisp_mmu_probe(struct atomisp_bus_device *adev)
 {
-	struct atomisp_mmu_device *mmu;
+	struct atomisp_mmu *mmu;
 
 	mmu = devm_kzalloc(&adev->dev, sizeof(*mmu), GFP_KERNEL);
 	if (!mmu)
@@ -418,7 +418,7 @@ static void atomisp_mmu_remove(struct atomisp_bus_device *adev)
 
 static void atomisp_mmu_isr(struct atomisp_bus_device *adev)
 {
-	struct atomisp_mmu_device *mmu = atomisp_bus_get_drvdata(adev);
+	struct atomisp_mmu *mmu = atomisp_bus_get_drvdata(adev);
 
 	dev_info(&adev->dev, "Yeah!\n");
 }

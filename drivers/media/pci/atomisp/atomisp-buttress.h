@@ -23,7 +23,7 @@
 #include "atomisp.h"
 #include "atomisp-pdata.h"
 
-struct atomisp_buttress_device {
+struct atomisp_buttress {
 	struct atomisp_buttress_pdata *pdata;
 };
 

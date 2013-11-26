@@ -26,7 +26,7 @@
 #include "atomisp.h"
 #include "atomisp-pdata.h"
 
-struct atomisp_isys_device {
+struct atomisp_isys {
 	struct media_device media_dev;
 	struct v4l2_device v4l2_dev;
 	struct atomisp_bus_device *adev;

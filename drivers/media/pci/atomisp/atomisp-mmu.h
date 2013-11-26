@@ -40,7 +40,7 @@ struct atomisp_mmu_domain {
 /*
  * @pgtbl: physical address of the l1 page table
  */
-struct atomisp_mmu_device {
+struct atomisp_mmu {
 	struct list_head node;
 	unsigned int users;
 

@@ -176,7 +176,7 @@ static void *atomisp_dma_alloc(struct device *dev, size_t size,
 			       dma_addr_t *dma_handle, gfp_t gfp,
 			       struct dma_attrs *attrs)
 {
-	struct atomisp_mmu_device *mmu = dev_get_drvdata(dev->archdata.iommu);
+	struct atomisp_mmu *mmu = dev_get_drvdata(dev->archdata.iommu);
 	struct page **pages;
 	struct iova *iova;
 	uint32_t iova_addr;
@@ -227,7 +227,7 @@ out_free_iova:
 static void atomisp_dma_free(struct device *dev, size_t size, void *vaddr,
 			     dma_addr_t dma_handle, struct dma_attrs *attrs)
 {
-	struct atomisp_mmu_device *mmu = dev_get_drvdata(dev->archdata.iommu);
+	struct atomisp_mmu *mmu = dev_get_drvdata(dev->archdata.iommu);
 	struct iova *iova =
 		find_iova(&mmu->dmap->iovad, dma_handle >> PAGE_SHIFT);
 	struct page **pages = __iommu_get_pages(vaddr, attrs);
@@ -247,7 +247,7 @@ static void atomisp_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
 				 int nents, enum dma_data_direction dir,
 				 struct dma_attrs *attrs)
 {
-	struct atomisp_mmu_device *mmu = dev_get_drvdata(dev->archdata.iommu);
+	struct atomisp_mmu *mmu = dev_get_drvdata(dev->archdata.iommu);
 	struct iova *iova = find_iova(&mmu->dmap->iovad,
 				      sg_dma_address(sglist) >> PAGE_SHIFT);
 
@@ -261,7 +261,7 @@ static int atomisp_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 			      int nents, enum dma_data_direction dir,
 			      struct dma_attrs *attrs)
 {
-	struct atomisp_mmu_device *mmu = dev_get_drvdata(dev->archdata.iommu);
+	struct atomisp_mmu *mmu = dev_get_drvdata(dev->archdata.iommu);
 	struct scatterlist *sg;
 	struct iova *iova;
 	size_t size = 0;

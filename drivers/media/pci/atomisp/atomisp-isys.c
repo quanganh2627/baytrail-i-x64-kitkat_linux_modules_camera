@@ -29,7 +29,7 @@
 #include "atomisp-bus.h"
 #include "atomisp-isys.h"
 
-static int isys_register_devices(struct atomisp_isys_device *isys)
+static int isys_register_devices(struct atomisp_isys *isys)
 {
 	int rval;
 
@@ -59,7 +59,7 @@ out_media_device_unregister:
 	return rval;
 }
 
-static void isys_unregister_devices(struct atomisp_isys_device *isys)
+static void isys_unregister_devices(struct atomisp_isys *isys)
 {
 	v4l2_device_unregister(&isys->v4l2_dev);
 	media_device_unregister(&isys->media_dev);
@@ -67,7 +67,7 @@ static void isys_unregister_devices(struct atomisp_isys_device *isys)
 
 static int isys_probe(struct atomisp_bus_device *adev)
 {
-	struct atomisp_isys_device *isys;
+	struct atomisp_isys *isys;
 
 	isys = devm_kzalloc(&adev->dev, sizeof(*isys), GFP_KERNEL);
 	if (!isys)
@@ -83,7 +83,7 @@ static int isys_probe(struct atomisp_bus_device *adev)
 
 static void isys_remove(struct atomisp_bus_device *adev)
 {
-	struct atomisp_isys_device *isys = atomisp_bus_get_drvdata(adev);
+	struct atomisp_isys *isys = atomisp_bus_get_drvdata(adev);
 
 	dev_info(&adev->dev, "removed\n");
 	isys_unregister_devices(isys);
@@ -91,7 +91,7 @@ static void isys_remove(struct atomisp_bus_device *adev)
 
 static void isys_isr(struct atomisp_bus_device *adev)
 {
-	struct atomisp_isys_device *isys = atomisp_bus_get_drvdata(adev);
+	struct atomisp_isys *isys = atomisp_bus_get_drvdata(adev);
 
 	dev_info(&adev->dev, "Yeah!\n");
 }
