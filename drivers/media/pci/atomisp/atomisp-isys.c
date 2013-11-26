@@ -28,6 +28,33 @@
 #include "atomisp.h"
 #include "atomisp-bus.h"
 #include "atomisp-isys.h"
+#include "atomisp-csi2.h"
+
+static unsigned int bxt_nlanes[] = { 4, 1, 2, 2 };
+
+static void isys_unregister_csi2(struct atomisp_isys *isys)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(bxt_lanes); i++)
+		atomisp_csi2_cleanup(&isys->csi2[i]);
+}
+
+static int isys_register_csi2(struct atomisp_isys *isys)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(bxt_lanes); i++) {
+		int rval = atomisp_csi2_init(&isys->csi2[i], isys,
+					     isys->pdata->base, bxt_nlanes[i]);
+		if (rval) {
+			isys_unregister_csi2(isys);
+			return rval;
+		}
+	}
+
+	return 0;
+}
 
 static int isys_register_devices(struct atomisp_isys *isys)
 {
@@ -51,7 +78,16 @@ static int isys_register_devices(struct atomisp_isys *isys)
 		goto out_media_device_unregister;
 	}
 
+	rval = isys_register_csi2(isys);
+	if (rval) {
+		dev_info(&isys->adev->dev, "can't register csi2 devices\n");
+		goto out_v4l2_device_unregister;
+	}
+
 	return 0;
+
+out_v4l2_device_unregister:
+	v4l2_device_unregister(&isys->v4l2_dev);
 
 out_media_device_unregister:
 	media_device_unregister(&isys->media_dev);
@@ -61,6 +97,7 @@ out_media_device_unregister:
 
 static void isys_unregister_devices(struct atomisp_isys *isys)
 {
+	isys_unregister_csi2(isys);
 	v4l2_device_unregister(&isys->v4l2_dev);
 	media_device_unregister(&isys->media_dev);
 }

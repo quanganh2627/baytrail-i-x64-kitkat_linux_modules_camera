@@ -20,17 +20,21 @@
 #ifndef ATOMISP_CSI2_H
 #define ATOMISP_CSI2_H
 
-#include "atomisp.h"
-#include "atomisp-pdata.h"
+struct atomisp_csi2_pdata;
+struct atomisp_isys;
 
-/*
- * @pgtbl: physical address of the l1 page table
- */
-struct atomisp_csi2_device {
+struct atomisp_csi2 {
 	struct atomisp_csi2_pdata *pdata;
-	struct scatterlist sg;
+	struct atomisp_isys *isys;
+	struct v4l2_subdev sd;
+
+	void __iomem *base;
+	unsigned int nlanes;
 };
 
-irqreturn_t atomisp_csi2_isr(int irq, struct atomisp_csi2_device *adev);
+int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
+		      void __iomem *base, unsigned int lanes);
+void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2);
+void atomisp_csi2_isr(struct atomisp_csi2 *csi2);
 
 #endif

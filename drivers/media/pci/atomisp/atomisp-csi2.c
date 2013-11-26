@@ -24,62 +24,28 @@
 #include <linux/module.h>
 #include <linux/sizes.h>
 
+#include <media/v4l2-device.h>
+
 #include "atomisp.h"
 #include "atomisp-bus.h"
+#include "atomisp-isys.h"
 #include "atomisp-csi2.h"
 
-static int atomisp_csi2_probe(struct atomisp_bus_device *adev)
+int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
+		      void __iomem *base, unsigned int nlanes)
 {
-	struct atomisp_csi2_device *csi2;
-	int rval;
+	csi2->isys = isys;
+	csi2->base = base;
+	csi2->nlanes = nlanes;
 
-	csi2 = devm_kzalloc(&adev->dev, sizeof(*csi2), GFP_KERNEL);
-	if (!csi2)
-		return -ENOMEM;
-
-	sg_set_page(&csi2->sg, alloc_page(GFP_KERNEL), PAGE_SIZE, 0);
-	if (!sg_page(&csi2->sg))
-		return -ENOMEM;
-
-	dev_info(&adev->dev, "csi2 probe %p %p\n", adev, &adev->dev);
-	atomisp_bus_set_drvdata(adev, csi2);
-
-	sg_mark_end(&csi2->sg);
-
-	rval = dma_map_sg(&adev->dev, &csi2->sg, 1, DMA_FROM_DEVICE);
-	if (rval)
-		goto out_dma_map_sg;
-
-	return 0;
-
-out_dma_map_sg:
-	__free_page(sg_page(&csi2->sg));
-
-	return rval;
+	return v4l2_device_register_subdev(&isys->v4l2_dev, &csi2->sd);
 }
 
-static void atomisp_csi2_remove(struct atomisp_bus_device *adev)
+void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2)
 {
-	struct atomisp_csi2_device *csi2 = atomisp_bus_get_drvdata(adev);
-
-	dma_unmap_sg(&adev->dev, &csi2->sg, 1, DMA_FROM_DEVICE);
-
-	__free_page(sg_page(&csi2->sg));
-	dev_info(&adev->dev, "removed\n");
+	v4l2_device_unregister_subdev(&csi2->sd);
 }
 
-static struct atomisp_bus_driver atomisp_csi2_driver = {
-	.probe = atomisp_csi2_probe,
-	.remove = atomisp_csi2_remove,
-	.wanted = ATOMISP_CSI2_NAME,
-	.drv = {
-		.name = ATOMISP_CSI2_NAME,
-		.owner = THIS_MODULE,
-	},
-};
-
-module_atomisp_bus_driver(atomisp_csi2_driver);
-
-MODULE_AUTHOR("Sakari Ailus <sakari.ailus@intel.com>");
-MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Intel Atom ISP driver");
+void atomisp_csi2_isr(struct atomisp_csi2 *csi2)
+{
+}

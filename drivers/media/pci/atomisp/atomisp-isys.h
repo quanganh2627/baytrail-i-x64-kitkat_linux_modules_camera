@@ -25,6 +25,9 @@
 
 #include "atomisp.h"
 #include "atomisp-pdata.h"
+#include "atomisp-csi2.h"
+
+#define MAX_CSI2_PORTS			4
 
 struct atomisp_isys {
 	struct media_device media_dev;
@@ -32,6 +35,8 @@ struct atomisp_isys {
 	struct atomisp_bus_device *adev;
 
 	struct atomisp_isys_pdata *pdata;
+
+	struct atomisp_csi2 csi2[MAX_CSI2_PORTS];
 };
 
 #endif /* ATOMISP_ISYS_H */
