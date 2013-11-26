@@ -65,7 +65,7 @@ static void isys_unregister_devices(struct atomisp_isys_device *isys)
 	media_device_unregister(&isys->media_dev);
 }
 
-static int atomisp_isys_probe(struct atomisp_bus_device *adev)
+static int isys_probe(struct atomisp_bus_device *adev)
 {
 	struct atomisp_isys_device *isys;
 
@@ -81,7 +81,7 @@ static int atomisp_isys_probe(struct atomisp_bus_device *adev)
 	return isys_register_devices(isys);
 }
 
-static void atomisp_isys_remove(struct atomisp_bus_device *adev)
+static void isys_remove(struct atomisp_bus_device *adev)
 {
 	struct atomisp_isys_device *isys = atomisp_bus_get_drvdata(adev);
 
@@ -89,17 +89,17 @@ static void atomisp_isys_remove(struct atomisp_bus_device *adev)
 	isys_unregister_devices(isys);
 }
 
-static void atomisp_isys_isr(struct atomisp_bus_device *adev)
+static void isys_isr(struct atomisp_bus_device *adev)
 {
 	struct atomisp_isys_device *isys = atomisp_bus_get_drvdata(adev);
 
 	dev_info(&adev->dev, "Yeah!\n");
 }
 
-static struct atomisp_bus_driver atomisp_isys_driver = {
-	.probe = atomisp_isys_probe,
-	.remove = atomisp_isys_remove,
-	.isr = atomisp_isys_isr,
+static struct atomisp_bus_driver isys_driver = {
+	.probe = isys_probe,
+	.remove = isys_remove,
+	.isr = isys_isr,
 	.wanted = ATOMISP_ISYS_NAME,
 	.drv = {
 		.name = ATOMISP_ISYS_NAME,
@@ -107,7 +107,7 @@ static struct atomisp_bus_driver atomisp_isys_driver = {
 	},
 };
 
-module_atomisp_bus_driver(atomisp_isys_driver);
+module_atomisp_bus_driver(isys_driver);
 
 MODULE_AUTHOR("Sakari Ailus <sakari.ailus@intel.com>");
 MODULE_LICENSE("GPL");
