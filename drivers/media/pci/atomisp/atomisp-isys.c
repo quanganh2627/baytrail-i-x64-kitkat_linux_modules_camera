@@ -23,10 +23,47 @@
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/sizes.h>
+#include <linux/string.h>
 
 #include "atomisp.h"
 #include "atomisp-bus.h"
 #include "atomisp-isys.h"
+
+static int isys_register_devices(struct atomisp_isys_device *isys)
+{
+	int rval;
+
+	isys->media_dev.dev = &isys->adev->dev;
+	strlcpy(isys->media_dev.model, "Intel ISP",
+		sizeof(isys->media_dev.model));
+
+	rval = media_device_register(&isys->media_dev);
+	if (rval < 0) {
+		dev_info(&isys->adev->dev, "can't register media device\n");
+		return rval;
+	}
+
+	isys->v4l2_dev.mdev = &isys->media_dev;
+
+	rval = v4l2_device_register(&isys->adev->dev, &isys->v4l2_dev);
+	if (rval < 0) {
+		dev_info(&isys->adev->dev, "can't register v4l2 device\n");
+		goto out_media_device_unregister;
+	}
+
+	return 0;
+
+out_media_device_unregister:
+	media_device_unregister(&isys->media_dev);
+
+	return rval;
+}
+
+static void isys_unregister_devices(struct atomisp_isys_device *isys)
+{
+	v4l2_device_unregister(&isys->v4l2_dev);
+	media_device_unregister(&isys->media_dev);
+}
 
 static int atomisp_isys_probe(struct atomisp_bus_device *adev)
 {
@@ -36,10 +73,12 @@ static int atomisp_isys_probe(struct atomisp_bus_device *adev)
 	if (!isys)
 		return -ENOMEM;
 
+	isys->adev = adev;
+
 	dev_info(&adev->dev, "isys probe %p %p\n", adev, &adev->dev);
 	atomisp_bus_set_drvdata(adev, isys);
 
-	return 0;
+	return isys_register_devices(isys);
 }
 
 static void atomisp_isys_remove(struct atomisp_bus_device *adev)
@@ -47,6 +86,7 @@ static void atomisp_isys_remove(struct atomisp_bus_device *adev)
 	struct atomisp_isys_device *isys = atomisp_bus_get_drvdata(adev);
 
 	dev_info(&adev->dev, "removed\n");
+	isys_unregister_devices(isys);
 }
 
 static void atomisp_isys_isr(struct atomisp_bus_device *adev)

@@ -20,10 +20,17 @@
 #ifndef ATOMISP_ISYS_H
 #define ATOMISP_ISYS_H
 
+#include <media/media-device.h>
+#include <media/v4l2-device.h>
+
 #include "atomisp.h"
 #include "atomisp-pdata.h"
 
 struct atomisp_isys_device {
+	struct media_device media_dev;
+	struct v4l2_device v4l2_dev;
+	struct atomisp_bus_device *adev;
+
 	struct atomisp_isys_pdata *pdata;
 };
 
