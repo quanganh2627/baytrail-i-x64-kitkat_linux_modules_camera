@@ -607,6 +607,8 @@ static int atomisp_release(struct file *file)
 		return -EBADF;
 
 	mutex_lock(&isp->streamoff_mutex);
+	del_timer_sync(&isp->wdt);
+	cancel_work_sync(&isp->wdt_work);
 	mutex_lock(&isp->mutex);
 
 	pipe->users--;
@@ -672,7 +674,6 @@ static int atomisp_release(struct file *file)
 	if (atomisp_dev_users(isp))
 		goto done;
 
-	del_timer_sync(&isp->wdt);
 	atomisp_acc_release(isp);
 	atomisp_free_all_shading_tables(isp);
 #ifdef CSS20
