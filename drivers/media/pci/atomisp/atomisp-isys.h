@@ -20,8 +20,8 @@
 #ifndef ATOMISP_ISYS_H
 #define ATOMISP_ISYS_H
 
-#include <media/media-device.h>
 #include <media/v4l2-device.h>
+#include <media/media-device.h>
 
 #include "atomisp.h"
 #include "atomisp-csi2.h"

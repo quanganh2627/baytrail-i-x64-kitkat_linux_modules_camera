@@ -20,6 +20,8 @@
 #ifndef ATOMISP_CSI2_H
 #define ATOMISP_CSI2_H
 
+#include <media/v4l2-device.h>
+
 struct atomisp_csi2_pdata;
 struct atomisp_isys;
 
