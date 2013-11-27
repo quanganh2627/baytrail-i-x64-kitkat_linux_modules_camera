@@ -2248,6 +2248,24 @@ find_pipe_by_num(uint8_t pipe_num)
 	return NULL;
 }
 
+static void sh_css_pipe_free_acc_binaries (
+    struct ia_css_pipe *pipe)
+{
+	unsigned int i;
+	struct ia_css_pipeline *pipeline;
+
+	assert(pipe != NULL);
+	pipeline = &pipe->pipeline;
+
+	/* loop through the stages and unload them */
+	for (i = 0; i < pipeline->num_stages; i++) {
+		struct ia_css_fw_info *firmware = (struct ia_css_fw_info *)
+						pipeline->stages[i].firmware;
+		if (firmware)
+			ia_css_pipe_unload_extension(pipe, firmware);
+	}
+}
+
 enum ia_css_err
 ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 {
@@ -2297,6 +2315,8 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 #endif
 		break;
 	case IA_CSS_PIPE_MODE_ACC:
+		sh_css_pipe_free_acc_binaries(pipe);
+		break;
 	case IA_CSS_PIPE_MODE_COPY:
 		break;
 	}
