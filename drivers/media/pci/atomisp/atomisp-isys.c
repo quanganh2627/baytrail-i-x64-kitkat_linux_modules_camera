@@ -27,8 +27,8 @@
 
 #include "atomisp.h"
 #include "atomisp-bus.h"
-#include "atomisp-isys.h"
 #include "atomisp-csi2.h"
+#include "atomisp-isys.h"
 
 static unsigned int bxt_nlanes[] = { 4, 1, 2, 2 };
 

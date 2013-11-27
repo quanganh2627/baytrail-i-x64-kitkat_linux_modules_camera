@@ -24,8 +24,8 @@
 #include <media/v4l2-device.h>
 
 #include "atomisp.h"
-#include "atomisp-pdata.h"
 #include "atomisp-csi2.h"
+#include "atomisp-pdata.h"
 
 #define MAX_CSI2_PORTS			4
 
