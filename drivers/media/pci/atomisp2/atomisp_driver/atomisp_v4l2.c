@@ -191,6 +191,9 @@ static int atomisp_save_iunit_reg(struct atomisp_device *isp)
 				      &isp->saved_regs.csi_afe_dly);
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_CONTROL,
 				      &isp->saved_regs.csi_control);
+		if (isp->media_dev.hw_revision >= ATOMISP_HW_REVISION_ISP2401)
+			isp->saved_regs.csi_control |=
+				MRFLD_PCI_CSI_CONTROL_PARPATHEN;
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_RCOMP_CONTROL,
 				      &isp->saved_regs.csi_afe_rcomp_config);
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_HS_CONTROL,
