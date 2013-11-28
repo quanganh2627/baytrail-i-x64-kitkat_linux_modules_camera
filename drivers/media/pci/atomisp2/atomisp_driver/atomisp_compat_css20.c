@@ -1796,10 +1796,11 @@ static enum ia_css_pipe_mode __pipe_id_to_pipe_mode(
 }
 
 static void __configure_output(struct atomisp_sub_device *asd,
-		unsigned int stream_index,
-		unsigned int width, unsigned int height,
-		enum ia_css_frame_format format,
-		enum ia_css_pipe_id pipe_id)
+			       unsigned int stream_index,
+			       unsigned int width, unsigned int height,
+			       unsigned int min_width,
+			       enum ia_css_frame_format format,
+			       enum ia_css_pipe_id pipe_id)
 {
 	struct atomisp_device *isp = asd->isp;
 	struct atomisp_stream_env *stream_env =
@@ -1812,6 +1813,7 @@ static void __configure_output(struct atomisp_sub_device *asd,
 	stream_env->pipe_configs[pipe_id].output_info.res.width = width;
 	stream_env->pipe_configs[pipe_id].output_info.res.height = height;
 	stream_env->pipe_configs[pipe_id].output_info.format = format;
+	stream_env->pipe_configs[pipe_id].output_info.padded_width = min_width;
 
 	/* isp binary 2.2 specific setting*/
 	if (width > stream_env->stream_config.effective_res.width ||
@@ -2050,6 +2052,7 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 
 static void __configure_vf_output(struct atomisp_sub_device *asd,
 				  unsigned int width, unsigned int height,
+				  unsigned int min_width,
 				  enum atomisp_css_frame_format format,
 				  enum ia_css_pipe_id pipe_id)
 {
@@ -2063,6 +2066,8 @@ static void __configure_vf_output(struct atomisp_sub_device *asd,
 	stream_env->pipe_configs[pipe_id].vf_output_info.res.width = width;
 	stream_env->pipe_configs[pipe_id].vf_output_info.res.height = height;
 	stream_env->pipe_configs[pipe_id].vf_output_info.format = format;
+	stream_env->pipe_configs[pipe_id].vf_output_info.padded_width =
+		min_width;
 	dev_dbg(isp->dev,
 		"configuring pipe[%d] vf output info w=%d.h=%d.f=%d.\n",
 		 pipe_id, width, height, format);
@@ -2196,7 +2201,7 @@ int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 					default_capture_config.mode =
 					CSS_CAPTURE_MODE_RAW;
 
-	__configure_output(asd, stream_index, width, height, format,
+	__configure_output(asd, stream_index, width, height, width, format,
 			   IA_CSS_PIPE_ID_COPY);
 	return 0;
 }
@@ -2207,8 +2212,8 @@ int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
 				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL,
-			width, height, format, IA_CSS_PIPE_ID_PREVIEW);
+	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL, width, height,
+			   min_width, format, IA_CSS_PIPE_ID_PREVIEW);
 	return 0;
 }
 
@@ -2217,8 +2222,8 @@ int atomisp_css_capture_configure_output(struct atomisp_sub_device *asd,
 				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL,
-			width, height, format, IA_CSS_PIPE_ID_CAPTURE);
+	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL, width, height,
+			   min_width, format, IA_CSS_PIPE_ID_CAPTURE);
 	return 0;
 }
 
@@ -2227,8 +2232,8 @@ int atomisp_css_video_configure_output(struct atomisp_sub_device *asd,
 				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL,
-			width, height, format, IA_CSS_PIPE_ID_VIDEO);
+	__configure_output(asd, ATOMISP_INPUT_STREAM_GENERAL, width, height,
+			   min_width, format, IA_CSS_PIPE_ID_VIDEO);
 	return 0;
 }
 
@@ -2238,7 +2243,7 @@ int atomisp_css_video_configure_viewfinder(
 				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	__configure_vf_output(asd, width, height, format,
+	__configure_vf_output(asd, width, height, min_width, format,
 			      IA_CSS_PIPE_ID_VIDEO);
 	return 0;
 }
@@ -2249,8 +2254,8 @@ int atomisp_css_capture_configure_viewfinder(
 				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	__configure_vf_output(asd, width, height, format,
-						IA_CSS_PIPE_ID_CAPTURE);
+	__configure_vf_output(asd, width, height, min_width, format,
+			      IA_CSS_PIPE_ID_CAPTURE);
 	return 0;
 }
 
