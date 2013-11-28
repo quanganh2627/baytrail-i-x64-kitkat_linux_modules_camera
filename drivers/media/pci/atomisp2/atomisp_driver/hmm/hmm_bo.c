@@ -136,7 +136,7 @@ int hmm_bo_init(struct hmm_bo_device *bdev,
 
 	bo->pgnr = pgnr;
 	bo->bdev = bdev;
-
+	bo->vmap_addr = NULL;
 	bo->release = release;
 
 	if (!bo->release)
@@ -198,6 +198,10 @@ static void hmm_bo_release(struct hmm_buffer_object *bo)
 		dev_warn(atomisp_dev,
 			     "the vm is still not freed, free vm first...\n");
 		hmm_bo_free_vm(bo);
+	}
+	if (bo->status & HMM_BO_VMAPED) {
+		dev_warn(atomisp_dev, "the vunmap is not done, do it...\n");
+		hmm_bo_vunmap(bo);
 	}
 
 	if (bo->release)
@@ -1068,13 +1072,19 @@ int hmm_bo_binded(struct hmm_buffer_object *bo)
 void *hmm_bo_vmap(struct hmm_buffer_object *bo)
 {
 	struct page **pages;
-	void *vmap_addr;
 	int i;
 
 	check_bo_null_return(bo, NULL);
 
+	mutex_lock(&bo->mutex);
+	if (bo->status & HMM_BO_VMAPED) {
+		mutex_unlock(&bo->mutex);
+		return bo->vmap_addr;
+	}
+
 	pages = atomisp_kernel_malloc(sizeof(*pages) * bo->pgnr);
 	if (unlikely(!pages)) {
+		mutex_unlock(&bo->mutex);
 		dev_err(atomisp_dev, "out of memory for pages...\n");
 		return NULL;
 	}
@@ -1082,11 +1092,33 @@ void *hmm_bo_vmap(struct hmm_buffer_object *bo)
 	for (i = 0; i < bo->pgnr; i++)
 		pages[i] = bo->page_obj[i].page;
 
-	vmap_addr = vmap(pages, bo->pgnr, VM_MAP, PAGE_KERNEL_NOCACHE);
+	bo->vmap_addr = vmap(pages, bo->pgnr, VM_MAP, PAGE_KERNEL_NOCACHE);
+	if (unlikely(!bo->vmap_addr)) {
+		mutex_unlock(&bo->mutex);
+		dev_err(atomisp_dev, "vmap failed...\n");
+		return NULL;
+	}
+	bo->status |= HMM_BO_VMAPED;
 
 	atomisp_kernel_free(pages);
 
-	return vmap_addr;
+	mutex_unlock(&bo->mutex);
+	return bo->vmap_addr;
+}
+
+void hmm_bo_vunmap(struct hmm_buffer_object *bo)
+{
+	check_bo_null_return_void(bo);
+
+	mutex_lock(&bo->mutex);
+	if (bo->status & HMM_BO_VMAPED) {
+		vunmap(bo->vmap_addr);
+		bo->vmap_addr = NULL;
+		bo->status &= ~HMM_BO_VMAPED;
+	}
+
+	mutex_unlock(&bo->mutex);
+	return;
 }
 
 void hmm_bo_ref(struct hmm_buffer_object *bo)

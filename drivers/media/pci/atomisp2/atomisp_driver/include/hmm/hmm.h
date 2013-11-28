@@ -59,13 +59,22 @@ phys_addr_t hmm_virt_to_phys(void *virt);
  * map ISP memory starts with virt to kernel virtual address
  * by using vmap. return NULL if failed.
  *
- * !! user needs to use vunmap to unmap it manually before calling
- * hmm_free to free the memory.
- *
  * virt must be the start address of ISP memory (return by hmm_alloc),
  * do not pass any other address.
  */
 void *hmm_vmap(void *virt);
+void hmm_vunmap(void *virt);
+
+/*
+ * Address translation from ISP shared memory address to kernel virtual address
+ * if the memory is not vmmaped,  then do it.
+ */
+void *hmm_isp_vaddr_to_host_vaddr(u32 ptr);
+
+/*
+ * Address translation from kernel virtual address to ISP shared memory address
+ */
+u32 hmm_host_vaddr_to_hrt_vaddr(const void *ptr);
 
 /*
  * map ISP memory starts with virt to specific vma.

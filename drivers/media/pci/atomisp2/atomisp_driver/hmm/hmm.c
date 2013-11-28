@@ -422,12 +422,28 @@ void *hmm_vmap(void *virt)
 	bo = hmm_bo_device_search_start(&bo_device, ptr);
 	if (!bo) {
 		dev_err(atomisp_dev,
-			    "can not find buffer object start with "
-			    "address 0x%x\n", (unsigned int)virt);
+			"can not find buffer object start with address %p\n",
+			virt);
 		return NULL;
 	}
 
 	return hmm_bo_vmap(bo);
+}
+
+void hmm_vunmap(void *virt)
+{
+	unsigned int ptr = (unsigned int)virt;
+	struct hmm_buffer_object *bo;
+
+	bo = hmm_bo_device_search_start(&bo_device, ptr);
+	if (!bo) {
+		dev_warn(atomisp_dev,
+			"can not find buffer object start with address %p\n",
+			virt);
+		return;
+	}
+
+	return hmm_bo_vunmap(bo);
 }
 
 int hmm_pool_register(unsigned int pool_size,
@@ -465,4 +481,24 @@ void hmm_pool_unregister(enum hmm_pool_type pool_type)
 	}
 
 	return;
+}
+
+void *hmm_isp_vaddr_to_host_vaddr(u32 ptr)
+{
+	return hmm_vmap((void *)ptr);
+	/* vmunmap will be done in hmm_bo_release() */
+}
+
+u32 hmm_host_vaddr_to_hrt_vaddr(const void *ptr)
+{
+	struct hmm_buffer_object *bo;
+
+	bo = hmm_bo_device_search_vmap_start(&bo_device, ptr);
+	if (bo)
+		return bo->vm_node->start;
+
+	dev_err(atomisp_dev,
+		"can not find buffer object whose kernel virtual address is %p\n",
+		ptr);
+	return 0;
 }
