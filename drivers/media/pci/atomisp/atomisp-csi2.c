@@ -30,6 +30,7 @@
 #include "atomisp-bus.h"
 #include "atomisp-isys.h"
 #include "atomisp-csi2.h"
+#include "atomisp-csi2-reg.h"
 
 int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 		      void __iomem *base, unsigned int nlanes)
@@ -48,4 +49,34 @@ void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2)
 
 void atomisp_csi2_isr(struct atomisp_csi2 *csi2)
 {
+}
+
+void atomisp_csi2_set_stream(struct atomisp_csi2 *csi2, bool enable)
+{
+	unsigned int i;
+
+	if (!enable) {
+		writel(0, csi2->base + CSI2_REG_CSI_RX_ENABLE);
+		return;
+	}
+
+	writel(csi2->sensor_cfg.termen[ATOMISP_CSI2_SENSOR_CFG_LANE_CLOCK],
+	       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_TERMEN_CLANE);
+	writel(csi2->sensor_cfg.settle[ATOMISP_CSI2_SENSOR_CFG_LANE_CLOCK],
+	       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_SETTLE_CLANE);
+
+	for (i = 0; i < MAX_CSI2_LANES; i++) {
+		writel(csi2->sensor_cfg.termen[ATOMISP_CSI2_SENSOR_CFG_LANE_DATA(i)],
+		       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_TERMEN_DLANE(i));
+		writel(csi2->sensor_cfg.settle[ATOMISP_CSI2_SENSOR_CFG_LANE_DATA(i)],
+		       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_SETTLE_DLANE(i));
+	}
+
+	writel(CSI2_CSI_RX_ENABLE_ENABLE, csi2->base + CSI2_REG_CSI_RX_ENABLE);
+}
+
+static bool atomisp_csi2_is_idle(struct atomisp_csi2 *csi2)
+{
+	return readl(csi2->base + CSI2_REG_CSI_RX_STATUS)
+		!= CSI2_CSI_RX_STATUS_BUSY;
 }

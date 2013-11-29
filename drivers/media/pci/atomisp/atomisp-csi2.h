@@ -22,9 +22,19 @@
 
 #include <media/v4l2-device.h>
 
+#define MAX_CSI2_LANES			4
+
 struct atomisp_csi2_pdata;
 struct atomisp_isys;
 
+#define ATOMISP_CSI2_SENSOR_CFG_LANE_CLOCK	0
+#define ATOMISP_CSI2_SENSOR_CFG_LANE_DATA(n)	((n) + 1)
+
+/*
+ * struct atomisp_csi2
+ *
+ * @nlanes: number of lanes in the receiver
+ */
 struct atomisp_csi2 {
 	struct atomisp_csi2_pdata *pdata;
 	struct atomisp_isys *isys;
@@ -32,6 +42,13 @@ struct atomisp_csi2 {
 
 	void __iomem *base;
 	unsigned int nlanes;
+
+	struct {
+		unsigned int nlanes;
+		/* Unit is 0,0625 ns */
+		unsigned int termen[MAX_CSI2_LANES];
+		unsigned int settle[MAX_CSI2_LANES];
+	} sensor_cfg;
 };
 
 int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
@@ -39,4 +56,6 @@ int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2);
 void atomisp_csi2_isr(struct atomisp_csi2 *csi2);
 
-#endif
+void atomisp_csi2_set_stream(struct atomisp_csi2 *csi2, bool enable);
+
+#endif /* ATOMISP_CSI2_H */
