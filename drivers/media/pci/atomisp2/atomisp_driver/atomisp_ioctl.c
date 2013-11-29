@@ -1484,7 +1484,7 @@ start_sensor:
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp, CSS_IRQ_INFO_CSS_RECEIVER_SOF,
 					true);
-#if !defined(CSS15) || !defined(ISP2400)
+#if defined(CSS15) && defined(ISP2300)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
 #endif
@@ -1613,9 +1613,14 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 
 	atomisp_clear_css_buffer_counters(asd);
 
-	if (!isp->sw_contex.file_input)
+	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp, CSS_IRQ_INFO_CSS_RECEIVER_SOF,
 					false);
+#if defined(CSS15) && defined(ISP2300)
+		atomisp_css_irq_enable(isp,
+				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, false);
+#endif
+	}
 
 	if (isp->delayed_init == ATOMISP_DELAYED_INIT_QUEUED) {
 		cancel_work_sync(&isp->delayed_init_work);

@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,6 +24,7 @@
 #include "ia_css_binary.h"
 #include "ia_css.h"
 #include "ia_css_debug.h"
+#include "ia_css_util.h"
 #include "sh_css_internal.h"
 #include "sh_css_sp.h"
 #include "sh_css_firmware.h"
@@ -38,6 +38,68 @@
 static struct ia_css_binary_xinfo *all_binaries; /* ISP binaries only (no SP) */
 static struct ia_css_binary_xinfo
 	*binary_infos[IA_CSS_BINARY_NUM_MODES] = { NULL, };
+
+static void
+ia_css_binary_dvs_env(const struct ia_css_binary_info *info,
+                      const struct ia_css_resolution *dvs_env,
+                      struct ia_css_resolution *binary_dvs_env)
+{
+	if (info->enable.dvs_envelope) {
+		assert(dvs_env != NULL);
+		binary_dvs_env->width  = max(dvs_env->width, SH_CSS_MIN_DVS_ENVELOPE);
+		binary_dvs_env->height = max(dvs_env->height, SH_CSS_MIN_DVS_ENVELOPE);
+	}
+}
+
+static void
+ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
+                           const struct ia_css_frame_info *bds_out_info,
+                           const struct ia_css_frame_info *out_info,
+                           const struct ia_css_resolution *dvs_env,
+                           const struct ia_css_binary_info *info,
+                           struct ia_css_resolution *internal_res)
+{
+	unsigned int isp_tmp_internal_width = 0,
+		     isp_tmp_internal_height = 0;
+	bool binary_supports_yuv_ds = info->enable.ds & 2;
+	struct ia_css_resolution binary_dvs_env;
+
+	binary_dvs_env.width = 0;
+	binary_dvs_env.height = 0;
+	ia_css_binary_dvs_env(info, dvs_env, &binary_dvs_env);
+
+	if (binary_supports_yuv_ds) {
+		if (in_info != NULL) {
+			isp_tmp_internal_width = in_info->res.width
+				+ info->left_cropping + binary_dvs_env.width;
+			isp_tmp_internal_height = in_info->res.height
+				+ info->top_cropping + binary_dvs_env.height;
+		}
+	} else if ((bds_out_info != NULL) && (out_info != NULL) &&
+				/* TODO: hack to make video_us case work. this should be reverted after
+				a nice solution in ISP */
+				(bds_out_info->res.width >= out_info->res.width)) {
+			isp_tmp_internal_width = bds_out_info->padded_width;
+			isp_tmp_internal_height = bds_out_info->res.height;
+	} else {
+		if (out_info != NULL) {
+			isp_tmp_internal_width = out_info->padded_width;
+			isp_tmp_internal_height = out_info->res.height;
+		}
+	}
+
+	/* We first calculate the resolutions used by the ISP. After that,
+	 * we use those resolutions to compute sizes for tables etc. */
+	internal_res->width = __ISP_INTERNAL_WIDTH(isp_tmp_internal_width,
+		(int)binary_dvs_env.width,
+		info->left_cropping, info->mode,
+		info->c_subsampling,
+		info->output_num_chunks, info->pipelining,
+		false);
+	internal_res->height = __ISP_INTERNAL_HEIGHT(isp_tmp_internal_height,
+		info->top_cropping,
+		binary_dvs_env.height);
+}
 
 void
 ia_css_binary_grid_info(const struct ia_css_binary *binary,
@@ -67,6 +129,7 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 	dvs_info->num_hor_coefs     = binary->dis_hor_coef_num_3a;
 	dvs_info->num_ver_coefs     = binary->dis_ver_coef_num_3a;
 
+#if !defined(IS_ISP_2500_SYSTEM)
 	/* 3A statistics grid */
 	s3a_info->enable            = binary->info->sp.enable.s3a;
 	s3a_info->width             = binary->s3atbl_width;
@@ -82,7 +145,7 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 #else
 	s3a_info->has_histogram     = 0;
 #endif
-
+#endif
 #if defined(HAS_VAMEM_VERSION_2)
 	info->vamem_type = IA_CSS_VAMEM_TYPE_2;
 #elif defined(HAS_VAMEM_VERSION_1)
@@ -181,6 +244,7 @@ ia_css_binary_init_infos(void)
 		enum ia_css_err ret;
 		struct ia_css_binary_xinfo *binary = &all_binaries[i];
 		bool binary_found;
+		unsigned pclass;
 
 		ret = binary_init_info(binary, i, &binary_found);
 		if (ret != IA_CSS_SUCCESS)
@@ -191,7 +255,9 @@ ia_css_binary_init_infos(void)
 		binary->next = binary_infos[binary->sp.mode];
 		binary_infos[binary->sp.mode] = binary;
 		binary->blob = &sh_css_blob_info[i];
-		binary->mem_offsets = sh_css_blob_info[i].mem_offsets;
+		for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
+			binary->mem_offsets.array[pclass].ptr = (void *)(sh_css_blob_info[i].mem_offsets[pclass].ptr);
+		}
 	}
 	return IA_CSS_SUCCESS;
 }
@@ -259,15 +325,13 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		     sc_3a_dis_padded_width = 0,
 		     /* Resolution at SC/3A/DIS kernel. */
 		     sc_3a_dis_height = 0,
-		     isp_tmp_internal_width = 0,
-		     isp_tmp_internal_height = 0,
 		     isp_internal_width = 0,
 		     isp_internal_height = 0,
 		     s3a_isp_width = 0;
 	bool is_out_format_rgba888 = false;
 
 	bool need_scaling = false;
-	bool binary_supports_yuv_ds = info->enable.ds & 2;
+	struct ia_css_resolution binary_dvs_env, internal_res;
 
 	if (in_info != NULL && out_info != NULL) {
 		need_scaling = (in_info->res.width != out_info->res.width) ||
@@ -277,45 +341,23 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	assert(info != NULL);
 	assert(binary != NULL);
 
-	if (info->enable.dvs_envelope) {
-		assert(dvs_env != NULL);
-		dvs_env_width  = max(dvs_env->width, SH_CSS_MIN_DVS_ENVELOPE);
-		dvs_env_height = max(dvs_env->height, SH_CSS_MIN_DVS_ENVELOPE);
-	}
+	/* binary_dvs_env has to be equal or larger than SH_CSS_MIN_DVS_ENVELOPE */
+	binary_dvs_env.width = 0;
+	binary_dvs_env.height = 0;
+	ia_css_binary_dvs_env(info, dvs_env, &binary_dvs_env);
+	dvs_env_width = binary_dvs_env.width;
+	dvs_env_height = binary_dvs_env.height;
 	binary->dvs_envelope.width  = dvs_env_width;
 	binary->dvs_envelope.height = dvs_env_height;
 
-	if (binary_supports_yuv_ds) {
-		if (in_info != NULL) {
-			isp_tmp_internal_width = in_info->res.width
-				+ info->left_cropping + dvs_env_width;
-			isp_tmp_internal_height = in_info->res.height
-				+ info->top_cropping + dvs_env_height;
-		}
-	} else if ((bds_out_info != NULL) && (out_info != NULL) &&
-				/* TODO: hack to make video_us case work. this should be reverted after
-				a nice solution in ISP */
-				(bds_out_info->res.width >= out_info->res.width)) {
-			isp_tmp_internal_width = bds_out_info->padded_width;
-			isp_tmp_internal_height = bds_out_info->res.height;
-	} else {
-		if (out_info != NULL) {
-			isp_tmp_internal_width = out_info->padded_width;
-			isp_tmp_internal_height = out_info->res.height;
-		}
-	}
+	/* internal resolution calculation */
+	internal_res.width = 0;
+	internal_res.height = 0;
+	ia_css_binary_internal_res(in_info, bds_out_info, out_info, dvs_env,
+			 	   info, &internal_res);
+	isp_internal_width = internal_res.width;
+	isp_internal_height = internal_res.height;
 
-	/* We first calculate the resolutions used by the ISP. After that,
-	 * we use those resolutions to compute sizes for tables etc. */
-	isp_internal_width = __ISP_INTERNAL_WIDTH(isp_tmp_internal_width,
-		(int)dvs_env_width,
-		info->left_cropping, info->mode,
-		info->c_subsampling,
-		info->output_num_chunks, info->pipelining,
-		is_out_format_rgba888);
-	isp_internal_height = __ISP_INTERNAL_HEIGHT(isp_tmp_internal_height,
-		info->top_cropping,
-		dvs_env_height);
 	/* internal frame info */
 	if (out_info != NULL) /* { */
 		binary->internal_frame_info.format = out_info->format;
@@ -327,6 +369,9 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 
 
 	if (in_info != NULL) {
+		binary->effective_in_frame_res.width = in_info->res.width;
+		binary->effective_in_frame_res.height = in_info->res.height;
+
 		bits_per_pixel = in_info->raw_bit_depth;
 
 		/* input info */
@@ -348,7 +393,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	}
 
 	if (online) {
-		bits_per_pixel = sh_css_input_format_bits_per_pixel(
+		bits_per_pixel = ia_css_util_input_format_bpp(
 			stream_format, two_ppc);
 	}
 	binary->in_frame_info.raw_bit_depth = bits_per_pixel;
@@ -574,7 +619,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 	bool continuous;
 	unsigned int isp_pipe_version;
-	struct ia_css_resolution dvs_env;
+	struct ia_css_resolution dvs_env, internal_res;
 
 	assert(descr != NULL);
 /* MW: used after an error check, may accept NULL, but doubtfull */
@@ -601,6 +646,8 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 
 	dvs_env.width = 0;
 	dvs_env.height = 0;
+	internal_res.width = 0;
+	internal_res.height = 0;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_binary_find() enter: "
@@ -717,18 +764,21 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				candidate->enable.dvs_envelope, (int)need_dvs);
 			continue;
 		}
-		if (dvs_env.width > candidate->max_dvs_envelope_width) {
+		/* internal_res check considers input, output, and dvs envelope sizes */
+		ia_css_binary_internal_res(req_in_info, req_bds_out_info,
+					   req_out_info, &dvs_env, candidate, &internal_res);
+		if (internal_res.width > candidate->max_internal_width) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			"ia_css_binary_find() [%d] continue: (%d > %d)\n",
-			__LINE__, dvs_env.width,
-			candidate->max_dvs_envelope_width);
+			__LINE__, internal_res.width,
+			candidate->max_internal_width);
 			continue;
 		}
-		if (dvs_env.height > candidate->max_dvs_envelope_height) {
+		if (internal_res.height > candidate->max_internal_height) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"ia_css_binary_find() [%d] continue: (%d > %d)\n",
-				__LINE__, dvs_env.height,
-				candidate->max_dvs_envelope_height);
+			"ia_css_binary_find() [%d] continue: (%d > %d)\n",
+			__LINE__, internal_res.height,
+			candidate->max_internal_height);
 			continue;
 		}
 		if (!candidate->enable.ds && need_ds) {

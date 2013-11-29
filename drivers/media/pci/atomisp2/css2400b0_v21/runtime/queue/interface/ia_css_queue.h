@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,26 +19,12 @@
  *
  */
 
-#ifndef __QUEUE_PUBLIC_H_INCLUDED__
-#define __QUEUE_PUBLIC_H_INCLUDED__
+#ifndef __IA_CSS_QUEUE_H
+#define __IA_CSS_QUEUE_H
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdbool.h>		/* bool */
-#include <stdint.h>		/* uint32_t */
-#endif
-
+#include "platform_support.h"
 #include "sh_css_internal.h"	/* enum sh_css_frame_id */
 
-
-/*! The Host initialize the "host2sp" queues.
- */
-extern void init_host2sp_queues(void);
-
-/*! The Host initialize the "sp2host" queues.
- */
-extern void init_sp2host_queues(void);
 
 /************************************************************
  *
@@ -115,5 +100,5 @@ extern bool host2sp_enqueue_sp_event(
 extern bool sp2host_dequeue_irq_event(
 	uint32_t *event);
 
-#endif /* __QUEUE_PUBLIC_H_INCLUDED__ */
+#endif /* __IA_CSS_QUEUE_H */
 

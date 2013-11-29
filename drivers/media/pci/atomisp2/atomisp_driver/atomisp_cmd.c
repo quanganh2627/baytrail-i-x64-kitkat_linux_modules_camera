@@ -1049,7 +1049,7 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_SOF, false);
-#if defined(CONFIG_VIDEO_ATOMISPCSS15) && defined(ISP2300)
+#if defined(CSS15) && defined(ISP2300)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, false);
 #endif
@@ -1129,7 +1129,7 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_SOF, true);
-#if defined(CONFIG_VIDEO_ATOMISPCSS15) && defined(ISP2300)
+#if defined(CSS15) && defined(ISP2300)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
 #endif

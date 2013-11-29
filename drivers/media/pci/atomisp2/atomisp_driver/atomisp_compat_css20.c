@@ -1680,15 +1680,29 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 				 enum ia_css_pipe_id pipe_id)
 {
 	struct atomisp_device *isp = asd->isp;
+#if 0
+	/*
+	 * FIXME, this is workaround to disable YUV decimation which caused
+	 * vied BZ:1075
+	 */
 	int out_width, out_height, yuv_ds_in_width, yuv_ds_in_height;
+#else
+	int out_width, out_height;
+#endif
 	struct atomisp_stream_env *stream_env = &asd->stream_env;
 	struct ia_css_stream_config *stream_config = &stream_env->stream_config;
 	struct ia_css_pipe_config *pipe_configs =
 		&stream_env->pipe_configs[pipe_id];
 	struct ia_css_pipe_extra_config *pipe_extra_configs =
 		&stream_env->pipe_extra_configs[pipe_id];
+#if 0
+	/*
+	 * FIXME, this is workaround to disable bayer downscaling which caused
+	 * vied BZ:1075
+	 */
 	struct ia_css_resolution *bayer_ds_out_res =
 		&pipe_configs->bayer_ds_out_res;
+#endif
 	struct ia_css_resolution *vf_pp_in_res =
 		&pipe_configs->vf_pp_in_res;
 	struct ia_css_resolution  *effective_res =
@@ -1737,6 +1751,11 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	 * 2: Do not configure bayer_ds_out_res if:
 	 * online == 1 or continuous == 0 or raw_binning = 0
 	 */
+#if 0
+	/*
+	 * FIXME, this is workaround to disable bayer downscaling which caused
+	 * vied BZ:1075
+	 */
 	if (stream_config->online || !stream_config->continuous ||
 			!pipe_extra_configs-> enable_raw_binning) {
 		bayer_ds_out_res->width = 0;
@@ -1753,17 +1772,23 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 			effective_res->height > out_height * 5 / 4) {
 		bayer_ds_out_res->width = effective_res->width * 4 / 5;
 		bayer_ds_out_res->height = effective_res->height * 4 / 5;
+
 	} else {
 		bayer_ds_out_res->width = effective_res->width;
 		bayer_ds_out_res->height = effective_res->height;
 	}
-
+#endif
 	/*
 	 * calculate YUV Decimation, YUV downscaling facor:
 	 * YUV Downscaling factor must not exceed 2.
 	 * YUV Decimation factor could be 1, 2 ,4.
 	 */
 	/* first decide the yuv_ds input resolution */
+#if 0
+	/*
+	 * FIXME, this is workaround to disable YUV decimation which caused
+	 * vied BZ:1075
+	 */
 	if (bayer_ds_out_res->width == 0) {
 		yuv_ds_in_width = effective_res->width;
 		yuv_ds_in_height = effective_res->height;
@@ -1786,6 +1811,10 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 		vf_pp_in_res->width = yuv_ds_in_width;
 		vf_pp_in_res->height = yuv_ds_in_height;
 	}
+#else
+	vf_pp_in_res->width = effective_res->width;
+	vf_pp_in_res->height = effective_res->height;
+#endif
 	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
 		pipe_id, width, height);
 }

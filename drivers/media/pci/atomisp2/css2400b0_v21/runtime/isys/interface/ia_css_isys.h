@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -27,14 +26,13 @@
 
 #include "input_system.h"
 #include "ia_css.h"
+#include "ia_css_isys_comm.h"
 
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 /**
  * Virtual Input System. (Input System 2401)
  */
-typedef input_system_cfg_t ia_css_isys_cfg_t;
-typedef virtual_input_system_t		ia_css_virtual_isys_t;
-typedef virtual_input_system_cfg_t	ia_css_virtual_isys_cfg_t;
+typedef input_system_cfg_t	ia_css_isys_descr_t;
 /** end of Virtual Input System */
 #endif
 
@@ -86,17 +84,17 @@ enum ia_css_err ia_css_isys_convert_stream_format_to_mipi_format(
 /**
  * Virtual Input System. (Input System 2401)
  */
-extern bool ia_css_virtual_isys_create(
-		ia_css_isys_cfg_t	*cfg,
-		ia_css_virtual_isys_t	*me);
+extern ia_css_isys_error_t ia_css_isys_stream_create(
+		ia_css_isys_descr_t	*isys_stream_descr,
+		ia_css_isys_stream_h	isys_stream);
 
-extern void ia_css_virtual_isys_destroy(
-		ia_css_virtual_isys_t	*me);
+extern void ia_css_isys_stream_destroy(
+		ia_css_isys_stream_h	isys_stream);
 
-extern bool ia_css_virtual_isys_calculate_cfg(
-		ia_css_virtual_isys_t		*me,
-		ia_css_isys_cfg_t		*isys_cfg,
-		ia_css_virtual_isys_cfg_t	*virtual_isys_cfg);
+extern ia_css_isys_error_t ia_css_isys_stream_calculate_cfg(
+		ia_css_isys_stream_h		isys_stream,
+		ia_css_isys_descr_t		*isys_stream_descr,
+		ia_css_isys_stream_cfg_t	*isys_stream_cfg);
 
 extern void ia_css_isys_csi_rx_lut_rmgr_init(void);
 

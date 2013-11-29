@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -31,22 +30,14 @@
 #define IS_SP_2400
 
 #include <scalar_processor_2400_params.h>
-#elif defined(HAS_SP_2400A0)
-#define IS_SP_2400A0
-
-#include <scalar_processor_2400_params.h>
 #else
-#error "sp_global.h: SP_2400 must be one of {2400, 2400A0, 2401 }"
+#error "sp_global.h: SP_2400 must be one of {2400, 2401 }"
 #endif
 
 #define SP_PMEM_WIDTH_LOG2		SP_PMEM_LOG_WIDTH_BITS
 #define SP_PMEM_SIZE			SP_PMEM_DEPTH
 
-#ifdef IS_SP_2400A0
-#define SP_DMEM_SIZE			0x2000
-#else
 #define SP_DMEM_SIZE			0x4000
-#endif
 
 /* SP Registers */
 #define SP_PC_REG				0x09

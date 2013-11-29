@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -97,6 +96,7 @@ struct ia_css_binary {
 	struct ia_css_frame_info in_frame_info;
 	struct ia_css_frame_info internal_frame_info;
 	struct ia_css_frame_info out_frame_info;
+	struct ia_css_resolution effective_in_frame_res;
 	struct ia_css_frame_info vf_frame_info;
 	int                      input_buf_vectors;
 	int                      deci_factor_log2;
@@ -149,6 +149,7 @@ struct ia_css_binary {
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
+	{ 0,0 },/* effective_in_frame_res */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	0,	/* input_buf_vectors */ \
 	0,	/* deci_factor_log2 */ \

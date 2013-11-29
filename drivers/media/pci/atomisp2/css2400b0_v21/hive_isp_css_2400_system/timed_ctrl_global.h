@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -30,7 +29,7 @@
 /**
  * Order of the input bits for the timed controller taken from
  * ISP_CSS_2401 System Architecture Description valid for
- * 2400, 2400A0 and 2401.
+ * 2400, 2401.
  *
  * Check for other systems.
  */

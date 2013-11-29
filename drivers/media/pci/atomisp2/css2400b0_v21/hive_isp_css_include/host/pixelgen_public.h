@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -37,6 +36,16 @@
  * @param[out]	state	Point to the register-state.
  */
 STORAGE_CLASS_PIXELGEN_H void pixelgen_ctrl_get_state(
+		const pixelgen_ID_t ID,
+		pixelgen_ctrl_state_t *state);
+/**
+ * @brief Dump the pixelgen state.
+ * Dump the state of the pixelgen regiester-set.
+ *
+ * @param[in]	id	The global unique ID of the pixelgen controller.
+ * @param[in]	state	Point to the register-state.
+ */
+STORAGE_CLASS_PIXELGEN_H void pixelgen_ctrl_dump_state(
 		const pixelgen_ID_t ID,
 		pixelgen_ctrl_state_t *state);
 /** end of NCI */

@@ -2,9 +2,9 @@
 # Kconfig for sensor drivers
 #
 
-source "../modules/camera/drivers/media/i2c/mt9e013/Kconfig"
-source "../modules/camera/drivers/media/i2c/imx/Kconfig"
-source "../modules/camera/drivers/media/i2c/imx135VB/Kconfig"
+source "drivers/external_drivers/camera/drivers/media/i2c/mt9e013/Kconfig"
+source "drivers/external_drivers/camera/drivers/media/i2c/imx/Kconfig"
+source "drivers/external_drivers/camera/drivers/media/i2c/imx135VB/Kconfig"
 
 config VIDEO_OV9724
        tristate "OVT ov9724 sensor support"

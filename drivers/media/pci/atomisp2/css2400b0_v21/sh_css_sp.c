@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -85,6 +84,9 @@ static void
 copy_isp_stage_to_sp_stage(void)
 {
 	sh_css_sp_stage.num_stripes = (uint8_t) sh_css_isp_stage.binary_info.num_stripes; // [WW07.5]type casting will cause potential issues
+	sh_css_sp_stage.row_stripes_height = (uint16_t) sh_css_isp_stage.binary_info.row_stripes_height; // [WW07.5]type casting will cause potential issues
+	sh_css_sp_stage.row_stripes_overlap_lines = (uint16_t) sh_css_isp_stage.binary_info.row_stripes_overlap_lines; // [WW07.5]type casting will cause potential issues
+	sh_css_sp_stage.top_cropping = (uint16_t) sh_css_isp_stage.binary_info.top_cropping; // [WW07.5]type casting will cause potential issues
 // moved to sh_css_sp_init_stage
 //	sh_css_sp_stage.enable.vf_output =
 //		sh_css_isp_stage.binary_info.enable.vf_veceven ||
@@ -617,7 +619,7 @@ set_ref_extra_frame_buffer(const struct ia_css_frame *frame,
 			unsigned pipe_num, unsigned stage_num)
 {
 ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "set_ref_extra_frame_buffer() %08x\n",
-			frame);		
+			frame);
 
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -657,21 +659,6 @@ set_tnr_out_frame_buffer(const struct ia_css_frame *frame,
 	sh_css_copy_frame_to_spframe(NULL, frame,
 					pipe_num, stage_num,
 					sh_css_frame_tnr_out);
-	return IA_CSS_SUCCESS;
-}
-
-static enum ia_css_err
-set_capture_pp_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
-{
-	if (frame == NULL)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV420)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.extra, frame,
-					pipe_num, stage_num,
-					sh_css_frame_extra);
 	return IA_CSS_SUCCESS;
 }
 
@@ -796,9 +783,6 @@ sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args,
 	if (err == IA_CSS_SUCCESS && args->out_vf_frame)
 		err = set_view_finder_buffer(args->out_vf_frame,
 						pipe_num, stage_num);
-	if (err == IA_CSS_SUCCESS && args->extra_frame)
-		err = set_capture_pp_frame_buffer(args->extra_frame,
-						pipe_num, stage_num);
 	if (err == IA_CSS_SUCCESS && args->out_ref_frame)
 		err = set_ref_out_frame_buffer(args->out_ref_frame,
 						pipe_num, stage_num);
@@ -917,6 +901,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	/* Copy the frame infos first, to be overwritten by the frames,
 	   if these are present.
 	*/
+	sh_css_sp_stage.frames.effective_in_res.width = binary->effective_in_frame_res.width;
+	sh_css_sp_stage.frames.effective_in_res.height = binary->effective_in_frame_res.height;
+
 	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.in.info,
 				&binary->in_frame_info);
 	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.out.info,
@@ -965,7 +952,12 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
-	if (continuous &&  binary->info->sp.enable.raw_binning) {
+	/* we do this only for preview pipe because in fill_binary_info function
+	 * we assign vf_out res to out res, but for ISP internal processing, we need
+	 * the original out res. for video pipe, it has two output pins --- out and
+	 * vf_out, so it can keep these two resolutions already. */
+	if (binary->info->sp.mode == IA_CSS_BINARY_MODE_PREVIEW &&
+		(binary->vf_downscale_log2 > 0)) {
 		/* TODO: Remove this after preview output decimation is fixed
 		 * by configuring out&vf info fiels properly */
 		sh_css_sp_stage.frames.out.info.padded_width
@@ -1105,7 +1097,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			bool two_ppc,
 			bool continuous,
 			bool offline,
-			bool input_needs_raw_binning,
+			unsigned int required_bds_factor,
 			enum sh_css_pipe_config_override copy_ovrd,
 			enum ia_css_input_mode input_mode,
 			const struct ia_css_metadata_config *md_config
@@ -1115,8 +1107,8 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			)
 {
 	/* Get first stage */
-	struct ia_css_pipeline_stage *stage;
-	struct ia_css_binary	     *first_binary;
+	struct ia_css_pipeline_stage *stage        = NULL;
+	struct ia_css_binary	     *first_binary = NULL;
 	unsigned num;
 
 	enum ia_css_pipe_id pipe_id = id;
@@ -1174,7 +1166,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 	sh_css_sp_group.pipe[thread_id].thread_id = thread_id;
 	sh_css_sp_group.pipe[thread_id].pipe_num = pipe_num;
 	sh_css_sp_group.pipe[thread_id].num_execs = me->num_execs;
-	sh_css_sp_group.pipe[thread_id].input_needs_raw_binning = input_needs_raw_binning;
+	sh_css_sp_group.pipe[thread_id].required_bds_factor = required_bds_factor;
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	sh_css_sp_group.pipe[thread_id].input_system_mode
 						= (uint32_t)input_mode;
@@ -1208,7 +1200,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 #else
 	(void)md_config;
 #endif
-	
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_sp_init_pipeline pipe_id %d port_config %08x\n",pipe_id,sh_css_sp_group.pipe[thread_id].inout_port_config);
 
 	for (stage = me->stages, num = 0; stage; stage = stage->next, num++) {
@@ -1562,7 +1554,7 @@ sh_css_sp_start_isp(void)
 	 */
 
 	/* we need to set sp_running before we call ia_css_mmu_invalidate_cache
-	 * as ia_css_mmu_invalidate_cache checks on sp_running to 
+	 * as ia_css_mmu_invalidate_cache checks on sp_running to
 	 * avoid that it accesses dmem while the SP is not powered
 	 */
 	sp_running = true;

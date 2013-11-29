@@ -177,6 +177,17 @@ static int atomisp_save_iunit_reg(struct atomisp_device *isp)
 				      &isp->saved_regs.csi_access_viol);
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_RCOMP_CONTROL,
 				      &isp->saved_regs.csi_rcomp_config);
+		/*
+		 * Anniedale hardware workaround:
+		 * RCOMP updates do not happen when using CSI2+ path and sensor
+		 * sending "continuous clock" (that is, not gating clock
+		 * in-between HS transactions. This can allow input
+		 * impedance on CSI pins to go out of spec.
+		 * Set CSI_HS_OVR_CLK_GATE_ON_UPDATE to work around.
+		 */
+		if (isp->media_dev.hw_revision == ATOMISP_HW_REVISION_ISP2401)
+			isp->saved_regs.csi_rcomp_config |=
+				MRFLD_PCI_CSI_HS_OVR_CLK_GATE_ON_UPDATE;
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_TRIM_CONTROL,
 				      &isp->saved_regs.csi_afe_dly);
 		pci_read_config_dword(dev, MRFLD_PCI_CSI_CONTROL,
@@ -956,6 +967,16 @@ load_firmware(struct atomisp_device *isp)
 			fw_path = "shisp_2400a0_v21.bin";
 
 		if (isp->media_dev.hw_revision ==
+		    ((ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT)
+		     | ATOMISP_HW_STEPPING_A0))
+			fw_path = "shisp_2401a0_v21.bin";
+
+		if (isp->media_dev.hw_revision ==
+		    ((ATOMISP_HW_REVISION_ISP2401_LEGACY << ATOMISP_HW_REVISION_SHIFT)
+		     | ATOMISP_HW_STEPPING_A0))
+			fw_path = "shisp_2401a0_legacy_v21.bin";
+
+		if (isp->media_dev.hw_revision ==
 		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
 		     | ATOMISP_HW_STEPPING_B0))
 			fw_path = "shisp_2400b0_v21.bin";
@@ -1124,6 +1145,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		atomisp_hmm_is_2400 = true;
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_ANN:
+	case ATOMISP_PCI_DEVICE_SOC_CHT:
 		isp->media_dev.hw_revision = (
 #ifdef ISP2401_NEW_INPUT_SYSTEM
 			 ATOMISP_HW_REVISION_ISP2401
@@ -1320,6 +1342,8 @@ static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
 #elif defined(ISP2401)
 	/* Anniedale (Merrifield+ / Moorefield) */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1478)},
+	/* Cherrytrail */
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x22b8)},
 #endif
 	{0,}
 };

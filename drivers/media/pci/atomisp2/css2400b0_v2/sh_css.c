@@ -2066,6 +2066,21 @@ static void invalidate_capture_binaries(
 	}
 }
 
+static void invalidate_acc_binaries(struct sh_css_pipe *pipe)
+{
+	unsigned int i;
+	struct sh_css_pipeline *pipeline;
+
+	assert(pipe != NULL);
+	pipeline = &pipe->pipeline;
+
+	/* loop through the stages and unload them */
+	for (i = 0; i < pipeline->num_stages; i++)
+		if (pipeline->stages[i].firmware)
+			sh_css_acc_unload_extension((struct ia_css_fw_info *)
+						pipeline->stages[i].firmware);
+}
+
 static void sh_css_pipe_invalidate_binaries(
 	struct sh_css_pipe *pipe)
 {
@@ -2081,6 +2096,9 @@ static void sh_css_pipe_invalidate_binaries(
 		break;
 	case IA_CSS_PIPE_ID_PREVIEW:
 		invalidate_preview_binaries(pipe);
+		break;
+	case IA_CSS_PIPE_ID_ACC:
+		invalidate_acc_binaries(pipe);
 		break;
 	case IA_CSS_PIPE_ID_COPY:
 		return;

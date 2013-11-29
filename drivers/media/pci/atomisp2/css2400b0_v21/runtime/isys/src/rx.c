@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -465,7 +464,7 @@ void ia_css_isys_rx_configure(const rx_cfg_t *config,
 	receiver_port_enable(RX0_ID, port, true);
 #endif
 	/* TODO: JB: need to add the beneath used define to mizuchi */
-	/* sh_css_sw_hive_isp_css_2400A0_system_20121224_0125\css
+	/* sh_css_sw_hive_isp_css_2400_system_20121224_0125\css
 	 *                      \hrt\input_system_defs.h
 	 * #define INPUT_SYSTEM_CSI_RECEIVER_SELECT_BACKENG 0X207
 	 */

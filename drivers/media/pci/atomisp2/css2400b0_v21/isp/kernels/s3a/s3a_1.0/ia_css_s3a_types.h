@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -35,6 +34,10 @@
  *  ISP2: S3A2 is used.
  */
 struct ia_css_3a_grid_info {
+
+#if defined(SYSTEM_css_skycam_a0t_system)
+	uint32_t dummy;
+#else
 	uint32_t enable;            /**< 3A statistics enabled.
 					0:disabled, 1:enabled */
 	uint32_t use_dmem;          /**< DMEM or VMEM determines layout.
@@ -66,6 +69,7 @@ struct ia_css_3a_grid_info {
 					to calculate 3A statistics.
 					This is 13, which is the normalized
 					bayer bit depth in DSP. */
+#endif
 };
 
 /* This struct should be split into 3, for AE, AWB and AF.
