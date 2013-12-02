@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -24,11 +23,7 @@
 
 #include "sp.h"
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdbool.h>			/* bool */
-#endif
+#include "platform_support.h"
 
 /* MW: The queue should be application agnostic */
 #include "sh_css_internal.h"
@@ -38,10 +33,6 @@
 #include "ia_css_types.h"		/* ia_css_fw_info */
 
 #include "assert_support.h"
-
-#ifndef offsetof
-#define offsetof(T, x) ((unsigned)&(((T *)0)->x))
-#endif
 
 /*
  * MW: The interface to get events is in "event_fifo.h" presently that is wired
@@ -64,24 +55,6 @@
  * Generic queues.
  *
  ************************************************************/
-/*! The Host initialize the target "host2sp" queue.
-
- @param	offset[in]	The target queue's offset that is
-			relative to the base address of the struct
-			"host_sp_communication"
- */
-/*STORAGE_CLASS_INLINE void init_sp_queue(*/
-
-/* MS: reduce host2sp parameter queue size to prevent
-			overflowing the sp2host parameter queue
-*/
-
-#define SH_CSS_CIRCULAR_BUF_DEFAULT_SIZE SH_CSS_CIRCULAR_BUF_NUM_ELEMS
-#define SH_CSS_CIRCULAR_BUF_PARAMETER_QUEUE_SIZE 3
-
-static void init_sp_queue(
-	struct sh_css_circular_buf *offset, unsigned int size);
-
 /*! Push an element to the queue.
 
  @param	offset[in]	The target queue's offset that is
@@ -91,7 +64,7 @@ static void init_sp_queue(
  */
 /*STORAGE_CLASS_INLINE bool push_sp_queue(*/
 static void push_sp_queue(
-	struct sh_css_circular_buf *offset,
+	ia_css_circbuf_t *offset, ia_css_circbuf_elem_t *offset_to_elems,
 	unsigned int elem);
 
 /*! Pop an element from the queue.
@@ -103,7 +76,7 @@ static void push_sp_queue(
  */
 /*STORAGE_CLASS_INLINE bool pop_sp_queue(*/
 static void pop_sp_queue(
-	struct sh_css_circular_buf *offset,
+	ia_css_circbuf_t *offset, ia_css_circbuf_elem_t *offset_to_elems,
 	unsigned int *elem);
 
 
@@ -117,7 +90,7 @@ static void pop_sp_queue(
  */
 /*STORAGE_CLASS_INLINE bool is_sp_queue_full(*/
 static bool is_sp_queue_full(
-	struct sh_css_circular_buf *offset);
+	ia_css_circbuf_t *offset);
 
 /*! Check whether the "host2sp" queue is empty or not.
 
@@ -129,7 +102,7 @@ static bool is_sp_queue_full(
  */
 /*STORAGE_CLASS_INLINE bool is_sp_queue_empty(*/
 static bool is_sp_queue_empty(
-	struct sh_css_circular_buf *offset);
+	ia_css_circbuf_t *offset);
 
 /*
  * The compiler complains that "warning: ‘dump_sp_queue’ defined
@@ -145,61 +118,15 @@ static bool is_sp_queue_empty(
  */
 /*STORAGE_CLASS_INLINE void dump_sp_queue(*/
 static void dump_sp_queue(
-	struct sh_css_circular_buf *offset);
+	ia_css_circbuf_t *offset);
 #endif
 /* end of local declarations */
-
-#ifndef __INLINE_QUEUE__
-#include "queue_private.h"
-#endif /* __INLINE_QUEUE__ */
 
 /************************************************************
  *
  * Application-specific queues.
  *
  ************************************************************/
-void init_host2sp_queues(void)
-{
-	unsigned int i, j;
-	struct sh_css_circular_buf *offset_to_queue;
-
-	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++) {
-		for (j = 0; j < SH_CSS_NUM_BUFFER_QUEUES; j++) {
-			offset_to_queue = (struct sh_css_circular_buf *)
-				offsetof(struct host_sp_queues,
-					host2sp_buffer_queues[i][j]);
-			init_sp_queue(offset_to_queue,
-				(j == sh_css_param_buffer_queue ?
-					SH_CSS_CIRCULAR_BUF_PARAMETER_QUEUE_SIZE :
-					SH_CSS_CIRCULAR_BUF_DEFAULT_SIZE));
-		}
-	}
-	offset_to_queue = (struct sh_css_circular_buf *)
-		offsetof(struct host_sp_queues,
-			host2sp_event_queue);
-	init_sp_queue(offset_to_queue,SH_CSS_CIRCULAR_BUF_DEFAULT_SIZE);
-}
-
-void init_sp2host_queues(void)
-{
-	unsigned int j;
-//	struct host_sp_queues *my_queues = NULL;
-	struct sh_css_circular_buf *offset_to_queue;
-
-	for (j = 0; j < SH_CSS_NUM_BUFFER_QUEUES; j++) {
-		offset_to_queue = (struct sh_css_circular_buf *)
-			offsetof(struct host_sp_queues,
-				sp2host_buffer_queues[j]);
-		init_sp_queue(offset_to_queue,SH_CSS_CIRCULAR_BUF_DEFAULT_SIZE);
-		//init_sp_queue(&my_queues->sp2host_buffer_queues[j]);
-	}
-	offset_to_queue = (struct sh_css_circular_buf *)
-		offsetof(struct host_sp_queues,
-			sp2host_event_queue);
-	init_sp_queue(offset_to_queue,SH_CSS_CIRCULAR_BUF_DEFAULT_SIZE);
-//	init_sp_queue(&my_queues->sp2host_event_queue);
-}
-
 /************************************************************
  *
  * Buffer queues (direction: the host -> the SP).
@@ -213,8 +140,8 @@ bool host2sp_enqueue_buffer(
 {
 	bool is_full;
 //	struct host_sp_queues *my_queues = NULL;
-	struct sh_css_circular_buf *offset_to_queue;
-
+	ia_css_circbuf_t *offset_to_queue;
+	ia_css_circbuf_elem_t *offset_to_elems;
 	(void)stage_num;
 
 	assert(pipe_num < SH_CSS_MAX_SP_THREADS);
@@ -226,16 +153,21 @@ bool host2sp_enqueue_buffer(
 	/* This is just the first step of introducing the queue API */
 	/* The implementation is still the old non-queue implementation */
 	/* till the new queue implementation is there */
-	offset_to_queue = (struct sh_css_circular_buf *)
+	offset_to_queue = (ia_css_circbuf_t *)
 		offsetof(struct host_sp_queues,
 			host2sp_buffer_queues[pipe_num][index]);
+
+	offset_to_elems = (ia_css_circbuf_elem_t *)
+		offsetof(struct host_sp_queues,
+			host2sp_buffer_queues_elems[pipe_num][index]);
 
 	/* check whether both queues are full or not */
 	is_full = is_sp_queue_full(offset_to_queue);
 
 	if (!is_full) {
 		/* push elements into the queues */
-		push_sp_queue(offset_to_queue, (uint32_t)buffer_ptr);
+		push_sp_queue(offset_to_queue, offset_to_elems,
+			      (uint32_t)buffer_ptr);
 	}
 
 
@@ -256,7 +188,8 @@ bool host2sp_dequeue_buffer(
 	bool is_empty;
 	uint32_t elem;
 //	struct host_sp_queues *my_queues = NULL;
-	struct sh_css_circular_buf *offset_to_queue;
+	ia_css_circbuf_t *offset_to_queue;
+	ia_css_circbuf_elem_t *offset_to_elems;
 
 	(void)stage_num;
 
@@ -270,9 +203,13 @@ bool host2sp_dequeue_buffer(
 	/* This is just the first step of introducing the queue API */
 	/* The implementation is still the old non-queue implementation */
 	/* till the new queue implementation is there */
-	offset_to_queue = (struct sh_css_circular_buf *)
+	offset_to_queue = (ia_css_circbuf_t *)
 		offsetof(struct host_sp_queues,
 			host2sp_buffer_queues[thread_id][index]);
+
+	offset_to_elems = (ia_css_circbuf_elem_t *)
+		offsetof(struct host_sp_queues,
+			host2sp_buffer_queues_elems[thread_id][index]);
 
 	/* check whether the queue is empty or not */
 	is_empty = is_sp_queue_empty(offset_to_queue);
@@ -280,7 +217,7 @@ bool host2sp_dequeue_buffer(
 	/* pop when both queue is not empty */
 	if (!is_empty) {
 		/* pop element from the queue */
-		pop_sp_queue(offset_to_queue, &elem);
+		pop_sp_queue(offset_to_queue, offset_to_elems, &elem);
 
 		/* set the frame data */
 		*buffer_ptr = elem;
@@ -299,17 +236,23 @@ bool host2sp_enqueue_sp_event(
 {
 	bool is_full;
 	//struct host_sp_queues *my_queues = NULL;
-	struct sh_css_circular_buf *offset_to_queue;
-	offset_to_queue = (struct sh_css_circular_buf *)
+	ia_css_circbuf_t *offset_to_queue;
+	ia_css_circbuf_elem_t *offset_to_elems;
+
+	offset_to_queue = (ia_css_circbuf_t *)
 		offsetof(struct host_sp_queues,
 			host2sp_event_queue);
+
+	offset_to_elems = (ia_css_circbuf_elem_t *)
+		offsetof(struct host_sp_queues,
+			 host2sp_event_queue_elems);
 
 	/* check whether the queue is full or not */
 	is_full = is_sp_queue_full(offset_to_queue);
 
 	if (!is_full) {
 		/* push elements into the queues */
-		push_sp_queue(offset_to_queue, event);
+		push_sp_queue(offset_to_queue, offset_to_elems, event);
 	}
 
 	return !is_full;
@@ -329,10 +272,16 @@ bool sp2host_dequeue_buffer(
 	uint32_t elem;
 	bool is_empty;
 	//struct host_sp_queues *my_queues = NULL;
-	struct sh_css_circular_buf *offset_to_queue;
-	offset_to_queue = (struct sh_css_circular_buf *)
+	ia_css_circbuf_t *offset_to_queue;
+	ia_css_circbuf_elem_t *offset_to_elems;
+
+	offset_to_queue = (ia_css_circbuf_t *)
 		offsetof(struct host_sp_queues,
 			sp2host_buffer_queues[index]);
+
+	offset_to_elems = (ia_css_circbuf_elem_t *)
+		offsetof(struct host_sp_queues,
+			sp2host_buffer_queues_elems[index]);
 
 	(void)stage_num;
 	(void)pipe_num;
@@ -350,7 +299,7 @@ bool sp2host_dequeue_buffer(
 	/* pop when both queue is not empty */
 	if (!is_empty) {
 		/* pop element from the queue */
-		pop_sp_queue(offset_to_queue, &elem);
+		pop_sp_queue(offset_to_queue, offset_to_elems, &elem);
 
 		/* set the frame data */
 		*buffer_ptr = elem;
@@ -370,12 +319,18 @@ bool sp2host_dequeue_irq_event(
 	unsigned int elem;
 	bool is_empty;
 	//struct host_sp_queues *my_queues = NULL;
-	struct sh_css_circular_buf *offset_to_queue;
+
+	ia_css_circbuf_t *offset_to_queue;
+	ia_css_circbuf_elem_t *offset_to_elems;
 	assert(event != NULL);
 
-	offset_to_queue = (struct sh_css_circular_buf *)
+	offset_to_queue = (ia_css_circbuf_t *)
 		offsetof(struct host_sp_queues,
 			sp2host_event_queue);
+
+	offset_to_elems = (ia_css_circbuf_elem_t *)
+		offsetof(struct host_sp_queues,
+			sp2host_event_queue_elems);
 
 	/* check whether the queue is empty or not */
 	is_empty = is_sp_queue_empty(offset_to_queue);
@@ -383,7 +338,7 @@ bool sp2host_dequeue_irq_event(
 	/* pop when both queue is not empty */
 	if (!is_empty) {
 		/* pop element from the queue */
-		pop_sp_queue(offset_to_queue, &elem);
+		pop_sp_queue(offset_to_queue, offset_to_elems, &elem);
 
 		/* fill in the IRQ event */
 		*event = elem;
@@ -393,9 +348,9 @@ bool sp2host_dequeue_irq_event(
 }
 
 static void store_sp_queue(
-	struct sh_css_circular_buf *offset,
+	ia_css_circbuf_t *offset,
 	unsigned int *size,
-	unsigned int *step,
+	unsigned int *elems,
 	unsigned int *start,
 	unsigned int *end)
 {
@@ -404,13 +359,13 @@ static void store_sp_queue(
 	const struct ia_css_fw_info *fw;
 #endif
 	unsigned int entry_to_cb_size  = 0;
-	unsigned int entry_to_cb_step  = 0;
+	unsigned int entry_to_cb_elems = 0;
 	unsigned int entry_to_cb_start = 0;
 	unsigned int entry_to_cb_end   = 0;
 
-assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
+	assert((uintptr_t)offset < (UINT32_MAX - sizeof(ia_css_circbuf_t)));
 	entry_to_cb_size  = (unsigned)(UINT32_MAX & (uintptr_t)&offset->size);
-	entry_to_cb_step  = (unsigned)(UINT32_MAX & (uintptr_t)&offset->step);
+	entry_to_cb_elems = (unsigned)(UINT32_MAX & (uintptr_t)&offset->elems);
 	entry_to_cb_start = (unsigned)(UINT32_MAX & (uintptr_t)&offset->start);
 	entry_to_cb_end   = (unsigned)(UINT32_MAX & (uintptr_t)&offset->end);
 
@@ -426,10 +381,10 @@ assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
 			entry_to_cb_size / sizeof(offset->size),
 			*size);
 
-	if (step)
-		store_sp_array_uint8(ia_css_bufq_host_sp_queue,
-			entry_to_cb_step / sizeof(offset->step),
-			*step);
+	if (elems)
+		store_sp_array_uint(ia_css_bufq_host_sp_queue,
+			entry_to_cb_elems / sizeof(offset->elems),
+			*elems);
 
 	if (start)
 		store_sp_array_uint8(ia_css_bufq_host_sp_queue,
@@ -443,9 +398,9 @@ assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
 }
 
 static void load_sp_queue(
-	struct sh_css_circular_buf *offset,
+	ia_css_circbuf_t *offset,
 	unsigned int *size,
-	unsigned int *step,
+	unsigned int *elems,
 	unsigned int *start,
 	unsigned int *end)
 {
@@ -454,13 +409,13 @@ static void load_sp_queue(
 	const struct ia_css_fw_info *fw;
 #endif
 	unsigned int entry_to_cb_size  = 0;
-	unsigned int entry_to_cb_step  = 0;
+	unsigned int entry_to_cb_elems = 0;
 	unsigned int entry_to_cb_start = 0;
 	unsigned int entry_to_cb_end   = 0;
 
-assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
+	assert((uintptr_t)offset < (UINT32_MAX - sizeof(ia_css_circbuf_t)));
 	entry_to_cb_size  = (unsigned)(UINT32_MAX & (uintptr_t)&offset->size);
-	entry_to_cb_step  = (unsigned)(UINT32_MAX & (uintptr_t)&offset->step);
+	entry_to_cb_elems = (unsigned)(UINT32_MAX & (uintptr_t)&offset->elems);
 	entry_to_cb_start = (unsigned)(UINT32_MAX & (uintptr_t)&offset->start);
 	entry_to_cb_end   = (unsigned)(UINT32_MAX & (uintptr_t)&offset->end);
 
@@ -474,8 +429,8 @@ assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
 	if (size)  *size  = load_sp_array_uint8(ia_css_bufq_host_sp_queue,
 			entry_to_cb_size / sizeof(offset->size));
 
-	if (step)  *step  = load_sp_array_uint8(ia_css_bufq_host_sp_queue,
-			entry_to_cb_step / sizeof(offset->step));
+	if (elems) *elems  = load_sp_array_uint(ia_css_bufq_host_sp_queue,
+			entry_to_cb_elems / sizeof(offset->elems));
 
 	if (start) *start = load_sp_array_uint8(ia_css_bufq_host_sp_queue,
 			entry_to_cb_start / sizeof(offset->start));
@@ -489,20 +444,10 @@ assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
  * Generic queues.
  *
  ************************************************************/
-/*STORAGE_CLASS_INLINE void init_sp_queue(*/
-static void init_sp_queue(
-	struct sh_css_circular_buf *offset, unsigned int size)
-{
-	unsigned int step  = sizeof(offset->elems[0]);
-	unsigned int start = 0;
-	unsigned int end   = 0;
-	size = min(size, (unsigned int)SH_CSS_CIRCULAR_BUF_NUM_ELEMS);
-	store_sp_queue (offset, &size, &step, &start, &end);
-}
-
 /*STORAGE_CLASS_INLINE void push_sp_queue(*/
 static void push_sp_queue(
-	struct sh_css_circular_buf *offset,
+	ia_css_circbuf_t *offset,
+	ia_css_circbuf_elem_t *offset_to_elems,
 	unsigned int elem)
 {
 #ifndef C_RUN
@@ -514,7 +459,7 @@ static void push_sp_queue(
 	unsigned int cb_start;
 	unsigned int cb_end;
 	unsigned int entry_to_cb_elem;
-	uint32_t cb_elem;
+	ia_css_circbuf_elem_t cb_elem;
 
 #ifndef C_RUN
 	/* get the variable address from the firmware */
@@ -525,15 +470,15 @@ static void push_sp_queue(
 	/* set a local copy of the circular buffer */
 	load_sp_queue (offset, &cb_size, NULL, &cb_start, &cb_end);
 
-assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
-	entry_to_cb_elem = (unsigned)(UINT32_MAX &
-			   (uintptr_t)&offset->elems[cb_end]);
+	assert((uintptr_t)offset < (UINT32_MAX - sizeof(ia_css_circbuf_t)));
+	entry_to_cb_elem = (unsigned)(UINT32_MAX & (uintptr_t)&offset_to_elems[cb_end]);
 
 	/* enqueue the element */
-	cb_elem = (uint32_t)elem;
-	store_sp_array_uint(ia_css_bufq_host_sp_queue,
-			entry_to_cb_elem / sizeof(uint32_t),
-			cb_elem);
+	cb_elem.val = (uint32_t)elem;
+	store_sp_var_with_offset(ia_css_bufq_host_sp_queue,
+				 entry_to_cb_elem,
+				 &cb_elem,
+				 sizeof(ia_css_circbuf_elem_t));
 
 	/* update the "end" index */
 	cb_end = (cb_end + 1) % cb_size;
@@ -542,7 +487,8 @@ assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
 
 /*STORAGE_CLASS_INLINE void pop_sp_queue(*/
 static void pop_sp_queue(
-	struct sh_css_circular_buf *offset,
+	ia_css_circbuf_t *offset,
+	ia_css_circbuf_elem_t *offset_to_elems,
 	unsigned int *elem)
 {
 #ifndef C_RUN
@@ -555,7 +501,7 @@ static void pop_sp_queue(
 	unsigned int cb_end;
 
 	unsigned int entry_to_cb_elem;
-	uint32_t cb_elem;
+	ia_css_circbuf_elem_t cb_elem;
 
 	assert(elem != NULL);
 #ifndef C_RUN
@@ -567,14 +513,16 @@ static void pop_sp_queue(
 	load_sp_queue(offset, &cb_size, NULL, &cb_start, &cb_end);
 
 	/* read from the non-empty queue */
-assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
-	entry_to_cb_elem = (unsigned)(UINT32_MAX &
-			   (uintptr_t)&offset->elems[cb_start]);
+	assert((uintptr_t)offset < (UINT32_MAX - sizeof(ia_css_circbuf_t)));
+	entry_to_cb_elem = (unsigned)(UINT32_MAX & (uintptr_t)&offset_to_elems[cb_start]);
 
 	/* dequeue the buffer */
-	cb_elem = load_sp_array_uint(ia_css_bufq_host_sp_queue,
-			entry_to_cb_elem / sizeof(uint32_t));
-	*elem = (unsigned int)cb_elem;
+	load_sp_var_with_offset(ia_css_bufq_host_sp_queue,
+				entry_to_cb_elem,
+				&cb_elem,
+				sizeof(ia_css_circbuf_elem_t));
+
+	*elem = cb_elem.val;
 
 	/* update the "start" index */
 	cb_start = (cb_start + 1) % cb_size;
@@ -584,7 +532,7 @@ assert((uintptr_t)offset < (UINT32_MAX - sizeof(struct sh_css_circular_buf)));
 #if 1
 /*STORAGE_CLASS_INLINE bool is_sp_queue_full(*/
 static bool is_sp_queue_full(
-	struct sh_css_circular_buf *offset)
+	ia_css_circbuf_t *offset)
 {
 #ifndef C_RUN
 	unsigned int HIVE_ADDR_ia_css_bufq_host_sp_queue;
@@ -637,7 +585,7 @@ static bool is_sp_queue_full(
 #endif
 
         /* get the offsets (in words) */
-        offset = offsetof(struct sh_css_circular_buf, fsm)
+        offset = offsetof(ia_css_circbuf_t, fsm)
                 / sizeof(int);
 
         /* get the entries (in words) */
@@ -655,7 +603,7 @@ static bool is_sp_queue_full(
 
 /*STORAGE_CLASS_INLINE bool is_sp_queue_empty(*/
 static bool is_sp_queue_empty(
-	struct sh_css_circular_buf *offset)
+	ia_css_circbuf_t *offset)
 {
 #ifndef C_RUN
 	unsigned int HIVE_ADDR_ia_css_bufq_host_sp_queue;
@@ -716,7 +664,7 @@ static void dump_sp_queue(
 #endif
 
 	/* get the offsets (in words) */
-	offset_4 = offsetof(struct sh_css_circular_buf, elems)
+	offset_4 = offsetof(ia_css_circbuf_t, elems)
 		/ sizeof(int);
 
 	/* get the entries (in words) */

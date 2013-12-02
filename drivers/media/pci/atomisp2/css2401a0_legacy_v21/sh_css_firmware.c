@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,9 +19,11 @@
  *
  */
 
+#include "platform_support.h"
 #include "sh_css_firmware.h"
 
 #include "sh_css_defs.h"
+#include "ia_css_debug.h"
 #include "sh_css_internal.h"
 #include "sh_css_sp_start.h"
 
@@ -31,6 +32,8 @@
 
 #include "isp.h"				/* PMEM_WIDTH_LOG2 */
 
+#define _STR(x) #x
+#define STR(x) _STR(x)
 
 struct firmware_header {
 	struct sh_css_fw_bi_file_h file_header;
@@ -39,6 +42,8 @@ struct firmware_header {
 
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
+
+static const char* release_version = STR(ci_master_20131130_1312);
 
 struct ia_css_fw_info	  sh_css_sp_fw;
 struct ia_css_blob_descr *sh_css_blob_info; /* Only ISP blob info (no SP) */
@@ -70,8 +75,7 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 {
 	const char *name;
 	const unsigned char *blob;
-	const struct ia_css_memory_offsets *mem_offsets;
-	const struct ia_css_config_memory_offsets *conf_offsets;
+	unsigned pclass;
 
 	assert(fw != NULL);
 	assert(bd != NULL);
@@ -79,8 +83,6 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 	/* Special case: only one binary in fw */
 	if (bi == NULL) bi = (const struct ia_css_fw_info *)fw;
 
-	mem_offsets = (const struct ia_css_memory_offsets *)(fw + bi->blob.memory_offset);
-	conf_offsets = (const struct ia_css_config_memory_offsets *)(fw + bi->blob.conf_memory_offset);
 	name = (const char *)fw + bi->blob.prog_name_offset;
 	blob = (const unsigned char *)fw + bi->blob.offset;
 
@@ -96,11 +98,11 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 	bd->blob = blob;
 	bd->header = *bi;
 	bd->name = name;
-	bd->mem_offsets = NULL;
-	bd->conf_mem_offsets = NULL;
-	if (bi->type == ia_css_isp_firmware) {
-		bd->mem_offsets = mem_offsets;
-		bd->conf_mem_offsets = conf_offsets;
+	for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
+		bd->mem_offsets[pclass].ptr = NULL;
+		if (bi->type == ia_css_isp_firmware) {
+			bd->mem_offsets[pclass].ptr = (void *)(fw + bi->blob.memory_offsets[pclass]);
+		}
 	}
 	return IA_CSS_SUCCESS;
 }
@@ -116,6 +118,15 @@ sh_css_load_firmware(const char *fw_data,
 	firmware_header = (struct firmware_header*)fw_data;
 	file_header = (struct sh_css_fw_bi_file_h *)&firmware_header->file_header;
 	binaries = (struct ia_css_fw_info *)&firmware_header->binary_header;
+	if (strcmp(file_header->version, release_version) != 0) {
+#if (!defined HRT_CSIM && !defined HRT_RTL)
+		ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "CSS code and firmware version mismatch!\n");
+		assert(false);
+		return IA_CSS_ERR_VERSION_MISMATCH;
+#endif
+	} else {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "successfully load firmware version %s\n", release_version);
+	}
 
 	/* some sanity checks */
 	if (!fw_data || fw_size < sizeof(struct sh_css_fw_bi_file_h))

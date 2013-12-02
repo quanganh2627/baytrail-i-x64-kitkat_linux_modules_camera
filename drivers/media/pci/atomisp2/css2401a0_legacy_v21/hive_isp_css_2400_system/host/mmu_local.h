@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,6 +24,10 @@
 
 #include "mmu_global.h"
 
+#if defined(_MSC_VER) && defined(_M_X64)
+#define HOST_ADDRESS(x) (unsigned long long)(x)
+#else
 #define HOST_ADDRESS(x) (unsigned long)(x)
+#endif
 
 #endif /* __MMU_LOCAL_H_INCLUDED__ */

@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -24,12 +23,7 @@
 
 #ifdef HAS_INPUT_SYSTEM_VERSION_2
 #include "ia_css_isys.h"
-
-#ifdef __KERNEL__
-#include <linux/string.h>
-#else
-#include <string.h>
-#endif
+#include "platform_support.h"
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2)
 input_system_error_t ia_css_isys_init(void)

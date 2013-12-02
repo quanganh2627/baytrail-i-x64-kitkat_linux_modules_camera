@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -56,10 +55,6 @@
 
 #define IS_ISP_2400_SYSTEM
 /*
- * Since the 2400A0 system is temporary, we use the same DLI for
- * both systems. The difference is only visible in the name of
- * cell specififc include files for the ISP and SP
- *
  * Since this file is visible everywhere and the system definition
  * macros are not, detect the separate definitions for {host, SP, ISP}
  *
@@ -76,13 +71,8 @@
 #define IS_ISP_2400_MAMOIADA_SYSTEM
 #define HAS_ISP_2400_MAMOIADA
 #define HAS_SP_2400
-//#elif defined(SYSTEM_hive_isp_css_2400A0_system) || defined(__isp2400A0_mamoiada) || defined(__scalar_processor_2400A0)
-#elif defined(SYSTEM_hive_isp_css_2400A0_system) || defined(__isp2400A0_mamoiada)
-#define IS_ISP_2400A0_MAMOIADA_SYSTEM
-#define HAS_ISP_2400A0_MAMOIADA
-#define HAS_SP_2400A0
 #else
-#error "system_global.h: 2400_SYSTEM must be one of {2400, 2400A0, 2401 }"
+#error "system_global.h: 2400_SYSTEM must be one of {2400, 2401 }"
 #endif
 
 #define USE_INPUT_SYSTEM_VERSION_2
@@ -153,13 +143,8 @@ typedef enum {
 	MMU1_ID,
 	N_MMU_ID
 } mmu_ID_t;
-#elif defined (IS_ISP_2400A0_MAMOIADA_SYSTEM)
-typedef enum {
-	MMU0_ID = 0,
-	N_MMU_ID
-} mmu_ID_t;
 #else
-#error "system_global.h: SYSTEM must be one of {2400, 2400A0, 2401}"
+#error "system_global.h: SYSTEM must be one of {2400, 2401}"
 #endif
 
 typedef enum {

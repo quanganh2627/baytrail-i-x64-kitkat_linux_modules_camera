@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -50,7 +49,8 @@
 #include "sh_css_defs.h"
 #include "sh_css_uds.h"
 #include "dma.h"	/* N_DMA_CHANNEL_ID */
-
+#include "ia_css_circbuf.h" /* Circular buffer */
+#include "ia_css_frame_comm.h"
 
 /* TODO: Move to a more suitable place when sp pipeline design is done. */
 #define IA_CSS_NUM_CB_SEM_READ_RESOURCE 	2
@@ -113,7 +113,9 @@
 #define SH_CSS_MAX_IF_CONFIGS	3 /* Must match with IA_CSS_NR_OF_CONFIGS (not defined yet).*/
 #define SH_CSS_IF_CONFIG_NOT_NEEDED	0xFF
 
-#if !defined (HIVE_ISP_CSS_IS_2400A0_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
+/* Currently sensor metadata support is only implemented for
+ * the input system v2, not for v3 yet. */
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
 #define SH_CSS_ENABLE_METADATA
 #endif
 
@@ -230,7 +232,6 @@ struct sh_css_binary_args {
 	struct ia_css_frame *out_frame;      /* output frame */
 	struct ia_css_frame *out_ref_frame;  /* reference output frame */
 	struct ia_css_frame *out_tnr_frame;  /* tnr output frame */
-	struct ia_css_frame *extra_frame;    /* intermediate frame */
 	struct ia_css_frame *out_vf_frame;   /* viewfinder output frame */
 	struct ia_css_frame *extra_ref_frame;    /* reference extra frame */
 	bool                 copy_vf;
@@ -427,7 +428,7 @@ struct sh_css_sp_pipeline {
 	uint32_t	thread_id;	/* the sp thread ID */
 	uint32_t	pipe_config;	/* the pipe config */
 	uint32_t    inout_port_config;
-	uint32_t	input_needs_raw_binning;
+	uint32_t	required_bds_factor;
 	uint32_t	dvs_frame_delay;
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	uint32_t	input_system_mode;	/* enum ia_css_input_mode */
@@ -437,7 +438,7 @@ struct sh_css_sp_pipeline {
 	uint32_t	running;	/* needed for pipe termination */
 	hrt_vaddress	sp_stage_addr[SH_CSS_MAX_STAGES];
 	CSS_ALIGN(struct sh_css_sp_stage *stage, 8); /* Current stage for this pipeline */
-	int32_t         num_execs; /* number of times to run if this is
+	CSS_ALIGN(int32_t num_execs, 8); /* number of times to run if this is
 					  an acceleration pipe. */
 #if defined (SH_CSS_ENABLE_METADATA)
 	uint32_t		md_format;		/* Metadata format in hrt format. */
@@ -455,47 +456,6 @@ struct sh_css_sp_pipeline {
 			unsigned int	raw_bit_depth;
 		} raw;
 	} copy;
-};
-
-/*
- * These structs are derived from structs defined in ia_css_types.h
- * (just take out the "_sp" from the struct name to get the "original")
- * All the fields that are not needed by the SP are removed.
- */
-struct sh_css_sp_frame_plane {
-	unsigned int offset;	/* offset in bytes to start of frame data */
-				/* offset is wrt data in sh_css_sp_sp_frame */
-};
-
-struct sh_css_sp_frame_binary_plane {
-	unsigned int size;
-	struct sh_css_sp_frame_plane data;
-};
-
-struct sh_css_sp_frame_yuv_planes {
-	struct sh_css_sp_frame_plane y;
-	struct sh_css_sp_frame_plane u;
-	struct sh_css_sp_frame_plane v;
-};
-
-struct sh_css_sp_frame_nv_planes {
-	struct sh_css_sp_frame_plane y;
-	struct sh_css_sp_frame_plane uv;
-};
-
-struct sh_css_sp_frame_rgb_planes {
-	struct sh_css_sp_frame_plane r;
-	struct sh_css_sp_frame_plane g;
-	struct sh_css_sp_frame_plane b;
-};
-
-struct sh_css_sp_frame_plane6_planes {
-	struct sh_css_sp_frame_plane r;
-	struct sh_css_sp_frame_plane r_at_b;
-	struct sh_css_sp_frame_plane gr;
-	struct sh_css_sp_frame_plane gb;
-	struct sh_css_sp_frame_plane b;
-	struct sh_css_sp_frame_plane b_at_r;
 };
 
 /* MW: ALL CAPS, and is it too much trouble to suffix an ID with ID ? */
@@ -525,53 +485,9 @@ enum sh_css_frame_id {
  *
  * s3a and dis are now also dynamic but (stil) handled seperately
  */
-#define SH_CSS_NUM_FRAME_IDS (14)
 #define SH_CSS_NUM_DYNAMIC_BUFFER_IDS (5)
 #define SH_CSS_NUM_DYNAMIC_FRAME_IDS (3)
 #define SH_CSS_INVALID_FRAME_ID (-1)
-
-
-/** Frame info struct. This describes the contents of an image frame buffer.
-  */
-struct sh_css_sp_frame_info {
-	uint16_t width;  /**< width of valid data in pixels */
-	uint16_t height; /**< Height of valid data in lines */
-	uint16_t padded_width; /**< stride of line in memory (in pixels) */
-	unsigned char format; /**< format of the frame data */
-	unsigned char raw_bit_depth; /**< number of valid bits per pixel,
-					 only valid for RAW bayer frames */
-	unsigned char raw_bayer_order; /**< bayer order, only valid
-						      for RAW bayer frames */
-	unsigned char padding;
-};
-
-
-struct sh_css_sp_frame {
-	struct sh_css_sp_frame_info info;
-	union {
-		struct sh_css_sp_frame_plane raw;
-		struct sh_css_sp_frame_plane rgb;
-		struct sh_css_sp_frame_rgb_planes planar_rgb;
-		struct sh_css_sp_frame_plane yuyv;
-		struct sh_css_sp_frame_yuv_planes yuv;
-		struct sh_css_sp_frame_nv_planes nv;
-		struct sh_css_sp_frame_plane6_planes plane6;
-		struct sh_css_sp_frame_binary_plane binary;
-	} planes;
-};
-
-struct sh_css_sp_frames {
-	struct sh_css_sp_frame	in;
-	struct sh_css_sp_frame	out;
-	struct sh_css_sp_frame	out_vf;
-	struct sh_css_sp_frame	ref_in;
-	/* ref_out_frame is same as ref_in_frame */
-	struct sh_css_sp_frame	tnr_in;
-	/* trn_out_frame is same as tnr_in_frame */
-	struct sh_css_sp_frame	extra;
-	struct sh_css_sp_frame_info internal_frame_info;
-	hrt_vaddress static_frame_data[SH_CSS_NUM_FRAME_IDS];
-};
 
 /* Information for a single pipeline stage for an ISP */
 struct sh_css_isp_stage {
@@ -629,13 +545,16 @@ struct sh_css_sp_stage {
 	/* unsigned char			padding[0]; */
 
 	struct sh_css_crop_pos		sp_out_crop_pos;
-	struct sh_css_sp_frames		frames;
+	struct ia_css_frames_sp		frames;
 	struct ia_css_resolution	dvs_envelope;
 	struct sh_css_uds_info		uds;
 	hrt_vaddress			isp_stage_addr;
 	hrt_vaddress			xmem_bin_addr;
 	hrt_vaddress			xmem_map_addr;
 
+	uint16_t		top_cropping;
+	uint16_t		row_stripes_height;
+	uint16_t		row_stripes_overlap_lines;
 	uint8_t			if_config_index; /* Which should be applied by this stage. */
 };
 
@@ -690,36 +609,25 @@ struct sh_css_sp_output {
 #else
 #define  SH_CSS_CIRCULAR_BUF_NUM_ELEMS              6
 #endif
-struct sh_css_circular_buf {
-	/*
-	 * WARNING: Do NOT change the memeber orders below,
-	 * unless you are the expert of either the CSS API
-	 * or the SP code.
-	 */
-
-	uint8_t size;  /* maximum number of elements */
-	uint8_t step;  /* number of bytes per element */
-	uint8_t start; /* index of the oldest element */
-	uint8_t end;   /* index at which to write the new element */
-
-	uint32_t elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS]; /* array of elements */
-};
 
 struct sh_css_hmm_buffer {
-	hrt_vaddress kernel_ptr;
 	uint32_t exp_id;
 	union {
 		struct ia_css_isp_3a_statistics  s3a;
 		struct ia_css_isp_dvs_statistics dis;
 		struct ia_css_data	metadata;
-//		hrt_vaddress frame_data;
 		struct {
 			hrt_vaddress	frame_data;
-			unsigned int	flashed;
-			unsigned int	exp_id;
+			uint32_t	flashed;
+			uint32_t	exp_id;
 		} frame;
 		hrt_vaddress ddr_ptrs;
 	} payload;
+	/*
+	 * kernel_ptr is present for host administration purposes only.
+	 * type is uint64_t in order to be 64-bit host compatible.
+	 */
+	CSS_ALIGN(uint64_t kernel_ptr, 8);
 };
 
 enum sh_css_buffer_queue_id {
@@ -779,26 +687,30 @@ struct host_sp_queues {
 	 * i.e. the "in_frame" buffer, the "out_frame"
 	 * buffer and the "vf_out_frame" buffer.
 	 */
-	struct sh_css_circular_buf host2sp_buffer_queues
+	ia_css_circbuf_t host2sp_buffer_queues
 		[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES];
-	struct sh_css_circular_buf sp2host_buffer_queues
+	ia_css_circbuf_elem_t host2sp_buffer_queues_elems
+	[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES]
+	[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	ia_css_circbuf_t sp2host_buffer_queues
 		[SH_CSS_NUM_BUFFER_QUEUES];
+	ia_css_circbuf_elem_t sp2host_buffer_queues_elems
+	[SH_CSS_NUM_BUFFER_QUEUES][SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
 
 	/*
 	 * The queue for the events.
 	 */
-	struct sh_css_circular_buf host2sp_event_queue;
-	struct sh_css_circular_buf sp2host_event_queue;
+	ia_css_circbuf_t host2sp_event_queue;
+	ia_css_circbuf_elem_t host2sp_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	ia_css_circbuf_t sp2host_event_queue;
+	ia_css_circbuf_elem_t sp2host_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+
 };
 
 extern int (*sh_css_printf) (const char *fmt, va_list args);
 
-#ifdef __HIVECC
-/* inline functions in hivecc cannot use varargs */
-static void
-#else
+#ifndef __HIVECC
 STORAGE_CLASS_INLINE void
-#endif
 sh_css_print(const char *fmt, ...)
 {
 	va_list ap;
@@ -810,17 +722,13 @@ sh_css_print(const char *fmt, ...)
 	}
 }
 
-#ifdef __HIVECC
-/* inline functions in hivecc cannot use varargs */
-static void
-#else
 STORAGE_CLASS_INLINE void
-#endif
 sh_css_vprint(const char *fmt, va_list args)
 {
 	if (sh_css_printf)
 		sh_css_printf(fmt, args);
 }
+#endif
 
 hrt_vaddress
 sh_css_params_ddr_address_map(void);
@@ -859,10 +767,6 @@ bool
 sh_css_frame_info_equal_resolution(const struct ia_css_frame_info *info_a,
 				   const struct ia_css_frame_info *info_b);
 
-unsigned int
-sh_css_input_format_bits_per_pixel(enum ia_css_stream_format format,
-				   bool two_ppc);
-
 enum ia_css_err
 sh_css_vf_downscale_log2(const struct ia_css_frame_info *out_info,
 			 const struct ia_css_frame_info *vf_info,
@@ -885,10 +789,6 @@ unsigned int
 sh_css_get_mipi_sizes_for_check(const unsigned int port, const unsigned int idx);
 
 #endif
-
-/* Return whether the sp copy process should be started */
-bool
-sh_css_continuous_start_sp_copy(void);
 
 hrt_vaddress
 sh_css_store_sp_group_to_ddr(void);
@@ -941,6 +841,11 @@ sh_css_update_uds_and_crop_info(
 
 void
 sh_css_invalidate_shading_tables(struct ia_css_stream *stream);
+
+#if defined(IS_ISP_2500_SYSTEM)
+void
+ia_css_pipe_get_bds_resolution(const struct ia_css_pipe *pipe, struct ia_css_resolution *res);
+#endif
 
 struct ia_css_pipeline *
 ia_css_pipe_get_pipeline(const struct ia_css_pipe *pipe);

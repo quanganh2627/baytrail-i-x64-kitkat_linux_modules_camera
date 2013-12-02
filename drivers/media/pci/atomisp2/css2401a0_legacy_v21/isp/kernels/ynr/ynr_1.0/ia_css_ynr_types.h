@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -45,12 +44,12 @@ struct ia_css_nr_config {
 				This is the same as
 				de_config.c1_coring_threshold.
 				u0.16, [0,65535],
-				default 128(0.001953125), ineffective 0 */
+				default 0(0), ineffective 0 */
 	ia_css_u0_16 threshold_cr; /**< Coring threshold for Cr (CNR).
 				This is the same as
 				de_config.c2_coring_threshold.
 				u0.16, [0,65535],
-				default 128(0.001953125), ineffective 0 */
+				default 0(0), ineffective 0 */
 };
 
 /** Edge Enhancement (sharpen) configuration.

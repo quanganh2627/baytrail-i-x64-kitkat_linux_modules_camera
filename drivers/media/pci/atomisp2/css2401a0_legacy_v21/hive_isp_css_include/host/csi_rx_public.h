@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -40,6 +39,16 @@ STORAGE_CLASS_CSI_RX_H void csi_rx_fe_ctrl_get_state(
 		const csi_rx_frontend_ID_t ID,
 		csi_rx_fe_ctrl_state_t *state);
 /**
+ * @brief Dump the csi rx frontend state.
+ * Dump the state of the csi rx frontend regiester-set.
+ *
+ * @param[in]	id	The global unique ID of the csi rx fe controller.
+ * @param[in]	state	Point to the register-state.
+ */
+STORAGE_CLASS_CSI_RX_H void csi_rx_fe_ctrl_dump_state(
+		const csi_rx_frontend_ID_t ID,
+		csi_rx_fe_ctrl_state_t *state);
+/**
  * @brief Get the state of the csi rx fe dlane.
  * Get the state of the register set per dlane process.
  *
@@ -62,19 +71,15 @@ STORAGE_CLASS_CSI_RX_H void csi_rx_be_ctrl_get_state(
 		const csi_rx_backend_ID_t ID,
 		csi_rx_be_ctrl_state_t *state);
 /**
- * @brief Get the state of the csi rx be dlane.
- * Get the state of the register set per dlane process.
+ * @brief Dump the csi rx backend state.
+ * Dump the state of the csi rx backend regiester-set.
  *
- * @param[in]	id		The global unique ID of the csirx be controller.
- * @param[in]	idx		The pec ID.
- * @param[in]	base_idx	The index from where pec starts .
- * @param[out]	state		Point to the pec state.
+ * @param[in]	id	The global unique ID of the csi rx be controller.
+ * @param[in]	state	Point to the register-state.
  */
-STORAGE_CLASS_CSI_RX_H void csi_rx_be_ctrl_get_pec_state(
+STORAGE_CLASS_CSI_RX_H void csi_rx_be_ctrl_dump_state(
 		const csi_rx_backend_ID_t ID,
-		const uint32_t idx,
-		const uint32_t base_idx,
-		csi_rx_be_ctrl_pec_t *pec_state);
+		csi_rx_be_ctrl_state_t *state);
 /** end of NCI */
 
 /*****************************************************
