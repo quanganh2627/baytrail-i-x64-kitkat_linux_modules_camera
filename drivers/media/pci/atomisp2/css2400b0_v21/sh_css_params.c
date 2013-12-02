@@ -1617,7 +1617,8 @@ static void ia_css_process_zoom_and_motion(
 				args->out_vf_frame ? &args->out_vf_frame->info
 									: NULL,
 				&tmp_binary,
-				NULL);
+				NULL,
+				-1);
 			binary = &tmp_binary;
 			binary->info = info;
 		}
@@ -1650,7 +1651,7 @@ sh_css_set_gamma_table(struct ia_css_isp_parameters *params,
 	assert(params != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_gamma_table() enter: "
-			    "table=%p\n",table);
+			    "table=%p\n", table);
 
 	assert(params != NULL);
 	assert(table != NULL);
@@ -1673,12 +1674,12 @@ sh_css_get_gamma_table(const struct ia_css_isp_parameters *params,
 	assert(params != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_gamma_table() enter: "
-		"table=%p\n",table);
+		"table=%p\n", table);
 
 	*table = params->gc_table;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_gamma_table() leave: "
-		"*table=%p\n",*table);
+		"return_void\n");
 }
 #endif
 
@@ -1692,7 +1693,7 @@ sh_css_set_ctc_table(struct ia_css_isp_parameters *params,
 	assert(params != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_ctc_table() enter: "
-		"table=%p\n",table);
+		"table=%p\n", table);
 
 	params->ctc_table = *table;
 	params->config_changed[IA_CSS_CTC_ID] = true;
@@ -1712,12 +1713,12 @@ sh_css_get_ctc_table(const struct ia_css_isp_parameters *params,
 	assert(params != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_ctc_table() enter: "
-		"table=%p\n",table);
+		"table=%p\n", table);
 
 	*table = params->ctc_table;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_ctc_table() leave: "
-		"*table=%p\n",*table);
+		"return_void\n");
 }
 #endif
 
@@ -1731,7 +1732,7 @@ sh_css_set_macc_table(struct ia_css_isp_parameters *params,
 	assert(params != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_macc_table() enter: "
-		"table=%p\n",table);
+		"table=%p\n", table);
 
 	params->macc_table = *table;
 	params->config_changed[IA_CSS_MACC_ID] = true;
@@ -1751,12 +1752,12 @@ sh_css_get_macc_table(const struct ia_css_isp_parameters *params,
 	assert(params != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_macc_table() enter: "
-		"table=%p\n",table);
+		"table=%p\n", table);
 
 	*table = params->macc_table;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_macc_table() leave: "
-		"*table=%p\n",*table);
+		"return_void\n");
 }
 #endif
 
@@ -1795,7 +1796,7 @@ sh_css_get_anr_thres(const struct ia_css_isp_parameters *params,
 	*thres = params->anr_thres;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_anr_thres() leave: "
-		"*thres=%p\n",*thres);
+		"return_void\n");
 }
 #endif
 
@@ -1935,7 +1936,7 @@ sh_css_set_morph_table(struct ia_css_isp_parameters *params,
 	assert(params != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_morph_table() enter: "
-		"table=%p\n",table);
+		"table=%p\n", table);
 
 	if (table->enable == false)
 		table = NULL;
@@ -1957,13 +1958,12 @@ sh_css_get_morph_table(struct ia_css_isp_parameters *params,
 	assert(params != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_morph_table() enter: "
-		"table=%p\n",table);
+		"table=%p\n", table);
 
 	*table = params->morph_table;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_morph_table() leave: "
-		"*table=%p\n",*table);
-
+		"return_void\n");
 }
 #endif
 #endif
@@ -2443,7 +2443,7 @@ sh_css_get_motion_vector(const struct ia_css_isp_parameters *params,
 }
 #endif
 
-void
+enum ia_css_err
 ia_css_stream_set_isp_config(
 	struct ia_css_stream *stream,
 	const struct ia_css_isp_config *config)
@@ -2451,7 +2451,7 @@ ia_css_stream_set_isp_config(
 	return ia_css_stream_set_isp_config_on_pipe(stream, config, NULL);
 }
 
-void
+enum ia_css_err
 ia_css_stream_set_isp_config_on_pipe(
 	struct ia_css_stream *stream,
 	const struct ia_css_isp_config *config,
@@ -2459,8 +2459,8 @@ ia_css_stream_set_isp_config_on_pipe(
 {
 	struct ia_css_isp_parameters *params;
 
-	assert(stream != NULL);
-	assert(config != NULL);
+	if ((stream == NULL) || (config == NULL))
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	params = stream->isp_params_configs;
 
@@ -2499,6 +2499,7 @@ ia_css_stream_set_isp_config_on_pipe(
 
 	/* Now commit all changes to the SP */
 	sh_css_param_update_isp_params(stream, sh_css_sp_is_running(), pipe);
+	return IA_CSS_SUCCESS;
 }
 
 /* TODO: make a direct implementation and remove the partial ones */
@@ -2730,11 +2731,13 @@ ia_css_isp_dvs_statistics_allocate(const struct ia_css_dvs_grid_info *grid)
 	ver_size =
 		sizeof(int) * IA_CSS_DVS_NUM_COEF_TYPES * grid->aligned_width;
 
+	me->hor_size = hor_size;
 	me->hor_proj = mmgr_malloc(hor_size);
 	if (me->hor_proj == mmgr_NULL)
 		goto err;
+	me->ver_size = ver_size;
 	me->ver_proj = mmgr_malloc(ver_size);
-	if (me->hor_proj == mmgr_NULL)
+	if (me->ver_proj == mmgr_NULL)
 		goto err;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_dvs_statistics_allocate() leave: return=%p\n",me);
@@ -2780,11 +2783,13 @@ ia_css_isp_dvs2_statistics_allocate(const struct ia_css_dvs_grid_info *grid)
 	ver_size = sizeof(int) * IA_CSS_DVS2_NUM_COEF_TYPES
 		* grid->aligned_width * grid->aligned_height;
 
+	me->hor_size = hor_size;
 	me->hor_proj = mmgr_malloc(hor_size);
 	if (me->hor_proj == mmgr_NULL)
 		goto err;
+	me->ver_size = ver_size;
 	me->ver_proj = mmgr_malloc(ver_size);
-	if (me->hor_proj == mmgr_NULL)
+	if (me->ver_proj == mmgr_NULL)
 		goto err;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_dvs2_statistics_allocate() leave: return=%p\n",me);
@@ -4793,7 +4798,6 @@ ia_css_dvs2_coefficients_allocate(const struct ia_css_dvs_grid_info *grid)
 	if (!me)
 		goto err;
 
-	memset(me, 0, sizeof(*me));
 	me->grid = *grid;
 
 	me->hor_coefs.odd_real = sh_css_malloc(grid->num_hor_coefs *

@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131119_2202 */
+/* Release Version: ci_master_20131130_2109 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -705,12 +705,6 @@ struct ia_css_isp_3a_statistics {
 	} data_hmem;
 };
 
-enum ia_css_dvs_tables {
-	IA_CSS_DVS_HOR_PROJ,
-	IA_CSS_DVS_VER_PROJ,
-	IA_CSS_NUM_DVS_TABLES
-};
-
 /** Structure that holds DVS statistics in the ISP internal
  * format. Use ia_css_get_dvs_statistics() to translate
  * this to the format used on the host (DVS engine).
@@ -718,6 +712,8 @@ enum ia_css_dvs_tables {
 struct ia_css_isp_dvs_statistics {
 	ia_css_ptr hor_proj;
 	ia_css_ptr ver_proj;
+	uint32_t   hor_size;
+	uint32_t   ver_size;
 };
 
 struct ia_css_properties {
@@ -1763,7 +1759,7 @@ ia_css_stream_request_flash(struct ia_css_stream *stream);
  * in fact this is the expected behavior most of the time. Proper
  * resource locking and double buffering is in place to allow for this.
  */
-void
+enum ia_css_err
 ia_css_stream_set_isp_config_on_pipe(struct ia_css_stream *stream,
 			     const struct ia_css_isp_config *config,
 			     struct ia_css_pipe *pipe);
@@ -1781,7 +1777,7 @@ ia_css_stream_set_isp_config_on_pipe(struct ia_css_stream *stream,
  * in fact this is the expected behavior most of the time. Proper
  * resource locking and double buffering is in place to allow for this.
  */
-void
+enum ia_css_err
 ia_css_stream_set_isp_config(
 	struct ia_css_stream *stream,
 	const struct ia_css_isp_config *config);

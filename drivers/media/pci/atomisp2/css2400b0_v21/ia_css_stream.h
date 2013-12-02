@@ -42,7 +42,6 @@ struct ia_css_stream {
 	struct ia_css_pipe           **pipes;
 	struct ia_css_pipe            *continuous_pipe;
 	struct ia_css_isp_parameters  *isp_params_configs;
-	bool                           continuous;
 	bool                           cont_capt;
 	bool						   started;
 };

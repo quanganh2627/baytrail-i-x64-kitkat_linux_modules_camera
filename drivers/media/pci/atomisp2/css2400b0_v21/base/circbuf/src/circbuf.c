@@ -20,7 +20,7 @@
  */
 
 #include "ia_css_circbuf.h"
-
+#if defined(__HIVECC) || defined (C_RUN)
 /**********************************************************************
  *
  * Forward declarations.
@@ -281,3 +281,4 @@ ia_css_circbuf_shift_chunk(ia_css_circbuf_t *cb,
 	/* adjust the index "start" */
 	cb->start = ia_css_circbuf_get_pos(cb, cb->start, chunk_offset);
 }
+#endif

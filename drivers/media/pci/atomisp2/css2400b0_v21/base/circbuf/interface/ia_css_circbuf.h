@@ -68,8 +68,13 @@ struct ia_css_circbuf_s {
 			   (always one empty slot) */
 	uint8_t start;	/* index of the oldest element             */
 	uint8_t end;	/* index at which to write the new element */
-
+	uint8_t dummy;  /* fixed size for 64 bit */
+#if defined(__HIVECC) || defined (C_RUN)
 	ia_css_circbuf_elem_t *elems;	/* an array of elements    */
+#else
+	uint32_t elems;
+#endif	
+	
 };
 
 /**********************************************************************
@@ -95,6 +100,7 @@ extern void ia_css_circbuf_create(ia_css_circbuf_t *cb,
  */
 extern void ia_css_circbuf_destroy(ia_css_circbuf_t *cb);
 
+#if defined(__HIVECC) || defined (C_RUN)
 /**
  * @brief Push a value in the circular buffer.
  * Put a new value at the tail of the circular buffer.
@@ -106,7 +112,7 @@ extern void ia_css_circbuf_destroy(ia_css_circbuf_t *cb);
  */
 static inline void ia_css_circbuf_push(ia_css_circbuf_t *cb,
 					    uint32_t val);
-
+#endif
 /**
  * @brief Pop a value out of the circular buffer.
  * Get a value at the head of the circular buffer.
@@ -260,6 +266,7 @@ static inline void ia_css_circbuf_elem_cpy(ia_css_circbuf_elem_t *
 						ia_css_circbuf_elem_t *
 						dest);
 
+#if defined (__HIVECC) || defined (C_RUN)
 /**
  * @brief Write a new element into the circular buffer.
  * Write a new element WITHOUT checking whether the
@@ -271,6 +278,7 @@ static inline void ia_css_circbuf_elem_cpy(ia_css_circbuf_elem_t *
  */
 static inline void ia_css_circbuf_write(ia_css_circbuf_t *cb,
 					     ia_css_circbuf_elem_t elem);
+#endif
 #if 0
 /**
  * @brief Update the state-machine of the circular buffer.
@@ -423,12 +431,13 @@ ia_css_circbuf_becomes_not_empty(ia_css_circbuf_t *cb)
  * @brief Write a new element into the circular buffer.
  * Refer to "Forward declarations" for details.
  */
+#if defined (__HIVECC) || defined (C_RUN)
 static inline void
 ia_css_circbuf_write(ia_css_circbuf_t *cb,
 			  ia_css_circbuf_elem_t elem)
 {
 	if (ia_css_circbuf_is_full(cb))
-#ifdef __SP
+#ifdef __HIVECC
 		OP_std_break();
 #else
 		assert(0);
@@ -442,7 +451,9 @@ ia_css_circbuf_write(ia_css_circbuf_t *cb,
 	if (cb->end == cb->start)
 		cb->start = ia_css_circbuf_get_pos(cb, cb->start, 1);
 }
+#endif
 
+#if defined (__HIVECC) || defined (C_RUN)
 /**
  * @brief Push a value in the circular buffer.
  * Refer to "Forward declarations" for details.
@@ -463,6 +474,7 @@ ia_css_circbuf_push(ia_css_circbuf_t *cb, uint32_t val)
 	ia_css_circbuf_update_fsm(cb);
 #endif
 }
+#endif
 
 #if 0
 /**

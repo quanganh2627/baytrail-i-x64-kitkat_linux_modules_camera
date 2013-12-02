@@ -129,7 +129,7 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 	dvs_info->num_hor_coefs     = binary->dis_hor_coef_num_3a;
 	dvs_info->num_ver_coefs     = binary->dis_ver_coef_num_3a;
 
-#if !defined(IS_ISP_2500_SYSTEM)
+#if !defined(SYSTEM_css_skycam_a0t_system)
 	/* 3A statistics grid */
 	s3a_info->enable            = binary->info->sp.enable.s3a;
 	s3a_info->width             = binary->s3atbl_width;
@@ -145,6 +145,13 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 #else
 	s3a_info->has_histogram     = 0;
 #endif
+#else	//SYSTEM_css_skycam_a0t_system defined
+        s3a_info->ae_enable         = binary->info->sp.enable.ae;
+	s3a_info->af_enable         = binary->info->sp.enable.af;
+	s3a_info->awb_fr_enable     = binary->info->sp.enable.awb_fr_acc;
+	s3a_info->awb_enable        = binary->info->sp.enable.awb_acc;
+        s3a_info->elem_bit_depth    = SH_CSS_BAYER_BITS;
+	//todo grid config	
 #endif
 #if defined(HAS_VAMEM_VERSION_2)
 	info->vamem_type = IA_CSS_VAMEM_TYPE_2;
@@ -200,7 +207,7 @@ static bool
 supports_bds_factor(uint32_t supported_factors,
 		       uint32_t bds_factor)
 {
-  return ((supported_factors & bds_factor) != 0);
+  return ((supported_factors & PACK_BDS_FACTOR(bds_factor)) != 0);
 }
 
 static enum ia_css_err
@@ -311,7 +318,8 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		 const struct ia_css_frame_info *out_info, /* can be NULL */
 		 const struct ia_css_frame_info *vf_info, /* can be NULL */
 		 struct ia_css_binary *binary,
-		 struct ia_css_resolution *dvs_env)
+		 struct ia_css_resolution *dvs_env,
+		 int stream_config_left_padding)
 {
 	const struct ia_css_binary_info *info = &xinfo->sp;
 	unsigned int dvs_env_width = 0,
@@ -381,11 +389,20 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 			+ info->top_cropping + dvs_env_height;
 
 		if (need_scaling) {
-			/* Different than before, we do left&right padding. */
-			binary->in_frame_info.padded_width =
-				CEIL_MUL(in_info->res.width + dvs_env_width +
-					(info->left_cropping ? 2*ISP_VEC_NELEMS : 0),
-					2*ISP_VEC_NELEMS);
+			/* In SDV use-case, we need to match left-padding of
+			 * primary and the video binary. */
+			if (stream_config_left_padding != -1) {
+				/* Different than before, we do left&right padding. */
+				binary->in_frame_info.padded_width =
+					CEIL_MUL(in_info->res.width + 2*ISP_VEC_NELEMS,
+						2*ISP_VEC_NELEMS);
+			} else {
+				/* Different than before, we do left&right padding. */
+				binary->in_frame_info.padded_width =
+					CEIL_MUL(in_info->res.width + dvs_env_width +
+						(info->left_cropping ? 2*ISP_VEC_NELEMS : 0),
+						2*ISP_VEC_NELEMS);
+			}
 		} else {
 			binary->in_frame_info.padded_width = isp_internal_width;
 		}
@@ -862,7 +879,8 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				       stream_format, req_in_info,
 				       req_bds_out_info,
 				       req_out_info, req_vf_info,
-				       binary, &dvs_env);
+				       binary, &dvs_env,
+				       descr->stream_config_left_padding);
 
 		if (err)
 			break;

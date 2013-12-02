@@ -89,6 +89,12 @@ struct ia_css_pipe {
 		struct ia_css_video_settings   video;
 		struct ia_css_capture_settings capture;
 	} pipe_settings;
+
+	/* This number is unique per pipe each instance of css. This number is
+	 * reused as pipeline number also. There is a 1-1 mapping between pipe_num
+	 * and sp thread id. Current logic limits pipe_num to
+	 * SH_CSS_MAX_SP_THREADS */
+	unsigned int pipe_num;
 };
 
 #endif /* __IA_CSS_CAMERA_PIPE_H__ */

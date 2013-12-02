@@ -66,6 +66,7 @@ void ia_css_pipe_get_copy_binarydesc(
 	copy_descr->isp_pipe_version = 1;
 	copy_descr->required_bds_factor = SH_CSS_BDS_FACTOR_1_00;
 	copy_descr->enable_fractional_ds = false;
+	copy_descr->stream_config_left_padding = -1;
 }
 
 /* Generic descriptor for offline binaries. Internal function. */
@@ -101,6 +102,7 @@ static void pipe_binarydesc_get_offline(
 	descr->dvs_env.width = 0;
 	descr->dvs_env.height = 0;
 	descr->required_bds_factor = SH_CSS_BDS_FACTOR_1_00;
+	descr->stream_config_left_padding = -1;
 }
 
 void ia_css_pipe_get_vfpp_binarydesc(
@@ -148,8 +150,10 @@ static enum ia_css_err binarydesc_calculate_bds_factor(
 	    in_h = input_res.height,
 	    out_w = output_res.width, out_h = output_res.height;
 
+	unsigned int max_bds_factor = 8;
+	unsigned int max_rounding_margin = 2;
 	/* delta in pixels to account for rounding margin in the calculation */
-	unsigned int delta = 4;
+	unsigned int delta = max_bds_factor * max_rounding_margin;
 
 	/* Assert if the resolutions are not set */
 	assert(in_w != 0 && in_h != 0);
@@ -288,7 +292,8 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	struct ia_css_binary_descr *video_descr,
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *bds_out_info,
-	struct ia_css_frame_info *vf_info)
+	struct ia_css_frame_info *vf_info,
+	int stream_config_left_padding)
 {
 	int mode = IA_CSS_BINARY_MODE_VIDEO;
 	enum ia_css_err err = IA_CSS_SUCCESS;
@@ -398,6 +403,7 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 
 		video_descr->enable_fractional_ds =
 		    pipe->extra_config.enable_fractional_ds;
+		video_descr->stream_config_left_padding = stream_config_left_padding;
 	}
 	return err;
 }
