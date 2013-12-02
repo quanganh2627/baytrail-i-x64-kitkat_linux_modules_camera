@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,18 +19,17 @@
  *
  */
 
-#ifndef __ADDR_SUPPORT_H_INCLUDED__
-#define __ADDR_SUPPORT_H_INCLUDED__
+#include "ia_css_pipe_util.h"
+#include "ia_css_util.h"
+#include "assert_support.h"
 
-/*
- * Compute the byte address offset of a struct or array member from the base struct base
- *
- * Note:
- *	- The header defining the type "T" must be included
- *	- This macro works on all cells, but not necessarily with the same output
- *	- Works for arrays, structs, arrays of structs, arrays in structs etc.
- */
-#define offsetof(T, x) ((unsigned)&(((T *)0)->x))
-#define OFFSET_OF(T, x) offsetof(T, x)
+unsigned int ia_css_pipe_util_pipe_input_format_bpp(
+	const struct ia_css_pipe * const pipe)
+{
+	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
 
-#endif /* __ADDR_SUPPORT_H_INCLUDED__ */
+	return ia_css_util_input_format_bpp(pipe->stream->config.format,
+			  pipe->stream->config.pixels_per_clock == 2);
+}
+

@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *

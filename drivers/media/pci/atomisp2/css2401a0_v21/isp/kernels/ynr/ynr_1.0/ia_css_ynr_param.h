@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -34,6 +33,8 @@ struct sh_css_isp_ynr_params {
 	int32_t threshold;
 	int32_t gain_all;
 	int32_t gain_dir;
+	int32_t threshold_cb;
+	int32_t threshold_cr;
 };
 
 /* YEE (Y Edge Enhancement) */

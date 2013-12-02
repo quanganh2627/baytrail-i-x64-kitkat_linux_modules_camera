@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -93,14 +92,17 @@ void ia_css_pipeline_init(void);
  *
  * @param[out] pipeline  structure to be initialized with defaults
  * @param[in] pipe_id
+ * @param[in] pipe_num Number that uniquely identifies a pipeline.
  * @return                     IA_CSS_SUCCESS or error code upon error.
  *
  * Initializes the pipeline structure with a set of default values.
  * This API is expected to be used when a pipeline structure is allocated
  * externally and needs sane defaults
  */
-enum ia_css_err ia_css_pipeline_create(struct ia_css_pipeline *pipeline,
-				   enum ia_css_pipe_id pipe_id);
+enum ia_css_err ia_css_pipeline_create(
+	struct ia_css_pipeline *pipeline,
+	enum ia_css_pipe_id pipe_id,
+	unsigned int pipe_num);
 
 /** @brief destroy a pipeline
  *
@@ -220,4 +222,14 @@ bool ia_css_pipeline_get_sp_thread_id(unsigned int key, unsigned int *val);
  */
 struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void);
 #endif
+
+/**
+ * @brief Map an SP thread to this pipeline
+ *
+ * @param[in]	pipeline
+ * @param[in]	map true for mapping and false for unmapping sp threads.
+ *
+ */
+void ia_css_pipeline_map(struct ia_css_pipeline *pipeline, bool map);
+
 #endif /*__IA_CSS_PIPELINE_H__*/

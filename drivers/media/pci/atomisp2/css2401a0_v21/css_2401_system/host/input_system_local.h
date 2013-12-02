@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,17 +22,13 @@
 #ifndef __INPUT_SYSTEM_LOCAL_H_INCLUDED__
 #define __INPUT_SYSTEM_LOCAL_H_INCLUDED__
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdbool.h>
-#endif
-
+#include "type_support.h"
 #include "input_system_global.h"
 
 #include "ibuf_ctrl.h"
 #include "csi_rx.h"
 #include "pixelgen.h"
+#include "isys_stream2mmio.h"
 
 typedef input_system_err_t input_system_error_t;
 
@@ -90,5 +85,6 @@ struct input_system_state_s {
 	csi_rx_fe_ctrl_state_t  csi_rx_fe_ctrl_state[N_CSI_RX_FRONTEND_ID];
 	csi_rx_be_ctrl_state_t  csi_rx_be_ctrl_state[N_CSI_RX_BACKEND_ID];
 	pixelgen_ctrl_state_t   pixelgen_ctrl_state[N_PIXELGEN_ID];
+	stream2mmio_state_t	stream2mmio_state[N_STREAM2MMIO_ID];
 };
 #endif /* __INPUT_SYSTEM_LOCAL_H_INCLUDED__ */

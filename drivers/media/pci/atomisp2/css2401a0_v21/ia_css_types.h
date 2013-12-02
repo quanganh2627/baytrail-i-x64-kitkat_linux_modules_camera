@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131030_2214 */
+/* Release Version: ci_master_20131130_1312 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -275,6 +275,8 @@ struct ia_css_isp_config {
 							[GC1, 1only] */
 	struct ia_css_ctc_table   *ctc_table;	/**< Chroma Tone Control
 							[CTC1, 1only] */
+
+	/** \deprecated */
 	struct ia_css_xnr_table   *xnr_table;	/**< eXtra Noise Reduction
 							[XNR1, 1&2] */
 	struct ia_css_rgb_gamma_table *r_gamma_table;/**< sRGB Gamma Correction

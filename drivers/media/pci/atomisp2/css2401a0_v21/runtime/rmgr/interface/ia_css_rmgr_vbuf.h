@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -66,7 +65,7 @@ extern struct ia_css_rmgr_vbuf_pool *hmm_buffer_pool;
  *
  * @param pool	The pointer to the pool
  */
-STORAGE_CLASS_RMGR_H void ia_css_rmgr_init_vbuf(
+STORAGE_CLASS_RMGR_H enum ia_css_err ia_css_rmgr_init_vbuf(
 	struct ia_css_rmgr_vbuf_pool *pool);
 
 /**

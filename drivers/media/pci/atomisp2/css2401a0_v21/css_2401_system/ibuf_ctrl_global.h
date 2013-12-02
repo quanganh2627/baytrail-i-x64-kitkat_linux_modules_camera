@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,11 +22,7 @@
 #ifndef __IBUF_CTRL_GLOBAL_H_INCLUDED__
 #define __IBUF_CTRL_GLOBAL_H_INCLUDED__
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 #include <ibuf_cntrl_defs.h>	/* _IBUF_CNTRL_RECALC_WORDS_STATUS,
 				 * _IBUF_CNTRL_ARBITERS_STATUS,

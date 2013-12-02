@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,19 +19,17 @@
  *
  */
 
-#ifndef __IA_CSS_IFMTR_H__
-#define __IA_CSS_IFMTR_H__
+#ifndef __IA_CSS_FIXEDBDS_HOST_H
+#define __IA_CSS_FIXEDBDS_HOST_H
 
-#include "ia_css.h"
-#include "ia_css_binary.h"
 
-unsigned int ia_css_ifmtr_lines_needed_for_bayer_order(
-			const struct ia_css_stream_config *config);
+#include "ia_css_fixedbds_param.h"
 
-unsigned int ia_css_ifmtr_columns_needed_for_bayer_order(
-			const struct ia_css_stream_config *config);
+struct sh_css_bds_factor {
+	unsigned numerator;
+	unsigned denominator;
+	unsigned int bds_factor;
+};
 
-enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
-				       struct ia_css_binary *binary);
 
-#endif /* __IA_CSS_IFMTR_H__ */
+#endif	/*__IA_CSS_FIXEDBDS_HOST_H*/

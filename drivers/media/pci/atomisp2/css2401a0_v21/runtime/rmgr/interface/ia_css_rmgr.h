@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -36,7 +35,7 @@
 /**
  * @brief Initialize resource manager (host/common)
  */
-void ia_css_rmgr_init(void);
+enum ia_css_err ia_css_rmgr_init(void);
 
 /**
  * @brief Uninitialize resource manager (host/common)

@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,7 +24,7 @@
 
 #include "csi_rx_global.h"
 #define N_CSI_RX_BE_MIPI_COMP_FMT_REG 		4
-#define N_CSI_RX_BE_MIPI_CUSTOM_PEC		3
+#define N_CSI_RX_BE_MIPI_CUSTOM_PEC		12
 #define N_CSI_RX_BE_SHORT_PKT_LUT		4
 #define N_CSI_RX_BE_LONG_PKT_LUT		8
 typedef struct csi_rx_fe_ctrl_state_s		csi_rx_fe_ctrl_state_t;
@@ -38,13 +37,6 @@ typedef struct csi_rx_be_ctrl_pec_s		csi_rx_be_ctrl_pec_t;
 struct csi_rx_fe_ctrl_lane_s {
 	hrt_data	termen;
 	hrt_data	settle;
-};
-
-struct csi_rx_be_ctrl_pec_s {
-	hrt_data	custom_pec_p0;
-	hrt_data	custom_pec_p1;
-	hrt_data	custom_pec_p2;
-	hrt_data	custom_pec_p3;
 };
 struct csi_rx_fe_ctrl_state_s {
 	hrt_data 		enable;
@@ -66,7 +58,7 @@ struct csi_rx_be_ctrl_state_s {
 	hrt_data 		irq_status;
 	hrt_data 		custom_mode_enable;
 	hrt_data 		custom_mode_data_state;
-	csi_rx_be_ctrl_pec_t 	pec[N_CSI_RX_BE_MIPI_CUSTOM_PEC];
+	hrt_data 		pec[N_CSI_RX_BE_MIPI_CUSTOM_PEC];
 	hrt_data 		custom_mode_valid_eop_config;
 	hrt_data 		global_lut_disregard_reg;
 	hrt_data 		packet_status_stall;

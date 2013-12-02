@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,6 +22,7 @@
 #include "ia_css_isys.h"
 #include "math_support.h"
 #include "virtual_isys.h"
+#include "isp.h"
 
 /*************************************************
  *
@@ -68,6 +68,7 @@ static bool acquire_ib_buffer(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
 	int32_t lines_per_frame,
+	int32_t fmt_type,
 	ib_buffer_t *buf);
 
 static void release_ib_buffer(
@@ -142,6 +143,11 @@ static bool calculate_isys2401_dma_port_cfg(
 
 static csi_mipi_packet_type_t get_csi_mipi_packet_type(
 	int32_t data_type);
+
+static int32_t calculate_input_system_alignment(
+	int32_t fmt_type,
+        int32_t bytes_per_pixel);
+
 /** end of Forwarded Declaration */
 
 /**************************************************
@@ -149,60 +155,60 @@ static csi_mipi_packet_type_t get_csi_mipi_packet_type(
  * Public Method
  *
  **************************************************/
-bool ia_css_virtual_isys_create(
-	ia_css_isys_cfg_t	*cfg,
-	ia_css_virtual_isys_t	*me)
+ ia_css_isys_error_t ia_css_isys_stream_create(
+	ia_css_isys_descr_t	*isys_stream_descr,
+	ia_css_isys_stream_h	isys_stream)
 {
-	bool rc;
+	ia_css_isys_error_t rc;
 
-	if (cfg == NULL || me == NULL)
+	if (isys_stream_descr == NULL || isys_stream == NULL)
 		return	false;
 
-	rc = create_input_system_input_port(cfg, &(me->input_port));
+	rc = create_input_system_input_port(isys_stream_descr, &(isys_stream->input_port));
 	if (rc == false)
 		return false;
 
-	rc = create_input_system_channel(cfg, &(me->channel));
+	rc = create_input_system_channel(isys_stream_descr, &(isys_stream->channel));
 	if (rc == false) {
-		destroy_input_system_input_port(&(me->input_port));
+		destroy_input_system_input_port(&(isys_stream->input_port));
 		return false;
 	}
 
 	return true;
 }
 
-void ia_css_virtual_isys_destroy(
-	ia_css_virtual_isys_t	*me)
+void ia_css_isys_stream_destroy(
+	ia_css_isys_stream_h	isys_stream)
 {
-	destroy_input_system_input_port(&(me->input_port));
-	destroy_input_system_channel(&(me->channel));
+	destroy_input_system_input_port(&(isys_stream->input_port));
+	destroy_input_system_channel(&(isys_stream->channel));
 }
 
-bool ia_css_virtual_isys_calculate_cfg(
-	ia_css_virtual_isys_t		*me,
-	ia_css_isys_cfg_t		*isys_cfg,
-	ia_css_virtual_isys_cfg_t	*virtual_isys_cfg)
+ ia_css_isys_error_t ia_css_isys_stream_calculate_cfg(
+	ia_css_isys_stream_h		isys_stream,
+	ia_css_isys_descr_t		*isys_stream_descr,
+	ia_css_isys_stream_cfg_t	*isys_stream_cfg)
 {
-	bool rc;
+	ia_css_isys_error_t rc;
 
-	if (virtual_isys_cfg == NULL	||
-		isys_cfg == NULL	||
-		me == NULL)
+	if (isys_stream_cfg == NULL	||
+		isys_stream_descr == NULL	||
+		isys_stream == NULL)
 		return false;
 
 	rc  = calculate_input_system_channel_cfg(
-			&(me->channel),
-			&(me->input_port),
-			isys_cfg,
-			&(virtual_isys_cfg->channel_cfg));
+			&(isys_stream->channel),
+			&(isys_stream->input_port),
+			isys_stream_descr,
+			&(isys_stream_cfg->channel_cfg));
 	if (rc == false)
 		return false;
 
 	rc = calculate_input_system_input_port_cfg(
-			&(me->channel),
-			&(me->input_port),
-			isys_cfg,
-			&(virtual_isys_cfg->input_port_cfg));
+			&(isys_stream->channel),
+			&(isys_stream->input_port),
+			isys_stream_descr,
+			&(isys_stream_cfg->input_port_cfg));
 	if (rc == false)
 		return false;
 
@@ -260,6 +266,7 @@ static bool create_input_system_channel(
 			cfg->input_port_resolution.bits_per_pixel,
 			cfg->input_port_resolution.pixels_per_line,
 			cfg->input_port_resolution.lines_per_frame,
+			cfg->csi_port_attr.fmt_type,
 			&(me->ib_buffer))) {
 		release_sid(me->stream2mmio_id,
 			&(me->stream2mmio_sid_id));
@@ -475,20 +482,43 @@ static void release_sid(
 	ia_css_isys_stream2mmio_sid_rmgr_release(stream2mmio, sid);
 }
 
+static int32_t calculate_input_system_alignment(
+	int32_t fmt_type,
+	int32_t bytes_per_pixel)
+{
+	int32_t memory_alignment_in_bytes;
+
+        /* make input system 2401 stride aligned with frame buffer
+           ISP_VEC_NELEMS is 64 for ISP on 2401 css system */
+        if (fmt_type <= MIPI_FORMAT_RAW14 && fmt_type >= MIPI_FORMAT_RAW6)
+                memory_alignment_in_bytes = bytes_per_pixel * 2 * ISP_VEC_NELEMS;
+        else if (fmt_type == MIPI_FORMAT_YUV420_8)
+                memory_alignment_in_bytes = bytes_per_pixel * 2 * HIVE_ISP_DDR_WORD_BYTES;
+        else
+                memory_alignment_in_bytes = bytes_per_pixel * HIVE_ISP_DDR_WORD_BYTES;
+
+	return memory_alignment_in_bytes;
+}
+
 static bool acquire_ib_buffer(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
 	int32_t lines_per_frame,
+	int32_t fmt_type,
 	ib_buffer_t *buf)
 {
 	const int32_t bits_per_byte = 8;
+	int32_t memory_alignment_in_bytes;
 	int32_t	bytes_per_pixel;
 	int32_t bytes_per_line;
 
 	bytes_per_pixel = ceil_div(bits_per_pixel, bits_per_byte);
 	bytes_per_line  = bytes_per_pixel * pixels_per_line;
 
-	buf->stride = bytes_per_line;
+	memory_alignment_in_bytes = calculate_input_system_alignment(fmt_type,
+					bytes_per_pixel);
+
+	buf->stride = CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
 	buf->lines = 2; /* ISYS2401 hardware can handle at most 4 lines */
 
 	(void)(lines_per_frame);
@@ -695,6 +725,7 @@ static bool calculate_isys2401_dma_port_cfg(
 {
 	const int32_t bits_per_byte = 8;
 	const int32_t bits_per_word = 256;
+	int32_t memory_alignment_in_bytes;
 
 	int32_t bits_per_pixel;
 	int32_t pixels_per_line;
@@ -705,12 +736,14 @@ static bool calculate_isys2401_dma_port_cfg(
 	int32_t pixels_per_word;
 	int32_t words_per_line;
 	int32_t bytes_per_word;
+	int32_t fmt_type;
 
 	(void)channel;
 	(void)input_port;
 
 	bits_per_pixel  = isys_cfg->input_port_resolution.bits_per_pixel;
 	pixels_per_line = isys_cfg->input_port_resolution.pixels_per_line;
+	fmt_type        = isys_cfg->csi_port_attr.fmt_type;
 
 	bytes_per_word  = bits_per_word / bits_per_byte;
 
@@ -730,7 +763,10 @@ static bool calculate_isys2401_dma_port_cfg(
 		words_per_line  = ceil_div(pixels_per_line, pixels_per_word);
 	}
 
-	cfg->stride	= bytes_per_line;
+	memory_alignment_in_bytes = calculate_input_system_alignment(fmt_type,
+					bytes_per_pixel);
+
+	cfg->stride	= CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
 	cfg->elements	= pixels_per_word;
 	cfg->cropping	= 0;
 	cfg->width	= words_per_line;

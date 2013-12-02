@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -76,12 +75,12 @@ typedef enum {
 	virq_sp_stream_mon         = IRQ0_ID_OFFSET + HIVE_GP_DEV_IRQ_SP_STREAM_MON_BIT_ID,
 	virq_isp_stream_mon        = IRQ0_ID_OFFSET + HIVE_GP_DEV_IRQ_ISP_STREAM_MON_BIT_ID,
 	virq_mod_stream_mon        = IRQ0_ID_OFFSET + HIVE_GP_DEV_IRQ_MOD_STREAM_MON_BIT_ID,
-#if defined(IS_ISP_2400_MAMOIADA_SYSTEM) || defined(IS_ISP_2400A0_MAMOIADA_SYSTEM)
+#if defined(IS_ISP_2400_MAMOIADA_SYSTEM)
 	virq_isp_pmem_error        = IRQ0_ID_OFFSET + HIVE_GP_DEV_IRQ_ISP_PMEM_ERROR_BIT_ID,
 #elif defined(IS_ISP_2401_MAMOIADA_SYSTEM)
 	virq_isys_2401             = IRQ0_ID_OFFSET + HIVE_GP_DEV_IRQ_IS2401_BIT_ID,
 #else
-#error "irq_local.h: 2400_SYSTEM must be one of {2400, 2400A0, 2401 }"
+#error "irq_local.h: 2400_SYSTEM must be one of {2400, 2401 }"
 #endif
 	virq_isp_bamem_error       = IRQ0_ID_OFFSET + HIVE_GP_DEV_IRQ_ISP_BAMEM_ERROR_BIT_ID,
 	virq_isp_dmem_error        = IRQ0_ID_OFFSET + HIVE_GP_DEV_IRQ_ISP_DMEM_ERROR_BIT_ID,

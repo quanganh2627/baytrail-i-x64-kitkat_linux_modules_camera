@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,6 +22,10 @@
 #ifndef __IA_CSS_S3A_TYPES_H
 #define __IA_CSS_S3A_TYPES_H
 
+#if defined(SYSTEM_css_skycam_a0t_system) && (! defined(PIPE_GENERATION) )
+#include "../../../../components/stats_3a/src/stats_3a_public.h"
+#endif
+
 /** 3A configuration. This configures the 3A statistics collection
  *  module.
  */
@@ -35,6 +38,32 @@
  *  ISP2: S3A2 is used.
  */
 struct ia_css_3a_grid_info {
+
+#if defined(SYSTEM_css_skycam_a0t_system)
+	uint32_t ae_enable;					/**< ae enabled in binary,
+								   0:disabled, 1:enabled */
+	struct ae_public_config_grid_config	ae_grd_info;	/**< see description in ae_public.h*/
+
+  	uint32_t awb_enable;					/**< awb enabled in binary,
+								   0:disabled, 1:enabled */
+	struct awb_public_config_grid_config	awb_grd_info;	/**< see description in awb_public.h*/
+
+  	uint32_t af_enable;					/**< af enabled in binary,
+								   0:disabled, 1:enabled */
+	struct af_public_grid_config		af_grd_info;	/**< see description in af_public.h*/
+
+  	uint32_t awb_fr_enable;					/**< awb_fr enabled in binary,
+								   0:disabled, 1:enabled */
+	struct awb_fr_public_grid_config	awb_fr_grd_info;/**< see description in awb_fr_public.h*/
+  
+        uint32_t elem_bit_depth;    /**< TODO:Taken from BYT  - need input from AIQ
+					if needed for SKC
+					Bit depth of element used
+					to calculate 3A statistics.
+					This is 13, which is the normalized
+					bayer bit depth in DSP. */
+
+#else
 	uint32_t enable;            /**< 3A statistics enabled.
 					0:disabled, 1:enabled */
 	uint32_t use_dmem;          /**< DMEM or VMEM determines layout.
@@ -66,6 +95,7 @@ struct ia_css_3a_grid_info {
 					to calculate 3A statistics.
 					This is 13, which is the normalized
 					bayer bit depth in DSP. */
+#endif
 };
 
 /* This struct should be split into 3, for AE, AWB and AF.

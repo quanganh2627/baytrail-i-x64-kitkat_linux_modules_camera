@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -79,6 +78,18 @@ void
 mmgr_clear(hrt_vaddress vaddr, const size_t size)
 {
 	my_env.set(vaddr, 0, size);
+}
+
+void * 
+mmgr_hrt_vaddr_to_host_vaddr(hrt_vaddress vaddr)
+{
+	return my_env.hrt_vaddr_to_host_vaddr(vaddr);
+}
+
+hrt_vaddress 
+mmgr_host_vaddr_to_hrt_vaddr(const void * ptr)
+{
+	return my_env.host_vaddr_to_hrt_vaddr(ptr);
 }
 
 void

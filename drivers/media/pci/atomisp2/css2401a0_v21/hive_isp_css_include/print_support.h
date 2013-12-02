@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -22,29 +21,15 @@
 
 #ifndef __PRINT_SUPPORT_H_INCLUDED__
 #define __PRINT_SUPPORT_H_INCLUDED__
-
-#if defined(_MSC_VER)
-
-#include <stdio.h>
-
-#elif defined(__HIVECC)
-/*
- * Use OP___dump()
- */
-
-#elif defined(__KERNEL__)
-/* printk() */
-
-#elif defined(__FIST__)
-
-#elif defined(__GNUC__)
-
-#include <stdio.h>
-
-#else /* default is for unknown environments */
-
-/* ? */
-
-#endif
-
+extern int (*sh_css_printf) (const char *fmt, va_list args);
+/* depends on host supplied print function in ia_css_init() */
+static __inline void ia_css_print(const char *fmt, ...)
+{
+	va_list ap;
+	if (sh_css_printf) {
+		va_start(ap, fmt);
+		sh_css_printf(fmt, ap);
+		va_end(ap);
+	}
+}
 #endif /* __PRINT_SUPPORT_H_INCLUDED__ */
