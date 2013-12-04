@@ -30,8 +30,6 @@
 #include "atomisp-dma.h"
 #include "atomisp-mmu.h"
 
-/* begin: Taken from isp_mmu.h */
-
 #define ISP_PAGE_SHIFT		12
 #define ISP_PAGE_SIZE		(1U << ISP_PAGE_SHIFT)
 #define ISP_PAGE_MASK		(~(ISP_PAGE_SIZE - 1))
@@ -47,7 +45,7 @@
 
 #define INVALID_PAGE		((phys_addr_t)(-1) & ISP_PAGE_MASK)
 
-/* end: Taken from isp_mmu.h */
+#define ISP_PADDR_SHIFT		12
 
 static void page_table_dump(struct atomisp_mmu_domain *adom)
 {
@@ -214,7 +212,7 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 	     l2_idx++) {
 		pr_info("l2_idx %u\n", l2_idx);
 		if (l2_pt[l2_idx] == INVALID_PAGE)
-			l2_pt[l2_idx] = paddr;
+			l2_pt[l2_idx] = paddr >> ISP_PADDR_SHIFT;
 		else
 			return -EBUSY;
 		pr_info("l2 index %u mapped as 0x%8.8x\n", l2_idx,
@@ -231,8 +229,8 @@ static int atomisp_mmu_map(struct iommu_domain *domain, unsigned long iova,
 	uint32_t iova_start = round_down(iova, ISP_PAGE_SIZE);
 	uint32_t iova_end = ALIGN(iova + size, ISP_PAGE_SIZE);
 
-	pr_info("mapping iova 0x%8.8x--0x%8.8x, size %u at paddr %p\n",
-		iova_start, iova_end, size, (void *)(uint32_t)paddr);
+	pr_info("mapping iova 0x%8.8x--0x%8.8x, size %u at paddr 0x%10.10x\n",
+		iova_start, iova_end, size, paddr);
 
 	return l2_map(domain, iova_start, paddr, size);
 }
@@ -246,7 +244,7 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 	uint32_t iova_start = iova;
 	unsigned int l2_idx;
 
-	pr_info("unmapping l2 page table for l1 index %u (iova 0x%8.8lx)\n",
+	pr_info("unmapping l2 page table for l1 index %u (iova 0x%8.8llx)\n",
 		l1_idx, iova);
 
 	if (adom->pgtbl[l1_idx] == INVALID_PAGE)
@@ -258,8 +256,8 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 	     (iova_start & ISP_L1PT_MASK) + (l2_idx << ISP_PAGE_SHIFT)
 		     < iova_start + size;
 	     l2_idx++) {
-		pr_info("l2 index %u unmapped, was 0x%8.8x\n", l2_idx,
-			l2_pt[l2_idx]);
+		pr_info("l2 index %u unmapped, was 0x%10.10llx\n",
+			l2_idx, ((dma_addr_t)l2_pt[l2_idx]) << ISP_PAGE_SHIFT);
 		l2_pt[l2_idx] = INVALID_PAGE;
 	}
 
@@ -278,7 +276,8 @@ static phys_addr_t atomisp_mmu_iova_to_phys(struct iommu_domain *domain,
 	struct atomisp_mmu_domain *adom = domain->priv;
 	uint32_t *l2_pt = (uint32_t *)adom->pgtbl[iova >> ISP_L1PT_SHIFT];
 
-	return l2_pt[(iova & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT];
+	return l2_pt[(iova & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT]
+		<< ISP_PAGE_SHIFT;
 }
 
 static int atomisp_mmu_device_group(struct device *dev, unsigned int *groupid)
