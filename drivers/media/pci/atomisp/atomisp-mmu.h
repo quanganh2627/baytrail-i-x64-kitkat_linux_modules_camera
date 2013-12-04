@@ -51,6 +51,8 @@ struct atomisp_mmu {
 
 	struct atomisp_mmu_pdata *pdata;
 	struct atomisp_dma_mapping *dmap;
+
+	void (*tlb_invalidate)(struct atomisp_mmu *mmu);
 };
 
 #endif

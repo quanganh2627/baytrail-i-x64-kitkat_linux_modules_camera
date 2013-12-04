@@ -52,6 +52,11 @@
 #define REG_L1_PHYS		0x0004 /* 27-bit pfn */
 #define REG_INFO		0x0008
 
+static void tlb_invalidate(struct atomisp_mmu *mmu)
+{
+	writel(TLB_INVALIDATE, mmu->base + REG_TLB_INVALIDATE);
+}
+
 static void page_table_dump(struct atomisp_mmu_domain *adom)
 {
 	uint32_t l1_idx;
@@ -403,6 +408,7 @@ static int atomisp_mmu_probe(struct atomisp_bus_device *adev)
 
 	atomisp_bus_set_iommu(&atomisp_iommu_ops);
 
+	mmu->tlb_invalidate = &tlb_invalidate;
 	writel(mmu->pgtbl >> ISP_PADDR_SHIFT, mmu->base + REG_L1_PHYS);
 
 	/*

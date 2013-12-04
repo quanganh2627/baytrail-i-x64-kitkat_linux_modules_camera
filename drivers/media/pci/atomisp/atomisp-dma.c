@@ -255,6 +255,8 @@ static void atomisp_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
 
 	iommu_unmap(mmu->dmap->domain, iova->pfn_lo << PAGE_SHIFT,
 		    (iova->pfn_hi - iova->pfn_lo + 1) << PAGE_SHIFT);
+
+	mmu->tlb_invalidate(mmu);
 }
 
 static int atomisp_dma_map_sg(struct device *dev, struct scatterlist *sglist,
@@ -297,6 +299,8 @@ static int atomisp_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 
 		iova_addr += PAGE_ALIGN(sg->length) >> PAGE_SHIFT;
 	}
+
+	mmu->tlb_invalidate(mmu);
 
 	return 0;
 
