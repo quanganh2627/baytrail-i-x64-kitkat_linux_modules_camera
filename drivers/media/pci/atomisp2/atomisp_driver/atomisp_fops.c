@@ -39,7 +39,11 @@
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 
+#ifndef CSS21
 #include "host/mmu_local.h"
+#else
+#include "type_support.h"
+#endif
 #include "device_access/device_access.h"
 #include "memory_access/memory_access.h"
 
