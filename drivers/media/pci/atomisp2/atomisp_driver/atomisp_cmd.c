@@ -166,6 +166,20 @@ static struct atomisp_freq_scaling_rule dfs_rules[] = {
 		.isp_freq = ISP_FREQ_400MHZ,
 		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
 	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_400MHZ,
+		.run_mode = ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_400MHZ,
+		.run_mode = ATOMISP_RUN_MODE_PREVIEW,
+	},
 };
 
 static unsigned short atomisp_get_sensor_fps(struct atomisp_sub_device *asd)
@@ -308,10 +322,6 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 		new_freq = dfs_rules[i].isp_freq;
 
 done:
-	/* workround to get isp works at 400Mhz for byt due to perf issue */
-	if (IS_BYT)
-		new_freq = ISP_FREQ_400MHZ;
-
 	dev_dbg(isp->dev, "DFS target frequency=%d.\n", new_freq);
 
 	if (new_freq == isp->sw_contex.running_freq) {
