@@ -489,7 +489,7 @@ int atomisp_css_create_acc_pipe(struct atomisp_sub_device *asd);
 
 int atomisp_css_start_acc_pipe(struct atomisp_sub_device *asd);
 
-void atomisp_css_stop_acc_pipe(struct atomisp_sub_device *asd);
+int atomisp_css_stop_acc_pipe(struct atomisp_sub_device *asd);
 
 void atomisp_css_destroy_acc_pipe(struct atomisp_sub_device *asd);
 

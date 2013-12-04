@@ -3029,12 +3029,13 @@ int atomisp_css_start_acc_pipe(struct atomisp_sub_device *asd)
 	return 0;
 }
 
-void atomisp_css_stop_acc_pipe(struct atomisp_sub_device *asd)
+int atomisp_css_stop_acc_pipe(struct atomisp_sub_device *asd)
 {
 	if (asd->stream_env.acc_stream_state == CSS_STREAM_STARTED) {
 		ia_css_stream_stop(asd->stream_env.acc_stream);
 		asd->stream_env.acc_stream_state = CSS_STREAM_STOPPED;
 	}
+	return 0;
 }
 
 void atomisp_css_destroy_acc_pipe(struct atomisp_sub_device *asd)

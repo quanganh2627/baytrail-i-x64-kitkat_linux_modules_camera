@@ -1433,10 +1433,15 @@ int atomisp_css_start_acc_pipe(struct atomisp_sub_device *asd)
 	return 0;
 }
 
-void atomisp_css_stop_acc_pipe(struct atomisp_sub_device *asd)
+int atomisp_css_stop_acc_pipe(struct atomisp_sub_device *asd)
 {
-	if (sh_css_acceleration_stop() != sh_css_success)
+	enum sh_css_err ret;
+	ret = sh_css_acceleration_stop();
+	if (ret != sh_css_success) {
 		dev_err(asd->isp->dev, "cannot stop acceleration pipeline\n");
+		return ret == sh_css_err_internal_error ? -EIO : -EINVAL;
+	}
+	return 0;
 }
 
 void atomisp_css_destroy_acc_pipe(struct atomisp_sub_device *asd)
