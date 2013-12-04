@@ -47,6 +47,11 @@
 
 #define ISP_PADDR_SHIFT		12
 
+#define REG_TLB_INVALIDATE	0x0000
+#define TLB_INVALIDATE		1
+#define REG_L1_PHYS		0x0004 /* 27-bit pfn */
+#define REG_INFO		0x0008
+
 static void page_table_dump(struct atomisp_mmu_domain *adom)
 {
 	uint32_t l1_idx;
