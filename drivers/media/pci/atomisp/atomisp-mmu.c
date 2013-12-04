@@ -359,6 +359,8 @@ static int atomisp_mmu_add_device(struct device *dev)
 	if (rval)
 		return rval;
 
+	mmu->pgtbl = virt_to_phys(adom->pgtbl);
+
 	kref_get(&dmap->ref);
 
 	return 0;
@@ -400,6 +402,8 @@ static int atomisp_mmu_probe(struct atomisp_bus_device *adev)
 	atomisp_bus_set_drvdata(adev, mmu);
 
 	atomisp_bus_set_iommu(&atomisp_iommu_ops);
+
+	writel(mmu->pgtbl >> ISP_PADDR_SHIFT, mmu->base + REG_L1_PHYS);
 
 	/*
 	 * FIXME: We can't unload this --- bus_set_iommu() will

@@ -46,7 +46,7 @@ struct atomisp_mmu {
 
 	void __iomem *base;
 
-	unsigned long pgtbl;
+	phys_addr_t pgtbl;
 	struct device *dev;
 
 	struct atomisp_mmu_pdata *pdata;
