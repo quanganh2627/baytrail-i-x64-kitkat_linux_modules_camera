@@ -619,7 +619,7 @@ static enum ia_css_err
 set_ref_extra_frame_buffer(const struct ia_css_frame *frame,
 			unsigned pipe_num, unsigned stage_num)
 {
-ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "set_ref_extra_frame_buffer() %08x\n",
+ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "set_ref_extra_frame_buffer() %p\n",
 			frame);
 
 	if (frame == NULL)

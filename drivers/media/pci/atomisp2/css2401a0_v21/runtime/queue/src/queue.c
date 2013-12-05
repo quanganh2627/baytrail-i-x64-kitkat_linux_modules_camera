@@ -481,7 +481,7 @@ static void push_sp_queue(
 				 sizeof(ia_css_circbuf_elem_t));
 
 	/* update the "end" index */
-	cb_end = (cb_size == 0) ? (cb_end + 1) : (cb_end + 1) % cb_size;
+	cb_end = (cb_end + 1) % cb_size;
 	store_sp_queue (offset, NULL, NULL, NULL, &cb_end);
 }
 
@@ -525,7 +525,7 @@ static void pop_sp_queue(
 	*elem = cb_elem.val;
 
 	/* update the "start" index */
-	cb_start = (cb_size == 0) ? (cb_start + 1) : (cb_start + 1) % cb_size;
+	cb_start = (cb_start + 1) % cb_size;
 	store_sp_queue(offset, NULL, NULL, &cb_start, NULL);
 }
 
