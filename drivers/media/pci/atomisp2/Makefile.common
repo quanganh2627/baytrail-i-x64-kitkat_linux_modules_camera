@@ -52,6 +52,7 @@ atomisp-$(postfix)-objs := \
 		css/ia_css_memory_access.o \
 		css/ia_css_device_access.o \
 		css/sh_css_param_dvs.o \
+		css/isp/kernels/vf/vf_1.0/ia_css_vf.host.o \
 		css/runtime/binary/src/binary.o \
 		css/runtime/debug/src/ia_css_debug.o \
 		css/runtime/isys/src/isys_init.o \
@@ -101,8 +102,8 @@ atomisp-$(postfix)-objs := \
 		css/camera/pipe/src/pipe_binarydesc.o \
 		css/camera/util/src/util.o \
 		css/camera/pipe/src/pipe_util.o \
-		css/camera/pipe/src/pipe_stagedesc.o
-
+		css/camera/pipe/src/pipe_stagedesc.o \
+		css/runtime/isp_param/src/isp_param.o  
 
 ifneq ($(ISP2401_NEW_INPUT_SYSTEM), )
 atomisp-$(postfix)-objs += \
@@ -119,9 +120,13 @@ atomisp-$(postfix)-objs += \
 endif
 
 ifneq ($(ISP2401), )
-atomisp-$(postfix)-objs += css/ia_css_isp_params.hive_isp_css_2401_system.o
+atomisp-$(postfix)-objs += \
+	css/ia_css_isp_params.hive_isp_css_2401_system.o \
+	css/ia_css_isp_configs.hive_isp_css_2401_system.o 
 else ifneq ($(ISP2400B0), )
-atomisp-$(postfix)-objs += css/ia_css_isp_params.hive_isp_css_2400_system.o
+atomisp-$(postfix)-objs += \
+	css/ia_css_isp_params.hive_isp_css_2400_system.o \
+	css/ia_css_isp_configs.hive_isp_css_2400_system.o 
 else ifneq ($(ISP2400), )
 atomisp-$(postfix)-objs += css/ia_css_isp_params.hive_isp_css_2400A0_system.o
 endif
@@ -295,7 +300,9 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/camera/util/interface \
 	    -I$(srctree)/$(src)/css/camera/pipe/interface \
 	    -I$(srctree)/$(src)/css/camera/util/interface \
-	    -I$(srctree)/$(src)/css/base/circbuf/interface
+	    -I$(srctree)/$(src)/css/base/circbuf/interface \
+            -I$(srctree)/$(src)/css/runtime/isp_param/interface \
+     	    -I$(srctree)/$(src)/css/isp/kernels/vf/vf_1.0
 endif
 endif
 
