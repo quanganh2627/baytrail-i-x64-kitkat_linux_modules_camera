@@ -211,7 +211,7 @@ struct atomisp_acc_fw {
 };
 
 struct atomisp_map {
-	hrt_vaddress ptr;
+	ia_css_ptr ptr;
 	size_t length;
 	struct list_head list;
 	/* FIXME: should keep book which maps are currently used

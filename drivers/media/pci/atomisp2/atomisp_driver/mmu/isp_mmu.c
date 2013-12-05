@@ -44,15 +44,15 @@ static void free_mmu_map(struct isp_mmu *mmu, unsigned int start_isp_virt,
 
 static unsigned int atomisp_get_pte(phys_addr_t pt, unsigned int idx)
 {
-	unsigned int pt_virt = (unsigned int)phys_to_virt(pt);
-	return *(((unsigned int *) pt_virt) + idx);
+	unsigned int *pt_virt = phys_to_virt(pt);
+	return *(pt_virt + idx);
 }
 
 static void atomisp_set_pte(phys_addr_t pt,
 			    unsigned int idx, unsigned int pte)
 {
-	unsigned int pt_virt = (unsigned int)phys_to_virt(pt);
-	(*(((unsigned int *) pt_virt) + idx)) = pte;
+	unsigned int *pt_virt = phys_to_virt(pt);
+	*(pt_virt + idx) = pte;
 }
 
 static void *isp_pt_phys_to_virt(phys_addr_t phys)
@@ -134,17 +134,17 @@ static void mmu_remap_error(struct isp_mmu *mmu,
 			    phys_addr_t new_phys)
 {
 	dev_err(atomisp_dev, "address remap:\n\n"
-		     "\tL1 PT: virt = 0x%x, phys = 0x%llx, "
+		     "\tL1 PT: virt = %p, phys = 0x%llx, "
 		     "idx = %d\n"
-		     "\tL2 PT: virt = 0x%x, phys = 0x%llx, "
+		     "\tL2 PT: virt = %p, phys = 0x%llx, "
 		     "idx = %d\n"
 		     "\told: isp_virt = 0x%x, phys = 0x%llx\n"
 		     "\tnew: isp_virt = 0x%x, phys = 0x%llx\n",
-		     (unsigned int)isp_pt_phys_to_virt(l1_pt),
+		     isp_pt_phys_to_virt(l1_pt),
 		     (u64)l1_pt, l1_idx,
-		     (unsigned int)isp_pt_phys_to_virt(l2_pt),
-		     (u64)l2_pt, l2_idx, (unsigned int)isp_virt,
-		     (u64)old_phys, (unsigned int)isp_virt,
+		     isp_pt_phys_to_virt(l2_pt),
+		     (u64)l2_pt, l2_idx, isp_virt,
+		     (u64)old_phys, isp_virt,
 		     (u64)new_phys);
 }
 
@@ -154,16 +154,16 @@ static void mmu_unmap_l2_pte_error(struct isp_mmu *mmu,
 				   unsigned int isp_virt, unsigned int pte)
 {
 	dev_err(atomisp_dev, "unmap unvalid L2 pte:\n\n"
-		     "\tL1 PT: virt = 0x%x, phys = 0x%llx, "
+		     "\tL1 PT: virt = %p, phys = 0x%llx, "
 		     "idx = %d\n"
-		     "\tL2 PT: virt = 0x%x, phys = 0x%llx, "
+		     "\tL2 PT: virt = %p, phys = 0x%llx, "
 		     "idx = %d\n"
 		     "\tisp_virt = 0x%x, pte(page phys) = 0x%x\n",
-		     (unsigned int)isp_pt_phys_to_virt(l1_pt),
+		     isp_pt_phys_to_virt(l1_pt),
 		     (u64)l1_pt, l1_idx,
-		     (unsigned int)isp_pt_phys_to_virt(l2_pt),
-		     (u64)l2_pt, l2_idx, (unsigned int)isp_virt,
-		     (unsigned int)pte);
+		     isp_pt_phys_to_virt(l2_pt),
+		     (u64)l2_pt, l2_idx, isp_virt,
+		     pte);
 }
 
 static void mmu_unmap_l1_pte_error(struct isp_mmu *mmu,
@@ -171,12 +171,12 @@ static void mmu_unmap_l1_pte_error(struct isp_mmu *mmu,
 				   unsigned int isp_virt, unsigned int pte)
 {
 	dev_err(atomisp_dev, "unmap unvalid L1 pte (L2 PT):\n\n"
-		     "\tL1 PT: virt = 0x%x, phys = 0x%llx, "
+		     "\tL1 PT: virt = %p, phys = 0x%llx, "
 		     "idx = %d\n"
 		     "\tisp_virt = 0x%x, l1_pte(L2 PT) = 0x%x\n",
-		     (unsigned int)isp_pt_phys_to_virt(l1_pt),
+		     isp_pt_phys_to_virt(l1_pt),
 		     (u64)l1_pt, l1_idx, (unsigned int)isp_virt,
-		     (unsigned int)pte);
+		     pte);
 }
 
 static void mmu_unmap_l1_pt_error(struct isp_mmu *mmu, unsigned int pte)

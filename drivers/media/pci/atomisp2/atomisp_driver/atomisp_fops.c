@@ -620,7 +620,7 @@ done:
  */
 static int do_isp_mm_remap(struct atomisp_device *isp,
 			   struct vm_area_struct *vma,
-			   void *isp_virt, u32 host_virt, u32 pgnr)
+			   ia_css_ptr isp_virt, u32 host_virt, u32 pgnr)
 {
 	u32 pfn;
 
@@ -643,7 +643,7 @@ static int do_isp_mm_remap(struct atomisp_device *isp,
 static int frame_mmap(struct atomisp_device *isp,
 	const struct atomisp_css_frame *frame, struct vm_area_struct *vma)
 {
-	void *isp_virt;
+	ia_css_ptr isp_virt;
 	u32 host_virt;
 	u32 pgnr;
 
@@ -653,7 +653,7 @@ static int frame_mmap(struct atomisp_device *isp,
 	}
 
 	host_virt = vma->vm_start;
-	isp_virt = (void *)frame->data;
+	isp_virt = frame->data;
 	atomisp_get_frame_pgnr(isp, frame, &pgnr);
 
 	if (do_isp_mm_remap(isp, vma, isp_virt, host_virt, pgnr))
@@ -723,10 +723,10 @@ static int remove_pad_from_frame(struct atomisp_device *isp,
 	unsigned int i;
 	unsigned short *buffer;
 	int ret = 0;
-	unsigned short *load = (unsigned short *)in_frame->data;
-	unsigned short *store = load;
+	ia_css_ptr load = in_frame->data;
+	ia_css_ptr store = load;
 
-	buffer = kmalloc(width*sizeof(*load), GFP_KERNEL);
+	buffer = kmalloc(width*sizeof(load), GFP_KERNEL);
 	if (!buffer) {
 		dev_err(isp->dev, "out of memory.\n");
 		return -ENOMEM;
@@ -735,11 +735,11 @@ static int remove_pad_from_frame(struct atomisp_device *isp,
 //#define ISP_LEFT_PAD			128	/* equal to 2*NWAY */
 	load += ISP_LEFT_PAD;
 	for (i = 0; i < height; i++) {
-		ret = hrt_isp_css_mm_load(load, buffer, width*sizeof(*load));
+		ret = hrt_isp_css_mm_load(load, buffer, width*sizeof(load));
 		if (ret < 0)
 			goto remove_pad_error;
 
-		ret = hrt_isp_css_mm_store(store, buffer, width*sizeof(*store));
+		ret = hrt_isp_css_mm_store(store, buffer, width*sizeof(store));
 		if (ret < 0)
 			goto remove_pad_error;
 

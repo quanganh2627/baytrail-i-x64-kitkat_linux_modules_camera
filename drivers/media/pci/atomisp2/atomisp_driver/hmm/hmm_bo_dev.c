@@ -139,7 +139,7 @@ int hmm_bo_device_inited(struct hmm_bo_device *bdev)
  * return NULL if no such buffer object found.
  */
 struct hmm_buffer_object *hmm_bo_device_search_start(struct hmm_bo_device *bdev,
-						     unsigned int vaddr)
+						     ia_css_ptr vaddr)
 {
 	struct list_head *pos;
 	struct hmm_buffer_object *bo;
