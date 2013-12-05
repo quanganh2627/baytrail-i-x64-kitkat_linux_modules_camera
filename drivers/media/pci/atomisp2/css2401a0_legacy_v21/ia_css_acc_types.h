@@ -163,8 +163,15 @@ struct ia_css_data {
 	uint32_t   size;    /* Disabled if 0 */
 };
 
+/** Host data descriptor */
 struct ia_css_host_data {
 	char      *address; /* Host address */
+	uint32_t   size;    /* Disabled if 0 */
+};
+
+/** ISP data descriptor */
+struct ia_css_isp_data {
+	uint32_t   address; /* ISP address */
 	uint32_t   size;    /* Disabled if 0 */
 };
 

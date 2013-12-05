@@ -611,11 +611,10 @@ struct sh_css_sp_output {
 #endif
 
 struct sh_css_hmm_buffer {
-	uint32_t exp_id;
 	union {
 		struct ia_css_isp_3a_statistics  s3a;
 		struct ia_css_isp_dvs_statistics dis;
-		struct ia_css_data	metadata;
+		struct ia_css_metadata	metadata;
 		struct {
 			hrt_vaddress	frame_data;
 			uint32_t	flashed;
