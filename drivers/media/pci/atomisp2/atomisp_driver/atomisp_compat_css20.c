@@ -137,6 +137,18 @@ static ia_css_ptr atomisp_css2_mm_mmap(const void *ptr, const size_t size,
 			attribute & HRT_BUF_FLAG_CACHED);
 }
 
+#ifdef CSS21
+static void *atomisp_css21_hrt_vaddr_to_host_vaddr(ia_css_ptr ptr)
+{
+	return hmm_isp_vaddr_to_host_vaddr(ptr);
+}
+
+static ia_css_ptr atomisp_css21_host_vaddr_to_hrt_vaddr(const void *ptr)
+{
+	return hmm_host_vaddr_to_hrt_vaddr(ptr);
+}
+#endif
+
 void atomisp_css2_hw_store_8(hrt_address addr, uint8_t data)
 {
 	unsigned long flags;
@@ -684,6 +696,12 @@ int atomisp_css_load_firmware(struct atomisp_device *isp)
 	isp->css_env.isp_css_env.css_mem_env.store = atomisp_css2_mm_store;
 	isp->css_env.isp_css_env.css_mem_env.set = atomisp_css2_mm_set;
 	isp->css_env.isp_css_env.css_mem_env.mmap = atomisp_css2_mm_mmap;
+#ifdef CSS21
+	isp->css_env.isp_css_env.css_mem_env.hrt_vaddr_to_host_vaddr =
+					atomisp_css21_hrt_vaddr_to_host_vaddr;
+	isp->css_env.isp_css_env.css_mem_env.host_vaddr_to_hrt_vaddr =
+					atomisp_css21_host_vaddr_to_hrt_vaddr;
+#endif
 
 	isp->css_env.isp_css_env.hw_access_env.store_8 =
 							atomisp_css2_hw_store_8;

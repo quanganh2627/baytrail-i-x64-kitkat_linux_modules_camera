@@ -92,6 +92,13 @@ struct hmm_buffer_object *hmm_bo_device_search_in_range(
 		struct hmm_bo_device *bdev, unsigned int vaddr);
 
 /*
+ * find the buffer object with kernel virtual address vaddr.
+ * return NULL if no such buffer object found.
+ */
+struct hmm_buffer_object *hmm_bo_device_search_vmap_start(
+		struct hmm_bo_device *bdev, const void *vaddr);
+
+/*
  * find a buffer object with pgnr pages from free_bo_list and
  * activate it (remove from free_bo_list and add to
  * active_bo_list)

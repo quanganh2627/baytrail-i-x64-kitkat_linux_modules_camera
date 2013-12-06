@@ -91,6 +91,9 @@
 #define MRFLD_PCI_CSI_DEADLINE_CONTROL	0xec
 #define MRFLD_PCI_CSI_RCOMP_CONTROL	0xf4
 
+/* Select Arasan (legacy)/Intel input system */
+#define MRFLD_PCI_CSI_CONTROL_PARPATHEN	BIT(24)
+
 /*
  * Enables the combining of adjacent 32-byte read requests to the same
  * cache line. When cleared, each 32-byte read request is sent as a

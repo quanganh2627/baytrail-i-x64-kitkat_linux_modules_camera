@@ -194,6 +194,31 @@ found:
 	return bo;
 }
 
+struct hmm_buffer_object *
+hmm_bo_device_search_vmap_start(struct hmm_bo_device *bdev, const void *vaddr)
+{
+	struct list_head *pos;
+	struct hmm_buffer_object *bo;
+	unsigned long flags;
+
+	check_bodev_null_return(bdev, NULL);
+
+	spin_lock_irqsave(&bdev->list_lock, flags);
+	list_for_each(pos, &bdev->active_bo_list) {
+		bo = list_to_hmm_bo(pos);
+		/* pass bo which has no vm_node allocated */
+		if (!hmm_bo_vm_allocated(bo))
+			continue;
+		if (bo->vmap_addr == vaddr)
+			goto found;
+	}
+	spin_unlock_irqrestore(&bdev->list_lock, flags);
+	return NULL;
+found:
+	spin_unlock_irqrestore(&bdev->list_lock, flags);
+	return bo;
+}
+
 /*
  * find a buffer object with pgnr pages from free_bo_list and
  * activate it (remove from free_bo_list and add to
