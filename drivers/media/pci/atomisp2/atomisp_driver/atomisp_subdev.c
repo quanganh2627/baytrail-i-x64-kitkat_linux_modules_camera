@@ -162,10 +162,17 @@ static int isp_subdev_set_power(struct v4l2_subdev *sd, int on)
 static int isp_subdev_subscribe_event(struct v4l2_subdev *sd,
 	struct v4l2_fh *fh, struct v4l2_event_subscription *sub)
 {
+	struct atomisp_sub_device *isp_sd = v4l2_get_subdevdata(sd);
+	struct atomisp_device *isp = isp_sd->isp;
+
 	if (sub->type != V4L2_EVENT_FRAME_SYNC &&
 	    sub->type != V4L2_EVENT_FRAME_END &&
 	    sub->type != V4L2_EVENT_ATOMISP_3A_STATS_READY &&
 	    sub->type != V4L2_EVENT_ATOMISP_METADATA_READY)
+		return -EINVAL;
+
+	if (sub->type == V4L2_EVENT_FRAME_SYNC &&
+			!atomisp_css_valid_sof(isp))
 		return -EINVAL;
 
 	return v4l2_event_subscribe(fh, sub, 16, NULL);
