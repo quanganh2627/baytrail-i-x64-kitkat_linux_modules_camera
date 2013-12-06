@@ -1235,6 +1235,32 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		atomisp_store_uint32(MRFLD_CSI_RECEIVER_SELECTION_REG, 1);
 	}
 
+	if ((id->device & ATOMISP_PCI_DEVICE_SOC_MASK) ==
+			ATOMISP_PCI_DEVICE_SOC_MRFLD) {
+		u32 csi_afe_trim;
+
+		/*
+		 * Workaround for imbalance data eye issue which is observed
+		 * on TNG B0.
+		 */
+		pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_TRIM_CONTROL,
+				      &csi_afe_trim);
+		csi_afe_trim &= ~((MRFLD_PCI_CSI_HSRXCLKTRIM_MASK <<
+					MRFLD_PCI_CSI1_HSRXCLKTRIM_SHIFT) |
+				  (MRFLD_PCI_CSI_HSRXCLKTRIM_MASK <<
+					MRFLD_PCI_CSI2_HSRXCLKTRIM_SHIFT) |
+				  (MRFLD_PCI_CSI_HSRXCLKTRIM_MASK <<
+					MRFLD_PCI_CSI3_HSRXCLKTRIM_SHIFT));
+		csi_afe_trim |= (MRFLD_PCI_CSI1_HSRXCLKTRIM <<
+					MRFLD_PCI_CSI1_HSRXCLKTRIM_SHIFT) |
+				(MRFLD_PCI_CSI2_HSRXCLKTRIM <<
+					MRFLD_PCI_CSI2_HSRXCLKTRIM_SHIFT) |
+				(MRFLD_PCI_CSI3_HSRXCLKTRIM <<
+					MRFLD_PCI_CSI3_HSRXCLKTRIM_SHIFT);
+		pci_write_config_dword(dev, MRFLD_PCI_CSI_AFE_TRIM_CONTROL,
+				      csi_afe_trim);
+	}
+
 	err = atomisp_initialize_modules(isp);
 	if (err < 0) {
 		dev_err(&dev->dev, "atomisp_initialize_modules (%d)\n", err);
