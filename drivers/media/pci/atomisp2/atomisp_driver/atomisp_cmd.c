@@ -578,8 +578,6 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 	if (irq_infos & CSS_IRQ_INFO_INVALID_FIRST_FRAME) {
 		isp->sw_contex.invalid_frame = 1;
 		isp->sw_contex.invalid_vf_frame = 1;
-		isp->sw_contex.invalid_s3a = 1;
-		isp->sw_contex.invalid_dis = 1;
 	}
 #endif /* CSS20 */
 
@@ -806,12 +804,6 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 
 	switch (buf_type) {
 		case CSS_BUFFER_TYPE_3A_STATISTICS:
-			/* ignore error in case of 3a statistics for now */
-			if (isp->sw_contex.invalid_s3a) {
-				requeue = true;
-				isp->sw_contex.invalid_s3a = 0;
-				break;
-			}
 			/* update the 3A data to ISP context */
 			if (!error)
 				atomisp_css_get_3a_statistics(asd, &buffer);
@@ -830,12 +822,6 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			atomisp_metadata_ready_event(asd);
 			break;
 		case CSS_BUFFER_TYPE_DIS_STATISTICS:
-			/* ignore error in case of dis statistics for now */
-			if (isp->sw_contex.invalid_dis) {
-				requeue = true;
-				isp->sw_contex.invalid_dis = 0;
-				break;
-			}
 			if (!error)
 				atomisp_css_get_dis_statistics(asd, &buffer);
 
@@ -1067,9 +1053,6 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 	 * may be corrupted, so mark it so. */
 	isp->sw_contex.invalid_frame = 1;
 	isp->sw_contex.invalid_vf_frame = 1;
-	isp->sw_contex.invalid_s3a = 1;
-	isp->sw_contex.invalid_dis = 1;
-
 	for (i = 0; i < isp->num_of_streams; i++) {
 		struct atomisp_sub_device *asd = &isp->asd[i];
 

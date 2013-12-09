@@ -193,8 +193,6 @@ struct atomisp_sw_contex {
 	bool file_input;
 	int  invalid_frame;
 	int  invalid_vf_frame;
-	int  invalid_s3a;
-	int  invalid_dis;
 
 	int power_state;
 	int running_freq;
