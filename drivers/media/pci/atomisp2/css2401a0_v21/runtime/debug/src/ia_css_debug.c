@@ -19,10 +19,10 @@
  *
  */
 
+#include "ia_css_debug.h"
 #include "debug.h"
 #include "memory_access.h"
 
-#include "ia_css_debug.h"
 #include "ia_css_debug_pipe.h"
 #include "ia_css_stream.h"
 #include "ia_css_pipeline.h"
