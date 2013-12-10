@@ -40,12 +40,6 @@ struct ia_css_pipeline_stage {
 	int mode;
 	bool out_frame_allocated;
 	bool vf_frame_allocated;
-	/* Parameters for isp memories, host memory pointers */
-	struct ia_css_host_data isp_mem_params[IA_CSS_NUM_ISP_MEMORIES];
-	/* Configurations for isp memories, host memory pointers */
-	struct ia_css_host_data isp_mem_configs[IA_CSS_NUM_ISP_MEMORIES];
-	/* Configurations for isp memories, css memory pointers */
-	struct ia_css_data isp_css_configs[IA_CSS_NUM_ISP_MEMORIES];
 	struct ia_css_pipeline_stage *next;
 };
 

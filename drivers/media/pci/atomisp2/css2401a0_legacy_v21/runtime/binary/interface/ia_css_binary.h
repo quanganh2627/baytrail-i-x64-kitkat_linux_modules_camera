@@ -47,6 +47,12 @@
 #include "sh_css_metrics.h"
 #include "isp/kernels/fixedbds/fixedbds_1.0/ia_css_fixedbds.host.h"
 
+/* Should be included without the path.
+   However, that requires adding the path to numerous makefiles
+   that have nothing to do with isp parameters.
+ */
+#include "runtime/isp_param/interface/ia_css_isp_param_types.h"
+
 struct ia_css_binary_descr {
 	int mode;
 	bool online;
@@ -109,6 +115,8 @@ struct ia_css_binary {
 	unsigned int             uds_yc;
 	unsigned int             left_padding;
 	struct sh_css_binary_metrics metrics;
+	struct ia_css_isp_param_host_segments mem_params;
+	struct ia_css_isp_param_css_segments  css_params;
 };
 
 #define IA_CSS_BINARY_DEFAULT_FRAME_INFO \
@@ -161,7 +169,9 @@ struct ia_css_binary {
 	0,	/* uds_xc */ \
 	0,	/* uds_yc */ \
 	0,	/* left_padding */ \
-	DEFAULT_BINARY_METRICS	/* metrics */ \
+	DEFAULT_BINARY_METRICS,	/* metrics */ \
+	IA_CSS_DEFAULT_ISP_MEM_PARAMS, /* mem_params */ \
+	IA_CSS_DEFAULT_ISP_CSS_PARAMS, /* css_params */ \
 }
 
 enum ia_css_err
@@ -193,5 +203,8 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 
 unsigned
 ia_css_binary_max_vf_width(void);
+
+void
+ia_css_binary_destroy_isp_parameters(struct ia_css_binary *binary);
 
 #endif /* _IA_CSS_BINARY_H_ */

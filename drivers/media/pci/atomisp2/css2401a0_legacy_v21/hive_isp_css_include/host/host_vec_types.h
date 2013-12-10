@@ -19,30 +19,22 @@
  *
  */
 
-#ifndef _IA_CSS_EVENT_H
-#define _IA_CSS_EVENT_H
+#ifndef __HOST_VEC_TYPES_H_INCLUDED__
+#define __HOST_VEC_TYPES_H_INCLUDED__
 
-#ifndef __KERNEL__
-/* bool */
-#include <stdbool.h>
-/* NULL */
-#include <stddef.h>
+#if !defined(__HIVECC) && !defined(__CRUN)
+#include "mpmath.h"
+#include "bbb_cfg.h"
+
+typedef struct { spudata_t elem[NUM_VEC_ELEMS];}    tvectoru;
+typedef struct { spsdata_t elem[NUM_VEC_ELEMS];}    tvector;
+typedef struct { spsdata_t elem[NUM_SLICE_ELEMS];}    tvectorslice;
+typedef struct { spsdata_t elem[NUM_VEC_ELEMS];}    tflags;
+
+#define __register
+#define MEM(a)
+
 #endif
 
-#include "system_types.h"
 
-#include "ia_css_binary.h"
-#include "sh_css_internal.h"
-#include "ia_css_types.h"
-#include "sw_event_global.h"    /*event macros.TODO : Change File Name..???*/
-
-bool ia_css_event_encode(
-	uint32_t	*in,
-	uint32_t	nr,
-	uint32_t	*out);
-
-void ia_css_event_decode(
-	uint32_t event,
-	uint8_t *payload);
-
-#endif /*_IA_CSS_EVENT_H*/
+#endif //__HOST_VEC_TYPES_H_INCLUDED__

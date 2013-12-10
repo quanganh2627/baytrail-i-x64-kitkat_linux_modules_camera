@@ -1,33 +1,32 @@
 /*
-* Support for Medfield PNW Camera Imaging ISP subsystem.
-*
-* Copyright (c) 2010 Intel Corporation. All Rights Reserved.
-*
-* Copyright (c) 2010 Silicon Hive www.siliconhive.com.
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License version
-* 2 as published by the Free Software Foundation.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
+ * Support for Intel Camera Imaging ISP subsystem.
+ *
+ * Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License version
+ * 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA.
+ *
+ */
 
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-* 02110-1301, USA.
-*
-*/
-#include "ia_css_debug.h"
 #include "debug.h"
 #include "memory_access.h"
 
+#include "ia_css_debug.h"
 #include "ia_css_debug_pipe.h"
 #include "ia_css_stream.h"
 #include "ia_css_pipeline.h"
+#include "ia_css_isp_param.h"
 #include "sh_css_params.h"
 
 #include HRTSTR(ia_css_isp_params.SYSTEM.h)
@@ -87,7 +86,7 @@
 
 /* snprintf is a C99 feature, MS visual studio defines _snprintf */
 #if defined(_MSC_VER)
-#define snprintf _snprintf
+#include <stdio.h>
 #endif
 
 /* Global variable to store the dtrace verbosity level */
@@ -2051,10 +2050,13 @@ findf_dmem_params(struct ia_css_stream *stream, short idx)
 		struct ia_css_pipeline *pipeline = ia_css_pipe_get_pipeline(pipe);
 		struct ia_css_pipeline_stage *stage;
 		for (stage = pipeline->stages; stage; stage = stage->next) {
-			short *offsets = (short*)&stage->binary->info->mem_offsets.offsets.param->dmem;
+			struct ia_css_binary *binary = stage->binary;
+			short *offsets = (short*)&binary->info->mem_offsets.offsets.param->dmem;
 			short dmem_offset = offsets[idx];
+			const struct ia_css_host_data *isp_data =
+				ia_css_isp_param_get_mem_init(&binary->mem_params, IA_CSS_PARAM_CLASS_PARAM, IA_CSS_ISP_DMEM0);
 			if (dmem_offset < 0) continue;
-			return &stage->isp_mem_params[IA_CSS_ISP_DMEM0].address[dmem_offset];
+			return &isp_data->address[dmem_offset];
 		}
 	}
 	return NULL;

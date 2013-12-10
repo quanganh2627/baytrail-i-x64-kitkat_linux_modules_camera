@@ -29,6 +29,7 @@
  */
 #include "hrt/defs.h"
 #include "storage_class.h"
+#include <stdio.h>
 #include <string.h>
 
 STORAGE_CLASS_INLINE void
@@ -39,6 +40,7 @@ hrt_sleep(void)
 
 /* Ignore warning 4505: Unreferenced local function has been removed */
 #pragma warning(disable: 4505)
+
 
 #define CSS_ALIGN(d, a) _declspec(align(a)) d
 #define inline      __inline

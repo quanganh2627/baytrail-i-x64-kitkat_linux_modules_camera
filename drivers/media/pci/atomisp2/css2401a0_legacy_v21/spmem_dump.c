@@ -43,7 +43,7 @@
 
 /* function input_system_acquisition_stop: 92E */
 
-/* function longjmp: 555C */
+/* function longjmp: 55CD */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_HIVE_IF_SRST_MASK
@@ -57,7 +57,7 @@
 #define HIVE_ADDR_sp_HIVE_IF_SRST_MASK 0x16C
 #define HIVE_SIZE_sp_HIVE_IF_SRST_MASK 16
 
-/* function ia_css_isys_sp_token_map_receive_ack: 5001 */
+/* function ia_css_isys_sp_token_map_receive_ack: 5072 */
 
 /* function ia_css_dmaproxy_sp_set_addr_B: 23C8 */
 
@@ -89,27 +89,27 @@
 #define HIVE_ADDR_sp_vbuf_mipi 0x330
 #define HIVE_SIZE_sp_vbuf_mipi 4
 
-/* function ia_css_event_sp_decode: 246F */
+/* function ia_css_event_sp_decode: 247C */
 
-/* function setjmp: 5565 */
+/* function setjmp: 55D6 */
 
-/* function ia_css_ispctrl_sp_dma_configure_io: 3727 */
+/* function ia_css_ispctrl_sp_dma_configure_io: 3630 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_rawcopy_sp_tgt_cp_fr_ct
 #define HIVE_MEM_ia_css_rawcopy_sp_tgt_cp_fr_ct scalar_processor_2400_dmem
-#define HIVE_ADDR_ia_css_rawcopy_sp_tgt_cp_fr_ct 0x4E50
+#define HIVE_ADDR_ia_css_rawcopy_sp_tgt_cp_fr_ct 0x4E88
 #define HIVE_SIZE_ia_css_rawcopy_sp_tgt_cp_fr_ct 4
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ia_css_rawcopy_sp_tgt_cp_fr_ct scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ia_css_rawcopy_sp_tgt_cp_fr_ct 0x4E50
+#define HIVE_ADDR_sp_ia_css_rawcopy_sp_tgt_cp_fr_ct 0x4E88
 #define HIVE_SIZE_sp_ia_css_rawcopy_sp_tgt_cp_fr_ct 4
 
 /* function __dmaproxy_sp_read_write_text: 2437 */
 
-/* function ia_css_dmaproxy_sp_wait_for_ack: 5B79 */
+/* function ia_css_dmaproxy_sp_wait_for_ack: 5BEA */
 
 /* function ia_css_tagger_buf_sp_pop_marked: 1CE0 */
 
@@ -117,13 +117,13 @@
 #ifndef HIVE_MEM_isp_stage
 #define HIVE_MEM_isp_stage scalar_processor_2400_dmem
 #define HIVE_ADDR_isp_stage 0x4850
-#define HIVE_SIZE_isp_stage 552
+#define HIVE_SIZE_isp_stage 608
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_isp_stage scalar_processor_2400_dmem
 #define HIVE_ADDR_sp_isp_stage 0x4850
-#define HIVE_SIZE_sp_isp_stage 552
+#define HIVE_SIZE_sp_isp_stage 608
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_vbuf_raw
@@ -137,7 +137,7 @@
 #define HIVE_ADDR_sp_vbuf_raw 0x32C
 #define HIVE_SIZE_sp_vbuf_raw 4
 
-/* function ia_css_sp_bin_copy_func: 43EA */
+/* function ia_css_sp_bin_copy_func: 445B */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_bufq_sp_pipe_private_metadata_bufs
@@ -168,13 +168,13 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_binary_group
 #define HIVE_MEM_sp_binary_group scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_binary_group 0x4B38
+#define HIVE_ADDR_sp_binary_group 0x4B70
 #define HIVE_SIZE_sp_binary_group 72
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_sp_binary_group scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_sp_binary_group 0x4B38
+#define HIVE_ADDR_sp_sp_binary_group 0x4B70
 #define HIVE_SIZE_sp_sp_binary_group 72
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
@@ -193,7 +193,7 @@
 
 /* function ia_css_thread_sp_main: CA3 */
 
-/* function ia_css_ispctrl_sp_init_internal_buffers: 2615 */
+/* function ia_css_ispctrl_sp_init_internal_buffers: 2622 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_ispctrl_sp_dma_vfout_cropping_a
@@ -212,13 +212,13 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_stop_copy_preview
 #define HIVE_MEM_sp_stop_copy_preview scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_stop_copy_preview 0x4E54
+#define HIVE_ADDR_sp_stop_copy_preview 0x4E8C
 #define HIVE_SIZE_sp_stop_copy_preview 4
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_sp_stop_copy_preview scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_sp_stop_copy_preview 0x4E54
+#define HIVE_ADDR_sp_sp_stop_copy_preview 0x4E8C
 #define HIVE_SIZE_sp_sp_stop_copy_preview 4
 
 /* function input_system_reg_load: 967 */
@@ -226,26 +226,26 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_vbuf_handles
 #define HIVE_MEM_vbuf_handles scalar_processor_2400_dmem
-#define HIVE_ADDR_vbuf_handles 0x4EEC
+#define HIVE_ADDR_vbuf_handles 0x4F24
 #define HIVE_SIZE_vbuf_handles 400
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_vbuf_handles scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_vbuf_handles 0x4EEC
+#define HIVE_ADDR_sp_vbuf_handles 0x4F24
 #define HIVE_SIZE_sp_vbuf_handles 400
 
-/* function ia_css_isys_sp_token_map_destroy: 5139 */
+/* function ia_css_isys_sp_token_map_destroy: 51AA */
 
 /* function ia_css_sp_flash_register: 1E40 */
 
-/* function ia_css_isys_sp_backend_create: 4CBE */
+/* function ia_css_isys_sp_backend_create: 4D2F */
 
 /* function ia_css_pipeline_sp_init: 1201 */
 
 /* function ia_css_tagger_sp_configure: 1723 */
 
-/* function ia_css_ispctrl_sp_end_binary: 24AA */
+/* function ia_css_ispctrl_sp_end_binary: 24B7 */
 
 /* function ia_css_s3a_sp_get_buffer_ddr_addr: 216E */
 
@@ -292,16 +292,16 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_init_dmem_data
 #define HIVE_MEM_sp_init_dmem_data scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_init_dmem_data 0x4E78
+#define HIVE_ADDR_sp_init_dmem_data 0x4EB0
 #define HIVE_SIZE_sp_init_dmem_data 36
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_sp_init_dmem_data scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_sp_init_dmem_data 0x4E78
+#define HIVE_ADDR_sp_sp_init_dmem_data 0x4EB0
 #define HIVE_SIZE_sp_sp_init_dmem_data 36
 
-/* function ia_css_sp_metadata_start: 4A6F */
+/* function ia_css_sp_metadata_start: 4AE0 */
 
 /* function ia_css_tagger_buf_sp_is_marked: 1DC4 */
 
@@ -313,7 +313,7 @@
 
 /* function is_isp_debug_buffer_full: 323 */
 
-/* function ia_css_sp_metadata_func: 4A12 */
+/* function ia_css_sp_metadata_func: 4A83 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_per_frame_data
@@ -327,7 +327,7 @@
 #define HIVE_ADDR_sp_sp_per_frame_data 0x3248
 #define HIVE_SIZE_sp_sp_per_frame_data 4
 
-/* function ia_css_rmgr_sp_vbuf_dequeue: 533B */
+/* function ia_css_rmgr_sp_vbuf_dequeue: 53AC */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_xmem_bin_addr
@@ -343,7 +343,7 @@
 
 /* function ia_css_pipeline_sp_run: F63 */
 
-/* function memcpy: 5605 */
+/* function memcpy: 5676 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_GP_DEVICE_BASE
@@ -385,11 +385,11 @@
 #define HIVE_ADDR_sp_ia_css_ispctrl_sp_ref_in_buf 0x481C
 #define HIVE_SIZE_sp_ia_css_ispctrl_sp_ref_in_buf 4
 
-/* function ia_css_isys_sp_frontend_start: 4EE9 */
+/* function ia_css_isys_sp_frontend_start: 4F5A */
 
-/* function ia_css_uds_sp_scale_params: 40F0 */
+/* function ia_css_uds_sp_scale_params: 4161 */
 
-/* function __divu: 5583 */
+/* function __divu: 55F4 */
 
 /* function ia_css_thread_sp_get_state: BD2 */
 
@@ -433,9 +433,9 @@
 
 /* function ia_css_parambuf_sp_handle_parameter_sets: E22 */
 
-/* function ia_css_spctrl_sp_set_state: 4AAD */
+/* function ia_css_spctrl_sp_set_state: 4B1E */
 
-/* function ia_css_thread_sem_sp_signal: 57E8 */
+/* function ia_css_thread_sem_sp_signal: 5859 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_IRQ_BASE
@@ -461,11 +461,11 @@
 #define HIVE_ADDR_sp_TIMED_CTRL_BASE 0x40
 #define HIVE_SIZE_sp_TIMED_CTRL_BASE 4
 
-/* function ia_css_isys_sp_isr: 5D20 */
+/* function ia_css_isys_sp_isr: 5D91 */
 
-/* function ia_css_rmgr_sp_init: 5247 */
+/* function ia_css_rmgr_sp_init: 52B8 */
 
-/* function ia_css_thread_sem_sp_init: 58B9 */
+/* function ia_css_thread_sem_sp_init: 592A */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_is_isp_requested
@@ -512,20 +512,20 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_rawcopy_sp_cur_co_fr_ct
 #define HIVE_MEM_ia_css_rawcopy_sp_cur_co_fr_ct scalar_processor_2400_dmem
-#define HIVE_ADDR_ia_css_rawcopy_sp_cur_co_fr_ct 0x4E58
+#define HIVE_ADDR_ia_css_rawcopy_sp_cur_co_fr_ct 0x4E90
 #define HIVE_SIZE_ia_css_rawcopy_sp_cur_co_fr_ct 4
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ia_css_rawcopy_sp_cur_co_fr_ct scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ia_css_rawcopy_sp_cur_co_fr_ct 0x4E58
+#define HIVE_ADDR_sp_ia_css_rawcopy_sp_cur_co_fr_ct 0x4E90
 #define HIVE_SIZE_sp_ia_css_rawcopy_sp_cur_co_fr_ct 4
 
-/* function ia_css_spctrl_sp_get_spid: 4AB4 */
+/* function ia_css_spctrl_sp_get_spid: 4B25 */
 
-/* function ia_css_dmaproxy_sp_read_byte_addr: 5BA7 */
+/* function ia_css_dmaproxy_sp_read_byte_addr: 5C18 */
 
-/* function ia_css_rmgr_sp_uninit: 5240 */
+/* function ia_css_rmgr_sp_uninit: 52B1 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_threads_stack
@@ -543,7 +543,7 @@
 
 /* function ia_css_parambuf_sp_wait_for_in_param: D88 */
 
-/* function ia_css_isys_sp_token_map_get_exp_id: 50D2 */
+/* function ia_css_isys_sp_token_map_get_exp_id: 5143 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_all_cb_elems_param
@@ -593,11 +593,11 @@
 #define HIVE_ADDR_sp_sem_for_cont_capt_start 0x37B8
 #define HIVE_SIZE_sp_sem_for_cont_capt_start 20
 
-/* function host2sp_event_queue_is_empty: 5CBA */
+/* function host2sp_event_queue_is_empty: 5D2B */
 
 /* function ia_css_tagger_buf_sp_mark: 1E15 */
 
-/* function ia_css_ispctrl_sp_output_compute_dma_info: 316D */
+/* function ia_css_ispctrl_sp_output_compute_dma_info: 3076 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_bufq_sp_pipe_private_s3a_bufs
@@ -613,21 +613,23 @@
 
 /* function debug_buffer_init_isp: D9 */
 
+/* function ia_css_sp_isp_param_hmem_load: 3FF9 */
+
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_rmgr_sp_mipi_frame_sem
 #define HIVE_MEM_ia_css_rmgr_sp_mipi_frame_sem scalar_processor_2400_dmem
-#define HIVE_ADDR_ia_css_rmgr_sp_mipi_frame_sem 0x507C
+#define HIVE_ADDR_ia_css_rmgr_sp_mipi_frame_sem 0x50B4
 #define HIVE_SIZE_ia_css_rmgr_sp_mipi_frame_sem 20
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ia_css_rmgr_sp_mipi_frame_sem scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ia_css_rmgr_sp_mipi_frame_sem 0x507C
+#define HIVE_ADDR_sp_ia_css_rmgr_sp_mipi_frame_sem 0x50B4
 #define HIVE_SIZE_sp_ia_css_rmgr_sp_mipi_frame_sem 20
 
-/* function ia_css_sp_raw_copy_func: 4499 */
+/* function ia_css_sp_raw_copy_func: 450A */
 
-/* function ia_css_rmgr_sp_refcount_dump: 5316 */
+/* function ia_css_rmgr_sp_refcount_dump: 5387 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_pipe_threads
@@ -643,7 +645,7 @@
 
 /* function sp_event_proxy_func: 645 */
 
-/* function ia_css_thread_sp_yield: 5761 */
+/* function ia_css_thread_sp_yield: 57D2 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_dmaproxy_sp_invalidate_tlb
@@ -666,20 +668,20 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ispctrl_sp_dma_configs
 #define HIVE_MEM_ispctrl_sp_dma_configs scalar_processor_2400_dmem
-#define HIVE_ADDR_ispctrl_sp_dma_configs 0x4E00
+#define HIVE_ADDR_ispctrl_sp_dma_configs 0x4E38
 #define HIVE_SIZE_ispctrl_sp_dma_configs 80
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ispctrl_sp_dma_configs scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ispctrl_sp_dma_configs 0x4E00
+#define HIVE_ADDR_sp_ispctrl_sp_dma_configs 0x4E38
 #define HIVE_SIZE_sp_ispctrl_sp_dma_configs 80
 
-/* function ia_css_ifmtr_sp_init: 51AE */
+/* function ia_css_ifmtr_sp_init: 521F */
 
 /* function initialize_sp_group: 61C */
 
-/* function __ia_css_sp_raw_copy_func_critical: 5CC4 */
+/* function __ia_css_sp_raw_copy_func_critical: 5D35 */
 
 /* function ia_css_thread_sp_init: C8B */
 
@@ -748,16 +750,16 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_isp_thread
 #define HIVE_MEM_isp_thread scalar_processor_2400_dmem
-#define HIVE_ADDR_isp_thread 0x4A78
+#define HIVE_ADDR_isp_thread 0x4AB0
 #define HIVE_SIZE_isp_thread 4
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_isp_thread scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_isp_thread 0x4A78
+#define HIVE_ADDR_sp_isp_thread 0x4AB0
 #define HIVE_SIZE_sp_isp_thread 4
 
-/* function ia_css_isys_sp_frontend_destroy: 4F63 */
+/* function ia_css_isys_sp_frontend_destroy: 4FD4 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_obarea_length_bq
@@ -773,9 +775,9 @@
 
 /* function is_ddr_debug_buffer_full: 2BB */
 
-/* function ia_css_isys_sp_frontend_stop: 4EBB */
+/* function ia_css_isys_sp_frontend_stop: 4F2C */
 
-/* function ia_css_isys_sp_token_map_init: 517A */
+/* function ia_css_isys_sp_token_map_init: 51EB */
 
 /* function sp_dma_proxy_isp_write_addr: 2299 */
 
@@ -795,9 +797,9 @@
 
 /* function debug_enqueue_ddr: E3 */
 
-/* function ia_css_rmgr_sp_refcount_init_vbuf: 52E2 */
+/* function ia_css_rmgr_sp_refcount_init_vbuf: 5353 */
 
-/* function dmaproxy_sp_read_write: 5C35 */
+/* function dmaproxy_sp_read_write: 5CA6 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_dmaproxy_isp_dma_cmd_buffer
@@ -811,9 +813,9 @@
 #define HIVE_ADDR_sp_ia_css_dmaproxy_isp_dma_cmd_buffer 0x4810
 #define HIVE_SIZE_sp_ia_css_dmaproxy_isp_dma_cmd_buffer 4
 
-/* function ia_css_dmaproxy_sp_ack: 58E1 */
+/* function ia_css_dmaproxy_sp_ack: 5952 */
 
-/* function host2sp_dequeue_buffer: 43C2 */
+/* function host2sp_dequeue_buffer: 4433 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_flash_sp_in_service
@@ -827,17 +829,17 @@
 #define HIVE_ADDR_sp_ia_css_flash_sp_in_service 0x2854
 #define HIVE_SIZE_sp_ia_css_flash_sp_in_service 4
 
-/* function ia_css_dmaproxy_sp_process: 590D */
+/* function ia_css_dmaproxy_sp_process: 597E */
 
-/* function sp2host_enqueue_buffer: 4366 */
+/* function sp2host_enqueue_buffer: 43D7 */
 
-/* function ia_css_isys_sp_backend_rcv_acquire_ack: 4B60 */
+/* function ia_css_isys_sp_backend_rcv_acquire_ack: 4BD1 */
 
-/* function ia_css_isys_sp_backend_pre_acquire_request: 4B76 */
+/* function ia_css_isys_sp_backend_pre_acquire_request: 4BE7 */
 
-/* function ia_css_ispctrl_sp_init_cs: 255A */
+/* function ia_css_ispctrl_sp_init_cs: 2567 */
 
-/* function ia_css_spctrl_sp_init: 4AC2 */
+/* function ia_css_spctrl_sp_init: 4B33 */
 
 /* function sp_event_proxy_init: 667 */
 
@@ -889,6 +891,8 @@
 #define HIVE_ADDR_sp_INPUT_FORMATTER_BASE 0x4C
 #define HIVE_SIZE_sp_INPUT_FORMATTER_BASE 16
 
+/* function sp_dma_proxy_reset_channels: 246F */
+
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sem_for_sp2host_event_queue
 #define HIVE_MEM_sem_for_sp2host_event_queue scalar_processor_2400_dmem
@@ -901,7 +905,7 @@
 #define HIVE_ADDR_sp_sem_for_sp2host_event_queue 0x3720
 #define HIVE_SIZE_sp_sem_for_sp2host_event_queue 20
 
-/* function ia_css_isys_sp_backend_acquire: 4C94 */
+/* function ia_css_isys_sp_backend_acquire: 4D05 */
 
 /* function ia_css_tagger_sp_update_size: 1C05 */
 
@@ -919,7 +923,7 @@
 
 /* function thread_fiber_sp_create: CF0 */
 
-/* function host2sp_dequeue_sp_event: 4337 */
+/* function host2sp_dequeue_sp_event: 43A8 */
 
 /* function ia_css_dmaproxy_sp_set_increments: 23B7 */
 
@@ -957,13 +961,13 @@
 #endif
 #define HIVE_ADDR_sp_sp_start_isp_entry 0x37E
 
-/* function ia_css_dmaproxy_sp_channel_acquire: 5CA6 */
+/* function ia_css_dmaproxy_sp_channel_acquire: 5D17 */
 
-/* function sp2host_enqueue_irq_event: 42DE */
+/* function sp2host_enqueue_irq_event: 434F */
 
-/* function ia_css_rmgr_sp_add_num_vbuf: 54D2 */
+/* function ia_css_rmgr_sp_add_num_vbuf: 5543 */
 
-/* function ia_css_isys_sp_token_map_create: 51A7 */
+/* function ia_css_isys_sp_token_map_create: 5218 */
 
 /* function __ia_css_dmaproxy_sp_wait_for_ack_text: 2236 */
 
@@ -995,7 +999,7 @@
 #define HIVE_ADDR_sp_sp_group 0x3268
 #define HIVE_SIZE_sp_sp_group 928
 
-/* function sp2host_buffer_queue_get_size: 435C */
+/* function sp2host_buffer_queue_get_size: 43CD */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_event_proxy_thread
@@ -1037,24 +1041,24 @@
 #define HIVE_ADDR_sp_MMU_BASE 0x24
 #define HIVE_SIZE_sp_MMU_BASE 8
 
-/* function ia_css_dmaproxy_sp_channel_release: 5C92 */
+/* function ia_css_dmaproxy_sp_channel_release: 5D03 */
 
 /* function ia_css_dmaproxy_sp_is_idle: 245A */
 
-/* function sp2host_event_queue_get_size: 42D5 */
+/* function sp2host_event_queue_get_size: 4346 */
 
 /* function isp_hmem_load: 9A5 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_isys_sp_error_cnt
 #define HIVE_MEM_ia_css_isys_sp_error_cnt scalar_processor_2400_dmem
-#define HIVE_ADDR_ia_css_isys_sp_error_cnt 0x4EA8
+#define HIVE_ADDR_ia_css_isys_sp_error_cnt 0x4EE0
 #define HIVE_SIZE_ia_css_isys_sp_error_cnt 12
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ia_css_isys_sp_error_cnt scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ia_css_isys_sp_error_cnt 0x4EA8
+#define HIVE_ADDR_sp_ia_css_isys_sp_error_cnt 0x4EE0
 #define HIVE_SIZE_sp_ia_css_isys_sp_error_cnt 12
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
@@ -1093,7 +1097,7 @@
 #define HIVE_ADDR_sp_ia_css_ispctrl_sp_dma_crop_block_width_b 0x4828
 #define HIVE_SIZE_sp_ia_css_ispctrl_sp_dma_crop_block_width_b 4
 
-/* function ia_css_rmgr_sp_refcount_retain_vbuf: 53A0 */
+/* function ia_css_rmgr_sp_refcount_retain_vbuf: 5411 */
 
 /* function ia_css_thread_sp_set_priority: C1D */
 
@@ -1109,7 +1113,7 @@
 
 /* function sp_generate_events: 7F7 */
 
-/* function __modu: 55C9 */
+/* function __modu: 563A */
 
 /* function ia_css_dmaproxy_sp_init_isp_vector: 2253 */
 
@@ -1139,7 +1143,7 @@
 #define HIVE_ADDR_sp_GDC_BASE 0x44
 #define HIVE_SIZE_sp_GDC_BASE 8
 
-/* function sp_event_proxy_callout_func: 5648 */
+/* function sp_event_proxy_callout_func: 56B9 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_thread_sp_num_ready_threads
@@ -1165,11 +1169,11 @@
 #define HIVE_ADDR_sp_sp_threads_stack_size 0x134
 #define HIVE_SIZE_sp_sp_threads_stack_size 20
 
-/* function ia_css_ispctrl_sp_isp_done_row_striping: 30B2 */
+/* function ia_css_ispctrl_sp_isp_done_row_striping: 2FC1 */
 
-/* function __ia_css_isys_sp_isr_text: 4B04 */
+/* function __ia_css_isys_sp_isr_text: 4B75 */
 
-/* function ia_css_dmaproxy_sp_configure_channel: 5BBE */
+/* function ia_css_dmaproxy_sp_configure_channel: 5C2F */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_current_thread_fiber_sp
@@ -1202,20 +1206,20 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_isp_ph
 #define HIVE_MEM_isp_ph scalar_processor_2400_dmem
-#define HIVE_ADDR_isp_ph 0x4EB4
+#define HIVE_ADDR_isp_ph 0x4EEC
 #define HIVE_SIZE_isp_ph 28
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_isp_ph scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_isp_ph 0x4EB4
+#define HIVE_ADDR_sp_isp_ph 0x4EEC
 #define HIVE_SIZE_sp_isp_ph 28
 
-/* function ia_css_isys_sp_token_map_flush: 511C */
+/* function ia_css_isys_sp_token_map_flush: 518D */
 
-/* function ia_css_ispctrl_sp_init_ds: 26CB */
+/* function ia_css_ispctrl_sp_init_ds: 26C5 */
 
-/* function get_xmem_base_addr_raw: 2A4D */
+/* function get_xmem_base_addr_raw: 2A47 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_all_cbs_param
@@ -1234,13 +1238,13 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_rawcopy_sp_tgt_co_fr_ct
 #define HIVE_MEM_ia_css_rawcopy_sp_tgt_co_fr_ct scalar_processor_2400_dmem
-#define HIVE_ADDR_ia_css_rawcopy_sp_tgt_co_fr_ct 0x4E5C
+#define HIVE_ADDR_ia_css_rawcopy_sp_tgt_co_fr_ct 0x4E94
 #define HIVE_SIZE_ia_css_rawcopy_sp_tgt_co_fr_ct 4
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ia_css_rawcopy_sp_tgt_co_fr_ct scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ia_css_rawcopy_sp_tgt_co_fr_ct 0x4E5C
+#define HIVE_ADDR_sp_ia_css_rawcopy_sp_tgt_co_fr_ct 0x4E94
 #define HIVE_SIZE_sp_ia_css_rawcopy_sp_tgt_co_fr_ct 4
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
@@ -1255,33 +1259,33 @@
 #define HIVE_ADDR_sp_sem_for_sp_group 0x3804
 #define HIVE_SIZE_sp_sem_for_sp_group 20
 
-/* function ia_css_framebuf_sp_wait_for_in_frame: 54F6 */
+/* function ia_css_framebuf_sp_wait_for_in_frame: 5567 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_i_raw_exp_id
 #define HIVE_MEM_ia_css_i_raw_exp_id scalar_processor_2400_dmem
-#define HIVE_ADDR_ia_css_i_raw_exp_id 0x5090
+#define HIVE_ADDR_ia_css_i_raw_exp_id 0x50C8
 #define HIVE_SIZE_ia_css_i_raw_exp_id 1
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ia_css_i_raw_exp_id scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ia_css_i_raw_exp_id 0x5090
+#define HIVE_ADDR_sp_ia_css_i_raw_exp_id 0x50C8
 #define HIVE_SIZE_sp_ia_css_i_raw_exp_id 1
 
 /* function ia_css_tagger_buf_sp_push_unmarked: 1C76 */
 
 /* function isp_hmem_clear: 975 */
 
-/* function ia_css_framebuf_sp_release_in_frame: 552F */
+/* function ia_css_framebuf_sp_release_in_frame: 55A0 */
 
-/* function ia_css_isys_sp_backend_snd_acquire_request: 4BE1 */
+/* function ia_css_isys_sp_backend_snd_acquire_request: 4C52 */
 
-/* function ia_css_isys_sp_token_map_is_full: 4FD0 */
+/* function ia_css_isys_sp_token_map_is_full: 5041 */
 
 /* function input_system_acquisition_run: 949 */
 
-/* function ia_css_ispctrl_sp_start_binary: 2538 */
+/* function ia_css_ispctrl_sp_start_binary: 2545 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_isp_sdis_vertproj_num
@@ -1319,7 +1323,7 @@
 #define HIVE_ADDR_sp_isp_pool 0x324
 #define HIVE_SIZE_sp_isp_pool 4
 
-/* function ia_css_rmgr_sp_rel_gen: 5289 */
+/* function ia_css_rmgr_sp_rel_gen: 52FA */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_event_any_pending_mask
@@ -1333,13 +1337,13 @@
 #define HIVE_ADDR_sp_event_any_pending_mask 0x340
 #define HIVE_SIZE_sp_event_any_pending_mask 8
 
-/* function ia_css_isys_sp_backend_push: 4B8A */
+/* function ia_css_isys_sp_backend_push: 4BFB */
 
 /* function sh_css_decode_tag_descr: 33E */
 
 /* function debug_enqueue_isp: 26A */
 
-/* function ia_css_spctrl_sp_uninit: 4ABB */
+/* function ia_css_spctrl_sp_uninit: 4B2C */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_HIVE_IF_SWITCH_CODE
@@ -1420,16 +1424,16 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_rawcopy_sp_tagger
 #define HIVE_MEM_ia_css_rawcopy_sp_tagger scalar_processor_2400_dmem
-#define HIVE_ADDR_ia_css_rawcopy_sp_tagger 0x4E60
+#define HIVE_ADDR_ia_css_rawcopy_sp_tagger 0x4E98
 #define HIVE_SIZE_ia_css_rawcopy_sp_tagger 24
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ia_css_rawcopy_sp_tagger scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ia_css_rawcopy_sp_tagger 0x4E60
+#define HIVE_ADDR_sp_ia_css_rawcopy_sp_tagger 0x4E98
 #define HIVE_SIZE_sp_ia_css_rawcopy_sp_tagger 24
 
-/* function ia_css_spctrl_sp_get_state: 4AA6 */
+/* function ia_css_spctrl_sp_get_state: 4B17 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_callout_sp_thread
@@ -1457,7 +1461,7 @@
 #define HIVE_ADDR_sp_SP_PMEM_BASE 0x0
 #define HIVE_SIZE_sp_SP_PMEM_BASE 4
 
-/* function ia_css_isys_sp_token_map_snd_acquire_req: 50BB */
+/* function ia_css_isys_sp_token_map_snd_acquire_req: 512C */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_isp_input_stream_format
@@ -1471,13 +1475,13 @@
 #define HIVE_ADDR_sp_sp_isp_input_stream_format 0x360C
 #define HIVE_SIZE_sp_sp_isp_input_stream_format 16
 
-/* function __mod: 55B5 */
+/* function __mod: 5626 */
 
 /* function ia_css_dmaproxy_sp_init_dmem_channel: 2333 */
 
 /* function ia_css_thread_sp_join: C4E */
 
-/* function ia_css_dmaproxy_sp_add_command: 5C76 */
+/* function ia_css_dmaproxy_sp_add_command: 5CE7 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_dmaproxy_sp_proxy_status
@@ -1491,15 +1495,17 @@
 #define HIVE_ADDR_sp_dmaproxy_sp_proxy_status 0x240
 #define HIVE_SIZE_sp_dmaproxy_sp_proxy_status 4
 
-/* function ia_css_event_sp_encode: 2499 */
+/* function ia_css_event_sp_encode: 24A6 */
 
 /* function ia_css_thread_sp_run: CBA */
 
 /* function sp_isys_copy_func: 63E */
 
-/* function ia_css_isys_sp_backend_flush: 4C01 */
+/* function ia_css_isys_sp_backend_flush: 4C72 */
 
-/* function ia_css_sp_input_system_token_map_reset_capturing_buffer_on_error: 4FA6 */
+/* function ia_css_sp_input_system_token_map_reset_capturing_buffer_on_error: 5017 */
+
+/* function ia_css_sp_isp_param_init_isp_memories: 4047 */
 
 /* function register_isr: 756 */
 
@@ -1524,18 +1530,20 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_isys_sp_frontend_states
 #define HIVE_MEM_ia_css_isys_sp_frontend_states scalar_processor_2400_dmem
-#define HIVE_ADDR_ia_css_isys_sp_frontend_states 0x4E9C
+#define HIVE_ADDR_ia_css_isys_sp_frontend_states 0x4ED4
 #define HIVE_SIZE_ia_css_isys_sp_frontend_states 12
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_ia_css_isys_sp_frontend_states scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_ia_css_isys_sp_frontend_states 0x4E9C
+#define HIVE_ADDR_sp_ia_css_isys_sp_frontend_states 0x4ED4
 #define HIVE_SIZE_sp_ia_css_isys_sp_frontend_states 12
 
-/* function ia_css_dmaproxy_sp_read_byte_addr_mmio: 5B90 */
+/* function ia_css_dmaproxy_sp_read_byte_addr_mmio: 5C01 */
 
-/* function ia_css_ispctrl_sp_done_ds: 26A5 */
+/* function ia_css_ispctrl_sp_done_ds: 26B2 */
+
+/* function ia_css_sp_isp_param_get_mem_inits: 4022 */
 
 /* function ia_css_parambuf_sp_init_buffer_queues: F50 */
 
@@ -1567,17 +1575,17 @@
 #define HIVE_ADDR_sp_ia_css_bufq_sp_pipe_private_frames 0x473C
 #define HIVE_SIZE_sp_ia_css_bufq_sp_pipe_private_frames 48
 
-/* function ia_css_isys_sp_backend_release: 4C7B */
+/* function ia_css_isys_sp_backend_release: 4CEC */
 
-/* function ia_css_isys_sp_backend_destroy: 4CA5 */
+/* function ia_css_isys_sp_backend_destroy: 4D16 */
 
-/* function ia_css_isys_sp_token_map_check_mipi_frame_size: 5086 */
+/* function ia_css_isys_sp_token_map_check_mipi_frame_size: 50F7 */
 
-/* function ia_css_ispctrl_sp_init_isp_vars: 344C */
+/* function ia_css_ispctrl_sp_init_isp_vars: 3355 */
 
-/* function ia_css_isys_sp_frontend_has_empty_mipi_buffer_cb: 4CF4 */
+/* function ia_css_isys_sp_frontend_has_empty_mipi_buffer_cb: 4D65 */
 
-/* function ia_css_rmgr_sp_vbuf_enqueue: 5366 */
+/* function ia_css_rmgr_sp_vbuf_enqueue: 53D7 */
 
 /* function ia_css_tagger_sp_tag_exp_id: 16CC */
 
@@ -1600,29 +1608,29 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_isp_addresses
 #define HIVE_MEM_sp_isp_addresses scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_isp_addresses 0x4A7C
+#define HIVE_ADDR_sp_isp_addresses 0x4AB4
 #define HIVE_SIZE_sp_isp_addresses 188
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_sp_isp_addresses scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_sp_isp_addresses 0x4A7C
+#define HIVE_ADDR_sp_sp_isp_addresses 0x4AB4
 #define HIVE_SIZE_sp_sp_isp_addresses 188
 
-/* function ia_css_rmgr_sp_acq_gen: 52A1 */
+/* function ia_css_rmgr_sp_acq_gen: 5312 */
 
 /* function receiver_reg_load: 920 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_isps
 #define HIVE_MEM_isps scalar_processor_2400_dmem
-#define HIVE_ADDR_isps 0x4ED0
+#define HIVE_ADDR_isps 0x4F08
 #define HIVE_SIZE_isps 28
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_isps scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_isps 0x4ED0
+#define HIVE_ADDR_sp_isps 0x4F08
 #define HIVE_SIZE_sp_isps 28
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
@@ -1733,7 +1741,7 @@
 #define HIVE_ADDR_sp_isp_sdis_horicoef_vectors 0x4840
 #define HIVE_SIZE_sp_isp_sdis_horicoef_vectors 4
 
-/* function ia_css_isys_sp_token_map_snd_capture_req: 50F3 */
+/* function ia_css_isys_sp_token_map_snd_capture_req: 5164 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sem_for_reading_if
@@ -1754,13 +1762,13 @@
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_data
 #define HIVE_MEM_sp_data scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_data 0x4B80
+#define HIVE_ADDR_sp_data 0x4BB8
 #define HIVE_SIZE_sp_data 640
 #else
 #endif
 #endif
 #define HIVE_MEM_sp_sp_data scalar_processor_2400_dmem
-#define HIVE_ADDR_sp_sp_data 0x4B80
+#define HIVE_ADDR_sp_sp_data 0x4BB8
 #define HIVE_SIZE_sp_sp_data 640
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
@@ -1775,7 +1783,7 @@
 #define HIVE_ADDR_sp_ISP_BAMEM_BASE 0x338
 #define HIVE_SIZE_sp_ISP_BAMEM_BASE 4
 
-/* function ia_css_isys_sp_frontend_rcv_capture_ack: 4DAA */
+/* function ia_css_isys_sp_frontend_rcv_capture_ack: 4E1B */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_bufq_sp_sems_for_sp2host_buf_queues
@@ -1867,7 +1875,7 @@
 #define HIVE_ADDR_sp_ISP_PMEM_BASE 0xC
 #define HIVE_SIZE_sp_ISP_PMEM_BASE 4
 
-/* function __div: 556D */
+/* function __div: 55DE */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_isp_vf_output_width_vecs
@@ -1881,9 +1889,9 @@
 #define HIVE_ADDR_sp_isp_vf_output_width_vecs 0x484C
 #define HIVE_SIZE_sp_isp_vf_output_width_vecs 4
 
-/* function ia_css_isys_sp_frontend_create: 4F79 */
+/* function ia_css_isys_sp_frontend_create: 4FEA */
 
-/* function ia_css_rmgr_sp_refcount_release_vbuf: 537F */
+/* function ia_css_rmgr_sp_refcount_release_vbuf: 53F0 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_ia_css_flash_sp_in_use
@@ -1897,7 +1905,7 @@
 #define HIVE_ADDR_sp_ia_css_flash_sp_in_use 0x39BC
 #define HIVE_SIZE_sp_ia_css_flash_sp_in_use 4
 
-/* function ia_css_thread_sem_sp_wait: 5833 */
+/* function ia_css_thread_sem_sp_wait: 58A4 */
 
 #ifndef HIVE_MULTIPLE_PROGRAMS
 #ifndef HIVE_MEM_sp_sleep_mode

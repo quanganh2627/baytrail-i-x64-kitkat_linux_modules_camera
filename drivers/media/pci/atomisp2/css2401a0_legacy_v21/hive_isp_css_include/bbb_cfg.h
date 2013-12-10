@@ -19,30 +19,38 @@
  *
  */
 
-#ifndef _IA_CSS_EVENT_H
-#define _IA_CSS_EVENT_H
+#ifndef __HOST_BBB_CFG_H_INCLUDED__
+#define __HOST_BBB_CFG_H_INCLUDED__
 
-#ifndef __KERNEL__
-/* bool */
-#include <stdbool.h>
-/* NULL */
-#include <stddef.h>
+#define USE2400
+//#define USE2600
+
+
+/* consider to use same naming as cfg.dat from the SDK */
+/* N --> number of lanes per vector
+ * B --> bit depth
+ * M --> lanes per slice
+ * W --> bit depth multiplier (1w = single pre 2w = double
+  */
+
+
+#define NUM_VEC_ELEMS 1
+
+
+#ifdef USE2400
+#define NUM_BITS 14
+#define NUM_SLICE_ELEMS 4
+#define ROUNDMODE           ROUND_NEAREST_EVEN
+
+#elif USE2600
+
+#define NUM_BITS 16
+#define NUM_SLICE_ELEMS 8
+#define ROUNDMODE           ROUND_NEAREST_EVEN
+
+#else
+#error "unsupported system"
 #endif
 
-#include "system_types.h"
 
-#include "ia_css_binary.h"
-#include "sh_css_internal.h"
-#include "ia_css_types.h"
-#include "sw_event_global.h"    /*event macros.TODO : Change File Name..???*/
-
-bool ia_css_event_encode(
-	uint32_t	*in,
-	uint32_t	nr,
-	uint32_t	*out);
-
-void ia_css_event_decode(
-	uint32_t event,
-	uint8_t *payload);
-
-#endif /*_IA_CSS_EVENT_H*/
+#endif //__HOST_BBB_CFG_H_INCLUDED__
