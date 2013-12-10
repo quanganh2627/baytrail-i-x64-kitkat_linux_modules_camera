@@ -19,30 +19,11 @@
  *
  */
 
-#ifndef _IA_CSS_EVENT_H
-#define _IA_CSS_EVENT_H
+#ifndef _ISP_ACC_H_
+#define _ISP_ACC_H_
 
-#ifndef __KERNEL__
-/* bool */
-#include <stdbool.h>
-/* NULL */
-#include <stddef.h>
-#endif
+/* Isp interface to accelerators */
 
-#include "system_types.h"
+#include "input_buf.isp.h"
 
-#include "ia_css_binary.h"
-#include "sh_css_internal.h"
-#include "ia_css_types.h"
-#include "sw_event_global.h"    /*event macros.TODO : Change File Name..???*/
-
-bool ia_css_event_encode(
-	uint32_t	*in,
-	uint32_t	nr,
-	uint32_t	*out);
-
-void ia_css_event_decode(
-	uint32_t event,
-	uint8_t *payload);
-
-#endif /*_IA_CSS_EVENT_H*/
+#endif /* _ISP_ACC_H_ */
