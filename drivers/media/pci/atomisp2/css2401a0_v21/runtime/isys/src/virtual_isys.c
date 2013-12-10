@@ -492,7 +492,10 @@ static int32_t calculate_input_system_alignment(
            ISP_VEC_NELEMS is 64 for ISP on 2401 css system */
         if (fmt_type <= MIPI_FORMAT_RAW14 && fmt_type >= MIPI_FORMAT_RAW6)
                 memory_alignment_in_bytes = bytes_per_pixel * 2 * ISP_VEC_NELEMS;
-        else if (fmt_type == MIPI_FORMAT_YUV420_8)
+	/* YUV420 double the Y plane to make all plane aligned
+	   YUV422 2 subpixles per pixel, need double the alignment */
+        else if (fmt_type == MIPI_FORMAT_YUV420_8 ||
+		 fmt_type == MIPI_FORMAT_YUV422_8)
                 memory_alignment_in_bytes = bytes_per_pixel * 2 * HIVE_ISP_DDR_WORD_BYTES;
         else
                 memory_alignment_in_bytes = bytes_per_pixel * HIVE_ISP_DDR_WORD_BYTES;
@@ -725,7 +728,7 @@ static bool calculate_isys2401_dma_port_cfg(
 {
 	const int32_t bits_per_byte = 8;
 	const int32_t bits_per_word = 256;
-	int32_t memory_alignment_in_bytes;
+	int32_t memory_alignment_in_bytes = 32;
 
 	int32_t bits_per_pixel;
 	int32_t pixels_per_line;
@@ -761,10 +764,9 @@ static bool calculate_isys2401_dma_port_cfg(
 		bytes_per_line  = bytes_per_pixel * pixels_per_line;
 		pixels_per_word = bits_per_word / bits_per_pixel;
 		words_per_line  = ceil_div(pixels_per_line, pixels_per_word);
+		memory_alignment_in_bytes = calculate_input_system_alignment(fmt_type,
+						bytes_per_pixel);
 	}
-
-	memory_alignment_in_bytes = calculate_input_system_alignment(fmt_type,
-					bytes_per_pixel);
 
 	cfg->stride	= CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
 	cfg->elements	= pixels_per_word;

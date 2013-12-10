@@ -502,7 +502,7 @@ struct sh_css_isp_stage {
 	struct ia_css_blob_info	  blob_info;
 	struct ia_css_binary_info binary_info;
 	char			  binary_name[SH_CSS_MAX_BINARY_NAME];
-	struct ia_css_data	  mem_initializers[IA_CSS_NUM_ISP_MEMORIES];
+	struct ia_css_isp_param_css_segments mem_initializers;
 };
 
 /* Information for a single pipeline stage */
@@ -766,10 +766,9 @@ bool
 sh_css_frame_info_equal_resolution(const struct ia_css_frame_info *info_a,
 				   const struct ia_css_frame_info *info_b);
 
-enum ia_css_err
-sh_css_vf_downscale_log2(const struct ia_css_frame_info *out_info,
-			 const struct ia_css_frame_info *vf_info,
-			 unsigned int *downscale_log2);
+unsigned int
+sh_css_input_format_bits_per_pixel(enum ia_css_stream_format format,
+				   bool two_ppc);
 
 void
 sh_css_capture_enable_bayer_downscaling(bool enable);

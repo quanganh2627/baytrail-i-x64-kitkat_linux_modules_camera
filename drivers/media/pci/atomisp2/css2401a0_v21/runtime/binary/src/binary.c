@@ -25,11 +25,13 @@
 #include "ia_css.h"
 #include "ia_css_debug.h"
 #include "ia_css_util.h"
+#include "ia_css_isp_param.h"
 #include "sh_css_internal.h"
 #include "sh_css_sp.h"
 #include "sh_css_firmware.h"
 #include "sh_css_defs.h"
 #include "sh_css_legacy.h"
+#include "vf/vf_1.0/ia_css_vf.host.h"
 
 #include "memory_access.h"
 
@@ -251,7 +253,6 @@ ia_css_binary_init_infos(void)
 		enum ia_css_err ret;
 		struct ia_css_binary_xinfo *binary = &all_binaries[i];
 		bool binary_found;
-		unsigned pclass;
 
 		ret = binary_init_info(binary, i, &binary_found);
 		if (ret != IA_CSS_SUCCESS)
@@ -262,9 +263,9 @@ ia_css_binary_init_infos(void)
 		binary->next = binary_infos[binary->sp.mode];
 		binary_infos[binary->sp.mode] = binary;
 		binary->blob = &sh_css_blob_info[i];
-		for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
-			binary->mem_offsets.array[pclass].ptr = (void *)(sh_css_blob_info[i].mem_offsets[pclass].ptr);
-		}
+		/* Cannot copy arrays with assignment */
+		assert (sizeof(binary->mem_offsets) == sizeof(sh_css_blob_info[i].mem_offsets));
+		memcpy (&binary->mem_offsets, &sh_css_blob_info[i].mem_offsets, sizeof(binary->mem_offsets));
 	}
 	return IA_CSS_SUCCESS;
 }
@@ -340,14 +341,21 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 
 	bool need_scaling = false;
 	struct ia_css_resolution binary_dvs_env, internal_res;
+	enum ia_css_err err;
+
+	assert(info != NULL);
+	assert(binary != NULL);
+
+	binary->info = xinfo;
+	ia_css_isp_param_allocate_isp_parameters(
+		&binary->mem_params, &binary->css_params,
+		&info->mem_initializers);
 
 	if (in_info != NULL && out_info != NULL) {
 		need_scaling = (in_info->res.width != out_info->res.width) ||
 			(in_info->res.height != out_info->res.height);
 	}
 
-	assert(info != NULL);
-	assert(binary != NULL);
 
 	/* binary_dvs_env has to be equal or larger than SH_CSS_MIN_DVS_ENVELOPE */
 	binary_dvs_env.width = 0;
@@ -426,15 +434,15 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		binary->out_frame_info.format        = out_info->format;
 	}
 
-	if (vf_info != NULL) {
-		enum ia_css_err err;
-		err = sh_css_vf_downscale_log2(out_info, vf_info, &vf_log_ds);
-		if (err != IA_CSS_SUCCESS)
-			return err;
-		vf_log_ds = min(vf_log_ds, info->max_vf_log_downscale);
-	}
-
+#ifndef IS_ISP_2500_SYSTEM
+	err = ia_css_vf_configure(binary, out_info, vf_info, &vf_log_ds);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+#else
+	(void)err;
+#endif
 	binary->vf_downscale_log2 = vf_log_ds;
+
 	binary->online            = online;
 	binary->input_format      = stream_format;
 
@@ -608,8 +616,6 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		binary->left_padding = 2 * ISP_VEC_NELEMS - info->left_cropping;
 	else
 		binary->left_padding = 0;
-
-	binary->info = xinfo;
 
 	return IA_CSS_SUCCESS;
 }

@@ -60,7 +60,7 @@
 #include "assert_support.h"
 #include "math_support.h"
 #include "ia_css_queue.h"		/* host2sp_enqueue_frame_data() */
-#include "sw_event_global.h"   			/* Event IDs.*/
+#include "sw_event_global.h"			/* Event IDs.*/
 #if !defined(HAS_NO_INPUT_FORMATTER)
 #include "ia_css_ifmtr.h"
 #endif
@@ -222,7 +222,7 @@ static int thread_alive;
 	0,				/* enable */ \
 	0,				/* use_dmem */ \
 	0,				/* use_histogram */ \
-	0, 				/* width */ \
+	0,				/* width */ \
 	0,				/* height */ \
 	0,				/* aligned_width */ \
 	0,				/* aligned_height */ \
@@ -272,8 +272,8 @@ static int thread_alive;
 	NULL,					/* shading_table */ \
 	DEFAULT_PIPELINE,			/* pipeline */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* output_info */ \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* vf_output_info */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* bds_output_info */ \
+	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* vf_output_info */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* out_yuv_ds_input_info */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* vf_yuv_ds_input_info */ \
 	NULL,					/* output_stage */ \
@@ -775,43 +775,6 @@ ia_css_stream_input_format_bits_per_pixel(struct ia_css_stream *stream)
 
 	return bpp;
 }
-/* compute the log2 of the downscale factor needed to get closest
- * to the requested viewfinder resolution on the upper side. The output cannot
- * be smaller than the requested viewfinder resolution.
- */
-enum ia_css_err
-sh_css_vf_downscale_log2(const struct ia_css_frame_info *out_info,
-			 const struct ia_css_frame_info *vf_info,
-			 unsigned int *downscale_log2)
-{
-	unsigned int ds_log2 = 0;
-	unsigned int out_width;
-
-	if ((out_info == NULL) | (vf_info == NULL))
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	out_width = out_info->res.width;
-
-	if (out_width == 0)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	/* downscale until width smaller than the viewfinder width. We don't
-	 * test for the height since the vmem buffers only put restrictions on
-	 * the width of a line, not on the number of lines in a frame.
-	 */
-	while (out_width >= vf_info->res.width) {
-		ds_log2++;
-		out_width /= 2;
-	}
-	/* now width is smaller, so we go up one step */
-	if ((ds_log2 > 0) && (out_width < ia_css_binary_max_vf_width()))
-		ds_log2--;
-	/* TODO: use actual max input resolution of vf_pp binary */
-	if ((out_info->res.width >> ds_log2) >= 2 * ia_css_binary_max_vf_width())
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	*downscale_log2 = ds_log2;
-	return IA_CSS_SUCCESS;
-}
 
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
 static enum ia_css_err
@@ -863,7 +826,7 @@ sh_css_config_input_network(struct ia_css_pipe *pipe,
 		if (pipe->stream->config.mode == IA_CSS_INPUT_MODE_TPG) {
 			/* TODO: move define to proper file in tools */
 			#define GP_ISEL_TPG_MODE 0x90058
-			ia_css_device_store_uint32(GP_ISEL_TPG_MODE, 2);
+			ia_css_device_store_uint32(GP_ISEL_TPG_MODE, 0);
 		}
 #endif
 	}
@@ -1254,6 +1217,7 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_resolution(
 	if (lines_per_frame == 0)
 		return false;
 
+	/* HW needs subpixel info for their settings */
 	isys_stream_descr->input_port_resolution.bits_per_pixel	= bits_per_subpixel;
 	isys_stream_descr->input_port_resolution.pixels_per_line	= max_subpixels_per_line;
 	isys_stream_descr->input_port_resolution.lines_per_frame = lines_per_frame;
@@ -1333,7 +1297,7 @@ static enum ia_css_err stream_register_with_csi_rx(
 
 	if (stream && (stream->last_pipe != NULL)) {
 		if ((stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) &&
-	   	    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY)) {
+		    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY)) {
 			rc = ia_css_pipeline_get_sp_thread_id(
 				ia_css_pipe_get_pipe_num(stream->last_pipe),
 				&sp_thread_id);
@@ -1358,7 +1322,7 @@ static enum ia_css_err stream_unregister_with_csi_rx(
 	if (stream && stream->last_pipe) {
 		me = &stream->last_pipe->pipeline;
 		if ((stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) &&
-	   	    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY) &&
+		    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY) &&
 		    (me->num_stages == 1) &&
 		    (me->stages && me->stages->sp_func == IA_CSS_PIPELINE_ISYS_COPY)) {
 			rc = ia_css_pipeline_get_sp_thread_id(
@@ -1516,6 +1480,8 @@ static enum ia_css_err
 start_copy_on_sp(struct ia_css_pipe *pipe,
 		 struct ia_css_frame *out_frame)
 {
+
+	(void)out_frame;
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
 
@@ -1593,7 +1559,7 @@ static enum ia_css_err start_pipe(
 
 	sh_css_sp_init_pipeline(&me->pipeline,
 				me->mode,
-				ia_css_pipe_get_pipe_num(me),
+				(uint8_t)ia_css_pipe_get_pipe_num(me),
 				me->config.default_capture_config.enable_xnr,
 				me->stream->config.pixels_per_clock == 2,
 				me->stream->config.continuous,
@@ -2232,6 +2198,24 @@ find_pipe_by_num(uint8_t pipe_num)
 	return NULL;
 }
 
+static void sh_css_pipe_free_acc_binaries (
+    struct ia_css_pipe *pipe)
+{
+	unsigned int i;
+	struct ia_css_pipeline *pipeline;
+
+	assert(pipe != NULL);
+	pipeline = &pipe->pipeline;
+
+	/* loop through the stages and unload them */
+	for (i = 0; i < pipeline->num_stages; i++) {
+		struct ia_css_fw_info *firmware = (struct ia_css_fw_info *)
+						pipeline->stages[i].firmware;
+		if (firmware)
+			ia_css_pipe_unload_extension(pipe, firmware);
+	}
+}
+
 enum ia_css_err
 ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 {
@@ -2281,6 +2265,8 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 #endif
 		break;
 	case IA_CSS_PIPE_MODE_ACC:
+		sh_css_pipe_free_acc_binaries(pipe);
+		break;
 	case IA_CSS_PIPE_MODE_COPY:
 		break;
 	}
@@ -2394,7 +2380,7 @@ ia_css_mmu_invalidate_cache(void)
 	sh_css_sp_invalidate_mmu();
 
 	/* if the SP is not running we should not access its dmem */
- 	if (sh_css_sp_is_running())
+	if (sh_css_sp_is_running())
 	{
 		HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb = fw->info.sp.invalidate_tlb;
 
@@ -3811,7 +3797,7 @@ preview_start(struct ia_css_pipe *pipe)
 	if (pipe->stream->config.continuous) {
 		sh_css_sp_init_pipeline(&copy_pipe->pipeline,
 			IA_CSS_PIPE_ID_COPY,
-			ia_css_pipe_get_pipe_num(copy_pipe),
+			(uint8_t)ia_css_pipe_get_pipe_num(copy_pipe),
 			false,
 			pipe->stream->config.pixels_per_clock == 2, false,
 			false, pipe->required_bds_factor,
@@ -3831,7 +3817,7 @@ preview_start(struct ia_css_pipe *pipe)
 	if (pipe->stream->cont_capt) {
 		sh_css_sp_init_pipeline(&capture_pipe->pipeline,
 			IA_CSS_PIPE_ID_CAPTURE,
-			ia_css_pipe_get_pipe_num(capture_pipe),
+			(uint8_t)ia_css_pipe_get_pipe_num(capture_pipe),
 			pipe->config.default_capture_config.enable_xnr,
 			capture_pipe->stream->config.pixels_per_clock == 2,
 			true, /* continuous */
@@ -4172,7 +4158,7 @@ ia_css_dequeue_event(struct ia_css_event *event)
 	if (event == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-        /*TODO:
+	/*TODO:
 	 * a) use generic decoding function , same as the one used by sp.
 	 * b) group decode and dequeue into eventQueue module
 	 */
@@ -4198,7 +4184,7 @@ ia_css_dequeue_event(struct ia_css_event *event)
 	/*  queue contains an event, it is decoded into 4 bytes of payload,
 	 *  convert sp event type in payload to host event type,
 	 *  TODO: can this enum conversion be eliminated */
-        event->type = convert_event_sp_to_host_domain[payload[0]];
+	event->type = convert_event_sp_to_host_domain[payload[0]];
 	pipe_id = (enum ia_css_pipe_id)payload[2];
 
 	if (event->type != IA_CSS_EVENT_TYPE_PORT_EOF) {
@@ -4645,8 +4631,8 @@ static enum ia_css_err alloc_frame_from_file(
 	err = fseek(fp, 0, SEEK_END);
 	if (err) {
 		fclose(fp);
-	  	printf("Error: Fseek error\n");
-	  	return 1;
+		printf("Error: Fseek error\n");
+		return 1;
 	}
 	len = ftell(fp);
 
@@ -4939,7 +4925,7 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	if (pipe->stream->config.continuous) {
 		sh_css_sp_init_pipeline(&copy_pipe->pipeline,
 			IA_CSS_PIPE_ID_COPY,
-			ia_css_pipe_get_pipe_num(copy_pipe),
+			(uint8_t)ia_css_pipe_get_pipe_num(copy_pipe),
 			false,
 			pipe->stream->config.pixels_per_clock == 2, false,
 			false, pipe->required_bds_factor,
@@ -4959,7 +4945,7 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	if (pipe->stream->cont_capt) {
 		sh_css_sp_init_pipeline(&capture_pipe->pipeline,
 			IA_CSS_PIPE_ID_CAPTURE,
-			ia_css_pipe_get_pipe_num(capture_pipe),
+			(uint8_t)ia_css_pipe_get_pipe_num(capture_pipe),
 			pipe->config.default_capture_config.enable_xnr,
 			capture_pipe->stream->config.pixels_per_clock == 2,
 			true, /* continuous */
@@ -6053,7 +6039,7 @@ ia_css_mipi_frame_specify(const unsigned int size_mem_words,
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 
-	my_css.size_mem_words 	= size_mem_words;
+	my_css.size_mem_words	= size_mem_words;
 	my_css.contiguous		= contiguous;
 
 
@@ -6100,7 +6086,7 @@ ia_css_mipi_frame_calculate_size(const unsigned int width,
 
 	switch (format) {
 		case IA_CSS_STREAM_FORMAT_RAW_6:			/* 4p, 3B, 24bits */
-			bits_per_pixel = 6; 	break;
+			bits_per_pixel = 6;	break;
 		case IA_CSS_STREAM_FORMAT_RAW_7:			/* 8p, 7B, 56bits */
 			bits_per_pixel = 7;		break;
 		case IA_CSS_STREAM_FORMAT_RAW_8:			/* 1p, 1B, 8bits */
@@ -6145,13 +6131,13 @@ ia_css_mipi_frame_calculate_size(const unsigned int width,
    /*  a frame represented in memory:  ()- optional; data - payload words.
 	*  addr		0		1		2		3		4		5		6		7:
 	*  first	SOF		(SOL)	PACK_H	data	data	data	data	data
-	*          	data	data	data	data	data	data	data	data
+	*	data	data	data	data	data	data	data	data
 	*           ...
-	*			data 	data	0		0		0		0		0		0
+	*			data	data	0		0		0		0		0		0
 	*  second   (EOL)	(SOL)	PACK_H	data	data	data	data	data
-	*          	data	data	data	data	data	data	data	data
+	*	data	data	data	data	data	data	data	data
 	*           ...
-	*			data 	data	0		0		0		0		0		0
+	*			data	data	0		0		0		0		0		0
 	*  ...
 	*  last		(EOL)	EOF		0		0		0		0		0		0
 	*
@@ -6160,19 +6146,19 @@ ia_css_mipi_frame_calculate_size(const unsigned int width,
 	*/
 
 
-	words_per_odd_line 	 = ((odd_line_bytes   + 3) >> 2 ); 		/* ceil(odd_line_bytes/4); word = 4 bytes */
+	words_per_odd_line	 = ((odd_line_bytes   + 3) >> 2 );		/* ceil(odd_line_bytes/4); word = 4 bytes */
 	words_per_even_line  = ((even_line_bytes  + 3) >> 2 );
     words_for_first_line = words_per_odd_line + 2 + (hasSOLandEOL ? 1 : 0); /* + SOF +packet header + optionally (SOL), but (EOL) is not in the first line */
-	words_per_odd_line 	+= (1 + (hasSOLandEOL ? 2 : 0));  /* each non-first line has format header, and optionally (SOL) and (EOL). */
+	words_per_odd_line	+= (1 + (hasSOLandEOL ? 2 : 0));  /* each non-first line has format header, and optionally (SOL) and (EOL). */
 	words_per_even_line += (1 + (hasSOLandEOL ? 2 : 0));
 
-	mem_words_per_odd_line 	 = ((words_per_odd_line + 7) >> 3); 	/* ceil(words_per_odd_line/8); mem_word = 32 bytes, 8 words */
+	mem_words_per_odd_line	 = ((words_per_odd_line + 7) >> 3);	/* ceil(words_per_odd_line/8); mem_word = 32 bytes, 8 words */
 	mem_words_for_first_line = ((words_for_first_line + 7) >> 3);
 	mem_words_per_even_line  = ((words_per_even_line + 7) >> 3);
 	mem_words_for_EOF        = 1; /* last line consisit of the optional (EOL) and EOF */
 
 	mem_words = ((embedded_data_size_words + 7) >> 3) +
-                mem_words_for_first_line +
+		mem_words_for_first_line +
 				(((height + 1) >> 1) - 1) * mem_words_per_odd_line + /* ceil (height/2) - 1 (first line is calculated separatelly) */
 				(  height      >> 1     ) * mem_words_per_even_line + /* floor(height/2) */
 				mem_words_for_EOF;
@@ -6762,11 +6748,11 @@ ia_css_pipe_create_extra(const struct ia_css_pipe_config *config,
 	}
 	/* handle bayer downscaling output info */
 	if (internal_pipe->config.bayer_ds_out_res.width) {
-	                ia_css_frame_info_init(
-	                        &internal_pipe->bds_output_info,
-	                        internal_pipe->config.bayer_ds_out_res.width,
-	                        internal_pipe->config.bayer_ds_out_res.height,
-	                        IA_CSS_FRAME_FORMAT_RAW, 0);
+			ia_css_frame_info_init(
+				&internal_pipe->bds_output_info,
+				internal_pipe->config.bayer_ds_out_res.width,
+				internal_pipe->config.bayer_ds_out_res.height,
+				IA_CSS_FRAME_FORMAT_RAW, 0);
 	}
 	/* handle output info, asume always needed */
 	if (internal_pipe->config.output_info.res.width) {
@@ -7553,7 +7539,8 @@ void ia_css_pipe_get_bds_resolution(const struct ia_css_pipe *pipe, struct ia_cs
 {
 	assert(pipe != NULL);
 
-	*res = (struct ia_css_resolution)pipe->bds_output_info.res;
+	*res = pipe->bds_output_info.res;
+
 }
 #endif
 

@@ -105,7 +105,7 @@ STORAGE_CLASS_CSI_RX_C void csi_rx_fe_ctrl_dump_state(
 	ia_css_print("CSI RX FE STATE Controller %d Enable state 0x%x \n", ID, state->enable);
 	ia_css_print("CSI RX FE STATE Controller %d No Of enable lanes 0x%x \n", ID, state->nof_enable_lanes);
 	ia_css_print("CSI RX FE STATE Controller %d Error handling 0x%x \n", ID, state->error_handling);
-	ia_css_print("CSI RX FE STATE Controller %d Status 0x%x \n", state->status);
+	ia_css_print("CSI RX FE STATE Controller %d Status 0x%x \n", ID, state->status);
 	ia_css_print("CSI RX FE STATE Controller %d Status Dlane HS 0x%x \n", ID, state->status_dlane_hs);
 	ia_css_print("CSI RX FE STATE Controller %d Status Dlane LP 0x%x \n", ID, state->status_dlane_lp);
 	ia_css_print("CSI RX FE STATE Controller %d Status term enable LP 0x%x \n", ID, state->clane.termen);

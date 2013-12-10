@@ -36,6 +36,7 @@
 #include "ia_css_debug.h"
 #include "ia_css_debug_pipe.h"
 #include "ia_css_stream.h"
+#include "ia_css_isp_param.h"
 #include "sh_css_params.h"
 #include "sh_css_legacy.h"
 #include "ia_css_frame_comm.h"
@@ -816,7 +817,7 @@ sh_css_sp_init_group(bool two_ppc,
 	(void)two_ppc;
 #endif
 
-	sh_css_sp_group.config.no_isp_sync = no_isp_sync;
+	sh_css_sp_group.config.no_isp_sync = (uint8_t)no_isp_sync;
 	/* decide whether the frame is processed online or offline */
 	if (if_config_index == SH_CSS_IF_CONFIG_NOT_NEEDED) return;
 #if !defined(HAS_NO_INPUT_FORMATTER)
@@ -834,6 +835,15 @@ sh_css_stage_write_binary_info(struct ia_css_binary_info *info)
 	sh_css_isp_stage.binary_info = *info;
 }
 
+static enum ia_css_err
+copy_isp_config_to_ddr(struct ia_css_binary *binary)
+{
+	return ia_css_isp_param_copy_isp_config_to_ddr(
+		&binary->css_params,
+		&binary->mem_params,
+		IA_CSS_PARAM_CLASS_CONFIG);
+}
+
 static bool
 is_sp_stage(struct ia_css_pipeline_stage *stage)
 {
@@ -849,7 +859,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		    unsigned int pipe_num,
 		    unsigned stage,
 		    bool xnr,
-		    const struct ia_css_data *isp_mem_if,
+		    const struct ia_css_isp_param_css_segments *isp_mem_if,
 		    unsigned int if_config_index)
 {
 	const struct ia_css_binary_xinfo *xinfo;
@@ -894,9 +904,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	 */
 	sh_css_sp_stage.stage_type = SH_CSS_ISP_STAGE_TYPE;
 	sh_css_sp_stage.num		= (uint8_t)stage;
-	sh_css_sp_stage.isp_online	= binary->online;
-	sh_css_sp_stage.isp_copy_vf     = args->copy_vf;
-	sh_css_sp_stage.isp_copy_output = args->copy_output;
+	sh_css_sp_stage.isp_online	= (uint8_t)binary->online;
+	sh_css_sp_stage.isp_copy_vf     = (uint8_t)args->copy_vf;
+	sh_css_sp_stage.isp_copy_output = (uint8_t)args->copy_output;
 	sh_css_sp_stage.enable.vf_output = (args->out_vf_frame != NULL);
 
 	/* Copy the frame infos first, to be overwritten by the frames,
@@ -919,7 +929,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 
 	sh_css_sp_stage.if_config_index = (uint8_t) if_config_index;
 
-	sh_css_sp_stage.sp_enable_xnr = xnr;
+	sh_css_sp_stage.sp_enable_xnr = (uint8_t)xnr;
 	sh_css_sp_stage.xmem_bin_addr = xinfo->xmem_addr;
 	sh_css_sp_stage.xmem_map_addr = sh_css_params_ddr_address_map();
 	sh_css_isp_stage.blob_info = *blob_info;
@@ -968,6 +978,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		sh_css_sp_stage.frames.out.info.height
 			<<= binary->vf_downscale_log2;
 	}
+	err = copy_isp_config_to_ddr(binary);
+	if (err != IA_CSS_SUCCESS)
+		return err;
 
 	return IA_CSS_SUCCESS;
 }
@@ -990,18 +1003,17 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 	const struct ia_css_binary_xinfo *info = NULL;
 	struct ia_css_binary tmp_binary;
 	const struct ia_css_blob_info *blob_info = NULL;
-	struct ia_css_data isp_mem_if[IA_CSS_NUM_ISP_MEMORIES];
-	/* LA: should be ia_css_data, should not caontain host pointer.
+	struct ia_css_isp_param_css_segments isp_mem_if;
+	/* LA: should be ia_css_data, should not contain host pointer.
 	   However, CSS/DDR pointer is not available yet.
 	   Hack is to store it in params->ddr_ptrs and then copy it late in the SP just before vmem init.
 	   TODO: Call this after CSS/DDR allocation and store that pointer.
 	   Best is to allocate it at stage creation time together with host pointer.
 	   Remove vmem from params.
 	*/
-	const struct ia_css_data *mem_if = isp_mem_if;
+	struct ia_css_isp_param_css_segments *mem_if = &isp_mem_if;
 
 	enum ia_css_err err = IA_CSS_SUCCESS;
-	unsigned mem;
 
 	assert(stage != NULL);
 
@@ -1010,16 +1022,12 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 	args = &stage->args;
 	stage_num = stage->stage_num;;
 
-	memset(isp_mem_if, 0, sizeof(isp_mem_if));
-	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
-		if (!stage->isp_mem_params[mem].address) continue;
-		isp_mem_if[mem].size = stage->isp_mem_params[mem].size;
-	}
 
 	if (binary) {
 		info = binary->info;
 		binary_name = (const char *)(info->blob->name);
 		blob_info = &info->blob->header.blob;
+		ia_css_init_memory_interface(mem_if, &binary->mem_params, &binary->css_params);
 	} else if (firmware) {
 		info = &firmware->info.isp;
 		ia_css_binary_fill_info(info, false, false,
@@ -1036,7 +1044,7 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 		binary->info = info;
 		binary_name = IA_CSS_EXT_ISP_PROG_NAME(firmware);
 		blob_info = &firmware->blob;
-		mem_if = firmware->mem_initializers;
+		mem_if = (struct ia_css_isp_param_css_segments *)&firmware->mem_initializers;
 	} else {
 	    /* SP stage */
 	    assert (stage->sp_func != IA_CSS_PIPELINE_NO_FUNC);

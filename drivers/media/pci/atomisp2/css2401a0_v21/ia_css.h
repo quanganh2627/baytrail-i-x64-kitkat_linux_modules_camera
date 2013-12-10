@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131205_0815 */
+/* Release Version: ci_master_20131207_1549 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -804,7 +804,8 @@ struct ia_css_acc_fw;
 struct ia_css_cpu_mem_env {
 	void *(*alloc)(size_t bytes, bool zero_mem);
 	/**< Allocation function with boolean argument to indicate whether
-	     the allocated memory should be zeroed out or not. */
+	     the allocated memory should be zeroed out or not, true (or 1)
+	     meaning the memory given to CSS must be zeroed */
 	void (*free)(void *ptr); /**< Corresponding free function. */
 	void (*flush) (struct ia_css_acc_fw *fw);
 	/**< Flush function to flush the cache for given accelerator. */
