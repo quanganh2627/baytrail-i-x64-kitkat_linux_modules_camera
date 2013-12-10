@@ -1976,10 +1976,10 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 {
 	int i , num_sets,size_of_set,index=0;
 
-	af_private_config_t	 	af_acc_cfg;
-	awb_fr_private_config_t 	awb_fr_acc_cfg;
-	ae_grid_config_t 		ae_acc_grd_cfg;
-	awb_private_config_t	 	awb_acc_grd_cfg;
+	af_private_config_t		af_acc_cfg;
+	awb_fr_private_config_t		awb_fr_acc_cfg;
+	ae_private_direct_config_t	ae_acc_grd_cfg;
+	awb_private_config_t		awb_acc_grd_cfg;
 
 	hrt_vaddress af_ddr_addr = (hrt_vaddress)(long int)&(((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->af_raw_buffer);
 	hrt_vaddress awb_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->awb_raw_buffer;
@@ -2020,7 +2020,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 							 sizeof(awb_fr_private_config_t));
 		mmgr_load(ae_cfg_ddr_addr,
 							(void*)&(ae_acc_grd_cfg),
-							 sizeof(ae_grid_config_t));
+							 sizeof(ae_private_direct_config_t));
 		mmgr_load(awb_cfg_ddr_addr,
 								(void*)&(awb_acc_grd_cfg),
 								 sizeof(awb_private_config_t));
@@ -2028,34 +2028,34 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 		/* Translate between private and public
 		 * TODO - make this more general, redefine the structs */
 
-		host_stats->stats_4a_config->af_grd_config.grid_width		= af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.grid_width;
-		host_stats->stats_4a_config->af_grd_config.grid_height	 	= af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.grid_height;
-		host_stats->stats_4a_config->af_grd_config.x_start 			= af_acc_cfg.ff_af_config.y_grid_config.grd_start.x_start;
-		host_stats->stats_4a_config->af_grd_config.y_start			= af_acc_cfg.ff_af_config.y_grid_config.grd_start.y_start;
-		host_stats->stats_4a_config->af_grd_config.block_width	 	= af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.block_width;
-		host_stats->stats_4a_config->af_grd_config.block_height		= af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.block_height;
+		host_stats->stats_4a_config->af_grd_config.grid_width		= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.grid_width;
+		host_stats->stats_4a_config->af_grd_config.grid_height	 	= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.grid_height;
+		host_stats->stats_4a_config->af_grd_config.x_start 		= (unsigned short)af_acc_cfg.ff_af_config.y_grid_config.grd_start.x_start;
+		host_stats->stats_4a_config->af_grd_config.y_start		= (unsigned short)af_acc_cfg.ff_af_config.y_grid_config.grd_start.y_start;
+		host_stats->stats_4a_config->af_grd_config.block_width	 	= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.block_width;
+		host_stats->stats_4a_config->af_grd_config.block_height		= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.block_height;
 
 
-		host_stats->stats_4a_config->awb_fr_grd_config.grid_width	= awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.grid_width;
-		host_stats->stats_4a_config->awb_fr_grd_config.grid_height	= awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.grid_height;
-		host_stats->stats_4a_config->awb_fr_grd_config.x_start		= awb_fr_acc_cfg.bayer_config.BAYER_GRD_START_Info_t.x_start;
-		host_stats->stats_4a_config->awb_fr_grd_config.y_start		= awb_fr_acc_cfg.bayer_config.BAYER_GRD_START_Info_t.y_start;
-		host_stats->stats_4a_config->awb_fr_grd_config.block_width	= awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.block_width;
-		host_stats->stats_4a_config->awb_fr_grd_config.block_height = awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.block_height;
+		host_stats->stats_4a_config->awb_fr_grd_config.grid_width	= (unsigned char)awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.grid_width;
+		host_stats->stats_4a_config->awb_fr_grd_config.grid_height	= (unsigned char)awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.grid_height;
+		host_stats->stats_4a_config->awb_fr_grd_config.x_start		= (unsigned short)awb_fr_acc_cfg.bayer_config.BAYER_GRD_START_Info_t.x_start;
+		host_stats->stats_4a_config->awb_fr_grd_config.y_start		= (unsigned short)awb_fr_acc_cfg.bayer_config.BAYER_GRD_START_Info_t.y_start;
+		host_stats->stats_4a_config->awb_fr_grd_config.block_width	= (unsigned char)awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.block_width;
+		host_stats->stats_4a_config->awb_fr_grd_config.block_height	= (unsigned char)awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.block_height;
 
 		host_stats->stats_4a_config->ae_grd_config.grid_height 		= ae_acc_grd_cfg.grid_height;
 		host_stats->stats_4a_config->ae_grd_config.grid_width  		= ae_acc_grd_cfg.grid_width;
 		host_stats->stats_4a_config->ae_grd_config.x_start  		= ae_acc_grd_cfg.x_start;
-		host_stats->stats_4a_config->ae_grd_config.y_start			= ae_acc_grd_cfg.y_start;
+		host_stats->stats_4a_config->ae_grd_config.y_start		= ae_acc_grd_cfg.y_start;
 		host_stats->stats_4a_config->ae_grd_config.block_width		= ae_acc_grd_cfg.block_width;
 		host_stats->stats_4a_config->ae_grd_config.block_height		= ae_acc_grd_cfg.block_height;
 
-		host_stats->stats_4a_config->awb_grd_config.grid_height 	= awb_acc_grd_cfg.rgbs_grd_cfg.grid_height;
-		host_stats->stats_4a_config->awb_grd_config.grid_width  	= awb_acc_grd_cfg.rgbs_grd_cfg.grid_width;
+		host_stats->stats_4a_config->awb_grd_config.grid_height 	= (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.grid_height;
+		host_stats->stats_4a_config->awb_grd_config.grid_width  	= (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.grid_width;
 		host_stats->stats_4a_config->awb_grd_config.grid_x_start	= awb_acc_grd_cfg.rgbs_grd_start.x_start;
 		host_stats->stats_4a_config->awb_grd_config.grid_y_start	= awb_acc_grd_cfg.rgbs_grd_start.y_start;
-		host_stats->stats_4a_config->awb_grd_config.grid_block_width= awb_acc_grd_cfg.rgbs_grd_cfg.block_width;
-		host_stats->stats_4a_config->awb_grd_config.grid_block_height= awb_acc_grd_cfg.rgbs_grd_cfg.block_height;
+		host_stats->stats_4a_config->awb_grd_config.grid_block_width	= (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.block_width;
+		host_stats->stats_4a_config->awb_grd_config.grid_block_height	= (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.block_height;
 
 
 		/* Debubble -  removes bubbles between sets of statistics for AWB, AWB_FR, AF caused by the ACC */
@@ -2813,10 +2813,10 @@ ia_css_isp_dvs2_statistics_free(struct ia_css_isp_dvs_statistics *me)
 	}
 }
 
-struct ia_css_data *
+struct ia_css_metadata *
 ia_css_metadata_allocate(unsigned int size)
 {
-	struct ia_css_data *md = NULL;
+	struct ia_css_metadata *md = NULL;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_metadata_allocate() enter: size=%p\n", size);
@@ -2849,7 +2849,7 @@ error:
 }
 
 void
-ia_css_metadata_free(struct ia_css_data *me)
+ia_css_metadata_free(struct ia_css_metadata *me)
 {
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_metadata_free() enter: me=%p\n", me);
@@ -3114,7 +3114,7 @@ void sh_css_params_reconfigure_gdc_lut(void)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_reconfigure_gdc_lut() enter: void\n");
 
 	for (i = 0; i < N_GDC_ID; i++)
-		gdc_lut_store(GDC0_ID, zoom_table);
+		gdc_lut_store((gdc_ID_t)i, zoom_table);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_reconfigure_gdc_lut() leave: return_void\n");
 }
@@ -4798,7 +4798,6 @@ ia_css_dvs2_coefficients_allocate(const struct ia_css_dvs_grid_info *grid)
 	if (!me)
 		goto err;
 
-	memset(me, 0, sizeof(*me));
 	me->grid = *grid;
 
 	me->hor_coefs.odd_real = sh_css_malloc(grid->num_hor_coefs *

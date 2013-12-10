@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131130_2109 */
+/* Release Version: ci_master_20131205_0815 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -344,6 +344,14 @@ struct ia_css_metadata_config {
 			data. */
 	unsigned int	size;       /**< Size of metadata in bytes. Set to 0 for no
 			metadata. Currently supported metadata size is up to 256 bytes. */
+};
+
+/** Structure that holds metadata.
+ */
+struct ia_css_metadata {
+	ia_css_ptr	address; /* CSS virtual address */
+	uint32_t	size;
+	uint32_t	exp_id;
 };
 
 /** Input stream description. This describes how input will flow into the
@@ -703,6 +711,7 @@ struct ia_css_isp_3a_statistics {
 	struct {
 		ia_css_ptr rgby_tbl;
 	} data_hmem;
+	uint32_t exp_id;
 };
 
 /** Structure that holds DVS statistics in the ISP internal
@@ -714,6 +723,7 @@ struct ia_css_isp_dvs_statistics {
 	ia_css_ptr ver_proj;
 	uint32_t   hor_size;
 	uint32_t   ver_size;
+	uint32_t   exp_id;
 };
 
 struct ia_css_properties {
@@ -896,7 +906,7 @@ struct ia_css_buffer {
 		struct ia_css_isp_dvs_statistics *stats_dvs;   /**< DVS statistics. */
 		struct ia_css_frame              *frame;       /**< Frame buffer. */
 		struct ia_css_acc_param          *custom_data; /**< Custom buffer. */
-		struct ia_css_data               *metadata;    /**< Sensor metadata. */
+		struct ia_css_metadata           *metadata;    /**< Sensor metadata. */
 	} data; /**< Buffer data pointer. */
 };
 
@@ -1505,7 +1515,7 @@ ia_css_frame_map(struct ia_css_frame **frame,
  * Because of DMA requirement, this function rounds up buffer size to be
  * multiple of 32 bytes before allocating the physical memory.
  */
-struct ia_css_data *
+struct ia_css_metadata *
 ia_css_metadata_allocate(unsigned int size);
 
 /** @brief Free a metadata buffer.
@@ -1515,7 +1525,7 @@ ia_css_metadata_allocate(unsigned int size);
  * This function frees a metadata buffer.
  */
 void
-ia_css_metadata_free(struct ia_css_data *metadata);
+ia_css_metadata_free(struct ia_css_metadata *metadata);
 
 /** @brief Unmap a CSS frame structure.
  *

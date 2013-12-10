@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131130_2109 */
+/* Release Version: ci_master_20131205_0815 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *

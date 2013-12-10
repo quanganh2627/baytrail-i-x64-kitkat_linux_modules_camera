@@ -43,7 +43,7 @@ struct firmware_header {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-static const char* release_version = STR(ci_master_20131130_2109);
+static const char* release_version = STR(ci_master_20131205_0815);
 
 struct ia_css_fw_info	  sh_css_sp_fw;
 struct ia_css_blob_descr *sh_css_blob_info; /* Only ISP blob info (no SP) */

@@ -448,22 +448,6 @@ struct sh_css {
 int (*sh_css_printf) (const char *fmt, va_list args) = NULL;
 
 static struct sh_css my_css;
-/* static variables, temporarily used in load_<mode>_binaries.
-   Declaring these inside the functions increases the size of the
-   stack frames beyond the acceptable 128 bytes. */
-static struct ia_css_binary_descr preview_descr,
-				  vf_pp_descr,
-				  copy_descr,
-				  prim_descr,
-				  pre_gdc_descr,
-				  gdc_descr,
-				  post_gdc_descr,
-				  pre_anr_descr,
-				  pre_de_descr,
-				  anr_descr,
-				  post_anr_descr,
-				  video_descr,
-				  capture_pp_descr;
 
 /* pqiao NOTICE: this is for css internal buffer recycling when stopping pipeline,
    this array is temporary and will be replaced by resource manager*/
@@ -2248,24 +2232,6 @@ find_pipe_by_num(uint8_t pipe_num)
 	return NULL;
 }
 
-static void sh_css_pipe_free_acc_binaries (
-    struct ia_css_pipe *pipe)
-{
-	unsigned int i;
-	struct ia_css_pipeline *pipeline;
-
-	assert(pipe != NULL);
-	pipeline = &pipe->pipeline;
-
-	/* loop through the stages and unload them */
-	for (i = 0; i < pipeline->num_stages; i++) {
-		struct ia_css_fw_info *firmware = (struct ia_css_fw_info *)
-						pipeline->stages[i].firmware;
-		if (firmware)
-			ia_css_pipe_unload_extension(pipe, firmware);
-	}
-}
-
 enum ia_css_err
 ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 {
@@ -2315,8 +2281,6 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 #endif
 		break;
 	case IA_CSS_PIPE_MODE_ACC:
-		sh_css_pipe_free_acc_binaries(pipe);
-		break;
 	case IA_CSS_PIPE_MODE_COPY:
 		break;
 	}
@@ -2799,6 +2763,7 @@ static enum ia_css_err load_copy_binary(
 	struct ia_css_frame_info copy_out_info, copy_in_info;
 	unsigned int left_padding;
 	enum ia_css_err err;
+	struct ia_css_binary_descr copy_descr;
 
 	/* next_binary can be NULL */
 	assert(pipe != NULL);
@@ -3145,16 +3110,22 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 		ia_css_frame_info_set_format(&prev_vf_info,
 					     IA_CSS_FRAME_FORMAT_YUV_LINE);
 
-	err = ia_css_pipe_get_preview_binarydesc(pipe, &preview_descr,
-		&prev_in_info, &prev_bds_out_info, &prev_out_info, &prev_vf_info);
-	if (err != IA_CSS_SUCCESS)
-		return err;
-	err = ia_css_binary_find(&preview_descr,
-				 &pipe->pipe_settings.preview.preview_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr preview_descr;
+
+		err = ia_css_pipe_get_preview_binarydesc(pipe, &preview_descr,
+			&prev_in_info, &prev_bds_out_info, &prev_out_info, &prev_vf_info);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+		err = ia_css_binary_find(&preview_descr,
+					 &pipe->pipe_settings.preview.preview_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	if (need_vf_pp) {
+		struct ia_css_binary_descr vf_pp_descr;
+
 		/* Viewfinder post-processing */
 		ia_css_pipe_get_vfpp_binarydesc(pipe, &vf_pp_descr,
 			&pipe->pipe_settings.preview.preview_binary.out_frame_info,
@@ -3566,7 +3537,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 
 	/* when the video binary supports only 1 output pin, vf_pp is needed to
 	produce the vf_frame.*/
-	if (need_vf_pp) {
+	if (need_vf_pp && video_stage) {
 		err = add_vf_pp_stage(pipe, vf_frame, vf_pp_binary,
 				      video_stage, &vf_pp_stage);
 		if (err != IA_CSS_SUCCESS)
@@ -3919,6 +3890,8 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 	ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(pipe), &thread_id);
 
 	sh_css_query_internal_queue_id(buf_type, &queue_id);
+	if ((queue_id < 0) || (queue_id > sh_css_buffer_queue_id_last))
+			return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	pipeline = &pipe->pipeline;
 
@@ -3928,7 +3901,6 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 
 	assert(sizeof(NULL) <= sizeof(ddr_buffer.kernel_ptr));
 	ddr_buffer.kernel_ptr = HOST_ADDRESS(NULL);
-	ddr_buffer.exp_id = 0;
 
 	if (buf_type == IA_CSS_BUFFER_TYPE_3A_STATISTICS) {
 		if (buffer->data.stats_3a == NULL)
@@ -4056,6 +4028,8 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 	ddr_buffer.kernel_ptr = 0;
 
 	sh_css_query_internal_queue_id(buf_type, &queue_id);
+	if ((queue_id < 0) || (queue_id > sh_css_buffer_queue_id_last))
+			return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	rc = sp2host_dequeue_buffer(0,
 				0,
@@ -4091,7 +4065,9 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 		if (ddr_buffer.kernel_ptr == 0)
 			rc = false;
 		else {
-			buffer->exp_id = ddr_buffer.exp_id;
+			/* buffer->exp_id : all instances to be removed later once the driver change
+			 * is completed. See patch #5758 for reference */
+			buffer->exp_id = 0;
 
 			switch (buf_type) {
 			case IA_CSS_BUFFER_TYPE_INPUT_FRAME:
@@ -4104,6 +4080,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			case IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME:
 				frame = (struct ia_css_frame*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
 				buffer->data.frame = frame;
+				buffer->exp_id = ddr_buffer.payload.frame.exp_id;
 				if (ddr_buffer.payload.frame.exp_id)
 					frame->exp_id = ddr_buffer.payload.frame.exp_id;
 				if (ddr_buffer.payload.frame.flashed == 1)
@@ -4124,14 +4101,23 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			case IA_CSS_BUFFER_TYPE_3A_STATISTICS:
 				buffer->data.stats_3a =
 					(struct ia_css_isp_3a_statistics*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
+				buffer->exp_id = ddr_buffer.payload.s3a.exp_id;
+				if (ddr_buffer.payload.s3a.exp_id)
+					buffer->data.stats_3a->exp_id = ddr_buffer.payload.s3a.exp_id;
 				break;
 			case IA_CSS_BUFFER_TYPE_DIS_STATISTICS:
 				buffer->data.stats_dvs =
 					(struct ia_css_isp_dvs_statistics*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
+				buffer->exp_id = ddr_buffer.payload.dis.exp_id;
+				if (ddr_buffer.payload.dis.exp_id)
+					buffer->data.stats_dvs->exp_id = ddr_buffer.payload.dis.exp_id;
 				break;
 			case IA_CSS_BUFFER_TYPE_METADATA:
 				buffer->data.metadata =
-					(struct ia_css_data*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
+					(struct ia_css_metadata*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
+				buffer->exp_id = ddr_buffer.payload.metadata.exp_id;
+				if (ddr_buffer.payload.metadata.exp_id)
+					buffer->data.metadata->exp_id = ddr_buffer.payload.metadata.exp_id;
 				break;
 			default:
 				rc = false;
@@ -4786,16 +4772,21 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	else {
 		video_vf_info = NULL;
 	}
-	err = ia_css_pipe_get_video_binarydesc(pipe,
-		&video_descr, &video_in_info, &video_bds_out_info, video_vf_info,
-		pipe->stream->config.left_padding);
-	if (err != IA_CSS_SUCCESS)
-		return err;
 
-	err = ia_css_binary_find(&video_descr,
-				 &pipe->pipe_settings.video.video_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr video_descr;
+
+		err = ia_css_pipe_get_video_binarydesc(pipe,
+			&video_descr, &video_in_info, &video_bds_out_info, video_vf_info,
+			pipe->stream->config.left_padding);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+
+		err = ia_css_binary_find(&video_descr,
+					 &pipe->pipe_settings.video.video_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	num_output_pins = pipe->pipe_settings.video.video_binary.info->num_output_pins;
 	/* This is where we set the flag for invalid first frame */
@@ -4822,6 +4813,8 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	if (pipe->enable_viewfinder &&  // only when viewfinder is enabled.
 	   ((num_output_pins == 1)        // when the binary has a single output pin, we need vf_pp
       || ((num_output_pins == 2) && resolution_differs)) ) { // when the binary has dual output pin, we only need vf_pp in case the resolution is different.
+		struct ia_css_binary_descr vf_pp_descr;
+
 		ia_css_pipe_get_vfpp_binarydesc(pipe, &vf_pp_descr,
 			&pipe->pipe_settings.video.video_binary.vf_frame_info,
 			&pipe->vf_output_info);
@@ -5121,7 +5114,7 @@ static enum ia_css_err load_primary_binaries(
 	struct ia_css_capture_settings *mycs;
 
 	assert(pipe != NULL);
-    mycs = &pipe->pipe_settings.capture;
+	mycs = &pipe->pipe_settings.capture;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "load_primary_binaries() enter:\n");
 
 	if (mycs->primary_binary.info)
@@ -5142,6 +5135,7 @@ static enum ia_css_err load_primary_binaries(
 	/* we build up the pipeline starting at the end */
 	/* Capture post-processing */
 	if (need_pp) {
+		struct ia_css_binary_descr capture_pp_descr;
 		ia_css_pipe_get_capturepp_binarydesc(pipe,
 			&capture_pp_descr, &prim_out_info, &vf_info);
 		err = ia_css_binary_find(&capture_pp_descr,
@@ -5153,11 +5147,15 @@ static enum ia_css_err load_primary_binaries(
 	}
 
 	/* Primary */
-	ia_css_pipe_get_primary_binarydesc(pipe,
-		&prim_descr, &prim_in_info, &prim_out_info, &vf_info);
-	err = ia_css_binary_find(&prim_descr, &mycs->primary_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr prim_descr;
+
+		ia_css_pipe_get_primary_binarydesc(pipe,
+			&prim_descr, &prim_in_info, &prim_out_info, &vf_info);
+		err = ia_css_binary_find(&prim_descr, &mycs->primary_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	/* Viewfinder post-processing */
 	if (need_pp) {
@@ -5168,11 +5166,15 @@ static enum ia_css_err load_primary_binaries(
 		    &mycs->primary_binary.vf_frame_info;
 	}
 
-	ia_css_pipe_get_vfpp_binarydesc(pipe,
-		&vf_pp_descr, vf_pp_in_info, &pipe->vf_output_info);
-	err = ia_css_binary_find(&vf_pp_descr, &mycs->vf_pp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr vf_pp_descr;
+
+		ia_css_pipe_get_vfpp_binarydesc(pipe,
+			&vf_pp_descr, vf_pp_in_info, &pipe->vf_output_info);
+		err = ia_css_binary_find(&vf_pp_descr, &mycs->vf_pp_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	/* ISP Copy */
 	if (!online && !continuous && !memory) {
@@ -5213,6 +5215,8 @@ static enum ia_css_err load_advanced_binaries(
 	/* we build up the pipeline starting at the end */
 	/* Capture post-processing */
 	if (need_pp) {
+		struct ia_css_binary_descr capture_pp_descr;
+
 		ia_css_pipe_get_capturepp_binarydesc(pipe,
 			&capture_pp_descr, &post_out_info, &vf_info);
 		err = ia_css_binary_find(&capture_pp_descr,
@@ -5224,30 +5228,42 @@ static enum ia_css_err load_advanced_binaries(
 	}
 
 	/* Post-gdc */
-	ia_css_pipe_get_post_gdc_binarydesc(pipe,
-		&post_gdc_descr, &post_in_info, &post_out_info, &vf_info);
-	err = ia_css_binary_find(&post_gdc_descr,
-				 &pipe->pipe_settings.capture.post_isp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr post_gdc_descr;
+
+		ia_css_pipe_get_post_gdc_binarydesc(pipe,
+			&post_gdc_descr, &post_in_info, &post_out_info, &vf_info);
+		err = ia_css_binary_find(&post_gdc_descr,
+					 &pipe->pipe_settings.capture.post_isp_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	/* Gdc */
-	ia_css_pipe_get_gdc_binarydesc(pipe, &gdc_descr, &gdc_in_info,
-		       &pipe->pipe_settings.capture.post_isp_binary.in_frame_info);
-	err = ia_css_binary_find(&gdc_descr,
-				 &pipe->pipe_settings.capture.anr_gdc_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr gdc_descr;
+
+		ia_css_pipe_get_gdc_binarydesc(pipe, &gdc_descr, &gdc_in_info,
+			       &pipe->pipe_settings.capture.post_isp_binary.in_frame_info);
+		err = ia_css_binary_find(&gdc_descr,
+					 &pipe->pipe_settings.capture.anr_gdc_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 	pipe->pipe_settings.capture.anr_gdc_binary.left_padding =
 		pipe->pipe_settings.capture.post_isp_binary.left_padding;
 
 	/* Pre-gdc */
-	ia_css_pipe_get_pre_gdc_binarydesc(pipe, &pre_gdc_descr, &pre_in_info,
-			   &pipe->pipe_settings.capture.anr_gdc_binary.in_frame_info);
-	err = ia_css_binary_find(&pre_gdc_descr,
-				 &pipe->pipe_settings.capture.pre_isp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr pre_gdc_descr;
+
+		ia_css_pipe_get_pre_gdc_binarydesc(pipe, &pre_gdc_descr, &pre_in_info,
+				   &pipe->pipe_settings.capture.anr_gdc_binary.in_frame_info);
+		err = ia_css_binary_find(&pre_gdc_descr,
+					 &pipe->pipe_settings.capture.pre_isp_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 	pipe->pipe_settings.capture.pre_isp_binary.left_padding =
 		pipe->pipe_settings.capture.anr_gdc_binary.left_padding;
 
@@ -5260,12 +5276,16 @@ static enum ia_css_err load_advanced_binaries(
 		    &pipe->pipe_settings.capture.post_isp_binary.vf_frame_info;
 	}
 
-	ia_css_pipe_get_vfpp_binarydesc(pipe,
-		&vf_pp_descr, vf_pp_in_info, &pipe->vf_output_info);
-	err = ia_css_binary_find(&vf_pp_descr,
-				 &pipe->pipe_settings.capture.vf_pp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr vf_pp_descr;
+
+		ia_css_pipe_get_vfpp_binarydesc(pipe,
+			&vf_pp_descr, vf_pp_in_info, &pipe->vf_output_info);
+		err = ia_css_binary_find(&vf_pp_descr,
+					 &pipe->pipe_settings.capture.vf_pp_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	/* Copy */
 	err = load_copy_binary(pipe,
@@ -5282,6 +5302,7 @@ static enum ia_css_err load_bayer_isp_binaries(
 {
 	struct ia_css_frame_info pre_isp_in_info;
 	enum ia_css_err err = IA_CSS_SUCCESS;
+	struct ia_css_binary_descr pre_de_descr;
 
 	assert(pipe != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "load_pre_isp_binaries() enter:\n");
@@ -5331,6 +5352,8 @@ static enum ia_css_err load_low_light_binaries(
 	/* we build up the pipeline starting at the end */
 	/* Capture post-processing */
 	if (need_pp) {
+		struct ia_css_binary_descr capture_pp_descr;
+
 		ia_css_pipe_get_capturepp_binarydesc(pipe,
 			&capture_pp_descr, &post_out_info, &vf_info);
 		err = ia_css_binary_find(&capture_pp_descr,
@@ -5342,30 +5365,42 @@ static enum ia_css_err load_low_light_binaries(
 	}
 
 	/* Post-anr */
-	ia_css_pipe_get_post_anr_binarydesc(pipe,
-		&post_anr_descr, &post_in_info, &post_out_info, &vf_info);
-	err = ia_css_binary_find(&post_anr_descr,
-				 &pipe->pipe_settings.capture.post_isp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr post_anr_descr;
+
+		ia_css_pipe_get_post_anr_binarydesc(pipe,
+			&post_anr_descr, &post_in_info, &post_out_info, &vf_info);
+		err = ia_css_binary_find(&post_anr_descr,
+					 &pipe->pipe_settings.capture.post_isp_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	/* Anr */
-	ia_css_pipe_get_anr_binarydesc(pipe, &anr_descr, &anr_in_info,
-			&pipe->pipe_settings.capture.post_isp_binary.in_frame_info);
-	err = ia_css_binary_find(&anr_descr,
-				 &pipe->pipe_settings.capture.anr_gdc_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr anr_descr;
+
+		ia_css_pipe_get_anr_binarydesc(pipe, &anr_descr, &anr_in_info,
+				&pipe->pipe_settings.capture.post_isp_binary.in_frame_info);
+		err = ia_css_binary_find(&anr_descr,
+					 &pipe->pipe_settings.capture.anr_gdc_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 	pipe->pipe_settings.capture.anr_gdc_binary.left_padding =
 		pipe->pipe_settings.capture.post_isp_binary.left_padding;
 
 	/* Pre-anr */
-	ia_css_pipe_get_pre_anr_binarydesc(pipe, &pre_anr_descr, &pre_in_info,
-			   &pipe->pipe_settings.capture.anr_gdc_binary.in_frame_info);
-	err = ia_css_binary_find(&pre_anr_descr,
-			&pipe->pipe_settings.capture.pre_isp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr pre_anr_descr;
+
+		ia_css_pipe_get_pre_anr_binarydesc(pipe, &pre_anr_descr, &pre_in_info,
+				   &pipe->pipe_settings.capture.anr_gdc_binary.in_frame_info);
+		err = ia_css_binary_find(&pre_anr_descr,
+				&pipe->pipe_settings.capture.pre_isp_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 	pipe->pipe_settings.capture.pre_isp_binary.left_padding =
 		pipe->pipe_settings.capture.anr_gdc_binary.left_padding;
 
@@ -5378,12 +5413,16 @@ static enum ia_css_err load_low_light_binaries(
 		    &pipe->pipe_settings.capture.post_isp_binary.vf_frame_info;
 	}
 
-	ia_css_pipe_get_vfpp_binarydesc(pipe,
-		&vf_pp_descr, vf_pp_in_info, &pipe->vf_output_info);
-	err = ia_css_binary_find(&vf_pp_descr,
-				 &pipe->pipe_settings.capture.vf_pp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	{
+		struct ia_css_binary_descr vf_pp_descr;
+
+		ia_css_pipe_get_vfpp_binarydesc(pipe,
+			&vf_pp_descr, vf_pp_in_info, &pipe->vf_output_info);
+		err = ia_css_binary_find(&vf_pp_descr,
+					 &pipe->pipe_settings.capture.vf_pp_binary);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 
 	/* Copy */
 	err = load_copy_binary(pipe,
@@ -7670,4 +7709,3 @@ ia_css_update_continuous_frames(struct ia_css_stream *stream)
 	    IA_CSS_DEBUG_TRACE,
 	    "sh_css_update_continuous_frames() leave: return_void\n");
 }
-

@@ -58,9 +58,19 @@ void ia_css_pipe_get_copy_binarydesc(
 
 	copy_descr->mode = IA_CSS_BINARY_MODE_COPY;
 	copy_descr->online = true;
-	copy_descr->stream_format = pipe->stream->config.format;
+	copy_descr->continuous = false;
 	copy_descr->two_ppc = (pipe->stream->config.pixels_per_clock == 2);
+	copy_descr->enable_yuv_ds = false;
+	copy_descr->enable_high_speed = false;
+	copy_descr->enable_dvs_6axis = false;
+	copy_descr->enable_reduced_pipe = false;
+	copy_descr->enable_dz = false;
+	copy_descr->enable_fractional_ds = false;
+	copy_descr->dvs_env.width = 0;
+	copy_descr->dvs_env.height = 0;
+	copy_descr->stream_format = pipe->stream->config.format;
 	copy_descr->in_info = in_info;
+	copy_descr->bds_out_info = NULL;
 	copy_descr->out_info = out_info;
 	copy_descr->vf_info = NULL;
 	copy_descr->isp_pipe_version = 1;
@@ -87,20 +97,21 @@ static void pipe_binarydesc_get_offline(
 	descr->mode = mode;
 	descr->online = false;
 	descr->continuous = pipe->stream->config.continuous;
-	descr->stream_format = pipe->stream->config.format;
 	descr->two_ppc = false;
-	descr->in_info = in_info;
-	descr->out_info = out_info;
-	descr->vf_info = vf_info;
-	descr->isp_pipe_version = pipe->config.isp_pipe_version;
 	descr->enable_yuv_ds = false;
 	descr->enable_high_speed = false;
-	descr->enable_reduced_pipe = false;
 	descr->enable_dvs_6axis = false;
+	descr->enable_reduced_pipe = false;
 	descr->enable_dz = true;
 	descr->enable_fractional_ds = false;
 	descr->dvs_env.width = 0;
 	descr->dvs_env.height = 0;
+	descr->stream_format = pipe->stream->config.format;
+	descr->in_info = in_info;
+	descr->bds_out_info = NULL;
+	descr->out_info = out_info;
+	descr->vf_info = vf_info;
+	descr->isp_pipe_version = pipe->config.isp_pipe_version;
 	descr->required_bds_factor = SH_CSS_BDS_FACTOR_1_00;
 	descr->stream_config_left_padding = -1;
 }
