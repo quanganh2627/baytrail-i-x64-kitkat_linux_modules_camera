@@ -42,6 +42,7 @@ struct atomisp_csi2 {
 
 	void __iomem *base;
 	unsigned int nlanes;
+	unsigned int index;
 
 	struct {
 		unsigned int nlanes;
@@ -52,7 +53,8 @@ struct atomisp_csi2 {
 };
 
 int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
-		      void __iomem *base, unsigned int lanes);
+		      void __iomem *base, unsigned int lanes,
+		      unsigned int index);
 void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2);
 void atomisp_csi2_isr(struct atomisp_csi2 *csi2);
 

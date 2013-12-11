@@ -33,11 +33,13 @@
 #include "atomisp-csi2-reg.h"
 
 int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
-		      void __iomem *base, unsigned int nlanes)
+		      void __iomem *base, unsigned int nlanes,
+		      unsigned int index)
 {
 	csi2->isys = isys;
 	csi2->base = base;
 	csi2->nlanes = nlanes;
+	csi2->index = index;
 
 	return v4l2_device_register_subdev(&isys->v4l2_dev, &csi2->sd);
 }

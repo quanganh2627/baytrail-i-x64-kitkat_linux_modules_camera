@@ -45,8 +45,9 @@ static int isys_register_csi2(struct atomisp_isys *isys)
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(bxt_nlanes); i++) {
-		int rval = atomisp_csi2_init(&isys->csi2[i], isys,
-					     isys->pdata->base, bxt_nlanes[i]);
+		int rval = atomisp_csi2_init(
+			&isys->csi2[i], isys, isys->pdata->base, bxt_nlanes[i],
+			i);
 		if (rval) {
 			isys_unregister_csi2(isys);
 			return rval;
