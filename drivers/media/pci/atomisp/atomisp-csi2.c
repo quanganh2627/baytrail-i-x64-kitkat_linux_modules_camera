@@ -24,29 +24,136 @@
 #include <linux/module.h>
 #include <linux/sizes.h>
 
+#include <media/media-device.h>
+#include <media/media-entity.h>
 #include <media/v4l2-device.h>
+#include <media/v4l2-ioctl.h>
+#include <media/videobuf2-core.h>
 
 #include "atomisp.h"
 #include "atomisp-bus.h"
-#include "atomisp-isys.h"
 #include "atomisp-csi2.h"
 #include "atomisp-csi2-reg.h"
+#include "atomisp-isys.h"
+#include "atomisp-isys-video.h"
+
+static int csi2_querycap(struct file *file, void *fh,
+			 struct v4l2_capability *cap)
+{
+	return 0;
+}
+
+static int csi2_enum_fmt_vid_cap(struct file *file, void *fh,
+				 struct v4l2_fmtdesc *fmtdesc)
+{
+	return 0;
+}
+
+static int csi2_g_fmt_vid_cap(struct file *file, void *fh,
+			      struct v4l2_format *fmt)
+{
+	return 0;
+}
+
+static int csi2_s_fmt_vid_cap(struct file *file, void *fh,
+			      struct v4l2_format *fmt)
+{
+	return 0;
+}
+
+static int csi2_try_fmt_vid_cap(struct file *file, void *fh,
+				struct v4l2_format *fmt)
+{
+	return 0;
+}
+
+static const struct v4l2_ioctl_ops csi2_ioctl_ops = {
+	.vidioc_querycap = csi2_querycap,
+	.vidioc_enum_fmt_vid_cap = csi2_enum_fmt_vid_cap,
+	.vidioc_g_fmt_vid_cap = csi2_g_fmt_vid_cap,
+	.vidioc_s_fmt_vid_cap = csi2_s_fmt_vid_cap,
+	.vidioc_try_fmt_vid_cap = csi2_try_fmt_vid_cap,
+	.vidioc_reqbufs = vb2_ioctl_reqbufs,
+	.vidioc_create_bufs = vb2_ioctl_create_bufs,
+	.vidioc_prepare_buf = vb2_ioctl_prepare_buf,
+	.vidioc_querybuf = vb2_ioctl_querybuf,
+	.vidioc_qbuf = vb2_ioctl_qbuf,
+	.vidioc_dqbuf = vb2_ioctl_dqbuf,
+	.vidioc_streamon = vb2_ioctl_streamon,
+	.vidioc_streamoff = vb2_ioctl_streamoff,
+};
+
+static struct v4l2_subdev_internal_ops csi2_sd_internal_ops = {
+};
+
+static struct v4l2_subdev_ops csi2_sd_ops = {
+};
+
+void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2)
+{
+	v4l2_device_unregister_subdev(&csi2->sd);
+	media_entity_cleanup(&csi2->sd.entity);
+	atomisp_isys_video_cleanup(&csi2->av);
+}
 
 int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 		      void __iomem *base, unsigned int nlanes,
 		      unsigned int index)
 {
+	int rval;
+
 	csi2->isys = isys;
 	csi2->base = base;
 	csi2->nlanes = nlanes;
 	csi2->index = index;
 
-	return v4l2_device_register_subdev(&isys->v4l2_dev, &csi2->sd);
-}
+	snprintf(csi2->av.vdev.name, sizeof(csi2->av.vdev.name),
+		 "AtomISP CSI-2 %u capture", index);
+	csi2->av.vdev.ioctl_ops = &csi2_ioctl_ops;
+	video_set_drvdata(&csi2->av.vdev, csi2);
+	rval = atomisp_isys_video_init(&csi2->av, csi2->isys);
+	if (rval) {
+		dev_info(&isys->adev->dev, "can't init video node\n");
+		goto fail;
+	}
 
-void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2)
-{
-	v4l2_device_unregister_subdev(&csi2->sd);
+	v4l2_subdev_init(&csi2->sd, &csi2_sd_ops);
+
+	csi2->pad[CSI2_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
+	csi2->pad[CSI2_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
+
+	rval = media_entity_init(&csi2->sd.entity, NR_OF_CSI2_PADS,
+				 csi2->pad, 0);
+	if (rval) {
+		dev_info(&isys->adev->dev, "can't register media entity\n");
+		goto fail;
+	}
+
+	csi2->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
+	csi2->sd.internal_ops = &csi2_sd_internal_ops;
+	csi2->sd.owner = THIS_MODULE;
+	snprintf(csi2->sd.name, sizeof(csi2->sd.name), "AtomISP CSI-2 %u",
+		 index);
+	v4l2_set_subdevdata(&csi2->sd, csi2);
+	rval = v4l2_device_register_subdev(&isys->v4l2_dev, &csi2->sd);
+	if (rval) {
+		dev_info(&isys->adev->dev, "can't register v4l2 subdev\n");
+		goto fail;
+	}
+
+	rval = media_entity_create_link(&csi2->sd.entity, CSI2_PAD_SOURCE,
+					&csi2->av.vdev.entity, 0, 0);
+	if (rval) {
+		dev_info(&isys->adev->dev, "can't create link\n");
+		goto fail;
+	}
+
+	return 0;
+
+fail:
+	atomisp_csi2_cleanup(csi2);
+
+	return rval;
 }
 
 void atomisp_csi2_isr(struct atomisp_csi2 *csi2)

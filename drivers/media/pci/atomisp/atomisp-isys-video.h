@@ -17,29 +17,21 @@
  *
  */
 
-#ifndef ATOMISP_ISYS_H
-#define ATOMISP_ISYS_H
+#ifndef ATOMISP_ISYS_VIDEO_H
+#define ATOMISP_ISYS_VIDEO_H
 
+#include <media/media-entity.h>
 #include <media/v4l2-device.h>
-#include <media/media-device.h>
 
-#include "atomisp.h"
-#include "atomisp-csi2.h"
-#include "atomisp-pdata.h"
+struct atomisp_isys;
 
-#define MAX_CSI2_PORTS			4
-
-struct atomisp_isys {
-	struct media_device media_dev;
-	struct v4l2_device v4l2_dev;
-	struct atomisp_bus_device *adev;
-
-	struct atomisp_isys_pdata *pdata;
-
-	struct atomisp_csi2 csi2[MAX_CSI2_PORTS];
+struct atomisp_isys_video {
+	struct media_pad pad;
+	struct video_device vdev;
 };
 
-extern const struct v4l2_ioctl_ops atomisp_isys_ioctl_ops;
-extern const struct v4l2_file_operations atomisp_isys_fops;
+int atomisp_isys_video_init(struct atomisp_isys_video *av,
+			    struct atomisp_isys *isys);
+void atomisp_isys_video_cleanup(struct atomisp_isys_video *av);
 
-#endif /* ATOMISP_ISYS_H */
+#endif /* ATOMISP_ISYS_VIDEO_H */

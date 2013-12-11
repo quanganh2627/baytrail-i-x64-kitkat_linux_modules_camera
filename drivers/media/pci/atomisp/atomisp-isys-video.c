@@ -17,29 +17,35 @@
  *
  */
 
-#ifndef ATOMISP_ISYS_H
-#define ATOMISP_ISYS_H
-
+#include <media/media-entity.h>
 #include <media/v4l2-device.h>
-#include <media/media-device.h>
 
-#include "atomisp.h"
-#include "atomisp-csi2.h"
-#include "atomisp-pdata.h"
+#include "atomisp-isys.h"
+#include "atomisp-isys-video.h"
 
-#define MAX_CSI2_PORTS			4
+int atomisp_isys_video_init(struct atomisp_isys_video *av,
+			    struct atomisp_isys *isys)
+{
+	int rval;
 
-struct atomisp_isys {
-	struct media_device media_dev;
-	struct v4l2_device v4l2_dev;
-	struct atomisp_bus_device *adev;
+	av->pad.flags = MEDIA_PAD_FL_SINK;
+	rval = media_entity_init(&av->vdev.entity, 1, &av->pad, 0);
+	if (rval)
+		return rval;
 
-	struct atomisp_isys_pdata *pdata;
+	av->vdev.release = video_device_release_empty;
+	av->vdev.fops = &atomisp_isys_fops;           
+	av->vdev.v4l2_dev = &isys->v4l2_dev;
 
-	struct atomisp_csi2 csi2[MAX_CSI2_PORTS];
-};
+	rval = video_register_device(&av->vdev, VFL_TYPE_GRABBER, -1);
+	if (rval)
+		media_entity_cleanup(&av->vdev.entity);
 
-extern const struct v4l2_ioctl_ops atomisp_isys_ioctl_ops;
-extern const struct v4l2_file_operations atomisp_isys_fops;
+	return rval;
+}
 
-#endif /* ATOMISP_ISYS_H */
+void atomisp_isys_video_cleanup(struct atomisp_isys_video *av)
+{
+	video_unregister_device(&av->vdev);
+	media_entity_cleanup(&av->vdev.entity);
+}

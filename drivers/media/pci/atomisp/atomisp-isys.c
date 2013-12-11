@@ -25,12 +25,41 @@
 #include <linux/sizes.h>
 #include <linux/string.h>
 
+#include <media/videobuf2-core.h>
+
 #include "atomisp.h"
 #include "atomisp-bus.h"
 #include "atomisp-csi2.h"
 #include "atomisp-isys.h"
 
 static unsigned int bxt_nlanes[] = { 4, 1, 2, 2 };
+
+static int isys_open(struct file *file)
+{
+	struct video_device *vdev = video_devdata(file);
+	struct atomisp_isys *isys = video_get_drvdata(vdev);
+	int rval;
+
+	return v4l2_fh_open(file);
+}
+
+static int isys_release(struct file *file)
+{
+	struct video_device *vdev = video_devdata(file);
+	struct atomisp_isys *isys = video_get_drvdata(vdev);
+
+	v4l2_fh_release(file);
+
+	return 0;
+}
+
+const struct v4l2_file_operations atomisp_isys_fops = {
+	.owner = THIS_MODULE,
+	.open = isys_open,
+	.release = isys_release,
+	.poll = vb2_fop_poll,
+	.mmap = vb2_fop_mmap,
+};
 
 static void isys_unregister_csi2(struct atomisp_isys *isys)
 {
@@ -64,6 +93,8 @@ static int isys_register_devices(struct atomisp_isys *isys)
 	isys->media_dev.dev = &isys->adev->dev;
 	strlcpy(isys->media_dev.model, "Intel ISP",
 		sizeof(isys->media_dev.model));
+	strlcpy(isys->v4l2_dev.name, isys->media_dev.model,
+		sizeof(isys->v4l2_dev.name));
 
 	rval = media_device_register(&isys->media_dev);
 	if (rval < 0) {
@@ -85,7 +116,14 @@ static int isys_register_devices(struct atomisp_isys *isys)
 		goto out_v4l2_device_unregister;
 	}
 
+	rval = v4l2_device_register_subdev_nodes(&isys->v4l2_dev);
+	if (rval)
+		goto out_isys_unregister_csi2;
+
 	return 0;
+
+out_isys_unregister_csi2:
+	isys_unregister_csi2(isys);
 
 out_v4l2_device_unregister:
 	v4l2_device_unregister(&isys->v4l2_dev);
@@ -112,6 +150,7 @@ static int isys_probe(struct atomisp_bus_device *adev)
 		return -ENOMEM;
 
 	isys->adev = adev;
+	isys->pdata = adev->pdata;
 
 	dev_info(&adev->dev, "isys probe %p %p\n", adev, &adev->dev);
 	atomisp_bus_set_drvdata(adev, isys);
