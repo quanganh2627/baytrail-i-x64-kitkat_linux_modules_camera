@@ -2553,7 +2553,7 @@ int atomisp_set_parameters(struct atomisp_sub_device *asd,
 
 #ifdef CSS20
 	if (asd->stream_env.stream
-		&& (asd->stream_env.stream_state != CSS_STREAM_CREATED
+		&& (asd->stream_env.stream_state != CSS_STREAM_STARTED
 		|| asd->run_mode->val
 			== ATOMISP_RUN_MODE_STILL_CAPTURE)) {
 		atomisp_css_update_isp_params(asd);

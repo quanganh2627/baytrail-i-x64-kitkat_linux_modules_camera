@@ -459,11 +459,13 @@ static int __destroy_stream(struct atomisp_sub_device *asd, bool force)
 		dev_err(isp->dev, "stop stream failed.\n");
 		return -EINVAL;
 	}
+	asd->stream_env.stream_state = CSS_STREAM_STOPPED;
 
 	if (ia_css_stream_destroy(asd->stream_env.stream) != IA_CSS_SUCCESS) {
 		dev_err(isp->dev, "destroy stream failed.\n");
 		return -EINVAL;
 	}
+	asd->stream_env.stream_state = CSS_STREAM_UNINIT;
 	asd->stream_env.stream = NULL;
 
 	return 0;
@@ -488,7 +490,7 @@ static int __create_stream(struct atomisp_sub_device *asd)
 	    pipe_index, multi_pipes, &asd->stream_env.stream)
 	    != IA_CSS_SUCCESS)
 		return -EINVAL;
-
+	asd->stream_env.stream_state = CSS_STREAM_CREATED;
 	return 0;
 }
 
@@ -952,7 +954,7 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 		goto start_err;
 	}
 
-	asd->stream_env.stream_state = CSS_STREAM_CREATED;
+	asd->stream_env.stream_state = CSS_STREAM_STARTED;
 	return 0;
 
 start_err:
@@ -1511,7 +1513,6 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 		return -EINVAL;
 	}
 
-	asd->stream_env.stream_state = CSS_STREAM_STOPPED;
 	if (!in_reset) {
 		int i;
 		for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
