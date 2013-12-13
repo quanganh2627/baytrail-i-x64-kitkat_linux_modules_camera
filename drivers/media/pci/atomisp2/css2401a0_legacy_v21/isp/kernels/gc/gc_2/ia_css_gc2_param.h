@@ -22,12 +22,7 @@
 #ifndef __IA_CSS_GC2_PARAM_H
 #define __IA_CSS_GC2_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
+#include "type_support.h"
 /* Extend GC1 */
 #include "gc/gc_1.0/ia_css_gc_param.h"
 #include "csc/csc_1.0/ia_css_csc_param.h"

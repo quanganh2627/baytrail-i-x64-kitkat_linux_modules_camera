@@ -437,6 +437,8 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	return IA_CSS_SUCCESS;
 }
 
+bool ifmtr_set_if_blocking_mode_reset = true;
+
 /************************************************************
  * Static functions
  ************************************************************/
@@ -445,7 +447,6 @@ static void ifmtr_set_if_blocking_mode(
 		const input_formatter_cfg_t const *config_b)
 {
 	int i;
-	static bool reset = true;
 	bool block[] = { false, false, false, false };
 	assert(N_INPUT_FORMATTER_ID <= (sizeof(block) / sizeof(block[0])));
 
@@ -461,8 +462,8 @@ static void ifmtr_set_if_blocking_mode(
 	/* TODO: next could cause issues when streams are started after
 	 * eachother. */
 	/*IF should not be reconfigured/reset from host */
-	if (reset) {
-		reset = false;
+	if (ifmtr_set_if_blocking_mode_reset) {
+		ifmtr_set_if_blocking_mode_reset = false;
 		for (i = 0; i < N_INPUT_FORMATTER_ID; i++) {
 			input_formatter_ID_t id = (input_formatter_ID_t) i;
 			input_formatter_rst(id);

@@ -22,12 +22,7 @@
 #ifndef __IA_CSS_CSC_PARAM_H
 #define __IA_CSS_CSC_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
+#include "type_support.h"
 /* CSC (Color Space Conversion) */
 struct sh_css_isp_csc_params {
 	uint16_t	m_shift;

@@ -19,17 +19,22 @@
  *
  */
 
-#ifndef __IA_CSS_FIXEDBDS_HOST_H
-#define __IA_CSS_FIXEDBDS_HOST_H
+#ifndef __IA_CSS_REF_PARAM_H
+#define __IA_CSS_REF_PARAM_H
 
+#ifdef __KERNEL__
+#include <linux/kernel.h>
+#else
+#include <stdint.h>
+#endif
 
-#include "ia_css_fixedbds_param.h"
+#include "dma.h"
+#include "ia_css_ref_types.h"
 
-struct sh_css_bds_factor {
-	unsigned numerator;
-	unsigned denominator;
-	unsigned int bds_factor;
+/** Reference frame */
+struct sh_css_isp_ref_isp_config {
+	uint32_t width_a_over_b;
+	struct dma_port_config port_b;
 };
 
-
-#endif	/*__IA_CSS_FIXEDBDS_HOST_H*/
+#endif /* __IA_CSS_REF_PARAM_H */

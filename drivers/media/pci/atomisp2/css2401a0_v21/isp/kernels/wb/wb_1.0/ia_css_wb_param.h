@@ -22,11 +22,7 @@
 #ifndef __IA_CSS_WB_PARAM_H
 #define __IA_CSS_WB_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 /* WB (White Balance) */
 struct sh_css_isp_wb_params {

@@ -32,28 +32,37 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <limits.h>
+#if defined(_M_X64)
+#define HOST_ADDRESS(x) (unsigned long long)(x)
+#else
+#define HOST_ADDRESS(x) (unsigned long)(x)
+#endif
 
 #elif defined(__HIVECC)
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <limits.h>
+#define HOST_ADDRESS(x) (unsigned long)(x)
 
 #elif defined(__KERNEL__)
 #include <linux/types.h>
 #include <linux/limits.h>
+#define HOST_ADDRESS(x) (unsigned long)(x)
 
 #elif defined(__GNUC__)
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <limits.h>
+#define HOST_ADDRESS(x) (unsigned long)(x)
 
 #else /* default is for the FIST environment */
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <limits.h>
+#define HOST_ADDRESS(x) (unsigned long)(x)
 
 #endif
 

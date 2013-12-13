@@ -307,4 +307,19 @@ typedef enum {
 	DMA_CONFIG_WIDTH_B = _DMA_V2_WIDTH_B_PARAM,
 } dma_config_type_t;
 
+struct dma_port_config {
+	uint8_t  crop, elems;
+	uint16_t width;
+	uint32_t stride;
+};
+
+/* Descriptor for dma configuration */
+struct dma_channel_config {
+	uint8_t  connection;
+	uint8_t  extension;
+	uint8_t  channel;
+	uint8_t  height;
+	struct dma_port_config a, b;
+};
+
 #endif /* __DMA_GLOBAL_H_INCLUDED__ */

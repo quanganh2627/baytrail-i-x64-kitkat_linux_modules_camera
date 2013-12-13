@@ -32,7 +32,7 @@
 #define IA_CSS_INCLUDE_PARAMETERS
 
 #include "sh_css_params.h"
-#include "ia_css_queue.h"		/* host2sp_enqueue_frame_data() */
+#include "ia_css_queue.h"
 #include "sw_event_global.h"		/* Event IDs */
 
 #include "assert_support.h"
@@ -1462,7 +1462,7 @@ sh_css_set_black_frame(struct ia_css_stream *stream,
 	convert_raw_to_fpn(params);
 
 	/* overwrite isp parameter */
-	ia_css_process_kernel(stream, params, ia_css_kernel_process[IA_CSS_FPN_ID]);
+	ia_css_process_kernel(stream, params, ia_css_kernel_process_param[IA_CSS_FPN_ID]);
 #endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_black_frame() leave: \
@@ -3476,13 +3476,22 @@ sh_css_update_acc_cluster_data_to_ddr(hrt_vaddress ddr_ptr)
 void ia_css_dequeue_param_buffers(void)
 {
 	hrt_vaddress cpy;
+	ia_css_queue_t *q;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_param_buffers() enter\n");
+	/* Get queue instance */
+	q = sh_css_get_queue(sh_css_sp2host_buffer_queue,
+			     sh_css_param_buffer_queue, -1);
+	if ( NULL == q ) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_dequeue_param_buffers() leave: err%d\n",
+			IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+		return;
+	}
 
 	/* clean-up old copy */
-	while (sp2host_dequeue_buffer(0, 0,
-				sh_css_param_buffer_queue,
-				&cpy)) {
+	while (IA_CSS_SUCCESS == ia_css_queue_dequeue(q, (uint32_t *)&cpy)) {
 		/* TMP: keep track of dequeued param set count
 		 */
 		g_param_buffer_dequeue_count++;
@@ -3534,7 +3543,7 @@ process_kernel_parameters(unsigned int pipe_id,
 	for (param_id = 0; param_id < IA_CSS_NUM_PARAMETER_IDS; param_id++) {
 		if (param_id == IA_CSS_SC_ID) continue;
 		if (params->config_changed[param_id])
-			ia_css_kernel_process[param_id](pipe_id, stage, params);
+			ia_css_kernel_process_param[param_id](pipe_id, stage, params);
 	}
 }
 #endif
@@ -3549,7 +3558,6 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 	unsigned int isp_pipe_version = 1;
 	struct ia_css_isp_parameters *params;
 	bool acc_cluster_params_changed = false;
-	bool rc;
 	(void)acc_cluster_params_changed;
 
 	assert(stream != NULL);
@@ -3589,12 +3597,26 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		struct ia_css_pipeline *pipeline;
 		struct ia_css_pipeline_stage *stage;
 		unsigned int thread_id, pipe_num;
+		ia_css_queue_t *q;
 
 		(void)stage;
 		pipe = stream->pipes[i];
 		pipeline = ia_css_pipe_get_pipeline(pipe);
 		pipe_num = ia_css_pipe_get_pipe_num(pipe);
 		ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
+
+		q = sh_css_get_queue(sh_css_host2sp_buffer_queue,
+			     sh_css_param_buffer_queue, thread_id);
+		if ( NULL == q ) {
+			/* Error as the queue is not initialized */
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"sh_css_param_update_isp_params: "
+				"error=%d\n",
+				IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+			err = IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+			break;
+		}
+
 
 		cur_map = &params->pipe_ddr_ptrs[pipeline->pipe_id];
 		cur_map_size = &params->pipe_ddr_ptrs_size[pipeline->pipe_id];
@@ -3698,10 +3720,8 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 			"queue param set %x to %d\n",
 			cpy, thread_id);
 
-		rc = host2sp_enqueue_buffer(thread_id, 0,
-			sh_css_param_buffer_queue,
-			cpy);
-		if (!rc) {
+		if (IA_CSS_SUCCESS !=
+		    ia_css_queue_enqueue(q, (uint32_t)cpy)) {
 			free_sh_css_ddr_address_map(cpy);
 		}
 		else {
@@ -3847,7 +3867,7 @@ sh_css_params_write_to_ddr_internal(
 			if (params->sc_config == NULL)
 				return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 			store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
-			ia_css_kernel_process[IA_CSS_SC_ID](pipe_id, stage, params);
+			ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
 
 			ia_css_shading_table_free(params->sc_config);
 			params->sc_config = NULL;
@@ -4821,7 +4841,6 @@ ia_css_dvs2_coefficients_allocate(const struct ia_css_dvs_grid_info *grid)
 	if (!me)
 		goto err;
 
-	memset(me, 0, sizeof(*me));
 	me->grid = *grid;
 
 	me->hor_coefs.odd_real = sh_css_malloc(grid->num_hor_coefs *

@@ -59,6 +59,26 @@
 #define SH_CSS_MACC2_COEF_SHIFT           13 /* [s[exp].[13-exp]] for ISP2 */
 #define SH_CSS_DIS_COEF_SHIFT             13
 
+/* enumeration of the bayer downscale factors. When a binary supports multiple
+ * factors, the OR of these defines is used to build the mask of supported
+ * factors. The BDS factor is used in pre-processor expressions so we cannot
+ * use an enum here. */
+#define SH_CSS_BDS_FACTOR_1_00	(0)
+#define SH_CSS_BDS_FACTOR_1_25	(1)
+#define SH_CSS_BDS_FACTOR_1_50	(2)
+#define SH_CSS_BDS_FACTOR_2_00	(3)
+#define SH_CSS_BDS_FACTOR_2_25	(4)
+#define SH_CSS_BDS_FACTOR_2_50	(5)
+#define SH_CSS_BDS_FACTOR_3_00	(6)
+#define SH_CSS_BDS_FACTOR_4_00	(7)
+#define SH_CSS_BDS_FACTOR_4_50	(8)
+#define SH_CSS_BDS_FACTOR_5_00	(9)
+#define SH_CSS_BDS_FACTOR_6_00	(10)
+#define SH_CSS_BDS_FACTOR_8_00	(11)
+#define NUM_BDS_FACTORS	        (12)
+
+#define PACK_BDS_FACTOR(factor)	(1<<(factor))
+
 /*--------------- sRGB Gamma -----------------
 CCM        : YCgCo[0,8191] -> RGB[0,4095]
 sRGB Gamma : RGB  [0,4095] -> RGB[0,8191]
@@ -326,9 +346,19 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
  * and definitely needs to be commented and explained. */
 #define _ISP_LEFT_CROP_EXTRA(left_crop) ((left_crop) > 0 ? 2*ISP_VEC_NELEMS : 0)
 
+#if defined(IS_ISP_2500_SYSTEM)
+
+// Nitsan - changed because of new iterator scheme for Stages in the line-loop
+//          it's no longer true that the min width is dependent on num-of-stages (pipelining)
+#define __ISP_MIN_INTERNAL_WIDTH(num_chunks, pipelining, mode) 	256
+
+#else
+
 #define __ISP_MIN_INTERNAL_WIDTH(num_chunks, pipelining, mode) \
 	((num_chunks) * (pipelining) * (1<<_ISP_LOG_VECTOR_STEP(mode)) * \
 	 ISP_VEC_NELEMS)
+#endif
+
 #define __ISP_PADDED_OUTPUT_WIDTH(out_width, dvs_env_width, left_crop) \
 	((out_width) + MAX(dvs_env_width, _ISP_LEFT_CROP_EXTRA(left_crop)))
 

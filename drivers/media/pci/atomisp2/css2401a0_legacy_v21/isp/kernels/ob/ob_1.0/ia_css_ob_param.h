@@ -22,12 +22,7 @@
 #ifndef __IA_CSS_OB_PARAM_H
 #define __IA_CSS_OB_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
+#include "type_support.h"
 #include "vmem.h"
 
 #define OBAREA_MASK_SIZE 64

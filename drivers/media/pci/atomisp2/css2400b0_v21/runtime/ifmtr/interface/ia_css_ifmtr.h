@@ -25,6 +25,8 @@
 #include "ia_css.h"
 #include "ia_css_binary.h"
 
+extern bool ifmtr_set_if_blocking_mode_reset;
+
 unsigned int ia_css_ifmtr_lines_needed_for_bayer_order(
 			const struct ia_css_stream_config *config);
 

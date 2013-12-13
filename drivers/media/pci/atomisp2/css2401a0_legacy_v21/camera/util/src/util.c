@@ -122,10 +122,10 @@ enum ia_css_err ia_css_util_check_vf_out_info(
 
 enum ia_css_err ia_css_util_check_res(unsigned int width, unsigned int height)
 {
+	/* height can be odd number for jpeg/embedded data from ISYS2401 */
 	if (((width  == 0)   ||
 	     (height == 0)   ||
-	     IS_ODD(width) ||
-	     IS_ODD(height))) {
+	     IS_ODD(width))) {
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
 	return IA_CSS_SUCCESS;

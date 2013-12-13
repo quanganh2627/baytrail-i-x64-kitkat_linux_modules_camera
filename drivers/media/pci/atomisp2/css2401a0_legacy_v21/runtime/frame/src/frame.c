@@ -87,6 +87,10 @@ static struct ia_css_frame *frame_create(unsigned int width,
 	bool contiguous,
 	bool valid);
 
+static unsigned
+ia_css_elems_bytes_from_info (
+	const struct ia_css_frame_info *info);
+
 /**************************************************************************
 **	CSS API functions, exposed by ia_css.h
 **************************************************************************/
@@ -559,6 +563,22 @@ bool ia_css_frame_is_same_type(const struct ia_css_frame *frame_a,
 	return is_equal;
 }
 
+void
+ia_css_dma_configure_from_info(
+	struct dma_port_config *config,
+	const struct ia_css_frame_info *info)
+{
+	unsigned elems_wb = ia_css_elems_bytes_from_info(info);
+	unsigned elems_b;
+	if (elems_wb == 0)
+		return;
+	elems_b = HIVE_ISP_DDR_WORD_BYTES / elems_wb;
+	config->elems  = elems_b;
+	config->stride = info->padded_width * elems_wb;
+	config->width  = info->res.width;
+	config->crop   = 0;
+}
+
 /**************************************************************************
 **	Static functions
 **************************************************************************/
@@ -584,7 +604,13 @@ static void frame_init_single_plane(struct ia_css_frame *frame,
 	unsigned int stride;
 
 	stride = subpixels_per_line * bytes_per_pixel;
-	frame->data_bytes = stride * height;
+	/* Frame height needs to be even number - needed by hw ISYS2401
+	   In case of odd number, round up to even.
+	   Images won't be impacted by this round up,
+	   only needed by jpeg/embedded data.
+	   As long as buffer allocation and release are using data_bytes,
+	   there won't be memory leak. */
+	frame->data_bytes = stride * CEIL_MUL2(height, 2);
 	frame_init_plane(plane, subpixels_per_line, stride, height, 0);
 	return;
 }
@@ -789,4 +815,10 @@ static struct ia_css_frame *frame_create(unsigned int width,
 	me->dynamic_data_index = SH_CSS_INVALID_FRAME_ID;
 
 	return me;
+}
+
+static unsigned
+ia_css_elems_bytes_from_info (const struct ia_css_frame_info *info)
+{
+	return CEIL_DIV(info->raw_bit_depth,8);
 }

@@ -22,11 +22,7 @@
 #ifndef __IA_CSS_HB_PARAM_H
 #define __IA_CSS_HB_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 #ifndef PIPE_GENERATION
 #define __INLINE_HMEM__

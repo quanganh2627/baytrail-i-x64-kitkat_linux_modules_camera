@@ -435,7 +435,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	}
 
 #ifndef IS_ISP_2500_SYSTEM
-	err = ia_css_vf_configure(binary, out_info, vf_info, &vf_log_ds);
+	err = ia_css_vf_configure(binary, out_info, (struct ia_css_frame_info *)vf_info, &vf_log_ds);
 	if (err != IA_CSS_SUCCESS)
 		return err;
 #else

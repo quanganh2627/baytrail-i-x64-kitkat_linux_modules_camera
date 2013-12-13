@@ -95,7 +95,7 @@ ia_css_isp_param_load_fw_params(
 
 /* Copy host parameter images to ddr */
 enum ia_css_err
-ia_css_isp_param_copy_isp_config_to_ddr(
+ia_css_isp_param_copy_isp_mem_if_to_ddr(
 	struct ia_css_isp_param_css_segments *ddr,
 	const struct ia_css_isp_param_host_segments *host,
 	enum ia_css_param_class pclass);

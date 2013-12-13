@@ -22,11 +22,7 @@
 #ifndef __RAW_PARAM_H
 #define __RAW_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 /* RAW (Optical Black) */
 struct sh_css_isp_raw_params {

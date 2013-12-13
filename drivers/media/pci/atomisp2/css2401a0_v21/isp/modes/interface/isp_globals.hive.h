@@ -41,7 +41,7 @@
 #include "isp_types.h"
 #include <sh_css_internal.h>
 #if !defined(__HOST)
-#include "dma_proxy_common.h"
+#include "dma_proxy.common.h"
 #endif
 #include "input_buf.isp.h"
 
@@ -154,10 +154,6 @@ typedef struct s_isp_addresses {
     PVECTOR  uds_ipxs_via_sp;
     PVECTOR  uds_ibuf_via_sp;
     PVECTOR  uds_obuf_via_sp;
-    PVECTOR  dp_buf;
-    PVECTOR  de_buf;
-    PVECTOR  ynr_buf;
-    PVECTOR  cnr_buf;
     PVECTOR  aa_buf;
   } vmem;
   struct {
@@ -165,10 +161,6 @@ typedef struct s_isp_addresses {
     unsigned g_sdis_horiproj_tbl;
     unsigned g_sdis_vertproj_tbl;
     unsigned vf_tmp;
-    unsigned dp_buf;
-    unsigned de_buf;
-    unsigned ynr_buf;
-    unsigned cnr_buf;
     unsigned aa_buf;
   } sizes;
 } s_isp_addresses;

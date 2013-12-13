@@ -45,7 +45,7 @@
 
 #include "ia_css.h"
 #include "sh_css_metrics.h"
-#include "isp/kernels/fixedbds/fixedbds_1.0/ia_css_fixedbds.host.h"
+#include "isp/kernels/fixedbds/fixedbds_1.0/ia_css_fixedbds_types.h"
 
 /* Should be included without the path.
    However, that requires adding the path to numerous makefiles

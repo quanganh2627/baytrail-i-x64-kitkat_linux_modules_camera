@@ -53,12 +53,14 @@
 #include "assert_support.h"
 #include "platform_support.h"	/* hrt_sleep() */
 
-#include "ia_css_queue.h" /* host_sp_enqueue_XXX */
 #include "sw_event_global.h"   			/* Event IDs.*/
 #include "ia_css_event.h"
 #ifndef offsetof
 #define offsetof(T, x) ((unsigned)&(((T *)0)->x))
 #endif
+
+#define IA_CSS_INCLUDE_CONFIGURATIONS
+#include HRTSTR(ia_css_isp_configs.SYSTEM.h)
 
 struct sh_css_sp_group		sh_css_sp_group;
 struct sh_css_sp_stage		sh_css_sp_stage;
@@ -836,12 +838,23 @@ sh_css_stage_write_binary_info(struct ia_css_binary_info *info)
 }
 
 static enum ia_css_err
-copy_isp_config_to_ddr(struct ia_css_binary *binary)
+copy_isp_mem_if_to_ddr(struct ia_css_binary *binary)
 {
-	return ia_css_isp_param_copy_isp_config_to_ddr(
+	enum ia_css_err err;
+
+	err = ia_css_isp_param_copy_isp_mem_if_to_ddr(
 		&binary->css_params,
 		&binary->mem_params,
 		IA_CSS_PARAM_CLASS_CONFIG);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+	err = ia_css_isp_param_copy_isp_mem_if_to_ddr(
+		&binary->css_params,
+		&binary->mem_params,
+		IA_CSS_PARAM_CLASS_STATE);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+	return IA_CSS_SUCCESS;
 }
 
 static bool
@@ -849,6 +862,19 @@ is_sp_stage(struct ia_css_pipeline_stage *stage)
 {
 	assert(stage != NULL);
 	return stage->sp_func != IA_CSS_PIPELINE_NO_FUNC;
+}
+
+static void
+configure_isp_from_args(
+	const struct ia_css_binary      *binary,
+	const struct sh_css_binary_args *args)
+{
+#if !defined(IS_ISP_2500_SYSTEM)
+	ia_css_ref_configure(binary, &args->in_ref_frame->info);
+#else
+	(void)binary;
+	(void)args;
+#endif
 }
 
 static enum ia_css_err
@@ -963,6 +989,8 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
+	configure_isp_from_args(binary, args);
+
 	/* we do this only for preview pipe because in fill_binary_info function
 	 * we assign vf_out res to out res, but for ISP internal processing, we need
 	 * the original out res. for video pipe, it has two output pins --- out and
@@ -978,7 +1006,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		sh_css_sp_stage.frames.out.info.height
 			<<= binary->vf_downscale_log2;
 	}
-	err = copy_isp_config_to_ddr(binary);
+	err = copy_isp_mem_if_to_ddr(binary);
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
@@ -1679,6 +1707,8 @@ sh_css_sp_snd_event(int evt_id, int evt_payload_0, int evt_payload_1, int evt_pa
 {
 	uint32_t tmp[4];
 	uint32_t sw_event;
+	ia_css_queue_t* q;
+
         /*TODO:
 	 *  group encode and enqueue into eventQueue module
 	 */
@@ -1692,8 +1722,17 @@ sh_css_sp_snd_event(int evt_id, int evt_payload_0, int evt_payload_1, int evt_pa
 	tmp[3] = (uint32_t)evt_payload_2;
 	ia_css_event_encode(tmp, 4, &sw_event);
 
+	q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+	if ( NULL == q ) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"sh_css_sp_snd_event() leave: err%d\n",
+			IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+		return;
+	}
+
 	/* queue the software event (busy-waiting) */
-	while (!host2sp_enqueue_sp_event(sw_event))
+	while (IA_CSS_SUCCESS != ia_css_queue_enqueue(q, sw_event))
 		hrt_sleep();
 }
 

@@ -37,6 +37,9 @@ struct ia_css_isp_parameters;
 #include "sh_css_defs.h"	/* SH_CSS_MAX_STAGES */
 #include "ia_css_pipeline.h"
 #include HRTSTR(ia_css_isp_params.SYSTEM.h)
+#if defined(IS_ISP_2500_SYSTEM)
+#include HRTSTR(ia_css_isp_acc_params.SYSTEM.h)
+#endif
 
 #include "ob/ob_1.0/ia_css_ob_param.h"
 #include "uds/uds_1.0/ia_css_uds_param.h"

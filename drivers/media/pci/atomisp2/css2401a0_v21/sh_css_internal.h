@@ -49,7 +49,7 @@
 #include "sh_css_defs.h"
 #include "sh_css_uds.h"
 #include "dma.h"	/* N_DMA_CHANNEL_ID */
-#include "ia_css_circbuf.h" /* Circular buffer */
+#include "ia_css_circbuf_comm.h" /* Circular buffer */
 #include "ia_css_frame_comm.h"
 
 /* TODO: Move to a more suitable place when sp pipeline design is done. */
@@ -91,8 +91,6 @@
 #endif
 
 #define SH_CSS_MAX_PIPELINES	SH_CSS_MAX_SP_THREADS
-
-#define NUM_REF_FRAMES		(3)
 
 /* keep next up to date with the definition for MAX_CB_ELEMS_FOR_TAGGER in tagger.sp.c */
 #if defined(HAS_SP_2400)
@@ -629,6 +627,14 @@ struct sh_css_hmm_buffer {
 	CSS_ALIGN(uint64_t kernel_ptr, 8);
 };
 
+enum sh_css_queue_type {
+	sh_css_invalid_queue_type = -1,
+	sh_css_host2sp_buffer_queue,
+	sh_css_sp2host_buffer_queue,
+	sh_css_host2sp_event_queue,
+	sh_css_sp2host_event_queue
+};
+
 enum sh_css_buffer_queue_id {
 	sh_css_invalid_buffer_queue     = -1,
 	sh_css_input_buffer_queue       = 0,
@@ -686,12 +692,12 @@ struct host_sp_queues {
 	 * i.e. the "in_frame" buffer, the "out_frame"
 	 * buffer and the "vf_out_frame" buffer.
 	 */
-	ia_css_circbuf_t host2sp_buffer_queues
+	ia_css_circbuf_desc_t host2sp_buffer_queues_desc
 		[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES];
 	ia_css_circbuf_elem_t host2sp_buffer_queues_elems
 	[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES]
 	[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
-	ia_css_circbuf_t sp2host_buffer_queues
+	ia_css_circbuf_desc_t sp2host_buffer_queues_desc
 		[SH_CSS_NUM_BUFFER_QUEUES];
 	ia_css_circbuf_elem_t sp2host_buffer_queues_elems
 	[SH_CSS_NUM_BUFFER_QUEUES][SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
@@ -699,9 +705,9 @@ struct host_sp_queues {
 	/*
 	 * The queue for the events.
 	 */
-	ia_css_circbuf_t host2sp_event_queue;
+	ia_css_circbuf_desc_t host2sp_event_queue_desc;
 	ia_css_circbuf_elem_t host2sp_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
-	ia_css_circbuf_t sp2host_event_queue;
+	ia_css_circbuf_desc_t sp2host_event_queue_desc;
 	ia_css_circbuf_elem_t sp2host_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
 
 };

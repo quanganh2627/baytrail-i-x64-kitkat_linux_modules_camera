@@ -22,11 +22,7 @@
 #ifndef __IA_CSS_S3A_PARAM_H
 #define __IA_CSS_S3A_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 /* AE (3A Support) */
 struct sh_css_isp_ae_params {

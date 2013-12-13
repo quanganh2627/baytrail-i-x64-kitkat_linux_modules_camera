@@ -22,11 +22,7 @@
 #ifndef __IA_CSS_DE_PARAM_H
 #define __IA_CSS_DE_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 /* DE (Demosaic) */
 struct sh_css_isp_de_params {

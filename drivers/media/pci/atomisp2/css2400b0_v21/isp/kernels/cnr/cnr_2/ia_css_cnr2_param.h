@@ -22,11 +22,7 @@
 #ifndef __IA_CSS_CNR2_PARAM_H
 #define __IA_CSS_CNR2_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 /* CNR (Chroma Noise Reduction) */
 struct sh_css_isp_cnr_params {
