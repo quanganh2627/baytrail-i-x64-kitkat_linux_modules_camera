@@ -146,6 +146,8 @@ struct atomisp_input_subdev {
 	 * which stream, in ISP multiple stream mode
 	 */
 	struct atomisp_sub_device *asd;
+
+	const struct atomisp_camera_caps *camera_caps;
 };
 
 struct atomisp_freq_scaling_rule {

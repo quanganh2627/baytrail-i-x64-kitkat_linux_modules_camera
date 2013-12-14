@@ -283,7 +283,11 @@ struct atomisp_sub_device {
 	struct atomisp_css_frame *raw_output_frame;
 	enum atomisp_frame_status frame_status[VIDEO_MAX_FRAME];
 
+	/* This field specifies which MIPI input port is selected. */
 	int input_curr;
+	/* This field specifies which sensor is being selected when there
+	   are multiple sensors connected to the same MIPI port. */
+	int sensor_curr;
 
 	atomic_t sof_count;
 	atomic_t sequence;      /* Sequence value that is assigned to buffer. */
