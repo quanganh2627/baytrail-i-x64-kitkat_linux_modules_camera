@@ -896,19 +896,19 @@ int atomisp_css_irq_enable(struct atomisp_device *isp,
 
 void atomisp_css_init_struct(struct atomisp_sub_device *asd)
 {
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
-	int i;
-	stream_env->stream = NULL;
-	for (i = 0; i < IA_CSS_PIPE_MODE_NUM; i++) {
-		stream_env->pipes[i] = NULL;
-		stream_env->update_pipe[i] = false;
-		ia_css_pipe_config_defaults(
-				&stream_env->pipe_configs[i]);
-		ia_css_pipe_extra_config_defaults(
-				&stream_env->pipe_extra_configs[i]);
+	int i, j;
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		asd->stream_env[i].stream = NULL;
+		for (j = 0; j < IA_CSS_PIPE_MODE_NUM; j++) {
+			asd->stream_env[i].pipes[j] = NULL;
+			asd->stream_env[i].update_pipe[j] = false;
+			ia_css_pipe_config_defaults(
+				&asd->stream_env[i].pipe_configs[j]);
+			ia_css_pipe_extra_config_defaults(
+				&asd->stream_env[i].pipe_extra_configs[j]);
+		}
+		ia_css_stream_config_defaults(&asd->stream_env[i].stream_config);
 	}
-	ia_css_stream_config_defaults(&stream_env->stream_config);
 }
 
 int atomisp_q_video_buffer_to_css(struct atomisp_sub_device *asd,
@@ -1609,8 +1609,6 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 			enum atomisp_css_pipe_id pipe_id, bool in_reset)
 {
 	struct atomisp_device *isp = asd->isp;
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 	/* if is called in atomisp_reset(), force destroy stream */
 	if (__destroy_streams(asd, true))
 		dev_err(isp->dev, "destroy stream failed.\n");
@@ -1630,15 +1628,19 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	}
 
 	if (!in_reset) {
-		int i;
-		for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
-			ia_css_pipe_config_defaults(
-				&stream_env->pipe_configs[i]);
-			ia_css_pipe_extra_config_defaults(
-				&stream_env->pipe_extra_configs[i]);
+		struct atomisp_stream_env *stream_env;
+		int i, j;
+		for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+			stream_env = &asd->stream_env[i];
+			for (j = 0; j < IA_CSS_PIPE_ID_NUM; j++) {
+				ia_css_pipe_config_defaults(
+					&stream_env->pipe_configs[j]);
+				ia_css_pipe_extra_config_defaults(
+					&stream_env->pipe_extra_configs[j]);
+			}
+			ia_css_stream_config_defaults(
+				&stream_env->stream_config);
 		}
-		ia_css_stream_config_defaults(
-					&stream_env->stream_config);
 	}
 
 	return 0;
