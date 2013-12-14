@@ -38,6 +38,7 @@
 #include "ia_css_stream.h"
 #include "sh_css_params.h"
 #include "sh_css_legacy.h"
+#include "ia_css_frame_comm.h"
 #if !defined(HAS_NO_INPUT_SYSTEM)
 #include "ia_css_isys.h"
 #endif
@@ -389,7 +390,7 @@ sh_css_sp_get_sw_interrupt_value(unsigned int irq)
 }
 
 static void
-sh_css_frame_info_to_sp(struct sh_css_sp_frame_info *sp,
+sh_css_frame_info_to_sp(struct ia_css_frame_sp_info *sp,
 			const struct ia_css_frame_info *host)
 {
 	assert(sp != NULL);
@@ -403,7 +404,7 @@ sh_css_frame_info_to_sp(struct sh_css_sp_frame_info *sp,
 }
 
 static void
-sh_css_copy_frame_to_spframe(struct sh_css_sp_frame *sp_frame_out,
+sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 				const struct ia_css_frame *frame_in,
 				unsigned pipe_num, unsigned stage_num,
 				enum sh_css_frame_id id)
@@ -618,7 +619,7 @@ static enum ia_css_err
 set_ref_extra_frame_buffer(const struct ia_css_frame *frame,
 			unsigned pipe_num, unsigned stage_num)
 {
-ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "set_ref_extra_frame_buffer() %08x\n",
+ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "set_ref_extra_frame_buffer() %p\n",
 			frame);
 
 	if (frame == NULL)
@@ -1029,7 +1030,8 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 			    args->out_vf_frame ? &args->out_vf_frame->info
 						: NULL,
 			    &tmp_binary,
-			    NULL);
+			    NULL,
+			    -1);
 		binary = &tmp_binary;
 		binary->info = info;
 		binary_name = IA_CSS_EXT_ISP_PROG_NAME(firmware);

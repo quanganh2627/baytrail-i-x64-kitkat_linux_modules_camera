@@ -166,6 +166,20 @@ static struct atomisp_freq_scaling_rule dfs_rules[] = {
 		.isp_freq = ISP_FREQ_400MHZ,
 		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
 	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_400MHZ,
+		.run_mode = ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_400MHZ,
+		.run_mode = ATOMISP_RUN_MODE_PREVIEW,
+	},
 };
 
 static unsigned short atomisp_get_sensor_fps(struct atomisp_sub_device *asd)
@@ -308,10 +322,6 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 		new_freq = dfs_rules[i].isp_freq;
 
 done:
-	/* workround to get isp works at 400Mhz for byt due to perf issue */
-	if (IS_BYT)
-		new_freq = ISP_FREQ_400MHZ;
-
 	dev_dbg(isp->dev, "DFS target frequency=%d.\n", new_freq);
 
 	if (new_freq == isp->sw_contex.running_freq) {
@@ -784,8 +794,6 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 	unsigned long irqflags;
 	struct atomisp_css_frame *frame = NULL;
 	struct atomisp_device *isp = asd->isp;
-	unsigned int *flash_num_ptr = NULL;
-	unsigned int partial_flash_num = 0;
 
 	if (buf_type != CSS_BUFFER_TYPE_3A_STATISTICS &&
 	    buf_type != CSS_BUFFER_TYPE_DIS_STATISTICS &&
@@ -861,8 +869,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 #endif
 
 			if (asd->params.flash_state ==
-			    ATOMISP_FLASH_ONGOING &&
-			    !IS_ISP24XX(isp)) {
+			    ATOMISP_FLASH_ONGOING) {
 				if (frame->flash_state
 				    == CSS_FRAME_FLASH_STATE_PARTIAL)
 					dev_dbg(isp->dev, "%s thumb partially "
@@ -903,8 +910,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			}
 
 			if (asd->params.flash_state ==
-			    ATOMISP_FLASH_ONGOING &&
-			    !IS_ISP24XX(isp)) {
+			    ATOMISP_FLASH_ONGOING) {
 				if (frame->flash_state
 				    == CSS_FRAME_FLASH_STATE_PARTIAL) {
 					asd->frame_status[vb->i] =
@@ -933,48 +939,6 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 					ATOMISP_FRAME_STATUS_FLASH_EXPOSED)
 					asd->params.flash_state =
 						ATOMISP_FLASH_DONE;
-			} else if (asd->params.flash_state ==
-				  ATOMISP_FLASH_ONGOING &&
-				  IS_ISP24XX(isp)) {
-				flash_num_ptr =
-					&asd->params.frame_num_since_flash;
-
-				if (css_pipe_id == CSS_PIPE_ID_PREVIEW) {
-					if (asd->continuous_mode->val)
-						partial_flash_num = 3;
-					else
-						partial_flash_num = 1;
-				} else if (css_pipe_id == CSS_PIPE_ID_CAPTURE) {
-					/*
-					 * capture with flash on always runs
-					 * at online mode
-					 */
-					partial_flash_num = 1;
-				}
-
-				if (*flash_num_ptr < partial_flash_num) {
-					asd->frame_status[vb->i] =
-						ATOMISP_FRAME_STATUS_FLASH_PARTIAL;
-					dev_dbg(isp->dev,
-						 "%s partially flashed\n",
-						 __func__);
-				} else {
-					asd->frame_status[vb->i] =
-						ATOMISP_FRAME_STATUS_FLASH_EXPOSED;
-					asd->params.num_flash_frames--;
-					dev_dbg(isp->dev,
-						 "%s completely flashed\n",
-						 __func__);
-				}
-
-				(*flash_num_ptr)++;
-
-				/* Check if flashing sequence is done */
-				if (asd->frame_status[vb->i] ==
-					ATOMISP_FRAME_STATUS_FLASH_EXPOSED)
-					asd->params.flash_state =
-						ATOMISP_FLASH_DONE;
-
 			} else {
 				asd->frame_status[vb->i] =
 					ATOMISP_FRAME_STATUS_OK;
@@ -1319,31 +1283,10 @@ void atomisp_setup_flash(struct atomisp_sub_device *asd)
 			dev_err(isp->dev, "flash timeout configure failed\n");
 			return;
 		}
-		if (IS_ISP24XX(isp)) {
-			ctrl.id = V4L2_CID_FLASH_STROBE;
-			ctrl.value = 1;
 
-			if (v4l2_subdev_call(isp->flash, core, s_ctrl, &ctrl)) {
-				dev_err(isp->dev, "flash strobe on failed\n");
-				return;
-			}
-		} else {
-			atomisp_css_request_flash(asd);
-		}
-
-		asd->params.frame_num_since_flash = 0;
+		atomisp_css_request_flash(asd);
 		asd->params.flash_state = ATOMISP_FLASH_ONGOING;
 	} else {
-		/* Flashing all frames is done */
-		if (IS_ISP24XX(isp)) {
-			ctrl.id = V4L2_CID_FLASH_STROBE;
-			ctrl.value = 0;
-
-			if (v4l2_subdev_call(isp->flash, core, s_ctrl, &ctrl)) {
-				dev_err(isp->dev, "flash strobe off failed\n");
-				return;
-			}
-		}
 		asd->params.flash_state = ATOMISP_FLASH_IDLE;
 	}
 }

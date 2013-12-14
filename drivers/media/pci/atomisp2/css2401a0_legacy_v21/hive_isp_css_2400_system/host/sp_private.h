@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -92,7 +91,7 @@ assert(SP_DMEM_BASE[ID] != (hrt_address)-1);
 #ifndef C_RUN
 	ia_css_device_store(SP_DMEM_BASE[ID] + addr, data, size);
 #else
-	memcpy((void *)addr, data, size);
+	memcpy((void *)(uint32_t)addr, data, size);
 #endif
 return;
 }
@@ -108,7 +107,7 @@ assert(SP_DMEM_BASE[ID] != (hrt_address)-1);
 #ifndef C_RUN
 	ia_css_device_load(SP_DMEM_BASE[ID] + addr, data, size);
 #else
-	memcpy(data, (void *)addr, size);
+	memcpy(data, (void *)(uint32_t)addr, size);
 #endif
 return;
 }
@@ -124,7 +123,7 @@ assert(SP_DMEM_BASE[ID] != (hrt_address)-1);
 #ifndef C_RUN
 	ia_css_device_store_uint8(SP_DMEM_BASE[SP0_ID] + addr, data);
 #else
-	*(uint8_t *)addr = data;
+	*(uint8_t *)(uint32_t)addr = data;
 #endif
 return;
 }
@@ -140,7 +139,7 @@ assert(SP_DMEM_BASE[ID] != (hrt_address)-1);
 #ifndef C_RUN
 	ia_css_device_store_uint16(SP_DMEM_BASE[SP0_ID] + addr, data);
 #else
-	*(uint16_t *)addr = data;
+	*(uint16_t *)(uint32_t)addr = data;
 #endif
 return;
 }
@@ -156,7 +155,7 @@ assert(SP_DMEM_BASE[ID] != (hrt_address)-1);
 #ifndef C_RUN
 	ia_css_device_store_uint32(SP_DMEM_BASE[SP0_ID] + addr, data);
 #else
-	*(uint32_t *)addr = data;
+	*(uint32_t *)(uint32_t)addr = data;
 #endif
 return;
 }
@@ -171,7 +170,7 @@ assert(SP_DMEM_BASE[ID] != (hrt_address)-1);
 #ifndef C_RUN
 	return ia_css_device_load_uint8(SP_DMEM_BASE[SP0_ID] + addr);
 #else
-	return *(uint8_t *)addr;
+	return *(uint8_t *)(uint32_t)addr;
 #endif
 }
 
@@ -185,7 +184,7 @@ assert(SP_DMEM_BASE[ID] != (hrt_address)-1);
 #ifndef C_RUN
 	return ia_css_device_load_uint16(SP_DMEM_BASE[SP0_ID] + addr);
 #else
-	return *(uint16_t *)addr;
+	return *(uint16_t *)(uint32_t)addr;
 #endif
 }
 
@@ -199,7 +198,7 @@ assert(SP_DMEM_BASE[ID] != (hrt_address)-1);
 #ifndef C_RUN
 	return ia_css_device_load_uint32(SP_DMEM_BASE[SP0_ID] + addr);
 #else
-	return *(uint32_t *)addr;
+	return *(uint32_t *)(uint32_t)addr;
 #endif
 }
 

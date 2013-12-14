@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -102,11 +101,8 @@ static const hrt_address SP_DMEM_BASE[N_SP_ID] = {
 static const hrt_address MMU_BASE[N_MMU_ID] = {
 	0x0000000000070000ULL,
 	0x00000000000A0000ULL};
-#elif defined(IS_ISP_2400A0_MAMOIADA_SYSTEM)
-static const hrt_address MMU_BASE[N_MMU_ID] = {
-	0x0000000000070000ULL};
 #else
-#error "system_local.h: SYSTEM must be one of {2400, 2400A0, 2401 }"
+#error "system_local.h: SYSTEM must be one of {2400, 2401 }"
 #endif
 
 /* DMA */
@@ -201,6 +197,12 @@ static const hrt_address PIXELGEN_CTRL_BASE[N_PIXELGEN_ID] = {
 	0x00000000000C3000ULL,	/* pixel gen controller B */
 	0x00000000000C5000ULL	/* pixel gen controller C */
 };
+/* Stream2MMIO, part of the Input System 2401 */
+static const hrt_address STREAM2MMIO_CTRL_BASE[N_STREAM2MMIO_ID] = {
+	0x00000000000C0C00ULL,	/* stream2mmio controller A */
+	0x00000000000C2C00ULL,	/* stream2mmio controller B */
+	0x00000000000C4C00ULL	/* stream2mmio controller C */
+};
 #elif HRT_ADDRESS_WIDTH == 32
 
 #define GP_FIFO_BASE   ((hrt_address)0x00090104)		/* This is NOT a base address */
@@ -243,11 +245,8 @@ static const hrt_address SP_DMEM_BASE[N_SP_ID] = {
 static const hrt_address MMU_BASE[N_MMU_ID] = {
 	0x00070000UL,
 	0x000A0000UL};
-#elif defined(IS_ISP_2400A0_MAMOIADA_SYSTEM)
-static const hrt_address MMU_BASE[N_MMU_ID] = {
-	0x00070000UL};
 #else
-#error "system_local.h: SYSTEM must be one of {2400, 2400A0, 2401 }"
+#error "system_local.h: SYSTEM must be one of {2400, 2401 }"
 #endif
 
 /* DMA */
@@ -341,6 +340,12 @@ static const hrt_address PIXELGEN_CTRL_BASE[N_PIXELGEN_ID] = {
 	0x000C1000UL,	/* pixel gen controller A */
 	0x000C3000UL,	/* pixel gen controller B */
 	0x000C5000UL	/* pixel gen controller C */
+};
+/* Stream2MMIO, part of the Input System 2401 */
+static const hrt_address STREAM2MMIO_CTRL_BASE[N_STREAM2MMIO_ID] = {
+	0x000C0C00UL,	/* stream2mmio controller A */
+	0x000C2C00UL,	/* stream2mmio controller B */
+	0x000C4C00UL	/* stream2mmio controller C */
 };
 
 #else

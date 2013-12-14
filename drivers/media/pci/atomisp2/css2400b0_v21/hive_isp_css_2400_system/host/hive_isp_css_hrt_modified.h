@@ -24,7 +24,6 @@
 
 #include "system_types.h"
 
-//#include <hrt/api.h>
 #include "hive_isp_css_host_ids_hrt.h"
 #include "hive_isp_css_defs.h"
 

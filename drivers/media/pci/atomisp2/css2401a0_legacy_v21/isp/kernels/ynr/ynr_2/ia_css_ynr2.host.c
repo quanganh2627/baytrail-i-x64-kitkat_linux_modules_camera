@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -36,6 +35,10 @@ const struct ia_css_ynr_config default_ynr_config = {
 
 const struct ia_css_fc_config default_fc_config = {
 	1,
+	0,		/* 0 -> ineffective */
+	0,		/* 0 -> ineffective */
+	0,		/* 0 -> ineffective */
+	0,		/* 0 -> ineffective */
 	(1 << (ISP_VEC_ELEMBITS - 2)),		/* 0.5 */
 	(1 << (ISP_VEC_ELEMBITS - 2)),		/* 0.5 */
 	(1 << (ISP_VEC_ELEMBITS - 2)),		/* 0.5 */
@@ -62,6 +65,11 @@ ia_css_fc_encode(struct sh_css_isp_fc_params *to,
 {
 	to->gain_exp   = from->gain_exp;
 
+	to->coring_pos_0 = from->coring_pos_0;
+	to->coring_pos_1 = from->coring_pos_1;
+	to->coring_neg_0 = from->coring_neg_0;
+	to->coring_neg_1 = from->coring_neg_1;
+
 	to->gain_pos_0 = from->gain_pos_0;
 	to->gain_pos_1 = from->gain_pos_1;
 	to->gain_neg_0 = from->gain_neg_0;
@@ -84,11 +92,15 @@ ia_css_fc_debug_dtrace(const struct ia_css_fc_config *config, unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.gain_exp=%d, "
+		"config.coring_pos_0=%d, config.coring_pos_1=%d, "
+		"config.coring_neg_0=%d, config.coring_neg_1=%d, "
 		"config.gain_pos_0=%d, config.gain_pos_1=%d, "
 		"config.gain_neg_0=%d, config.gain_neg_1=%d, "
 		"config.crop_pos_0=%d, config.crop_pos_1=%d, "
 		"config.crop_neg_0=%d, config.crop_neg_1=%d\n",
 		config->gain_exp,
+		config->coring_pos_0, config->coring_pos_1,
+		config->coring_neg_0, config->coring_neg_1,
 		config->gain_pos_0, config->gain_pos_1,
 		config->gain_neg_0, config->gain_neg_1,
 		config->crop_pos_0, config->crop_pos_1,

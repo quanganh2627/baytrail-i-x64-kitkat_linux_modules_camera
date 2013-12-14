@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -22,7 +21,7 @@
 
 
 #include "assert_support.h"
-#include <linux/string.h>		/* memset() */
+#include "platform_support.h"
 #include "ia_css_isys.h"
 #include "bitop_support.h"
 #include "ia_css_pipeline.h"	/* ia_css_pipeline_get_pipe_io_status() */

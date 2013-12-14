@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131030_2214 */
+/* Release Version: ci_master_20131130_1312 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -36,6 +36,7 @@
 #endif
 
 #include "ia_css_types.h"
+
 
 /* ID's for refcount */
 #define IA_CSS_REFCOUNT_PARAM_SET_POOL  0xCAFE0001
@@ -501,7 +502,8 @@ enum ia_css_err {
 	IA_CSS_ERR_RESOURCE_LIST_TO_SMALL,
 	IA_CSS_ERR_RESOURCE_ITEMS_STILL_ALLOCATED,
 	IA_CSS_ERR_RESOURCE_EXHAUSTED,
-	IA_CSS_ERR_RESOURCE_ALREADY_ALLOCATED
+	IA_CSS_ERR_RESOURCE_ALREADY_ALLOCATED,
+	IA_CSS_ERR_VERSION_MISMATCH
 };
 
 /** Frame plane structure. This describes one plane in an image
@@ -703,12 +705,6 @@ struct ia_css_isp_3a_statistics {
 	} data_hmem;
 };
 
-enum ia_css_dvs_tables {
-	IA_CSS_DVS_HOR_PROJ,
-	IA_CSS_DVS_VER_PROJ,
-	IA_CSS_NUM_DVS_TABLES
-};
-
 /** Structure that holds DVS statistics in the ISP internal
  * format. Use ia_css_get_dvs_statistics() to translate
  * this to the format used on the host (DVS engine).
@@ -716,6 +712,8 @@ enum ia_css_dvs_tables {
 struct ia_css_isp_dvs_statistics {
 	ia_css_ptr hor_proj;
 	ia_css_ptr ver_proj;
+	uint32_t   hor_size;
+	uint32_t   ver_size;
 };
 
 struct ia_css_properties {
@@ -832,6 +830,10 @@ struct ia_css_css_mem_env {
 	ia_css_ptr (*mmap)(const void *ptr, const size_t size,
 			   uint16_t attribute, void *context);
 	/**< Map an pre-allocated memory region to an address. */
+	void * (*hrt_vaddr_to_host_vaddr)(ia_css_ptr ptr);
+	/**< Address translation from ISP shared memory address to IA address */
+	ia_css_ptr (*host_vaddr_to_hrt_vaddr)(const void *ptr);
+	/**< Address translation from IA address to ISP shared memory address */
 };
 
 /** Environment with function pointers to access the CSS hardware. This includes
@@ -857,11 +859,9 @@ struct ia_css_hw_access_env {
 	/**< Load a 32 bit value from an address in the CSS HW address
 	     space. The address must be a 32 bit aligned address. */
 	void     (*store)(hrt_address addr, const void *data, uint32_t bytes);
-	/**< Store a number of bytes into a byte-aligned address in the CSS HW
-	     address space. */
+	/**< Store a number of bytes into a byte-aligned address in the CSS HW address space. */
 	void     (*load)(hrt_address addr, void *data, uint32_t bytes);
-	/**< Load a number of bytes from a byte-aligned address in the CSS HW
-	     address space. */
+	/**< Load a number of bytes from a byte-aligned address in the CSS HW address space. */
 };
 
 /** Environment with function pointers to print error and debug messages.
@@ -1499,14 +1499,14 @@ ia_css_frame_map(struct ia_css_frame **frame,
                  void *context);
 
 /** @brief Allocate a metadata buffer.
- * @param[in] config	Pointer of metadata configuration.
+ * @param[in] size		Size of metadata in bytes.
  *
- * This function allocates a metadata buffer based on the configurations.
+ * This function allocates a metadata buffer according to requested size.
  * Because of DMA requirement, this function rounds up buffer size to be
  * multiple of 32 bytes before allocating the physical memory.
  */
 struct ia_css_data *
-ia_css_metadata_allocate(const struct ia_css_metadata_config *config);
+ia_css_metadata_allocate(unsigned int size);
 
 /** @brief Free a metadata buffer.
  *
@@ -1759,7 +1759,7 @@ ia_css_stream_request_flash(struct ia_css_stream *stream);
  * in fact this is the expected behavior most of the time. Proper
  * resource locking and double buffering is in place to allow for this.
  */
-void
+enum ia_css_err
 ia_css_stream_set_isp_config_on_pipe(struct ia_css_stream *stream,
 			     const struct ia_css_isp_config *config,
 			     struct ia_css_pipe *pipe);
@@ -1777,7 +1777,7 @@ ia_css_stream_set_isp_config_on_pipe(struct ia_css_stream *stream,
  * in fact this is the expected behavior most of the time. Proper
  * resource locking and double buffering is in place to allow for this.
  */
-void
+enum ia_css_err
 ia_css_stream_set_isp_config(
 	struct ia_css_stream *stream,
 	const struct ia_css_isp_config *config);
@@ -1806,7 +1806,13 @@ void
 ia_css_get_dvs2_statistics(struct ia_css_dvs2_statistics           *host_stats,
 			  const struct ia_css_isp_dvs_statistics *isp_stats);
 
-/* Copy 3A statistics from an ISP buffer to a host buffer.
+#if defined(IS_ISP_2500_SYSTEM)
+struct ia_css_4a_statistics;
+void ia_css_get_4a_statistics(struct ia_css_4a_statistics           *host_stats,
+		const struct ia_css_isp_3a_statistics *isp_stats);
+#endif
+
+/* Copy 4A statistics from an ISP/ACC buffer to a host buffer.
  * This may include a translation step as well depending
  * on the ISP version.
  * Always use this function, never copy the buffer directly.

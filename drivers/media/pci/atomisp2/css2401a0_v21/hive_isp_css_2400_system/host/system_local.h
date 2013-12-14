@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -102,11 +101,8 @@ static const hrt_address SP_DMEM_BASE[N_SP_ID] = {
 static const hrt_address MMU_BASE[N_MMU_ID] = {
 	(hrt_address)0x0000000000070000ULL,
 	(hrt_address)0x00000000000A0000ULL};
-#elif defined (IS_ISP_2400A0_MAMOIADA_SYSTEM)
-static const hrt_address MMU_BASE[N_MMU_ID] = {
-	(hrt_address)0x0000000000070000ULL};
 #else
-#error "system_local.h: SYSTEM must be one of {2400, 2400A0, 2401 }"
+#error "system_local.h: SYSTEM must be one of {2400, 2401 }"
 #endif
 
 /* DMA */
@@ -219,11 +215,8 @@ static const hrt_address SP_DMEM_BASE[N_SP_ID] = {
 static const hrt_address MMU_BASE[N_MMU_ID] = {
 	(hrt_address)0x00070000UL,
 	(hrt_address)0x000A0000UL};
-#elif defined (IS_ISP_2400A0_MAMOIADA_SYSTEM)
-static const hrt_address MMU_BASE[N_MMU_ID] = {
-	(hrt_address)0x00070000UL};
 #else
-#error "system_local.h: SYSTEM must be one of {2400, 2400A0, 2401 }"
+#error "system_local.h: SYSTEM must be one of {2400, 2401 }"
 #endif
 
 /* DMA */

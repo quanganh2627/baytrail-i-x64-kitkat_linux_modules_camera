@@ -159,12 +159,7 @@ enum ia_css_isp_memories {
 
 /** CSS data descriptor */
 struct ia_css_data {
-	hrt_vaddress address; /* CSS virtual address */
-	uint32_t   size;    /* Disabled if 0 */
-};
-
-struct ia_css_isp_data {
-	uint32_t   address; /* ISP address */
+	ia_css_ptr address; /* CSS virtual address */
 	uint32_t   size;    /* Disabled if 0 */
 };
 
@@ -243,7 +238,7 @@ struct ia_css_binary_info {
 	uint32_t		output_block_height;
 	uint32_t		dvs_in_block_width;
 	uint32_t		dvs_in_block_height;
-	struct ia_css_isp_data	mem_initializers[IA_CSS_NUM_PARAM_CLASSES][IA_CSS_NUM_ISP_MEMORIES];
+	struct ia_css_data	mem_initializers[IA_CSS_NUM_PARAM_CLASSES][IA_CSS_NUM_ISP_MEMORIES];
 	uint32_t		sh_dma_cmd_ptr;     /* In ISP dmem */
 	uint32_t		isp_pipe_version;
 /* MW: Packing (related) bools in an integer ?? */

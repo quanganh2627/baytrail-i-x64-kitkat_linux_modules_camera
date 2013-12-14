@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,11 +22,7 @@
 #ifndef __CSI_RX_GLOBAL_H_INCLUDED__
 #define __CSI_RX_GLOBAL_H_INCLUDED__
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 typedef enum {
 	CSI_MIPI_PACKET_TYPE_UNDEFINED = 0,
@@ -78,4 +73,12 @@ static const uint32_t N_CSI_RX_FE_CTRL_DLANES[N_CSI_RX_FRONTEND_ID] = {
 	N_CSI_RX_DLANE_ID,	/* 4 dlanes for CSI_RX_FR0NTEND1_ID */
 	N_CSI_RX_DLANE_ID	/* 4 dlanes for CSI_RX_FR0NTEND2_ID */
 };
+
+/* sid_width for CSI_RX_BACKEND<N>_ID */
+static const uint32_t N_CSI_RX_BE_SID_WIDTH[N_CSI_RX_BACKEND_ID] = {
+	3,
+	2,
+	2
+};
+
 #endif /* __CSI_RX_GLOBAL_H_INCLUDED__ */

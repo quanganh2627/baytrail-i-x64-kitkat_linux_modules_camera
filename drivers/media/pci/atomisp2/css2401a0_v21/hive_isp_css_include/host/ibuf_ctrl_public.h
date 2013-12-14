@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -52,6 +51,16 @@ STORAGE_CLASS_IBUF_CTRL_H void ibuf_ctrl_get_proc_state(
 		const ibuf_ctrl_ID_t ID,
 		const uint32_t proc_id,
 		ibuf_ctrl_proc_state_t *state);
+/**
+ * @brief Dump the ibuf-controller state.
+ * Dump the state of the ibuf-controller regiester-set.
+ *
+ * @param[in]	id		The global unique ID of the input-buffer controller.
+ * @param[in]	state		Pointer to the register-state.
+ */
+STORAGE_CLASS_IBUF_CTRL_H void ibuf_ctrl_dump_state(
+		const ibuf_ctrl_ID_t ID,
+		ibuf_ctrl_state_t *state);
 /** end of NCI */
 
 /*****************************************************

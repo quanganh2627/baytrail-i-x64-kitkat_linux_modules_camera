@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -30,6 +29,7 @@
  */
 #include "hrt/defs.h"
 #include "storage_class.h"
+#include <string.h>
 
 STORAGE_CLASS_INLINE void
 hrt_sleep(void)
@@ -53,6 +53,7 @@ hrt_sleep(void)
  * "assert_support.h", "math_support.h", etc
  */
 //#include "hrt/host.h"
+#include <string.h>
 
 #define CSS_ALIGN(d, a) d __attribute__((aligned(a)))
 
@@ -60,6 +61,8 @@ hrt_sleep(void)
 #include "storage_class.h"
 #include <linux/delay.h>
 #include <linux/kernel.h>
+#include <linux/string.h>
+
 /* For definition of hrt_sleep() */
 #include <hrt/hive_isp_css_custom_host_hrt.h>
 
@@ -79,6 +82,7 @@ hrt_sleep(void)
  * "assert_support.h", "math_support.h", etc
  */
 #include "hrt/host.h"
+#include <string.h>
 
 #define CSS_ALIGN(d, a) d __attribute__((aligned(a)))
 
@@ -87,6 +91,7 @@ hrt_sleep(void)
  * Put here everything FIST specific not covered in
  * "assert_support.h", "math_support.h", etc
  */
+#include <string.h>
 
 #endif
 

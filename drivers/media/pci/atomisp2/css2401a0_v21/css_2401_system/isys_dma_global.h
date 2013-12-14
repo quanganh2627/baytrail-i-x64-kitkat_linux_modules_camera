@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,11 +22,7 @@
 #ifndef __ISYS_DMA_GLOBAL_H_INCLUDED__
 #define __ISYS_DMA_GLOBAL_H_INCLUDED__
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 #define HIVE_ISYS2401_DMA_IBUF_DDR_CONN	0
 #define _DMA_V2_ZERO_EXTEND		0

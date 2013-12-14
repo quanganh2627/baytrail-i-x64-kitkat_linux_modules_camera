@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,7 +19,6 @@
  *
  */
 
-/* Release Version: ci_master_20131030_2214 */
 #ifndef _dma_v2_defs_h
 #define _dma_v2_defs_h
 

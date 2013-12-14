@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -54,6 +53,10 @@ ia_css_nr_encode(struct sh_css_isp_ynr_params *to,
 	    uDIGIT_FITTING(from->ynr_gain, 16, SH_CSS_YNR_GAIN_SHIFT);
 	to->gain_dir =
 	    uDIGIT_FITTING(from->ynr_gain, 16, SH_CSS_YNR_GAIN_SHIFT);
+	to->threshold_cb =
+	    uDIGIT_FITTING(from->threshold_cb, 16, SH_CSS_BAYER_BITS);
+	to->threshold_cr =
+	    uDIGIT_FITTING(from->threshold_cr, 16, SH_CSS_BAYER_BITS);
 }
 
 void
@@ -119,6 +122,10 @@ ia_css_nr_dump(const struct sh_css_isp_ynr_params *ynr, unsigned level)
 			"ynr_gain_all", ynr->gain_all);
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"ynr_gain_dir", ynr->gain_dir);
+	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
+			"ynr_threshold_cb", ynr->threshold_cb);
+	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
+			"ynr_threshold_cr", ynr->threshold_cr);
 }
 
 void

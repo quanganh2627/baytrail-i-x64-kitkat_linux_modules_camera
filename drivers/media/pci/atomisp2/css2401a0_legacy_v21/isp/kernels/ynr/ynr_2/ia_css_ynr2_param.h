@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -40,6 +39,10 @@ struct sh_css_isp_yee2_params {
 /* Fringe Control */
 struct sh_css_isp_fc_params {
 	int32_t gain_exp;
+	uint16_t coring_pos_0;
+	uint16_t coring_pos_1;
+	uint16_t coring_neg_0;
+	uint16_t coring_neg_1;
 	int32_t gain_pos_0;
 	int32_t gain_pos_1;
 	int32_t gain_neg_0;

@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -62,17 +61,11 @@ struct ia_css_xnr_table {
 	union ia_css_xnr_data data;
 };
 
-/** eXtra Noise Reduction configuration.
- *
- *  NOTE: This paramater is not passed to ISP.
- *        ISP1 and ISP2 use XNR1, but the threshold in ia_css_xnr_config is not used.
- *        The threshold is set as constant value inside ISP.
- *
- *  ISP block: XNR1
- */
 struct ia_css_xnr_config {
-	uint32_t threshold;  /**< Threshold.
-				u0.16, [0,65535], default/ineffective 0 */
+	/** XNR threshold.
+	 * type:u0.16 valid range:[0,65535]
+	 * default: 25 */
+	uint16_t threshold;
 };
 
 #endif /* __IA_CSS_XNR_TYPES_H */

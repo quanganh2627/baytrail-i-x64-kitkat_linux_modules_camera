@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 #ifndef _IA_CSS_INPUTFIFO_H
 #define _IA_CSS_INPUTFIFO_H
 

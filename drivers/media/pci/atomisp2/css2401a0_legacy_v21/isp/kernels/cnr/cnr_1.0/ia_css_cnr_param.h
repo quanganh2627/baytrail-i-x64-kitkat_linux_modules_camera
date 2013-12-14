@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,12 +22,8 @@
 #ifndef __IA_CSS_CNR_PARAM_H
 #define __IA_CSS_CNR_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
 /* CNR (Chroma Noise Reduction) */
+/* Reuse YNR1 param structure */
+#include  "../../ynr/ynr_1.0/ia_css_ynr_param.h"
 
 #endif /* __IA_CSS_CNR_PARAM_H */

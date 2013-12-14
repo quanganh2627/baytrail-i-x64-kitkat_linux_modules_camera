@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
 * Support for Medfield PNW Camera Imaging ISP subsystem.
 *
@@ -22,10 +21,10 @@
 * 02110-1301, USA.
 *
 */
-#include "ia_css_debug.h"
 #include "debug.h"
 #include "memory_access.h"
 
+#include "ia_css_debug.h"
 #include "ia_css_debug_pipe.h"
 #include "ia_css_stream.h"
 #include "ia_css_pipeline.h"
@@ -240,7 +239,7 @@ void ia_css_debug_dump_isp_state(void)
 #endif
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "[2] dma_FIFO stalled",
 				    stall.fifo2);
-#if defined(HAS_ISP_2400_MAMOIADA) || defined(HAS_ISP_2400A0_MAMOIADA) || defined(HAS_ISP_2401_MAMOIADA) || \
+#if defined(HAS_ISP_2400_MAMOIADA) || defined(HAS_ISP_2401_MAMOIADA) || \
     defined(HAS_ISP_2500_SKYCAM)
 
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "[3] gdc0_FIFO stalled",
@@ -255,7 +254,7 @@ void ia_css_debug_dump_isp_state(void)
 				    stall.fifo6);
 #else
 #error "ia_css_debug: ISP cell must be \
-	one of {2400_MAMOIADA,, 2400A0_MAMOIADA, 2401_MAMOIADA, 2500_SKYCAM}"
+	one of {2400_MAMOIADA,, 2401_MAMOIADA, 2500_SKYCAM}"
 #endif
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n",
 				    "status & control stalled",
@@ -268,7 +267,7 @@ void ia_css_debug_dump_isp_state(void)
 				    stall.vamem1);
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "vamem2 stalled",
 				    stall.vamem2);
-#if defined(HAS_ISP_2400_MAMOIADA) || defined(HAS_ISP_2400A0_MAMOIADA) || defined(HAS_ISP_2401_MAMOIADA)
+#if defined(HAS_ISP_2400_MAMOIADA) || defined(HAS_ISP_2401_MAMOIADA)
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "vamem3 stalled",
 				    stall.vamem3);
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "hmem stalled",
@@ -287,7 +286,7 @@ void ia_css_debug_dump_sp_state(void)
 	sp_get_state(SP0_ID, &state, &stall);
 	debug_print_sp_state(&state, "SP");
 	if (state.is_stalling) {
-#if defined(HAS_SP_2400) || defined(HAS_SP_2400A0) || defined(HAS_SP_2500)
+#if defined(HAS_SP_2400) || defined(HAS_SP_2500)
 #if !defined(HAS_NO_INPUT_SYSTEM)
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "isys_FIFO stalled",
 				    stall.fifo0);
@@ -320,7 +319,7 @@ void ia_css_debug_dump_sp_state(void)
 				    stall.fifoa);
 #else
 #error "ia_css_debug: SP cell must be \
-	one of {SP2400, SP2400A0, SP2500}"
+	one of {SP2400, SP2500}"
 #endif
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "dmem stalled",
 				    stall.dmem);
@@ -1938,15 +1937,15 @@ void ia_css_debug_dump_isys_state(void)
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
 void ia_css_debug_dump_isys_state(void)
 {
-	input_system_state_t *state;
+	/* Android compilation fails if made a local variable
+	stack size on android is limited to 2k and this structure
+	is around 3.5K, in place of static malloc can be done but
+	if this call is made too often it will lead to fragment memory
+	versus a fixed allocation */
+	static input_system_state_t state;
 
-	state = sh_css_malloc(sizeof(*state));
-	if (!state) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "out of memory\n");
-		return;
-	}
-	input_system_get_state(INPUT_SYSTEM0_ID, state);
-	sh_css_free(state);
+	input_system_get_state(INPUT_SYSTEM0_ID, &state);
+	input_system_dump_state(INPUT_SYSTEM0_ID, &state);
 }
 #endif
 
@@ -2052,7 +2051,7 @@ findf_dmem_params(struct ia_css_stream *stream, short idx)
 		struct ia_css_pipeline *pipeline = ia_css_pipe_get_pipeline(pipe);
 		struct ia_css_pipeline_stage *stage;
 		for (stage = pipeline->stages; stage; stage = stage->next) {
-			short *offsets = (short*)&stage->binary->info->mem_offsets->dmem;
+			short *offsets = (short*)&stage->binary->info->mem_offsets.offsets.param->dmem;
 			short dmem_offset = offsets[idx];
 			if (dmem_offset < 0) continue;
 			return &stage->isp_mem_params[IA_CSS_ISP_DMEM0].address[dmem_offset];

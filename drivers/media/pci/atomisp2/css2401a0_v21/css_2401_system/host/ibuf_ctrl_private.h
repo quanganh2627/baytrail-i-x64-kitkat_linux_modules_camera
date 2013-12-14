@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -28,6 +27,7 @@
 #include "device_access.h"	/* ia_css_device_load_uint32 */
 
 #include "assert_support.h" /* assert */
+#include "print_support.h" /* print */
 
 
 /*****************************************************
@@ -153,6 +153,51 @@ STORAGE_CLASS_IBUF_CTRL_C void ibuf_ctrl_get_proc_state(
 
 	state->isp_sync_state =
 		ibuf_ctrl_reg_load(ID, reg_bank_offset + _IBUF_CNTRL_ISP_SYNC_STATE);
+}
+/**
+ * @brief Dump the ibuf-controller state.
+ * Refer to "ibuf_ctrl_public.h" for details.
+ */
+STORAGE_CLASS_IBUF_CTRL_C void ibuf_ctrl_dump_state(
+		const ibuf_ctrl_ID_t ID,
+		ibuf_ctrl_state_t *state)
+{
+	uint32_t i;
+	ia_css_print("IBUF controller ID %d recalculate words 0x%x\n", ID, state->recalc_words);
+	ia_css_print("IBUF controller ID %d arbiters 0x%x\n", ID, state->arbiters);
+
+	/*
+	 * Dump the values of the register-set per
+	 * ibuf-controller process.
+	 */
+	for (i = 0; i < N_IBUF_CTRL_PROCS[ID]; i++) {
+		ia_css_print("IBUF controller ID %d Process ID %d num_items 0x%x\n", ID, i, state->proc_state[i].num_items);
+		ia_css_print("IBUF controller ID %d Process ID %d num_stores 0x%x\n", ID, i, state->proc_state[i].num_stores);
+		ia_css_print("IBUF controller ID %d Process ID %d dma_channel 0x%x\n", ID, i, state->proc_state[i].dma_channel);
+		ia_css_print("IBUF controller ID %d Process ID %d dma_command 0x%x\n", ID, i, state->proc_state[i].dma_command);
+		ia_css_print("IBUF controller ID %d Process ID %d ibuf_st_addr 0x%x\n", ID, i, state->proc_state[i].ibuf_st_addr);
+		ia_css_print("IBUF controller ID %d Process ID %d ibuf_stride 0x%x\n", ID, i, state->proc_state[i].ibuf_stride);
+		ia_css_print("IBUF controller ID %d Process ID %d ibuf_end_addr 0x%x\n", ID, i, state->proc_state[i].ibuf_end_addr);
+		ia_css_print("IBUF controller ID %d Process ID %d dest_st_addr 0x%x\n", ID, i, state->proc_state[i].dest_st_addr);
+		ia_css_print("IBUF controller ID %d Process ID %d dest_stride 0x%x\n", ID, i, state->proc_state[i].dest_stride);
+		ia_css_print("IBUF controller ID %d Process ID %d dest_end_addr 0x%x\n", ID, i, state->proc_state[i].dest_end_addr);
+		ia_css_print("IBUF controller ID %d Process ID %d sync_frame 0x%x\n", ID, i, state->proc_state[i].sync_frame);
+		ia_css_print("IBUF controller ID %d Process ID %d sync_command 0x%x\n", ID, i, state->proc_state[i].sync_command);
+		ia_css_print("IBUF controller ID %d Process ID %d store_command 0x%x\n", ID, i, state->proc_state[i].store_command);
+		ia_css_print("IBUF controller ID %d Process ID %d shift_returned_items 0x%x\n", ID, i, state->proc_state[i].shift_returned_items);
+		ia_css_print("IBUF controller ID %d Process ID %d elems_ibuf 0x%x\n", ID, i, state->proc_state[i].elems_ibuf);
+		ia_css_print("IBUF controller ID %d Process ID %d elems_dest 0x%x\n", ID, i, state->proc_state[i].elems_dest);
+		ia_css_print("IBUF controller ID %d Process ID %d cur_stores 0x%x\n", ID, i, state->proc_state[i].cur_stores);
+		ia_css_print("IBUF controller ID %d Process ID %d cur_acks 0x%x\n", ID, i, state->proc_state[i].cur_acks);
+		ia_css_print("IBUF controller ID %d Process ID %d cur_s2m_ibuf_addr 0x%x\n", ID, i, state->proc_state[i].cur_s2m_ibuf_addr);
+		ia_css_print("IBUF controller ID %d Process ID %d cur_dma_ibuf_addr 0x%x\n", ID, i, state->proc_state[i].cur_dma_ibuf_addr);
+		ia_css_print("IBUF controller ID %d Process ID %d cur_dma_dest_addr 0x%x\n", ID, i, state->proc_state[i].cur_dma_dest_addr);
+		ia_css_print("IBUF controller ID %d Process ID %d cur_isp_dest_addr 0x%x\n", ID, i, state->proc_state[i].cur_isp_dest_addr);
+		ia_css_print("IBUF controller ID %d Process ID %d dma_cmds_send 0x%x\n", ID, i, state->proc_state[i].dma_cmds_send);
+		ia_css_print("IBUF controller ID %d Process ID %d main_cntrl_state 0x%x\n", ID, i, state->proc_state[i].main_cntrl_state);
+		ia_css_print("IBUF controller ID %d Process ID %d dma_sync_state 0x%x\n", ID, i, state->proc_state[i].dma_sync_state);
+		ia_css_print("IBUF controller ID %d Process ID %d isp_sync_state 0x%x\n", ID, i, state->proc_state[i].isp_sync_state);
+	}
 }
 /** end of NCI */
 

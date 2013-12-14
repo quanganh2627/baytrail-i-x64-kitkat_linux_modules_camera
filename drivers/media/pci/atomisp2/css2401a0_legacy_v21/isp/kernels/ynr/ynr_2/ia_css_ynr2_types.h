@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -56,6 +55,18 @@ struct ia_css_fc_config {
 	uint8_t  gain_exp;   /**< Common exponent of gains.
 				u8.0, [0,13],
 				default 1, ineffective 0 */
+	uint16_t coring_pos_0; /**< Coring threshold for positive edge in dark area.
+				u0.13, [0,8191],
+				default 0(0), ineffective 0 */
+	uint16_t coring_pos_1; /**< Coring threshold for positive edge in bright area.
+				u0.13, [0,8191],
+				default 0(0), ineffective 0 */
+	uint16_t coring_neg_0; /**< Coring threshold for negative edge in dark area.
+				u0.13, [0,8191],
+				default 0(0), ineffective 0 */
+	uint16_t coring_neg_1; /**< Coring threshold for negative edge in bright area.
+				u0.13, [0,8191],
+				default 0(0), ineffective 0 */
 	uint16_t gain_pos_0; /**< Gain for positive edge in dark area.
 				u0.13, [0,8191],
 				default 4096(0.5), ineffective 0 */

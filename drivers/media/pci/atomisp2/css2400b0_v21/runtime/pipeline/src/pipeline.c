@@ -28,30 +28,26 @@
 #include "sh_css_sp.h"
 #include "ia_css_pipeline.h"
 
+#define PIPELINE_NUM_UNMAPPED                   (~0)
 #define PIPELINE_SP_THREAD_EMPTY_TOKEN          (0x0)
 #define PIPELINE_SP_THREAD_RESERVED_TOKEN       (0x1)
-#define PIPELINE_NUM_EMPTY_TOKEN                (0xFFFF)
-#define PIPELINE_NUM_RESERVED_TOKEN             (0x1)
-#define PIPELINE_NUM_UNMAPPED                   (0xFFFF)
 
 /*******************************************************
 *** Static variables
 ********************************************************/
-static uint32_t pipeline_num_counter;
-static uint32_t pipeline_num_list[IA_CSS_PIPELINE_NUM_MAX];
 static unsigned int pipeline_num_to_sp_thread_map[IA_CSS_PIPELINE_NUM_MAX];
 static unsigned int pipeline_sp_thread_list[SH_CSS_MAX_SP_THREADS];
 
 /*******************************************************
 *** Static functions
 ********************************************************/
-static uint8_t pipeline_generate_num(void);
-static void pipeline_release_num(unsigned int pipe_num);
 static void pipeline_init_sp_thread_map(void);
 static void pipeline_map_num_to_sp_thread(unsigned int pipe_num);
 static void pipeline_unmap_num_to_sp_thread(unsigned int pipe_num);
-static void pipeline_init_defaults(struct ia_css_pipeline *pipeline,
-	enum ia_css_pipe_id pipe_id);
+static void pipeline_init_defaults(
+	struct ia_css_pipeline *pipeline,
+	enum ia_css_pipe_id pipe_id,
+	unsigned int pipe_num);
 
 static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage);
 static enum ia_css_err pipeline_stage_create(
@@ -63,36 +59,39 @@ static enum ia_css_err pipeline_stage_create(
 ********************************************************/
 void ia_css_pipeline_init(void)
 {
-	unsigned int i;
-	pipeline_num_counter = 0;
-	for (i = 0; i < IA_CSS_PIPELINE_NUM_MAX; i++)
-		pipeline_num_list[i] = PIPELINE_NUM_EMPTY_TOKEN;
-
 	pipeline_init_sp_thread_map();
 }
 
-enum ia_css_err ia_css_pipeline_create(struct ia_css_pipeline *pipeline,
-			      enum ia_css_pipe_id pipe_id)
+enum ia_css_err ia_css_pipeline_create(
+	struct ia_css_pipeline *pipeline,
+	enum ia_css_pipe_id pipe_id,
+	unsigned int pipe_num)
 {
 	assert(pipeline != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_create() enter:\n");
 
-	pipeline_init_defaults(pipeline, pipe_id);
-
-	/* Allocate the pipe number */
-	pipeline->pipe_num = pipeline_generate_num();
-	if (pipeline_num_counter > IA_CSS_PIPELINE_NUM_MAX) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_pipeline_create() exit: reached max pipes\n");
-		return IA_CSS_ERR_RESOURCE_LIST_TO_SMALL;
-	}
+	pipeline_init_defaults(pipeline, pipe_id, pipe_num);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_create() exit: pipe_num=%d\n",
 		pipeline->pipe_num);
 
 	return IA_CSS_SUCCESS;
+}
+
+void ia_css_pipeline_map(struct ia_css_pipeline *pipeline, bool map)
+{
+	assert(pipeline != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_pipeline_map() enter: pipe_num=%d\n", pipeline->pipe_num);
+
+	if(map) {
+		pipeline_map_num_to_sp_thread(pipeline->pipe_num);
+	} else {
+		pipeline_unmap_num_to_sp_thread(pipeline->pipe_num);
+	}
 }
 
 /** @brief destroy a pipeline
@@ -109,7 +108,6 @@ void ia_css_pipeline_destroy(struct ia_css_pipeline *pipeline)
 		"ia_css_pipeline_destroy() enter: pipe_num=%d\n",
 		pipeline->pipe_num);
 	/* Free the pipeline number */
-	pipeline_release_num(pipeline->pipe_num);
 
 	ia_css_pipeline_clean(pipeline);
 
@@ -160,7 +158,7 @@ bool ia_css_pipeline_get_sp_thread_id(unsigned int key, unsigned int *val)
 	      key);
 	*val = pipeline_num_to_sp_thread_map[key];
 
-	assert(*val != PIPELINE_NUM_UNMAPPED);
+	assert(*val != (unsigned)PIPELINE_NUM_UNMAPPED);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 	      "ia_css_pipeline_get_sp_thread_id() leave: return_val=%d\n",
 	      *val);
@@ -205,7 +203,7 @@ void ia_css_pipeline_clean(struct ia_css_pipeline *pipeline)
 		pipeline_stage_destroy(s);
 		s = next;
 	}
-	pipeline_init_defaults(pipeline, pipeline->pipe_id);
+	pipeline_init_defaults(pipeline, pipeline->pipe_id, pipeline->pipe_num);
 }
 
 /** @brief Add a stage to pipeline.
@@ -386,26 +384,26 @@ struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void)
  * Pipelines must be cleaned and re-created when settings of the binaries
  * change.
  */
-static void pipeline_stage_destroy(struct ia_css_pipeline_stage *pipeline)
+static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage)
 {
 	unsigned mem;
-	if (pipeline->out_frame_allocated) {
-		ia_css_frame_free(pipeline->args.out_frame);
-		pipeline->args.out_frame = NULL;
+	if (stage->out_frame_allocated) {
+		ia_css_frame_free(stage->args.out_frame);
+		stage->args.out_frame = NULL;
 	}
-	if (pipeline->vf_frame_allocated) {
-		ia_css_frame_free(pipeline->args.out_vf_frame);
-		pipeline->args.out_vf_frame = NULL;
+	if (stage->vf_frame_allocated) {
+		ia_css_frame_free(stage->args.out_vf_frame);
+		stage->args.out_vf_frame = NULL;
 	}
 	for (mem = 0; mem < IA_CSS_NUM_ISP_MEMORIES; mem++) {
-		if (pipeline->isp_mem_params[mem].address)
-			sh_css_free(pipeline->isp_mem_params[mem].address);
-		if (pipeline->isp_mem_configs[mem].address)
-			sh_css_free(pipeline->isp_mem_configs[mem].address);
-		if (pipeline->isp_css_configs[mem].address)
-			mmgr_free(pipeline->isp_css_configs[mem].address);
+		if (stage->isp_mem_params[mem].address)
+			sh_css_free(stage->isp_mem_params[mem].address);
+		if (stage->isp_mem_configs[mem].address)
+			sh_css_free(stage->isp_mem_configs[mem].address);
+		if (stage->isp_css_configs[mem].address)
+			mmgr_free(stage->isp_css_configs[mem].address);
 	}
-	sh_css_free(pipeline);
+	sh_css_free(stage);
 }
 
 static void pipeline_init_sp_thread_map(void)
@@ -422,9 +420,11 @@ static void pipeline_init_sp_thread_map(void)
 static void pipeline_map_num_to_sp_thread(unsigned int pipe_num)
 {
 	unsigned int i;
+	bool found_sp_thread = false;
+
 	/* pipe is not mapped to any thread */
 	assert(pipeline_num_to_sp_thread_map[pipe_num]
-		== PIPELINE_NUM_UNMAPPED);
+		== (unsigned)PIPELINE_NUM_UNMAPPED);
 
 	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++) {
 		if (pipeline_sp_thread_list[i] ==
@@ -432,46 +432,29 @@ static void pipeline_map_num_to_sp_thread(unsigned int pipe_num)
 			pipeline_sp_thread_list[i] =
 			    PIPELINE_SP_THREAD_RESERVED_TOKEN;
 			pipeline_num_to_sp_thread_map[pipe_num] = i;
+			found_sp_thread = true;
 			break;
 		}
 	}
+
+	/* Make sure a mapping is found */
+	/* I could do:
+		assert(i < SH_CSS_MAX_SP_THREADS);
+
+		But the below is more descriptive.
+	*/
+	assert(found_sp_thread != false);
 }
 
 static void pipeline_unmap_num_to_sp_thread(unsigned int pipe_num)
 {
 	unsigned int thread_id;
 	assert(pipeline_num_to_sp_thread_map[pipe_num]
-		!= PIPELINE_NUM_UNMAPPED);
+		!= (unsigned)PIPELINE_NUM_UNMAPPED);
 
 	thread_id = pipeline_num_to_sp_thread_map[pipe_num];
 	pipeline_num_to_sp_thread_map[pipe_num] = PIPELINE_NUM_UNMAPPED;
 	pipeline_sp_thread_list[thread_id] = PIPELINE_SP_THREAD_EMPTY_TOKEN;
-}
-
-static uint8_t pipeline_generate_num(void)
-{
-	uint8_t i;
-	uint8_t pipe_num = ~0; /* UINT8_MAX; but Linux does not have this macro */
-	/*Assign a new pipe_num .... search for empty place */
-	for (i = 0; i < IA_CSS_PIPELINE_NUM_MAX; i++) {
-		if (pipeline_num_list[i] == PIPELINE_NUM_EMPTY_TOKEN) {
-			/*position is reserved */
-			pipeline_num_list[i] = PIPELINE_NUM_RESERVED_TOKEN;
-			pipe_num = i;
-			break;
-		}
-	}
-	assert(pipe_num != (uint8_t)~0); /* UINT8_MAX; but Linux does not have this macro */
-	pipeline_num_counter++;
-	pipeline_map_num_to_sp_thread(pipe_num);
-	return pipe_num;
-}
-
-static void pipeline_release_num(unsigned int pipe_num)
-{
-	pipeline_num_list[pipe_num] = PIPELINE_NUM_EMPTY_TOKEN;
-	pipeline_num_counter--;
-	pipeline_unmap_num_to_sp_thread(pipe_num);
 }
 
 static enum ia_css_err pipeline_stage_create(
@@ -600,8 +583,10 @@ ERR:
 	return err;
 }
 
-static void pipeline_init_defaults(struct ia_css_pipeline *pipeline,
-	enum ia_css_pipe_id pipe_id)
+static void pipeline_init_defaults(
+	struct ia_css_pipeline *pipeline,
+	enum ia_css_pipe_id pipe_id,
+	unsigned int pipe_num)
 {
 	struct ia_css_frame init_frame;
 	init_frame.dynamic_data_index = SH_CSS_INVALID_FRAME_ID;
@@ -615,4 +600,5 @@ static void pipeline_init_defaults(struct ia_css_pipeline *pipeline,
 	pipeline->vf_frame = init_frame;
 	pipeline->num_execs = -1;
 	pipeline->acquire_isp_each_stage = true;
+	pipeline->pipe_num = pipe_num;
 }

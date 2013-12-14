@@ -42,32 +42,10 @@
 #define IA_CSS_BINARY_INPUT_MEMORY   1
 #define IA_CSS_BINARY_INPUT_VARIABLE 2
 
-/* enumeration of the bayer downscale factors. When a binary supports multiple
- * factors, the OR of these defines is used to build the mask of supported
- * factors. The BDS factor is used in pre-processor expressions so we cannot
- * use an enum here. */
-/* THIS SHOULD BE MOVED TO THE PUBLIC INTERFACE OF THE BDS KERNEL */
-#define SH_CSS_BDS_FACTOR_1_00 (1<<0)
-#define SH_CSS_BDS_FACTOR_1_25 (1<<1)
-#define SH_CSS_BDS_FACTOR_1_50 (1<<2)
-#define SH_CSS_BDS_FACTOR_2_00 (1<<3)
-#define SH_CSS_BDS_FACTOR_2_25 (1<<4)
-#define SH_CSS_BDS_FACTOR_2_50 (1<<5)
-#define SH_CSS_BDS_FACTOR_3_00 (1<<6)
-#define SH_CSS_BDS_FACTOR_4_00 (1<<7)
-#define SH_CSS_BDS_FACTOR_4_50 (1<<8)
-#define SH_CSS_BDS_FACTOR_5_00 (1<<9)
-#define SH_CSS_BDS_FACTOR_6_00 (1<<10)
-#define SH_CSS_BDS_FACTOR_8_00 (1<<11)
-
-struct sh_css_bds_factor {
-	unsigned numerator;
-	unsigned denominator;
-	unsigned int bds_factor;
-};
 
 #include "ia_css.h"
 #include "sh_css_metrics.h"
+#include "isp/kernels/fixedbds/fixedbds_1.0/ia_css_fixedbds.host.h"
 
 struct ia_css_binary_descr {
 	int mode;
@@ -88,6 +66,7 @@ struct ia_css_binary_descr {
 	struct ia_css_frame_info *vf_info;
 	unsigned int isp_pipe_version;
 	unsigned int required_bds_factor;
+	int stream_config_left_padding;
 };
 
 struct ia_css_binary {
@@ -201,7 +180,8 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		 const struct ia_css_frame_info *out_info,
 		 const struct ia_css_frame_info *vf_info,
 		 struct ia_css_binary *binary,
-		 struct ia_css_resolution *dvs_env);
+		 struct ia_css_resolution *dvs_env,
+		 int stream_config_left_padding);
 
 enum ia_css_err
 ia_css_binary_find(struct ia_css_binary_descr *descr,

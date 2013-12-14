@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -37,12 +36,8 @@
 #define IS_ISP_2400_MAMOIADA
 
 #include "isp2400_mamoiada_params.h"
-#elif defined (HAS_ISP_2400A0_MAMOIADA)
-#define IS_ISP_2400A0_MAMOIADA
-
-#include "isp2400A0_mamoiada_params.h"
 #else
-#error "isp_global_h: ISP_2400_MAMOIDA must be one of {2400, 2400A0, 2401 }"
+#error "isp_global_h: ISP_2400_MAMOIDA must be one of {2400, 2401 }"
 #endif
 
 #define ISP_PMEM_WIDTH_LOG2		ISP_LOG2_PMEM_WIDTH

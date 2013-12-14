@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,6 +24,10 @@
 
 /* ceil((real)a / b) */
 #define ceil_div(a,b) (((a)+(b)-1)/(b))
+#define IS_ODD(a) ((a) & 0x1)
+
+/* A => B */
+#define IMPLIES(a, b) (!(a) || (b))
 
 #if defined(_MSC_VER)
 

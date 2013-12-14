@@ -1,4 +1,3 @@
-/* Release Version: ci_master_20131030_2214 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,6 +24,7 @@
 #include "input_formatter.h"
 #include "assert_support.h"
 #include "sh_css_sp.h"
+#include "isp/modes/interface/input_buf.isp.h"
 
 /************************************************************
  * Static functions declarations
@@ -105,11 +105,17 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	enum ia_css_csi2_port port;
 
 	assert(binary != NULL);
-	cropped_height = binary->in_frame_info.res.height,
-	cropped_width = binary->in_frame_info.res.width,
-	buffer_width = binary->info->sp.max_input_width,
+	cropped_height = binary->in_frame_info.res.height;
+	cropped_width = binary->in_frame_info.res.width;
+	/* This should correspond to the input buffer definition for ISP
+	 * binaries in input_buf.isp.h */
+	if (binary->info->sp.enable.continuous && binary->info->sp.mode != IA_CSS_BINARY_MODE_COPY)
+		buffer_width = MAX_VECTORS_PER_INPUT_LINE_CONT * ISP_VEC_NELEMS;
+	else
+		buffer_width = binary->info->sp.max_input_width;
 	input_format = binary->input_format;
 	two_ppc = config->pixels_per_clock == 2;
+
 
 	if (config->mode == IA_CSS_INPUT_MODE_SENSOR
 	    || config->mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
@@ -443,9 +449,9 @@ static void ifmtr_set_if_blocking_mode(
 	bool block[] = { false, false, false, false };
 	assert(N_INPUT_FORMATTER_ID <= (sizeof(block) / sizeof(block[0])));
 
-#if (!defined(IS_ISP_2300_SYSTEM) && !defined(IS_ISP_2400_SYSTEM))
+#if !defined(IS_ISP_2400_SYSTEM)
 #error "ifmtr_set_if_blocking_mode: ISP_SYSTEM must be one of \
-	{IS_ISP_2300_SYSTEM, IS_ISP_2400_SYSTEM}"
+	{IS_ISP_2400_SYSTEM}"
 #endif
 
 	block[INPUT_FORMATTER0_ID] = (bool)config_a->block_no_reqs;

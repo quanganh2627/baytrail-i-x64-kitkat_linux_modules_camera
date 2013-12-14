@@ -105,10 +105,14 @@ static struct atomisp_map *acc_get_map(struct atomisp_device *isp,
 	return NULL;
 }
 
-static void acc_stop_acceleration(struct atomisp_device *isp)
+static int acc_stop_acceleration(struct atomisp_device *isp)
 {
-	atomisp_css_stop_acc_pipe(isp->asd);
+	int ret;
+
+	ret = atomisp_css_stop_acc_pipe(isp->asd);
 	atomisp_css_destroy_acc_pipe(isp->asd);
+
+	return ret;
 }
 
 void atomisp_acc_init(struct atomisp_device *isp)
@@ -327,7 +331,10 @@ int atomisp_acc_wait(struct atomisp_sub_device *asd, unsigned int *handle)
 		return -EINVAL;
 
 	ret = atomisp_css_wait_acc_finish(asd);
-	acc_stop_acceleration(isp);
+	if (acc_stop_acceleration(isp) == -EIO) {
+		atomisp_reset(isp);
+		return -EINVAL;
+	}
 
 	return ret;
 }
