@@ -299,58 +299,19 @@ static void atomisp_isp_parameters_clean_up(
 	memset(config, 0, sizeof(*config));
 }
 
-static void __dump_stream_config(struct atomisp_sub_device *asd)
-{
-	struct atomisp_device *isp = asd->isp;
-	struct ia_css_stream_config *s_config;
-
-	s_config = &asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-		stream_config;
-	dev_dbg(isp->dev, "sh_css_init success\n");
-	dev_dbg(isp->dev,
-		 "dumping stream config:\n");
-	dev_dbg(isp->dev,
-		 "stream_config.mode=%d.\n",
-		 s_config->mode);
-	dev_dbg(isp->dev,
-		 "stream_config.input_res w=%d, h=%d.\n",
-		 s_config->input_res.width,
-		 s_config->input_res.height);
-	dev_dbg(isp->dev,
-		 "stream_config.effective_res w=%d, h=%d.\n",
-		 s_config->effective_res.width,
-		 s_config->effective_res.height);
-	dev_dbg(isp->dev,
-		 "stream_config.format=%d.\n",
-		 s_config->format);
-	dev_dbg(isp->dev,
-		 "stream_config.bayer_order=%d.\n",
-		 s_config->bayer_order);
-	dev_dbg(isp->dev,
-		 "stream_config.2ppc=%d.\n",
-		 s_config->two_pixels_per_clock);
-	dev_dbg(isp->dev,
-		 "stream_config.online=%d.\n",
-		 s_config->online);
-	dev_dbg(isp->dev,
-		 "stream_config.continuous=%d.\n",
-		 s_config->continuous);
-}
 static void __dump_pipe_config(struct atomisp_sub_device *asd,
+			       struct atomisp_stream_env *stream_env,
 			       unsigned int pipe_id)
 {
 	struct atomisp_device *isp = asd->isp;
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 	if (stream_env->pipes[pipe_id]) {
 		struct ia_css_pipe_config *p_config;
 		struct ia_css_pipe_extra_config *pe_config;
 		p_config = &stream_env->pipe_configs[pipe_id];
 		pe_config = &stream_env->pipe_extra_configs[pipe_id];
+		dev_dbg(isp->dev, "dumping pipe[%d] config:\n", pipe_id);
 		dev_dbg(isp->dev,
-			 "dumping pipe[%d] config:\n", pipe_id);
-		dev_dbg(isp->dev,
-			 "pipe_config.pipe_id:%d.\n", p_config->mode);
+			 "pipe_config.pipe_mode:%d.\n", p_config->mode);
 		dev_dbg(isp->dev,
 			 "pipe_config.output_info w=%d, h=%d.\n",
 			 p_config->output_info.res.width,
@@ -438,11 +399,62 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 	}
 }
 
-static int __destroy_stream(struct atomisp_sub_device *asd, bool force)
+static void __dump_stream_config(struct atomisp_sub_device *asd)
 {
 	struct atomisp_device *isp = asd->isp;
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+	struct ia_css_stream_config *s_config;
+	int i, j;
+	bool valid_stream;
+
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		valid_stream = false;
+		for (j = 0; j < IA_CSS_PIPE_ID_NUM; j++) {
+			if (asd->stream_env[i].pipes[j]) {
+				__dump_pipe_config(asd, &asd->stream_env[i], j);
+				valid_stream = true;
+			}
+		}
+		if (!valid_stream)
+			continue;
+		s_config = &asd->stream_env[i].stream_config;
+		dev_dbg(isp->dev,
+			"dumping stream config[%d]:\n", i);
+		dev_dbg(isp->dev,
+			"stream_config.mode=%d.\n",
+			s_config->mode);
+		dev_dbg(isp->dev,
+			"stream_config.input_res w=%d, h=%d.\n",
+			s_config->input_res.width,
+			s_config->input_res.height);
+		dev_dbg(isp->dev,
+			"stream_config.effective_res w=%d, h=%d.\n",
+			s_config->effective_res.width,
+			s_config->effective_res.height);
+		dev_dbg(isp->dev,
+			"stream_config.format=%d.\n",
+			s_config->format);
+		dev_dbg(isp->dev,
+			"stream_config.bayer_order=%d.\n",
+			s_config->bayer_order);
+		dev_dbg(isp->dev,
+			"stream_config.2ppc=%d.\n",
+			s_config->two_pixels_per_clock);
+		dev_dbg(isp->dev,
+			"stream_config.online=%d.\n",
+			s_config->online);
+		dev_dbg(isp->dev,
+			"stream_config.continuous=%d.\n",
+			s_config->continuous);
+		dev_dbg(isp->dev,
+			"stream_config.channel_id=%d.\n",
+			s_config->channel_id);
+	}
+}
+
+static int __destroy_stream(struct atomisp_sub_device *asd,
+			struct atomisp_stream_env *stream_env, bool force)
+{
+	struct atomisp_device *isp = asd->isp;
 	int i;
 
 	if (!stream_env->stream)
@@ -474,18 +486,28 @@ static int __destroy_stream(struct atomisp_sub_device *asd, bool force)
 	return 0;
 }
 
-static int __create_stream(struct atomisp_sub_device *asd)
+static int __destroy_streams(struct atomisp_sub_device *asd, bool force)
+{
+	int ret, i;
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		ret = __destroy_stream(asd, &asd->stream_env[i], force);
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
+static int __create_stream(struct atomisp_sub_device *asd,
+			   struct atomisp_stream_env *stream_env)
 {
 	int pipe_index = 0, i;
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 	struct ia_css_pipe *multi_pipes[IA_CSS_PIPE_ID_NUM];
 
-	__dump_stream_config(asd);
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
 		if (stream_env->pipes[i])
 			multi_pipes[pipe_index++] = stream_env->pipes[i];
 	}
+	if (pipe_index == 0)
+		return 0;
 
 #ifdef CSS21
 	stream_env->stream_config.target_num_cont_raw_buf =
@@ -498,50 +520,79 @@ static int __create_stream(struct atomisp_sub_device *asd)
 	return 0;
 }
 
-static int __destroy_pipes(struct atomisp_sub_device *asd, bool force)
+static int __create_streams(struct atomisp_sub_device *asd)
+{
+	int ret, i;
+	__dump_stream_config(asd);
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		ret = __create_stream(asd, &asd->stream_env[i]);
+		if (ret)
+			goto rollback;
+	}
+	return 0;
+rollback:
+	for (i--; i >= 0; i--)
+		__destroy_stream(asd, &asd->stream_env[i], true);
+	return ret;
+}
+
+static int __destroy_stream_pipes(struct atomisp_sub_device *asd,
+				  struct atomisp_stream_env *stream_env,
+				  bool force)
 {
 	struct atomisp_device *isp = asd->isp;
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
-	int i;
-	int ret = 0;
-
-	if (stream_env->stream) {
-		dev_err(isp->dev, "cannot destroy css stream.\n");
-		return -EINVAL;
-	}
+	int ret, i;
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
 		if (!stream_env->pipes[i] ||
 		    !(force || stream_env->update_pipe[i]))
 			continue;
-
 		if (ia_css_pipe_destroy(stream_env->pipes[i])
 		    != IA_CSS_SUCCESS) {
 			dev_err(isp->dev,
 				"destroy pipe[%d]failed.cannot recover.\n", i);
 			ret = -EINVAL;
 		}
-
 		stream_env->pipes[i] = NULL;
 		stream_env->update_pipe[i] = false;
 	}
+	return 0;
+}
 
-	return ret;
+static int __destroy_pipes(struct atomisp_sub_device *asd, bool force)
+{
+	struct atomisp_device *isp = asd->isp;
+	int i;
+	int ret = 0;
+
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		if (asd->stream_env[i].stream) {
+
+			dev_err(isp->dev,
+				"cannot destroy css pipes for stream[%d].\n",
+				i);
+			continue;
+		}
+
+		ret = __destroy_stream_pipes(asd, &asd->stream_env[i], force);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
 }
 
 void atomisp_destroy_pipes_stream_force(struct atomisp_sub_device *asd)
 {
-	__destroy_stream(asd, true);
+	__destroy_streams(asd, true);
 	__destroy_pipes(asd, true);
 }
 
 static void __apply_additional_pipe_config(
 				struct atomisp_sub_device *asd,
+				struct atomisp_stream_env *stream_env,
 				enum ia_css_pipe_id pipe_id)
 {
 	struct atomisp_device *isp = asd->isp;
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 
 	if (pipe_id < 0 || pipe_id >= IA_CSS_PIPE_ID_NUM) {
 		dev_err(isp->dev,
@@ -593,50 +644,61 @@ static void __apply_additional_pipe_config(
 		break;
 	}
 }
-static int __create_pipe(struct atomisp_sub_device *asd)
+
+static int __create_pipe(struct atomisp_sub_device *asd,
+			 struct atomisp_stream_env *stream_env,
+			 enum ia_css_pipe_id pipe_id)
 {
-	struct ia_css_pipe_extra_config extra_config;
 	struct atomisp_device *isp = asd->isp;
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+	struct ia_css_pipe_extra_config extra_config;
 	enum ia_css_err ret;
-	int i;
+	if (!stream_env->pipe_configs[pipe_id].output_info.res.width)
+		return 0;
 
 	ia_css_pipe_extra_config_defaults(&extra_config);
-	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
-		if (!stream_env->pipe_configs[i].output_info.res.width)
-			continue;
 
-		__apply_additional_pipe_config(asd, i);
-		if (!memcmp(
-			    &extra_config,
-			    &stream_env->pipe_extra_configs[i],
-			    sizeof(extra_config)))
-			ret = ia_css_pipe_create(
-					&stream_env->pipe_configs[i],
-					&stream_env->pipes[i]);
-		else
-			ret = ia_css_pipe_create_extra(
-				&stream_env->pipe_configs[i],
-				&stream_env->pipe_extra_configs[i],
-				&stream_env->pipes[i]);
-		if (ret != IA_CSS_SUCCESS) {
-			dev_err(isp->dev, "create pipe[%d] error.\n", i);
+	__apply_additional_pipe_config(asd, stream_env, pipe_id);
+	if (!memcmp(&extra_config,
+		    &stream_env->pipe_extra_configs[pipe_id],
+		    sizeof(extra_config)))
+		ret = ia_css_pipe_create(
+			&stream_env->pipe_configs[pipe_id],
+			&stream_env->pipes[pipe_id]);
+	else
+		ret = ia_css_pipe_create_extra(
+			&stream_env->pipe_configs[pipe_id],
+			&stream_env->pipe_extra_configs[pipe_id],
+			&stream_env->pipes[pipe_id]);
+	if (ret != IA_CSS_SUCCESS)
+		dev_err(isp->dev, "create pipe[%d] error.\n", pipe_id);
+	return ret;
+}
+
+static int __create_pipes(struct atomisp_sub_device *asd)
+{
+	enum ia_css_err ret;
+	int i, j;
+
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		for (j = 0; j < IA_CSS_PIPE_ID_NUM; j++) {
+			ret = __create_pipe(asd, &asd->stream_env[i], j);
+			if (ret != IA_CSS_SUCCESS)
+				break;
+		}
+		if (j < IA_CSS_PIPE_ID_NUM)
 			goto pipe_err;
-		}
-		__dump_pipe_config(asd, i);
 	}
-
 	return 0;
-
 pipe_err:
-	for (i--; i >= 0; i--) {
-		if (stream_env->pipes[i]) {
-			ia_css_pipe_destroy(stream_env->pipes[i]);
-			stream_env->pipes[i] = NULL;
+	for (; i >= 0; i--) {
+		for (j--; j >= 0; j--) {
+			if (asd->stream_env[i].pipes[j]) {
+				ia_css_pipe_destroy(asd->stream_env[i].pipes[j]);
+				asd->stream_env[i].pipes[j] = NULL;
+			}
 		}
+		j = IA_CSS_PIPE_ID_NUM;
 	}
-
 	return -EINVAL;
 }
 
@@ -645,19 +707,19 @@ int atomisp_css_update_stream(struct atomisp_sub_device *asd)
 	int ret;
 	struct atomisp_device *isp = asd->isp;
 
-	if (__destroy_stream(asd, true) != IA_CSS_SUCCESS)
+	if (__destroy_streams(asd, true) != IA_CSS_SUCCESS)
 		dev_warn(isp->dev, "destroy stream failed.\n");
 
 	if (__destroy_pipes(asd, true) != IA_CSS_SUCCESS)
 		dev_warn(isp->dev, "destroy pipe failed.\n");
 
-	ret = __create_pipe(asd);
+	ret = __create_pipes(asd);
 	if (ret != IA_CSS_SUCCESS) {
 		dev_err(isp->dev, "create pipe failed %d.\n", ret);
 		return -EIO;
 	}
 
-	ret = __create_stream(asd);
+	ret = __create_streams(asd);
 	if (ret != IA_CSS_SUCCESS) {
 		dev_warn(isp->dev, "create stream failed %d.\n", ret);
 		__destroy_pipes(asd, true);
@@ -930,19 +992,19 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 			enum atomisp_css_pipe_id pipe_id, bool in_reset)
 {
 	struct atomisp_device *isp = asd->isp;
-	int ret = 0;
+	int ret = 0, i = 0;
 	if (in_reset) {
-		if (__destroy_stream(asd, true))
+		if (__destroy_streams(asd, true))
 			dev_warn(isp->dev, "destroy stream failed.\n");
 
 		if (__destroy_pipes(asd, true))
 			dev_warn(isp->dev, "destroy pipe failed.\n");
 
-		if (__create_pipe(asd)) {
+		if (__create_pipes(asd)) {
 			dev_err(isp->dev, "create pipe error.\n");
 			return -EINVAL;
 		}
-		if (__create_stream(asd)) {
+		if (__create_streams(asd)) {
 			dev_err(isp->dev, "create stream error.\n");
 			ret = -EINVAL;
 			goto stream_err;
@@ -963,19 +1025,24 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 		goto start_err;
 	}
 
-	if (ia_css_stream_start(asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream) != IA_CSS_SUCCESS) {
-		dev_err(isp->dev, "stream start error.\n");
-		ret = -EINVAL;
-		goto start_err;
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		if (asd->stream_env[i].stream) {
+			if (ia_css_stream_start(asd->stream_env[i]
+						.stream) != IA_CSS_SUCCESS) {
+				dev_err(isp->dev, "stream[%d] start error.\n", i);
+				ret = -EINVAL;
+				goto start_err;
+			} else {
+				asd->stream_env[i].stream_state = CSS_STREAM_STARTED;
+				dev_dbg(isp->dev, "stream[%d] started.\n", i);
+			}
+		}
 	}
 
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream_state = CSS_STREAM_STARTED;
 	return 0;
 
 start_err:
-	__destroy_stream(asd, true);
+	__destroy_streams(asd, true);
 stream_err:
 	__destroy_pipes(asd, true);
 
@@ -1545,7 +1612,7 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	struct atomisp_stream_env *stream_env =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 	/* if is called in atomisp_reset(), force destroy stream */
-	if (__destroy_stream(asd, true))
+	if (__destroy_streams(asd, true))
 		dev_err(isp->dev, "destroy stream failed.\n");
 
 	/* if is called in atomisp_reset(), force destroy all pipes */
@@ -1918,16 +1985,16 @@ static int __get_frame_info(struct atomisp_sub_device *asd,
 	enum ia_css_err ret;
 	struct ia_css_pipe_info p_info;
 
-	if (__destroy_stream(asd, true))
+	if (__destroy_streams(asd, true))
 		dev_warn(isp->dev, "destroy stream failed.\n");
 
 	if (__destroy_pipes(asd, true))
 		dev_warn(isp->dev, "destroy pipe failed.\n");
 
-	if (__create_pipe(asd))
+	if (__create_pipes(asd))
 		return -EINVAL;
 
-	if (__create_stream(asd))
+	if (__create_streams(asd))
 		goto stream_err;
 
 	ret = ia_css_pipe_get_info(
