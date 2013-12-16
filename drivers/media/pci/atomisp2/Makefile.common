@@ -63,6 +63,7 @@ atomisp-$(postfix)-objs := \
 		css/runtime/rmgr/src/rmgr_vbuf.o \
 		css/runtime/pipeline/src/pipeline.o \
 		css/runtime/event/src/event.o \
+		css/runtime/eventq/src/eventq.o \
 		css/runtime/inputfifo/src/inputfifo.o \
 		css/base/refcount/src/refcount.o \
 		css/base/circbuf/src/circbuf.o \
@@ -294,6 +295,7 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/runtime/binary/interface \
 	    -I$(srctree)/$(src)/css/runtime/pipeline/interface \
 	    -I$(srctree)/$(src)/css/runtime/event/interface \
+	    -I$(srctree)/$(src)/css/runtime/eventq/interface \
 	    -I$(srctree)/$(src)/css/base/refcount/interface \
 	    -I$(srctree)/$(src)/css/host \
 	    -I$(srctree)/$(src)/css/runtime/queue/interface \
