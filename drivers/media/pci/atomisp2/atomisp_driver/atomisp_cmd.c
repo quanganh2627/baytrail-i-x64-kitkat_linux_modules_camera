@@ -2398,7 +2398,7 @@ int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
 {
 	struct atomisp_css_dvs_6axis_config *dvs_6axis_config;
 	struct atomisp_css_dvs_6axis_config *old_6axis_config;
-	struct ia_css_stream *stream = asd->stream_env.stream;
+	struct ia_css_stream *stream = asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream;
 	struct ia_css_dvs_6axis_config *stream_dvs_config =
 	    stream->isp_params_configs->dvs_6axis_config;
 	int ret = -EFAULT;
@@ -2438,15 +2438,11 @@ int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
 		ia_css_dvs2_6axis_config_free(asd->params.dvs_6axis);
 		asd->params.dvs_6axis = NULL;
 
-		dvs_6axis_config = ia_css_dvs2_6axis_config_allocate(asd->
-								     stream_env.
-								     stream);
+		dvs_6axis_config = ia_css_dvs2_6axis_config_allocate(stream);
 		if (!dvs_6axis_config)
 			return -ENOMEM;
 	} else if (!dvs_6axis_config) {
-		dvs_6axis_config = ia_css_dvs2_6axis_config_allocate(asd->
-								     stream_env.
-								     stream);
+		dvs_6axis_config = ia_css_dvs2_6axis_config_allocate(stream);
 		if (!dvs_6axis_config)
 			return -ENOMEM;
 	}
@@ -2563,8 +2559,8 @@ int atomisp_set_parameters(struct atomisp_sub_device *asd,
 	asd->params.css_update_params_needed = true;
 
 #ifdef CSS20
-	if (asd->stream_env.stream
-		&& (asd->stream_env.stream_state != CSS_STREAM_STARTED
+	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream
+		&& (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_state != CSS_STREAM_STARTED
 		|| asd->run_mode->val
 			== ATOMISP_RUN_MODE_STILL_CAPTURE)) {
 		atomisp_css_update_isp_params(asd);
@@ -2595,10 +2591,10 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 			sizeof(struct atomisp_css_dvs_grid_info));
 		/* update dvs envelop info */
 		config->dvs_envelop.width =
-		    asd->stream_env.pipe_configs[IA_CSS_PIPE_ID_VIDEO].
+		    asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipe_configs[IA_CSS_PIPE_ID_VIDEO].
 		    dvs_envelope.width;
 		config->dvs_envelop.height =
-		    asd->stream_env.pipe_configs[IA_CSS_PIPE_ID_VIDEO].
+		    asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipe_configs[IA_CSS_PIPE_ID_VIDEO].
 		    dvs_envelope.height;
 #endif
 		return 0;

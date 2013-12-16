@@ -596,7 +596,7 @@ static int atomisp_release(struct file *file)
 	atomisp_acc_release(isp);
 	atomisp_free_all_shading_tables(isp);
 #ifdef CSS20
-	if (asd->stream_env.stream)
+	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream)
 		atomisp_destroy_pipes_stream_force(asd);
 #endif
 	atomisp_css_uninit(isp);

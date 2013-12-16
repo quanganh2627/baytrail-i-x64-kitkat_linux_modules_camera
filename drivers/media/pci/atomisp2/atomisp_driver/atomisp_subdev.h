@@ -270,7 +270,7 @@ struct atomisp_sub_device {
 	struct atomisp_css_params params;
 
 #ifdef CSS20
-	struct atomisp_stream_env stream_env;
+	struct atomisp_stream_env stream_env[ATOMISP_INPUT_STREAM_NUM];
 #endif
 	struct v4l2_pix_format dvs_envelop;
 	unsigned int s3a_bufs_in_css[CSS_PIPE_ID_NUM];
