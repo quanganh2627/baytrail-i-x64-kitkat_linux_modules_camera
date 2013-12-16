@@ -3311,6 +3311,19 @@ int configure_pp_input_nop(struct atomisp_sub_device *asd,
 	return 0;
 }
 
+int configure_output_nop(struct atomisp_sub_device *asd,
+				unsigned int width, unsigned int height,
+				enum atomisp_css_frame_format sh_fmt)
+{
+	return 0;
+}
+
+int get_frame_info_nop(struct atomisp_sub_device *asd,
+				struct atomisp_css_frame_info *finfo)
+{
+	return 0;
+}
+
 /**
  * Resets CSS parameters that depend on input resolution.
  *
@@ -3382,12 +3395,15 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	enum atomisp_css_pipe_id pipe_id;
 	int (*configure_output)(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
-				enum atomisp_css_frame_format sh_fmt);
+				enum atomisp_css_frame_format sh_fmt) =
+							configure_output_nop;
 	int (*get_frame_info)(struct atomisp_sub_device *asd,
-				struct atomisp_css_frame_info *finfo);
+				struct atomisp_css_frame_info *finfo) =
+							get_frame_info_nop;
 	int (*configure_pp_input)(struct atomisp_sub_device *asd,
 				  unsigned int width, unsigned int height) =
 							configure_pp_input_nop;
+	uint16_t stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
 	int ret;
 
 	isp_sink_crop = atomisp_subdev_get_rect(
@@ -3472,9 +3488,18 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	atomisp_css_disable_vf_pp(asd,
 			asd->vfpp->val != ATOMISP_VFPP_ENABLE);
 
+#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+	/* ISP2401 new input system need to use copy pipe */
+	if (format->sh_fmt == CSS_FRAME_FORMAT_RAW ||
+			isp->inputs[asd->input_curr].type == SOC_CAMERA) {
+		pipe_id = CSS_PIPE_ID_COPY;
+	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO ||
+	    asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
+#else
 	/* video same in continuouscapture and online modes */
 	if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO ||
 	    asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
+#endif
 		configure_output = atomisp_css_video_configure_output;
 		get_frame_info = atomisp_css_video_get_output_frame_info;
 		pipe_id = CSS_PIPE_ID_VIDEO;
@@ -3523,13 +3548,23 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			asd->run_mode->val = ATOMISP_RUN_MODE_STILL_CAPTURE;
 		}
 	}
-
+#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+	/* ISP2401 new input system need to use copy pipe */
+	if (format->sh_fmt == CSS_FRAME_FORMAT_RAW ||
+			isp->inputs[asd->input_curr].type == SOC_CAMERA)
+		ret = atomisp_css_copy_configure_output(asd, stream_index,
+				width, height, format->sh_fmt);
+	else
+		ret = configure_output(asd, width, height, format->sh_fmt);
+#else
 	ret = configure_output(asd, width, height, format->sh_fmt);
+#endif
 	if (ret) {
 		dev_err(isp->dev, "configure_output %ux%u, format %8.8x\n",
 			width, height, format->sh_fmt);
 		return -EINVAL;
 	}
+
 	if (asd->continuous_mode->val &&
 	    configure_pp_input == atomisp_css_preview_configure_pp_input) {
 #ifdef CSS20
@@ -3559,7 +3594,17 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			return -EINVAL;
 		}
 	}
+#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+	/* ISP2401 new input system need to use copy pipe */
+	if (format->sh_fmt == CSS_FRAME_FORMAT_RAW ||
+			isp->inputs[asd->input_curr].type == SOC_CAMERA)
+		ret = atomisp_css_copy_get_output_frame_info(asd, stream_index,
+				output_info);
+	else
+		ret = get_frame_info(asd, output_info);
+#else
 	ret = get_frame_info(asd, output_info);
+#endif
 	if (ret) {
 		dev_err(isp->dev, "get_frame_info %ux%u\n", width, height);
 		return -EINVAL;
@@ -3605,15 +3650,22 @@ static void atomisp_get_dis_envelop(struct atomisp_sub_device *asd,
 	asd->params.css_update_params_needed = true;
 }
 
-static int atomisp_set_fmt_to_snr(struct atomisp_sub_device *asd,
-			  struct v4l2_format *f, unsigned int pixelformat,
-			  unsigned int padding_w, unsigned int padding_h,
-			  unsigned int dvs_env_w, unsigned int dvs_env_h)
+static int atomisp_set_fmt_to_snr(struct video_device *vdev,
+		struct v4l2_format *f, unsigned int pixelformat,
+		unsigned int padding_w, unsigned int padding_h,
+		unsigned int dvs_env_w, unsigned int dvs_env_h)
 {
+	struct atomisp_sub_device *asd = atomisp_to_video_pipe(vdev)->asd;
 	const struct atomisp_format_bridge *format;
 	struct v4l2_mbus_framefmt ffmt, req_ffmt;
 	struct atomisp_device *isp = asd->isp;
+	struct atomisp_input_stream_info *stream_info =
+		(struct atomisp_input_stream_info *)ffmt.reserved;
+	uint16_t stream_index = ATOMISP_INPUT_STREAM_GENERAL;
+	int source_pad = atomisp_subdev_source_pad(vdev);
 	int ret;
+
+	stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
 
 	format = atomisp_get_format_bridge(pixelformat);
 	if (format == NULL)
@@ -3626,6 +3678,10 @@ static int atomisp_set_fmt_to_snr(struct atomisp_sub_device *asd,
 	dev_dbg(isp->dev, "s_mbus_fmt: ask %ux%u (padding %ux%u, dvs %ux%u)\n",
 		ffmt.width, ffmt.height, padding_w, padding_h,
 		dvs_env_w, dvs_env_h);
+
+	stream_info->enable = 1;
+	stream_info->stream = stream_index;
+	stream_info->ch_id = 0;
 
 	req_ffmt = ffmt;
 
@@ -3653,6 +3709,10 @@ static int atomisp_set_fmt_to_snr(struct atomisp_sub_device *asd,
 	if (ret)
 		return ret;
 
+#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+	/* assign virtual channel id return from sensor driver query */
+	asd->stream_env[stream_index].ch_id = stream_info->ch_id;
+#endif
 	dev_dbg(isp->dev, "sensor width: %d, height: %d\n",
 		ffmt.width, ffmt.height);
 
@@ -3701,9 +3761,17 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	pipe->sh_fmt = format_bridge->sh_fmt;
 	pipe->pix.pixelformat = f->fmt.pix.pixelformat;
 
+#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+	if (isp->inputs[asd->input_curr].camera_caps->sensor[asd->sensor_curr].
+			stream_num < 2 &&
+			(source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VF ||
+			 (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW
+		&& asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO))) {
+#else
 	if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VF ||
 	    (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW
 		&& asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)) {
+#endif
 		if (asd->fmt_auto->val) {
 			struct v4l2_rect *capture_comp =
 				atomisp_subdev_get_rect(
@@ -3832,7 +3900,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	    isp_sink_fmt.width < (f->fmt.pix.width + padding_w + dvs_env_w) ||
 	     isp_sink_fmt.height < (f->fmt.pix.height + padding_h +
 				    dvs_env_h)) {
-		ret = atomisp_set_fmt_to_snr(asd, f, f->fmt.pix.pixelformat,
+		ret = atomisp_set_fmt_to_snr(vdev, f, f->fmt.pix.pixelformat,
 					     padding_w, padding_h,
 					     dvs_env_w, dvs_env_h);
 		if (ret)
@@ -4224,4 +4292,36 @@ int atomisp_flash_enable(struct atomisp_sub_device *asd, int num_frames)
 	asd->params.num_flash_frames = num_frames;
 	asd->params.flash_state = ATOMISP_FLASH_REQUESTED;
 	return 0;
+}
+
+int atomisp_source_pad_to_stream_id(struct atomisp_sub_device *asd,
+					   uint16_t source_pad)
+{
+	int stream_id;
+	struct atomisp_device *isp = asd->isp;
+
+	if (isp->inputs[asd->input_curr].camera_caps->
+			sensor[asd->sensor_curr].stream_num == 1)
+		return ATOMISP_INPUT_STREAM_GENERAL;
+
+	if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
+			source_pad == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE)
+		stream_id = ATOMISP_INPUT_STREAM_VIDEO;
+	else {
+		switch (source_pad) {
+			case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
+				stream_id = ATOMISP_INPUT_STREAM_CAPTURE;
+				break;
+			case ATOMISP_SUBDEV_PAD_SOURCE_VF:
+				stream_id = ATOMISP_INPUT_STREAM_POSTVIEW;
+				break;
+			case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
+				stream_id = ATOMISP_INPUT_STREAM_PREVIEW;
+				break;
+			default:
+				stream_id = ATOMISP_INPUT_STREAM_GENERAL;
+		}
+	}
+
+	return stream_id;
 }
