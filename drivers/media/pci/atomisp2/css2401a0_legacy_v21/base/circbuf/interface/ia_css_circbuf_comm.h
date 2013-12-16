@@ -37,6 +37,8 @@ struct ia_css_circbuf_desc_s {
 	uint8_t start;	/* index of the oldest element */
 	uint8_t end;	/* index at which to write the new element */
 };
+#define SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT				\
+	(4 * sizeof(uint8_t))
 
 /**
  * @brief Data structure for the circular buffer element.
@@ -45,5 +47,7 @@ typedef struct ia_css_circbuf_elem_s ia_css_circbuf_elem_t;
 struct ia_css_circbuf_elem_s {
 	uint32_t val;	/* the value stored in the element */
 };
+#define SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT				\
+	(sizeof(uint32_t))
 
 #endif /*_IA_CSS_CIRCBUF_COMM_H*/

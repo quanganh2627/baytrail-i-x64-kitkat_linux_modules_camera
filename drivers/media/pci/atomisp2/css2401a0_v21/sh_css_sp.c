@@ -1698,44 +1698,6 @@ sh_css_sp_set_dma_sw_reg(int dma_id,
 	return true;
 }
 
-/**
- * @brief The Host sends the event to the SP.
- * Refer to "sh_css_sp.h" for details.
- */
-void
-sh_css_sp_snd_event(int evt_id, int evt_payload_0, int evt_payload_1, int evt_payload_2)
-{
-	uint32_t tmp[4];
-	uint32_t sw_event;
-	ia_css_queue_t* q;
-
-        /*TODO:
-	 *  group encode and enqueue into eventQueue module
-	 */
-	/*
-	 * Encode the queue type, the thread ID and
-	 * the queue ID into the event.
-	 */
-	tmp[0] = (uint32_t)evt_id;
-	tmp[1] = (uint32_t)evt_payload_0;
-	tmp[2] = (uint32_t)evt_payload_1;
-	tmp[3] = (uint32_t)evt_payload_2;
-	ia_css_event_encode(tmp, 4, &sw_event);
-
-	q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
-	if ( NULL == q ) {
-		/* Error as the queue is not initialized */
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"sh_css_sp_snd_event() leave: err%d\n",
-			IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
-		return;
-	}
-
-	/* queue the software event (busy-waiting) */
-	while (IA_CSS_SUCCESS != ia_css_queue_enqueue(q, sw_event))
-		hrt_sleep();
-}
-
 void
 sh_css_sp_reset_global_vars(void)
 {

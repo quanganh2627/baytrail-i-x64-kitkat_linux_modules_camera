@@ -28,6 +28,7 @@
 #include "sh_css_sp.h"
 #include "ia_css_pipeline.h"
 #include "ia_css_isp_param.h"
+#include "ia_css_eventq.h"
 
 #define PIPELINE_NUM_UNMAPPED                   (~0)
 #define PIPELINE_SP_THREAD_EMPTY_TOKEN          (0x0)
@@ -122,6 +123,7 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 {
 	uint8_t pipe_num = 0;
 	unsigned int thread_id;
+	ia_css_queue_t *eventq;
 
 	assert(pipeline != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -138,7 +140,17 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 				);
 
 	ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
-	sh_css_sp_snd_event(SP_SW_EVENT_ID_4, thread_id, 0, 0);
+	eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
+					-1, -1);
+	if (NULL == eventq) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_pipeline_start() leaving: host2sp_eventq"
+			"not available\n");
+		return;
+	}
+	ia_css_eventq_send(eventq,
+			SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0, 0);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 	      "ia_css_pipeline_start() leave: return_void\n");
@@ -170,8 +182,13 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	unsigned int thread_id;
+	ia_css_queue_t *eventq;
 
 	assert(pipeline != NULL);
+
+	if (pipeline == NULL)
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_request_stop() enter: pipeline=%p\n",
 		pipeline);
@@ -181,7 +198,17 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 	/* This needs improvement, stop on all the pipes available
 	 * in the stream*/
 	ia_css_pipeline_get_sp_thread_id(pipeline->pipe_num, &thread_id);
-	sh_css_sp_snd_event(SP_SW_EVENT_ID_5, thread_id, 0,  0);
+	eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
+					-1, -1);
+	if (NULL == eventq) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_pipeline_request_stop() leaving:"
+			"host2sp_eventq not available\n");
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
+	ia_css_eventq_send(eventq,
+			SP_SW_EVENT_ID_5, (uint8_t)thread_id, 0,  0);
 	sh_css_sp_uninit_pipeline(pipeline->pipe_num);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,

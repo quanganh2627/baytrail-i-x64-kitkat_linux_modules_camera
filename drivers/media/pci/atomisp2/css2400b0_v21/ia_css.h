@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131213_0838 */
+/* Release Version: ci_master_20131215_0443 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -37,7 +37,6 @@
 
 #include "ia_css_types.h"
 
-
 /* ID's for refcount */
 #define IA_CSS_REFCOUNT_PARAM_SET_POOL  0xCAFE0001
 #define IA_CSS_REFCOUNT_PARAM_BUFFER    0xCAFE0002
@@ -71,6 +70,8 @@ enum ia_css_input_mode {
 	IA_CSS_INPUT_MODE_BUFFERED_SENSOR /**< data is sent through mipi buffer */
 };
 
+/** Interrupt types, these enumerate all supported interrupt types.
+ */
 enum ia_css_irq_type {
 	IA_CSS_IRQ_TYPE_EDGE,  /**< Edge (level) sensitive interrupt */
 	IA_CSS_IRQ_TYPE_PULSE  /**< Pulse-shaped interrupt */
@@ -353,6 +354,9 @@ struct ia_css_metadata {
 	uint32_t	size;
 	uint32_t	exp_id;
 };
+#define SIZE_OF_IA_CSS_METADATA_STRUCT					\
+	(SIZE_OF_IA_CSS_PTR +						\
+	(2 * sizeof(uint32_t)))
 
 /** Input stream description. This describes how input will flow into the
  *  CSS. This is used to program the CSS hardware.
@@ -713,6 +717,22 @@ struct ia_css_isp_3a_statistics {
 	} data_hmem;
 	uint32_t exp_id;
 };
+#define SIZE_OF_DMEM_STRUCT						\
+	(SIZE_OF_IA_CSS_PTR)
+
+#define SIZE_OF_VMEM_STRUCT						\
+	(2 * SIZE_OF_IA_CSS_PTR)
+
+#define SIZE_OF_DATA_UNION						\
+	(MAX(SIZE_OF_DMEM_STRUCT, SIZE_OF_VMEM_STRUCT))
+
+#define SIZE_OF_DATA_HMEM_STRUCT					\
+	(SIZE_OF_IA_CSS_PTR)
+
+#define SIZE_OF_IA_CSS_ISP_3A_STATISTICS_STRUCT				\
+	(SIZE_OF_DATA_UNION +						\
+	SIZE_OF_DATA_HMEM_STRUCT +					\
+	sizeof(uint32_t))
 
 /** Structure that holds DVS statistics in the ISP internal
  * format. Use ia_css_get_dvs_statistics() to translate
@@ -725,6 +745,9 @@ struct ia_css_isp_dvs_statistics {
 	uint32_t   ver_size;
 	uint32_t   exp_id;
 };
+#define SIZE_OF_IA_CSS_ISP_DVS_STATISTICS_STRUCT			\
+	((2 * SIZE_OF_IA_CSS_PTR) +					\
+	(3 * sizeof(uint32_t)))
 
 struct ia_css_properties {
 	int  gdc_coord_one;
@@ -991,8 +1014,8 @@ enum ia_css_err
 ia_css_load_firmware(const struct ia_css_env *env,
 	    const struct ia_css_fw  *fw);
 
-/** @brief unloads the firmware
- * @return			None
+/** @brief Unloads the firmware
+ * @return	None
  *
  * This function unloads the firmware loaded by ia_css_load_firmware.
  * It is pointless to call this function if no firmware is loaded,
@@ -1014,7 +1037,7 @@ ia_css_unload_firmware(void);
  *                              of the L1 page table. This is a physical
  *                              address or index.
  * @param[in]	irq_type 	The type of interrupt to be used (edge or level)
- * @return			Returns IA_CSS_ERR_INTERNAL_ERROR in case of any
+ * @return				Returns IA_CSS_ERR_INTERNAL_ERROR in case of any
  *				errors and IA_CSS_SUCCESS otherwise.
  *
  * This function initializes the API which includes allocating and initializing
@@ -1029,6 +1052,7 @@ enum ia_css_err ia_css_init(
 	enum ia_css_irq_type     irq_type);
 
 /** @brief Un-initialize the CSS API.
+ * @return	None
  *
  * This function deallocates all memory that has been allocated by the CSS API
  * Exception: if you explicitly loaded firmware through ia_css_load_firmware
@@ -1038,13 +1062,15 @@ enum ia_css_err ia_css_init(
  * with the exception of ia_css_init which will re-initialize the CSS code,
  * ia_css_unload_firmware to unload the firmware or ia_css_load_firmware
  * to load new firmware
- *
- * @return None
  */
 void
 ia_css_uninit(void);
 
-/** @brief Suspend CSS API for power down.
+/** @brief Suspend CSS API for power down (NOT IMPLEMENTED YET).
+ *
+ * IMPORTANT NOTE: This function is a place-holder for a future implementation
+ * and it is not used at the moment. Below is the information what this
+ * function should do when implemented.
  *
  * This function prepares the CSS API for a power down of the CSS hardware.
  * This will make sure the hardware is idle. After this function is called,
@@ -1058,6 +1084,8 @@ ia_css_suspend(void);
 
 /** @brief Resume CSS API from power down
  *
+ * @return	None
+ *
  * After a power cycle, this function will bring the CSS API back into
  * a state where it can be started. This will re-initialize the hardware.
  * Call this function only after ia_css_suspend() has been called.
@@ -1066,6 +1094,8 @@ void
 ia_css_resume(void);
 
 /** @brief Get hardware properties
+ * @param[in,out] 	properties The hardware properties
+ * @return	None
  *
  * This function returns a number of hardware properties.
  */
@@ -1095,6 +1125,8 @@ ia_css_irq_translate(unsigned int *info);
  *			bits will be written this info.
  *			This will be the error bits that are enabled in the CSI
  *			receiver error register.
+ * @return	None
+ *
  * This function should be used whenever a CSI receiver error interrupt is
  * generated. It provides the detailed information (bits) on the exact error
  * that occurred.
@@ -1106,6 +1138,7 @@ ia_css_rx_get_irq_info(unsigned int *irq_bits);
  *
  * @param[in] irq_bits	The bits that should be cleared from the CSI receiver
  *			interrupt bits register.
+ * @return	None
  *
  * This function should be called after ia_css_rx_get_irq_info has been called
  * and the error bits have been interpreted. It is advised to use the return
@@ -1128,6 +1161,7 @@ enum ia_css_err
 ia_css_irq_enable(enum ia_css_irq_info type, bool enable);
 
 /** @brief Invalidate the MMU internal cache.
+ * @return	None
  *
  * This function triggers an invalidation of the translate-look-aside
  * buffer (TLB) that's inside the CSS MMU. This function should be called
@@ -1136,26 +1170,94 @@ ia_css_irq_enable(enum ia_css_irq_info type, bool enable);
 void
 ia_css_mmu_invalidate_cache(void);
 
-/**
- * create the internal structures and fill in the configuration data
+/** @brief Load default pipe configuration
+ * @param[out]	pipe_config The pipe configuration.
+ * @return	None
+ *
+ * This function will load the default pipe configuration:
+@code
+	struct ia_css_pipe_config def_config = {
+		IA_CSS_PIPE_MODE_PREVIEW,  //mode
+		1,      // isp_pipe_version
+		{0, 0}, // bayer_ds_out_res
+                {0, 0}, // capt_pp_in_res
+                {0, 0}, // vf_pp_in_res
+                {0, 0}, // dvs_crop_out_res
+                {{0, 0}, 0, 0, 0, 0}, // output_info
+                {{0, 0}, 0, 0, 0, 0}, // vf_output_info
+                NULL,   // acc_extension
+                NULL,   // acc_stages
+                0,      // num_acc_stages
+                {
+                        IA_CSS_CAPTURE_MODE_RAW, // mode
+                        false, // enable_xnr
+                        false  // enable_raw_output
+                },      // default_capture_config
+                {0, 0}, // dvs_envelope
+                1,      // dvs_frame_delay
+                -1,     // acc_num_execs
+                true,   // enable_dz
+        };
+@endcode
  */
 void ia_css_pipe_config_defaults(struct ia_css_pipe_config *pipe_config);
 
+/** @brief Create a pipe
+ * @param[in]	config The pipe configuration.
+ * @param[out]	pipe The pipe.
+ * @return	IA_CSS_SUCCESS or the error code.
+ *
+ * This function will create a pipe with the given configuration.
+ */
 enum ia_css_err
 ia_css_pipe_create(const struct ia_css_pipe_config *config,
 		   struct ia_css_pipe **pipe);
 
+/** @brief Destroy a pipe
+ * @param[in]	pipe The pipe.
+ * @return	IA_CSS_SUCCESS or the error code.
+ *
+ * This function will destroy a given pipe.
+ */
 enum ia_css_err
 ia_css_pipe_destroy(struct ia_css_pipe *pipe);
 
+/** @brief Provides information about a pipe
+ * @param[in]	pipe The pipe.
+ * @param[out]	pipe_info The pipe information.
+ * @return	IA_CSS_SUCCESS or IA_CSS_ERR_INVALID_ARGUMENTS.
+ *
+ * This function will provide information about a given pipe.
+ */
 enum ia_css_err
 ia_css_pipe_get_info(const struct ia_css_pipe *pipe,
 		     struct ia_css_pipe_info *pipe_info);
 
+/** @brief Load default stream configuration
+ * @param[in,out]	stream_config The stream configuration.
+ * @return 	None
+ *
+ * This function will reset the stream configuration to the default state:
+@code
+        memset(stream_config, 0, sizeof(*stream_config));
+        stream_config->online = true;
+        stream_config->left_padding = -1;
+@endcode
+ */
 void ia_css_stream_config_defaults(struct ia_css_stream_config *stream_config);
 
-/**
+/*
  * create the internal structures and fill in the configuration data and pipes
+ */
+
+ /** @brief Creates a stream
+ * @param[in]	stream_config The stream configuration.
+ * @param[in]	num_pipes The number of pipes to incorporate in the stream.
+ * @param[in]	pipes The pipes.
+ * @param[out]	stream The stream.
+ * @return	IA_CSS_SUCCESS or the error code.
+ *
+ * This function will create a stream with a given configuration and given pipes.
  */
 enum ia_css_err
 ia_css_stream_create(const struct ia_css_stream_config *stream_config,
@@ -1163,20 +1265,38 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 					 struct ia_css_pipe *pipes[],
 					 struct ia_css_stream **stream);
 
+/** @brief Destroys a stream
+ * @param[in]	stream The stream.
+ * @return	IA_CSS_SUCCESS or the error code.
+ *
+ * This function will destroy a given stream.
+ */
 enum ia_css_err
 ia_css_stream_destroy(struct ia_css_stream *stream);
 
+/** @brief Provides information about a stream
+ * @param[in]	stream The stream.
+ * @param[out]	stream_info The information about the stream.
+ * @return	IA_CSS_SUCCESS or the error code.
+ *
+ * This function will destroy a given stream.
+ */
 enum ia_css_err
 ia_css_stream_get_info(const struct ia_css_stream *stream,
 		       struct ia_css_stream_info *stream_info);
 
+/** @brief NOT IMPLEMENTED (remove?)
+ *
+ */
 enum ia_css_err
 ia_css_stream_load(struct ia_css_stream *stream);
 
 /** @brief Starts the stream.
+ * @param[in]	stream The stream.
+ * @return IA_CSS_SUCCESS or the error code.
  *
  * The dynamic data in
- * the buffers are not used and need to be queued with a seperate call
+ * the buffers are not used and need to be queued with a separate call
  * to ia_css_pipe_enqueue_buffer.
  * NOTE: this function will only send start event to corresponding
  * thread and will not start SP any more.
@@ -1185,23 +1305,45 @@ enum ia_css_err
 ia_css_stream_start(struct ia_css_stream *stream);
 
 /** @brief Stop the stream.
+ * @param[in]	stream The stream.
+ * @return	IA_CSS_SUCCESS or the error code.
  *
  * NOTE: this function will send stop event to pipes belong to this
  * stream but will not terminate threads.
  */
-
 enum ia_css_err
 ia_css_stream_stop(struct ia_css_stream *stream);
 
+/** @brief Check if a stream has stopped
+ * @param[in]	stream The stream.
+ * @return	boolean flag
+ *
+ * This function will check if the stream has stopped and return the correspondent boolean flag.
+ */
 bool
 ia_css_stream_has_stopped(struct ia_css_stream *stream);
 
+/** @brief NOT IMPLEMENTED (remove?)
+ *
+ */
 enum ia_css_err
 ia_css_stream_unload(struct ia_css_stream *stream);
 
-enum ia_css_stream_format
+/** @brief Returns stream format
+ * @param[in]	stream The stream.
+ * @return	format of the string
+ *
+ * This function will return the stream format.
+ */
+ enum ia_css_stream_format
 ia_css_stream_get_format(const struct ia_css_stream *stream);
 
+/** @brief Check if the stream is configured for 2 pixels per clock
+ * @param[in]	stream The stream.
+ * @return	boolean flag
+ *
+ * This function will check if the stream is configured for 2 pixels per clock and return the correspondent boolean flag.
+ */
 bool
 ia_css_stream_get_two_pixels_per_clock(const struct ia_css_stream *stream);
 
@@ -1257,7 +1399,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
  *			IA_CSS_SUCCESS otherwise.
  *
  * This function dequeues an event from an event queue. The queue is inbetween
- * the Host (i.e. the Atom processosr) and the CSS system. This function can be
+ * the Host (i.e. the Atom processor) and the CSS system. This function can be
  * called after an interrupt has been generated that signalled that a new event
  * was available and can be used in a polling-like situation where the NO_EVENT
  * return value is used to determine whether an event was available or not.
@@ -1368,6 +1510,7 @@ ia_css_event_get_irq_mask(const struct ia_css_pipe *pipe,
 /** @brief Fill a frame with zeros
  *
  * @param	frame		The frame.
+ * @return	None
  *
  * Fill a frame with pixel values of zero
  */
@@ -1410,6 +1553,7 @@ ia_css_frame_allocate_from_info(struct ia_css_frame **frame,
 /** @brief Free a CSS frame structure.
  *
  * @param[in]	frame	Pointer to the frame.
+ * @return	None
  *
  * Free a CSS frame structure. This will free both the frame structure
  * and the pixel data pointer contained within the frame structure.
@@ -1511,6 +1655,7 @@ ia_css_frame_map(struct ia_css_frame **frame,
 
 /** @brief Allocate a metadata buffer.
  * @param[in] size		Size of metadata in bytes.
+ * @return	Pointer of metadata buffer or NULL (if error)
  *
  * This function allocates a metadata buffer according to requested size.
  * Because of DMA requirement, this function rounds up buffer size to be
@@ -1522,6 +1667,7 @@ ia_css_metadata_allocate(unsigned int size);
 /** @brief Free a metadata buffer.
  *
  * @param[in]	metadata	Pointer of metadata buffer.
+ * @return	None
  *
  * This function frees a metadata buffer.
  */
@@ -1531,6 +1677,7 @@ ia_css_metadata_free(struct ia_css_metadata *metadata);
 /** @brief Unmap a CSS frame structure.
  *
  * @param[in]	frame	Pointer to the CSS frame.
+ * @return	None
  *
  * This function unmaps the frame data pointer within a CSS frame and
  * then frees the CSS frame structure. Use this for frame pointers created
@@ -1539,18 +1686,21 @@ ia_css_metadata_free(struct ia_css_metadata *metadata);
 void
 ia_css_frame_unmap(struct ia_css_frame *frame);
 
-/** @brief Return max nr of continuous RAW frames.
+/** @brief Return max number of continuous RAW frames.
+ * @param[in]	stream The Stream.
+ * @param[out]	buffer_depth The maximum number of continuous RAW frames.
+ * @return	IA_CSS_SUCCESS or IA_CSS_ERR_INVALID_ARGUMENTS
  *
- * @return	Max nr of continuous RAW frames.
- *
- * Return the maximum nr of continuous RAW frames the system can support.
+ * This function will return the maximum number of continuous RAW frames
+ * the system can support.
  */
 enum ia_css_err
 ia_css_stream_get_max_buffer_depth(struct ia_css_stream *stream, int *buffer_depth);
 
 /** @brief Set nr of continuous RAW frames to use.
  *
- * @param 	num_frames	Number of frames.
+ * @param[in]	stream The stream.
+ * @param[in] 	buffer_depth	Number of frames to set.
  * @return	IA_CSS_SUCCESS or error code upon error.
  *
  * Set the number of continuous frames to use during continuous modes.
@@ -1558,10 +1708,10 @@ ia_css_stream_get_max_buffer_depth(struct ia_css_stream *stream, int *buffer_dep
 enum ia_css_err
 ia_css_stream_set_buffer_depth(struct ia_css_stream *stream, int buffer_depth);
 
-/** @brief Get nr of continuous RAW frames to use.
- *
- * @return 	Number of frames to use.
-
+/** @brief Get number of continuous RAW frames to use.
+ * @param[in] 	stream The stream.
+ * @param[out]	buffer_depth The number of frames to use
+ * @return	IA_CSS_SUCCESS or IA_CSS_ERR_INVALID_ARGUMENTS
  *
  * Get the currently set number of continuous frames
  * to use during continuous modes.
@@ -1573,7 +1723,8 @@ ia_css_stream_get_buffer_depth(struct ia_css_stream *stream, int *buffer_depth);
 
 /** @brief Configure the continuous capture
  *
- * @param	num_captures	The number of RAW frames to be processed to
+ * @param[in]	stream 			The stream.
+ * @param[in]	num_captures	The number of RAW frames to be processed to
  *                              YUV. Setting this to -1 will make continuous
  *                              capture run until it is stopped.
  *                              This number will also be used to allocate RAW
@@ -1583,10 +1734,10 @@ ia_css_stream_get_buffer_depth(struct ia_css_stream *stream, int *buffer_depth);
  *                              If the offset is negative and the skip setting
  *                              is greater than 0, additional buffers may be
  *                              needed.
- * @param	skip		Skip N frames in between captures. This can be
+ * @param[in]	skip		Skip N frames in between captures. This can be
  *                              used to select a slower capture frame rate than
  *                              the sensor output frame rate.
- * @param	offset		Start the RAW-to-YUV processing at RAW buffer
+ * @param[in]	offset		Start the RAW-to-YUV processing at RAW buffer
  *                              with this offset. This allows the user to
  *                              process RAW frames that were captured in the
  *                              past or future.
@@ -1604,7 +1755,8 @@ ia_css_stream_capture(struct ia_css_stream *stream,
 
 /** @brief Specify which raw frame to tag based on exp_id found in frame info
  *
- * @param	exp_id	The exposure id of the raw frame to tag.
+ * @param[in]	stream The stream.
+ * @param[in]	exp_id	The exposure id of the raw frame to tag.
  *
  * @return			IA_CSS_SUCCESS or error code upon error.
  *
@@ -1619,25 +1771,21 @@ ia_css_stream_capture_frame(struct ia_css_stream *stream,
 
 /** @brief Send streaming data into the css input FIFO
  *
- * @param	data	Pointer to the pixels to be send.
- * @param	width	Width of the input frame.
- * @param	height	Height of the input frame.
+ * @param[in]	stream	The stream.
+ * @param[in]	data	Pointer to the pixels to be send.
+ * @param[in]	width	Width of the input frame.
+ * @param[in]	height	Height of the input frame.
+ * @return	None
  *
  * Send streaming data into the css input FIFO. This is for testing purposes
  * only. This uses the channel ID and input format as set by the user with
  * the regular functions for this.
  * This function blocks until the entire frame has been written into the
  * input FIFO.
- */
-void
-ia_css_stream_send_input_frame(const struct ia_css_stream *stream,
-			       const unsigned short *data,
-			       unsigned int width,
-			       unsigned int height);
-
-/*
+ *
+ * Note:
  * For higher flexibility the ia_css_stream_send_input_frame is replaced by
- * three seperate functions:
+ * three separate functions:
  * 1) ia_css_stream_start_input_frame
  * 2) ia_css_stream_send_input_line
  * 3) ia_css_stream_end_input_frame
@@ -1647,12 +1795,16 @@ ia_css_stream_send_input_frame(const struct ia_css_stream *stream,
  * These 3 functions are for testing purpose only and can be used in
  * conjunction with ia_css_stream_send_input_frame
  */
+void
+ia_css_stream_send_input_frame(const struct ia_css_stream *stream,
+			       const unsigned short *data,
+			       unsigned int width,
+			       unsigned int height);
 
 /** @brief Start an input frame on the CSS input FIFO.
  *
- * @param[in]	channel_id		The channel id.
- * @param[in]	input_format		The input format.
- * @param[in]	two_pixels_per_clock	Use 2 pixels per clock.
+ * @param[in]	stream The stream.
+ * @return	None
  *
  * Starts the streaming to mipi frame by sending SoF for channel channel_id.
  * It will use the input_format and two_pixels_per_clock as provided by
@@ -1667,11 +1819,12 @@ ia_css_stream_start_input_frame(const struct ia_css_stream *stream);
 
 /** @brief Send a line of input data into the CSS input FIFO.
  *
- * @param[in]	channel_id		The channel id.
+ * @param[in]	stream		The stream.
  * @param[in]	data	Array of the first line of image data.
  * @param	width	The width (in pixels) of the first line.
  * @param[in]	data2	Array of the second line of image data.
  * @param	width2	The width (in pixels) of the second line.
+ * @return	None
  *
  * Sends 1 frame line. Start with SoL followed by width bytes of data, followed
  * by width2 bytes of data2 and followed by and EoL
@@ -1694,6 +1847,7 @@ ia_css_stream_send_input_line(const struct ia_css_stream *stream,
  * @param[in]	format     Format of the embedded data.
  * @param[in]	data       Pointer of the embedded data line.
  * @param[in]	width      The width (in pixels) of the line.
+ * @return		None
  *
  * Sends one embedded data line to input fifo. Start with SoL followed by
  * width bytes of data, and followed by and EoL.
@@ -1711,7 +1865,8 @@ ia_css_stream_send_input_embedded_line(const struct ia_css_stream *stream,
 
 /** @brief End an input frame on the CSS input FIFO.
  *
- * @param[in]	channel_id	The channel id.
+ * @param[in]	stream	The stream.
+ * @return	None
  *
  * Send the end-of-frame signal into the CSS input FIFO.
  */
@@ -1720,7 +1875,7 @@ ia_css_stream_end_input_frame(const struct ia_css_stream *stream);
 
 /** @brief Test whether the ISP has started.
  *
- * @return	The ISP has started.
+ * @return	Boolean flag true if the ISP has started or false otherwise.
  *
  * Temporary function to poll whether the ISP has been started. Once it has,
  * the sensor can also be started. */
@@ -1729,16 +1884,16 @@ ia_css_isp_has_started(void);
 
 /** @brief Test whether the SP has initialized.
  *
- * @return	The SP has initialized.
+ * @return	Boolean flag true if the SP has initialized or false otherwise.
  *
- * Temporary function to poll whether the SP has been initilized. Once it has,
+ * Temporary function to poll whether the SP has been initialized. Once it has,
  * we can enqueue buffers. */
 bool
 ia_css_sp_has_initialized(void);
 
 /** @brief Test whether the SP has terminated.
  *
- * @return	The SP has terminated.
+ * @return	Boolean flag true if the SP has terminated or false otherwise.
  *
  * Temporary function to poll whether the SP has been terminated. Once it has,
  * we can switch mode. */
@@ -1746,6 +1901,9 @@ bool
 ia_css_sp_has_terminated(void);
 
 /** @brief send a request flash command to SP
+ *
+ * @param[in]	stream The stream.
+ * @return	None
  *
  * Driver needs to call this function to send a flash request command
  * to SP, SP will be responsible for switching on/off the flash at proper
@@ -1758,6 +1916,7 @@ ia_css_stream_request_flash(struct ia_css_stream *stream);
 
 /** @brief Configure a stream with filter coefficients.
  *
+ * @param[in]	stream The stream.
  * @param[in]	config	The set of filter coefficients.
  * @param[in]   pipe Pipe to be updated when set isp config, NULL means to
  *                   update all pipes in the stream. 
@@ -1776,7 +1935,7 @@ ia_css_stream_set_isp_config_on_pipe(struct ia_css_stream *stream,
 			     struct ia_css_pipe *pipe);
 
 /** @brief Configure a stream with filter coefficients.
- *
+ * @param[in] 	stream	The stream.
  * @param[in]	config	The set of filter coefficients.
  * @return		IA_CSS_SUCCESS or error code upon error.
  *
@@ -1785,7 +1944,7 @@ ia_css_stream_set_isp_config_on_pipe(struct ia_css_stream *stream,
  * function will have no effect. All pipes of a stream will be updated.
  * See ::ia_css_stream_set_isp_config_on_pipe() for the per-pipe alternative.
  * It is safe to call this function while the image stream is running,
- * in fact this is the expected behavior most of the time. Proper
+ * in fact this is the expected behaviour most of the time. Proper
  * resource locking and double buffering is in place to allow for this.
  */
 enum ia_css_err
@@ -1794,12 +1953,18 @@ ia_css_stream_set_isp_config(
 	const struct ia_css_isp_config *config);
 
 /** @brief Get selected configuration settings
+ * @param[in] 	stream	The stream.
+ * @param[out]	config	Configuration settings.
+ * @return		None
  */
 void
 ia_css_stream_get_isp_config(const struct ia_css_stream *stream,
 			     struct ia_css_isp_config *config);
 
-/* Copy DVS statistics from an ISP buffer to a host buffer.
+/** @brief Copy DVS statistics from an ISP buffer to a host buffer.
+ * @param[in]	host_stats Host buffer
+ * @param[in] 	isp_stats ISP buffer
+ * @return		None
  * This may include a translation step as well depending
  * on the ISP version.
  * Always use this function, never copy the buffer directly.
@@ -1808,7 +1973,10 @@ void
 ia_css_get_dvs_statistics(struct ia_css_dvs_statistics           *host_stats,
 			  const struct ia_css_isp_dvs_statistics *isp_stats);
 
-/* Copy DVS 2.0 statistics from an ISP buffer to a host buffer.
+/** @brief Copy DVS 2.0 statistics from an ISP buffer to a host buffer.
+ * @param[in]	host_stats Host buffer
+ * @param[in] 	isp_stats ISP buffer
+ * @return		None
  * This may include a translation step as well depending
  * on the ISP version.
  * Always use this function, never copy the buffer directly.
@@ -1818,12 +1986,21 @@ ia_css_get_dvs2_statistics(struct ia_css_dvs2_statistics           *host_stats,
 			  const struct ia_css_isp_dvs_statistics *isp_stats);
 
 #if defined(IS_ISP_2500_SYSTEM)
+/** @brief Copy 4A statistics from an ISP/ACC buffer to a host buffer.
+ * @param[in]	host_stats Host buffer.
+ * @param[in] 	isp_stats ISP buffer.
+ * @return		None
+ */
 struct ia_css_4a_statistics;
 void ia_css_get_4a_statistics(struct ia_css_4a_statistics           *host_stats,
 		const struct ia_css_isp_3a_statistics *isp_stats);
 #endif
 
-/* Copy 4A statistics from an ISP/ACC buffer to a host buffer.
+/** @brief Copy 3A statistics from an ISP/ACC buffer to a host buffer.
+ * @param[in]	host_stats Host buffer.
+ * @param[in] 	isp_stats ISP buffer.
+ * @return		None
+ *
  * This may include a translation step as well depending
  * on the ISP version.
  * Always use this function, never copy the buffer directly.
@@ -1834,72 +2011,160 @@ ia_css_get_3a_statistics(struct ia_css_3a_statistics           *host_stats,
 
 /* Convenience functions for alloc/free of certain datatypes */
 
-/* Morphing table */
+/** @brief Morphing table
+ * @param[in]	width Width of the morphing table.
+ * @param[in]	height Height of the morphing table.
+ * @return		Pointer to the morphing table
+*/
 struct ia_css_morph_table *
 ia_css_morph_table_allocate(unsigned int width, unsigned int height);
 
+/** @brief Free the morph table
+ * @param[in]	me Pointer to the morph table.
+ * @return		None
+*/
 void
 ia_css_morph_table_free(struct ia_css_morph_table *me);
 
-/* Shading table */
-void
-ia_css_shading_table_free(struct ia_css_shading_table *table);
-
+/** @brief Shading table 
+ * @param[in]	width Width of the shading table.
+ * @param[in]	height Height of the shading table.
+ * @return		Pointer to the shading table
+*/
 struct ia_css_shading_table *
 ia_css_shading_table_alloc(unsigned int width,
 			   unsigned int height);
 
+/** @brief Free shading table
+ * @param[in]	table Pointer to the shading table.
+ * @return		None
+*/
+void
+ia_css_shading_table_free(struct ia_css_shading_table *table);
+
+/** @brief Allocate memory for the 3a statistics on the ISP
+ * @param[in]	grid The grid.
+ * @return		Pointer to the allocated 3a statistics buffer on the ISP
+*/
 struct ia_css_isp_3a_statistics *
 ia_css_isp_3a_statistics_allocate(const struct ia_css_3a_grid_info *grid);
 
+/** @brief Free the 3a statistics memory on the isp
+ * @param[in]	me Pointer to the 3a statistics buffer on the ISP.
+ * @return		None
+*/
 void
 ia_css_isp_3a_statistics_free(struct ia_css_isp_3a_statistics *me);
 
+/** @brief Allocate the DVS statistics memory on the ISP
+ * @param[in]	grid The grid.
+ * @return		Pointer to the allocated DVS statistics buffer on the ISP
+*/
 struct ia_css_isp_dvs_statistics *
 ia_css_isp_dvs_statistics_allocate(const struct ia_css_dvs_grid_info *grid);
 
+/** @brief Free the DVS statistics memory on the ISP
+ * @param[in]	me Pointer to the DVS statistics buffer on the ISP.
+ * @return		None
+*/
 void
 ia_css_isp_dvs_statistics_free(struct ia_css_isp_dvs_statistics *me);
 
+/** @brief Allocate the DVS 2.0 statistics memory
+ * @param[in]	grid The grid.
+ * @return		Pointer to the allocated DVS statistics buffer on the ISP
+*/
 struct ia_css_isp_dvs_statistics *
 ia_css_isp_dvs2_statistics_allocate(const struct ia_css_dvs_grid_info *grid);
 
+/** @brief Free the DVS 2.0 statistics memory
+ * @param[in]	me Pointer to the DVS statistics buffer on the ISP.
+ * @return		None
+*/
 void
 ia_css_isp_dvs2_statistics_free(struct ia_css_isp_dvs_statistics *me);
 
+/** @brief Allocate memory for the 3a statistics on the host
+ * @param[in]	grid The grid.
+ * @return		Pointer to the allocated 3a statistics buffer on the host
+*/
 struct ia_css_3a_statistics *
 ia_css_3a_statistics_allocate(const struct ia_css_3a_grid_info *grid);
 
+/** @brief Free the 3a statistics memory on the host
+ * @param[in]	me Pointer to the 3a statistics buffer on the host.
+ * @return		None
+ */
 void
 ia_css_3a_statistics_free(struct ia_css_3a_statistics *me);
 
+/** @brief Allocate the DVS statistics memory on the host
+ * @param[in]	grid The grid.
+ * @return		Pointer to the allocated DVS statistics buffer on the host
+*/
 struct ia_css_dvs_statistics *
 ia_css_dvs_statistics_allocate(const struct ia_css_dvs_grid_info *grid);
 
+/** @brief Free the DVS statistics memory on the host
+ * @param[in]	me Pointer to the DVS statistics buffer on the host.
+ * @return		None
+*/
 void
 ia_css_dvs_statistics_free(struct ia_css_dvs_statistics *me);
 
+/** @brief Allocate the DVS coefficients memory
+ * @param[in]	grid The grid.
+ * @return		Pointer to the allocated DVS coefficients buffer
+*/
 struct ia_css_dvs_coefficients *
 ia_css_dvs_coefficients_allocate(const struct ia_css_dvs_grid_info *grid);
 
+/** @brief Free the DVS coefficients memory
+ * @param[in]	me Pointer to the DVS coefficients buffer.
+ * @return		None
+ */
 void
 ia_css_dvs_coefficients_free(struct ia_css_dvs_coefficients *me);
 
+/** @brief Allocate the DVS 2.0 statistics memory on the host
+ * @param[in]	grid The grid.
+ * @return		Pointer to the allocated DVS 2.0 statistics buffer on the host
+ */
 struct ia_css_dvs2_statistics *
 ia_css_dvs2_statistics_allocate(const struct ia_css_dvs_grid_info *grid);
 
+/** @brief Free the DVS 2.0 statistics memory
+ * @param[in]	me Pointer to the DVS 2.0 statistics buffer on the host.
+ * @return		None
+*/
 void
 ia_css_dvs2_statistics_free(struct ia_css_dvs2_statistics *me);
 
+/** @brief Allocate the DVS 2.0 coefficients memory
+ * @param[in]	grid The grid.
+ * @return		Pointer to the allocated DVS 2.0 coefficients buffer
+*/
 struct ia_css_dvs2_coefficients *
 ia_css_dvs2_coefficients_allocate(const struct ia_css_dvs_grid_info *grid);
 
+/** @brief Free the DVS 2.0 coefficients memory
+ * @param[in]	me Pointer to the DVS 2.0 coefficients buffer.
+ * @return		None
+*/
 void
 ia_css_dvs2_coefficients_free(struct ia_css_dvs2_coefficients *me);
 
+/** @brief Allocate the DVS 2.0 6-axis config memory
+ * @param[in]	stream The stream.
+ * @return		Pointer to the allocated DVS 6axis configuration buffer
+*/
 struct ia_css_dvs_6axis_config *
 ia_css_dvs2_6axis_config_allocate(const struct ia_css_stream *stream);
 
+/** @brief Free the DVS 2.0 6-axis config memory
+ * @param[in]	dvs_6axis_config Pointer to the DVS 6axis configuration buffer
+ * @return		None
+ */
 void
 ia_css_dvs2_6axis_config_free(struct ia_css_dvs_6axis_config *dvs_6axis_config);
 
@@ -1960,7 +2225,7 @@ ia_css_mipi_frame_enable_check_on_size(const enum ia_css_csi2_port port,
 
 /** @brief Dequeue param buffers from sp2host_queue
  *
- * @return                                       no return code
+ * @return                                       None
  *
  * This function must be called at every driver interrupt handler to prevent
  * overflow of sp2host_queue.
@@ -1969,6 +2234,8 @@ void
 ia_css_dequeue_param_buffers(void);
 
 /** @brief allocate continuous raw frames for continuous capture
+ * @param[in]	stream The stream.
+ * @return IA_CSS_SUCCESS or error code.
  *
  *  because this allocation takes a long time (around 120ms per frame),
  *  we separate the allocation part and update part to let driver call
@@ -1979,6 +2246,8 @@ enum ia_css_err
 ia_css_alloc_continuous_frame_remain(struct ia_css_stream *stream);
 
 /** @brief allocate continuous raw frames for continuous capture
+ * @param[in]	stream The stream.
+ * @return	None
  *
  *  because this allocation takes a long time (around 120ms per frame),
  *  we separate the allocation part and update part to let driver call

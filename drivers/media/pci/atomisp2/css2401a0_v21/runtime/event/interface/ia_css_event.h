@@ -37,8 +37,8 @@
 #include "sw_event_global.h"    /*event macros.TODO : Change File Name..???*/
 
 bool ia_css_event_encode(
-	uint32_t	*in,
-	uint32_t	nr,
+	uint8_t	*in,
+	uint8_t	nr,
 	uint32_t	*out);
 
 void ia_css_event_decode(

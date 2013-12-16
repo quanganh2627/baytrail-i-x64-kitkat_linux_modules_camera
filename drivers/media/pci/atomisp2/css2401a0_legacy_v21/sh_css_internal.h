@@ -117,7 +117,50 @@
 #define SH_CSS_ENABLE_METADATA
 #endif
 
-/*
+/**
+ * The C99 standard does not specify the exact object representation of structs;
+ * the representation is compiler dependent.
+ *
+ * The structs that are communicated between host and SP/ISP should have the
+ * exact same object representation. The compiler that is used to compile the
+ * firmware is hivecc.
+ *
+ * To check if a different compiler, used to compile a host application, uses
+ * another object representation, macros are defined specifying the size of
+ * the structs as expected by the firmware.
+ *
+ * A host application shall verify that a sizeof( ) of the struct is equal to
+ * the SIZE_OF_XXX macro of the corresponding struct. If they are not
+ * equal, functionality will break.
+ */
+#define CALC_ALIGNMENT_MEMBER(x, y)	(CEIL_MUL(x, y) - x)
+#define SIZE_OF_HRT_VADDRESS		sizeof(hive_uint32)
+#define SIZE_OF_IA_CSS_PTR		sizeof(uint32_t)
+
+/**
+ * The following macro can help to test the size of a struct at compile
+ * time rather than at run-time. It does not work for all compilers; see
+ * below.
+ *
+ * Depending on the value of 'condition', the following macro is expanded to:
+ * - condition==true:
+ *     an expression containing an array declaration with negative size,
+ *     usually resulting in a compilation error
+ * - condition==false:
+ *     (void) 1; // C statement with no effect
+ *
+ * example:
+ *  COMPILATION_ERROR_IF( sizeof(struct host_sp_queues) != SIZE_OF_HOST_SP_QUEUES_STRUCT);
+ *
+ * verify that the macro indeed triggers a compilation error with your compiler:
+ *  COMPILATION_ERROR_IF( sizeof(struct host_sp_queues) != (sizeof(struct host_sp_queues)+1) );
+ *
+ * Not all compilers will trigger an error with this macro; use a search engine to search for
+ * BUILD_BUG_ON to find other methods.
+ */
+#define COMPILATION_ERROR_IF( condition ) ((void)sizeof(char[1 - 2*!!(condition)]))
+
+ /*
  * JB: keep next enum in sync with thread id's
  * and pipe id's
  */
@@ -184,6 +227,10 @@ struct sh_css_ddr_address_map {
 	hrt_vaddress dvs_6axis_params_y;
 	hrt_vaddress anr_thres;
 };
+#define SIZE_OF_SH_CSS_DDR_ADDRESS_MAP_STRUCT					\
+	(SIZE_OF_HRT_VADDRESS +							\
+	(SH_CSS_MAX_STAGES * IA_CSS_NUM_ISP_MEMORIES * SIZE_OF_HRT_VADDRESS) +	\
+	(19 * SIZE_OF_HRT_VADDRESS))
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -626,6 +673,22 @@ struct sh_css_hmm_buffer {
 	 */
 	CSS_ALIGN(uint64_t kernel_ptr, 8);
 };
+#define SIZE_OF_FRAME_STRUCT						\
+	(SIZE_OF_HRT_VADDRESS +						\
+	(2 * sizeof(uint32_t)))
+
+#define SIZE_OF_PAYLOAD_UNION						\
+	(MAX(MAX(MAX(MAX(						\
+	SIZE_OF_IA_CSS_ISP_3A_STATISTICS_STRUCT,			\
+	SIZE_OF_IA_CSS_ISP_DVS_STATISTICS_STRUCT),			\
+	SIZE_OF_IA_CSS_METADATA_STRUCT),				\
+	SIZE_OF_FRAME_STRUCT),						\
+	SIZE_OF_HRT_VADDRESS))
+
+#define SIZE_OF_SH_CSS_HMM_BUFFER_STRUCT				\
+	(SIZE_OF_PAYLOAD_UNION + 					\
+	CALC_ALIGNMENT_MEMBER(SIZE_OF_PAYLOAD_UNION, 8) +		\
+	sizeof(uint64_t))
 
 enum sh_css_queue_type {
 	sh_css_invalid_queue_type = -1,
@@ -658,6 +721,8 @@ struct sh_css_event_irq_mask {
 	uint16_t or_mask;
 	uint16_t and_mask;
 };
+#define SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT				\
+	(2 * sizeof(uint16_t))
 
 struct host_sp_communication {
 	/*
@@ -685,6 +750,12 @@ struct host_sp_communication {
 	struct sh_css_event_irq_mask host2sp_event_irq_mask[NR_OF_PIPELINES];
 
 };
+#define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
+	(sizeof(uint32_t) +						\
+	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS) +		\
+	(NUM_MIPI_FRAMES * SIZE_OF_HRT_VADDRESS) +			\
+	(4 *sizeof(uint32_t)) +						\
+	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
 
 struct host_sp_queues {
 	/*
@@ -711,6 +782,15 @@ struct host_sp_queues {
 	ia_css_circbuf_elem_t sp2host_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
 
 };
+#define SIZE_OF_HOST_SP_QUEUES_STRUCT 													\
+	(((SH_CSS_MAX_SP_THREADS * SH_CSS_NUM_BUFFER_QUEUES) * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +					\
+	((SH_CSS_MAX_SP_THREADS * SH_CSS_NUM_BUFFER_QUEUES * SH_CSS_CIRCULAR_BUF_NUM_ELEMS) * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +	\
+	(SH_CSS_NUM_BUFFER_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +								\
+	((SH_CSS_NUM_BUFFER_QUEUES * SH_CSS_CIRCULAR_BUF_NUM_ELEMS) * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +				\
+	SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT +												\
+	(SH_CSS_CIRCULAR_BUF_NUM_ELEMS * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +							\
+	SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT +												\
+	(SH_CSS_CIRCULAR_BUF_NUM_ELEMS * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT))
 
 extern int (*sh_css_printf) (const char *fmt, va_list args);
 

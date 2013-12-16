@@ -30,6 +30,7 @@
 #endif /* !defined(HAS_NO_HMEM) */
 
 #define IA_CSS_INCLUDE_PARAMETERS
+#define IA_CSS_INCLUDE_ACC_PARAMETERS
 
 #include "sh_css_params.h"
 #include "ia_css_queue.h"
@@ -84,6 +85,7 @@
 #include "ynr/ynr_2/ia_css_ynr2.host.h"
 
 #include "platform_support.h"
+#include "ia_css_eventq.h"
 
 #if defined(IS_ISP_2500_SYSTEM)
 #include "product_specific.host.h"
@@ -2829,7 +2831,7 @@ ia_css_metadata_allocate(unsigned int size)
 
 	/* Make metadata buffer size multiple of DDR bus width for DMA. */
 	md->size = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
-	md->address = mmgr_alloc_attr(md->size, MMGR_ATTRIBUTE_CONTIGUOUS);
+	md->address = mmgr_malloc(md->size);
 	if (md->address == mmgr_NULL)
 		goto error;
 
@@ -3494,12 +3496,19 @@ void ia_css_dequeue_param_buffers(void)
 	while (IA_CSS_SUCCESS == ia_css_queue_dequeue(q, (uint32_t *)&cpy)) {
 		/* TMP: keep track of dequeued param set count
 		 */
+		ia_css_queue_t *eventq;
 		g_param_buffer_dequeue_count++;
+		eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
+					-1, -1);
+
+		/*no need to check validity of eventq as queue is
+		 * initialized by the time we reach here.*/
 		/*
 		 * Tell the SP which queues are not full,
 		 * by sending the software event.
 		 */
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_2,
+		ia_css_eventq_send(eventq,
+				SP_SW_EVENT_ID_2,
 				0,
 				sh_css_param_buffer_queue,
 				0);
@@ -3558,6 +3567,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 	unsigned int isp_pipe_version = 1;
 	struct ia_css_isp_parameters *params;
 	bool acc_cluster_params_changed = false;
+
 	(void)acc_cluster_params_changed;
 
 	assert(stream != NULL);
@@ -3728,15 +3738,26 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 			/* TMP: check discrepancy between nr of enqueued
 			 * parameter sets and dequeued sets
 			 */
+			ia_css_queue_t *eventq;
 			g_param_buffer_enqueue_count++;
 			assert(g_param_buffer_enqueue_count < g_param_buffer_dequeue_count+50);
 			/*
 			 * Tell the SP which queues are not empty,
 			 * by sending the software event.
 			 */
-			sh_css_sp_snd_event(SP_SW_EVENT_ID_1,
-					thread_id,
-					sh_css_param_buffer_queue,
+			eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
+					-1, -1);
+			if (NULL == eventq) {
+				/* Error as the queue is not initialized */
+				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+					"sh_css_param_update_isp_params() leaving:"
+					"eventq unavailable\n");
+				return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+			}
+			ia_css_eventq_send(eventq,
+					SP_SW_EVENT_ID_1,
+					(uint8_t)thread_id,
+					(uint8_t)sh_css_param_buffer_queue,
 					0);
 		}
 		/* clean-up old copy */

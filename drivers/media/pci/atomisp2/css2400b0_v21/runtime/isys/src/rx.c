@@ -269,6 +269,9 @@ enum ia_css_err ia_css_isys_convert_stream_format_to_mipi_format(
 	case IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY:
 		*fmt_type = MIPI_FORMAT_YUV420_8_LEGACY;
 		break;
+	case IA_CSS_STREAM_FORMAT_EMBEDDED:
+		*fmt_type = MIPI_FORMAT_EMBEDDED;
+		break;
 #ifndef USE_INPUT_SYSTEM_VERSION_2401
 	case IA_CSS_STREAM_FORMAT_RAW_16:
 		/* This is not specified by Arasan, so we use

@@ -51,7 +51,6 @@
 #include "ia_css_pipe_util.h"
 #include "ia_css_pipe_binarydesc.h"
 #include "ia_css_pipe_stagedesc.h"
-#include "ia_css_event.h" /*ia_css_event_decode() */
 //#include "ia_css_stream_manager.h"
 /* #include "ia_css_rmgr_gen.h" */
 
@@ -60,7 +59,8 @@
 #include "assert_support.h"
 #include "math_support.h"
 #include "ia_css_queue.h"
-#include "sw_event_global.h"   			/* Event IDs.*/
+#include "sw_event_global.h"			/* Event IDs.*/
+#include "ia_css_eventq.h"              /* ia_css_eventq_recv()*/
 #if !defined(HAS_NO_INPUT_FORMATTER)
 #include "ia_css_ifmtr.h"
 #endif
@@ -1691,6 +1691,45 @@ ia_css_init(const struct ia_css_env *env,
 	hrt_data select, enable;
 #endif
 
+	/**
+	 * The C99 standard does not specify the exact object representation of structs;
+	 * the representation is compiler dependent.
+	 *
+	 * The structs that are communicated between host and SP/ISP should have the
+	 * exact same object representation. The compiler that is used to compile the
+	 * firmware is hivecc.
+	 *
+	 * To check if a different compiler, used to compile a host application, uses
+	 * another object representation, macros are defined specifying the size of
+	 * the structs as expected by the firmware.
+	 *
+	 * A host application shall verify that a sizeof( ) of the struct is equal to
+	 * the SIZE_OF_XXX macro of the corresponding struct. If they are not
+	 * equal, functionality will break.
+	 */
+#if !defined(IS_ISP_2500_SYSTEM)
+	/* Check struct sh_css_ddr_address_map */
+	COMPILATION_ERROR_IF( sizeof(struct sh_css_ddr_address_map)		!= SIZE_OF_SH_CSS_DDR_ADDRESS_MAP_STRUCT	);
+#endif
+
+	/* Check struct host_sp_queues */
+	COMPILATION_ERROR_IF( sizeof(struct host_sp_queues)			!= SIZE_OF_HOST_SP_QUEUES_STRUCT		);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_circbuf_desc_s)		!= SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT		);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_circbuf_elem_s)		!= SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT		);
+
+	/* Check struct host_sp_communication */
+	COMPILATION_ERROR_IF( sizeof(struct host_sp_communication)		!= SIZE_OF_HOST_SP_COMMUNICATION_STRUCT		);
+	COMPILATION_ERROR_IF( sizeof(struct sh_css_event_irq_mask)		!= SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT		);
+
+	/* Check struct sh_css_hmm_buffer */
+	COMPILATION_ERROR_IF( sizeof(struct sh_css_hmm_buffer)			!= SIZE_OF_SH_CSS_HMM_BUFFER_STRUCT		);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_isp_3a_statistics)		!= SIZE_OF_IA_CSS_ISP_3A_STATISTICS_STRUCT	);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_isp_dvs_statistics)		!= SIZE_OF_IA_CSS_ISP_DVS_STATISTICS_STRUCT	);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_metadata)			!= SIZE_OF_IA_CSS_METADATA_STRUCT		);
+
+	/* Check struct ia_css_init_dmem_cfg */
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_sp_init_dmem_cfg)		!= SIZE_OF_IA_CSS_SP_INIT_DMEM_CFG_STRUCT	);
+
 	if (fw == NULL && !fw_explicitly_loaded)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	if (env == NULL)
@@ -3005,7 +3044,20 @@ send_mipi_frames (struct ia_css_pipe *pipe)
 	 *
 	 **********************************/
 	{
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_6,	/* the event ID  */
+		ia_css_queue_t *q;
+		q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+
+		if (NULL == q) {
+			/* q handle not available */
+			/* Error as the queue is not initialized */
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"send_mipi_frames() leaving: host2sp_event_queue not available\n");
+			return;
+		}
+
+		/* casting eventq payload to ensure it is encodable*/
+		ia_css_eventq_send(q,
+			SP_SW_EVENT_ID_6,	/* the event ID  */
 			0,				/* not used */
 			0,				/* not used */
 			0				/* not used */);
@@ -4056,11 +4108,21 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 		 * Tell the SP which queues are not empty,
 		 * by sending the software event.
 		 */
-	if (err == IA_CSS_SUCCESS)
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_1,
-				thread_id,
+	if (err == IA_CSS_SUCCESS) {
+		ia_css_queue_t *q;
+		q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+		if (NULL == q) {
+			/* Error as the queue is not initialized */
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"ia_css_pipe_enqueue_buffer() leaving: host2sp eventq not available\n");
+			return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+		}
+		ia_css_eventq_send(q,
+				SP_SW_EVENT_ID_1,
+				(uint8_t)thread_id,
 				queue_id,
 				0);
+	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipe_enqueue_buffer() leave: return_err=%d\n",err);
@@ -4206,12 +4268,21 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 	 * Tell the SP which queues are not full,
 	 * by sending the software event.
 	 */
-	if (err == IA_CSS_SUCCESS)
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_2,
+	if (err == IA_CSS_SUCCESS) {
+		ia_css_queue_t *q;
+		q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+		if (NULL == q) {
+			/* Error as the queue is not initialized */
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"ia_css_pipe_dequeue_buffer() leaving: host2sp eventq not available\n");
+			return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+		}
+		ia_css_eventq_send(q,
+				SP_SW_EVENT_ID_2,
 				0,
 				queue_id,
 				0);
-
+	}
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipe_dequeue_buffer() leave: buffer=%p\n", buffer);
 
@@ -4238,7 +4309,6 @@ static enum ia_css_event_type convert_event_sp_to_host_domain[] = {
 enum ia_css_err
 ia_css_dequeue_event(struct ia_css_event *event)
 {
-	uint32_t sp_event;
 	enum ia_css_pipe_id pipe_id;
 	uint8_t payload[4] = {0,0,0,0};
 	ia_css_queue_t* q;
@@ -4259,8 +4329,8 @@ ia_css_dequeue_event(struct ia_css_event *event)
 	}
 
 	/* dequeue the IRQ event */
-	if (IA_CSS_SUCCESS != ia_css_queue_dequeue(q, &sp_event)) {
-		/* sp2host event queue is empty */
+	/* check whether the IRQ event is available or not */
+	if (IA_CSS_SUCCESS != ia_css_eventq_recv(q, payload)) {
 		//ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		//      "ia_css_dequeue_event() out: EVENT_QUEUE_EMPTY\n");
 		return IA_CSS_ERR_QUEUE_IS_EMPTY;
@@ -4269,11 +4339,14 @@ ia_css_dequeue_event(struct ia_css_event *event)
 		 * Tell the SP which queues are not full,
 		 * by sending the software event.
 		 */
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_3, 0, 0, 0);
+		ia_css_queue_t *send_q;
+		send_q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+		/* No need to check here as queue is definetly initialized
+		 * by the time we reach here.*/
+		ia_css_eventq_send(send_q, SP_SW_EVENT_ID_3, 0, 0, 0);
 	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_event() enter: queue not empty\n");
-	ia_css_event_decode(sp_event, payload);
 	/*  queue contains an event, it is decoded into 4 bytes of payload,
 	 *  convert sp event type in payload to host event type,
 	 *  TODO: can this enum conversion be eliminated */
@@ -4380,6 +4453,7 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 	struct ia_css_pipe *pipe;
 	enum ia_css_pipe_id pipe_id;
 	unsigned int thread_id;
+	ia_css_queue_t *q;
 
 	assert(stream != NULL);
 	pipe = stream->last_pipe;
@@ -4439,7 +4513,16 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 	ia_css_debug_pipe_graph_dump_epilogue();
 
 	ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(pipe), &thread_id);
-	sh_css_sp_snd_event(SP_SW_EVENT_ID_4, thread_id, 0,  0);
+
+	q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+	if (NULL == q) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"sh_css_pipe_start() leaving: host2sp_eventq not available\n");
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
+	/* casting eventq payload to ensure it is encodable*/
+	ia_css_eventq_send(q, SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0,  0);
 
 	/* in case of continuous capture mode, we also start capture thread and copy thread*/
 	if (pipe->stream->config.continuous) {
@@ -4454,7 +4537,8 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 		if (copy_pipe == NULL)
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(copy_pipe), &thread_id);
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_4, thread_id, 0,  0);
+		 /* by the time we reach here q is initialized and handle is available.*/
+		ia_css_eventq_send(q, SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0,  0);
 	}
 	if (pipe->stream->cont_capt) {
 		struct ia_css_pipe *capture_pipe = NULL;
@@ -4467,7 +4551,8 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 		if (capture_pipe == NULL)
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(capture_pipe), &thread_id);
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_4, thread_id, 0,  0);
+		 /* by the time we reach here q is initialized and handle is available.*/
+		ia_css_eventq_send(q, SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0,  0);
 	}
 
 	stream->started = true;

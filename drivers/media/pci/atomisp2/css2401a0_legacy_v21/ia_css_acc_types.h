@@ -515,6 +515,10 @@ struct ia_css_sp_init_dmem_cfg {
 	uint32_t        data_size;      /**< data segment size            */
 	uint32_t        bss_size;       /**< bss segment size             */
 };
+#define SIZE_OF_IA_CSS_SP_INIT_DMEM_CFG_STRUCT				\
+	(sizeof(uint32_t) +						\
+	(2 * SIZE_OF_IA_CSS_PTR) +					\
+	(6 * sizeof(uint32_t)))
 
 enum ia_css_sp_sleep_mode {
 	SP_DISABLE_SLEEP_MODE = 0,

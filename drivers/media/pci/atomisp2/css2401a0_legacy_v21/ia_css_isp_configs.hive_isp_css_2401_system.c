@@ -26,6 +26,7 @@
 #include "ia_css_pipeline.h"
 #include HRTSTR(ia_css_isp_configs.SYSTEM.h)
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 void
 ia_css_configure_ref(

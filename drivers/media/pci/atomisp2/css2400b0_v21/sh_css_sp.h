@@ -234,20 +234,6 @@ extern bool sh_css_sp_set_dma_sw_reg(int dma_id,
 		int request_type,
 		bool enable);
 
-/**
- * @brief The Host sends the event to the SP.
- * The caller of this API will be blocked until the event
- * is sent.
- *
- * @param[in]	evt_id		The event ID.
- * @param[in]	evt_payload_0	The event payload.
- * @param[in]	evt_payload_1	The event payload.
- * @param[in]	evt_payload_2	The event payload.
- */
-extern void sh_css_sp_snd_event(int evt_id,
-		int evt_payload_0,
-		int evt_payload_1,
-		int evt_payload_2);
 
 extern struct sh_css_sp_group sh_css_sp_group;
 extern struct sh_css_sp_stage sh_css_sp_stage;
