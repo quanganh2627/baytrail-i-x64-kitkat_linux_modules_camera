@@ -27,7 +27,6 @@
 #include <media/media-device.h>
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
-#include <media/v4l2-ioctl.h>
 #include <media/videobuf2-core.h>
 
 #include "atomisp.h"
@@ -37,52 +36,6 @@
 #include "atomisp-isys.h"
 #include "atomisp-isys-video.h"
 #include "atomisp-isys-queue.h"
-
-static int csi2_querycap(struct file *file, void *fh,
-			 struct v4l2_capability *cap)
-{
-	return 0;
-}
-
-static int csi2_enum_fmt_vid_cap(struct file *file, void *fh,
-				 struct v4l2_fmtdesc *fmtdesc)
-{
-	return 0;
-}
-
-static int csi2_g_fmt_vid_cap(struct file *file, void *fh,
-			      struct v4l2_format *fmt)
-{
-	return 0;
-}
-
-static int csi2_s_fmt_vid_cap(struct file *file, void *fh,
-			      struct v4l2_format *fmt)
-{
-	return 0;
-}
-
-static int csi2_try_fmt_vid_cap(struct file *file, void *fh,
-				struct v4l2_format *fmt)
-{
-	return 0;
-}
-
-static const struct v4l2_ioctl_ops csi2_ioctl_ops = {
-	.vidioc_querycap = csi2_querycap,
-	.vidioc_enum_fmt_vid_cap = csi2_enum_fmt_vid_cap,
-	.vidioc_g_fmt_vid_cap = csi2_g_fmt_vid_cap,
-	.vidioc_s_fmt_vid_cap = csi2_s_fmt_vid_cap,
-	.vidioc_try_fmt_vid_cap = csi2_try_fmt_vid_cap,
-	.vidioc_reqbufs = vb2_ioctl_reqbufs,
-	.vidioc_create_bufs = vb2_ioctl_create_bufs,
-	.vidioc_prepare_buf = vb2_ioctl_prepare_buf,
-	.vidioc_querybuf = vb2_ioctl_querybuf,
-	.vidioc_qbuf = vb2_ioctl_qbuf,
-	.vidioc_dqbuf = vb2_ioctl_dqbuf,
-	.vidioc_streamon = vb2_ioctl_streamon,
-	.vidioc_streamoff = vb2_ioctl_streamoff,
-};
 
 static struct v4l2_subdev_internal_ops csi2_sd_internal_ops = {
 };
@@ -117,8 +70,6 @@ int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 
 	snprintf(csi2->av.vdev.name, sizeof(csi2->av.vdev.name),
 		 "AtomISP CSI-2 %u capture", index);
-	csi2->av.vdev.ioctl_ops = &csi2_ioctl_ops;
-	video_set_drvdata(&csi2->av.vdev, csi2);
 	rval = atomisp_isys_video_init(&csi2->av, csi2->isys);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't init video node\n");
