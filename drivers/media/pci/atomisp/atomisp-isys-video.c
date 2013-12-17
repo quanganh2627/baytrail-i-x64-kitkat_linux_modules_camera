@@ -34,7 +34,7 @@ int atomisp_isys_video_init(struct atomisp_isys_video *av,
 		return rval;
 
 	av->vdev.release = video_device_release_empty;
-	av->vdev.fops = &atomisp_isys_fops;           
+	av->vdev.fops = &atomisp_isys_fops;
 	av->vdev.v4l2_dev = &isys->v4l2_dev;
 
 	rval = video_register_device(&av->vdev, VFL_TYPE_GRABBER, -1);
