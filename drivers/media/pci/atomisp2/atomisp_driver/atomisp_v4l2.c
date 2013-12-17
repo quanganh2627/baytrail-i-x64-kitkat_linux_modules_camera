@@ -566,8 +566,20 @@ static int atomisp_resume(struct device *dev)
 }
 #endif
 
-static int mrfld_csi_lane_config(struct atomisp_device *isp)
+static int atomisp_csi_lane_config(struct atomisp_device *isp)
 {
+#ifdef ISP2401_NEW_INPUT_SYSTEM
+	static const u8 mipi_lanes[CHV_PORT_CONFIG_NUM][CHV_PORT_NUM] = {
+		{4, 2, 0},
+		{3, 2, 0},
+		{2, 2, 0},
+		{1, 2, 0},
+		{2, 2, 2},
+		{3, 2, 1},
+		{2, 2, 1},
+		{1, 2, 1}
+	};
+#else
 	static const u8 mipi_lanes[MRFLD_PORT_CONFIG_NUM][MRFLD_PORT_NUM] = {
 		{4, 1, 0},
 		{3, 1, 0},
@@ -578,7 +590,7 @@ static int mrfld_csi_lane_config(struct atomisp_device *isp)
 		{2, 1, 1},
 		{1, 1, 1}
 	};
-
+#endif
 	unsigned int i, j;
 	u8 sensor_lanes[MRFLD_PORT_NUM] = {0};
 	u32 data;
@@ -634,11 +646,18 @@ static int mrfld_csi_lane_config(struct atomisp_device *isp)
 	dev_dbg(isp->dev, "%s: original CSI_CONTROL is 0x%x\n", __func__, data);
 	data &= ~MRFLD_PORT_CONFIG_MASK;
 	data |= (i << MRFLD_PORT_CONFIGCODE_SHIFT)
+#ifdef ISP2401_NEW_INPUT_SYSTEM
+	        | (1 << CHV_CSI_PORT_CONFIG_SHIFT)
+	        | (1 << CHV_CSI_PAR_PATH_SHIFT)
+#endif
 		| (mipi_lanes[i][2] ? 0 : (1 << MRFLD_PORT3_ENABLE_SHIFT))
 		| (((1 << mipi_lanes[i][0]) - 1) << MRFLD_PORT1_LANES_SHIFT)
 		| (((1 << mipi_lanes[i][1]) - 1) << MRFLD_PORT2_LANES_SHIFT)
+#ifdef ISP2401_NEW_INPUT_SYSTEM
+		| (((1 << mipi_lanes[i][2]) - 1) << CHV_PORT3_LANES_SHIFT);
+#else
 		| (((1 << mipi_lanes[i][2]) - 1) << MRFLD_PORT3_LANES_SHIFT);
-
+#endif
 	pci_write_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, data);
 
 	dev_dbg(isp->dev,
@@ -749,7 +768,7 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 		dev_warn(isp->dev, "no camera attached or fail to detect\n");
 
 	if (IS_ISP24XX(isp))
-		return mrfld_csi_lane_config(isp);
+		return atomisp_csi_lane_config(isp);
 
 	return 0;
 }
