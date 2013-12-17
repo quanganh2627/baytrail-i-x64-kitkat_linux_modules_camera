@@ -120,6 +120,7 @@
 struct atomisp_device;
 struct atomisp_sub_device;
 struct video_device;
+enum atomisp_input_stream_id;
 
 void atomisp_css_debug_dump_sp_sw_debug_info(void);
 void atomisp_css_debug_dump_debug_info(const char *context);
@@ -150,15 +151,18 @@ int atomisp_css_irq_enable(struct atomisp_device *isp,
 
 int atomisp_q_video_buffer_to_css(struct atomisp_sub_device *asd,
 			struct videobuf_vmalloc_memory *vm_mem,
+			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_buffer_type css_buf_type,
 			enum atomisp_css_pipe_id css_pipe_id);
 
 int atomisp_q_s3a_buffer_to_css(struct atomisp_sub_device *asd,
 			struct atomisp_s3a_buf *s3a_buf,
+			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_pipe_id css_pipe_id);
 
 int atomisp_q_dis_buffer_to_css(struct atomisp_sub_device *asd,
 			struct atomisp_dis_buf *dis_buf,
+			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_pipe_id css_pipe_id);
 
 void atomisp_css_mmu_invalidate_cache(void);

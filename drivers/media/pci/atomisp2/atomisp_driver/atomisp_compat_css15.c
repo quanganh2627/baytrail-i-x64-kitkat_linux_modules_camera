@@ -215,6 +215,7 @@ void atomisp_css_init_struct(struct atomisp_sub_device *asd)
 
 int atomisp_q_video_buffer_to_css(struct atomisp_sub_device *asd,
 			struct videobuf_vmalloc_memory *vm_mem,
+			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_buffer_type css_buf_type,
 			enum atomisp_css_pipe_id css_pipe_id)
 {
@@ -229,6 +230,7 @@ int atomisp_q_video_buffer_to_css(struct atomisp_sub_device *asd,
 
 int atomisp_q_s3a_buffer_to_css(struct atomisp_sub_device *asd,
 			struct atomisp_s3a_buf *s3a_buf,
+			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_pipe_id css_pipe_id)
 {
 	if (sh_css_queue_buffer(css_pipe_id, SH_CSS_BUFFER_TYPE_3A_STATISTICS,
@@ -242,6 +244,7 @@ int atomisp_q_s3a_buffer_to_css(struct atomisp_sub_device *asd,
 
 int atomisp_q_dis_buffer_to_css(struct atomisp_sub_device *asd,
 			struct atomisp_dis_buf *dis_buf,
+			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_pipe_id css_pipe_id)
 {
 	if (sh_css_queue_buffer(css_pipe_id,
