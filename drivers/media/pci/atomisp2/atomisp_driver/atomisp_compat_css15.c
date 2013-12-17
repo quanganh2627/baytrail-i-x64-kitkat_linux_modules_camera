@@ -292,6 +292,7 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 }
 
 int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
+			     enum atomisp_input_stream_id stream_id,
 			     enum atomisp_css_pipe_id pipe_id,
 			     enum atomisp_css_buffer_type buf_type,
 			     struct atomisp_css_buffer *isp_css_buffer)
@@ -322,6 +323,7 @@ int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
 }
 
 int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
+				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_pipe_id pipe_id,
 				enum atomisp_css_buffer_type buf_type,
 				struct atomisp_css_buffer *isp_css_buffer)
@@ -1551,24 +1553,28 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 		case CSS_EVENT_OUTPUT_FRAME_DONE:
 			frame_done_found[asd->index] = true;
 			atomisp_buf_done(asd, 0, CSS_BUFFER_TYPE_OUTPUT_FRAME,
-					 current_event.pipe, true);
+					 current_event.pipe, true,
+					 ATOMISP_INPUT_STREAM_GENERAL);
 			break;
 		case CSS_EVENT_3A_STATISTICS_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_3A_STATISTICS,
 					 current_event.pipe,
-					 css_pipe_done[asd->index]);
+					 css_pipe_done[asd->index],
+					 ATOMISP_INPUT_STREAM_GENERAL);
 			break;
 		case CSS_EVENT_VF_OUTPUT_FRAME_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_VF_OUTPUT_FRAME,
-					 current_event.pipe, true);
+					 current_event.pipe, true,
+					 ATOMISP_INPUT_STREAM_GENERAL);
 			break;
 		case CSS_EVENT_DIS_STATISTICS_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_DIS_STATISTICS,
 					 current_event.pipe,
-					 css_pipe_done[asd->index]);
+					 css_pipe_done[asd->index],
+					 ATOMISP_INPUT_STREAM_GENERAL);
 			break;
 		case CSS_EVENT_PIPELINE_DONE:
 			break;

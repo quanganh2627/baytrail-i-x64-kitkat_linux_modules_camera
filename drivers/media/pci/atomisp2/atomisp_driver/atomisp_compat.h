@@ -177,11 +177,13 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 void atomisp_css_update_isp_params(struct atomisp_sub_device *asd);
 
 int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
+			     enum atomisp_input_stream_id stream_id,
 			     enum atomisp_css_pipe_id pipe_id,
 			     enum atomisp_css_buffer_type buf_type,
 			     struct atomisp_css_buffer *isp_css_buffer);
 
 int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
+				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_pipe_id pipe_id,
 				enum atomisp_css_buffer_type buf_type,
 				struct atomisp_css_buffer *isp_css_buffer);

@@ -769,9 +769,23 @@ void atomisp_flush_bufs_and_wakeup(struct atomisp_sub_device *asd)
 /* find atomisp_video_pipe with css pipe id, buffer type and atomisp run_mode */
 static struct atomisp_video_pipe *__atomisp_get_pipe(
 		struct atomisp_sub_device *asd,
+		enum atomisp_input_stream_id stream_id,
 		enum atomisp_css_pipe_id css_pipe_id,
 		enum atomisp_css_buffer_type buf_type)
 {
+
+	if (css_pipe_id == CSS_PIPE_ID_COPY) {
+		switch (stream_id) {
+		case ATOMISP_INPUT_STREAM_PREVIEW:
+			return &asd->video_out_preview;
+		case ATOMISP_INPUT_STREAM_POSTVIEW:
+			return &asd->video_out_vf;
+		case ATOMISP_INPUT_STREAM_CAPTURE:
+		case ATOMISP_INPUT_STREAM_VIDEO:
+		default:
+			return &asd->video_out_capture;
+		}
+	}
 	/* video is same in online as in continuouscapture mode */
 	if (asd->vfpp->val != ATOMISP_VFPP_ENABLE) {
 		return &asd->video_out_capture;
@@ -796,7 +810,7 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 		      enum atomisp_css_buffer_type buf_type,
 		      enum atomisp_css_pipe_id css_pipe_id,
-		      bool q_buffers)
+		      bool q_buffers, enum atomisp_input_stream_id stream_id)
 {
 	struct videobuf_buffer *vb = NULL;
 	struct atomisp_video_pipe *pipe = NULL;
@@ -819,7 +833,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 
 	memset(&buffer, 0, sizeof(struct atomisp_css_buffer));
 	buffer.css_buffer.type = buf_type;
-	err = atomisp_css_dequeue_buffer(asd, css_pipe_id, buf_type, &buffer);
+	err = atomisp_css_dequeue_buffer(asd, stream_id, css_pipe_id,
+			buf_type, &buffer);
 	if (err) {
 		dev_err(isp->dev,
 			"atomisp_css_dequeue_buffer failed: 0x%x\n", err);
@@ -827,7 +842,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 	}
 
 	/* need to know the atomisp pipe for frame buffers */
-	pipe = __atomisp_get_pipe(asd, css_pipe_id, buf_type);
+	pipe = __atomisp_get_pipe(asd, stream_id, css_pipe_id, buf_type);
 	if (pipe == NULL) {
 		dev_err(isp->dev, "error getting atomisp pipe\n");
 		return;
@@ -994,8 +1009,9 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 	 * Queue/dequeue order will change if driver recycles image buffers.
 	 */
 	if (requeue) {
-		err = atomisp_css_queue_buffer(asd, css_pipe_id,
-						buf_type, &buffer);
+		err = atomisp_css_queue_buffer(asd,
+					stream_id, css_pipe_id,
+					buf_type, &buffer);
 		if (err)
 			dev_err(isp->dev, "%s, q to css fails: %d\n",
 					__func__, err);

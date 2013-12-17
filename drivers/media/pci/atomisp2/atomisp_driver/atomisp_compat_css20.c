@@ -1070,12 +1070,13 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 }
 
 int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
+			     enum atomisp_input_stream_id stream_id,
 			     enum atomisp_css_pipe_id pipe_id,
 			     enum atomisp_css_buffer_type buf_type,
 			     struct atomisp_css_buffer *isp_css_buffer)
 {
 	if (ia_css_pipe_enqueue_buffer(
-		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipes[pipe_id],
+		asd->stream_env[stream_id].pipes[pipe_id],
 					&isp_css_buffer->css_buffer)
 					!= IA_CSS_SUCCESS)
 		return -EINVAL;
@@ -1084,6 +1085,7 @@ int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
 }
 
 int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
+				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_pipe_id pipe_id,
 				enum atomisp_css_buffer_type buf_type,
 				struct atomisp_css_buffer *isp_css_buffer)
@@ -1092,7 +1094,7 @@ int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
 	enum ia_css_err err;
 
 	err = ia_css_pipe_dequeue_buffer(
-		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipes[pipe_id],
+		asd->stream_env[stream_id].pipes[pipe_id],
 					&isp_css_buffer->css_buffer);
 	if (err != IA_CSS_SUCCESS) {
 		dev_err(isp->dev,
@@ -3272,21 +3274,27 @@ int atomisp_css_load_acc_binary(struct atomisp_sub_device *asd,
 
 static struct atomisp_sub_device *__get_atomisp_subdev(
 					struct ia_css_pipe *css_pipe,
-					struct atomisp_device *isp) {
-	int i, j;
+					struct atomisp_device *isp,
+					enum atomisp_input_stream_id *stream_id) {
+	int i, j, k;
 	struct atomisp_sub_device *asd;
 	struct atomisp_stream_env *stream_env;
 
 	for (i = 0; i < isp->num_of_streams; i++) {
 		asd = &isp->asd[i];
-		stream_env = &asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 		if (asd->streaming == ATOMISP_DEVICE_STREAMING_DISABLED &&
 		    !isp->acc.pipeline)
 			continue;
-		for (j = 0; j < IA_CSS_PIPE_ID_NUM; j++)
-			if (stream_env->pipes[j] &&
-			    stream_env->pipes[j] == css_pipe)
-				return asd;
+		for (j = 0; j < ATOMISP_INPUT_STREAM_NUM; j++) {
+			stream_env = &asd->stream_env[j];
+			for (k = 0; k < IA_CSS_PIPE_ID_NUM; k++) {
+				if (stream_env->pipes[k] &&
+					stream_env->pipes[k] == css_pipe) {
+						*stream_id = j;
+						return asd;
+					}
+				}
+		}
 	}
 
 	return NULL;
@@ -3297,13 +3305,14 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			   bool *css_pipe_done,
 			   bool *reset_wdt_timer)
 {
+	enum atomisp_input_stream_id stream_id;
 	struct atomisp_css_event current_event;
 	struct atomisp_sub_device *asd = &isp->asd[0];
 
 	while (!atomisp_css_dequeue_event(&current_event)) {
 		atomisp_css_temp_pipe_to_pipe_id(&current_event);
 		asd = __get_atomisp_subdev(current_event.event.pipe,
-						  isp);
+						  isp, &stream_id);
 		if (!asd) {
 			/* EOF Event does not have the css_pipe returned */
 			if (current_event.event.type !=
@@ -3318,26 +3327,26 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 		case CSS_EVENT_OUTPUT_FRAME_DONE:
 			frame_done_found[asd->index] = true;
 			atomisp_buf_done(asd, 0, CSS_BUFFER_TYPE_OUTPUT_FRAME,
-					 current_event.pipe, true);
+					 current_event.pipe, true, stream_id);
 			*reset_wdt_timer = true; /* ISP running */
 			break;
 		case CSS_EVENT_3A_STATISTICS_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_3A_STATISTICS,
 					 current_event.pipe,
-					 css_pipe_done[asd->index]);
+					 css_pipe_done[asd->index], stream_id);
 			break;
 		case CSS_EVENT_VF_OUTPUT_FRAME_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_VF_OUTPUT_FRAME,
-					 current_event.pipe, true);
+					 current_event.pipe, true, stream_id);
 			*reset_wdt_timer = true; /* ISP running */
 			break;
 		case CSS_EVENT_DIS_STATISTICS_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_DIS_STATISTICS,
 					 current_event.pipe,
-					 css_pipe_done[asd->index]);
+					 css_pipe_done[asd->index], stream_id);
 			break;
 		case CSS_EVENT_PIPELINE_DONE:
 			css_pipe_done[asd->index] = true;
