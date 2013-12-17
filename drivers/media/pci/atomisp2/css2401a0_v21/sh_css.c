@@ -1254,8 +1254,7 @@ static enum ia_css_err stream_register_with_csi_rx(
 	unsigned int	sp_thread_id;
 
 	if (stream && (stream->last_pipe != NULL)) {
-		if ((stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) &&
-		    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY)) {
+		if (stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
 			rc = ia_css_pipeline_get_sp_thread_id(
 				ia_css_pipe_get_pipe_num(stream->last_pipe),
 				&sp_thread_id);
@@ -1994,13 +1993,14 @@ create_host_pipeline(struct ia_css_stream *stream)
 	main_pipe 	= stream->last_pipe;
 	pipe_id 	= main_pipe->mode;
 
+#if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* Standalone Capture pipe cannot work with continuous capture. */
 	if((pipe_id == IA_CSS_PIPE_ID_CAPTURE) && (stream->num_pipes == 1)) {
 		if(!stream->config.online &&
 			!main_pipe->pipe_settings.capture.copy_binary.info)
 			goto ERR;
 	}
-
+#endif
 	/* No continuous frame allocation for capture pipe. It uses the
 	 * "main" pipe's frames. */
 	if((pipe_id == IA_CSS_PIPE_ID_PREVIEW) ||
@@ -3076,12 +3076,20 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	bool continuous, need_vf_pp = false;
 	unsigned int left_cropping;
+	bool need_isp_copy_binary = false;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	bool sensor = false;
+#endif
 
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
 
 	online = pipe->stream->config.online;
 	continuous = pipe->stream->config.continuous;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+#endif
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"load_preview_binaries() enter:\n");
 
@@ -3154,8 +3162,17 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 			return err;
 	}
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, only the Direct Sensor Mode
+	 * Offline Preview uses the ISP copy binary.
+	 */
+	need_isp_copy_binary = !online && sensor;
+#else
+	need_isp_copy_binary = !online && !continuous;
+#endif
+
 	/* Copy */
-	if (!online && !continuous) {
+	if (need_isp_copy_binary) {
 		err = load_copy_binary(pipe,
 				       &pipe->pipe_settings.preview.copy_binary,
 				       &pipe->pipe_settings.preview.preview_binary);
@@ -3742,6 +3759,16 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 	struct ia_css_frame *in_frame = NULL, *cc_frame = NULL;
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	struct ia_css_frame *out_frame;
+	bool need_in_frameinfo_memory = false;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	bool sensor = false;
+	bool buffered_sensor = false;
+	bool online = false;
+	bool continuous = false;
+#endif
+
+	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"create_host_preview_pipeline(): enter\n");
@@ -3756,8 +3783,24 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 	me = &pipe->pipeline;
 	ia_css_pipeline_clean(me);
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, always enable 'in_frameinfo_memory'
+	 * except for the following:
+	 * - Direct Sensor Mode Online Preview
+	 * - Direct Sensor Mode Continuous Preview
+	 * - Buffered Sensor Mode Continous Preview
+	 */
+	sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+	buffered_sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR;
+	online = pipe->stream->config.online;
+	continuous = pipe->stream->config.continuous;
+	need_in_frameinfo_memory =
+		!((sensor && (online || continuous)) || (buffered_sensor && continuous));
+#else
 	/* Construct in_frame info (only in case we have dynamic input */
-	if (pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY) {
+	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
+#endif
+	if (need_in_frameinfo_memory) {
 		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
@@ -3787,7 +3830,15 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 			goto ERR;
 		in_frame = me->stages->args.out_frame;
 	} else {
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+		/* When continuous is enabled, configure in_frame with the
+		 * last pipe, which is the copy pipe.
+		 */
+		if (continuous)
+			in_frame = pipe->stream->last_pipe->continuous_frames[0];
+#else
 		in_frame = pipe->continuous_frames[0];
+#endif
 	}
 
 	if (vf_pp_binary) {
@@ -5267,10 +5318,14 @@ static bool need_capture_pp(
 static enum ia_css_err load_primary_binaries(
 	struct ia_css_pipe *pipe)
 {
-	bool online = pipe->stream->config.online;
-	bool memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
-	bool continuous = pipe->stream->config.continuous;
+	bool online = false;
+	bool memory = false;
+	bool continuous = false;
 	bool need_pp = false;
+	bool need_isp_copy_binary = false;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	bool sensor = false;
+#endif
 	struct ia_css_frame_info prim_in_info,
 				 prim_out_info, vf_info,
 				 *vf_pp_in_info;
@@ -5278,6 +5333,15 @@ static enum ia_css_err load_primary_binaries(
 	struct ia_css_capture_settings *mycs;
 
 	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
+
+	online = pipe->stream->config.online;
+	memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
+	continuous = pipe->stream->config.continuous;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+#endif
+
 	mycs = &pipe->pipe_settings.capture;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "load_primary_binaries() enter:\n");
 
@@ -5340,8 +5404,16 @@ static enum ia_css_err load_primary_binaries(
 			return err;
 	}
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, only the Direct Sensor Mode
+	 * Offline Capture uses the ISP copy binary.
+	 */
+	need_isp_copy_binary = !online && sensor;
+#else
+	need_isp_copy_binary = !online && !continuous && !memory;
+#endif
 	/* ISP Copy */
-	if (!online && !continuous && !memory) {
+	if (need_isp_copy_binary) {
 		err = load_copy_binary(pipe,
 				       &mycs->copy_binary,
 				       &mycs->primary_binary);
@@ -5820,8 +5892,16 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 	struct ia_css_frame *out_frame;
 	struct ia_css_frame *vf_frame;
 	struct ia_css_pipeline_stage_desc stage_desc;
+	bool need_in_frameinfo_memory = false;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	bool sensor = false;
+	bool buffered_sensor = false;
+	bool online = false;
+	bool continuous = false;
+#endif
 
 	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
 
 	me = &pipe->pipeline;
 	mode = pipe->config.default_capture_config.mode;
@@ -5830,8 +5910,24 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 		 "create_host_regular_capture_pipeline() enter:\n");
 	ia_css_pipeline_clean(me);
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, always enable 'in_frameinfo_memory'
+	 * except for the following:
+	 * - Direct Sensor Mode Online Capture
+	 * - Direct Sensor Mode Continuous Capture
+	 * - Buffered Sensor Mode Continous Capture
+	 */
+	sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+	buffered_sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR;
+	online = pipe->stream->config.online;
+	continuous = pipe->stream->config.continuous;
+	need_in_frameinfo_memory =
+		!((sensor && (online || continuous)) || (buffered_sensor && continuous));
+#else
 	/* Construct in_frame info (only in case we have dynamic input */
-	if (pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY) {
+	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
+#endif
+	if (need_in_frameinfo_memory) {
 		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame);
 		if (err != IA_CSS_SUCCESS)
 			return err;
@@ -7152,7 +7248,6 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	ia_css_debug_pipe_graph_dump_stream_config(stream_config);
 
-#if !defined(HAS_INPUT_SYSTEM_VERSION_2401)
 	/* check if mipi size specified */
 	if (stream_config->mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
 		if (my_css.size_mem_words == 0) {
@@ -7163,7 +7258,6 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 			goto ERR;
 		}
 	}
-#endif
 #endif
 
 	/* Currently we only supported metadata up to a certain size. */
