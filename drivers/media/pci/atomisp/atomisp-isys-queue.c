@@ -96,12 +96,11 @@ struct vb2_ops atomisp_isys_queue_ops = {
 	.buf_queue = buf_queue,
 };
 
-int atomisp_isys_queue_init(struct atomisp_isys *isys,
-			    struct atomisp_isys_queue *aq)
+int atomisp_isys_queue_init(struct atomisp_isys_queue *aq)
 {
+	struct atomisp_isys *isys = atomisp_isys_queue_to_video(aq)->isys;
 	int rval;
 
-	aq->isys = isys;
 	aq->vbq.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	aq->vbq.lock = &aq->mutex;
 	aq->vbq.io_modes = VB2_USERPTR | VB2_DMABUF;

@@ -25,7 +25,6 @@ struct atomisp_isys_queue {
 	struct vb2_queue vbq;
 	struct vb2_alloc_ctx *ctx;
 	struct mutex mutex;
-	struct atomisp_isys *isys;
 };
 
 struct atomisp_isys_buffer {
@@ -34,8 +33,7 @@ struct atomisp_isys_buffer {
 void atomisp_isys_queue_lock(struct vb2_queue *q);
 void atomisp_isys_queue_unlock(struct vb2_queue *q);
 
-int atomisp_isys_queue_init(struct atomisp_isys *isys,
-			    struct atomisp_isys_queue *aq);
+int atomisp_isys_queue_init(struct atomisp_isys_queue *aq);
 void atomisp_isys_queue_cleanup(struct atomisp_isys_queue *aq);
 
 #endif /* ATOMISP_ISYS_QUEUE_H */

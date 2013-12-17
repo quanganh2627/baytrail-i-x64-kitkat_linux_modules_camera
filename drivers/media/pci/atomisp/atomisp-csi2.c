@@ -35,7 +35,6 @@
 #include "atomisp-csi2-reg.h"
 #include "atomisp-isys.h"
 #include "atomisp-isys-video.h"
-#include "atomisp-isys-queue.h"
 
 static struct v4l2_subdev_internal_ops csi2_sd_internal_ops = {
 };
@@ -48,7 +47,6 @@ void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2)
 	v4l2_device_unregister_subdev(&csi2->sd);
 	media_entity_cleanup(&csi2->sd.entity);
 	atomisp_isys_video_cleanup(&csi2->av);
-	atomisp_isys_queue_cleanup(&csi2->aq);
 }
 
 int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
@@ -61,12 +59,6 @@ int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 	csi2->base = base;
 	csi2->nlanes = nlanes;
 	csi2->index = index;
-
-	rval = atomisp_isys_queue_init(isys, &csi2->aq);
-	if (rval) {
-		dev_info(&isys->adev->dev, "can't create queue\n");
-		return rval;
-	}
 
 	snprintf(csi2->av.vdev.name, sizeof(csi2->av.vdev.name),
 		 "AtomISP CSI-2 %u capture", index);

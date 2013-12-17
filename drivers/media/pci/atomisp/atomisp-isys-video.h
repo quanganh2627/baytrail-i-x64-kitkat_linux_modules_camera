@@ -23,12 +23,19 @@
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
 
+#include "atomisp-isys-queue.h"
+
 struct atomisp_isys;
 
 struct atomisp_isys_video {
 	struct media_pad pad;
 	struct video_device vdev;
+	struct atomisp_isys_queue aq;
+	struct atomisp_isys *isys;
 };
+
+#define atomisp_isys_queue_to_video(__aq) \
+	container_of(__aq, struct atomisp_isys_video, aq)
 
 int atomisp_isys_video_init(struct atomisp_isys_video *av,
 			    struct atomisp_isys *isys);

@@ -75,10 +75,16 @@ int atomisp_isys_video_init(struct atomisp_isys_video *av,
 {
 	int rval;
 
+	av->isys = isys;
+
+	rval = atomisp_isys_queue_init(&av->aq);
+	if (rval)
+		return rval;
+
 	av->pad.flags = MEDIA_PAD_FL_SINK;
 	rval = media_entity_init(&av->vdev.entity, 1, &av->pad, 0);
 	if (rval)
-		return rval;
+		goto out_atomisp_isys_queue_cleanup;
 
 	av->vdev.release = video_device_release_empty;
 	av->vdev.fops = &atomisp_isys_fops;
@@ -88,7 +94,15 @@ int atomisp_isys_video_init(struct atomisp_isys_video *av,
 
 	rval = video_register_device(&av->vdev, VFL_TYPE_GRABBER, -1);
 	if (rval)
-		media_entity_cleanup(&av->vdev.entity);
+		goto out_media_entity_cleanup;
+
+	return rval;
+
+out_media_entity_cleanup:
+	media_entity_cleanup(&av->vdev.entity);
+
+out_atomisp_isys_queue_cleanup:
+	atomisp_isys_queue_cleanup(&av->aq);
 
 	return rval;
 }

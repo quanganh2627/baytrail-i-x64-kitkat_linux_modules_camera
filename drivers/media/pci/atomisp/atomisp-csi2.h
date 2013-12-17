@@ -49,7 +49,6 @@ struct atomisp_csi2 {
 	struct atomisp_isys *isys;
 	struct v4l2_subdev sd;
 	struct atomisp_isys_video av;
-	struct atomisp_isys_queue aq;
 	struct media_pad pad[NR_OF_CSI2_PADS];
 
 	void __iomem *base;
