@@ -124,30 +124,95 @@ static struct ap1302_res_struct ap1302_video_res[] = {
 		.fps = 30,
 	}
 };
+
+static enum ap1302_contexts stream_to_context[] = {
+	CONTEXT_SNAPSHOT,
+	CONTEXT_PREVIEW,
+	CONTEXT_PREVIEW,
+	CONTEXT_VIDEO
+};
+
+static u16 aux_stream_config[CONTEXT_NUM][CONTEXT_NUM] = {
+	{0, 0, 0},	/* Preview: No aux streams. */
+	{1, 0, 2},	/* Snapshot: 1 for postview. 2 for video */
+	{1, 0, 0},	/* Video: 1 for preview. */
+};
+
+static struct ap1302_context_info context_info[] = {
+	{CNTX_WIDTH, AP1302_REG16, "width"},
+	{CNTX_HEIGHT, AP1302_REG16, "height"},
+	{CNTX_ROI_X0, AP1302_REG16, "roi_x0"},
+	{CNTX_ROI_X1, AP1302_REG16, "roi_x1"},
+	{CNTX_ROI_Y0, AP1302_REG16, "roi_y0"},
+	{CNTX_ROI_Y1, AP1302_REG16, "roi_y1"},
+	{CNTX_ASPECT, AP1302_REG16, "aspect"},
+	{CNTX_LOCK, AP1302_REG16, "lock"},
+	{CNTX_ENABLE, AP1302_REG16, "enable"},
+	{CNTX_OUT_FMT, AP1302_REG16, "out_fmt"},
+	{CNTX_SENSOR_MODE, AP1302_REG16, "sensor_mode"},
+	{CNTX_MIPI_CTRL, AP1302_REG16, "mipi_ctrl"},
+	{CNTX_MIPI_II_CTRL, AP1302_REG16, "mipi_ii_ctrl"},
+	{CNTX_LINE_TIME, AP1302_REG32, "line_time"},
+	{CNTX_MAX_FPS, AP1302_REG16, "max_fps"},
+	{CNTX_AE_USG, AP1302_REG16, "ae_usg"},
+	{CNTX_AE_UPPER_ET, AP1302_REG32, "ae_upper_et"},
+	{CNTX_AE_MAX_ET, AP1302_REG32, "ae_max_et"},
+	{CNTX_SS, AP1302_REG16, "ss"},
+	{CNTX_S1_SENSOR_MODE, AP1302_REG16, "s1_sensor_mode"},
+	{CNTX_HINF_CTRL, AP1302_REG16, "hinf_ctrl"},
+};
+
 /* End of static definitions */
 
 static int ap1302_i2c_read_reg(struct v4l2_subdev *sd,
 				u16 reg, u16 len, void *val)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
 	if (len == AP1302_REG16)
-		return regmap_read(dev->regmap16, reg, val);
+		ret = regmap_read(dev->regmap16, reg, val);
 	else if (len == AP1302_REG32)
-		return regmap_read(dev->regmap32, reg, val);
+		ret = regmap_read(dev->regmap32, reg, val);
 	else
-		return -EINVAL;
+		ret = -EINVAL;
+	if (ret) {
+		dev_dbg(&client->dev, "Read reg failed. reg=0x%04X\n", reg);
+		return ret;
+	}
+	if (len == AP1302_REG16)
+		dev_dbg(&client->dev, "read_reg[0x%04X] = 0x%04X\n",
+			reg, *(u16*)val);
+	else
+		dev_dbg(&client->dev, "read_reg[0x%04X] = 0x%08X\n",
+			reg, *(u32*)val);
+	return ret;
 }
 
 static int ap1302_i2c_write_reg(struct v4l2_subdev *sd,
 				u16 reg, u16 len, u32 val)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
 	if (len == AP1302_REG16)
-		return regmap_write(dev->regmap16, reg, val);
+		ret = regmap_write(dev->regmap16, reg, val);
 	else if (len == AP1302_REG32)
-		return regmap_write(dev->regmap32, reg, val);
+		ret = regmap_write(dev->regmap32, reg, val);
 	else
-		return -EINVAL;
+		ret = -EINVAL;
+	if (ret) {
+		dev_dbg(&client->dev, "Write reg failed. reg=0x%04X\n", reg);
+		return ret;
+	}
+	if (len == AP1302_REG16)
+		dev_dbg(&client->dev, "write_reg[0x%04X] = 0x%04X\n",
+			reg, (u16)val);
+	else
+		dev_dbg(&client->dev, "write_reg[0x%04X] = 0x%08X\n",
+			reg, (u32)val);
+	return ret;
 }
 
 static u16
@@ -194,6 +259,31 @@ static int ap1302_write_context_reg(struct v4l2_subdev *sd,
 		return -EINVAL;
 	return ap1302_i2c_write_reg(sd, reg_addr, len,
 			*(u32*)(((u8*)&dev->cntx_config[context]) + offset));
+}
+
+static int ap1302_dump_context_reg(struct v4l2_subdev *sd,
+				   enum ap1302_contexts context)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct ap1302_device *dev = to_ap1302_device(sd);
+	int i;
+	dev_dbg(&client->dev, "Dump registers for context[%d]:\n", context);
+	for (i = 0; i < ARRAY_SIZE(context_info); i++) {
+		struct ap1302_context_info *info = &context_info[i];
+		u8 *var = (u8*)&dev->cntx_config[context] + info->offset;
+		/* Snapshot context does not have s1_sensor_mode register. */
+		if (context == CONTEXT_SNAPSHOT &&
+			info->offset == CNTX_S1_SENSOR_MODE)
+			continue;
+		ap1302_read_context_reg(sd, context, info->offset, info->len);
+		if (info->len == AP1302_REG16)
+			dev_dbg(&client->dev, "context.%s = 0x%04X (%d)\n",
+				info->name, *(u16*)var, *(u16*)var);
+		else
+			dev_dbg(&client->dev, "context.%s = 0x%08X (%d)\n",
+				info->name, *(u32*)var, *(u32*)var);
+	}
+	return 0;
 }
 
 static int ap1302_request_firmware(struct v4l2_subdev *sd)
@@ -248,6 +338,7 @@ static int ap1302_load_firmware(struct v4l2_subdev *sd)
 	u16 win_pos = 0;
 	int ret;
 
+	dev_info(&client->dev, "Start to load firmware.\n");
 	if (!dev->fw) {
 		dev_err(&client->dev, "firmware not requested.\n");
 		return -EINVAL;
@@ -305,6 +396,7 @@ static int ap1302_load_firmware(struct v4l2_subdev *sd)
 				   AP1302_REG16, 0xFFFF);
 	if (ret)
 		return ret;
+	dev_info(&client->dev, "Load firmware successfully.\n");
 
 	return 0;
 }
@@ -323,7 +415,7 @@ static int __ap1302_s_power(struct v4l2_subdev *sd, int on, int load_fw)
 		return ret;
 	}
 
-	if (!on && !load_fw)
+	if (!on || !load_fw)
 		return 0;
 	/* Load firmware after power on. */
 	ret = ap1302_load_firmware(sd);
@@ -336,37 +428,11 @@ static int __ap1302_s_power(struct v4l2_subdev *sd, int on, int load_fw)
 static int ap1302_s_power(struct v4l2_subdev *sd, int on)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
-	enum ap1302_contexts context;
 	int ret;
 
 	mutex_lock(&dev->input_lock);
 	ret = __ap1302_s_power(sd, on, 1);
-	if (ret)
-		goto failed;
-
-	for (context = 0; context < CONTEXT_NUM; context++) {
-		/* Configure mipi lane number */
-		ret = ap1302_read_context_reg(sd, context,
-			CNTX_HINF_CTRL, AP1302_REG16);
-		if (ret)
-			goto failed;
-		dev->cntx_config[context].hinf_ctrl &= ~CTRL_CNTX_MASK;
-		dev->cntx_config[context].hinf_ctrl |=
-			(dev->num_lanes << CTRL_CNTX_OFFSET);
-		ret = ap1302_write_context_reg(sd, context,
-			CNTX_HINF_CTRL, AP1302_REG16);
-		if (ret)
-			goto failed;
-		/* Configure VC id for main streams. */
-		dev->cntx_config[context].mipi_ctrl = MIPI_CTRL_IMGTYPE_AUTO;
-		dev->cntx_config[context].mipi_ctrl |=
-			(context << MIPI_CTRL_IMGVC_OFFSET);
-		ret = ap1302_write_context_reg(sd, context,
-			CNTX_MIPI_CTRL, AP1302_REG16);
-		if (ret)
-			goto failed;
-	}
-failed:
+	dev->sys_activated = 0;
 	mutex_unlock(&dev->input_lock);
 
 	return ret;
@@ -406,7 +472,13 @@ static int ap1302_s_config(struct v4l2_subdev *sd, void *pdata)
 			ret, reg_val);
 		goto fail_config;
 	}
+	dev_info(&client->dev, "AP1302 Chip ID is 0x%X\n", reg_val);
 
+	/* Detect revision for AP1302 */
+	ret = ap1302_i2c_read_reg(sd, REG_CHIP_REV, AP1302_REG16, &reg_val);
+	if (ret)
+		goto fail_config;
+	dev_info(&client->dev, "AP1302 Chip Rev is 0x%X\n", reg_val);
 	ret = dev->platform_data->csi_cfg(sd, 1);
 	if (ret)
 		goto fail_config;
@@ -539,7 +611,9 @@ static int ap1302_set_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
-	enum ap1302_contexts context;
+	struct atomisp_input_stream_info *stream_info =
+		(struct atomisp_input_stream_info*)fmt->reserved;
+	enum ap1302_contexts context, main_context;
 	int ret;
 
 	mutex_lock(&dev->input_lock);
@@ -547,13 +621,41 @@ static int ap1302_set_mbus_fmt(struct v4l2_subdev *sd,
 	if (ret)
 		goto fail_set_fmt;
 
-	context = ap1302_get_context(sd);
+	context = stream_to_context[stream_info->stream];
 	dev->cntx_config[context].width = fmt->width;
 	dev->cntx_config[context].height = fmt->height;
-	dev->cntx_config[context].out_fmt = AP1302_FMT_UYVY422;
 	ap1302_write_context_reg(sd, context, CNTX_WIDTH, AP1302_REG16);
 	ap1302_write_context_reg(sd, context, CNTX_HEIGHT, AP1302_REG16);
-	ap1302_write_context_reg(sd, context, CNTX_OUT_FMT, AP1302_REG16);
+
+	main_context = ap1302_get_context(sd);
+	if (context == main_context) {
+		ap1302_read_context_reg(sd, context,
+			CNTX_MIPI_CTRL, AP1302_REG16);
+		dev->cntx_config[context].mipi_ctrl &= ~MIPI_CTRL_IMGVC_MASK;
+		dev->cntx_config[context].mipi_ctrl |=
+			(context << MIPI_CTRL_IMGVC_OFFSET);
+		ap1302_write_context_reg(sd, context,
+			CNTX_MIPI_CTRL, AP1302_REG16);
+	} else {
+		/* Configure aux stream */
+		ap1302_read_context_reg(sd, context,
+			CNTX_MIPI_II_CTRL, AP1302_REG16);
+		dev->cntx_config[context].mipi_ii_ctrl &= ~MIPI_CTRL_IMGVC_MASK;
+		dev->cntx_config[context].mipi_ii_ctrl |=
+			(context << MIPI_CTRL_IMGVC_OFFSET);
+		ap1302_write_context_reg(sd, context,
+			CNTX_MIPI_II_CTRL, AP1302_REG16);
+		if (stream_info->enable) {
+			ap1302_read_context_reg(sd, main_context,
+				CNTX_OUT_FMT, AP1302_REG16);
+			dev->cntx_config[context].out_fmt |=
+				(aux_stream_config[main_context][context]
+				 << OUT_FMT_IIS_OFFSET);
+			ap1302_write_context_reg(sd, main_context,
+				CNTX_OUT_FMT, AP1302_REG16);
+		}
+	}
+	stream_info->ch_id = context;
 fail_set_fmt:
 	mutex_unlock(&dev->input_lock);
 
@@ -695,14 +797,40 @@ static int ap1302_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	enum ap1302_contexts context;
+	u32 reg_val;
 	int ret;
 
 	mutex_lock(&dev->input_lock);
-	/* AP1302 has the same register command for both stream on and off.
-	   To stream on AP1302, write sys stall command to sys_start register.
-	   To stream off AP1302, write sys stall command again. */
-	ret = ap1302_i2c_write_reg(sd, REG_SYS_START,
-				   AP1302_REG16, AP1302_STREAM_SWITCH);
+	context = ap1302_get_context(sd);
+	/* Switch context */
+	ap1302_i2c_read_reg(sd, REG_CTRL,
+			    AP1302_REG16, &reg_val);
+	reg_val &= ~CTRL_CNTX_MASK;
+	reg_val |= (context<<CTRL_CNTX_OFFSET);
+	ap1302_i2c_write_reg(sd, REG_CTRL,
+			    AP1302_REG16, reg_val);
+	/* Select sensor */
+	ap1302_i2c_read_reg(sd, REG_SENSOR_SELECT,
+			    AP1302_REG16, &reg_val);
+	reg_val &= ~SENSOR_SELECT_MASK;
+	reg_val |= (AP1302_SENSOR_PRI<<SENSOR_SELECT_OFFSET);
+	ap1302_i2c_write_reg(sd, REG_SENSOR_SELECT,
+			    AP1302_REG16, reg_val);
+	if (enable) {
+		dev_info(&client->dev, "Start stream. context=%d\n", context);
+		ap1302_dump_context_reg(sd, context);
+		if (!dev->sys_activated) {
+			reg_val = AP1302_SYS_ACTIVATE;
+			dev->sys_activated = 1;
+		} else {
+			reg_val = AP1302_SYS_SWITCH;
+		}
+	} else {
+		dev_info(&client->dev, "Stop stream. context=%d\n", context);
+		reg_val = AP1302_SYS_SWITCH;
+	}
+	ret = ap1302_i2c_write_reg(sd, REG_SYS_START, AP1302_REG16, reg_val);
 	if (ret)
 		dev_err(&client->dev,
 			"AP1302 set stream failed. enable=%d\n", enable);
@@ -714,32 +842,10 @@ static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ap1302_device *dev = container_of(
 		ctrl->handler, struct ap1302_device, ctrl_handler);
-	enum ap1302_contexts context;
-	u16 reg_val = 0;
-	int ret;
 
 	switch (ctrl->id) {
 	case V4L2_CID_RUN_MODE:
-		context = dev->cur_context;
-		ret = ap1302_i2c_read_reg(&dev->sd, REG_CTRL,
-					  AP1302_REG16, &reg_val);
-		if (ret)
-			return -ENODEV;
-
-		reg_val &= ~CTRL_CNTX_MASK;
-		reg_val |= (ap1302_cntx_mapping[ctrl->val]<<CTRL_CNTX_OFFSET);
-		context = ap1302_cntx_mapping[ctrl->val];
-		if (context != dev->cur_context) {
-			ret = ap1302_i2c_write_reg(&dev->sd,
-				REG_CTRL, AP1302_REG16, reg_val);
-			if (ret)
-				return -ENODEV;
-			dev->cur_context = context;
-		}
-		/* Reset output format. Disable aux stream. */
-		dev->cntx_config[context].out_fmt = AP1302_FMT_UYVY422;
-		ap1302_write_context_reg(&dev->sd, context,
-			CNTX_OUT_FMT, AP1302_REG16);
+		dev->cur_context = ap1302_cntx_mapping[ctrl->val];
 		break;
 	default:
 		return -EINVAL;
@@ -815,8 +921,7 @@ static int ap1302_remove(struct i2c_client *client)
 	if (dev->platform_data->platform_deinit)
 		dev->platform_data->platform_deinit();
 
-	if (dev->fw)
-		release_firmware(dev->fw);
+	release_firmware(dev->fw);
 
 	media_entity_cleanup(&dev->sd.entity);
 	dev->platform_data->csi_cfg(sd, 0);

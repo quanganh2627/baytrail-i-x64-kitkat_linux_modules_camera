@@ -37,10 +37,12 @@
 #define AP1302_REG32		4
 
 #define REG_CHIP_VERSION	0x0000
+#define REG_CHIP_REV		0x0050
 #define REG_MF_ID		0x0004
 #define REG_ERROR		0x0006
 #define REG_CTRL		0x1000
 #define REG_BOOTDATA_STAGE	0x6002
+#define REG_SENSOR_SELECT	0x600C
 #define REG_SYS_START		0x601A
 #define REG_SIP_CRC		0xF052
 
@@ -78,10 +80,15 @@
 #define MIPI_CTRL_IMGTYPE_AUTO	0x3F
 #define OUT_FMT_IIS_MASK	0x30
 #define OUT_FMT_IIS_OFFSET	0x08
+#define SENSOR_SELECT_MASK	0x03
+#define SENSOR_SELECT_OFFSET	0x00
 
 #define AP1302_FMT_UYVY422	0x30
 
-#define AP1302_STREAM_SWITCH	0x8140
+#define AP1302_SYS_ACTIVATE	0x8010
+#define AP1302_SYS_SWITCH	0x8140
+#define AP1302_SENSOR_PRI	0x01
+#define AP1302_SENSOR_SEC	0x02
 
 #define AP1302_MAX_RATIO_MISMATCH	10 /* Unit in percentage */
 
@@ -101,7 +108,9 @@ struct ap1302_context_config {
 	u16 width;
 	u16 height;
 	u16 roi_x0;
+	u16 roi_y0;
 	u16 roi_x1;
+	u16 roi_y1;
 	u16 aspect_factor;
 	u16 lock;
 	u16 enable;
@@ -147,6 +156,7 @@ struct ap1302_device {
 	unsigned int num_lanes;
 	struct regmap *regmap16;
 	struct regmap *regmap32;
+	bool sys_activated;
 };
 
 struct ap1302_firmware {
@@ -154,6 +164,12 @@ struct ap1302_firmware {
 	u32 pll_init_size;
 	u32 total_size;
 	u32 reserved;
+};
+
+struct ap1302_context_info {
+	u16 offset;
+	u16 len;
+	char *name;
 };
 
 #endif
