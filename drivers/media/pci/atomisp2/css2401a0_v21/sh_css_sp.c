@@ -29,7 +29,6 @@
 
 #include "ia_css.h"
 #include "ia_css_binary.h"
-#include "sh_css_sp_start.h"
 #include "sh_css_hrt.h"
 #include "sh_css_defs.h"
 #include "sh_css_internal.h"
@@ -55,6 +54,9 @@
 
 #include "sw_event_global.h"   			/* Event IDs.*/
 #include "ia_css_event.h"
+#include "mmu_device.h"
+#include "ia_css_spctrl.h"
+
 #ifndef offsetof
 #define offsetof(T, x) ((unsigned)&(((T *)0)->x))
 #endif
@@ -870,11 +872,10 @@ configure_isp_from_args(
 	const struct sh_css_binary_args *args)
 {
 #if !defined(IS_ISP_2500_SYSTEM)
-	ia_css_ref_configure(binary, &args->in_ref_frame->info);
-#else
-	(void)binary;
-	(void)args;
+	ia_css_fpn_configure(binary, &binary->in_frame_info);
 #endif
+	ia_css_ref_configure(binary, &args->in_ref_frame->info);
+	ia_css_tnr_configure(binary, &args->in_tnr_frame->info);
 }
 
 static enum ia_css_err
@@ -1577,7 +1578,7 @@ sh_css_sp_start_isp(void)
 
 	sp_dmem_store_uint32(SP0_ID,
 		(unsigned int)sp_address_of(sp_sw_state),
-		(uint32_t)(SP_SW_STATE_NULL));
+		(uint32_t)(IA_CSS_SP_SW_TERMINATED));
 
 
 	//init_host2sp_command();
@@ -1597,7 +1598,10 @@ sh_css_sp_start_isp(void)
 	 */
 	sp_running = true;
 	ia_css_mmu_invalidate_cache();
-	sh_css_hrt_sp_start_isp();
+	/* Invalidate all MMU caches */
+	mmu_invalidate_cache_all();
+
+	ia_css_spctrl_start(SP0_ID);
 
 }
 
@@ -1611,24 +1615,6 @@ ia_css_isp_has_started(void)
 	return (bool)load_sp_uint(ia_css_ispctrl_sp_isp_started);
 }
 
-bool
-ia_css_sp_has_initialized(void)
-{
-	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
-	unsigned int HIVE_ADDR_sp_sw_state = fw->info.sp.sw_state;
-	(void)HIVE_ADDR_sp_sw_state; /* Suppres warnings in CRUN */
-
-	return (load_sp_uint(sp_sw_state) == SP_SW_INITIALIZED);
-}
-
-bool
-ia_css_sp_has_terminated(void)
-{
-	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
-	unsigned int HIVE_ADDR_sp_sw_state = fw->info.sp.sw_state;
-	(void)HIVE_ADDR_sp_sw_state; /* Suppres warnings in CRUN */
-	return (load_sp_uint(sp_sw_state) == SP_SW_TERMINATED);
-}
 
 /**
  * @brief Initialize the DMA software-mask in the debug mode.

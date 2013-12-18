@@ -20,10 +20,13 @@
  */
 
 #include "ia_css_types.h"
+#include "ia_css_frame.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
 #include "assert_support.h"
+#define IA_CSS_INCLUDE_CONFIGURATIONS
+#include HRTSTR(ia_css_isp_configs.SYSTEM.h)
 
 #include "ia_css_tnr.host.h"
 
@@ -65,4 +68,27 @@ ia_css_tnr_debug_dtrace(const struct ia_css_tnr_config *config, unsigned level)
 		"config.threshold_y=%d, config.threshold_uv=%d\n",
 		config->gain,
 		config->threshold_y, config->threshold_uv);
+}
+
+void
+ia_css_tnr_config(struct sh_css_isp_tnr_isp_config *to,
+		 const struct ia_css_tnr_configuration *from)
+{
+	unsigned elems_a = ISP_NWAY;
+	ia_css_dma_configure_from_info(&to->port_b, from->info);
+	to->width_a_over_b = elems_a / to->port_b.elems;
+	to->frame_height = from->info->res.height;
+
+	/* Assume divisiblity here, may need to generalize to fixed point. */
+	assert (elems_a % to->port_b.elems == 0);
+}
+
+void
+ia_css_tnr_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *info)
+{
+	const struct ia_css_tnr_configuration config =
+		{ info };
+	ia_css_configure_tnr(binary, &config);
 }

@@ -27,7 +27,6 @@
 #include "ia_css_binary.h"
 #include "sh_css_internal.h"
 #include "sh_css_sp.h"		/* sh_css_sp_group */
-#include "sh_css_sp_start.h"
 #if !defined(HAS_NO_INPUT_SYSTEM)
 #include "ia_css_isys.h"
 #endif
@@ -98,6 +97,7 @@ static int thread_alive;
 #if DVS_REF_TESTING
 #include <stdio.h>
 #endif
+#include"ia_css_spctrl.h"
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
@@ -1099,7 +1099,7 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_attr(
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.hblank_cycles = 100;
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.vblank_cycles = 100;
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.pixels_per_clock = stream_cfg->pixels_per_clock;
-		isys_stream_descr->tpg_port_attr.sync_gen_cfg.nr_of_frames = 4;
+		isys_stream_descr->tpg_port_attr.sync_gen_cfg.nr_of_frames = ~(0x0);
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.pixels_per_line = stream_cfg->input_res.width;
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.lines_per_frame = stream_cfg->input_res.height;
 
@@ -1118,7 +1118,7 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_attr(
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.hblank_cycles = 100;
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.vblank_cycles = 100;
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.pixels_per_clock = stream_cfg->pixels_per_clock;
-		isys_stream_descr->prbs_port_attr.sync_gen_cfg.nr_of_frames = 4;
+		isys_stream_descr->prbs_port_attr.sync_gen_cfg.nr_of_frames = ~(0x0);
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.pixels_per_line = stream_cfg->input_res.width;
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.lines_per_frame = stream_cfg->input_res.height;
 
@@ -1602,6 +1602,31 @@ enable_interrupts(enum ia_css_irq_type irq_type)
 #endif
 }
 
+static bool sh_css_setup_spctrl_config(const struct ia_css_fw_info *fw,
+							const char * program,
+							ia_css_spctrl_cfg  *spctrl_cfg)
+{
+	if((fw == NULL)||(spctrl_cfg == NULL))
+		return false;
+	spctrl_cfg->sp_entry = 0;
+	spctrl_cfg->program_name = (char *)(program);
+
+#if !defined(C_RUN) && !defined(HRT_UNSCHED)
+	spctrl_cfg->ddr_data_offset =  fw->blob.data_source;
+	spctrl_cfg->dmem_data_addr = fw->blob.data_target;
+	spctrl_cfg->dmem_bss_addr = fw->blob.bss_target;
+	spctrl_cfg->data_size = fw->blob.data_size ;
+	spctrl_cfg->bss_size = fw->blob.bss_size;
+
+	spctrl_cfg->spctrl_config_dmem_addr = fw->info.sp.init_dmem_data;
+	spctrl_cfg->spctrl_state_dmem_addr = fw->info.sp.sw_state;
+
+	spctrl_cfg->code_size = fw->blob.size;
+	spctrl_cfg->code      = fw->blob.code;
+	spctrl_cfg->sp_entry  = fw->info.sp.sp_entry; /* entry function ptr on SP */
+#endif
+	return true;
+}
 void
 ia_css_unload_firmware(void)
 {
@@ -1681,6 +1706,7 @@ ia_css_init(const struct ia_css_env *env,
 	    enum ia_css_irq_type     irq_type)
 {
 	enum ia_css_err err;
+	ia_css_spctrl_cfg spctrl_cfg;
 	//uint32_t i = 0;
 
 	void *(*malloc_func) (size_t size, bool zero_mem);
@@ -1803,12 +1829,13 @@ ia_css_init(const struct ia_css_env *env,
 			return err;
 		fw_explicitly_loaded = false;
 	}
-	my_css.sp_bin_addr = sh_css_sp_load_program(&sh_css_sp_fw,
-						    SP_PROG_NAME,
-						    my_css.sp_bin_addr);
-	if (!my_css.sp_bin_addr) {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init() leave: return_err=%d\n",IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
-		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	if(!sh_css_setup_spctrl_config(&sh_css_sp_fw,SP_PROG_NAME,&spctrl_cfg))
+		return IA_CSS_ERR_INTERNAL_ERROR;
+
+	err = ia_css_spctrl_load_fw(SP0_ID, &spctrl_cfg);
+	if (err != IA_CSS_SUCCESS) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init() leave: return_err=%d\n",err);
+		return err;
 	}
 
 #if defined(HRT_CSIM)
@@ -1879,9 +1906,6 @@ ia_css_resume(void)
 #if !defined(IS_ISP_2500_SYSTEM)
 	sh_css_params_reconfigure_gdc_lut();
 #endif
-
-	sh_css_sp_activate_program(&sh_css_sp_fw, my_css.sp_bin_addr,
-				   SP_PROG_NAME);
 
 	enable_interrupts(my_css.irq_type);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_resume() leave: return_void\n");
@@ -2011,7 +2035,7 @@ create_host_pipeline(struct ia_css_stream *stream)
 				goto ERR;
 		}
 
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 		if(main_pipe->continuous_frames[0])
 			ia_css_frame_zero(main_pipe->continuous_frames[0]);
 #endif
@@ -2324,10 +2348,8 @@ ia_css_uninit(void)
 	if (fw_explicitly_loaded == false) {
 		ia_css_unload_firmware();
 	}
-	if (my_css.sp_bin_addr) {
-		mmgr_free(my_css.sp_bin_addr);
-		my_css.sp_bin_addr = mmgr_NULL;
-	}
+	ia_css_spctrl_unload_fw(SP0_ID);
+
 	sh_css_sp_set_sp_running(false);
 	/* check and free any remaining mipi frames */
 	free_mipi_frames(NULL, true);
@@ -2395,8 +2417,6 @@ ia_css_mmu_invalidate_cache(void)
 	unsigned int HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_mmu_invalidate_cache() enter\n");
-	/* indicate to sp start that invalidation must occur */
-	sh_css_sp_invalidate_mmu();
 
 	/* if the SP is not running we should not access its dmem */
 	if (sh_css_sp_is_running())
@@ -2955,7 +2975,7 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 				}
 				return err;
 			}
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 			ia_css_frame_zero(my_css.mipi_frames[i]);
 #endif
 		}
@@ -5061,7 +5081,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 		err = ia_css_frame_allocate_from_info(
 				&pipe->pipe_settings.video.ref_frames[i],
 				&ref_info);
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 		ia_css_frame_zero(pipe->pipe_settings.video.ref_frames[i]);
 #endif
 		if (err != IA_CSS_SUCCESS)
@@ -5098,7 +5118,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 		err = ia_css_frame_allocate_from_info(
 				&pipe->pipe_settings.video.tnr_frames[i],
 				&tnr_info);
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 		ia_css_frame_zero(pipe->pipe_settings.video.tnr_frames[i]);
 #endif
 		if (err != IA_CSS_SUCCESS)
@@ -6494,54 +6514,52 @@ remove_firmware(struct ia_css_fw_info **l, struct ia_css_fw_info *firmware)
 }
 
 #if !defined(C_RUN) && !defined(HRT_UNSCHED)
-static const unsigned char *
-upload_isp_code(const struct ia_css_fw_info *firmware)
+static enum ia_css_err
+upload_isp_code(struct ia_css_fw_info *firmware)
 {
-	const unsigned char *binary = firmware->isp_code;
+	hrt_vaddress binary = firmware->info.isp.xmem_addr;
 	if (!binary) {
 		unsigned size = firmware->blob.size;
 		const unsigned char *blob;
 		const unsigned char *binary_name;
-		hrt_vaddress binary_hrt_vaddress;
 		binary_name =
 			(const unsigned char *)(IA_CSS_EXT_ISP_PROG_NAME(
 						firmware));
 		blob = binary_name +
 			strlen((const char *)binary_name) +
 			1;
-		binary_hrt_vaddress = sh_css_load_blob(blob, size);
-		binary = mmgr_hrt_vaddr_to_host_vaddr(binary_hrt_vaddress);
-		((struct ia_css_fw_info *)firmware)->isp_code = binary;
-		((struct ia_css_fw_info *)firmware)->info.isp.xmem_addr = binary_hrt_vaddress;
+		binary = sh_css_load_blob(blob, size);
+		firmware->info.isp.xmem_addr = binary;
 	}
 
 	if (!binary)
-		return NULL;
-	return binary;
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	return IA_CSS_SUCCESS;
 }
 #endif
 
 static enum ia_css_err
-acc_load_extension(const struct ia_css_fw_info *firmware)
+acc_load_extension(struct ia_css_fw_info *firmware)
 {
 #if !defined(C_RUN) && !defined(HRT_UNSCHED)
-	const unsigned char *isp_program
-			= upload_isp_code(firmware);
-	if (isp_program == NULL)
-		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	enum ia_css_err err = upload_isp_code(firmware);
+	if (err != IA_CSS_SUCCESS)
+		return err;
 #endif
 
-	((struct ia_css_fw_info *)firmware)->loaded = true;
+	firmware->loaded = true;
 	return IA_CSS_SUCCESS;
 }
 
 static void
-acc_unload_extension(const struct ia_css_fw_info *firmware)
+acc_unload_extension(struct ia_css_fw_info *firmware)
 {
-	if (firmware->isp_code)
-		mmgr_free(mmgr_host_vaddr_to_hrt_vaddr((firmware->isp_code)));
-	((struct ia_css_fw_info *)firmware)->isp_code = NULL;
-	((struct ia_css_fw_info *)firmware)->loaded = false;
+	if (firmware->info.isp.xmem_addr) {
+		mmgr_free(firmware->info.isp.xmem_addr);
+		firmware->info.isp.xmem_addr = mmgr_NULL;
+	}
+	firmware->isp_code = NULL;
+	firmware->loaded = false;
 }
 /* Load firmware for extension */
 static enum ia_css_err
@@ -7859,7 +7877,7 @@ ia_css_start_sp(void)
 
 	/* waiting for the SP is completely started */
 	timeout = SP_START_TIMEOUT_US;
-	while (!ia_css_sp_has_initialized() && timeout) {
+	while((ia_css_spctrl_get_state(SP0_ID) != IA_CSS_SP_SW_INITIALIZED) && timeout) {
 		timeout--;
 		hrt_sleep();
 	}
@@ -7901,7 +7919,7 @@ ia_css_stop_sp(void)
 	printk("STOP_FUNC: reach point 1\n");
 #endif
 	timeout = SP_SHUTDOWN_TIMEOUT_US;
-	while (!ia_css_sp_has_terminated() && timeout) {
+	while ((ia_css_spctrl_get_state(SP0_ID)!= IA_CSS_SP_SW_TERMINATED) && timeout) {
 		timeout--;
 		hrt_sleep();
 	}

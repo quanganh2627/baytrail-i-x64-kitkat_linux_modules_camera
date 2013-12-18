@@ -31,4 +31,10 @@ struct sh_css_isp_tnr_params {
 	int32_t threshold_C;
 };
 
+struct sh_css_isp_tnr_isp_config {
+	uint32_t width_a_over_b;
+	uint32_t frame_height;
+	struct dma_port_config port_b;
+};
+
 #endif /* __IA_CSS_TNR_PARAM_H */

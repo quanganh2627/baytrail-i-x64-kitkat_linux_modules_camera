@@ -92,10 +92,6 @@ enum ia_css_isp_memories {
 	N_IA_CSS_ISP_MEMORIES
 };
 
-/* Short hands */
-#define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
-#define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
-
 #define IA_CSS_NUM_ISP_MEMORIES 7
 
 #elif defined(IS_ISP_2500_SYSTEM)
@@ -115,6 +111,10 @@ enum ia_css_isp_memories {
 #else
 #error "ia_css_types.h:  SYSTEM must be one of {ISP_2400_SYSTEM, ISP_2500_SYSTEM}"
 #endif
+
+/* Short hands */
+#define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
+#define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
 
 /** CSS data descriptor */
 struct ia_css_data {
@@ -303,6 +303,7 @@ struct ia_css_binary_info {
 		uint8_t	raw_out_channel;
 		uint8_t	ref_y_channel;
 		uint8_t	ref_c_channel;
+		uint8_t	tnr_channel;
 		uint8_t	tnr_out_channel;
 		uint8_t	dvs_in_channel;
 		uint8_t	dvs_coords_channel;
@@ -311,11 +312,8 @@ struct ia_css_binary_info {
 		uint8_t	vfout_channel;
 		uint8_t	vfout_c_channel;
 		uint8_t	claimed_by_isp;
-		/* uint8_t padding[0]; */
-		struct ia_css_channel_descr fpn;
+		uint8_t padding[2];
 		struct ia_css_channel_descr raw;
-		struct ia_css_channel_descr sct;
-		struct ia_css_channel_descr tnr;
 	} dma;
 	struct {
 		uint16_t	bpp;
@@ -500,36 +498,9 @@ struct ia_css_acc_fw {
 #define IA_CSS_EXT_ISP_MEM_OFFSETS(f) \
 	((const struct ia_css_memory_offsets *)((const char *)(f)+(f)->blob.mem_offsets))
 
-/** Structure to encapsulate required arguments for
- * initialization of SP DMEM using the SP itself
- * This is exported for accelerators implementing their own SP code.
- */
-struct ia_css_sp_init_dmem_cfg {
-	uint32_t        done;           /**< Init has been done */
-	ia_css_ptr      ddr_code_addr;  /**< code segment address in ddr  */
-	ia_css_ptr      ddr_data_addr;  /**< data segment address in ddr  */
-	uint32_t        pmem_text_addr; /**< text segment address in pmem */
-	uint32_t        dmem_data_addr; /**< data segment address in dmem */
-	uint32_t        dmem_bss_addr;  /**< bss segment address in dmem  */
-	uint32_t        text_size;      /**< text segment size            */
-	uint32_t        data_size;      /**< data segment size            */
-	uint32_t        bss_size;       /**< bss segment size             */
-};
-#define SIZE_OF_IA_CSS_SP_INIT_DMEM_CFG_STRUCT				\
-	(sizeof(uint32_t) +						\
-	(2 * SIZE_OF_IA_CSS_PTR) +					\
-	(6 * sizeof(uint32_t)))
-
 enum ia_css_sp_sleep_mode {
 	SP_DISABLE_SLEEP_MODE = 0,
 	SP_SLEEP_AFTER_FRAME = 1 << 0,
 	SP_SLEEP_AFTER_IRQ = 1 << 1
 };
-
-enum ia_css_sp_sw_state {
-	SP_SW_STATE_NULL = 0,
-	SP_SW_INITIALIZED,
-	SP_SW_TERMINATED
-};
-
 #endif /* _IA_CSS_TYPES_H_ */

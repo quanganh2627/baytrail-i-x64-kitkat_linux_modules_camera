@@ -24,10 +24,19 @@
 
 #include "type_support.h"
 
+#include "dma.h"
+#include "ia_css.h"
+#include "ia_css_fpn_types.h"
+
 /* FPNR (Fixed Pattern Noise Reduction) */
 struct sh_css_isp_fpn_params {
 	int32_t shift;
 	int32_t enabled;
+};
+
+struct sh_css_isp_fpn_isp_config {
+	uint32_t width_a_over_b;
+	struct dma_port_config port_b;
 };
 
 #endif /* __IA_CSS_FPN_PARAM_H */

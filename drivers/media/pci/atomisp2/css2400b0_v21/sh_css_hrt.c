@@ -43,21 +43,10 @@
 
 /* System independent */
 #include "sh_css_internal.h"
-#include "sh_css_sp_start.h"	/* sh_css_sp_start_function() */
 #if !defined(HAS_NO_INPUT_SYSTEM)
 #include "ia_css_isys.h"
 #endif
 
-
-void sh_css_hrt_sp_start_isp(void)
-{
-	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
-	unsigned int HIVE_ADDR_sp_start_isp_entry =
-					fw->info.sp.sp_entry;
-	(void)HIVE_ADDR_sp_start_isp_entry;
-	sh_css_sp_start_function(sp_start_isp);
-return;
-}
 
 bool sh_css_hrt_system_is_idle(void)
 {

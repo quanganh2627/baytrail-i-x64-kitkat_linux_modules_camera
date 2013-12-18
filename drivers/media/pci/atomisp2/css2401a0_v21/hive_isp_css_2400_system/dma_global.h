@@ -317,7 +317,6 @@ struct dma_port_config {
 struct dma_channel_config {
 	uint8_t  connection;
 	uint8_t  extension;
-	uint8_t  channel;
 	uint8_t  height;
 	struct dma_port_config a, b;
 };

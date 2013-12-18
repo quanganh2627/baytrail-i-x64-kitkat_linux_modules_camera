@@ -643,6 +643,11 @@ static bool calculate_stream2mmio_cfg(
 	(void)input_port;
 
 	cfg->bits_per_pixel = isys_cfg->input_port_resolution.bits_per_pixel;
+
+	cfg->enable_blocking =
+		((isys_cfg->mode == INPUT_SYSTEM_SOURCE_TYPE_TPG) ||
+		 (isys_cfg->mode == INPUT_SYSTEM_SOURCE_TYPE_PRBS));
+
 	return true;
 }
 

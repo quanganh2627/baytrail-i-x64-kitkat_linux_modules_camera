@@ -55,6 +55,12 @@ STORAGE_CLASS_EXTERN void mmu_invalidate_cache(
 	const mmu_ID_t		ID);
 
 
+/*! Invalidate the page table cache of all MMUs
+
+ \return none
+ */
+STORAGE_CLASS_EXTERN void mmu_invalidate_cache_all(void);
+
 /*! Write to a control register of MMU[ID]
 
  \param	ID[in]				MMU identifier

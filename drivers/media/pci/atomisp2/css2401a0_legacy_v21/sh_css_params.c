@@ -47,7 +47,6 @@
 #include "sh_css_internal.h"
 #include "sh_css_defs.h"
 #include "sh_css_sp.h"
-#include "sh_css_sp_start.h"	/* SH_CSS_PREVENT_UNINIT_READS */
 #include "ia_css_pipeline.h"
 #include "ia_css_debug.h"
 #include "memory_access.h"
@@ -3407,7 +3406,7 @@ static void sh_css_update_isp_params_to_ddr(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "sh_css_update_isp_params_to_ddr() enter:\n");
 
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 	{
 		/* ispparm struct is read with DMA which reads
 		 * multiples of the DDR word with (32 bytes):
@@ -3455,7 +3454,7 @@ static void sh_css_update_isp_mem_params_to_ddr(
 void
 sh_css_update_acc_cluster_data_to_ddr(hrt_vaddress ddr_ptr)
 {
-#if (SH_CSS_PREVENT_UNINIT_READS)
+#ifdef HRT_CSIM
 	/* ispparm struct is read with DMA which reads
 	 * multiples of the DDR word with (32 bytes):
 	 * So we pad with zeroes to prevent warnings in csim.
@@ -3856,7 +3855,7 @@ sh_css_params_write_to_ddr_internal(
 			if (params->fpn_config.enabled) {
 				store_fpntbl(params, ddr_map->fpn_tbl);
 			}
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 			else {
 				hrt_vaddress ptr =
 					(hrt_vaddress)ddr_map->fpn_tbl;

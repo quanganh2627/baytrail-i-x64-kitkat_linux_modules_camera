@@ -25,7 +25,6 @@
 
 #include "ia_css.h"
 #include "ia_css_binary.h"
-#include "sh_css_sp_start.h"
 #include "sh_css_hrt.h"
 #include "sh_css_defs.h"
 #include "sh_css_internal.h"
