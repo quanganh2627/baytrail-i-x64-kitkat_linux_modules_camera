@@ -302,14 +302,6 @@ struct atomisp_device {
 	spinlock_t lock; /* Just for streaming below */
 
 	bool need_gfx_throttle;
-
-	/* delayed memory allocation for css */
-	struct completion init_done;
-	struct workqueue_struct *delayed_init_workq;
-	unsigned int delayed_init;
-	struct work_struct delayed_init_work;
-
-	unsigned int latest_preview_exp_id; /* CSS ZSL raw buffer id */
 };
 
 #define v4l2_dev_to_atomisp_device(dev) \

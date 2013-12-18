@@ -1384,13 +1384,13 @@ static int atomisp_streamon(struct file *file, void *fh,
 		    asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO) {
 			dev_dbg(isp->dev,
 				"ZSL last preview raw buffer id: %u\n",
-				isp->latest_preview_exp_id);
+				asd->latest_preview_exp_id);
 
-			if (isp->delayed_init != ATOMISP_DELAYED_INIT_DONE) {
-				flush_work(&isp->delayed_init_work);
+			if (asd->delayed_init != ATOMISP_DELAYED_INIT_DONE) {
+				flush_work_sync(&asd->delayed_init_work);
 				mutex_unlock(&isp->mutex);
 				if (wait_for_completion_interruptible(
-						&isp->init_done) != 0)
+						&asd->init_done) != 0)
 					return -ERESTARTSYS;
 				mutex_lock(&isp->mutex);
 			}
@@ -1444,9 +1444,9 @@ static int atomisp_streamon(struct file *file, void *fh,
 				       V4L2_SUBDEV_FORMAT_ACTIVE,
 				       ATOMISP_SUBDEV_PAD_SINK);
 
-		INIT_COMPLETION(isp->init_done);
-		isp->delayed_init = ATOMISP_DELAYED_INIT_QUEUED;
-		queue_work(isp->delayed_init_workq, &isp->delayed_init_work);
+		INIT_COMPLETION(asd->init_done);
+		asd->delayed_init = ATOMISP_DELAYED_INIT_QUEUED;
+		queue_work(asd->delayed_init_workq, &asd->delayed_init_work);
 		atomisp_css_set_cont_prev_start_time(isp,
 				ATOMISP_CALC_CSS_PREV_OVERLAP(sink->height));
 	}
@@ -1466,7 +1466,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 
 	isp->sw_contex.invalid_frame = false;
 	asd->params.dis_proj_data_valid = false;
-	isp->latest_preview_exp_id = 0;
+	asd->latest_preview_exp_id = 0;
 
 	atomisp_qbuffers_to_css(asd);
 
@@ -1622,9 +1622,9 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 #endif
 	}
 
-	if (isp->delayed_init == ATOMISP_DELAYED_INIT_QUEUED) {
-		cancel_work_sync(&isp->delayed_init_work);
-		isp->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
+	if (asd->delayed_init == ATOMISP_DELAYED_INIT_QUEUED) {
+		cancel_work_sync(&asd->delayed_init_work);
+		asd->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
 	}
 
 	css_pipe_id = atomisp_get_css_pipe_id(asd);

@@ -763,7 +763,6 @@ static void atomisp_unregister_entities(struct atomisp_device *isp)
 static int atomisp_register_entities(struct atomisp_device *isp)
 {
 	int ret = 0;
-	unsigned int subdev_registered = 0;
 	unsigned int i;
 
 	isp->media_dev.dev = isp->dev;
@@ -820,16 +819,39 @@ static int atomisp_register_entities(struct atomisp_device *isp)
 		goto tpg_register_failed;
 	}
 
-	for (subdev_registered = 0; subdev_registered < isp->num_of_streams;
-	     subdev_registered++) {
-		ret = atomisp_subdev_register_entities(
-					&isp->asd[subdev_registered],
-					&isp->v4l2_dev);
+	for (i = 0; i < isp->num_of_streams; i++) {
+		struct atomisp_sub_device *asd = &isp->asd[i];
+
+		ret = atomisp_subdev_register_entities(asd, &isp->v4l2_dev);
 		if (ret < 0) {
 			dev_err(isp->dev,
 				"atomisp_subdev_register_entities fail\n");
+			for (; i > 0; i--)
+				atomisp_subdev_unregister_entities(
+						&isp->asd[i - 1]);
 			goto subdev_register_failed;
 		}
+	}
+
+	for (i = 0; i < isp->num_of_streams; i++) {
+		struct atomisp_sub_device *asd = &isp->asd[i];
+
+		init_completion(&asd->init_done);
+
+		asd->delayed_init_workq =
+			alloc_workqueue(isp->v4l2_dev.name, WQ_CPU_INTENSIVE,
+					1);
+		if (asd->delayed_init_workq == NULL) {
+			dev_err(isp->dev,
+					"Failed to initialize delayed init workq\n");
+			ret = -ENOMEM;
+
+			for (; i > 0; i--)
+				destroy_workqueue(isp->asd[i - 1].
+						delayed_init_workq);
+			goto wq_alloc_failed;
+		}
+		INIT_WORK(&asd->delayed_init_work, atomisp_delayed_init_work);
 	}
 
 	for (i = 0; i < isp->input_cnt; i++) {
@@ -879,10 +901,14 @@ static int atomisp_register_entities(struct atomisp_device *isp)
 	return ret;
 
 link_failed:
-subdev_register_failed:
-	for (; subdev_registered > 0; subdev_registered--)
+	for (i = 0; i < isp->num_of_streams; i++)
+		destroy_workqueue(isp->asd[i].
+				delayed_init_workq);
+wq_alloc_failed:
+	for (i = 0; i < isp->num_of_streams; i++)
 		atomisp_subdev_unregister_entities(
-					&isp->asd[subdev_registered - 1]);
+					&isp->asd[i]);
+subdev_register_failed:
 	atomisp_tpg_unregister_entities(&isp->tpg);
 tpg_register_failed:
 	atomisp_file_input_unregister_entities(&isp->file_dev);
@@ -1123,7 +1149,6 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	mutex_init(&isp->mutex);
 	mutex_init(&isp->streamoff_mutex);
 	spin_lock_init(&isp->lock);
-	init_completion(&isp->init_done);
 
 #ifndef CSS20
 	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_15;
@@ -1190,15 +1215,6 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		goto wdt_work_queue_fail;
 	}
 	INIT_WORK(&isp->wdt_work, atomisp_wdt_work);
-
-	isp->delayed_init_workq =
-		alloc_workqueue(isp->v4l2_dev.name, WQ_CPU_INTENSIVE, 1);
-	if (isp->delayed_init_workq == NULL) {
-		dev_err(&dev->dev, "Failed to initialize delayed init workq\n");
-		err = -ENOMEM;
-		goto delayed_init_work_queue_fail;
-	}
-	INIT_WORK(&isp->delayed_init_work, atomisp_delayed_init_work);
 
 	pci_set_master(dev);
 	pci_set_drvdata(dev, isp);
@@ -1310,8 +1326,6 @@ css_init_fail:
 	atomisp_acc_cleanup(isp);
 #endif /* CSS20 */
 enable_msi_fail:
-	destroy_workqueue(isp->delayed_init_workq);
-delayed_init_work_queue_fail:
 	destroy_workqueue(isp->wdt_work_queue);
 wdt_work_queue_fail:
 	release_firmware(isp->firmware);
