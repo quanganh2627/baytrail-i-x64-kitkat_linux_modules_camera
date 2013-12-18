@@ -49,7 +49,6 @@ struct atomisp_mmu {
 	phys_addr_t pgtbl;
 	struct device *dev;
 
-	struct atomisp_mmu_pdata *pdata;
 	struct atomisp_dma_mapping *dmap;
 
 	void (*tlb_invalidate)(struct atomisp_mmu *mmu);

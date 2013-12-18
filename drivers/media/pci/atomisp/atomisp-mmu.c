@@ -408,6 +408,7 @@ static int atomisp_mmu_probe(struct atomisp_bus_device *adev)
 
 	atomisp_bus_set_iommu(&atomisp_iommu_ops);
 
+	mmu->base = ((struct atomisp_mmu_pdata *)adev->pdata)->base;
 	mmu->tlb_invalidate = &tlb_invalidate;
 	writel(mmu->pgtbl >> ISP_PADDR_SHIFT, mmu->base + REG_L1_PHYS);
 
