@@ -35,7 +35,6 @@ atomisp-$(postfix)-objs := \
 		css/sh_css_hrt.o \
 		css/sh_css_params.o \
 		css/sh_css_sp.o \
-		css/sh_css_sp_start.o \
 		css/sh_css_metrics.o \
 		css/sh_css_firmware.o \
 		css/sh_css_param_shading.o \
@@ -69,6 +68,7 @@ atomisp-$(postfix)-objs := \
 		css/base/circbuf/src/circbuf.o \
 		css/runtime/queue/src/queue.o \
 		css/runtime/queue/src/queue_access.o \
+		css/runtime/spctrl/src/spctrl.o \
 		css/isp/kernels/raw/raw_1.0/ia_css_raw.host.o \
 		css/isp/kernels/ob/ob_1.0/ia_css_ob.host.o \
 		css/isp/kernels/aa/aa_2/ia_css_aa2.host.o \
@@ -308,7 +308,8 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/base/circbuf/interface \
             -I$(srctree)/$(src)/css/runtime/isp_param/interface \
 	    -I$(srctree)/$(src)/css/isp/kernels/ref/ref_1.0 \
-     	    -I$(srctree)/$(src)/css/isp/kernels/vf/vf_1.0
+	    -I$(srctree)/$(src)/css/isp/kernels/vf/vf_1.0 \
+	    -I$(srctree)/$(src)/css/runtime/spctrl/interface
 endif
 endif
 
