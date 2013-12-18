@@ -105,7 +105,7 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 			rval);
 		return rval;
 	}
-	dev_info(&pdev->dev, "physical base address 0x%x\n", phys);
+	dev_info(&pdev->dev, "physical base address 0x%llx\n", phys);
 
 	base = pcim_iomap_table(pdev)[ATOMISP_PCI_BAR];
 	dev_info(&pdev->dev, "mapped as: 0x%p\n", base);

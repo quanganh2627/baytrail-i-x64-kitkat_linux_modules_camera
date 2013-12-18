@@ -81,8 +81,9 @@ static void page_table_dump(struct atomisp_mmu_domain *adom)
 			if (l2_pt[l2_idx] == INVALID_PAGE)
 				continue;
 
-			pr_info("\tl2 entry %u; iova 0x%8.8x, phys 0x%8.8x\n",
-				l2_idx, l2_phys_start, l2_pt[l2_idx]);
+			pr_info("\tl2 entry %u; iova 0x%8.8x, phys 0x%8.8llx\n",
+				l2_idx, l2_phys_start,
+				(phys_addr_t)l2_pt[l2_idx] << ISP_PADDR_SHIFT);
 		}
 	}
 
@@ -239,7 +240,7 @@ static int atomisp_mmu_map(struct iommu_domain *domain, unsigned long iova,
 	uint32_t iova_start = round_down(iova, ISP_PAGE_SIZE);
 	uint32_t iova_end = ALIGN(iova + size, ISP_PAGE_SIZE);
 
-	pr_info("mapping iova 0x%8.8x--0x%8.8x, size %u at paddr 0x%10.10x\n",
+	pr_info("mapping iova 0x%8.8x--0x%8.8x, size %u at paddr 0x%10.10llx\n",
 		iova_start, iova_end, size, paddr);
 
 	return l2_map(domain, iova_start, paddr, size);
