@@ -24,6 +24,7 @@
 #include <media/v4l2-device.h>
 #include <media/videobuf2-core.h>
 
+#include "atomisp-isys-subdev.h"
 #include "atomisp-isys-video.h"
 #include "atomisp-isys-queue.h"
 
@@ -47,7 +48,7 @@ struct atomisp_isys;
 struct atomisp_csi2 {
 	struct atomisp_csi2_pdata *pdata;
 	struct atomisp_isys *isys;
-	struct v4l2_subdev sd;
+	struct atomisp_isys_subdev asd;
 	struct atomisp_isys_video av;
 	struct media_pad pad[NR_OF_CSI2_PADS];
 

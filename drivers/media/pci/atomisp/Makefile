@@ -3,7 +3,8 @@ obj-$(CONFIG_VIDEO_ATOMISP_NG)		+= atomisp-mod.o
 obj-$(CONFIG_VIDEO_ATOMISP_NG)		+= atomisp-mmu.o
 atomisp-isys-mod-objs			+= atomisp-isys.o atomisp-csi2.o \
 					   atomisp-isys-video.o \
-					   atomisp-isys-queue.o
+					   atomisp-isys-queue.o \
+					   atomisp-isys-subdev.o
 obj-$(CONFIG_VIDEO_ATOMISP_NG)		+= atomisp-isys-mod.o
 obj-$(CONFIG_VIDEO_ATOMISP_NG)		+= atomisp-psys.o
 obj-$(CONFIG_VIDEO_ATOMISP_NG)		+= atomisp-buttress.o

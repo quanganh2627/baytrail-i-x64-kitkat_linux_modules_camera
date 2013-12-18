@@ -34,18 +34,45 @@
 #include "atomisp-csi2.h"
 #include "atomisp-csi2-reg.h"
 #include "atomisp-isys.h"
+#include "atomisp-isys-subdev.h"
 #include "atomisp-isys-video.h"
+
+static const uint32_t csi2_supported_fmts_pad[] = {
+	V4L2_MBUS_FMT_SBGGR10_1X10,
+	V4L2_MBUS_FMT_SGBRG10_1X10,
+	V4L2_MBUS_FMT_SGRBG10_1X10,
+	V4L2_MBUS_FMT_SRGGB10_1X10,
+	0,
+};
+
+static const uint32_t *csi2_supported_fmts[] = {
+	csi2_supported_fmts_pad,
+	csi2_supported_fmts_pad,
+};
 
 static struct v4l2_subdev_internal_ops csi2_sd_internal_ops = {
 };
 
+static const struct v4l2_subdev_core_ops csi2_sd_core_ops = {
+};
+
+static const struct v4l2_subdev_video_ops csi2_sd_video_ops = {
+};
+
+static const struct v4l2_subdev_pad_ops csi2_sd_pad_ops = {
+	.set_fmt = atomisp_isys_subdev_set_ffmt
+};
+
 static struct v4l2_subdev_ops csi2_sd_ops = {
+	.core = &csi2_sd_core_ops,
+	.video = &csi2_sd_video_ops,
+	.pad = &csi2_sd_pad_ops,
 };
 
 void atomisp_csi2_cleanup(struct atomisp_csi2 *csi2)
 {
-	v4l2_device_unregister_subdev(&csi2->sd);
-	media_entity_cleanup(&csi2->sd.entity);
+	v4l2_device_unregister_subdev(&csi2->asd.sd);
+	media_entity_cleanup(&csi2->asd.sd.entity);
 	atomisp_isys_video_cleanup(&csi2->av);
 }
 
@@ -53,6 +80,14 @@ int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 		      void __iomem *base, unsigned int nlanes,
 		      unsigned int index)
 {
+	struct v4l2_subdev_format fmt = {
+		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
+		.pad = CSI2_PAD_SINK,
+		.format = {
+			.width = 4096,
+			.height = 3072,
+		},
+	};
 	int rval;
 
 	csi2->isys = isys;
@@ -68,31 +103,32 @@ int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 		goto fail;
 	}
 
-	v4l2_subdev_init(&csi2->sd, &csi2_sd_ops);
-
 	csi2->pad[CSI2_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
 	csi2->pad[CSI2_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
 
-	rval = media_entity_init(&csi2->sd.entity, NR_OF_CSI2_PADS,
-				 csi2->pad, 0);
+	atomisp_isys_subdev_init(&csi2->asd, &csi2_sd_ops);
+
+	rval = media_entity_init(&csi2->asd.sd.entity, NR_OF_CSI2_PADS,
+				 csi2->asd.pad, 0);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't register media entity\n");
 		goto fail;
 	}
 
-	csi2->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
-	csi2->sd.internal_ops = &csi2_sd_internal_ops;
-	csi2->sd.owner = THIS_MODULE;
-	snprintf(csi2->sd.name, sizeof(csi2->sd.name), "AtomISP CSI-2 %u",
-		 index);
-	v4l2_set_subdevdata(&csi2->sd, csi2);
-	rval = v4l2_device_register_subdev(&isys->v4l2_dev, &csi2->sd);
+	csi2->asd.supported_fmts = csi2_supported_fmts;
+	atomisp_isys_subdev_set_ffmt(&csi2->asd.sd, NULL, &fmt);
+
+	csi2->asd.sd.internal_ops = &csi2_sd_internal_ops;
+	snprintf(csi2->asd.sd.name, sizeof(csi2->asd.sd.name),
+		 "AtomISP CSI-2 %u", index);
+	v4l2_set_subdevdata(&csi2->asd.sd, csi2);
+	rval = v4l2_device_register_subdev(&isys->v4l2_dev, &csi2->asd.sd);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't register v4l2 subdev\n");
 		goto fail;
 	}
 
-	rval = media_entity_create_link(&csi2->sd.entity, CSI2_PAD_SOURCE,
+	rval = media_entity_create_link(&csi2->asd.sd.entity, CSI2_PAD_SOURCE,
 					&csi2->av.vdev.entity, 0, 0);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't create link\n");
