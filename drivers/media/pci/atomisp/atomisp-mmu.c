@@ -231,6 +231,8 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 		paddr += ISP_PAGE_SIZE;
 	}
 
+	page_table_dump(adom);
+
 	return 0;
 }
 
@@ -255,7 +257,7 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 	uint32_t iova_start = iova;
 	unsigned int l2_idx;
 
-	pr_info("unmapping l2 page table for l1 index %u (iova 0x%8.8llx)\n",
+	pr_info("unmapping l2 page table for l1 index %u (iova 0x%8.8lx)\n",
 		l1_idx, iova);
 
 	if (adom->pgtbl[l1_idx] == INVALID_PAGE)
@@ -268,7 +270,7 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 		     < iova_start + size;
 	     l2_idx++) {
 		pr_info("l2 index %u unmapped, was 0x%10.10llx\n",
-			l2_idx, ((dma_addr_t)l2_pt[l2_idx]) << ISP_PAGE_SHIFT);
+			l2_idx, ((phys_addr_t)l2_pt[l2_idx]) << ISP_PAGE_SHIFT);
 		l2_pt[l2_idx] = INVALID_PAGE;
 	}
 
@@ -434,8 +436,6 @@ static void atomisp_mmu_remove(struct atomisp_bus_device *adev)
 
 static void atomisp_mmu_isr(struct atomisp_bus_device *adev)
 {
-	struct atomisp_mmu *mmu = atomisp_bus_get_drvdata(adev);
-
 	dev_info(&adev->dev, "Yeah!\n");
 }
 

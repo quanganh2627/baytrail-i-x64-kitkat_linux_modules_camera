@@ -74,8 +74,6 @@ int atomisp_isys_subdev_get_ffmt(struct v4l2_subdev *sd,
 				 struct v4l2_subdev_fh *fh,
 				 struct v4l2_subdev_format *fmt)
 {
-	struct atomisp_isys_subdev *asd = to_atomisp_isys_subdev(sd);
-
 	fmt->format = *__atomisp_isys_get_ffmt(sd, fh, fmt->pad, fmt->which);
 
 	return 0;

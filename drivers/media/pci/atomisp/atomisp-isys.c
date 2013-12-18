@@ -36,18 +36,11 @@ static unsigned int bxt_nlanes[] = { 4, 1, 2, 2 };
 
 static int isys_open(struct file *file)
 {
-	struct video_device *vdev = video_devdata(file);
-	struct atomisp_isys_video *av = video_get_drvdata(vdev);
-	int rval;
-
 	return v4l2_fh_open(file);
 }
 
 static int isys_release(struct file *file)
 {
-	struct video_device *vdev = video_devdata(file);
-	struct atomisp_isys_video *av = video_get_drvdata(vdev);
-
 	v4l2_fh_release(file);
 
 	return 0;
@@ -168,8 +161,6 @@ static void isys_remove(struct atomisp_bus_device *adev)
 
 static void isys_isr(struct atomisp_bus_device *adev)
 {
-	struct atomisp_isys *isys = atomisp_bus_get_drvdata(adev);
-
 	dev_info(&adev->dev, "Yeah!\n");
 }
 

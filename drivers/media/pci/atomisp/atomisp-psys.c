@@ -44,8 +44,6 @@ static int atomisp_psys_probe(struct atomisp_bus_device *adev)
 
 static void atomisp_psys_remove(struct atomisp_bus_device *adev)
 {
-	struct atomisp_psys *psys = atomisp_bus_get_drvdata(adev);
-
 	dev_info(&adev->dev, "removed\n");
 }
 

@@ -44,9 +44,6 @@ static int atomisp_buttress_probe(struct atomisp_bus_device *adev)
 
 static void atomisp_buttress_remove(struct atomisp_bus_device *adev)
 {
-	struct atomisp_buttress *buttress =
-		atomisp_bus_get_drvdata(adev);
-
 	dev_info(&adev->dev, "removed\n");
 }
 

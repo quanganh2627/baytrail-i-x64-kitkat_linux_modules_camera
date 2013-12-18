@@ -162,8 +162,6 @@ out_atomisp_bus_del_devices:
 
 static void atomisp_pci_remove(struct pci_dev *pdev)
 {
-	struct atomisp_device *isp = pci_get_drvdata(pdev);
-
 	atomisp_bus_del_devices(pdev);
 
 	pm_runtime_forbid(&pdev->dev);
