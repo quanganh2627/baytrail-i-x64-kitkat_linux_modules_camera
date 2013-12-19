@@ -1126,9 +1126,24 @@ stream_err:
 
 void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 {
+	/*
+	 * FIXME!
+	 * for ISP2401 new input system, this api is under development.
+	 * Calling it would cause kernel panic.
+	 *
+	 * VIED BZ: 1458
+	 *
+	 * Check if it is Cherry Trail and also new input system
+	 */
+	if (asd->isp->media_dev.hw_revision == ATOMISP_HW_REVISION_ISP2401) {
+		dev_warn(asd->isp->dev, "%s: ia_css_stream_set_isp_config() not supported!.\n",
+				__func__);
+		return;
+	}
+
 	ia_css_stream_set_isp_config(
-		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
-				     &asd->params.config);
+			asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
+			&asd->params.config);
 	atomisp_isp_parameters_clean_up(&asd->params.config);
 }
 
