@@ -13,6 +13,7 @@ ifneq ($(CSS21), )
 # Objects for CSS 2.1
 atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_ioctl.o \
+		atomisp_driver/atomisp_compat_ioctl32.o \
 		atomisp_driver/atomisp_cmd.o \
 		atomisp_driver/atomisp_fops.o \
 		atomisp_driver/atomisp_subdev.o \
@@ -139,6 +140,7 @@ else
 # Objects for CSS 2.0
 atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_ioctl.o \
+		atomisp_driver/atomisp_compat_ioctl32.o \
 		atomisp_driver/atomisp_cmd.o \
 		atomisp_driver/atomisp_fops.o \
 		atomisp_driver/atomisp_subdev.o \
@@ -195,6 +197,7 @@ else
 # Objects for CSS 1.5
 atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_ioctl.o \
+		atomisp_driver/atomisp_compat_ioctl32.o \
 		atomisp_driver/atomisp_cmd.o \
 		atomisp_driver/atomisp_fops.o \
 		atomisp_driver/atomisp_subdev.o \
