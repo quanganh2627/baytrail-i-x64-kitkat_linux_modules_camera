@@ -40,6 +40,7 @@
 
 #ifdef CSS21
 #include "ia_css_debug.h"
+#include "ia_css_isp_param.h"
 #else /* CSS21 */
 #include "ia_css_accelerate.h"
 #include "sh_css_debug.h"
@@ -109,30 +110,30 @@ static ia_css_ptr atomisp_css2_mm_alloc(size_t bytes, uint32_t attr)
 
 static void atomisp_css2_mm_free(ia_css_ptr ptr)
 {
-	hrt_isp_css_mm_free((void *)ptr);
+	hrt_isp_css_mm_free(ptr);
 }
 
 static int atomisp_css2_mm_load(ia_css_ptr ptr, void *data, size_t bytes)
 {
-	return hrt_isp_css_mm_load((void *)ptr, data, bytes);
+	return hrt_isp_css_mm_load(ptr, data, bytes);
 }
 
 static int atomisp_css2_mm_store(ia_css_ptr ptr, const void *data, size_t bytes)
 {
-	return hrt_isp_css_mm_store((void *)ptr, data, bytes);
+	return hrt_isp_css_mm_store(ptr, data, bytes);
 }
 
 static int atomisp_css2_mm_set(ia_css_ptr ptr, int c, size_t bytes)
 {
-	return hrt_isp_css_mm_set((void *)ptr, c, bytes);
+	return hrt_isp_css_mm_set(ptr, c, bytes);
 }
 
 static ia_css_ptr atomisp_css2_mm_mmap(const void *ptr, const size_t size,
 		   uint16_t attribute, void *context)
 {
 	struct hrt_userbuffer_attr *userbuffer_attr = context;
-	return (ia_css_ptr)hrt_isp_css_mm_alloc_user_ptr(
-			size, (unsigned int)ptr, userbuffer_attr->pgnr,
+	return hrt_isp_css_mm_alloc_user_ptr(
+			size, (void *)ptr, userbuffer_attr->pgnr,
 			userbuffer_attr->type,
 			attribute & HRT_BUF_FLAG_CACHED);
 }
@@ -2915,10 +2916,10 @@ int atomisp_css_set_acc_parameters(struct atomisp_acc_fw *acc_fw)
 			!= IA_CSS_SUCCESS)
 			return -EIO;
 #else /* !CSS21 */
-		acc_fw->fw->mem_initializers[mem].address =
-						acc_fw->args[mem].css_ptr;
-		acc_fw->fw->mem_initializers[mem].size =
-						acc_fw->args[mem].length;
+		ia_css_isp_param_set_css_mem_init(&acc_fw->fw->mem_initializers,
+						IA_CSS_PARAM_CLASS_PARAM, mem,
+						acc_fw->args[mem].css_ptr,
+						acc_fw->args[mem].length);
 #endif /* !CSS21 */
 	}
 

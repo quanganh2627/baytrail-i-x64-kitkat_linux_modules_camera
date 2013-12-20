@@ -26,6 +26,7 @@
 #include "ia_css_debug.h"
 #include "sh_css_internal.h"
 #include "sh_css_sp_start.h"
+#include "ia_css_isp_param.h"
 
 #include "memory_access.h"
 #include "assert_support.h"
@@ -43,7 +44,7 @@ struct firmware_header {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-static const char* release_version = STR(ci_master_20131130_1312);
+static const char* release_version = STR(ci_master_20131207_1549);
 
 struct ia_css_fw_info	  sh_css_sp_fw;
 struct ia_css_blob_descr *sh_css_blob_info; /* Only ISP blob info (no SP) */
@@ -75,7 +76,6 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 {
 	const char *name;
 	const unsigned char *blob;
-	unsigned pclass;
 
 	assert(fw != NULL);
 	assert(bd != NULL);
@@ -98,12 +98,8 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 	bd->blob = blob;
 	bd->header = *bi;
 	bd->name = name;
-	for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
-		bd->mem_offsets[pclass].ptr = NULL;
-		if (bi->type == ia_css_isp_firmware) {
-			bd->mem_offsets[pclass].ptr = (void *)(fw + bi->blob.memory_offsets[pclass]);
-		}
-	}
+	if (bi->type == ia_css_isp_firmware)
+		ia_css_isp_param_load_fw_params(fw, &bd->mem_offsets, &bi->blob.memory_offsets, bi->type == ia_css_isp_firmware);
 	return IA_CSS_SUCCESS;
 }
 

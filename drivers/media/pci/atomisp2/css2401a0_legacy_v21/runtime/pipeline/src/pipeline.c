@@ -27,6 +27,7 @@
 #include "memory_access.h"
 #include "sh_css_sp.h"
 #include "ia_css_pipeline.h"
+#include "ia_css_isp_param.h"
 
 #define PIPELINE_NUM_UNMAPPED                   (~0)
 #define PIPELINE_SP_THREAD_EMPTY_TOKEN          (0x0)
@@ -386,7 +387,6 @@ struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void)
  */
 static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage)
 {
-	unsigned mem;
 	if (stage->out_frame_allocated) {
 		ia_css_frame_free(stage->args.out_frame);
 		stage->args.out_frame = NULL;
@@ -395,14 +395,8 @@ static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage)
 		ia_css_frame_free(stage->args.out_vf_frame);
 		stage->args.out_vf_frame = NULL;
 	}
-	for (mem = 0; mem < IA_CSS_NUM_ISP_MEMORIES; mem++) {
-		if (stage->isp_mem_params[mem].address)
-			sh_css_free(stage->isp_mem_params[mem].address);
-		if (stage->isp_mem_configs[mem].address)
-			sh_css_free(stage->isp_mem_configs[mem].address);
-		if (stage->isp_css_configs[mem].address)
-			mmgr_free(stage->isp_css_configs[mem].address);
-	}
+	if (stage->binary)
+		ia_css_isp_param_destroy_isp_parameters(&stage->binary->mem_params, &stage->binary->css_params);
 	sh_css_free(stage);
 }
 
@@ -467,7 +461,6 @@ static enum ia_css_err pipeline_stage_create(
 	struct ia_css_frame *vf_frame;
 	struct ia_css_frame *out_frame;
 	const struct ia_css_fw_info *firmware;
-	unsigned mem, pclass;
 
 	/* Verify input parameters*/
 	if (!(stage_desc->in_frame) && !(stage_desc->firmware)
@@ -499,40 +492,6 @@ static enum ia_css_err pipeline_stage_create(
 			    (struct ia_css_binary_info *)binary->info;
 		else
 			stage->binary_info = NULL;
-	}
-
-	pclass = IA_CSS_PARAM_CLASS_PARAM;
-	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
-		size_t size = 0;
-		if (stage->binary_info)
-			size = stage->binary_info->mem_initializers[pclass][mem].size;
-		stage->isp_mem_params[mem].size = size;
-		stage->isp_mem_params[mem].address = NULL;
-		if (size) {
-			stage->isp_mem_params[mem].address = sh_css_malloc(size);
-			if (stage->isp_mem_params[mem].address == NULL) {
-				err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-				goto ERR;
-			}
-		}
-	}
-
-	pclass = IA_CSS_PARAM_CLASS_CONFIG;
-	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
-		size_t size = 0;
-		if (stage->binary_info)
-			size = stage->binary_info->mem_initializers[pclass][mem].size;
-		stage->isp_mem_configs[mem].size = size;
-		stage->isp_mem_configs[mem].address = NULL;
-		if (size) {
-			stage->isp_mem_configs[mem].address = sh_css_malloc(size);
-			stage->isp_css_configs[mem].address = mmgr_malloc(size);
-		    if (stage->isp_mem_params[mem].address == NULL ||
-				stage->isp_css_configs[mem].address == mmgr_NULL) {
-					err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-					goto ERR;
-			}
-		}
 	}
 
 	stage->firmware = firmware;

@@ -60,47 +60,6 @@
  * in the kernel and HAL.
 */
 
-/* Explicit member numbering to avoid fish type checker bug */
-enum ia_css_param_class {
-	IA_CSS_PARAM_CLASS_PARAM  = 0,	/* Late binding parameters, like 3A */
-	IA_CSS_PARAM_CLASS_CONFIG = 1,	/* Pipe config time parameters, like resolution */
-	/* Not yet implemented
-	IA_CSS_PARAM_CLASS_FRAME	  = 2,    // Frame time parameters, like output buffer
-	IA_CSS_PARAM_CLASS_STATE	  = 3,    // State parameters, like tnr buffer index
-	*/
-};
-#define IA_CSS_NUM_PARAM_CLASSES (IA_CSS_PARAM_CLASS_CONFIG + 1)
-
-/** Blob descriptor.
- * This structure describes an SP or ISP blob.
- * It describes the test, data and bss sections as well as position in a
- * firmware file.
- * For convenience, it contains dynamic data after loading.
- */
-struct ia_css_blob_info {
-	/**< Static blob data */
-	uint32_t offset;		/**< Blob offset in fw file */
-	uint32_t memory_offsets[IA_CSS_NUM_PARAM_CLASSES];  /**< offset wrt hdr in bytes */
-	uint32_t prog_name_offset;  /**< offset wrt hdr in bytes */
-	uint32_t size;			/**< Size of blob */
-	uint32_t padding_size;	/**< total cummulative of bytes added due to section alignment */
-	uint32_t icache_source;	/**< Position of icache in blob */
-	uint32_t icache_size;	/**< Size of icache section */
-	uint32_t icache_padding;/**< bytes added due to icache section alignment */
-	uint32_t text_source;	/**< Position of text in blob */
-	uint32_t text_size;		/**< Size of text section */
-	uint32_t text_padding;	/**< bytes added due to text section alignment */
-	uint32_t data_source;	/**< Position of data in blob */
-	uint32_t data_target;	/**< Start of data in SP dmem */
-	uint32_t data_size;		/**< Size of text section */
-	uint32_t data_padding;	/**< bytes added due to data section alignment */
-	uint32_t bss_target;	/**< Start position of bss in SP dmem */
-	uint32_t bss_size;		/**< Size of bss section */
-	/**< Dynamic data filled by loader */
-	CSS_ALIGN(const void  *code, 8);		/**< Code section absolute pointer within fw, code = icache + text */
-	CSS_ALIGN(const void  *data, 8);		/**< Data section absolute pointer within fw, data = data + bss */
-};
-
 /** Type of acceleration.
  */
 enum ia_css_acc_type {
@@ -163,30 +122,60 @@ struct ia_css_data {
 	uint32_t   size;    /* Disabled if 0 */
 };
 
+/** Host data descriptor */
 struct ia_css_host_data {
 	char      *address; /* Host address */
 	uint32_t   size;    /* Disabled if 0 */
 };
 
-struct ia_css_blob_descr;
-
-/** Offsets for ISP kernel parameters per isp memory.
- * Only relevant for standard ISP binaries, not ACC or SP.
- */
-union ia_css_all_memory_offsets {
-	struct {
-		CSS_ALIGN(struct ia_css_memory_offsets	    *param, 8);
-		CSS_ALIGN(struct ia_css_config_memory_offsets *config, 8);
-	} offsets;
-	struct {
-		CSS_ALIGN(void * ptr, 8);
-	} array[IA_CSS_NUM_PARAM_CLASSES];
+/** ISP data descriptor */
+struct ia_css_isp_data {
+	uint32_t   address; /* ISP address */
+	uint32_t   size;    /* Disabled if 0 */
 };
+
+/* Should be included without the path.
+   However, that requires adding the path to numerous makefiles
+   that have nothing to do with isp parameters.
+ */
+#include "runtime/isp_param/interface/ia_css_isp_param_types.h"
+
+struct ia_css_blob_descr;
 
 struct ia_css_channel_descr {
 	uint8_t		channel;  /* Dma channel used */
 	uint8_t		height;   /* Buffer height */
 	uint16_t	stride;   /* Buffer stride */
+};
+
+/** Blob descriptor.
+ * This structure describes an SP or ISP blob.
+ * It describes the test, data and bss sections as well as position in a
+ * firmware file.
+ * For convenience, it contains dynamic data after loading.
+ */
+struct ia_css_blob_info {
+	/**< Static blob data */
+	uint32_t offset;		/**< Blob offset in fw file */
+	struct ia_css_isp_param_memory_offsets memory_offsets;  /**< offset wrt hdr in bytes */
+	uint32_t prog_name_offset;  /**< offset wrt hdr in bytes */
+	uint32_t size;			/**< Size of blob */
+	uint32_t padding_size;	/**< total cummulative of bytes added due to section alignment */
+	uint32_t icache_source;	/**< Position of icache in blob */
+	uint32_t icache_size;	/**< Size of icache section */
+	uint32_t icache_padding;/**< bytes added due to icache section alignment */
+	uint32_t text_source;	/**< Position of text in blob */
+	uint32_t text_size;		/**< Size of text section */
+	uint32_t text_padding;	/**< bytes added due to text section alignment */
+	uint32_t data_source;	/**< Position of data in blob */
+	uint32_t data_target;	/**< Start of data in SP dmem */
+	uint32_t data_size;		/**< Size of text section */
+	uint32_t data_padding;	/**< bytes added due to data section alignment */
+	uint32_t bss_target;	/**< Start position of bss in SP dmem */
+	uint32_t bss_size;		/**< Size of bss section */
+	/**< Dynamic data filled by loader */
+	CSS_ALIGN(const void  *code, 8);		/**< Code section absolute pointer within fw, code = icache + text */
+	CSS_ALIGN(const void  *data, 8);		/**< Data section absolute pointer within fw, data = data + bss */
 };
 
 /** Structure describing an ISP binary.
@@ -238,7 +227,7 @@ struct ia_css_binary_info {
 	uint32_t		output_block_height;
 	uint32_t		dvs_in_block_width;
 	uint32_t		dvs_in_block_height;
-	struct ia_css_data	mem_initializers[IA_CSS_NUM_PARAM_CLASSES][IA_CSS_NUM_ISP_MEMORIES];
+	struct ia_css_isp_param_isp_segments mem_initializers;
 	uint32_t		sh_dma_cmd_ptr;     /* In ISP dmem */
 	uint32_t		isp_pipe_version;
 /* MW: Packing (related) bools in an integer ?? */
@@ -416,18 +405,18 @@ union ia_css_fw_union {
 /** Firmware information.
  */
 struct ia_css_fw_info {
-	size_t			header_size; /**< size of fw header */
+	size_t			 header_size; /**< size of fw header */
 	CSS_ALIGN(uint32_t type, 8);
-	union ia_css_fw_union	info; /**< Binary info */
-	struct ia_css_blob_info blob; /**< Blob info */
+	union ia_css_fw_union	 info; /**< Binary info */
+	struct ia_css_blob_info  blob; /**< Blob info */
 	/* Dynamic part */
-	struct ia_css_fw_info  *next;
-	CSS_ALIGN(uint32_t                loaded, 8);    /**< Firmware has been loaded */
-	CSS_ALIGN(const uint8_t          *isp_code, 8);  /**< ISP pointer to code */
+	struct ia_css_fw_info   *next;
+	CSS_ALIGN(uint32_t       loaded, 8);	/**< Firmware has been loaded */
+	CSS_ALIGN(const uint8_t *isp_code, 8);  /**< ISP pointer to code */
 	/**< Firmware handle between user space and kernel */
-	CSS_ALIGN(uint32_t		handle, 8);
+	CSS_ALIGN(uint32_t	handle, 8);
 	/**< Sections to copy from/to ISP */
-	struct ia_css_data mem_initializers[IA_CSS_NUM_ISP_MEMORIES];
+	struct ia_css_isp_param_css_segments mem_initializers;
 	/**< Initializer for local ISP memories */
 };
 
@@ -435,9 +424,7 @@ struct ia_css_blob_descr {
 	const unsigned char  *blob;
 	struct ia_css_fw_info header;
 	const char	     *name;
-	struct {
-	  CSS_ALIGN(void * ptr, 8);
-	} mem_offsets[IA_CSS_NUM_PARAM_CLASSES];
+	union ia_css_all_memory_offsets mem_offsets;
 };
 
 struct ia_css_acc_fw;

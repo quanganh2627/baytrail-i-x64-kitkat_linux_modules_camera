@@ -2888,7 +2888,7 @@ atomisp_v4l2_framebuffer_to_css_frame(const struct v4l2_framebuffer *arg,
 		goto err;
 	}
 
-	if (hmm_store((void *)res->data, tmp_buf, arg->fmt.sizeimage)) {
+	if (hmm_store(res->data, tmp_buf, arg->fmt.sizeimage)) {
 		ret = -EINVAL;
 		goto err;
 	}

@@ -23,8 +23,6 @@
 #ifndef __IA_CSS_S3A_HOST_H
 #define __IA_CSS_S3A_HOST_H
 
-#include "sh_css_params.h"
-
 #include "ia_css_s3a_types.h"
 #include "ia_css_s3a_param.h"
 

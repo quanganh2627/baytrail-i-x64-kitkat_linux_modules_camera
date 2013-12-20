@@ -379,22 +379,22 @@ static void store_sp_queue(
 	if (size)
 		store_sp_array_uint8(ia_css_bufq_host_sp_queue,
 			entry_to_cb_size / sizeof(offset->size),
-			*size);
+		        (const uint8_t)*size);
 
 	if (elems)
 		store_sp_array_uint(ia_css_bufq_host_sp_queue,
 			entry_to_cb_elems / sizeof(offset->elems),
-			*elems);
+			(const uint8_t)*elems);
 
 	if (start)
 		store_sp_array_uint8(ia_css_bufq_host_sp_queue,
 			entry_to_cb_start / sizeof(offset->start),
-			*start);
+			(const uint8_t)*start);
 
 	if (end)
 		store_sp_array_uint8(ia_css_bufq_host_sp_queue,
 			entry_to_cb_end / sizeof(offset->end),
-			*end);
+			(const uint8_t)*end);
 }
 
 static void load_sp_queue(
@@ -481,7 +481,7 @@ static void push_sp_queue(
 				 sizeof(ia_css_circbuf_elem_t));
 
 	/* update the "end" index */
-	cb_end = (cb_size == 0) ? (cb_end + 1) : (cb_end + 1) % cb_size;
+	cb_end = (cb_end + 1) % cb_size;
 	store_sp_queue (offset, NULL, NULL, NULL, &cb_end);
 }
 
@@ -525,7 +525,7 @@ static void pop_sp_queue(
 	*elem = cb_elem.val;
 
 	/* update the "start" index */
-	cb_start = (cb_size == 0) ? (cb_start + 1) : (cb_start + 1) % cb_size;
+	cb_start = (cb_start + 1) % cb_size;
 	store_sp_queue(offset, NULL, NULL, &cb_start, NULL);
 }
 

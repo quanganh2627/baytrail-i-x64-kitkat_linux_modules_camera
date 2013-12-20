@@ -685,7 +685,7 @@ error:
  * Convert user space virtual address into pages list
  */
 static int alloc_user_pages(struct hmm_buffer_object *bo,
-			      unsigned int userptr, bool cached)
+			      void *userptr, bool cached)
 {
 	int page_nr;
 	int i;
@@ -708,7 +708,7 @@ static int alloc_user_pages(struct hmm_buffer_object *bo,
 
 	mutex_unlock(&bo->mutex);
 	down_read(&current->mm->mmap_sem);
-	vma = find_vma(current->mm, userptr);
+	vma = find_vma(current->mm, (unsigned long)userptr);
 	up_read(&current->mm->mmap_sem);
 	if (vma == NULL) {
 		dev_err(atomisp_dev, "find_vma failed\n");
@@ -803,7 +803,7 @@ static void free_user_pages(struct hmm_buffer_object *bo)
  */
 int hmm_bo_alloc_pages(struct hmm_buffer_object *bo,
 		       enum hmm_bo_type type, int from_highmem,
-		       unsigned int userptr, bool cached)
+		       void *userptr, bool cached)
 {
 	int ret;
 

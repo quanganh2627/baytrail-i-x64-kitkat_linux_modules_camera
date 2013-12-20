@@ -49,6 +49,7 @@
 #include "isp/kernels/ynr/ynr_2/ia_css_ynr2.host.h"
 /* Generated code: do not edit or commmit. */
 
+#include "ia_css.h"
 #include HRTSTR(ia_css_isp_params.SYSTEM.h)
 #include "ia_css_debug.h"
 
@@ -68,7 +69,7 @@ ia_css_process_bh(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_bh_encode((struct sh_css_isp_bh_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->s3a_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -80,7 +81,7 @@ ia_css_process_bh(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_bh_hmem_encode((struct sh_css_isp_bh_hmem_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_HMEM0].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_HMEM0].address[offset],
 					&params->s3a_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_HMEM0] = true;
@@ -106,7 +107,7 @@ ia_css_process_dp(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_dp_encode((struct sh_css_isp_dp_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->dp_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -132,7 +133,7 @@ ia_css_process_aa(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_aa_encode((struct sh_css_isp_aa_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->aa_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -158,7 +159,7 @@ ia_css_process_anr(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_anr_encode((struct sh_css_isp_anr_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->anr_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -184,7 +185,7 @@ ia_css_process_nr(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_nr_encode((struct sh_css_isp_ynr_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->nr_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -210,7 +211,7 @@ ia_css_process_raa(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_raa_encode((struct sh_css_isp_aa_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->raa_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -236,7 +237,7 @@ ia_css_process_wb(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_wb_encode((struct sh_css_isp_wb_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->wb_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -262,7 +263,7 @@ ia_css_process_yee(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_yee_encode((struct sh_css_isp_yee_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->yee_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -288,7 +289,7 @@ ia_css_process_ob(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_ob_encode((struct sh_css_isp_ob_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->ob_config, &params->stream_configs.ob);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -300,7 +301,7 @@ ia_css_process_ob(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_ob_vmem_encode((struct sh_css_isp_ob_vmem_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_VMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VMEM].address[offset],
 					&params->ob_config, &params->stream_configs.ob);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VMEM] = true;
@@ -326,7 +327,7 @@ ia_css_process_bnr(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_bnr_encode((struct sh_css_isp_bnr_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->nr_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -352,7 +353,7 @@ ia_css_process_s3a(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_s3a_encode((struct sh_css_isp_s3a_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->s3a_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -378,7 +379,7 @@ ia_css_process_csc(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_csc_encode((struct sh_css_isp_csc_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->csc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -404,7 +405,7 @@ ia_css_process_rgb2yuv(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_rgb2yuv_encode((struct sh_css_isp_csc_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->rgb2yuv_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -430,7 +431,7 @@ ia_css_process_yuv2rgb(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_yuv2rgb_encode((struct sh_css_isp_csc_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->yuv2rgb_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -456,7 +457,7 @@ ia_css_process_ce(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_ce_encode((struct sh_css_isp_ce_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->ce_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -482,7 +483,7 @@ ia_css_process_gc(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_gc_encode((struct sh_css_isp_gc_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->gc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -494,7 +495,7 @@ ia_css_process_gc(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_gc_vamem_encode((struct sh_css_isp_gc_vamem_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_VAMEM1].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM1].address[offset],
 					&params->gc_table);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM1] = true;
@@ -520,7 +521,7 @@ ia_css_process_fc(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_fc_encode((struct sh_css_isp_fc_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->fc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -546,7 +547,7 @@ ia_css_process_de(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_de_encode((struct sh_css_isp_de_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->de_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -572,7 +573,7 @@ ia_css_process_cnr(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_cnr_encode((struct sh_css_isp_cnr_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->cnr_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -598,7 +599,7 @@ ia_css_process_ctc(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_ctc_encode((struct sh_css_isp_ctc_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->ctc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -610,7 +611,7 @@ ia_css_process_ctc(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_ctc_vamem_encode((struct sh_css_isp_ctc_vamem_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_VAMEM0].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM0].address[offset],
 					&params->ctc_table);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM0] = true;
@@ -636,7 +637,7 @@ ia_css_process_ecd(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_ecd_encode((struct sh_css_isp_ecd_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->ecd_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -662,7 +663,7 @@ ia_css_process_fpn(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_fpn_encode((struct sh_css_isp_fpn_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->fpn_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -688,7 +689,7 @@ ia_css_process_macc(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_macc_encode((struct sh_css_isp_macc_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->macc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -714,7 +715,7 @@ ia_css_process_raw(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_raw_encode((struct sh_css_isp_raw_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->raw_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -740,7 +741,7 @@ ia_css_process_sc(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_sc_encode((struct sh_css_isp_sc_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->sc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -766,7 +767,7 @@ ia_css_process_tnr(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_tnr_encode((struct sh_css_isp_tnr_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->tnr_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -792,7 +793,7 @@ ia_css_process_xnr(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_xnr_encode((struct sh_css_isp_xnr_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->xnr_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -818,7 +819,7 @@ ia_css_process_ynr(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_ynr_encode((struct sh_css_isp_yee2_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_DMEM].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
 					&params->ynr_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
@@ -844,7 +845,7 @@ ia_css_process_r_gamma(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_r_gamma_vamem_encode((struct sh_css_isp_rgb_gamma_vamem_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_VAMEM0].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM0].address[offset],
 					&params->r_gamma_table);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM0] = true;
@@ -870,7 +871,7 @@ ia_css_process_g_gamma(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_g_gamma_vamem_encode((struct sh_css_isp_rgb_gamma_vamem_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_VAMEM1].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM1].address[offset],
 					&params->g_gamma_table);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM1] = true;
@@ -896,7 +897,7 @@ ia_css_process_xnr_table(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_xnr_table_vamem_encode((struct sh_css_isp_xnr_vamem_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_VAMEM1].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM1].address[offset],
 					&params->xnr_table);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM1] = true;
@@ -922,7 +923,7 @@ ia_css_process_b_gamma(unsigned pipe_id,
 
 		if (offset >= 0) {
 			ia_css_b_gamma_vamem_encode((struct sh_css_isp_rgb_gamma_vamem_params *)
-					&stage->isp_mem_params[IA_CSS_ISP_VAMEM2].address[offset],
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM2].address[offset],
 					&params->b_gamma_table);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM2] = true;

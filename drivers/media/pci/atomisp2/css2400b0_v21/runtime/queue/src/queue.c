@@ -379,22 +379,22 @@ static void store_sp_queue(
 	if (size)
 		store_sp_array_uint8(ia_css_bufq_host_sp_queue,
 			entry_to_cb_size / sizeof(offset->size),
-			*size);
+		        (const uint8_t)*size);
 
 	if (elems)
 		store_sp_array_uint(ia_css_bufq_host_sp_queue,
 			entry_to_cb_elems / sizeof(offset->elems),
-			*elems);
+			(const uint8_t)*elems);
 
 	if (start)
 		store_sp_array_uint8(ia_css_bufq_host_sp_queue,
 			entry_to_cb_start / sizeof(offset->start),
-			*start);
+			(const uint8_t)*start);
 
 	if (end)
 		store_sp_array_uint8(ia_css_bufq_host_sp_queue,
 			entry_to_cb_end / sizeof(offset->end),
-			*end);
+			(const uint8_t)*end);
 }
 
 static void load_sp_queue(

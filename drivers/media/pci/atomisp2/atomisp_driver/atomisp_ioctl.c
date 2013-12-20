@@ -1387,7 +1387,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 				isp->latest_preview_exp_id);
 
 			if (isp->delayed_init != ATOMISP_DELAYED_INIT_DONE) {
-				flush_work_sync(&isp->delayed_init_work);
+				flush_work(&isp->delayed_init_work);
 				mutex_unlock(&isp->mutex);
 				if (wait_for_completion_interruptible(
 						&isp->init_done) != 0)

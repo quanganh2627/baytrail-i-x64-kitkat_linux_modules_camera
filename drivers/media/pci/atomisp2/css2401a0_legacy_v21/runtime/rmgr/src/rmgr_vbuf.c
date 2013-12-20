@@ -154,7 +154,7 @@ enum ia_css_err ia_css_rmgr_init_vbuf(struct ia_css_rmgr_vbuf_pool *pool)
 	if (pool->recycle && pool->size) {
 		/* allocate memory for storing the handles */
 		bytes_needed =
-		    sizeof(struct ia_css_i_host_rmgr_vbuf_handle *) *
+		    sizeof(void *) *
 		    pool->size;
 		pool->handles = sh_css_malloc(bytes_needed);
 		if (pool->handles != NULL)
