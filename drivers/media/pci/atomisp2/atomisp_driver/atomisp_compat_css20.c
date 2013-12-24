@@ -1186,17 +1186,19 @@ void atomisp_css_free_3a_dis_buffers(struct atomisp_sub_device *asd)
 }
 
 int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
-				enum atomisp_css_pipe_id pipe_id)
+				enum atomisp_css_pipe_id pipe_id,
+				int source_pad)
 {
 	struct ia_css_pipe_info p_info;
 	struct ia_css_grid_info old_info;
 	struct atomisp_device *isp = asd->isp;
+	int stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
 
 	memset(&p_info, 0, sizeof(struct ia_css_pipe_info));
 	memset(&old_info, 0, sizeof(struct ia_css_grid_info));
 
 	if (ia_css_pipe_get_info(
-		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipes[pipe_id],
+		asd->stream_env[stream_index].pipes[pipe_id],
 		&p_info) != IA_CSS_SUCCESS) {
 		dev_err(isp->dev, "ia_css_pipe_get_info failed\n");
 		return -EINVAL;

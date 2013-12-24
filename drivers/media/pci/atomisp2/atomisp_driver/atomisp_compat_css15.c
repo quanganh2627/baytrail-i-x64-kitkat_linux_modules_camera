@@ -422,7 +422,8 @@ void atomisp_css_free_3a_dis_buffers(struct atomisp_sub_device *asd)
 }
 
 int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
-				enum atomisp_css_pipe_id pipe_id)
+				enum atomisp_css_pipe_id pipe_id,
+				int stream_index)
 {
 	enum sh_css_err err;
 	struct atomisp_css_grid_info old_info = asd->params.curr_grid_info;

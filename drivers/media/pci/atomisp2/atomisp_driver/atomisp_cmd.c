@@ -1798,12 +1798,12 @@ void atomisp_free_3a_dis_buffers(struct atomisp_sub_device *asd)
 }
 
 static void atomisp_update_grid_info(struct atomisp_sub_device *asd,
-				enum atomisp_css_pipe_id pipe_id)
+				enum atomisp_css_pipe_id pipe_id, int source_pad)
 {
 	struct atomisp_device *isp = asd->isp;
 	int err;
 
-	if (atomisp_css_get_grid_info(asd, pipe_id))
+	if (atomisp_css_get_grid_info(asd, pipe_id, source_pad))
 		return;
 
 	/* We must free all buffers because they no longer match
@@ -3610,7 +3610,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		return -EINVAL;
 	}
 
-	atomisp_update_grid_info(asd, pipe_id);
+	atomisp_update_grid_info(asd, pipe_id, source_pad);
 
 	/* Free the raw_dump buffer first */
 	atomisp_css_frame_free(asd->raw_output_frame);

@@ -199,7 +199,8 @@ void atomisp_css_free_dis_buffers(struct atomisp_dis_buf *dis_buf);
 void atomisp_css_free_3a_dis_buffers(struct atomisp_sub_device *asd);
 
 int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
-				enum atomisp_css_pipe_id pipe_id);
+				enum atomisp_css_pipe_id pipe_id,
+				int source_pad);
 
 int atomisp_alloc_3a_output_buf(struct atomisp_sub_device *asd);
 
