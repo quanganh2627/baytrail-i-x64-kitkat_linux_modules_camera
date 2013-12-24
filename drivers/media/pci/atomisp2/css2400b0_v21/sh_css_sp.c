@@ -872,10 +872,11 @@ configure_isp_from_args(
 	const struct sh_css_binary_args *args)
 {
 #if !defined(IS_ISP_2500_SYSTEM)
-	ia_css_fpn_configure(binary, &binary->in_frame_info);
-#endif
 	ia_css_ref_configure(binary, &args->in_ref_frame->info);
-	ia_css_tnr_configure(binary, &args->in_tnr_frame->info);
+#else
+	(void)binary;
+	(void)args;
+#endif
 }
 
 static enum ia_css_err
@@ -961,10 +962,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	sh_css_sp_stage.xmem_map_addr = sh_css_params_ddr_address_map();
 	sh_css_isp_stage.blob_info = *blob_info;
 	sh_css_stage_write_binary_info((struct ia_css_binary_info *)info);
-	memcpy(sh_css_isp_stage.binary_name, binary_name,
-		strlen(binary_name)+1);
-	memcpy(&sh_css_isp_stage.mem_initializers, isp_mem_if,
-		sizeof(sh_css_isp_stage.mem_initializers));
+	strncpy(sh_css_isp_stage.binary_name, binary_name, SH_CSS_MAX_BINARY_NAME);
+	sh_css_isp_stage.binary_name[SH_CSS_MAX_BINARY_NAME - 1] = 0;
+	sh_css_isp_stage.mem_initializers = *isp_mem_if;
 
 	/**
 	 * Even when a stage does not need uds and does not params,
