@@ -307,6 +307,8 @@ struct atomisp_sub_device {
 	struct work_struct delayed_init_work;
 
 	unsigned int latest_preview_exp_id; /* CSS ZSL raw buffer id */
+
+	unsigned int mipi_frame_size;
 };
 
 extern const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[];

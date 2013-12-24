@@ -415,6 +415,7 @@ static void atomisp_dev_init_struct(struct atomisp_device *isp)
 	isp->sw_contex.file_input = 0;
 	isp->need_gfx_throttle = true;
 	isp->isp_fatal_error = false;
+	isp->mipi_frame_size = 0;
 
 	for (i = 0; i < isp->input_cnt; i++)
 		isp->inputs[i].asd = NULL;
@@ -451,6 +452,8 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
 	/* Add for channel */
 	asd->input_curr = 0;
+
+	asd->mipi_frame_size = 0;
 
 	atomisp_css_init_struct(asd);
 }

@@ -989,6 +989,27 @@ void atomisp_css_mmu_set_page_table_base_index(unsigned long base_index)
 {
 }
 
+/*
+ * Check whether currently running MIPI buffer size fulfill
+ * the requirement of the stream to be run
+ */
+bool __need_realloc_mipi_buffer(struct atomisp_device *isp)
+{
+	unsigned int i;
+
+	for (i = 0; i < isp->num_of_streams; i++) {
+		struct atomisp_sub_device *asd = &isp->asd[i];
+
+		if (asd->streaming !=
+				ATOMISP_DEVICE_STREAMING_ENABLED)
+			continue;
+		if (asd->mipi_frame_size < isp->mipi_frame_size)
+			return true;
+	}
+
+	return false;
+}
+
 int atomisp_css_start(struct atomisp_sub_device *asd,
 			enum atomisp_css_pipe_id pipe_id, bool in_reset)
 {
@@ -1020,6 +1041,47 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 	 */
 	if (atomisp_streaming_count(isp)) {
 		dev_dbg(isp->dev, "skip start sp\n");
+		/*
+		 * FIXME! VIED BZ 1439:
+		 * ISP timeout in start second stream due to incorrect MIPI
+		 * Buffer size.
+		 *
+		 * This is due to MIPI buffers are allocated once and shared
+		 * by all streams. So if the first sensor start running, MIPI
+		 * buffer is allocated with size conrresponding to the sensor
+		 * output frame size; when start second sensor, whose output
+		 * resolution requires more MIPI buffers, the previous
+		 * allocated MIPI buffer could not fulfill the requirement and
+		 * hense get ISP timeout or other unexpected behavor.
+		 *
+		 * Workaround here is to reset ISP which will stop previous
+		 * running stream, re-allocate mipi buffer, and start again.
+		 */
+		if (__need_realloc_mipi_buffer(isp)) {
+			dev_warn(isp->dev, "Need to reallocate mipi buffer.\n");
+			/* destroy stream/pipe for this stream */
+			if (__destroy_streams(asd, true))
+				dev_warn(isp->dev, "destroy stream failed.\n");
+
+			if (__destroy_pipes(asd, true))
+				dev_warn(isp->dev, "destroy pipe failed.\n");
+
+			/*
+			 * reset running stream which will reset mipi buffer
+			 */
+			atomisp_css_flush(isp);
+
+			/* recreate stream/pipe for this stream */
+			if (__create_pipes(asd)) {
+				dev_err(isp->dev, "create pipe error.\n");
+				return -EINVAL;
+			}
+			if (__create_streams(asd)) {
+				dev_err(isp->dev, "create stream error.\n");
+				ret = -EINVAL;
+				goto stream_err;
+			}
+		}
 	} else if (ia_css_start_sp() != IA_CSS_SUCCESS) {
 		dev_err(isp->dev, "start sp error.\n");
 		ret = -EINVAL;
@@ -1491,7 +1553,13 @@ void atomisp_css_input_set_mode(struct atomisp_sub_device *asd,
 		}
 		total_size_mem_words += size_mem_words;
 	}
-	ia_css_mipi_frame_specify(total_size_mem_words, false);
+
+	if (total_size_mem_words > asd->isp->mipi_frame_size)
+		asd->isp->mipi_frame_size = size_mem_words;
+
+	asd->mipi_frame_size = asd->isp->mipi_frame_size;
+
+	ia_css_mipi_frame_specify(asd->isp->mipi_frame_size, false);
 }
 
 void atomisp_css_capture_enable_online(struct atomisp_sub_device *asd,

@@ -304,6 +304,8 @@ struct atomisp_device {
 	spinlock_t lock; /* Just for streaming below */
 
 	bool need_gfx_throttle;
+
+	unsigned int mipi_frame_size;
 };
 
 #define v4l2_dev_to_atomisp_device(dev) \
