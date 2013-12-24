@@ -3252,17 +3252,18 @@ static mipi_port_ID_t __get_mipi_port(struct atomisp_device *isp,
 	}
 }
 
-static inline void atomisp_set_sensor_mipi_to_isp(struct atomisp_sub_device
-						  *asd,
-						  struct camera_mipi_info
-						  *mipi_info)
+static inline void atomisp_set_sensor_mipi_to_isp(
+				struct atomisp_sub_device *asd,
+				enum atomisp_input_stream_id stream_id,
+				struct camera_mipi_info *mipi_info)
 {
 	/* Compatibility for sensors which provide no media bus code
 	 * in s_mbus_framefmt() nor support pad formats. */
 	if (mipi_info->input_format != -1) {
-		atomisp_css_input_set_bayer_order(asd,
+		atomisp_css_input_set_bayer_order(asd, stream_id,
 						mipi_info->raw_bayer_order);
-		atomisp_css_input_set_format(asd, mipi_info->input_format);
+		atomisp_css_input_set_format(asd, stream_id,
+						mipi_info->input_format);
 	}
 	atomisp_css_input_configure_port(asd, __get_mipi_port(asd->isp,
 							mipi_info->port),
@@ -3393,6 +3394,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	const struct atomisp_format_bridge *format;
 	struct v4l2_rect *isp_sink_crop;
 	enum atomisp_css_pipe_id pipe_id;
+	struct v4l2_subdev_fh fh;
 	int (*configure_output)(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
 				enum atomisp_css_frame_format sh_fmt) =
@@ -3405,6 +3407,8 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 							configure_pp_input_nop;
 	uint16_t stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
 	int ret;
+
+	v4l2_fh_init(&fh.vfh, vdev);
 
 	isp_sink_crop = atomisp_subdev_get_rect(
 		&asd->subdev, NULL, V4L2_SUBDEV_FORMAT_ACTIVE,
@@ -3422,7 +3426,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			dev_err(isp->dev, "mipi_info is NULL\n");
 			return -EINVAL;
 		}
-		atomisp_set_sensor_mipi_to_isp(asd, mipi_info);
+		atomisp_set_sensor_mipi_to_isp(asd, stream_index, mipi_info);
 
 		if (format->sh_fmt == CSS_FRAME_FORMAT_RAW &&
 		     raw_output_format_match_input(
@@ -3451,11 +3455,11 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		   atomisp_output_fmts[] in atomisp_v4l2.c */
 		vf_ffmt.code = 0x8001;
 
-		atomisp_subdev_set_selection(&asd->subdev, NULL,
+		atomisp_subdev_set_selection(&asd->subdev, &fh,
 					     V4L2_SUBDEV_FORMAT_ACTIVE,
 					     ATOMISP_SUBDEV_PAD_SOURCE_VF,
 					     V4L2_SEL_TGT_COMPOSE, 0, &vf_size);
-		atomisp_subdev_set_ffmt(&asd->subdev, NULL,
+		atomisp_subdev_set_ffmt(&asd->subdev, &fh,
 					V4L2_SUBDEV_FORMAT_ACTIVE,
 					ATOMISP_SUBDEV_PAD_SOURCE_VF, &vf_ffmt);
 #ifdef CSS20
@@ -3663,7 +3667,10 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 		(struct atomisp_input_stream_info *)ffmt.reserved;
 	uint16_t stream_index = ATOMISP_INPUT_STREAM_GENERAL;
 	int source_pad = atomisp_subdev_source_pad(vdev);
+	struct v4l2_subdev_fh fh;
 	int ret;
+
+	v4l2_fh_init(&fh.vfh, vdev);
 
 	stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
 
@@ -3727,7 +3734,7 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 		asd->params.video_dis_en = 0;
 	}
 
-	atomisp_subdev_set_ffmt(&asd->subdev, NULL,
+	atomisp_subdev_set_ffmt(&asd->subdev, &fh,
 				V4L2_SUBDEV_FORMAT_ACTIVE,
 				ATOMISP_SUBDEV_PAD_SINK, &ffmt);
 
@@ -3749,10 +3756,13 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	struct v4l2_mbus_framefmt isp_source_fmt = {0};
 	struct v4l2_rect isp_sink_crop;
 	uint16_t source_pad = atomisp_subdev_source_pad(vdev);
+	struct v4l2_subdev_fh fh;
 	int ret;
 
 	dev_dbg(isp->dev, "setting resolution %ux%u on pad %u\n",
 		f->fmt.pix.width, f->fmt.pix.height, source_pad);
+
+	v4l2_fh_init(&fh.vfh, vdev);
 
 	format_bridge = atomisp_get_format_bridge(f->fmt.pix.pixelformat);
 	if (format_bridge == NULL)
@@ -3791,7 +3801,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 			}
 
 			atomisp_subdev_set_selection(
-				&asd->subdev, NULL,
+				&asd->subdev, &fh,
 				V4L2_SUBDEV_FORMAT_ACTIVE, source_pad,
 				V4L2_SEL_TGT_COMPOSE, 0, &r);
 
@@ -3859,7 +3869,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 
 	isp_source_fmt.code = atomisp_get_format_bridge(
 		f->fmt.pix.pixelformat)->mbus_code;
-	atomisp_subdev_set_ffmt(&asd->subdev, NULL,
+	atomisp_subdev_set_ffmt(&asd->subdev, &fh,
 				V4L2_SUBDEV_FORMAT_ACTIVE,
 				source_pad, &isp_source_fmt);
 
@@ -3940,13 +3950,13 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 			isp_sink_crop.height = f->fmt.pix.height;
 		}
 
-		atomisp_subdev_set_selection(&asd->subdev, NULL,
+		atomisp_subdev_set_selection(&asd->subdev, &fh,
 					     V4L2_SUBDEV_FORMAT_ACTIVE,
 					     ATOMISP_SUBDEV_PAD_SINK,
 					     V4L2_SEL_TGT_CROP,
 					     V4L2_SEL_FLAG_KEEP_CONFIG,
 					     &isp_sink_crop);
-		atomisp_subdev_set_selection(&asd->subdev, NULL,
+		atomisp_subdev_set_selection(&asd->subdev, &fh,
 					     V4L2_SUBDEV_FORMAT_ACTIVE,
 					     source_pad, V4L2_SEL_TGT_COMPOSE,
 					     0, &isp_sink_crop);
@@ -3965,7 +3975,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 					     f->fmt.pix.height);
 		}
 
-		atomisp_subdev_set_selection(&asd->subdev, NULL,
+		atomisp_subdev_set_selection(&asd->subdev, &fh,
 					     V4L2_SUBDEV_FORMAT_ACTIVE,
 					     ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE,
 					     V4L2_SEL_TGT_COMPOSE, 0,
@@ -4026,7 +4036,10 @@ int atomisp_set_fmt_file(struct video_device *vdev, struct v4l2_format *f)
 	struct atomisp_sub_device *asd = pipe->asd;
 	struct v4l2_mbus_framefmt ffmt = {0};
 	const struct atomisp_format_bridge *format_bridge;
+	struct v4l2_subdev_fh fh;
 	int ret;
+
+	v4l2_fh_init(&fh.vfh, vdev);
 
 	dev_dbg(isp->dev, "setting fmt %ux%u 0x%x for file inject\n",
 		f->fmt.pix.width, f->fmt.pix.height, f->fmt.pix.pixelformat);
@@ -4052,7 +4065,7 @@ int atomisp_set_fmt_file(struct video_device *vdev, struct v4l2_format *f)
 	ffmt.height = f->fmt.pix.height;
 	ffmt.code = format_bridge->mbus_code;
 
-	atomisp_subdev_set_ffmt(&asd->subdev, NULL, V4L2_SUBDEV_FORMAT_ACTIVE,
+	atomisp_subdev_set_ffmt(&asd->subdev, &fh, V4L2_SUBDEV_FORMAT_ACTIVE,
 				ATOMISP_SUBDEV_PAD_SINK, &ffmt);
 
 	return 0;

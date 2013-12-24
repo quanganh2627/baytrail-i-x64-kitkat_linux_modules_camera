@@ -601,6 +601,7 @@ void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_css_event *current_event)
 }
 
 int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
+					enum atomisp_input_stream_id stream_id,
 					struct v4l2_mbus_framefmt *ffmt)
 {
 	if (sh_css_input_set_resolution(ffmt->width, ffmt->height)
@@ -611,25 +612,29 @@ int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
 }
 
 void atomisp_css_input_set_binning_factor(struct atomisp_sub_device *asd,
-						unsigned int bin_factor)
+					enum atomisp_input_stream_id stream_id,
+					unsigned int bin_factor)
 {
 	sh_css_input_set_binning_factor(bin_factor);
 }
 
 void atomisp_css_input_set_bayer_order(struct atomisp_sub_device *asd,
+				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_bayer_order bayer_order)
 {
 	sh_css_input_set_bayer_order(bayer_order);
 }
 
 void atomisp_css_input_set_format(struct atomisp_sub_device *asd,
-					enum atomisp_css_stream_format format)
+				enum atomisp_input_stream_id stream_id,
+				enum atomisp_css_stream_format format)
 {
 	sh_css_input_set_format(format);
 }
 
 int atomisp_css_input_set_effective_resolution(
 					struct atomisp_sub_device *asd,
+					enum atomisp_input_stream_id stream_id,
 					unsigned int width, unsigned int height)
 {
 	if (sh_css_input_set_effective_resolution(width, height)

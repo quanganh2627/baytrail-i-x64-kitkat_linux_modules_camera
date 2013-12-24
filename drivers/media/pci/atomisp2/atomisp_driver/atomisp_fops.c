@@ -563,9 +563,12 @@ static int atomisp_release(struct file *file)
 	struct atomisp_video_pipe *pipe = atomisp_to_video_pipe(vdev);
 	struct atomisp_sub_device *asd = pipe->asd;
 	struct v4l2_requestbuffers req;
+	struct v4l2_subdev_fh fh;
 	int ret = 0;
 
 	dev_dbg(isp->dev, "release device %s\n", vdev->name);
+
+	v4l2_fh_init(&fh.vfh, vdev);
 
 	req.count = 0;
 	if (isp == NULL)
@@ -608,7 +611,7 @@ static int atomisp_release(struct file *file)
 	if (!isp->sw_contex.file_input && asd->fmt_auto->val) {
 		struct v4l2_mbus_framefmt isp_sink_fmt = { 0 };
 		atomisp_subdev_set_ffmt(
-			&asd->subdev, NULL,
+			&asd->subdev, &fh,
 			V4L2_SUBDEV_FORMAT_ACTIVE, ATOMISP_SUBDEV_PAD_SINK,
 			&isp_sink_fmt);
 	}
@@ -619,7 +622,7 @@ static int atomisp_release(struct file *file)
 	/* clear the sink pad for file input */
 	if (isp->sw_contex.file_input && asd->fmt_auto->val) {
 		struct v4l2_mbus_framefmt isp_sink_fmt = { 0 };
-		atomisp_subdev_set_ffmt(&asd->subdev, NULL,
+		atomisp_subdev_set_ffmt(&asd->subdev, &fh,
 					V4L2_SUBDEV_FORMAT_ACTIVE,
 					ATOMISP_SUBDEV_PAD_SINK, &isp_sink_fmt);
 	}

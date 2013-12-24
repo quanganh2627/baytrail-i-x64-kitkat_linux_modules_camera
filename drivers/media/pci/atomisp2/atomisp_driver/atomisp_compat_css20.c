@@ -1327,44 +1327,49 @@ void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_css_event *current_event)
 }
 
 int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
-					struct v4l2_mbus_framefmt *ffmt)
+				enum atomisp_input_stream_id stream_id,
+				struct v4l2_mbus_framefmt *ffmt)
 {
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream_config.input_res.width = ffmt->width;
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream_config.input_res.height = ffmt->height;
+	asd->stream_env[stream_id]
+	    .stream_config.input_res.width = ffmt->width;
+	asd->stream_env[stream_id]
+	    .stream_config.input_res.height = ffmt->height;
 	return 0;
 }
 
 void atomisp_css_input_set_binning_factor(struct atomisp_sub_device *asd,
-						unsigned int bin_factor)
+					enum atomisp_input_stream_id stream_id,
+					unsigned int bin_factor)
 {
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream_config.sensor_binning_factor = bin_factor;
+	asd->stream_env[stream_id]
+	    .stream_config.sensor_binning_factor = bin_factor;
 }
 
 void atomisp_css_input_set_bayer_order(struct atomisp_sub_device *asd,
+				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_bayer_order bayer_order)
 {
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream_config.bayer_order = bayer_order;
+	asd->stream_env[stream_id]
+	    .stream_config.bayer_order = bayer_order;
 }
 
 void atomisp_css_input_set_format(struct atomisp_sub_device *asd,
+					enum atomisp_input_stream_id stream_id,
 					enum atomisp_css_stream_format format)
 {
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream_config.format = format;
+	asd->stream_env[stream_id]
+	    .stream_config.format = format;
 }
 
 int atomisp_css_input_set_effective_resolution(
 					struct atomisp_sub_device *asd,
+					enum atomisp_input_stream_id stream_id,
 					unsigned int width, unsigned int height)
 {
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream_config.effective_res.width = width;
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.stream_config.effective_res.height = height;
+	asd->stream_env[stream_id]
+	    .stream_config.effective_res.width = width;
+	asd->stream_env[stream_id]
+	    .stream_config.effective_res.height = height;
 
 	return 0;
 }
@@ -1450,34 +1455,43 @@ void atomisp_css_capture_set_mode(struct atomisp_sub_device *asd,
 void atomisp_css_input_set_mode(struct atomisp_sub_device *asd,
 				enum atomisp_css_input_mode mode)
 {
-	struct ia_css_stream_config *s_config =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_config;
-	unsigned int size_mem_words;
+	int i;
+	unsigned int size_mem_words, total_size_mem_words = 0;
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++)
+		asd->stream_env[i].stream_config.mode = mode;
 
-	s_config->mode = mode;
 	if (mode != IA_CSS_INPUT_MODE_BUFFERED_SENSOR)
 		return;
 
-	/*
-	 * TODO: sensor needs to export the embedded_data_size_words
-	 * information to atomisp for each setting.
-	 * Here using a large safe value.
-	 */
-	if (ia_css_mipi_frame_calculate_size(s_config->input_res.width,
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		/*
+		 * TODO: sensor needs to export the embedded_data_size_words
+		 * information to atomisp for each setting.
+		 * Here using a large safe value.
+		 */
+		struct ia_css_stream_config *s_config =
+			&asd->stream_env[i].stream_config;
+		if (s_config->input_res.width == 0)
+			continue;
+		if (ia_css_mipi_frame_calculate_size(s_config->input_res.width,
 					s_config->input_res.height,
 					s_config->format,
 					true,
 					0x13000,
 					&size_mem_words) != IA_CSS_SUCCESS) {
-		if (intel_mid_identify_cpu() == INTEL_MID_CPU_CHIP_TANGIER)
-			size_mem_words = CSS_MIPI_FRAME_BUFFER_SIZE_2;
-		else
-			size_mem_words = CSS_MIPI_FRAME_BUFFER_SIZE_1;
-		dev_warn(asd->isp->dev,
-			"ia_css_mipi_frame_calculate_size failed, applying pre-defined MIPI buffer size %u.\n",
-			size_mem_words);
+			if (intel_mid_identify_cpu() ==
+				INTEL_MID_CPU_CHIP_TANGIER)
+				size_mem_words = CSS_MIPI_FRAME_BUFFER_SIZE_2;
+			else
+				size_mem_words = CSS_MIPI_FRAME_BUFFER_SIZE_1;
+			dev_warn(asd->isp->dev,
+				"ia_css_mipi_frame_calculate_size failed,"
+				"applying pre-defined MIPI buffer size %u.\n",
+				size_mem_words);
+		}
+		total_size_mem_words += size_mem_words;
 	}
-	ia_css_mipi_frame_specify(size_mem_words, false);
+	ia_css_mipi_frame_specify(total_size_mem_words, false);
 }
 
 void atomisp_css_capture_enable_online(struct atomisp_sub_device *asd,
@@ -1534,12 +1548,14 @@ int atomisp_css_input_configure_port(struct atomisp_sub_device *asd,
 					unsigned int num_lanes,
 					unsigned int timeout)
 {
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
-
-	stream_env->stream_config.source.port.port = port;
-	stream_env->stream_config.source.port.num_lanes = num_lanes;
-	stream_env->stream_config.source.port.timeout = timeout;
+	int i;
+	struct atomisp_stream_env *stream_env;
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+		stream_env = &asd->stream_env[i];
+		stream_env->stream_config.source.port.port = port;
+		stream_env->stream_config.source.port.num_lanes = num_lanes;
+		stream_env->stream_config.source.port.timeout = timeout;
+	}
 
 	return 0;
 }
