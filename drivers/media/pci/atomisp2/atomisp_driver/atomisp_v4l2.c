@@ -46,6 +46,8 @@
 #include <linux/intel_mid_pm.h>
 #include <asm/intel-mid.h>
 
+#define ATOMISP_INTERNAL_PM	(IS_BYT || IS_MOFD)
+
 /* set reserved memory pool size in page */
 unsigned int repool_pgnr;
 module_param(repool_pgnr, uint, 0644);
@@ -453,7 +455,7 @@ static int atomisp_runtime_suspend(struct device *dev)
 	if (ret)
 		return ret;
 	pm_qos_update_request(&isp->pm_qos, PM_QOS_DEFAULT_VALUE);
-	if (IS_BYT)
+	if (ATOMISP_INTERNAL_PM)
 		ret = atomisp_mrfld_power_down(isp);
 
 	return ret;
@@ -465,7 +467,7 @@ static int atomisp_runtime_resume(struct device *dev)
 		dev_get_drvdata(dev);
 	int ret;
 
-	if (IS_BYT) {
+	if (ATOMISP_INTERNAL_PM) {
 		ret = atomisp_mrfld_power_up(isp);
 		if (ret)
 			return ret;
@@ -529,7 +531,7 @@ static int atomisp_suspend(struct device *dev)
 		return ret;
 	}
 	pm_qos_update_request(&isp->pm_qos, PM_QOS_DEFAULT_VALUE);
-	if (IS_BYT)
+	if (ATOMISP_INTERNAL_PM)
 		ret = atomisp_mrfld_power_down(isp);
 
 	return ret;
@@ -541,7 +543,7 @@ static int atomisp_resume(struct device *dev)
 		dev_get_drvdata(dev);
 	int ret;
 
-	if (IS_BYT) {
+	if (ATOMISP_INTERNAL_PM) {
 		ret = atomisp_mrfld_power_up(isp);
 		if (ret)
 			return ret;
