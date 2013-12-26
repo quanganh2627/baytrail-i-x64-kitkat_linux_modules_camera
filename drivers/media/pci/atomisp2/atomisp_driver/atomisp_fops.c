@@ -652,6 +652,8 @@ static int atomisp_release(struct file *file)
 	atomisp_css_uninit(isp);
 #ifndef CSS20
 	hrt_isp_css_mm_clear();
+#else /* CSS20 */
+	hmm_cleanup_mmu_l2();
 #endif /* CSS20 */
 	hmm_pool_unregister(HMM_POOL_TYPE_DYNAMIC);
 
