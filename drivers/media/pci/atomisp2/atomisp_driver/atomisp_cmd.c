@@ -147,7 +147,7 @@ struct atomisp_video_pipe *atomisp_to_video_pipe(struct video_device *dev)
 }
 
 /* This is just a draft rules, should be tuned when sensor is ready*/
-static struct atomisp_freq_scaling_rule dfs_rules[] = {
+static struct atomisp_freq_scaling_rule dfs_rules_isp2400[] = {
 	/*
 	 * TODO: SDV maybe have to use 457MHz on TNG B0,
 	 * add 457MHz option later together with SDV.
@@ -178,6 +178,41 @@ static struct atomisp_freq_scaling_rule dfs_rules[] = {
 		.height = ISP_FREQ_RULE_ANY,
 		.fps = ISP_FREQ_RULE_ANY,
 		.isp_freq = ISP_FREQ_400MHZ,
+		.run_mode = ATOMISP_RUN_MODE_PREVIEW,
+	},
+};
+
+static struct atomisp_freq_scaling_rule dfs_rules_isp2401[] = {
+	/*
+	 * TODO: SDV maybe have to use 457MHz on TNG B0,
+	 * add 457MHz option later together with SDV.
+	 */
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_320MHZ,
+		.run_mode = ATOMISP_RUN_MODE_VIDEO,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_320MHZ,
+		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_320MHZ,
+		.run_mode = ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_320MHZ,
 		.run_mode = ATOMISP_RUN_MODE_PREVIEW,
 	},
 };
@@ -266,6 +301,8 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 	struct atomisp_sub_device *asd = &isp->asd[0];
 	unsigned int new_freq;
 	struct atomisp_freq_scaling_rule curr_rules;
+	struct atomisp_freq_scaling_rule *dfs_rules;
+	unsigned int rule_number;
 	int i, ret;
 	unsigned short fps = 0;
 
@@ -280,7 +317,7 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 	}
 
 	if (mode == ATOMISP_DFS_MODE_MAX) {
-		new_freq = ISP_FREQ_400MHZ;
+		new_freq = ISP_FREQ_MAX;
 		goto done;
 	}
 
@@ -300,8 +337,16 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 	if (asd->continuous_mode->val)
 		curr_rules.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE;
 
+	if (IS_ISP2401(isp)) {
+		dfs_rules = dfs_rules_isp2401;
+		rule_number = ARRAY_SIZE(dfs_rules_isp2401);
+	} else {
+		dfs_rules = dfs_rules_isp2400;
+		rule_number = ARRAY_SIZE(dfs_rules_isp2400);
+	}
+
 	/* search for the target frequency by looping freq rules*/
-	for (i = 0; i < ARRAY_SIZE(dfs_rules); i++) {
+	for (i = 0; i < rule_number; i++) {
 		if (curr_rules.width != dfs_rules[i].width
 			&& dfs_rules[i].width != ISP_FREQ_RULE_ANY)
 			continue;
@@ -316,7 +361,7 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 			continue;
 		break;
 	}
-	if (i == ARRAY_SIZE(dfs_rules))
+	if (i == rule_number)
 		new_freq = ISP_FREQ_320MHZ;
 	else
 		new_freq = dfs_rules[i].isp_freq;

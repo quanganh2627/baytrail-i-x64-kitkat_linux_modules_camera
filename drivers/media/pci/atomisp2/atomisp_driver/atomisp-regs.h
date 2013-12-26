@@ -174,4 +174,9 @@
 #define ISP_FREQ_200MHZ				0xc8
 #define HPLL_FREQ				0x640
 
+#if defined(ISP2401)
+#define ISP_FREQ_MAX	ISP_FREQ_320MHZ
+#else
+#define ISP_FREQ_MAX	ISP_FREQ_400MHZ
+#endif
 #endif /* ATOMISP_REGS_H */
