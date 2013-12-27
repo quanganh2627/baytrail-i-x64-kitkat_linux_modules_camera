@@ -22,12 +22,7 @@
 #ifndef __IA_CSS_CTC2_PARAM_H
 #define __IA_CSS_CTC2_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
+#include "type_support.h"
 #include "ctc/ctc_1.0/ia_css_ctc_param.h" /* vamem params */
 
 /* CTC (Color Tone Control) */

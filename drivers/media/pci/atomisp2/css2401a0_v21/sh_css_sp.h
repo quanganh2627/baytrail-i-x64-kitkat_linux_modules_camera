@@ -31,6 +31,7 @@
 #include "sh_css_internal.h"
 #include "ia_css_types.h"
 #include "ia_css_pipeline.h"
+#include "ia_css_queue.h"
 
 /* Function to initialize the data and bss section descr of the binary */
 void
@@ -90,19 +91,6 @@ sh_css_read_host2sp_command(void);
 void
 sh_css_init_host2sp_frame_data(void);
 
-#if 0
-/* Temporarily prototypes till we have the proper header files and final
- * function names
- */
-extern bool
-host2sp_enqueue_frame_data(
-			unsigned int pipe_num,
-			enum sh_css_frame_id frame_id,
-			void *frame_data);	/* IN */
-
-extern bool sp2host_dequeue_irq_event(void *irq_event);
-#endif
-
 /**
  * @brief Update the offline frame information in host_sp_communication.
  *
@@ -114,6 +102,16 @@ sh_css_update_host2sp_offline_frame(
 				unsigned frame_num,
 				struct ia_css_frame *frame);
 
+/**
+ * @brief Get the right queue to operate on
+ *
+ * @param[in] type
+ * @param[in] id
+ * @param[in] thread
+ */
+ia_css_queue_t*
+sh_css_get_queue(enum sh_css_queue_type type, enum sh_css_buffer_queue_id id,
+		 int thread);
 /**
  * @brief Update the mipi frame information in host_sp_communication.
  *
@@ -236,20 +234,6 @@ extern bool sh_css_sp_set_dma_sw_reg(int dma_id,
 		int request_type,
 		bool enable);
 
-/**
- * @brief The Host sends the event to the SP.
- * The caller of this API will be blocked until the event
- * is sent.
- *
- * @param[in]	evt_id		The event ID.
- * @param[in]	evt_payload_0	The event payload.
- * @param[in]	evt_payload_1	The event payload.
- * @param[in]	evt_payload_2	The event payload.
- */
-extern void sh_css_sp_snd_event(int evt_id,
-		int evt_payload_0,
-		int evt_payload_1,
-		int evt_payload_2);
 
 extern struct sh_css_sp_group sh_css_sp_group;
 extern struct sh_css_sp_stage sh_css_sp_stage;

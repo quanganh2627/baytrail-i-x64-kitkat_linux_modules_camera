@@ -24,10 +24,4 @@
 
 #include "mmu_global.h"
 
-#if defined(_MSC_VER) && defined(_M_X64)
-#define HOST_ADDRESS(x) (unsigned long long)(x)
-#else
-#define HOST_ADDRESS(x) (unsigned long)(x)
-#endif
-
 #endif /* __MMU_LOCAL_H_INCLUDED__ */

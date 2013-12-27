@@ -46,7 +46,6 @@
 
 /* System independent */
 #include "sh_css_internal.h"
-#include "sh_css_sp_start.h"	/* sh_css_sp_start_function() */
 #if !defined(HAS_NO_INPUT_SYSTEM)
 #include "ia_css_isys.h"
 #endif

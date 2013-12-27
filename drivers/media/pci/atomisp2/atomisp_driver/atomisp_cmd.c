@@ -433,11 +433,9 @@ void atomisp_msi_irq_uninit(struct atomisp_device *isp, struct pci_dev *dev)
 	pci_write_config_word(dev, PCI_COMMAND, msg16);
 }
 
-static void atomisp_sof_event(struct atomisp_device *isp)
+static void atomisp_sof_event(struct atomisp_sub_device *asd)
 {
 	struct v4l2_event event = {0};
-	/* FIXME: Only support subdev[0] at present */
-	struct atomisp_sub_device *asd = &isp->asd[0];
 
 	event.type = V4L2_EVENT_FRAME_SYNC;
 	event.u.frame_sync.frame_sequence = atomic_read(&asd->sof_count);
@@ -502,9 +500,10 @@ static void clear_irq_reg(struct atomisp_device *isp)
 irqreturn_t atomisp_isr(int irq, void *dev)
 {
 	struct atomisp_device *isp = (struct atomisp_device *)dev;
-	struct atomisp_sub_device *asd = &isp->asd[0];
+	struct atomisp_sub_device *asd;
 	unsigned int irq_infos = 0;
 	unsigned long flags;
+	unsigned int i;
 	int err;
 
 	spin_lock_irqsave(&isp->lock, flags);
@@ -525,32 +524,45 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 	if (!atomisp_streaming_count(isp) && !isp->acc.pipeline)
 		goto out_nowake;
 
-	if (irq_infos & CSS_IRQ_INFO_CSS_RECEIVER_SOF) {
-		atomic_inc(&asd->sof_count);
-		atomisp_sof_event(isp);
-		irq_infos &= ~CSS_IRQ_INFO_CSS_RECEIVER_SOF;
+	for (i = 0; i < isp->num_of_streams; i++) {
+		asd = &isp->asd[i];
+		if (asd->streaming != ATOMISP_DEVICE_STREAMING_ENABLED)
+			continue;
+		/*
+		 * Current SOF only support one stream, so the SOF only valid
+		 * either solely one stream is running
+		 */
+		if (irq_infos & CSS_IRQ_INFO_CSS_RECEIVER_SOF) {
+			atomic_inc(&asd->sof_count);
+			atomisp_sof_event(asd);
 
-		/* If sequence_temp and sequence are the same
-		 * there where no frames lost so we can increase sequence_temp.
-		 * If not then processing of frame is still in progress and
-		 * driver needs to keep old sequence_temp value.
-		 * NOTE: There is assumption here that ISP will not start
-		 * processing next frame from sensor before old one is
-		 * completely done. */
-		if (atomic_read(&asd->sequence) == atomic_read(
-					&asd->sequence_temp))
-			atomic_set(&asd->sequence_temp,
-				   atomic_read(&asd->sof_count));
+			/* If sequence_temp and sequence are the same
+			 * there where no frames lost so we can increase
+			 * sequence_temp.
+			 * If not then processing of frame is still in progress
+			 * and driver needs to keep old sequence_temp value.
+			 * NOTE: There is assumption here that ISP will not
+			 * start processing next frame from sensor before old
+			 * one is completely done. */
+			if (atomic_read(&asd->sequence) == atomic_read(
+						&asd->sequence_temp))
+				atomic_set(&asd->sequence_temp,
+						atomic_read(&asd->sof_count));
 
-		/* signal streamon after delayed init is done */
-		if (isp->delayed_init == ATOMISP_DELAYED_INIT_WORK_DONE) {
-			isp->delayed_init = ATOMISP_DELAYED_INIT_DONE;
-			complete(&isp->init_done);
+			/* signal streamon after delayed init is done */
+			if (asd->delayed_init ==
+					ATOMISP_DELAYED_INIT_WORK_DONE) {
+				asd->delayed_init = ATOMISP_DELAYED_INIT_DONE;
+				complete(&asd->init_done);
+			}
 		}
+		if (irq_infos & CSS_IRQ_INFO_EVENTS_READY)
+			atomic_set(&asd->sequence,
+					atomic_read(&asd->sequence_temp));
 	}
 
-	if (irq_infos & CSS_IRQ_INFO_EVENTS_READY)
-		atomic_set(&asd->sequence, atomic_read(&asd->sequence_temp));
+	if (irq_infos & CSS_IRQ_INFO_CSS_RECEIVER_SOF)
+		irq_infos &= ~CSS_IRQ_INFO_CSS_RECEIVER_SOF;
 
 #if defined(ISP2400) || defined(ISP2400B0) || defined(ISP2401)
 	if ((irq_infos & CSS_IRQ_INFO_INPUT_SYSTEM_ERROR) ||
@@ -951,7 +963,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 				unsigned int exp_id = frame->exp_id;
 
 				if (css_pipe_id == CSS_PIPE_ID_PREVIEW)
-					isp->latest_preview_exp_id = exp_id;
+					asd->latest_preview_exp_id = exp_id;
 				else if (css_pipe_id == CSS_PIPE_ID_CAPTURE)
 					dev_dbg(isp->dev,
 						"ZSL capture raw buffer id: %u\n",
@@ -995,13 +1007,12 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 
 void atomisp_delayed_init_work(struct work_struct *work)
 {
-	struct atomisp_device *isp = container_of(work, struct atomisp_device,
-						  delayed_init_work);
-	/* FIXME! only the first stream support this */
-	struct atomisp_sub_device *asd = &isp->asd[0];
+	struct atomisp_sub_device *asd = container_of(work,
+			struct atomisp_sub_device,
+			delayed_init_work);
 	atomisp_css_allocate_continuous_frames(false, asd);
 	atomisp_css_update_continuous_frames(asd);
-	isp->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
+	asd->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
 }
 
 static void __atomisp_css_recover(struct atomisp_device *isp)
@@ -1019,11 +1030,6 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 #endif
 	}
 
-	if (isp->delayed_init == ATOMISP_DELAYED_INIT_QUEUED)
-		cancel_work_sync(&isp->delayed_init_work);
-
-	complete(&isp->init_done);
-	isp->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
 
 	for (i = 0; i < isp->num_of_streams; i++) {
 		struct atomisp_sub_device *asd = &isp->asd[i];
@@ -1031,6 +1037,11 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 		if (asd->streaming !=
 				ATOMISP_DEVICE_STREAMING_ENABLED)
 			continue;
+		if (asd->delayed_init == ATOMISP_DELAYED_INIT_QUEUED)
+			cancel_work_sync(&asd->delayed_init_work);
+
+		complete(&asd->init_done);
+		asd->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
 
 		stream_restart[asd->index] = true;
 
@@ -1124,12 +1135,12 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 
 		if (asd->continuous_mode->val &&
 				asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO &&
-				isp->delayed_init ==
+				asd->delayed_init ==
 				ATOMISP_DELAYED_INIT_NOT_QUEUED) {
-			INIT_COMPLETION(isp->init_done);
-			isp->delayed_init = ATOMISP_DELAYED_INIT_QUEUED;
-			queue_work(isp->delayed_init_workq,
-					&isp->delayed_init_work);
+			INIT_COMPLETION(asd->init_done);
+			asd->delayed_init = ATOMISP_DELAYED_INIT_QUEUED;
+			queue_work(asd->delayed_init_workq,
+					&asd->delayed_init_work);
 		}
 		/*
 		 * dequeueing buffers is not needed. CSS will recycle
@@ -1216,12 +1227,12 @@ void atomisp_wdt_work(struct work_struct *work)
 			    ATOMISP_DEVICE_STREAMING_ENABLED) {
 				atomisp_clear_css_buffer_counters(asd);
 				atomisp_flush_bufs_and_wakeup(asd);
+				complete(&asd->init_done);
 			}
 		}
 
 		atomic_set(&isp->wdt_count, 0);
 		isp->isp_fatal_error = true;
-		complete(&isp->init_done);
 
 		mutex_unlock(&isp->mutex);
 		return;
@@ -2553,7 +2564,7 @@ int atomisp_set_parameters(struct atomisp_sub_device *asd,
 
 #ifdef CSS20
 	if (asd->stream_env.stream
-		&& (asd->stream_env.stream_state != CSS_STREAM_CREATED
+		&& (asd->stream_env.stream_state != CSS_STREAM_STARTED
 		|| asd->run_mode->val
 			== ATOMISP_RUN_MODE_STILL_CAPTURE)) {
 		atomisp_css_update_isp_params(asd);

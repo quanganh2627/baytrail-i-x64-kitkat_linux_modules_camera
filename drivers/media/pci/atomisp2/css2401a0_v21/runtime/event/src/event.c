@@ -25,7 +25,6 @@
 
 #include "ia_css.h"
 #include "ia_css_binary.h"
-#include "sh_css_sp_start.h"
 #include "sh_css_hrt.h"
 #include "sh_css_defs.h"
 #include "sh_css_internal.h"
@@ -49,8 +48,8 @@
  * Refer to "sw_event_public.h" for details.
  */
 bool ia_css_event_encode(
-	uint32_t	*in,
-	uint32_t	nr,
+	uint8_t	*in,
+	uint8_t	nr,
 	uint32_t	*out)
 {
 	bool ret;

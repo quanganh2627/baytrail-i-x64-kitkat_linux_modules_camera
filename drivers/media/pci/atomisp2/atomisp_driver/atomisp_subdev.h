@@ -195,15 +195,10 @@ struct atomisp_css_params {
 	   CSS and user space. These are needed to perform the
 	   copy_to_user. */
 	struct ia_css_3a_statistics *s3a_user_stat;
-#ifdef CSS20
 	struct ia_css_dvs2_coefficients *dvs_coeff;
 	struct ia_css_dvs2_statistics *dvs_stat;
 	struct ia_css_dvs_6axis_config *dvs_6axis;
 	uint32_t exp_id;
-#else /* CSS20 */
-	struct ia_css_dvs_coefficients *dvs_coeff;
-	struct ia_css_dvs_statistics *dvs_stat;
-#endif /* CSS20 */
 	int  dvs_hor_coef_bytes;
 	int  dvs_ver_coef_bytes;
 	int  dvs_ver_proj_bytes;
@@ -300,6 +295,14 @@ struct atomisp_sub_device {
 	 * resource, like which camera is used by which subdev
 	 */
 	unsigned int index;
+
+	/* delayed memory allocation for css */
+	struct completion init_done;
+	struct workqueue_struct *delayed_init_workq;
+	unsigned int delayed_init;
+	struct work_struct delayed_init_work;
+
+	unsigned int latest_preview_exp_id; /* CSS ZSL raw buffer id */
 };
 
 extern const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[];

@@ -109,12 +109,22 @@ STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_sub(
 STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_sub_c(
     const tvector1w     _a,
     const tscalar1w     _b);
-    
-#define   OP_vec1w_addsat   OP_vec_addsat  
-#define   OP_vec1w_addsat_c OP_vec_addsat_c
-#define   OP_vec1w_subsat   OP_vec_subsat  
-#define   OP_vec1w_subsat_c OP_vec_subsat_c  
 
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_addsat(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_addsat_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_subsat(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_subsat_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
 
 /* Multiplicative */
 
@@ -129,37 +139,71 @@ STORAGE_CLASS_ISP2400_VEC1W_H tvector1w2 OP_vec1w_muld_c(
 
 /* Comparative */
 
-/* Use standard operations */
-#define   OP_vec1w_eq       OP_vec_eq
-#define   OP_vec1w_eq_c     OP_vec_eq_c
-#define   OP_vec1w_neq      OP_vec_neq
-#define   OP_vec1w_neq_c    OP_vec_neq_c
-#define   OP_vec1w_le       OP_vec_le
-#define   OP_vec1w_le_c     OP_vec_le_c
-#define   OP_vec1w_lt       OP_vec_lt
-#define   OP_vec1w_lt_c     OP_vec_lt_c
-#define   OP_vec1w_ge       OP_vec_ge
-#define   OP_vec1w_ge_c     OP_vec_ge_c
-#define   OP_vec1w_gt       OP_vec_gt
-#define   OP_vec1w_gt_c     OP_vec_gt_c
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_eq(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_eq_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_neq(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_neq_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_le(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_le_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_lt(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_lt_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_ge(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_ge_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_gt(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tflags OP_vec1w_gt_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
 
 /* Shift */
 
 STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_asr(
     const tvector1w     _a,
-    const tvector       _b); 
+    const tvector1w     _b);
 
 STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_asrrnd(
     const tvector1w     _a,
-    const tvector       _b);
+    const tvector1w     _b);
     
 STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lsl(
     const tvector1w     _a,
-    const tvector       _b);
+    const tvector1w     _b);
     
 STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lslsat(
     const tvector1w     _a,
-    const tvector       _b);
+    const tvector1w     _b);
     
 STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lsr(
     const tvector1w     _a,
@@ -168,17 +212,31 @@ STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lsr(
 STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lsrrnd(
     const tvector1w     _a,
     const tvector1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_asr_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_asrrnd_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lsl_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lslsat_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
     
+STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lsr_c(
+    const tvector1w     _a,
+    const tscalar1w     _b);
+
 STORAGE_CLASS_ISP2400_VEC1W_H tvector1w OP_vec1w_lsrrnd_c(
     const tvector1w     _a,
-    const sp_fragment_t _c);
+    const tscalar1w      _b);
     
-#define   OP_vec1w_asr_c    OP_vec_asr_c
-#define   OP_vec1w_asrrnd_c OP_vec_asrrnd_c 
-#define   OP_vec1w_lsl_c    OP_vec_lsl_c
-#define   OP_vec1w_lslsat_c OP_vec_lslsat_c
-#define   OP_vec1w_lsr_c    OP_vec_lsr_c
-   
  
 /* Cast */
 

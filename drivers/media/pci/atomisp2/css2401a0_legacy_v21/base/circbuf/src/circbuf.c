@@ -20,7 +20,6 @@
  */
 
 #include "ia_css_circbuf.h"
-#if defined(__HIVECC) || defined (C_RUN)
 /**********************************************************************
  *
  * Forward declarations.
@@ -74,15 +73,20 @@ ia_css_circbuf_elem_get_val(ia_css_circbuf_elem_t *elem);
  */
 void
 ia_css_circbuf_create(ia_css_circbuf_t *cb,
-			   ia_css_circbuf_elem_t *elems, uint32_t sz)
+			   ia_css_circbuf_elem_t *elems,
+			   ia_css_circbuf_desc_t *desc)
 {
 	uint32_t i;
 
-	cb->size = sz;
-	cb->start = 0;
-	cb->end = 0;
+	OP___assert(desc);
 
-	for (i = 0; i < sz; i++)
+	cb->desc = desc;
+	/* Initialize to defaults */
+	cb->desc->start = 0;
+	cb->desc->end = 0;
+	cb->desc->step = 0;
+
+	for (i = 0; i < cb->desc->size; i++)
 		ia_css_circbuf_elem_init(&elems[i]);
 
 	cb->elems = elems;
@@ -94,9 +98,7 @@ ia_css_circbuf_create(ia_css_circbuf_t *cb,
  */
 void ia_css_circbuf_destroy(ia_css_circbuf_t *cb)
 {
-	cb->size = 0;
-	cb->start = 0;
-	cb->end = 0;
+	cb->desc = NULL;
 
 	cb->elems = NULL;
 }
@@ -119,10 +121,6 @@ uint32_t ia_css_circbuf_pop(ia_css_circbuf_t *cb)
 	/* read an element from the buffer */
 	elem = ia_css_circbuf_read(cb);
 	ret = ia_css_circbuf_elem_get_val(&elem);
-#if 0
-	/* update the state of the circular buffer */
-	ia_css_circbuf_update_fsm(cb);
-#endif
 	return ret;
 }
 
@@ -139,7 +137,7 @@ uint32_t ia_css_circbuf_extract(ia_css_circbuf_t *cb, int offset)
 	uint32_t dest_pos;
 
 	/* get the maximum offest */
-	max_offset = ia_css_circbuf_get_offset(cb, cb->start, cb->end);
+	max_offset = ia_css_circbuf_get_offset(cb, cb->desc->start, cb->desc->end);
 	max_offset--;
 
 	/*
@@ -163,20 +161,16 @@ uint32_t ia_css_circbuf_extract(ia_css_circbuf_t *cb, int offset)
 	 * "end" position.
 	 */
 	/* get the position of the target element */
-	pos = ia_css_circbuf_get_pos(cb, cb->start, offset);
+	pos = ia_css_circbuf_get_pos_at_offset(cb, cb->desc->start, offset);
 
 	/* get the value from the target element */
 	val = ia_css_circbuf_elem_get_val(&cb->elems[pos]);
 
 	/* shift the elements */
-	src_pos = ia_css_circbuf_get_pos(cb, pos, -1);
+	src_pos = ia_css_circbuf_get_pos_at_offset(cb, pos, -1);
 	dest_pos = pos;
 	ia_css_circbuf_shift_chunk(cb, src_pos, dest_pos);
 
-#if 0
-	/* update the state of the circular buffer */
-	ia_css_circbuf_update_fsm(cb);
-#endif
 	return val;
 }
 
@@ -188,30 +182,12 @@ uint32_t ia_css_circbuf_peek(ia_css_circbuf_t *cb, int offset)
 {
 	int pos;
 
-	pos = ia_css_circbuf_get_pos(cb, cb->end, offset);
+	pos = ia_css_circbuf_get_pos_at_offset(cb, cb->desc->end, offset);
 
 	/* get the value at the position */
 	return cb->elems[pos].val;
 }
 
-#if 0
-/**
- * @brief Test if the circular buffer becomes not full.
- * Refer to "ia_css_circbuf.h" for details.
- */
-bool ia_css_circbuf_becomes_not_full(ia_css_circbuf_t *cb)
-{
-	bool ret;
-
-	ret = (cb->attr.fsm.prev_state == _CB_STATE_FULL);
-	ret &= (cb->attr.fsm.curr_state != _CB_STATE_FULL);
-
-	/* TODO: check if following is needed, only indicate transition once */
-	cb->attr.fsm.prev_state = cb->attr.fsm.curr_state;
-
-	return ret;
-}
-#endif
 
 /****************************************************************
  *
@@ -238,19 +214,19 @@ ia_css_circbuf_read(ia_css_circbuf_t *cb)
 	ia_css_circbuf_elem_t elem;
 
 	/* get the element from the target position */
-	elem = cb->elems[cb->start];
+	elem = cb->elems[cb->desc->start];
 
 	/* clear the target position */
-	ia_css_circbuf_elem_init(&cb->elems[cb->start]);
+	ia_css_circbuf_elem_init(&cb->elems[cb->desc->start]);
 
 	/* adjust the "start" position */
-	cb->start = ia_css_circbuf_get_pos(cb, cb->start, 1);
+	cb->desc->start = ia_css_circbuf_get_pos_at_offset(cb, cb->desc->start, 1);
 	return elem;
 }
 
 /**
  * @brief Shift a chunk of elements in the circular buffer.
- * Refer to "Forward declaraions" for details.
+ * Refer to "Forward declarations" for details.
  */
 static inline void
 ia_css_circbuf_shift_chunk(ia_css_circbuf_t *cb,
@@ -263,7 +239,7 @@ ia_css_circbuf_shift_chunk(ia_css_circbuf_t *cb,
 	/* get the chunk offset and size */
 	chunk_offset = ia_css_circbuf_get_offset(cb,
 						      chunk_src, chunk_dest);
-	chunk_sz = ia_css_circbuf_get_offset(cb, cb->start, chunk_src) + 1;
+	chunk_sz = ia_css_circbuf_get_offset(cb, cb->desc->start, chunk_src) + 1;
 
 	/* shift each element to its terminal position */
 	for (i = 0; i < chunk_sz; i++) {
@@ -273,12 +249,12 @@ ia_css_circbuf_shift_chunk(ia_css_circbuf_t *cb,
 					     &cb->elems[chunk_dest]);
 
 		/* adjust the source/terminal positions */
-		chunk_src = ia_css_circbuf_get_pos(cb, chunk_src, -1);
-		chunk_dest = ia_css_circbuf_get_pos(cb, chunk_dest, -1);
+		chunk_src = ia_css_circbuf_get_pos_at_offset(cb, chunk_src, -1);
+		chunk_dest = ia_css_circbuf_get_pos_at_offset(cb, chunk_dest, -1);
 
 	}
 
 	/* adjust the index "start" */
-	cb->start = ia_css_circbuf_get_pos(cb, cb->start, chunk_offset);
+	cb->desc->start = ia_css_circbuf_get_pos_at_offset(cb, cb->desc->start, chunk_offset);
 }
-#endif
+

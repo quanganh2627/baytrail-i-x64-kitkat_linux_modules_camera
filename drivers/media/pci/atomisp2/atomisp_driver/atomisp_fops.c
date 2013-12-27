@@ -39,7 +39,11 @@
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 
+#ifndef CSS21
 #include "host/mmu_local.h"
+#else
+#include "type_support.h"
+#endif
 #include "device_access/device_access.h"
 #include "memory_access/memory_access.h"
 
@@ -366,7 +370,6 @@ static void atomisp_dev_init_struct(struct atomisp_device *isp)
 	isp->sw_contex.file_input = 0;
 	isp->need_gfx_throttle = true;
 	isp->isp_fatal_error = false;
-	isp->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
 
 	for (i = 0; i < isp->input_cnt; i++)
 		isp->inputs[i].asd = NULL;
@@ -400,6 +403,7 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->params.offline_parm.num_captures = 1;
 	asd->params.offline_parm.skip_frames = 0;
 	asd->params.offline_parm.offset = 0;
+	asd->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
 	/* Add for channel */
 	asd->input_curr = 0;
 
@@ -870,6 +874,9 @@ const struct v4l2_file_operations atomisp_fops = {
 	.release = atomisp_release,
 	.mmap = atomisp_mmap,
 	.ioctl = video_ioctl2,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl32 = atomisp_compat_ioctl32,
+#endif
 	.poll = atomisp_poll,
 };
 
@@ -879,6 +886,9 @@ const struct v4l2_file_operations atomisp_file_fops = {
 	.release = atomisp_release,
 	.mmap = atomisp_file_mmap,
 	.ioctl = video_ioctl2,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl32 = atomisp_compat_ioctl32,
+#endif
 	.poll = atomisp_poll,
 };
 

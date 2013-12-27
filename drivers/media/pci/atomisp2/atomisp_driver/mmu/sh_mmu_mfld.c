@@ -21,7 +21,11 @@
  *
  */
 
+#ifndef CSS21
 #include <host/mmu_local.h>
+#else
+#include "type_support.h"
+#endif
 
 #include "mmu/isp_mmu.h"
 #include "memory_access/memory_access.h"

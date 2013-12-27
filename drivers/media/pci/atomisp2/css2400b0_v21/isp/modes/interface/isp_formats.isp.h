@@ -66,7 +66,9 @@
 #define PACK_FMT(fmt) (1<<fmt)
 #define SUPPORT_FMT(fmt) ((SUPPORTED_OUTPUT_FORMATS & PACK_FMT(fmt)) != 0)
 
+#ifndef PARAM_GENERATION
 #include "isp_defs_for_hive.h" /* SUPPORTED_OUTPUT_FORMATS */
+#endif
 
 /***************************/
 

@@ -22,12 +22,7 @@
 #ifndef __IA_CSS_XNR_PARAM_H
 #define __IA_CSS_XNR_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
+#include "type_support.h"
 #include <system_global.h>
 
 #ifndef PIPE_GENERATION

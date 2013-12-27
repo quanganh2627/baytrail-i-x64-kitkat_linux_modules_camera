@@ -19,10 +19,10 @@
  *
  */
 
-#include "ia_css_debug.h"
 #include "debug.h"
 #include "memory_access.h"
 
+#include "ia_css_debug.h"
 #include "ia_css_debug_pipe.h"
 #include "ia_css_stream.h"
 #include "ia_css_pipeline.h"
@@ -46,7 +46,7 @@
 #include "gp_device.h"
 #include "sp.h"
 #include "isp.h"
-#include "mmu_device.h"
+#include "type_support.h"
 #if defined(HAS_INPUT_FORMATTER_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 #include "input_system.h"	/* input_formatter_reg_load */
 #include "gp_device.h"		/* gp_device_reg_load */

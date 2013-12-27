@@ -22,17 +22,19 @@
 #ifndef __IA_CSS_TNR_PARAM_H
 #define __IA_CSS_TNR_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
+#include "type_support.h"
 
 /* TNR (Temporal Noise Reduction) */
 struct sh_css_isp_tnr_params {
 	int32_t coef;
 	int32_t threshold_Y;
 	int32_t threshold_C;
+};
+
+struct sh_css_isp_tnr_isp_config {
+	uint32_t width_a_over_b;
+	uint32_t frame_height;
+	struct dma_port_config port_b;
 };
 
 #endif /* __IA_CSS_TNR_PARAM_H */

@@ -22,12 +22,7 @@
 #ifndef __IA_CSS_DP_PARAM_H
 #define __IA_CSS_DP_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
+#include "type_support.h"
 #include "bnr/bnr_1.0/ia_css_bnr_param.h"
 
 /* DP (Defect Pixel Correction) */

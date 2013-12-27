@@ -25,7 +25,6 @@
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_internal.h"
-#include "sh_css_sp_start.h"
 #include "ia_css_isp_param.h"
 
 #include "memory_access.h"
@@ -44,7 +43,7 @@ struct firmware_header {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-static const char* release_version = STR(ci_master_20131207_1549);
+static const char* release_version = STR(ci_master_20131218_0259);
 
 struct ia_css_fw_info	  sh_css_sp_fw;
 struct ia_css_blob_descr *sh_css_blob_info; /* Only ISP blob info (no SP) */
@@ -188,7 +187,7 @@ sh_css_load_blob(const unsigned char *blob, unsigned size)
 	assert(blob != NULL);
 	if (target_addr) {
 		mmgr_store(target_addr, blob, size);
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 		{
 			unsigned padded_size = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
 			mmgr_clear(target_addr + size, padded_size - size);

@@ -44,6 +44,8 @@
 #define assert(cnd) ASSERT(cnd)
 
 #define OP___assert(cnd) assert(cnd)
+#define OP_std_break()	OP___assert(0)
+
 #elif defined(__HIVECC)
 
 /*
@@ -75,6 +77,7 @@
 	} while (0)
 
 #define OP___assert(cnd) assert(cnd)
+#define OP_std_break()	OP___assert(0)
 
 #elif defined(__FIST__)
 
@@ -82,8 +85,17 @@
 #define OP___assert(cnd) assert(cnd)
 
 #elif defined(__GNUC__)
+
 #include "assert.h"
 #define OP___assert(cnd) assert(cnd)
+#if !defined(__ISP) && !defined(__SP)
+/*
+ * For SP and ISP, SDK provides the definition of OP_std_break
+ * We need it only for host
+ */
+#define OP_std_break()	OP___assert(0)
+#endif
+
 #else /* default is for unknown environments */
 #define assert(cnd) ((void)0)
 #endif

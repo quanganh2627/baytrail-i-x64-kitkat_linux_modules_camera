@@ -23,6 +23,7 @@
 #define __IA_CSS_FRAME_H__
 
 #include "ia_css.h"
+#include "dma.h"
 
 /*********************************************************************
 ****	Frame INFO APIs
@@ -128,7 +129,19 @@ enum ia_css_err ia_css_frame_allocate_with_buffer_size(
  * @param[in]	frame_b         The second frame to be compared
  * @return      Returns true if the frames are equal
  */
-bool ia_css_frame_is_same_type(const struct ia_css_frame *frame_a,
+bool ia_css_frame_is_same_type(
+	const struct ia_css_frame *frame_a,
 	const struct ia_css_frame *frame_b);
+
+/** @brief Configure a dma port from frame info
+ *
+ * @param
+ * @param[in]	config         The DAM port configuration
+ * @param[in]	info           The frame info
+ * @return
+ */
+void ia_css_dma_configure_from_info(
+	struct dma_port_config *config,
+	const struct ia_css_frame_info *info);
 
 #endif /* __IA_CSS_FRAME_H__ */

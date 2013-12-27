@@ -27,7 +27,6 @@
 #include "ia_css_binary.h"
 #include "sh_css_internal.h"
 #include "sh_css_sp.h"		/* sh_css_sp_group */
-#include "sh_css_sp_start.h"
 #if !defined(HAS_NO_INPUT_SYSTEM)
 #include "ia_css_isys.h"
 #endif
@@ -51,7 +50,6 @@
 #include "ia_css_pipe_util.h"
 #include "ia_css_pipe_binarydesc.h"
 #include "ia_css_pipe_stagedesc.h"
-#include "ia_css_event.h" /*ia_css_event_decode() */
 //#include "ia_css_stream_manager.h"
 /* #include "ia_css_rmgr_gen.h" */
 
@@ -59,8 +57,9 @@
 #include "tag.h"
 #include "assert_support.h"
 #include "math_support.h"
-#include "ia_css_queue.h"		/* host2sp_enqueue_frame_data() */
+#include "ia_css_queue.h"
 #include "sw_event_global.h"			/* Event IDs.*/
+#include "ia_css_eventq.h"              /* ia_css_eventq_recv()*/
 #if !defined(HAS_NO_INPUT_FORMATTER)
 #include "ia_css_ifmtr.h"
 #endif
@@ -98,12 +97,29 @@ static int thread_alive;
 #if DVS_REF_TESTING
 #include <stdio.h>
 #endif
+#include"ia_css_spctrl.h"
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
 
 /* Size of Refcount List */
 #define REFCOUNT_SIZE 1000
+/*********************************************************/
+/* Global Queue objects used by CSS                      */
+/*********************************************************/
+struct sh_css_queues {
+	/* Host2SP buffer queue */
+	ia_css_queue_t host2sp_buffer_queue_handles
+		[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES];
+	/* SP2Host buffer queue */
+	ia_css_queue_t sp2host_buffer_queue_handles
+		[SH_CSS_NUM_BUFFER_QUEUES];
+
+	/* Host2SP event queue */
+	ia_css_queue_t host2sp_event_queue_handle;
+	/* SP2Host event queue */
+	ia_css_queue_t sp2host_event_queue_handle;
+};
 
 /* for JPEG, we don't know the length of the image upfront,
  * but since we support sensor upto 16MP, we take this as
@@ -349,70 +365,8 @@ struct sh_css {
 	bool                           contiguous;
 	enum ia_css_irq_type           irq_type;
 	unsigned int                   pipe_counter;
+	struct sh_css_queues	       queues;
 };
-
-#if defined(HAS_NO_INPUT_SYSTEM)
-#define DEFAULT_CSS \
-{ \
-	{NULL, NULL, NULL, NULL },/* active_pipes */ \
-	{NULL, NULL, NULL, NULL },/* all_pipes */ \
-	NULL,                     /* malloc */ \
-	NULL,                     /* free */ \
-	NULL,                     /* flush */ \
-	true,                     /* check_system_idle */ \
-	false,                    /* stop_copy_preview */ \
-	NUM_CONTINUOUS_FRAMES,    /* num_cont_raw_frames */ \
-	NUM_MIPI_FRAMES,	  /* num_mipi_frames */ \
-	{ NULL }, 		  /* mipi_frames */ \
-	0,                        /* sp_bin_addr */ \
-	0,                        /* page_table_base_index */ \
-	0,                        /* size_mem_words */ \
-	true,                     /* contiguous */ \
-	IA_CSS_IRQ_TYPE_EDGE,     /* irq_type */ \
-	0,                        /* pipe_counter */ \
-}
-#elif defined(USE_INPUT_SYSTEM_VERSION_2)
-#define DEFAULT_CSS \
-{ \
-	{NULL, NULL, NULL, NULL },/* active_pipes */ \
-	{NULL, NULL, NULL, NULL },/* all_pipes */ \
-	NULL,                     /* malloc */ \
-	NULL,                     /* free */ \
-	NULL,                     /* flush */ \
-	true,                     /* check_system_idle */ \
-	false,                    /* stop_copy_preview */ \
-	NUM_CONTINUOUS_FRAMES,    /* num_cont_raw_frames */ \
-	NUM_MIPI_FRAMES,	  /* num_mipi_frames */ \
-	{ NULL }, 		  /* mipi_frames */ \
-	0,                        /* sp_bin_addr */ \
-	0,                        /* page_table_base_index */ \
-	0,                        /* size_mem_words */ \
-	{ {0, 0, 0}, {0, 0, 0}, {0, 0, 0} },    /* mipi_sizes_for_check */ \
-	true,                     /* contiguous */ \
-	IA_CSS_IRQ_TYPE_EDGE,     /* irq_type */ \
-	0,                        /* pipe_counter */ \
-}
-#elif defined(USE_INPUT_SYSTEM_VERSION_2401)
-#define DEFAULT_CSS \
-{ \
-	{NULL, NULL, NULL, NULL },/* active_pipes */ \
-	{NULL, NULL, NULL, NULL },/* all_pipes */ \
-	NULL,                     /* malloc */ \
-	NULL,                     /* free */ \
-	NULL,                     /* flush */ \
-	true,                     /* check_system_idle */ \
-	false,                    /* stop_copy_preview */ \
-	NUM_CONTINUOUS_FRAMES,    /* num_cont_raw_frames */ \
-	NUM_MIPI_FRAMES,	  /* num_mipi_frames */ \
-	{ NULL }, 		  /* mipi_frames */ \
-	0,                        /* sp_bin_addr */ \
-	0,                        /* page_table_base_index */ \
-	0,                        /* size_mem_words */ \
-	true,                     /* contiguous */ \
-	IA_CSS_IRQ_TYPE_EDGE,     /* irq_type */ \
-	0,                        /* pipe_counter */ \
-}
-#endif
 
 #if defined(HAS_RX_VERSION_2)
 
@@ -487,6 +441,8 @@ ia_css_pipe_load_extension(struct ia_css_pipe *pipe,
 static void
 ia_css_pipe_unload_extension(struct ia_css_pipe *pipe,
 			     struct ia_css_fw_info *firmware);
+static void
+ia_css_reset_defaults(struct sh_css* css);
 
 static void
 sh_css_init_host_sp_control_vars(void);
@@ -1143,7 +1099,7 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_attr(
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.hblank_cycles = 100;
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.vblank_cycles = 100;
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.pixels_per_clock = stream_cfg->pixels_per_clock;
-		isys_stream_descr->tpg_port_attr.sync_gen_cfg.nr_of_frames = 4;
+		isys_stream_descr->tpg_port_attr.sync_gen_cfg.nr_of_frames = ~(0x0);
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.pixels_per_line = stream_cfg->input_res.width;
 		isys_stream_descr->tpg_port_attr.sync_gen_cfg.lines_per_frame = stream_cfg->input_res.height;
 
@@ -1162,7 +1118,7 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_attr(
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.hblank_cycles = 100;
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.vblank_cycles = 100;
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.pixels_per_clock = stream_cfg->pixels_per_clock;
-		isys_stream_descr->prbs_port_attr.sync_gen_cfg.nr_of_frames = 4;
+		isys_stream_descr->prbs_port_attr.sync_gen_cfg.nr_of_frames = ~(0x0);
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.pixels_per_line = stream_cfg->input_res.width;
 		isys_stream_descr->prbs_port_attr.sync_gen_cfg.lines_per_frame = stream_cfg->input_res.height;
 
@@ -1213,7 +1169,9 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_resolution(
 	if (max_subpixels_per_line == 0)
 		return false;
 
-	lines_per_frame = stream_cfg->input_res.height;
+	/* for jpeg/embedded data with odd number of lines, round up to even.
+	   this is required by hw ISYS2401 */
+	lines_per_frame = CEIL_MUL2(stream_cfg->input_res.height, 2);
 	if (lines_per_frame == 0)
 		return false;
 
@@ -1296,8 +1254,7 @@ static enum ia_css_err stream_register_with_csi_rx(
 	unsigned int	sp_thread_id;
 
 	if (stream && (stream->last_pipe != NULL)) {
-		if ((stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) &&
-		    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY)) {
+		if (stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
 			rc = ia_css_pipeline_get_sp_thread_id(
 				ia_css_pipe_get_pipe_num(stream->last_pipe),
 				&sp_thread_id);
@@ -1645,6 +1602,31 @@ enable_interrupts(enum ia_css_irq_type irq_type)
 #endif
 }
 
+static bool sh_css_setup_spctrl_config(const struct ia_css_fw_info *fw,
+							const char * program,
+							ia_css_spctrl_cfg  *spctrl_cfg)
+{
+	if((fw == NULL)||(spctrl_cfg == NULL))
+		return false;
+	spctrl_cfg->sp_entry = 0;
+	spctrl_cfg->program_name = (char *)(program);
+
+#if !defined(C_RUN) && !defined(HRT_UNSCHED)
+	spctrl_cfg->ddr_data_offset =  fw->blob.data_source;
+	spctrl_cfg->dmem_data_addr = fw->blob.data_target;
+	spctrl_cfg->dmem_bss_addr = fw->blob.bss_target;
+	spctrl_cfg->data_size = fw->blob.data_size ;
+	spctrl_cfg->bss_size = fw->blob.bss_size;
+
+	spctrl_cfg->spctrl_config_dmem_addr = fw->info.sp.init_dmem_data;
+	spctrl_cfg->spctrl_state_dmem_addr = fw->info.sp.sw_state;
+
+	spctrl_cfg->code_size = fw->blob.size;
+	spctrl_cfg->code      = fw->blob.code;
+	spctrl_cfg->sp_entry  = fw->info.sp.sp_entry; /* entry function ptr on SP */
+#endif
+	return true;
+}
 void
 ia_css_unload_firmware(void)
 {
@@ -1657,12 +1639,30 @@ ia_css_unload_firmware(void)
 	fw_explicitly_loaded = false;
 }
 
+static void
+ia_css_reset_defaults(struct sh_css* css)
+{
+	struct sh_css default_css;
+
+	/* Reset everything to zero */
+	memset(&default_css, 0, sizeof(default_css));
+
+	/* Initialize the non zero values*/
+	default_css.check_system_idle = true;
+	default_css.num_cont_raw_frames = NUM_CONTINUOUS_FRAMES;
+	default_css.num_mipi_frames = NUM_MIPI_FRAMES;
+	default_css.contiguous = true;
+	default_css.irq_type = IA_CSS_IRQ_TYPE_EDGE;
+
+	/*Set the defaults to the output */
+	*css = default_css;
+}
+
 enum ia_css_err
 ia_css_load_firmware(const struct ia_css_env *env,
 	    const struct ia_css_fw  *fw)
 {
 	enum ia_css_err err;
-	struct sh_css default_css = DEFAULT_CSS;
 
 	if (env == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -1679,7 +1679,7 @@ ia_css_load_firmware(const struct ia_css_env *env,
 	    (my_css.flush != env->cpu_mem_env.flush)
 	    )
 	{
-		my_css = default_css;
+		ia_css_reset_defaults(&my_css);
 
 		my_css.malloc = env->cpu_mem_env.alloc;
 		my_css.free = env->cpu_mem_env.free;
@@ -1705,8 +1705,8 @@ ia_css_init(const struct ia_css_env *env,
 	    uint32_t                 mmu_l1_base,
 	    enum ia_css_irq_type     irq_type)
 {
-	static struct sh_css default_css = DEFAULT_CSS;
 	enum ia_css_err err;
+	ia_css_spctrl_cfg spctrl_cfg;
 	//uint32_t i = 0;
 
 	void *(*malloc_func) (size_t size, bool zero_mem);
@@ -1715,6 +1715,45 @@ ia_css_init(const struct ia_css_env *env,
 #if !defined(HAS_NO_GPIO)
 	hrt_data select, enable;
 #endif
+
+	/**
+	 * The C99 standard does not specify the exact object representation of structs;
+	 * the representation is compiler dependent.
+	 *
+	 * The structs that are communicated between host and SP/ISP should have the
+	 * exact same object representation. The compiler that is used to compile the
+	 * firmware is hivecc.
+	 *
+	 * To check if a different compiler, used to compile a host application, uses
+	 * another object representation, macros are defined specifying the size of
+	 * the structs as expected by the firmware.
+	 *
+	 * A host application shall verify that a sizeof( ) of the struct is equal to
+	 * the SIZE_OF_XXX macro of the corresponding struct. If they are not
+	 * equal, functionality will break.
+	 */
+#if !defined(IS_ISP_2500_SYSTEM)
+	/* Check struct sh_css_ddr_address_map */
+	COMPILATION_ERROR_IF( sizeof(struct sh_css_ddr_address_map)		!= SIZE_OF_SH_CSS_DDR_ADDRESS_MAP_STRUCT	);
+#endif
+
+	/* Check struct host_sp_queues */
+	COMPILATION_ERROR_IF( sizeof(struct host_sp_queues)			!= SIZE_OF_HOST_SP_QUEUES_STRUCT		);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_circbuf_desc_s)		!= SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT		);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_circbuf_elem_s)		!= SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT		);
+
+	/* Check struct host_sp_communication */
+	COMPILATION_ERROR_IF( sizeof(struct host_sp_communication)		!= SIZE_OF_HOST_SP_COMMUNICATION_STRUCT		);
+	COMPILATION_ERROR_IF( sizeof(struct sh_css_event_irq_mask)		!= SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT		);
+
+	/* Check struct sh_css_hmm_buffer */
+	COMPILATION_ERROR_IF( sizeof(struct sh_css_hmm_buffer)			!= SIZE_OF_SH_CSS_HMM_BUFFER_STRUCT		);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_isp_3a_statistics)		!= SIZE_OF_IA_CSS_ISP_3A_STATISTICS_STRUCT	);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_isp_dvs_statistics)		!= SIZE_OF_IA_CSS_ISP_DVS_STATISTICS_STRUCT	);
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_metadata)			!= SIZE_OF_IA_CSS_METADATA_STRUCT		);
+
+	/* Check struct ia_css_init_dmem_cfg */
+	COMPILATION_ERROR_IF( sizeof(struct ia_css_sp_init_dmem_cfg)		!= SIZE_OF_IA_CSS_SP_INIT_DMEM_CFG_STRUCT	);
 
 	if (fw == NULL && !fw_explicitly_loaded)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -1744,7 +1783,7 @@ ia_css_init(const struct ia_css_env *env,
 	if (malloc_func == NULL || free_func == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	my_css = default_css;
+	ia_css_reset_defaults(&my_css);
 
 	my_css.malloc = malloc_func;
 	my_css.free = free_func;
@@ -1790,12 +1829,13 @@ ia_css_init(const struct ia_css_env *env,
 			return err;
 		fw_explicitly_loaded = false;
 	}
-	my_css.sp_bin_addr = sh_css_sp_load_program(&sh_css_sp_fw,
-						    SP_PROG_NAME,
-						    my_css.sp_bin_addr);
-	if (!my_css.sp_bin_addr) {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init() leave: return_err=%d\n",IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
-		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	if(!sh_css_setup_spctrl_config(&sh_css_sp_fw,SP_PROG_NAME,&spctrl_cfg))
+		return IA_CSS_ERR_INTERNAL_ERROR;
+
+	err = ia_css_spctrl_load_fw(SP0_ID, &spctrl_cfg);
+	if (err != IA_CSS_SUCCESS) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init() leave: return_err=%d\n",err);
+		return err;
 	}
 
 #if defined(HRT_CSIM)
@@ -1866,9 +1906,6 @@ ia_css_resume(void)
 #if !defined(IS_ISP_2500_SYSTEM)
 	sh_css_params_reconfigure_gdc_lut();
 #endif
-
-	sh_css_sp_activate_program(&sh_css_sp_fw, my_css.sp_bin_addr,
-				   SP_PROG_NAME);
 
 	enable_interrupts(my_css.irq_type);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_resume() leave: return_void\n");
@@ -1980,13 +2017,14 @@ create_host_pipeline(struct ia_css_stream *stream)
 	main_pipe 	= stream->last_pipe;
 	pipe_id 	= main_pipe->mode;
 
+#if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* Standalone Capture pipe cannot work with continuous capture. */
 	if((pipe_id == IA_CSS_PIPE_ID_CAPTURE) && (stream->num_pipes == 1)) {
 		if(!stream->config.online &&
 			!main_pipe->pipe_settings.capture.copy_binary.info)
 			goto ERR;
 	}
-
+#endif
 	/* No continuous frame allocation for capture pipe. It uses the
 	 * "main" pipe's frames. */
 	if((pipe_id == IA_CSS_PIPE_ID_PREVIEW) ||
@@ -1997,7 +2035,7 @@ create_host_pipeline(struct ia_css_stream *stream)
 				goto ERR;
 		}
 
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 		if(main_pipe->continuous_frames[0])
 			ia_css_frame_zero(main_pipe->continuous_frames[0]);
 #endif
@@ -2302,13 +2340,16 @@ ia_css_uninit(void)
 
 	ia_css_rmgr_uninit();
 
+#if !defined(HAS_NO_INPUT_FORMATTER)
+	/* needed for reprogramming the inputformatter after power cycle of css */
+	ifmtr_set_if_blocking_mode_reset = true;
+#endif
+
 	if (fw_explicitly_loaded == false) {
 		ia_css_unload_firmware();
 	}
-	if (my_css.sp_bin_addr) {
-		mmgr_free(my_css.sp_bin_addr);
-		my_css.sp_bin_addr = mmgr_NULL;
-	}
+	ia_css_spctrl_unload_fw(SP0_ID);
+
 	sh_css_sp_set_sp_running(false);
 	/* check and free any remaining mipi frames */
 	free_mipi_frames(NULL, true);
@@ -2376,8 +2417,6 @@ ia_css_mmu_invalidate_cache(void)
 	unsigned int HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_mmu_invalidate_cache() enter\n");
-	/* indicate to sp start that invalidation must occur */
-	sh_css_sp_invalidate_mmu();
 
 	/* if the SP is not running we should not access its dmem */
 	if (sh_css_sp_is_running())
@@ -2936,7 +2975,7 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 				}
 				return err;
 			}
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 			ia_css_frame_zero(my_css.mipi_frames[i]);
 #endif
 		}
@@ -3025,7 +3064,20 @@ send_mipi_frames (struct ia_css_pipe *pipe)
 	 *
 	 **********************************/
 	{
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_6,	/* the event ID  */
+		ia_css_queue_t *q;
+		q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+
+		if (NULL == q) {
+			/* q handle not available */
+			/* Error as the queue is not initialized */
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"send_mipi_frames() leaving: host2sp_event_queue not available\n");
+			return;
+		}
+
+		/* casting eventq payload to ensure it is encodable*/
+		ia_css_eventq_send(q,
+			SP_SW_EVENT_ID_6,	/* the event ID  */
 			0,				/* not used */
 			0,				/* not used */
 			0				/* not used */);
@@ -3044,12 +3096,20 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	bool continuous, need_vf_pp = false;
 	unsigned int left_cropping;
+	bool need_isp_copy_binary = false;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	bool sensor = false;
+#endif
 
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
 
 	online = pipe->stream->config.online;
 	continuous = pipe->stream->config.continuous;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+#endif
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"load_preview_binaries() enter:\n");
 
@@ -3122,8 +3182,17 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 			return err;
 	}
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, only the Direct Sensor Mode
+	 * Offline Preview uses the ISP copy binary.
+	 */
+	need_isp_copy_binary = !online && sensor;
+#else
+	need_isp_copy_binary = !online && !continuous;
+#endif
+
 	/* Copy */
-	if (!online && !continuous) {
+	if (need_isp_copy_binary) {
 		err = load_copy_binary(pipe,
 				       &pipe->pipe_settings.preview.copy_binary,
 				       &pipe->pipe_settings.preview.preview_binary);
@@ -3330,7 +3399,9 @@ sh_css_init_buffer_queues(void)
 {
 	const struct ia_css_fw_info *fw;
 	unsigned int HIVE_ADDR_host_sp_queues_initialized;
-	unsigned int i;
+	unsigned int HIVE_ADDR_ia_css_bufq_host_sp_queue;
+	ia_css_queue_remote_t remoteq;
+	unsigned int i, j;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init_buffer_queues() enter:\n");
 
@@ -3344,15 +3415,113 @@ sh_css_init_buffer_queues(void)
 	HIVE_ADDR_host_sp_queues_initialized =
 		fw->info.sp.host_sp_queues_initialized;
 
+#ifdef C_RUN
+	HIVE_ADDR_ia_css_bufq_host_sp_queue = (unsigned int)
+		sp_address_of(ia_css_bufq_host_sp_queue);
+#else
+	HIVE_ADDR_ia_css_bufq_host_sp_queue = fw->info.sp.host_sp_queue;
+#endif
+	/* Setup queue location as SP and proc id as SP0_ID*/
+	remoteq.location = IA_CSS_QUEUE_LOC_SP;
+	remoteq.proc_id = SP0_ID;
+
+	/* Setup all the local queue descriptors for Host2SP Buffer Queues */
+	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++)
+		for (j = 0; j < SH_CSS_NUM_BUFFER_QUEUES; j++) {
+			remoteq.cb_desc_addr =
+				HIVE_ADDR_ia_css_bufq_host_sp_queue
+					+ offsetof(struct host_sp_queues,
+					 host2sp_buffer_queues_desc[i][j]);
+
+			remoteq.cb_elems_addr =
+				HIVE_ADDR_ia_css_bufq_host_sp_queue
+					+ offsetof(struct host_sp_queues,
+					 host2sp_buffer_queues_elems[i][j]);
+
+			/* Initialize the queue instance and obtain handle */
+			ia_css_queue_remote_init(
+				&my_css.queues.host2sp_buffer_queue_handles[i][j],
+				&remoteq);
+		}
+
+	/* Setup all the local queue descriptors for SP2Host Buffer Queues */
+	for (i = 0; i < SH_CSS_NUM_BUFFER_QUEUES; i++) {
+		remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue
+			+ offsetof(struct host_sp_queues,
+				 sp2host_buffer_queues_desc[i]);
+
+		remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue
+			+ offsetof(struct host_sp_queues,
+				 sp2host_buffer_queues_elems[i]);
+
+		/* Initialize the queue instance and obtain handle */
+		ia_css_queue_remote_init(
+			&my_css.queues.sp2host_buffer_queue_handles[i],
+			&remoteq);
+	}
+
+	/* Host2SP event queue */
+	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
+		offsetof(struct host_sp_queues, host2sp_event_queue_desc);
+	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
+		offsetof(struct host_sp_queues, host2sp_event_queue_elems);
+	/* Initialize the queue instance and obtain handle */
+	ia_css_queue_remote_init(&my_css.queues.host2sp_event_queue_handle,
+		&remoteq);
+
+	/* SP2Host queues event queue*/
+	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
+		offsetof(struct host_sp_queues, sp2host_event_queue_desc);
+	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
+		offsetof(struct host_sp_queues, sp2host_event_queue_elems);
+	/* Initialize the queue instance and obtain handle */
+	ia_css_queue_remote_init(&my_css.queues.sp2host_event_queue_handle,
+		&remoteq);
+
 	/* set "host_sp_queues_initialized" to "true" */
 	sp_dmem_store_uint32(SP0_ID,
 		(unsigned int)sp_address_of(host_sp_queues_initialized),
 		(uint32_t)(1));
 
-
-
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init_buffer_queues() leave:\n");
 }
+
+ia_css_queue_t*
+sh_css_get_queue(enum sh_css_queue_type type, enum sh_css_buffer_queue_id id,
+		 int thread)
+{
+	ia_css_queue_t* q = 0;
+	if (!sh_css_sp_is_running()) {
+		/* SP is not running. The queues are not valid */
+		return NULL;
+	}
+
+	switch (type) {
+	case sh_css_host2sp_buffer_queue:
+		if (thread >= SH_CSS_MAX_SP_THREADS || thread < 0 ||
+			id == sh_css_invalid_buffer_queue)
+			break;
+		q = &my_css.queues.host2sp_buffer_queue_handles[thread][id];
+		break;
+	case sh_css_sp2host_buffer_queue:
+		if (id == sh_css_invalid_buffer_queue)
+			break;
+		q = &my_css.queues.sp2host_buffer_queue_handles[id];
+		break;
+	case sh_css_host2sp_event_queue:
+		q = &my_css.queues.host2sp_event_queue_handle;
+		break;
+	case sh_css_sp2host_event_queue:
+		q = &my_css.queues.sp2host_event_queue_handle;
+		break;
+	default:
+		break;
+	}
+
+	return q;
+}
+
+
 
 static enum ia_css_err
 init_vf_frameinfo_defaults(struct ia_css_pipe *pipe,
@@ -3610,6 +3779,16 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 	struct ia_css_frame *in_frame = NULL, *cc_frame = NULL;
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	struct ia_css_frame *out_frame;
+	bool need_in_frameinfo_memory = false;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	bool sensor = false;
+	bool buffered_sensor = false;
+	bool online = false;
+	bool continuous = false;
+#endif
+
+	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"create_host_preview_pipeline(): enter\n");
@@ -3624,8 +3803,24 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 	me = &pipe->pipeline;
 	ia_css_pipeline_clean(me);
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, always enable 'in_frameinfo_memory'
+	 * except for the following:
+	 * - Direct Sensor Mode Online Preview
+	 * - Direct Sensor Mode Continuous Preview
+	 * - Buffered Sensor Mode Continous Preview
+	 */
+	sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+	buffered_sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR;
+	online = pipe->stream->config.online;
+	continuous = pipe->stream->config.continuous;
+	need_in_frameinfo_memory =
+		!((sensor && (online || continuous)) || (buffered_sensor && continuous));
+#else
 	/* Construct in_frame info (only in case we have dynamic input */
-	if (pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY) {
+	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
+#endif
+	if (need_in_frameinfo_memory) {
 		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
@@ -3655,7 +3850,15 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 			goto ERR;
 		in_frame = me->stages->args.out_frame;
 	} else {
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+		/* When continuous is enabled, configure in_frame with the
+		 * last pipe, which is the copy pipe.
+		 */
+		if (continuous)
+			in_frame = pipe->stream->last_pipe->continuous_frames[0];
+#else
 		in_frame = pipe->continuous_frames[0];
+#endif
 	}
 
 	if (vf_pp_binary) {
@@ -3853,9 +4056,9 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 	struct ia_css_rmgr_vbuf_handle p_vbuf;
 	struct ia_css_rmgr_vbuf_handle *h_vbuf;
 	struct sh_css_hmm_buffer ddr_buffer;
-	bool rc = true;
 	enum ia_css_buffer_type buf_type;
 	enum ia_css_pipe_id pipe_id;
+	ia_css_queue_t* q;
 
 	if (pipe == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -3878,6 +4081,17 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 	sh_css_query_internal_queue_id(buf_type, &queue_id);
 	if ((queue_id < 0) || (queue_id > sh_css_buffer_queue_id_last))
 			return IA_CSS_ERR_INVALID_ARGUMENTS;
+
+	/* Get the queue for communication */
+	q = sh_css_get_queue(sh_css_host2sp_buffer_queue,
+		queue_id, thread_id);
+	if ( NULL == q ) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_pipe_enqueue_buffer() leave: return_err=%d\n",
+			IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
 
 	pipeline = &pipe->pipeline;
 
@@ -3935,23 +4149,17 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 				after it got empty 3a and dis */
 			if (STATS_ENABLED(stage)) {
 				/* there is a stage that needs it */
-				rc = host2sp_enqueue_buffer(thread_id, 0,
-						queue_id,
-						(uint32_t)h_vbuf->vptr);
+				err = ia_css_queue_enqueue(q,
+					(uint32_t)h_vbuf->vptr);
 			}
 		}
 	} else if ((buf_type == IA_CSS_BUFFER_TYPE_INPUT_FRAME)
 		|| (buf_type == IA_CSS_BUFFER_TYPE_OUTPUT_FRAME)
 		|| (buf_type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME)
 		|| (buf_type == IA_CSS_BUFFER_TYPE_METADATA)) {
-			rc = host2sp_enqueue_buffer(thread_id,
-				0,
-				queue_id,
+			err = ia_css_queue_enqueue(q,
 				(uint32_t)h_vbuf->vptr);
 	}
-
-	err = (rc == true) ?
-		IA_CSS_SUCCESS : IA_CSS_ERR_QUEUE_IS_FULL;
 
 	if (err == IA_CSS_SUCCESS) {
 		for (i = 0; i < MAX_HMM_BUFFER_NUM; i++) {
@@ -3971,11 +4179,21 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 		 * Tell the SP which queues are not empty,
 		 * by sending the software event.
 		 */
-	if (err == IA_CSS_SUCCESS)
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_1,
-				thread_id,
+	if (err == IA_CSS_SUCCESS) {
+		ia_css_queue_t *q;
+		q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+		if (NULL == q) {
+			/* Error as the queue is not initialized */
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"ia_css_pipe_enqueue_buffer() leaving: host2sp eventq not available\n");
+			return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+		}
+		ia_css_eventq_send(q,
+				SP_SW_EVENT_ID_1,
+				(uint8_t)thread_id,
 				queue_id,
 				0);
+	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipe_enqueue_buffer() leave: return_err=%d\n",err);
@@ -3993,10 +4211,10 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 	enum sh_css_buffer_queue_id queue_id;
 	hrt_vaddress ddr_buffer_addr;
 	struct sh_css_hmm_buffer ddr_buffer;
-	bool rc;
 	unsigned int i, found_record;
 	enum ia_css_buffer_type buf_type;
 	enum ia_css_pipe_id pipe_id;
+	ia_css_queue_t* q;
 
 	if (buffer == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -4017,11 +4235,19 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 	if ((queue_id < 0) || (queue_id > sh_css_buffer_queue_id_last))
 			return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	rc = sp2host_dequeue_buffer(0,
-				0,
-				queue_id,
-				&ddr_buffer_addr);
-	if (rc) {
+	q = sh_css_get_queue(sh_css_sp2host_buffer_queue,
+		queue_id, -1);
+	if ( NULL == q ) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_pipe_dequeue_buffer() leave: err=%d\n",
+			IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
+
+	err = ia_css_queue_dequeue(q,
+		(uint32_t *)&ddr_buffer_addr);
+	if (err == IA_CSS_SUCCESS) {
 		struct ia_css_frame *frame;
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			     "ia_css_pipe_dequeue_buffer() receive vbuf=%x\n",
@@ -4049,7 +4275,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 		   we do not want to touch buffer
 		*/
 		if (ddr_buffer.kernel_ptr == 0)
-			rc = false;
+			err = IA_CSS_ERR_INTERNAL_ERROR;
 		else {
 			/* buffer->exp_id : all instances to be removed later once the driver change
 			 * is completed. See patch #5758 for reference */
@@ -4067,8 +4293,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 				frame = (struct ia_css_frame*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
 				buffer->data.frame = frame;
 				buffer->exp_id = ddr_buffer.payload.frame.exp_id;
-				if (ddr_buffer.payload.frame.exp_id)
-					frame->exp_id = ddr_buffer.payload.frame.exp_id;
+				frame->exp_id = ddr_buffer.payload.frame.exp_id;
 				if (ddr_buffer.payload.frame.flashed == 1)
 					frame->flash_state =
 						IA_CSS_FRAME_FLASH_STATE_PARTIAL;
@@ -4088,42 +4313,47 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 				buffer->data.stats_3a =
 					(struct ia_css_isp_3a_statistics*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
 				buffer->exp_id = ddr_buffer.payload.s3a.exp_id;
-				if (ddr_buffer.payload.s3a.exp_id)
-					buffer->data.stats_3a->exp_id = ddr_buffer.payload.s3a.exp_id;
+				buffer->data.stats_3a->exp_id = ddr_buffer.payload.s3a.exp_id;
 				break;
 			case IA_CSS_BUFFER_TYPE_DIS_STATISTICS:
 				buffer->data.stats_dvs =
 					(struct ia_css_isp_dvs_statistics*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
 				buffer->exp_id = ddr_buffer.payload.dis.exp_id;
-				if (ddr_buffer.payload.dis.exp_id)
-					buffer->data.stats_dvs->exp_id = ddr_buffer.payload.dis.exp_id;
+				buffer->data.stats_dvs->exp_id = ddr_buffer.payload.dis.exp_id;
 				break;
 			case IA_CSS_BUFFER_TYPE_METADATA:
 				buffer->data.metadata =
 					(struct ia_css_metadata*)HOST_ADDRESS(ddr_buffer.kernel_ptr);
 				buffer->exp_id = ddr_buffer.payload.metadata.exp_id;
-				if (ddr_buffer.payload.metadata.exp_id)
-					buffer->data.metadata->exp_id = ddr_buffer.payload.metadata.exp_id;
+				buffer->data.metadata->exp_id = ddr_buffer.payload.metadata.exp_id;
 				break;
 			default:
-				rc = false;
+				err = IA_CSS_ERR_INTERNAL_ERROR;
 				break;
 			}
 		}
 	}
 
-	err = rc ? IA_CSS_SUCCESS : IA_CSS_ERR_QUEUE_IS_EMPTY;
 
 	/*
 	 * Tell the SP which queues are not full,
 	 * by sending the software event.
 	 */
-	if (err == IA_CSS_SUCCESS)
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_2,
+	if (err == IA_CSS_SUCCESS) {
+		ia_css_queue_t *q;
+		q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+		if (NULL == q) {
+			/* Error as the queue is not initialized */
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"ia_css_pipe_dequeue_buffer() leaving: host2sp eventq not available\n");
+			return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+		}
+		ia_css_eventq_send(q,
+				SP_SW_EVENT_ID_2,
 				0,
 				queue_id,
 				0);
-
+	}
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipe_dequeue_buffer() leave: buffer=%p\n", buffer);
 
@@ -4150,24 +4380,28 @@ static enum ia_css_event_type convert_event_sp_to_host_domain[] = {
 enum ia_css_err
 ia_css_dequeue_event(struct ia_css_event *event)
 {
-	bool is_event_available;
-	uint32_t sp_event;
 	enum ia_css_pipe_id pipe_id;
 	uint8_t payload[4] = {0,0,0,0};
+	ia_css_queue_t* q;
 
 	if (event == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	/*TODO:
+        /*TODO:
 	 * a) use generic decoding function , same as the one used by sp.
 	 * b) group decode and dequeue into eventQueue module
 	 */
+	q = sh_css_get_queue(sh_css_sp2host_event_queue, -1, -1);
+	if ( NULL == q ) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_dequeue_event() leaving: Not available\n");
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
 
 	/* dequeue the IRQ event */
-	is_event_available = sp2host_dequeue_irq_event(&sp_event);
-
 	/* check whether the IRQ event is available or not */
-	if (!is_event_available) {
+	if (IA_CSS_SUCCESS != ia_css_eventq_recv(q, payload)) {
 		//ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		//      "ia_css_dequeue_event() out: EVENT_QUEUE_EMPTY\n");
 		return IA_CSS_ERR_QUEUE_IS_EMPTY;
@@ -4176,11 +4410,14 @@ ia_css_dequeue_event(struct ia_css_event *event)
 		 * Tell the SP which queues are not full,
 		 * by sending the software event.
 		 */
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_3, 0, 0, 0);
+		ia_css_queue_t *send_q;
+		send_q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+		/* No need to check here as queue is definetly initialized
+		 * by the time we reach here.*/
+		ia_css_eventq_send(send_q, SP_SW_EVENT_ID_3, 0, 0, 0);
 	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_event() enter: queue not empty\n");
-	ia_css_event_decode(sp_event, payload);
 	/*  queue contains an event, it is decoded into 4 bytes of payload,
 	 *  convert sp event type in payload to host event type,
 	 *  TODO: can this enum conversion be eliminated */
@@ -4287,6 +4524,7 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 	struct ia_css_pipe *pipe;
 	enum ia_css_pipe_id pipe_id;
 	unsigned int thread_id;
+	ia_css_queue_t *q;
 
 	assert(stream != NULL);
 	pipe = stream->last_pipe;
@@ -4346,7 +4584,16 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 	ia_css_debug_pipe_graph_dump_epilogue();
 
 	ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(pipe), &thread_id);
-	sh_css_sp_snd_event(SP_SW_EVENT_ID_4, thread_id, 0,  0);
+
+	q = sh_css_get_queue(sh_css_host2sp_event_queue, -1, -1);
+	if (NULL == q) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"sh_css_pipe_start() leaving: host2sp_eventq not available\n");
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
+	/* casting eventq payload to ensure it is encodable*/
+	ia_css_eventq_send(q, SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0,  0);
 
 	/* in case of continuous capture mode, we also start capture thread and copy thread*/
 	if (pipe->stream->config.continuous) {
@@ -4361,7 +4608,8 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 		if (copy_pipe == NULL)
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(copy_pipe), &thread_id);
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_4, thread_id, 0,  0);
+		 /* by the time we reach here q is initialized and handle is available.*/
+		ia_css_eventq_send(q, SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0,  0);
 	}
 	if (pipe->stream->cont_capt) {
 		struct ia_css_pipe *capture_pipe = NULL;
@@ -4374,7 +4622,8 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 		if (capture_pipe == NULL)
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(capture_pipe), &thread_id);
-		sh_css_sp_snd_event(SP_SW_EVENT_ID_4, thread_id, 0,  0);
+		 /* by the time we reach here q is initialized and handle is available.*/
+		ia_css_eventq_send(q, SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0,  0);
 	}
 
 	stream->started = true;
@@ -4832,7 +5081,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 		err = ia_css_frame_allocate_from_info(
 				&pipe->pipe_settings.video.ref_frames[i],
 				&ref_info);
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 		ia_css_frame_zero(pipe->pipe_settings.video.ref_frames[i]);
 #endif
 		if (err != IA_CSS_SUCCESS)
@@ -4869,7 +5118,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 		err = ia_css_frame_allocate_from_info(
 				&pipe->pipe_settings.video.tnr_frames[i],
 				&tnr_info);
-#if SH_CSS_PREVENT_UNINIT_READS == 1
+#ifdef HRT_CSIM
 		ia_css_frame_zero(pipe->pipe_settings.video.tnr_frames[i]);
 #endif
 		if (err != IA_CSS_SUCCESS)
@@ -5089,10 +5338,14 @@ static bool need_capture_pp(
 static enum ia_css_err load_primary_binaries(
 	struct ia_css_pipe *pipe)
 {
-	bool online = pipe->stream->config.online;
-	bool memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
-	bool continuous = pipe->stream->config.continuous;
+	bool online = false;
+	bool memory = false;
+	bool continuous = false;
 	bool need_pp = false;
+	bool need_isp_copy_binary = false;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	bool sensor = false;
+#endif
 	struct ia_css_frame_info prim_in_info,
 				 prim_out_info, vf_info,
 				 *vf_pp_in_info;
@@ -5100,6 +5353,15 @@ static enum ia_css_err load_primary_binaries(
 	struct ia_css_capture_settings *mycs;
 
 	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
+
+	online = pipe->stream->config.online;
+	memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
+	continuous = pipe->stream->config.continuous;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+#endif
+
 	mycs = &pipe->pipe_settings.capture;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "load_primary_binaries() enter:\n");
 
@@ -5162,8 +5424,16 @@ static enum ia_css_err load_primary_binaries(
 			return err;
 	}
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, only the Direct Sensor Mode
+	 * Offline Capture uses the ISP copy binary.
+	 */
+	need_isp_copy_binary = !online && sensor;
+#else
+	need_isp_copy_binary = !online && !continuous && !memory;
+#endif
 	/* ISP Copy */
-	if (!online && !continuous && !memory) {
+	if (need_isp_copy_binary) {
 		err = load_copy_binary(pipe,
 				       &mycs->copy_binary,
 				       &mycs->primary_binary);
@@ -5642,8 +5912,16 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 	struct ia_css_frame *out_frame;
 	struct ia_css_frame *vf_frame;
 	struct ia_css_pipeline_stage_desc stage_desc;
+	bool need_in_frameinfo_memory = false;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	bool sensor = false;
+	bool buffered_sensor = false;
+	bool online = false;
+	bool continuous = false;
+#endif
 
 	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
 
 	me = &pipe->pipeline;
 	mode = pipe->config.default_capture_config.mode;
@@ -5652,8 +5930,24 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 		 "create_host_regular_capture_pipeline() enter:\n");
 	ia_css_pipeline_clean(me);
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, always enable 'in_frameinfo_memory'
+	 * except for the following:
+	 * - Direct Sensor Mode Online Capture
+	 * - Direct Sensor Mode Continuous Capture
+	 * - Buffered Sensor Mode Continous Capture
+	 */
+	sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+	buffered_sensor = pipe->stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR;
+	online = pipe->stream->config.online;
+	continuous = pipe->stream->config.continuous;
+	need_in_frameinfo_memory =
+		!((sensor && (online || continuous)) || (buffered_sensor && continuous));
+#else
 	/* Construct in_frame info (only in case we have dynamic input */
-	if (pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY) {
+	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
+#endif
+	if (need_in_frameinfo_memory) {
 		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame);
 		if (err != IA_CSS_SUCCESS)
 			return err;
@@ -6220,54 +6514,52 @@ remove_firmware(struct ia_css_fw_info **l, struct ia_css_fw_info *firmware)
 }
 
 #if !defined(C_RUN) && !defined(HRT_UNSCHED)
-static const unsigned char *
-upload_isp_code(const struct ia_css_fw_info *firmware)
+static enum ia_css_err
+upload_isp_code(struct ia_css_fw_info *firmware)
 {
-	const unsigned char *binary = firmware->isp_code;
+	hrt_vaddress binary = firmware->info.isp.xmem_addr;
 	if (!binary) {
 		unsigned size = firmware->blob.size;
 		const unsigned char *blob;
 		const unsigned char *binary_name;
-		hrt_vaddress binary_hrt_vaddress;
 		binary_name =
 			(const unsigned char *)(IA_CSS_EXT_ISP_PROG_NAME(
 						firmware));
 		blob = binary_name +
 			strlen((const char *)binary_name) +
 			1;
-		binary_hrt_vaddress = sh_css_load_blob(blob, size);
-		binary = mmgr_hrt_vaddr_to_host_vaddr(binary_hrt_vaddress);
-		((struct ia_css_fw_info *)firmware)->isp_code = binary;
-		((struct ia_css_fw_info *)firmware)->info.isp.xmem_addr = binary_hrt_vaddress;
+		binary = sh_css_load_blob(blob, size);
+		firmware->info.isp.xmem_addr = binary;
 	}
 
 	if (!binary)
-		return NULL;
-	return binary;
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	return IA_CSS_SUCCESS;
 }
 #endif
 
 static enum ia_css_err
-acc_load_extension(const struct ia_css_fw_info *firmware)
+acc_load_extension(struct ia_css_fw_info *firmware)
 {
 #if !defined(C_RUN) && !defined(HRT_UNSCHED)
-	const unsigned char *isp_program
-			= upload_isp_code(firmware);
-	if (isp_program == NULL)
-		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	enum ia_css_err err = upload_isp_code(firmware);
+	if (err != IA_CSS_SUCCESS)
+		return err;
 #endif
 
-	((struct ia_css_fw_info *)firmware)->loaded = true;
+	firmware->loaded = true;
 	return IA_CSS_SUCCESS;
 }
 
 static void
-acc_unload_extension(const struct ia_css_fw_info *firmware)
+acc_unload_extension(struct ia_css_fw_info *firmware)
 {
-	if (firmware->isp_code)
-		mmgr_free(mmgr_host_vaddr_to_hrt_vaddr((firmware->isp_code)));
-	((struct ia_css_fw_info *)firmware)->isp_code = NULL;
-	((struct ia_css_fw_info *)firmware)->loaded = false;
+	if (firmware->info.isp.xmem_addr) {
+		mmgr_free(firmware->info.isp.xmem_addr);
+		firmware->info.isp.xmem_addr = mmgr_NULL;
+	}
+	firmware->isp_code = NULL;
+	firmware->loaded = false;
 }
 /* Load firmware for extension */
 static enum ia_css_err
@@ -6381,8 +6673,8 @@ enum ia_css_err ia_css_stream_capture_frame(struct ia_css_stream *stream,
 {
 	struct sh_css_tag_descr tag_descr;
 	unsigned int encoded_tag_descr;
-
-	bool enqueue_successful = false;
+	enum ia_css_err err;
+	ia_css_queue_t* q;
 
 	(void)stream;
 	assert(stream != NULL);
@@ -6405,29 +6697,28 @@ enum ia_css_err ia_css_stream_capture_frame(struct ia_css_stream *stream,
 	/* Encode the tag descriptor into a 32-bit value */
 	encoded_tag_descr = sh_css_encode_tag_descr(&tag_descr);
 
+	q = sh_css_get_queue(sh_css_host2sp_buffer_queue,
+		sh_css_tag_cmd_queue, 0);
+	if ( NULL == q ) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_stream_capture_frame() "
+			"leave: return_err=%d\n",
+			IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
 
 	/* Enqueue the encoded tag to the host2sp queue.
 	 * Note: The pipe and stage IDs for tag_cmd queue are hard-coded to 0
 	 * on both host and the SP side.
 	 * It is mainly because it is enough to have only one tag_cmd queue */
-	enqueue_successful = host2sp_enqueue_buffer(0, 0,
-				sh_css_tag_cmd_queue,
-				(uint32_t)encoded_tag_descr);
-
-
-	/* Give an error if the tag command cannot be issued
-	 * (because the cmd queue is full) */
-	if (!enqueue_successful) {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_stream_capture_frame() leave: return_err=%d\n",
-		IA_CSS_ERR_QUEUE_IS_FULL);
-		return IA_CSS_ERR_QUEUE_IS_FULL;
-	}
+	err = ia_css_queue_enqueue(q,
+		(uint32_t)encoded_tag_descr);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_stream_capture_frame() leave: return_err=%d\n",
-		IA_CSS_SUCCESS);
-	return IA_CSS_SUCCESS;
+		err);
+	return err;
 }
 
 /**
@@ -6442,8 +6733,8 @@ enum ia_css_err ia_css_stream_capture(
 {
 	struct sh_css_tag_descr tag_descr;
 	unsigned int encoded_tag_descr;
-
-	bool enqueue_successful = false;
+	enum ia_css_err err;
+	ia_css_queue_t* q;
 
 	if (stream == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -6467,29 +6758,26 @@ enum ia_css_err ia_css_stream_capture(
 	/* Encode the tag descriptor into a 32-bit value */
 	encoded_tag_descr = sh_css_encode_tag_descr(&tag_descr);
 
+	q = sh_css_get_queue(sh_css_host2sp_buffer_queue,
+		sh_css_tag_cmd_queue, 0);
+	if ( NULL == q ) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_stream_capture() leave: return_err=%d\n",
+			IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
 
 	/* Enqueue the encoded tag to the host2sp queue.
 	 * Note: The pipe and stage IDs for tag_cmd queue are hard-coded to 0
 	 * on both host and the SP side.
 	 * It is mainly because it is enough to have only one tag_cmd queue */
-	enqueue_successful = host2sp_enqueue_buffer(0, 0,
-				sh_css_tag_cmd_queue,
-				(uint32_t)encoded_tag_descr);
-
-
-	/* Give an error if the tag command cannot be issued
-	 * (because the cmd queue is full) */
-	if (!enqueue_successful) {
+	err = ia_css_queue_enqueue(q,
+		(uint32_t)encoded_tag_descr);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_stream_capture() leave: return_err=%d\n",
-		IA_CSS_ERR_QUEUE_IS_FULL);
-		return IA_CSS_ERR_QUEUE_IS_FULL;
-	}
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_stream_capture() leave: return_err=%d\n",
-		IA_CSS_SUCCESS);
-	return IA_CSS_SUCCESS;
+		err);
+	return err;
 }
 
 void ia_css_stream_request_flash(struct ia_css_stream *stream)
@@ -6978,7 +7266,6 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	ia_css_debug_pipe_graph_dump_stream_config(stream_config);
 
-#if !defined(HAS_INPUT_SYSTEM_VERSION_2401)
 	/* check if mipi size specified */
 	if (stream_config->mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
 		if (my_css.size_mem_words == 0) {
@@ -6989,7 +7276,6 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 			goto ERR;
 		}
 	}
-#endif
 #endif
 
 	/* Currently we only supported metadata up to a certain size. */
@@ -7591,7 +7877,7 @@ ia_css_start_sp(void)
 
 	/* waiting for the SP is completely started */
 	timeout = SP_START_TIMEOUT_US;
-	while (!ia_css_sp_has_initialized() && timeout) {
+	while((ia_css_spctrl_get_state(SP0_ID) != IA_CSS_SP_SW_INITIALIZED) && timeout) {
 		timeout--;
 		hrt_sleep();
 	}
@@ -7633,7 +7919,7 @@ ia_css_stop_sp(void)
 	printk("STOP_FUNC: reach point 1\n");
 #endif
 	timeout = SP_SHUTDOWN_TIMEOUT_US;
-	while (!ia_css_sp_has_terminated() && timeout) {
+	while ((ia_css_spctrl_get_state(SP0_ID)!= IA_CSS_SP_SW_TERMINATED) && timeout) {
 		timeout--;
 		hrt_sleep();
 	}

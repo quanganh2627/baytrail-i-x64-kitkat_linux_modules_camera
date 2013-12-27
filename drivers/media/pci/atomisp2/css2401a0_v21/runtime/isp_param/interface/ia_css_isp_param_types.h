@@ -28,12 +28,12 @@
 enum ia_css_param_class {
 	IA_CSS_PARAM_CLASS_PARAM  = 0,	/* Late binding parameters, like 3A */
 	IA_CSS_PARAM_CLASS_CONFIG = 1,	/* Pipe config time parameters, like resolution */
+	IA_CSS_PARAM_CLASS_STATE  = 2,    // State parameters, like tnr buffer index
 	/* Not yet implemented
-	IA_CSS_PARAM_CLASS_FRAME	  = 2,    // Frame time parameters, like output buffer
-	IA_CSS_PARAM_CLASS_STATE	  = 3,    // State parameters, like tnr buffer index
+	IA_CSS_PARAM_CLASS_FRAME	  = 3,    // Frame time parameters, like output buffer
 	*/
 };
-#define IA_CSS_NUM_PARAM_CLASSES (IA_CSS_PARAM_CLASS_CONFIG + 1)
+#define IA_CSS_NUM_PARAM_CLASSES (IA_CSS_PARAM_CLASS_STATE + 1)
 
 
 /* Address/size of each parameter class in each isp memory, host memory pointers */
@@ -63,6 +63,7 @@ union ia_css_all_memory_offsets {
 	struct {
 		CSS_ALIGN(struct ia_css_memory_offsets	      *param, 8);
 		CSS_ALIGN(struct ia_css_config_memory_offsets *config, 8);
+		CSS_ALIGN(struct ia_css_state_memory_offsets  *state, 8);
 	} offsets;
 	struct {
 		CSS_ALIGN(void *ptr, 8);

@@ -23,82 +23,101 @@
 #define __IA_CSS_QUEUE_H
 
 #include "platform_support.h"
+#include "ia_css_queue_comm.h"
+#include "../src/queue_access.h"
+
 #include "sh_css_internal.h"	/* enum sh_css_frame_id */
 
+/* Local Queue object descriptor */
+struct ia_css_queue_local {
+	ia_css_circbuf_desc_t *cb_desc; /*Circbuf desc for local queues*/
+	ia_css_circbuf_elem_t *cb_elems; /*Circbuf elements*/
+};
+typedef struct ia_css_queue_local ia_css_queue_local_t;
 
-/************************************************************
+/* Handle for queue object*/
+typedef struct ia_css_queue ia_css_queue_t;
+
+
+/*****************************************************************************
+ * Queue Public APIs
+ *****************************************************************************/
+/** @brief Initialize a local queue instance.
  *
- * Buffer queues (the host -> the SP).
+ * @param[out] qhandle. Handle to queue instance for use with API
+ * @param[in]  desc.   Descriptor with queue properties filled-in
+ * @return     IA_CSS_SUCCESS on successful init of queue instance.
+ * @return     IA_CSS_ERR_INVALID_ARGUMENTS if args are invalid.
  *
- ************************************************************/
-/*! The Host puts the buffer at the tail of the queue
-
- \param	pipe_num[in]			the pipe number
- \param stage_num[in]			the stage number
- \param	ERROR frame_id[in]			the frame type
- \param	ERROR frame_data[in]			the frame that will be enqueued
-
- \return !isFull(host2sp_queue[pipe_num][stage_num][frame_id])
  */
-extern bool host2sp_enqueue_buffer(
-	unsigned int pipe_num,
-	unsigned int stage_num,
-	enum sh_css_buffer_queue_id index,
-	uint32_t buffer_ptr);
+extern enum ia_css_err
+ia_css_queue_local_init(ia_css_queue_t *qhandle, ia_css_queue_local_t *desc);
 
-extern bool host2sp_dequeue_buffer(
-	unsigned int thread_id,
-	unsigned int stage_num,
-	enum sh_css_buffer_queue_id index,
-	uint32_t *buffer_ptr);
-
-/************************************************************
+/** @brief Initialize a remote queue instance
  *
- * Buffer queues (the SP -> the host).
+ * @param[out] qhandle. Handle to queue instance for use with API
+ * @param[in]  desc.   Descriptor with queue properties filled-in
+ * @return     IA_CSS_SUCCESS on successful init of queue instance.
+ * @return     IA_CSS_ERR_INVALID_ARGUMENTS if args are invalid.
  *
- ************************************************************/
-/*! The Host gets the buffer at the head of the queue
-
- \param	pipe_num[in]			the pipe number
- \param stage_num[in]			the stage number
- \param	ERROR frame_id[in]			the frame type
- \param	ERROR frame_data[out]			the frame that will be dequeued
-
- \return !isEmpty(sp2host_queue[frame_id])
  */
-extern bool sp2host_dequeue_buffer(
-	unsigned int pipe_num,
-	unsigned int stage_num,
-	enum sh_css_buffer_queue_id index,
-	uint32_t *buffer_ptr);
+extern enum ia_css_err
+ia_css_queue_remote_init(ia_css_queue_t *qhandle, ia_css_queue_remote_t *desc);
 
-/************************************************************
+/** @brief Uninitialize a queue instance
  *
- * Event queues (the host -> the SP).
+ * @param[in]  qhandle. Handle to queue instance
+ * @return     IA_CSS_SUCCESS on successful uninit.
  *
- ************************************************************/
-/*! The Host puts the SP event at the tail of the queue.
-
- \param	event[in]			the SP event that will be queued
-
- \return !isFull(host2sp_queue)
  */
-extern bool host2sp_enqueue_sp_event(
-		uint32_t event);
+extern enum ia_css_err
+ia_css_queue_uninit(ia_css_queue_t *qhandle);
 
-/************************************************************
+/** @brief Enqueue an item in the queue instance
  *
- * Event queues (the SP -> the host).
+ * @param[in]  qhandle. Handle to queue instance
+ * @param[in]  item. Object to be enqueued.
+ * @return     IA_CSS_SUCCESS on successful enqueue.
+ * @return     IA_CSS_ERR_INVALID_ARGUMENTS if args are invalid.
+ * @return     IA_CSS_ERR_QUEUE_IS_FULL if queue is full.
  *
- ************************************************************/
-/*! The Host gets the IRQ event from the IRQ queue
-
- \param	event[out]			the IRQ event that will be dequeued
-
- \return !isEmpty(sp2host_queue)
  */
-extern bool sp2host_dequeue_irq_event(
-	uint32_t *event);
+extern enum ia_css_err
+ia_css_queue_enqueue(ia_css_queue_t *qhandle, uint32_t item);
+
+/** @brief Dequeue an item from the queue instance
+ *
+ * @param[in]  qhandle. Handle to queue instance
+ * @param[out] item. Object to be dequeued into this item.
+ * @return     IA_CSS_SUCCESS on successful enqueue.
+ * @return     IA_CSS_ERR_INVALID_ARGUMENTS if args are invalid.
+ * @return     IA_CSS_ERR_QUEUE_IS_EMPTY if queue is empty.
+ *
+ */
+extern enum ia_css_err
+ia_css_queue_dequeue(ia_css_queue_t *qhandle, uint32_t *item);
+
+/** @brief Check if the queue is empty
+ *
+ * @param[in]  qhandle. Handle to queue instance
+ * @return     IA_CSS_ERR_QUEUE_IS_EMPTY if queue is empty.
+ * @return     IA_CSS_ERR_INVALID_ARGUMENTS if args are invalid.
+ * @return     IA_CSS_ERR_INTERNAL_ERROR for other errors.
+ *
+ */
+extern enum ia_css_err
+ia_css_queue_is_empty(ia_css_queue_t *qhandle);
+
+/** @brief Get the usable size for the queue
+ *
+ * @param[in]  qhandle. Handle to queue instance
+ * @param[out] size.Size value to be returned here.
+ * @return     IA_CSS_SUCCESS on success.
+ * @return     IA_CSS_ERR_INVALID_ARGUMENTS if args are invalid.
+ *
+ */
+extern enum ia_css_err
+ia_css_queue_get_size(ia_css_queue_t *qhandle, uint32_t *size);
 
 #endif /* __IA_CSS_QUEUE_H */
 

@@ -29,7 +29,6 @@
 
 #include "ia_css.h"
 #include "ia_css_binary.h"
-#include "sh_css_sp_start.h"
 #include "sh_css_hrt.h"
 #include "sh_css_defs.h"
 #include "sh_css_internal.h"
@@ -53,12 +52,17 @@
 #include "assert_support.h"
 #include "platform_support.h"	/* hrt_sleep() */
 
-#include "ia_css_queue.h" /* host_sp_enqueue_XXX */
 #include "sw_event_global.h"   			/* Event IDs.*/
 #include "ia_css_event.h"
+#include "mmu_device.h"
+#include "ia_css_spctrl.h"
+
 #ifndef offsetof
 #define offsetof(T, x) ((unsigned)&(((T *)0)->x))
 #endif
+
+#define IA_CSS_INCLUDE_CONFIGURATIONS
+#include HRTSTR(ia_css_isp_configs.SYSTEM.h)
 
 struct sh_css_sp_group		sh_css_sp_group;
 struct sh_css_sp_stage		sh_css_sp_stage;
@@ -836,12 +840,23 @@ sh_css_stage_write_binary_info(struct ia_css_binary_info *info)
 }
 
 static enum ia_css_err
-copy_isp_config_to_ddr(struct ia_css_binary *binary)
+copy_isp_mem_if_to_ddr(struct ia_css_binary *binary)
 {
-	return ia_css_isp_param_copy_isp_config_to_ddr(
+	enum ia_css_err err;
+
+	err = ia_css_isp_param_copy_isp_mem_if_to_ddr(
 		&binary->css_params,
 		&binary->mem_params,
 		IA_CSS_PARAM_CLASS_CONFIG);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+	err = ia_css_isp_param_copy_isp_mem_if_to_ddr(
+		&binary->css_params,
+		&binary->mem_params,
+		IA_CSS_PARAM_CLASS_STATE);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+	return IA_CSS_SUCCESS;
 }
 
 static bool
@@ -849,6 +864,18 @@ is_sp_stage(struct ia_css_pipeline_stage *stage)
 {
 	assert(stage != NULL);
 	return stage->sp_func != IA_CSS_PIPELINE_NO_FUNC;
+}
+
+static void
+configure_isp_from_args(
+	const struct ia_css_binary      *binary,
+	const struct sh_css_binary_args *args)
+{
+#if !defined(IS_ISP_2500_SYSTEM)
+	ia_css_fpn_configure(binary, &binary->in_frame_info);
+#endif
+	ia_css_ref_configure(binary, &args->in_ref_frame->info);
+	ia_css_tnr_configure(binary, &args->in_tnr_frame->info);
 }
 
 static enum ia_css_err
@@ -963,6 +990,8 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
+	configure_isp_from_args(binary, args);
+
 	/* we do this only for preview pipe because in fill_binary_info function
 	 * we assign vf_out res to out res, but for ISP internal processing, we need
 	 * the original out res. for video pipe, it has two output pins --- out and
@@ -978,7 +1007,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		sh_css_sp_stage.frames.out.info.height
 			<<= binary->vf_downscale_log2;
 	}
-	err = copy_isp_config_to_ddr(binary);
+	err = copy_isp_mem_if_to_ddr(binary);
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
@@ -1549,7 +1578,7 @@ sh_css_sp_start_isp(void)
 
 	sp_dmem_store_uint32(SP0_ID,
 		(unsigned int)sp_address_of(sp_sw_state),
-		(uint32_t)(SP_SW_STATE_NULL));
+		(uint32_t)(IA_CSS_SP_SW_TERMINATED));
 
 
 	//init_host2sp_command();
@@ -1569,7 +1598,10 @@ sh_css_sp_start_isp(void)
 	 */
 	sp_running = true;
 	ia_css_mmu_invalidate_cache();
-	sh_css_hrt_sp_start_isp();
+	/* Invalidate all MMU caches */
+	mmu_invalidate_cache_all();
+
+	ia_css_spctrl_start(SP0_ID);
 
 }
 
@@ -1583,24 +1615,6 @@ ia_css_isp_has_started(void)
 	return (bool)load_sp_uint(ia_css_ispctrl_sp_isp_started);
 }
 
-bool
-ia_css_sp_has_initialized(void)
-{
-	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
-	unsigned int HIVE_ADDR_sp_sw_state = fw->info.sp.sw_state;
-	(void)HIVE_ADDR_sp_sw_state; /* Suppres warnings in CRUN */
-
-	return (load_sp_uint(sp_sw_state) == SP_SW_INITIALIZED);
-}
-
-bool
-ia_css_sp_has_terminated(void)
-{
-	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
-	unsigned int HIVE_ADDR_sp_sw_state = fw->info.sp.sw_state;
-	(void)HIVE_ADDR_sp_sw_state; /* Suppres warnings in CRUN */
-	return (load_sp_uint(sp_sw_state) == SP_SW_TERMINATED);
-}
 
 /**
  * @brief Initialize the DMA software-mask in the debug mode.
@@ -1668,33 +1682,6 @@ sh_css_sp_set_dma_sw_reg(int dma_id,
 	sh_css_sp_group.debug.dma_sw_reg = sw_reg;
 
 	return true;
-}
-
-/**
- * @brief The Host sends the event to the SP.
- * Refer to "sh_css_sp.h" for details.
- */
-void
-sh_css_sp_snd_event(int evt_id, int evt_payload_0, int evt_payload_1, int evt_payload_2)
-{
-	uint32_t tmp[4];
-	uint32_t sw_event;
-        /*TODO:
-	 *  group encode and enqueue into eventQueue module
-	 */
-	/*
-	 * Encode the queue type, the thread ID and
-	 * the queue ID into the event.
-	 */
-	tmp[0] = (uint32_t)evt_id;
-	tmp[1] = (uint32_t)evt_payload_0;
-	tmp[2] = (uint32_t)evt_payload_1;
-	tmp[3] = (uint32_t)evt_payload_2;
-	ia_css_event_encode(tmp, 4, &sw_event);
-
-	/* queue the software event (busy-waiting) */
-	while (!host2sp_enqueue_sp_event(sw_event))
-		hrt_sleep();
 }
 
 void

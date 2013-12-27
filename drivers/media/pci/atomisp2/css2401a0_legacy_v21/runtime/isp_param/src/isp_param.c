@@ -124,7 +124,7 @@ ia_css_isp_param_allocate_isp_parameters(
 			css_params->params[pclass][mem].size = size;
 			css_params->params[pclass][mem].address = 0x0;
 			if (size) {
-				mem_params->params[pclass][mem].address = sh_css_malloc(size);
+				mem_params->params[pclass][mem].address = sh_css_calloc(1, size);
 				if (!mem_params->params[pclass][mem].address)
 					return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 				if (pclass != IA_CSS_PARAM_CLASS_PARAM) {
@@ -171,7 +171,7 @@ ia_css_isp_param_load_fw_params(
 }
 
 enum ia_css_err
-ia_css_isp_param_copy_isp_config_to_ddr(
+ia_css_isp_param_copy_isp_mem_if_to_ddr(
 	struct ia_css_isp_param_css_segments *ddr,
 	const struct ia_css_isp_param_host_segments *host,
 	enum ia_css_param_class pclass)

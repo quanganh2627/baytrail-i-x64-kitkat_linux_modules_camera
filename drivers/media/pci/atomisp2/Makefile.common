@@ -13,6 +13,7 @@ ifneq ($(CSS21), )
 # Objects for CSS 2.1
 atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_ioctl.o \
+		atomisp_driver/atomisp_compat_ioctl32.o \
 		atomisp_driver/atomisp_cmd.o \
 		atomisp_driver/atomisp_fops.o \
 		atomisp_driver/atomisp_subdev.o \
@@ -35,7 +36,6 @@ atomisp-$(postfix)-objs := \
 		css/sh_css_hrt.o \
 		css/sh_css_params.o \
 		css/sh_css_sp.o \
-		css/sh_css_sp_start.o \
 		css/sh_css_metrics.o \
 		css/sh_css_firmware.o \
 		css/sh_css_param_shading.o \
@@ -52,6 +52,7 @@ atomisp-$(postfix)-objs := \
 		css/ia_css_memory_access.o \
 		css/ia_css_device_access.o \
 		css/sh_css_param_dvs.o \
+		css/isp/kernels/ref/ref_1.0/ia_css_ref.host.o \
 		css/isp/kernels/vf/vf_1.0/ia_css_vf.host.o \
 		css/runtime/binary/src/binary.o \
 		css/runtime/debug/src/ia_css_debug.o \
@@ -62,9 +63,13 @@ atomisp-$(postfix)-objs := \
 		css/runtime/rmgr/src/rmgr_vbuf.o \
 		css/runtime/pipeline/src/pipeline.o \
 		css/runtime/event/src/event.o \
+		css/runtime/eventq/src/eventq.o \
 		css/runtime/inputfifo/src/inputfifo.o \
 		css/base/refcount/src/refcount.o \
+		css/base/circbuf/src/circbuf.o \
 		css/runtime/queue/src/queue.o \
+		css/runtime/queue/src/queue_access.o \
+		css/runtime/spctrl/src/spctrl.o \
 		css/isp/kernels/raw/raw_1.0/ia_css_raw.host.o \
 		css/isp/kernels/ob/ob_1.0/ia_css_ob.host.o \
 		css/isp/kernels/aa/aa_2/ia_css_aa2.host.o \
@@ -135,6 +140,7 @@ else
 # Objects for CSS 2.0
 atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_ioctl.o \
+		atomisp_driver/atomisp_compat_ioctl32.o \
 		atomisp_driver/atomisp_cmd.o \
 		atomisp_driver/atomisp_fops.o \
 		atomisp_driver/atomisp_subdev.o \
@@ -191,6 +197,7 @@ else
 # Objects for CSS 1.5
 atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_ioctl.o \
+		atomisp_driver/atomisp_compat_ioctl32.o \
 		atomisp_driver/atomisp_cmd.o \
 		atomisp_driver/atomisp_fops.o \
 		atomisp_driver/atomisp_subdev.o \
@@ -291,6 +298,7 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/runtime/binary/interface \
 	    -I$(srctree)/$(src)/css/runtime/pipeline/interface \
 	    -I$(srctree)/$(src)/css/runtime/event/interface \
+	    -I$(srctree)/$(src)/css/runtime/eventq/interface \
 	    -I$(srctree)/$(src)/css/base/refcount/interface \
 	    -I$(srctree)/$(src)/css/host \
 	    -I$(srctree)/$(src)/css/runtime/queue/interface \
@@ -302,7 +310,9 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/camera/util/interface \
 	    -I$(srctree)/$(src)/css/base/circbuf/interface \
             -I$(srctree)/$(src)/css/runtime/isp_param/interface \
-     	    -I$(srctree)/$(src)/css/isp/kernels/vf/vf_1.0
+	    -I$(srctree)/$(src)/css/isp/kernels/ref/ref_1.0 \
+	    -I$(srctree)/$(src)/css/isp/kernels/vf/vf_1.0 \
+	    -I$(srctree)/$(src)/css/runtime/spctrl/interface
 endif
 endif
 
