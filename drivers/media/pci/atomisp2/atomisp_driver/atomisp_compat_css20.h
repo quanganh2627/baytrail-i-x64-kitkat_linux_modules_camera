@@ -236,4 +236,12 @@ void atomisp_css_unload_firmware(struct atomisp_device *isp);
 
 void atomisp_css_set_dvs_6axis(struct atomisp_sub_device *asd,
 			struct atomisp_css_dvs_6axis *dvs_6axis);
+
+unsigned int atomisp_css_debug_get_dtrace_level(void);
+
+int atomisp_css_debug_dump_isp_binary(void);
+
+int atomisp_css_dump_sp_raw_copy_linecount(bool reduced);
+
+int atomisp_css_dump_blob_infor(void);
 #endif

@@ -85,6 +85,12 @@ void atomisp_css_debug_set_dtrace_level(const unsigned int trace_level)
 {
 	ia_css_debug_set_dtrace_level(trace_level);
 }
+
+unsigned int atomisp_css_debug_get_dtrace_level(void)
+{
+	return ia_css_debug_trace_level;
+}
+
 #else /* CSS21 */
 void atomisp_css_debug_dump_sp_sw_debug_info(void)
 {
@@ -94,6 +100,11 @@ void atomisp_css_debug_dump_sp_sw_debug_info(void)
 void atomisp_css_debug_dump_debug_info(const char *context)
 {
 	sh_css_dump_debug_info(context);
+}
+
+unsigned int atomisp_css_debug_get_dtrace_level(void)
+{
+	return sh_css_trace_level;
 }
 
 void atomisp_css_debug_set_dtrace_level(const unsigned int trace_level)
@@ -250,6 +261,13 @@ static int atomisp_css2_dbg_print(const char *fmt, va_list args)
 {
 	if (dbg_level > 5)
 		vprintk(fmt, args);
+	return 0;
+}
+
+static int atomisp_css2_dbg_ftrace_print(const char *fmt, va_list args)
+{
+	if (dbg_level > 5)
+		ftrace_vprintk(fmt, args);
 	return 0;
 }
 
@@ -932,7 +950,14 @@ int atomisp_css_load_firmware(struct atomisp_device *isp)
 	isp->css_env.isp_css_env.hw_access_env.load = atomisp_css2_hw_load;
 	isp->css_env.isp_css_env.hw_access_env.store = atomisp_css2_hw_store;
 
-	isp->css_env.isp_css_env.print_env.debug_print = atomisp_css2_dbg_print;
+	if (0 == dbg_func)
+		isp->css_env.isp_css_env.print_env.debug_print = NULL;
+	else if (1 == dbg_func)
+		isp->css_env.isp_css_env.print_env.debug_print =
+			atomisp_css2_dbg_ftrace_print;
+	else if (2 == dbg_func)
+		isp->css_env.isp_css_env.print_env.debug_print = atomisp_css2_dbg_print;
+
 	isp->css_env.isp_css_env.print_env.error_print = atomisp_css2_err_print;
 
 	/* load isp fw into ISP memory */
@@ -3941,4 +3966,39 @@ bool atomisp_css_valid_sof(struct atomisp_device *isp)
 	}
 
 	return true;
+}
+
+int atomisp_css_debug_dump_isp_binary(void)
+{
+#ifdef CSS21
+	ia_css_debug_dump_isp_binary();
+#endif
+	return 0;
+}
+
+int atomisp_css_dump_sp_raw_copy_linecount(bool reduced)
+{
+#ifdef CSS21
+	sh_css_dump_sp_raw_copy_linecount(reduced);
+#endif
+	return 0;
+}
+
+int atomisp_css_dump_blob_infor(void)
+{
+#ifdef CSS21
+	struct ia_css_blob_descr *bd = sh_css_blob_info;
+	unsigned i, nm = sh_css_num_binaries;
+
+	if (nm == 0)
+		return -EPERM;
+	if (bd == NULL)
+		return -EPERM;
+
+	for (i = 1; i < sh_css_num_binaries; i++) {
+		dev_dbg(atomisp_dev, "Num%d binary id is %d, name is %s\n", i,
+			bd[i-1].header.info.isp.sp.id, bd[i-1].name);
+	}
+#endif
+	return 0;
 }

@@ -71,6 +71,12 @@ int dbg_level = 0;
 module_param(dbg_level, int, 0644);
 MODULE_PARM_DESC(dbg_level, "debug message on/off (default:off)");
 
+/* log function switch */
+int dbg_func = 2;
+module_param(dbg_func, int, 0644);
+MODULE_PARM_DESC(dbg_func,
+		"log function switch non/trace_printk/printk (default:printk)");
+
 int mipicsi_flag;
 module_param(mipicsi_flag, int, 0644);
 MODULE_PARM_DESC(mipicsi_flag, "mipi csi compression predictor algorithm");
