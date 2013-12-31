@@ -616,7 +616,7 @@ static int atomisp_csi_lane_config(struct atomisp_device *isp)
 		case ATOMISP_CAMERA_PORT_SECONDARY:
 			sensor_lanes[1] = mipi_info->num_lanes;
 			break;
-		case ATOMISP_CAMERA_PORT_THIRD:
+		case ATOMISP_CAMERA_PORT_TERTIARY:
 			sensor_lanes[2] = mipi_info->num_lanes;
 			break;
 		default:
