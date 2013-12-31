@@ -571,38 +571,63 @@ static int atomisp_resume(struct device *dev)
 
 static int atomisp_csi_lane_config(struct atomisp_device *isp)
 {
-#ifdef ISP2401_NEW_INPUT_SYSTEM
-	static const u8 mipi_lanes[CHV_PORT_CONFIG_NUM][CHV_PORT_NUM] = {
-		{4, 2, 0},
-		{3, 2, 0},
-		{2, 2, 0},
-		{1, 2, 0},
-		{2, 2, 2},
-		{3, 2, 1},
-		{2, 2, 1},
-		{1, 2, 1}
+	static const struct {
+		u8 code;
+		u8 lanes[MRFLD_PORT_NUM];
+	} portconfigs[] = {
+		/* Tangier/Merrifield available lane configurations */
+		{ 0x00, { 4, 1, 0 } },		/* 00000 */
+		{ 0x01, { 3, 1, 0 } },		/* 00001 */
+		{ 0x02, { 2, 1, 0 } },		/* 00010 */
+		{ 0x03, { 1, 1, 0 } },		/* 00011 */
+		{ 0x04, { 2, 1, 2 } },		/* 00100 */
+		{ 0x08, { 3, 1, 1 } },		/* 01000 */
+		{ 0x09, { 2, 1, 1 } },		/* 01001 */
+		{ 0x0a, { 1, 1, 1 } },		/* 01010 */
+
+		/* Anniedale/Moorefield only configurations */
+		{ 0x10, { 4, 2, 0 } },		/* 10000 */
+		{ 0x11, { 3, 2, 0 } },		/* 10001 */
+		{ 0x12, { 2, 2, 0 } },		/* 10010 */
+		{ 0x13, { 1, 2, 0 } },		/* 10011 */
+		{ 0x14, { 2, 2, 2 } },		/* 10100 */
+		{ 0x18, { 3, 2, 1 } },		/* 11000 */
+		{ 0x19, { 2, 2, 1 } },		/* 11001 */
+		{ 0x1a, { 1, 2, 1 } },		/* 11010 */
 	};
-#else
-	static const u8 mipi_lanes[MRFLD_PORT_CONFIG_NUM][MRFLD_PORT_NUM] = {
-		{4, 1, 0},
-		{3, 1, 0},
-		{2, 1, 0},
-		{1, 1, 0},
-		{2, 1, 2},
-		{3, 1, 1},
-		{2, 1, 1},
-		{1, 1, 1}
-	};
-#endif
+
 	unsigned int i, j;
-	u8 sensor_lanes[MRFLD_PORT_NUM] = {0};
-	u32 data;
+	u8 sensor_lanes[MRFLD_PORT_NUM] = { 0 };
+	u32 csi_control;
+	int nportconfigs;
+	u32 port_config_mask;
+	int port3_lanes_shift;
+
+ 	if (isp->media_dev.hw_revision <
+	    ATOMISP_HW_REVISION_ISP2401_LEGACY << ATOMISP_HW_REVISION_SHIFT) {
+		/* Merrifield */
+		port_config_mask = MRFLD_PORT_CONFIG_MASK;
+		port3_lanes_shift = MRFLD_PORT3_LANES_SHIFT;
+	} else {
+		/* Moorefield / Cherryview */
+		port_config_mask = CHV_PORT_CONFIG_MASK;
+		port3_lanes_shift = CHV_PORT3_LANES_SHIFT;
+	}
+
+	if (isp->media_dev.hw_revision <
+	    ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT) {
+		/* Merrifield / Moorefield legacy input system */
+		nportconfigs = MRFLD_PORT_CONFIG_NUM;
+	} else {
+		/* Moorefield / Cherryview new input system */
+		nportconfigs = ARRAY_SIZE(portconfigs);
+	}
 
 	for (i = 0; i < isp->input_cnt; i++) {
 		struct camera_mipi_info *mipi_info;
 
 		if (isp->inputs[i].type != RAW_CAMERA &&
-			isp->inputs[i].type != SOC_CAMERA)
+		    isp->inputs[i].type != SOC_CAMERA)
 			continue;
 
 		mipi_info = atomisp_to_sensor_mipi_info(isp->inputs[i].camera);
@@ -623,54 +648,47 @@ static int atomisp_csi_lane_config(struct atomisp_device *isp)
 			dev_err(isp->dev,
 				"%s: invalid port: %d for the %dth sensor\n",
 				__func__, mipi_info->port, i);
-			break;
+			return -EINVAL;
 		}
 	}
 
-	for (i = 0; i < MRFLD_PORT_CONFIG_NUM; i++) {
+	for (i = 0; i < nportconfigs; i++) {
 		for (j = 0; j < MRFLD_PORT_NUM; j++)
-			if (sensor_lanes[j]
-				&& sensor_lanes[j] != mipi_lanes[i][j])
+			if (sensor_lanes[j] &&
+			    sensor_lanes[j] != portconfigs[i].lanes[j])
 				break;
 
 		if (j == MRFLD_PORT_NUM)
-			break;	/* matched setting is found */
+			break;			/* Found matching setting */
 	}
 
-	if (i == MRFLD_PORT_CONFIG_NUM) {
+	if (i >= nportconfigs) {
 		dev_err(isp->dev,
 			"%s: could not find the CSI port setting for %d-%d-%d\n",
-			__func__, sensor_lanes[0],
-			sensor_lanes[1], sensor_lanes[2]);
+			__func__,
+			sensor_lanes[0], sensor_lanes[1], sensor_lanes[2]);
 		return -EINVAL;
 	}
 
-	pci_read_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, &data);
-	dev_dbg(isp->dev, "%s: original CSI_CONTROL is 0x%x\n", __func__, data);
-	data &= ~MRFLD_PORT_CONFIG_MASK;
-	data |= (i << MRFLD_PORT_CONFIGCODE_SHIFT)
-#ifdef ISP2401_NEW_INPUT_SYSTEM
-	        | (1 << CHV_CSI_PORT_CONFIG_SHIFT)
-	        | (1 << CHV_CSI_PAR_PATH_SHIFT)
-#endif
-		| (mipi_lanes[i][2] ? 0 : (1 << MRFLD_PORT3_ENABLE_SHIFT))
-		| (((1 << mipi_lanes[i][0]) - 1) << MRFLD_PORT1_LANES_SHIFT)
-		| (((1 << mipi_lanes[i][1]) - 1) << MRFLD_PORT2_LANES_SHIFT)
-#ifdef ISP2401_NEW_INPUT_SYSTEM
-		| (((1 << mipi_lanes[i][2]) - 1) << CHV_PORT3_LANES_SHIFT);
-#else
-		| (((1 << mipi_lanes[i][2]) - 1) << MRFLD_PORT3_LANES_SHIFT);
-#endif
-	pci_write_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, data);
+	pci_read_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, &csi_control);
+	csi_control &= ~port_config_mask;
+	csi_control |= (portconfigs[i].code << MRFLD_PORT_CONFIGCODE_SHIFT)
+		| (portconfigs[i].lanes[0] ? 0 : (1 << MRFLD_PORT1_ENABLE_SHIFT))
+		| (portconfigs[i].lanes[1] ? 0 : (1 << MRFLD_PORT2_ENABLE_SHIFT))
+		| (portconfigs[i].lanes[2] ? 0 : (1 << MRFLD_PORT3_ENABLE_SHIFT))
+		| (((1 << portconfigs[i].lanes[0]) - 1) << MRFLD_PORT1_LANES_SHIFT)
+		| (((1 << portconfigs[i].lanes[1]) - 1) << MRFLD_PORT2_LANES_SHIFT)
+		| (((1 << portconfigs[i].lanes[2]) - 1) << port3_lanes_shift);
+
+	pci_write_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, csi_control);
 
 	dev_dbg(isp->dev,
-		"%s: the portconfig is %d-%d-%d, CSI_CONTROL is 0x%x\n",
-		__func__, mipi_lanes[i][0], mipi_lanes[i][1],
-		mipi_lanes[i][2], data);
+		"%s: the portconfig is %d-%d-%d, CSI_CONTROL is 0x%08X\n",
+		__func__, portconfigs[i].lanes[0], portconfigs[i].lanes[1],
+		portconfigs[i].lanes[2], csi_control);
 
 	return 0;
 }
-
 
 static int atomisp_subdev_probe(struct atomisp_device *isp)
 {
