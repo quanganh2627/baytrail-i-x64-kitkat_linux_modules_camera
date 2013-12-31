@@ -248,6 +248,7 @@ struct ia_css_binary_info {
 		uint8_t	awb_fr_acc;
 		uint8_t	anr_acc;
 		uint8_t	rgbpp_acc;
+		uint8_t	rgbpp_ff;
 		uint8_t	demosaic_acc;
 		uint8_t	demosaic_ff;
 		uint8_t	yuvp1_acc;
