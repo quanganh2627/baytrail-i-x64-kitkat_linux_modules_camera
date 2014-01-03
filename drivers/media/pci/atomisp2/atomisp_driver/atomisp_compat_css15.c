@@ -1013,6 +1013,14 @@ int atomisp_css_capture_configure_pp_input(
 	return 0;
 }
 
+int atomisp_css_video_configure_pp_input(
+				struct atomisp_sub_device *asd,
+				unsigned int width, unsigned int height)
+{
+	/* Not supported on CSS1.5, Dummy function for compiling. */
+	return 0;
+}
+
 int atomisp_css_offline_capture_configure(struct atomisp_sub_device *asd,
 				int num_captures, unsigned int skip, int offset)
 {

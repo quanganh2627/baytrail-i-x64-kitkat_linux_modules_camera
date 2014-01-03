@@ -173,6 +173,7 @@
 #define ISP_FREQ_VALID_OFFSET			0x7
 #define ISP_FREQ_RULE_ANY			0x0
 
+#define ISP_FREQ_457MHZ				0x1C9
 #define ISP_FREQ_400MHZ				0x190
 #define ISP_FREQ_320MHZ				0x140
 #define ISP_FREQ_266MHZ				0x10a

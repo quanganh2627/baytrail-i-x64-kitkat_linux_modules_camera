@@ -64,6 +64,11 @@ enum frame_info_type {
 	ATOMISP_CSS_RAW_FRAME,
 };
 
+struct bayer_ds_factor {
+	unsigned int numerator;
+	unsigned int denominator;
+};
+
 #ifdef CSS21
 void atomisp_css_debug_dump_sp_sw_debug_info(void)
 {
@@ -448,6 +453,17 @@ static void __dump_stream_config(struct atomisp_sub_device *asd)
 		dev_dbg(isp->dev,
 			"stream_config.channel_id=%d.\n",
 			s_config->channel_id);
+#ifdef CSS21
+		dev_dbg(isp->dev,
+			"stream_config.init_num_cont_raw_buf=%d.\n",
+			s_config->init_num_cont_raw_buf);
+		dev_dbg(isp->dev,
+			"stream_config.target_num_cont_raw_buf=%d.\n",
+			s_config->target_num_cont_raw_buf);
+		dev_dbg(isp->dev,
+			"stream_config.left_padding=%d.\n",
+			s_config->left_padding);
+#endif
 	}
 }
 
@@ -1499,21 +1515,23 @@ void atomisp_css_enable_raw_binning(struct atomisp_sub_device *asd,
 {
 	struct atomisp_stream_env *stream_env =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+	unsigned int pipe;
 
-	stream_env->pipe_extra_configs[IA_CSS_PIPE_ID_PREVIEW].
-	    enable_raw_binning = !!enable;
-	stream_env->update_pipe[IA_CSS_PIPE_ID_PREVIEW] = true;
+	if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+		pipe = IA_CSS_PIPE_ID_VIDEO;
+	else
+		pipe = IA_CSS_PIPE_ID_PREVIEW;
+
+	stream_env->pipe_extra_configs[pipe].enable_raw_binning = enable;
+	stream_env->update_pipe[pipe] = true;
 	if (enable) {
 #ifndef CSS21
-		stream_env->pipe_configs[IA_CSS_PIPE_ID_PREVIEW].
-		    bin_out_res.width =
+		stream_env->pipe_configs[pipe].bin_out_res.width =
 		    stream_env->stream_config.effective_res.width;
-		stream_env->pipe_configs[IA_CSS_PIPE_ID_PREVIEW].
-		    bin_out_res.height =
+		stream_env->pipe_configs[pipe].bin_out_res.height =
 		    stream_env->stream_config.effective_res.height;
 #endif /* CSS21 */
-		stream_env->pipe_configs[IA_CSS_PIPE_ID_PREVIEW].
-		    output_info.padded_width =
+		stream_env->pipe_configs[pipe].output_info.padded_width =
 		    stream_env->stream_config.effective_res.width;
 	}
 }
@@ -2065,6 +2083,97 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
 		pipe_id, width, height);
 }
+
+/*
+ * For CSS2.1, offline video pipe could support bayer decimation, and
+ * yuv downscaling, which needs addtional configurations.
+ */
+static void __configure_video_pp_input(struct atomisp_sub_device *asd,
+				 unsigned int width, unsigned int height,
+				 enum ia_css_pipe_id pipe_id)
+{
+	struct atomisp_device *isp = asd->isp;
+	int out_width, out_height;
+	struct atomisp_stream_env *stream_env =
+		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+	struct ia_css_stream_config *stream_config = &stream_env->stream_config;
+	struct ia_css_pipe_config *pipe_configs =
+		&stream_env->pipe_configs[pipe_id];
+	struct ia_css_pipe_extra_config *pipe_extra_configs =
+		&stream_env->pipe_extra_configs[pipe_id];
+	struct ia_css_resolution *bayer_ds_out_res =
+		&pipe_configs->bayer_ds_out_res;
+	struct ia_css_resolution  *effective_res =
+		&stream_config->effective_res;
+	const struct bayer_ds_factor bds_factors[] =
+		{{8, 1}, {4, 1}, {2, 1}, {3, 2}, {5, 4}};
+	unsigned int i;
+
+	if (width == 0 && height == 0)
+		return;
+
+	if (width * 9 / 10 < pipe_configs->output_info.res.width ||
+	    height * 9 / 10 < pipe_configs->output_info.res.height)
+		return;
+
+	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
+	stream_env->update_pipe[pipe_id] = true;
+
+	pipe_extra_configs->enable_yuv_ds = false;
+
+	/*
+	 * If DVS is enabled,  video binary will take care the dvs envelope
+	 * and usually the bayer_ds_out_res should be larger than 120% of
+	 * destination resolution, the extra 20% will be cropped as DVS
+	 * envelope. But,  if the bayer_ds_out_res is less than 120% of the
+	 * destination. The ISP can still work,  but DVS quality is not good.
+	 */
+	/* taking at least 18% as envelope */
+	if (asd->params.video_dis_en) {
+		out_width = pipe_configs->output_info.res.width * 118 / 100;
+		out_height = pipe_configs->output_info.res.height * 118 / 100;
+	} else {
+		out_width = pipe_configs->output_info.res.width;
+		out_height = pipe_configs->output_info.res.height;
+	}
+
+	/*
+	 * calculate bayer decimate factor:
+	 * 1: only 1.25, 1.5, 2, 4 and 8 get supported
+	 * 2: Do not configure bayer_ds_out_res if:
+	 *    online == 1 or continuous == 0 or raw_binning = 0
+	 */
+	if (stream_config->online || !stream_config->continuous ||
+	    !pipe_extra_configs->enable_raw_binning) {
+		bayer_ds_out_res->width = 0;
+		bayer_ds_out_res->height = 0;
+		goto done;
+	}
+
+	bayer_ds_out_res->width = effective_res->width;
+	bayer_ds_out_res->height = effective_res->height;
+
+	for (i = 0; i < sizeof(bds_factors) / sizeof(struct bayer_ds_factor);
+	     i++) {
+		if (effective_res->width >= out_width *
+		    bds_factors[i].numerator / bds_factors[i].denominator &&
+		    effective_res->height >= out_height *
+		    bds_factors[i].numerator / bds_factors[i].denominator) {
+			bayer_ds_out_res->width = effective_res->width *
+			    bds_factors[i].denominator /
+			    bds_factors[i].numerator;
+			bayer_ds_out_res->height = effective_res->height *
+			    bds_factors[i].denominator /
+			    bds_factors[i].numerator;
+			break;
+		}
+	}
+
+done:
+	stream_config->left_padding = 12;
+	dev_dbg(isp->dev, "configuring pipe[%d]video pp input w=%d.h=%d.\n",
+		pipe_id, width, height);
+}
 #endif
 
 static void __configure_vf_output(struct atomisp_sub_device *asd,
@@ -2149,18 +2258,17 @@ unsigned int atomisp_get_pipe_index(struct atomisp_sub_device *asd,
 		return IA_CSS_PIPE_ID_COPY;
 
 	switch (source_pad) {
-	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
 	case ATOMISP_SUBDEV_PAD_SOURCE_VIDEO:
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO
 		    || asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER)
 			return IA_CSS_PIPE_ID_VIDEO;
 		else
 			return IA_CSS_PIPE_ID_CAPTURE;
+	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
+		return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_VF:
-		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
-			return IA_CSS_PIPE_ID_VIDEO;
-		else if (!atomisp_is_mbuscode_raw(
-				 asd->fmt[asd->capture_pad].fmt.code))
+		if (!atomisp_is_mbuscode_raw(
+		    asd->fmt[asd->capture_pad].fmt.code))
 			return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
@@ -2372,6 +2480,25 @@ int atomisp_css_capture_configure_pp_input(
 	__configure_capture_pp_input(asd, width, height, IA_CSS_PIPE_ID_CAPTURE);
 #else
 	__configure_pp_input(asd, width, height, IA_CSS_PIPE_ID_CAPTURE);
+#endif
+	return 0;
+}
+
+int atomisp_css_video_configure_pp_input(
+				struct atomisp_sub_device *asd,
+				unsigned int width, unsigned int height)
+{
+#ifdef CSS21
+	struct atomisp_stream_env *stream_env =
+		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+
+	__configure_video_pp_input(asd, width, height,
+			IA_CSS_PIPE_ID_VIDEO);
+
+	if (width > stream_env->pipe_configs[IA_CSS_PIPE_ID_CAPTURE].
+					capt_pp_in_res.width)
+		__configure_capture_pp_input(asd,
+				     width, height, IA_CSS_PIPE_ID_CAPTURE);
 #endif
 	return 0;
 }

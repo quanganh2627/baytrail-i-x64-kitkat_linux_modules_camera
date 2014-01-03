@@ -310,7 +310,7 @@ struct atomisp_sub_device {
 	unsigned int delayed_init;
 	struct work_struct delayed_init_work;
 
-	unsigned int latest_preview_exp_id; /* CSS ZSL raw buffer id */
+	unsigned int latest_preview_exp_id; /* CSS ZSL/SDV raw buffer id */
 
 	unsigned int mipi_frame_size;
 };

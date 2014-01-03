@@ -205,23 +205,30 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 	enum atomisp_css_buffer_type buf_type;
 	enum atomisp_css_pipe_id css_capture_pipe_id = CSS_PIPE_ID_NUM;
 	enum atomisp_css_pipe_id css_preview_pipe_id = CSS_PIPE_ID_NUM;
+	enum atomisp_css_pipe_id css_video_pipe_id = CSS_PIPE_ID_NUM;
 	enum atomisp_input_stream_id input_stream_id;
 	struct atomisp_video_pipe *capture_pipe = NULL;
 	struct atomisp_video_pipe *vf_pipe = NULL;
 	struct atomisp_video_pipe *preview_pipe = NULL;
+	struct atomisp_video_pipe *video_pipe = NULL;
 	bool raw_mode = atomisp_is_mbuscode_raw(
 			    asd->fmt[asd->capture_pad].fmt.code);
 
 	if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
-		preview_pipe = &asd->video_out_video_capture;
-		css_preview_pipe_id = CSS_PIPE_ID_VIDEO;
+		video_pipe = &asd->video_out_video_capture;
+		css_video_pipe_id = CSS_PIPE_ID_VIDEO;
 	} else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_LOWLAT) {
 		preview_pipe = &asd->video_out_capture;
 		css_preview_pipe_id = CSS_PIPE_ID_CAPTURE;
 	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
-		capture_pipe = &asd->video_out_video_capture;
+		if (asd->continuous_mode->val) {
+			capture_pipe = &asd->video_out_capture;
+			vf_pipe = &asd->video_out_vf;
+			css_capture_pipe_id = CSS_PIPE_ID_CAPTURE;
+		}
+		video_pipe = &asd->video_out_video_capture;
 		preview_pipe = &asd->video_out_preview;
-		css_capture_pipe_id = CSS_PIPE_ID_VIDEO;
+		css_video_pipe_id = CSS_PIPE_ID_VIDEO;
 		css_preview_pipe_id = CSS_PIPE_ID_VIDEO;
 	} else if (asd->continuous_mode->val) {
 		capture_pipe = &asd->video_out_capture;
@@ -294,6 +301,22 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 					       buf_type, css_preview_pipe_id);
 	}
 
+	if (video_pipe) {
+		buf_type = atomisp_get_css_buf_type(
+			asd, css_video_pipe_id,
+			atomisp_subdev_source_pad(&video_pipe->vdev));
+#ifdef CSS20
+		if (asd->stream_env[ATOMISP_INPUT_STREAM_VIDEO].stream)
+			input_stream_id = ATOMISP_INPUT_STREAM_VIDEO;
+		else
+#endif
+			input_stream_id = ATOMISP_INPUT_STREAM_GENERAL;
+		atomisp_q_video_buffers_to_css(asd, video_pipe,
+					       input_stream_id,
+					       buf_type, css_video_pipe_id);
+	}
+
+
 	if (asd->params.curr_grid_info.s3a_grid.enable) {
 		if (css_capture_pipe_id < CSS_PIPE_ID_NUM)
 			atomisp_q_s3a_buffers_to_css(asd,
@@ -303,12 +326,16 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 			atomisp_q_s3a_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
 					css_preview_pipe_id);
+		if (css_video_pipe_id < CSS_PIPE_ID_NUM)
+			atomisp_q_s3a_buffers_to_css(asd,
+					ATOMISP_INPUT_STREAM_GENERAL,
+					css_video_pipe_id);
 	}
 
 	if (asd->params.curr_grid_info.dvs_grid.enable)
 		atomisp_q_dis_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
-					css_capture_pipe_id);
+					css_video_pipe_id);
 
 	return 0;
 }

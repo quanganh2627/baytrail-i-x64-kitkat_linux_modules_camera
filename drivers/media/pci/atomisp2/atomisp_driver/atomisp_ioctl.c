@@ -1275,9 +1275,12 @@ static int atomisp_dqbuf(struct file *file, void *fh, struct v4l2_buffer *buf)
 
 enum atomisp_css_pipe_id atomisp_get_css_pipe_id(struct atomisp_sub_device *asd)
 {
-	if (asd->continuous_mode->val &&
-	    asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO)
-		return CSS_PIPE_ID_PREVIEW;
+	if (asd->continuous_mode->val) {
+		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+			return CSS_PIPE_ID_VIDEO;
+		else
+			return CSS_PIPE_ID_PREVIEW;
+	}
 
 	/*
 	 * Disable vf_pp and run CSS in video mode. This allows using ISP
@@ -1381,9 +1384,13 @@ static int atomisp_streamon(struct file *file, void *fh,
 		/* trigger still capture */
 		if (asd->continuous_mode->val &&
 		    atomisp_subdev_source_pad(vdev)
-		    == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE &&
-		    asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO) {
-			dev_dbg(isp->dev,
+		    == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE) {
+			if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+			    dev_dbg(isp->dev,
+				"SDV last video raw buffer id: %u\n",
+				asd->latest_preview_exp_id);
+			else
+			    dev_dbg(isp->dev,
 				"ZSL last preview raw buffer id: %u\n",
 				asd->latest_preview_exp_id);
 
@@ -1437,8 +1444,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 	if (ret)
 		goto out;
 
-	if (asd->continuous_mode->val &&
-	    asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO) {
+	if (asd->continuous_mode->val) {
 		struct v4l2_mbus_framefmt *sink;
 
 		sink = atomisp_subdev_get_ffmt(&asd->subdev, NULL,
@@ -1547,9 +1553,11 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 	 * do only videobuf_streamoff for capture & vf pipes in
 	 * case of continuous capture
 	 */
-	if (asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO &&
-	    asd->continuous_mode->val && atomisp_subdev_source_pad(vdev)
-	    != ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW) {
+	if (asd->continuous_mode->val &&
+	    atomisp_subdev_source_pad(vdev) !=
+		ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW &&
+	    atomisp_subdev_source_pad(vdev) !=
+		ATOMISP_SUBDEV_PAD_SOURCE_VIDEO) {
 
 		/* stop continuous still capture if needed */
 		if (atomisp_subdev_source_pad(vdev)
