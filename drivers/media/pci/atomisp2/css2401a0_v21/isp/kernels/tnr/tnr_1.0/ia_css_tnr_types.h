@@ -56,9 +56,5 @@ struct ia_css_tnr_config {
 				u0.16, [0,65535], default/ineffective 0 */
 };
 
-struct ia_css_tnr_configuration {
-	const struct ia_css_frame_info *info;
-};
-
 #endif /* __IA_CSS_TNR_TYPES_H */
 

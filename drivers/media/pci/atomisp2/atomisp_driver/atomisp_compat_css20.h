@@ -151,6 +151,7 @@ struct atomisp_stream_env {
 	struct ia_css_stream *acc_stream;
 	enum atomisp_css_stream_state acc_stream_state;
 	struct ia_css_stream_config acc_stream_config;
+	unsigned int ch_id; /* virtual channel ID */
 };
 
 struct atomisp_css_env {

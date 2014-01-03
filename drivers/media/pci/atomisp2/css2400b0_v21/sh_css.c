@@ -506,6 +506,12 @@ static void
 pipe_release_pipe_num(unsigned int pipe_num);
 
 static enum ia_css_err
+create_host_pipeline_object(struct ia_css_pipe *pipe);
+
+static enum ia_css_err
+create_host_pipeline_structure(struct ia_css_stream *stream);
+
+static enum ia_css_err
 create_host_pipeline(struct ia_css_stream *stream);
 
 static enum ia_css_err
@@ -1998,8 +2004,112 @@ map_sp_threads(struct ia_css_stream *stream, bool map)
 	return err;
 }
 
-/* creates a host pipeline for all pipes in a stream. Called during
+/* Create pipeline placeholder */
+static enum ia_css_err
+create_host_pipeline_object(struct ia_css_pipe *pipe)
+{
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"create_host_pipeline_object(): enter\n");
+
+	err = ia_css_pipeline_create(&pipe->pipeline, pipe->mode, pipe->pipe_num);
+	if (err != IA_CSS_SUCCESS) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"create_host_pipeline_object(): "
+				"Unable to create pipe err=%d\n", err);
+	}
+	return err;
+}
+
+/* creates a host pipeline skeleton for all pipes in a stream. Called during
  * stream_create. */
+static enum ia_css_err
+create_host_pipeline_structure(struct ia_css_stream *stream)
+{
+	struct ia_css_pipe *copy_pipe = NULL, *capture_pipe = NULL;
+	enum ia_css_pipe_id pipe_id;
+	struct ia_css_pipe *main_pipe = NULL;
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	assert(stream != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"create_host_pipeline_structure() enter:\n");
+
+	main_pipe 	= stream->last_pipe;
+	pipe_id 	= main_pipe->mode;
+
+#if !defined(USE_INPUT_SYSTEM_VERSION_2401)
+	/* Standalone Capture pipe cannot work with continuous capture. */
+	if((pipe_id == IA_CSS_PIPE_ID_CAPTURE) && (stream->num_pipes == 1)) {
+		if(!stream->config.online &&
+			!main_pipe->pipe_settings.capture.copy_binary.info)
+			goto ERR;
+	}
+#endif
+	
+	switch (pipe_id) {
+	case IA_CSS_PIPE_ID_PREVIEW:
+		copy_pipe    = main_pipe->pipe_settings.preview.copy_pipe;
+		capture_pipe = main_pipe->pipe_settings.preview.capture_pipe;
+		
+		err = create_host_pipeline_object(main_pipe);
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
+
+		break;
+
+	case IA_CSS_PIPE_ID_VIDEO:
+		copy_pipe    = main_pipe->pipe_settings.video.copy_pipe;
+		capture_pipe = main_pipe->pipe_settings.video.capture_pipe;
+		
+		err = create_host_pipeline_object(main_pipe);
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
+
+		break;
+
+	case IA_CSS_PIPE_ID_CAPTURE:
+		capture_pipe = main_pipe;
+
+		break;
+
+	case IA_CSS_PIPE_ID_ACC:
+		err = create_host_pipeline_object(main_pipe);
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
+
+		break;
+	default:
+		err = IA_CSS_ERR_INVALID_ARGUMENTS;
+	}
+	if (err != IA_CSS_SUCCESS)
+		goto ERR;
+
+	if(copy_pipe) {
+		err = create_host_pipeline_object(copy_pipe);
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
+	}
+
+	if(capture_pipe) {
+		err = create_host_pipeline_object(capture_pipe);
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
+	}
+
+ERR:
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"create_host_pipeline_structure() leave: return (%d)\n", err);
+	return err;
+}
+
+/* creates a host pipeline for all pipes in a stream. Called during
+ * stream_start. */
 static enum ia_css_err
 create_host_pipeline(struct ia_css_stream *stream)
 {
@@ -3607,13 +3717,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 	pipe->out_frame_struct.data = 0;
 	pipe->vf_frame_struct.data = 0;
 
-	err = ia_css_pipeline_create(&pipe->pipeline, pipe->mode, pipe->pipe_num);
-	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "create_host_video_pipeline(): "
-			"Unable to create main pipe err=%d\n", err);
-		goto ERR;
-	}
-
+	/* pipeline already created as part of create_host_pipeline_structure */
 	me = &pipe->pipeline;
 	ia_css_pipeline_clean(me);
 
@@ -3743,14 +3847,6 @@ create_host_acc_pipeline(struct ia_css_pipe *pipe)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"create_host_acc_pipeline() enter\n");
 
-	err = ia_css_pipeline_create(&pipe->pipeline, pipe->mode, pipe->pipe_num);
-	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"create_host_acc_pipeline(): "
-				"Unable to create main pipe err=%d\n", err);
-		return err;
-	}
-
 	for (i=0; i<pipe->config.num_acc_stages; i++) {
 		struct ia_css_fw_info *fw = pipe->config.acc_stages[i];
 		err = sh_css_pipeline_add_acc_stage(&pipe->pipeline, fw);
@@ -3793,13 +3889,7 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"create_host_preview_pipeline(): enter\n");
 
-	err = ia_css_pipeline_create(&pipe->pipeline, pipe->mode, pipe->pipe_num);
-	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"create_host_preview_pipeline(): "
-				"Unable to create main pipe err=%d\n", err);
-		goto ERR;
-	}
+	/* pipeline already created as part of create_host_pipeline_structure */
 	me = &pipe->pipeline;
 	ia_css_pipeline_clean(me);
 
@@ -4101,6 +4191,7 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 
 	assert(sizeof(NULL) <= sizeof(ddr_buffer.kernel_ptr));
 	ddr_buffer.kernel_ptr = HOST_ADDRESS(NULL);
+	ddr_buffer.cookie_ptr = buffer->driver_cookie;
 
 	if (buf_type == IA_CSS_BUFFER_TYPE_3A_STATISTICS) {
 		if (buffer->data.stats_3a == NULL)
@@ -4280,6 +4371,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			/* buffer->exp_id : all instances to be removed later once the driver change
 			 * is completed. See patch #5758 for reference */
 			buffer->exp_id = 0;
+			buffer->driver_cookie = ddr_buffer.cookie_ptr;
 
 			switch (buf_type) {
 			case IA_CSS_BUFFER_TYPE_INPUT_FRAME:
@@ -5803,13 +5895,7 @@ create_host_copy_pipeline(struct ia_css_pipe *pipe,
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"create_host_copy_pipeline() enter:\n");
 
-	err = ia_css_pipeline_create(&pipe->pipeline, pipe->mode, pipe->pipe_num);
-	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "create_host_copy_pipeline(): "
-			"Unable to create copy pipe err=%d\n", err);
-		return err;
-	}
-
+	/* pipeline already created as part of create_host_pipeline_structure */
 	me = &pipe->pipeline;
 	ia_css_pipeline_clean(me);
 
@@ -6169,14 +6255,6 @@ create_host_capture_pipeline(struct ia_css_pipe *pipe)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"create_host_capture_pipeline() enter:\n");
 
-	err = ia_css_pipeline_create(&pipe->pipeline, pipe->mode, pipe->pipe_num);
-	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"create_host_capture_pipeline(): "
-				"Unable to create capture pipe err=%d\n", err);
-		return err;
-	}
-
 	if (pipe->config.mode == IA_CSS_PIPE_MODE_COPY)
 		err = create_host_isyscopy_capture_pipeline(pipe);
 	else
@@ -6184,6 +6262,7 @@ create_host_capture_pipeline(struct ia_css_pipe *pipe)
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
+	/* pipeline already created as part of create_host_pipeline_structure */
 	configure_pipe_inout_port(&pipe->pipeline,
 		pipe->stream->config.continuous);
 
@@ -7224,12 +7303,20 @@ ia_css_acc_stream_create(struct ia_css_stream *stream)
 		pipe->stream = stream;
 	}
 
-	err = create_host_pipeline(stream);
+	err = create_host_pipeline_structure(stream);
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
 	stream->started = false;
 
+	/* Map SP threads before doing anything. */
+	err = map_sp_threads(stream, true);
+	if (err != IA_CSS_SUCCESS) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"ia_css_stream_start(): map_sp_threads: return_err=%d\n", err);
+		return err;
+	}
+	
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"ia_css_acc_stream_create() leave:\n");
 
@@ -7530,13 +7617,22 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 
 	curr_stream->started = false;
 
-	/* Create host side pipeline. No SP resources are allocated. */
-	err = create_host_pipeline(curr_stream);
+	/* Create host side pipeline objects without stages */
+	err = create_host_pipeline_structure(curr_stream);
 	if (err != IA_CSS_SUCCESS)
 		return err;
-
+	
 	/* assign curr_stream */
 	*stream = curr_stream;
+	
+	/* Map SP threads before doing anything. */
+	err = map_sp_threads(curr_stream, true);
+	if (err != IA_CSS_SUCCESS) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"ia_css_stream_start(): map_sp_threads: return_err=%d\n", err);
+		return err;
+	}
+	
 ERR:
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create() leave, err=%d\n",
 			err);
@@ -7557,13 +7653,11 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 	stream_unregister_with_csi_rx(stream);
 #endif
 
-	if(stream->started) {
-		err = map_sp_threads(stream, false);
-		if (err != IA_CSS_SUCCESS) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-				"ia_css_stream_destroy(): map_sp_threads: return_err=%d\n", err);
-			return err;
-		}
+	err = map_sp_threads(stream, false);
+	if (err != IA_CSS_SUCCESS) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"ia_css_stream_destroy(): map_sp_threads: return_err=%d\n", err);
+		return err;
 	}
 
 	/* remove references from pipes to stream */
@@ -7635,13 +7729,10 @@ ia_css_stream_start(struct ia_css_stream *stream)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_start: starting %d\n",
 		stream->last_pipe->mode);
 
-	/* Map SP threads before doing anything. */
-	err = map_sp_threads(stream, true);
-	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"ia_css_stream_start(): map_sp_threads: return_err=%d\n", err);
+	/* Create host side pipeline. */
+	err = create_host_pipeline(stream);
+	if (err != IA_CSS_SUCCESS)
 		return err;
-	}
 
 #if !defined(HAS_NO_INPUT_SYSTEM)
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
