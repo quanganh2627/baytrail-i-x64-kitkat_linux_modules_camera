@@ -28,9 +28,6 @@
 #define inode_to_atomisp_device(inode) \
 	container_of((inode)->i_cdev, struct atomisp_device, cdev)
 
-struct cdev;
-struct list;
-struct device;
 struct atomisp_event;
 
 struct atomisp_kbuffer {

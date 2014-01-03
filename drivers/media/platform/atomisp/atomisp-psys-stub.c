@@ -37,6 +37,7 @@
 static dev_t atomisp_dev_t;
 static DECLARE_BITMAP(atomisp_devices, ATOMISP_NUM_DEVICES);
 static DEFINE_MUTEX(atomisp_devices_mutex);
+static struct platform_device *atomisp_platform_device;
 
 static struct bus_type atomisp_psys_bus = {
 	.name = ATOMISP_PSYS_STUB_NAME,
@@ -329,6 +330,10 @@ static const struct file_operations atomisp_fops = {
 	.owner = THIS_MODULE,
 };
 
+void atomisp_dev_release(struct device *dev)
+{
+}
+
 static int atomisp_platform_probe(struct platform_device *pdev)
 {
 	struct atomisp_device *isp;
@@ -363,13 +368,16 @@ static int atomisp_platform_probe(struct platform_device *pdev)
 
 	isp->dev.bus = &atomisp_psys_bus;
 	isp->dev.devt = MKDEV(MAJOR(atomisp_dev_t), minor);
+	isp->dev.release = atomisp_dev_release;
 	dev_set_name(&isp->dev, ATOMISP_PSYS_STUB_NAME "%d", minor);
 	rval = device_register(&isp->dev);
 	if (rval < 0) {
 		dev_err(&isp->dev, "device_register failed\n");
 		goto out_unlock;
 	}
-	
+
+	platform_set_drvdata(pdev, isp);
+
 	mutex_unlock(&atomisp_devices_mutex);
 	mutex_init(&isp->mutex);
 	INIT_LIST_HEAD(&isp->fhs);
@@ -418,11 +426,6 @@ static struct platform_driver atomisp_platform_driver = {
 	.id_table = atomisp_psys_id_table,
 };
 
-static struct platform_device atomisp_platform_device = {
-	.name           = ATOMISP_PSYS_STUB_NAME,
-        .id             = -1,
-};
-
 static int __init atomisp_init(void)
 {
 	int rval = alloc_chrdev_region(&atomisp_dev_t, 0, ATOMISP_NUM_DEVICES,
@@ -439,9 +442,16 @@ static int __init atomisp_init(void)
 		goto out_bus_register;
 	}
 
-	rval = platform_device_register(&atomisp_platform_device);
+	atomisp_platform_device = platform_device_alloc(ATOMISP_PSYS_STUB_NAME, -1);
+	if (!atomisp_platform_device) {
+		pr_warn("can't allocate platform device\n");
+		rval = -ENOMEM;
+		goto out_bus_register;
+	}
+
+	rval = platform_device_add(atomisp_platform_device);
 	if (rval) {
-		pr_warn("can't register pci driver (%d)\n", rval);
+		pr_warn("can't add pci driver (%d)\n", rval);
 		goto out_platform_device_register;
 	}
 
@@ -454,7 +464,7 @@ static int __init atomisp_init(void)
 	return 0;
 
 out_platform_driver_register:
-	platform_device_unregister(&atomisp_platform_device);
+	platform_device_unregister(atomisp_platform_device);
 
 out_platform_device_register:
 	bus_unregister(&atomisp_psys_bus);
@@ -468,7 +478,8 @@ out_bus_register:
 static void __exit atomisp_exit(void)
 {
 	platform_driver_unregister(&atomisp_platform_driver);
-	platform_device_unregister(&atomisp_platform_device);
+	platform_device_unregister(atomisp_platform_device);
+	atomisp_platform_device = NULL;
 	bus_unregister(&atomisp_psys_bus);
 	unregister_chrdev_region(atomisp_dev_t, ATOMISP_NUM_DEVICES);
 }
