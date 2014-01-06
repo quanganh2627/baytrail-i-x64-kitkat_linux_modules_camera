@@ -157,6 +157,7 @@ struct ap1302_device {
 	struct regmap *regmap16;
 	struct regmap *regmap32;
 	bool sys_activated;
+	bool power_on;
 };
 
 struct ap1302_firmware {

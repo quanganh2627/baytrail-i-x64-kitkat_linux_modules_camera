@@ -414,7 +414,7 @@ static int __ap1302_s_power(struct v4l2_subdev *sd, int on, int load_fw)
 			"ap1302_s_power error. on=%d ret=%d\n", on, ret);
 		return ret;
 	}
-
+	dev->power_on = on;
 	if (!on || !load_fw)
 		return 0;
 	/* Load firmware after power on. */
@@ -854,6 +854,66 @@ static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 	return 0;
 }
 
+static int ap1302_g_register(struct v4l2_subdev *sd,
+			     struct v4l2_dbg_register *reg)
+{
+	struct ap1302_device *dev = to_ap1302_device(sd);
+	int ret;
+	u32 reg_val;
+
+	if (reg->size != AP1302_REG16 &&
+	    reg->size != AP1302_REG32)
+		return -EINVAL;
+
+	mutex_lock(&dev->input_lock);
+	if (dev->power_on)
+		ret = ap1302_i2c_read_reg(sd, reg->reg, reg->size, &reg_val);
+	else
+		ret = -EIO;
+	mutex_unlock(&dev->input_lock);
+	if (ret)
+		return ret;
+
+	reg->val = reg_val;
+
+	return 0;
+}
+
+static int ap1302_s_register(struct v4l2_subdev *sd,
+			     const struct v4l2_dbg_register *reg)
+{
+	struct ap1302_device *dev = to_ap1302_device(sd);
+	int ret;
+
+	if (reg->size != AP1302_REG16 &&
+	    reg->size != AP1302_REG32)
+		return -EINVAL;
+
+	mutex_lock(&dev->input_lock);
+	if (dev->power_on)
+		ret = ap1302_i2c_write_reg(sd, reg->reg, reg->size, reg->val);
+	else
+		ret = -EIO;
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static long ap1302_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
+{
+	long ret = 0;
+	switch (cmd) {
+	case VIDIOC_DBG_G_REGISTER:
+		ret = ap1302_g_register(sd, arg);
+		break;
+	case VIDIOC_DBG_S_REGISTER:
+		ret = ap1302_s_register(sd, arg);
+		break;
+	default:
+		ret = -EINVAL;
+	}
+	return ret;
+}
+
 static const struct v4l2_ctrl_ops ctrl_ops = {
 	.s_ctrl = ap1302_s_ctrl,
 };
@@ -897,6 +957,11 @@ static const struct v4l2_subdev_core_ops ap1302_core_ops = {
 	.queryctrl	= v4l2_subdev_queryctrl,
 	.g_ctrl		= v4l2_subdev_g_ctrl,
 	.s_ctrl		= v4l2_subdev_s_ctrl,
+	.ioctl		= ap1302_ioctl,
+#ifdef CONFIG_VIDEO_ADV_DEBUG
+	.g_register	= ap1302_g_register,
+	.s_register	= ap1302_s_register,
+#endif
 };
 
 static const struct v4l2_subdev_pad_ops ap1302_pad_ops = {
