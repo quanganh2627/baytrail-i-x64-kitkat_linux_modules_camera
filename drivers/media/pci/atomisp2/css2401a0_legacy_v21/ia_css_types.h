@@ -1,8 +1,8 @@
-/* Release Version: ci_master_20140103_1003 */
+/* Release Version: ci_master_20140105_1004 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
- * Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+ * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version

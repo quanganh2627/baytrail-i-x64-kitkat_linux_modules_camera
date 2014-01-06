@@ -1,7 +1,7 @@
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
- * Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+ * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
@@ -54,7 +54,6 @@ hrt_sleep(void)
  * Put here everything __HIVECC specific not covered in
  * "assert_support.h", "math_support.h", etc
  */
-//#include "hrt/host.h"
 #include <string.h>
 
 #define CSS_ALIGN(d, a) d __attribute__((aligned(a)))
