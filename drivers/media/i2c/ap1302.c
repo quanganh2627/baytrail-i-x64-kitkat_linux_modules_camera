@@ -838,6 +838,46 @@ static int ap1302_s_stream(struct v4l2_subdev *sd, int enable)
 	return ret;
 }
 
+static u16 ap1302_ev_values[] = {0xfd00, 0xfe80, 0x0, 0x180, 0x300};
+
+static int ap1302_set_exposure_off(struct v4l2_subdev *sd, s32 val)
+{
+	val -= AP1302_MIN_EV;
+	return ap1302_i2c_write_reg(sd, REG_AE_BV_OFF, AP1302_REG16,
+				ap1302_ev_values[val]);
+}
+
+static u16 ap1302_wb_values[] = {
+	0, /* V4L2_WHITE_BALANCE_MANUAL */
+	0xf, /* V4L2_WHITE_BALANCE_AUTO */
+	0x2, /* V4L2_WHITE_BALANCE_INCANDESCENT */
+	0x4, /* V4L2_WHITE_BALANCE_FLUORESCENT */
+	0x5, /* V4L2_WHITE_BALANCE_FLUORESCENT_H */
+	0x1, /* V4L2_WHITE_BALANCE_HORIZON */
+	0x5, /* V4L2_WHITE_BALANCE_DAYLIGHT */
+	0xf, /* V4L2_WHITE_BALANCE_FLASH */
+	0x6, /* V4L2_WHITE_BALANCE_CLOUDY */
+	0x6, /* V4L2_WHITE_BALANCE_SHADE */
+};
+
+static int ap1302_set_wb_mode(struct v4l2_subdev *sd, s32 val)
+{
+	int ret = 0;
+	u16 reg_val;
+
+	ret = ap1302_i2c_read_reg(sd, REG_AWB_CTRL, AP1302_REG16, &reg_val);
+	if (ret)
+		return ret;
+	reg_val &= ~AWB_CTRL_MODE_MASK;
+	reg_val |= ap1302_wb_values[val] << AWB_CTRL_MODE_OFFSET;
+	if (val == V4L2_WHITE_BALANCE_FLASH)
+		reg_val |= AWB_CTRL_FLASH_MASK;
+	else
+		reg_val &= ~AWB_CTRL_FLASH_MASK;
+	ret = ap1302_i2c_write_reg(sd, REG_AWB_CTRL, AP1302_REG16, reg_val);
+	return ret;
+}
+
 static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ap1302_device *dev = container_of(
@@ -846,6 +886,12 @@ static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 	switch (ctrl->id) {
 	case V4L2_CID_RUN_MODE:
 		dev->cur_context = ap1302_cntx_mapping[ctrl->val];
+		break;
+	case V4L2_CID_EXPOSURE:
+		ap1302_set_exposure_off(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE:
+		ap1302_set_wb_mode(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -936,6 +982,26 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.def = 4,
 		.max = 4,
 		.qmenu = ctrl_run_mode_menu,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_EXPOSURE,
+		.name = "Exposure",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = AP1302_MIN_EV,
+		.def = 0,
+		.max = AP1302_MAX_EV,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE,
+		.name = "White Balance",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 9,
+		.step = 1,
 	},
 };
 

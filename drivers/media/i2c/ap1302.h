@@ -41,6 +41,9 @@
 #define REG_MF_ID		0x0004
 #define REG_ERROR		0x0006
 #define REG_CTRL		0x1000
+#define REG_AE_BV_OFF		0x5014
+#define REG_AE_BV_BIAS		0x5016
+#define REG_AWB_CTRL		0x5100
 #define REG_BOOTDATA_STAGE	0x6002
 #define REG_SENSOR_SELECT	0x600C
 #define REG_SYS_START		0x601A
@@ -82,6 +85,9 @@
 #define OUT_FMT_IIS_OFFSET	0x08
 #define SENSOR_SELECT_MASK	0x03
 #define SENSOR_SELECT_OFFSET	0x00
+#define AWB_CTRL_MODE_MASK	0x0F
+#define AWB_CTRL_MODE_OFFSET	0x00
+#define AWB_CTRL_FLASH_MASK	0x100
 
 #define AP1302_FMT_UYVY422	0x30
 
@@ -91,6 +97,8 @@
 #define AP1302_SENSOR_SEC	0x02
 
 #define AP1302_MAX_RATIO_MISMATCH	10 /* Unit in percentage */
+#define AP1302_MAX_EV		2
+#define AP1302_MIN_EV		-2
 
 enum ap1302_contexts {
 	CONTEXT_PREVIEW = 0,
