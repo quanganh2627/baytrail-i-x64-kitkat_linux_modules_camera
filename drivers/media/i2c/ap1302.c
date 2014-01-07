@@ -715,6 +715,24 @@ static int ap1302_enum_frameintervals(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int ap1302_g_frame_interval(struct v4l2_subdev *sd,
+			struct v4l2_subdev_frame_interval *interval)
+{
+	struct ap1302_device *dev = to_ap1302_device(sd);
+	enum ap1302_contexts context;
+	struct ap1302_res_struct *res_table;
+	u32 cur_res;
+
+	mutex_lock(&dev->input_lock);
+	context = ap1302_get_context(sd);
+	res_table = dev->cntx_res[context].res_table;
+	cur_res = dev->cntx_res[context].cur_res;
+	interval->interval.denominator = res_table[cur_res].fps;
+	interval->interval.numerator = 1;
+	mutex_unlock(&dev->input_lock);
+	return 0;
+}
+
 static int ap1302_enum_frame_size(struct v4l2_subdev *sd,
 	struct v4l2_subdev_fh *fh,
 	struct v4l2_subdev_frame_size_enum *fse)
@@ -1010,6 +1028,7 @@ static const struct v4l2_subdev_video_ops ap1302_video_ops = {
 	.s_stream = ap1302_s_stream,
 	.enum_framesizes = ap1302_enum_framesizes,
 	.enum_frameintervals = ap1302_enum_frameintervals,
+	.g_frame_interval = ap1302_g_frame_interval,
 };
 
 static const struct v4l2_subdev_core_ops ap1302_core_ops = {
