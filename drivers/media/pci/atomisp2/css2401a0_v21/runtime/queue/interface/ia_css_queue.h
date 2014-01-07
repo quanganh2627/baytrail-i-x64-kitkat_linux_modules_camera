@@ -26,7 +26,7 @@
 #include "ia_css_queue_comm.h"
 #include "../src/queue_access.h"
 
-#include "sh_css_internal.h"	/* enum sh_css_frame_id */
+#include "sh_css_internal.h"
 
 /* Local Queue object descriptor */
 struct ia_css_queue_local {
