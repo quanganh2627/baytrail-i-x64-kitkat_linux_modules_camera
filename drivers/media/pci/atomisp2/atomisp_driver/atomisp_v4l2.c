@@ -938,6 +938,8 @@ static int atomisp_register_entities(struct atomisp_device *isp)
 		isp->inputs[isp->input_cnt].port = -1;
 		isp->inputs[isp->input_cnt].shading_table = NULL;
 		isp->inputs[isp->input_cnt].morph_table = NULL;
+		isp->inputs[isp->input_cnt].camera_caps =
+		    atomisp_get_default_camera_caps();
 		isp->inputs[isp->input_cnt++].camera = &isp->tpg.sd;
 	} else {
 		dev_warn(isp->dev, "too many atomisp inputs, TPG ignored.\n");

@@ -1194,8 +1194,7 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 			dev_err(isp->dev,
 					"acc extension failed to reload\n");
 
-		if (isp->inputs[asd->input_curr].type != TEST_PATTERN &&
-				isp->inputs[asd->input_curr].type != FILE_INPUT)
+		if (isp->inputs[asd->input_curr].type != FILE_INPUT)
 			atomisp_css_input_set_mode(asd,
 					CSS_INPUT_MODE_SENSOR);
 
@@ -3231,20 +3230,6 @@ int atomisp_try_fmt(struct video_device *vdev, struct v4l2_format *f,
 		fmt = atomisp_output_fmts;
 	}
 
-	/* fixing me! seems tpg does not support mbus interface */
-#if 0
-	/*set TPG format*/
-	if (isp->inputs[isp->input_curr].type == TEST_PATTERN) {
-		ret = v4l2_subdev_call(isp->inputs[isp->input_curr].camera,
-			video, try_fmt, f);
-		in_width = f->fmt.pix.width;
-		in_height = f->fmt.pix.height;
-		goto done;
-	}
-#else
-	if (isp->inputs[asd->input_curr].type == TEST_PATTERN)
-		return 0;
-#endif
 	snr_mbus_fmt.code = fmt->mbus_code;
 	snr_mbus_fmt.width = f->fmt.pix.width;
 	snr_mbus_fmt.height = f->fmt.pix.height;
@@ -3391,8 +3376,7 @@ static int __enable_continuous_mode(struct atomisp_sub_device *asd,
 		atomisp_css_input_set_two_pixels_per_clock(asd, false);
 	}
 
-	if (isp->inputs[asd->input_curr].type != TEST_PATTERN &&
-		isp->inputs[asd->input_curr].type != FILE_INPUT)
+	if (isp->inputs[asd->input_curr].type != FILE_INPUT)
 		atomisp_css_input_set_mode(asd, CSS_INPUT_MODE_SENSOR);
 
 	return atomisp_update_run_mode(asd);
