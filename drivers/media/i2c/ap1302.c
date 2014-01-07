@@ -529,7 +529,7 @@ static int ap1302_match_resolution(struct ap1302_context_res *res,
 	s32 w1 = fmt->width;
 	s32 h1 = fmt->height;
 	s32 min_distance = INT_MAX;
-	u32 i, idx = -1;
+	s32 i, idx = -1;
 
 	if (w1 == 0 || h1 == 0)
 		return -1;
@@ -552,44 +552,39 @@ static int ap1302_match_resolution(struct ap1302_context_res *res,
 	return idx;
 }
 
-static int ap1302_try_mbus_fmt_locked(struct v4l2_subdev *sd,
-			       struct v4l2_mbus_framefmt *fmt)
+static s32 ap1302_try_mbus_fmt_locked(struct v4l2_subdev *sd,
+				enum ap1302_contexts context,
+				struct v4l2_mbus_framefmt *fmt)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
-	enum ap1302_contexts context;
 	struct ap1302_res_struct *res_table;
-	u32 res_num, idx;
+	s32 res_num, idx = -1;
 
-	context = ap1302_get_context(sd);
 	res_table = dev->cntx_res[context].res_table;
 	res_num = dev->cntx_res[context].res_num;
 
-	if ((fmt->width > res_table[res_num - 1].width)
-		|| (fmt->height > res_table[res_num - 1].height)) {
-		fmt->width  = res_table[res_num - 1].width;
-		fmt->height = res_table[res_num - 1].height;
-	} else {
+	if ((fmt->width <= res_table[res_num - 1].width) &&
+		(fmt->height <= res_table[res_num - 1].height))
 		idx = ap1302_match_resolution(&dev->cntx_res[context], fmt);
+	if (idx == -1)
+		idx = res_num - 1;
 
-		if (idx == -1) {
-			fmt->width = res_table[res_num - 1].width;
-			fmt->height = res_table[res_num - 1].height;
-		}
-	}
-
+	fmt->width = res_table[idx].width;
+	fmt->height = res_table[idx].height;
 	fmt->code = V4L2_MBUS_FMT_UYVY8_1X16;
-	return 0;
+	return idx;
 }
 
 static int ap1302_try_mbus_fmt(struct v4l2_subdev *sd,
 			       struct v4l2_mbus_framefmt *fmt)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
-	int ret;
+	enum ap1302_contexts context;
 	mutex_lock(&dev->input_lock);
-	ret = ap1302_try_mbus_fmt_locked(sd, fmt);
+	context = ap1302_get_context(sd);
+	ap1302_try_mbus_fmt_locked(sd, context, fmt);
 	mutex_unlock(&dev->input_lock);
-	return ret;
+	return 0;
 }
 
 static int ap1302_get_mbus_fmt(struct v4l2_subdev *sd,
@@ -597,12 +592,16 @@ static int ap1302_get_mbus_fmt(struct v4l2_subdev *sd,
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
 	enum ap1302_contexts context;
+	struct ap1302_res_struct *res_table;
+	s32 cur_res;
 
 	mutex_lock(&dev->input_lock);
 	context = ap1302_get_context(sd);
+	res_table = dev->cntx_res[context].res_table;
+	cur_res = dev->cntx_res[context].cur_res;
 	fmt->code = V4L2_MBUS_FMT_UYVY8_1X16;
-	fmt->width = dev->cntx_config[context].width;
-	fmt->height = dev->cntx_config[context].height;
+	fmt->width = res_table[cur_res].width;
+	fmt->height = res_table[cur_res].height;
 	mutex_unlock(&dev->input_lock);
 	return 0;
 }
@@ -614,14 +613,11 @@ static int ap1302_set_mbus_fmt(struct v4l2_subdev *sd,
 	struct atomisp_input_stream_info *stream_info =
 		(struct atomisp_input_stream_info*)fmt->reserved;
 	enum ap1302_contexts context, main_context;
-	int ret;
 
 	mutex_lock(&dev->input_lock);
-	ret = ap1302_try_mbus_fmt_locked(sd, fmt);
-	if (ret)
-		goto fail_set_fmt;
-
 	context = stream_to_context[stream_info->stream];
+	dev->cntx_res[context].cur_res =
+		ap1302_try_mbus_fmt_locked(sd, context, fmt);
 	dev->cntx_config[context].width = fmt->width;
 	dev->cntx_config[context].height = fmt->height;
 	ap1302_write_context_reg(sd, context, CNTX_WIDTH, AP1302_REG16);
@@ -656,17 +652,16 @@ static int ap1302_set_mbus_fmt(struct v4l2_subdev *sd,
 		}
 	}
 	stream_info->ch_id = context;
-fail_set_fmt:
 	mutex_unlock(&dev->input_lock);
 
-	return ret;
+	return 0;
 }
 
 static int
 ap1302_enum_framesizes(struct v4l2_subdev *sd, struct v4l2_frmsizeenum *fsize)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
-	unsigned int index = fsize->index;
+	s32 index = fsize->index;
 	enum ap1302_contexts context;
 	struct ap1302_res_struct *res_table;
 
@@ -693,8 +688,7 @@ static int ap1302_enum_frameintervals(struct v4l2_subdev *sd,
 	enum ap1302_contexts context;
 	struct ap1302_res_struct *res_table;
 	unsigned int index = fival->index;
-	u32 res_num;
-	int i;
+	s32 res_num, i;
 
 	if (index > 0)
 		return -EINVAL;

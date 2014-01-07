@@ -145,7 +145,8 @@ struct ap1302_res_struct {
 };
 
 struct ap1302_context_res {
-	u32 res_num;
+	s32 res_num;
+	s32 cur_res;
 	struct ap1302_res_struct *res_table;
 };
 
@@ -158,8 +159,8 @@ struct ap1302_device {
 	struct v4l2_mbus_framefmt format;
 	struct v4l2_ctrl_handler ctrl_handler;
 	struct v4l2_ctrl *run_mode;
-	struct ap1302_context_config cntx_config[3];
-	struct ap1302_context_res cntx_res[3];
+	struct ap1302_context_config cntx_config[CONTEXT_NUM];
+	struct ap1302_context_res cntx_res[CONTEXT_NUM];
 	enum ap1302_contexts cur_context;
 	unsigned int num_lanes;
 	struct regmap *regmap16;
