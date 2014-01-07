@@ -18,6 +18,7 @@
  */
 
 #include <linux/cdev.h>
+#include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/fs.h>
 #include <linux/interrupt.h>
@@ -43,6 +44,71 @@ static struct bus_type atomisp_psys_bus = {
 	.name = ATOMISP_PSYS_STUB_NAME,
 };
 
+static const struct atomisp_capability caps = {
+	.version = 1,
+	.driver = "atomisp-psys-stub",
+};
+
+static int atomisp_queue_event(struct atomisp_fh *fh, struct atomisp_event *e)
+{
+	struct atomisp_eventq *eventq;
+	struct atomisp_event *ev;
+
+	eventq = kzalloc(sizeof(*eventq), GFP_KERNEL);
+	if (!eventq)
+		return -ENOMEM;
+	ev = kzalloc(sizeof(*ev), GFP_KERNEL);
+	if (!ev)
+		goto out;
+	*ev = *e;
+	eventq->ev = ev;
+	dev_dbg(fh->dev, "queue event %u (%p)\n", ev->type, ev);
+	list_add_tail(&eventq->list, &fh->eventq);
+	wake_up_interruptible(&fh->wait);
+	return 0;
+out:
+	kfree(eventq);
+	return -ENOMEM;
+}
+
+/**
+ * This should be moved to a separate file as this part will be
+ * replaced by the actual PSYS hardware API.
+ */
+static int psysstub_command(struct atomisp_fh *fh, struct atomisp_command *command)
+{
+	int err = 0;
+	struct atomisp_event ev;
+
+	switch(command->id) {
+	case ATOMISP_PSYS_STUB_PREVIEW:
+		ev.type = ATOMISP_EVENT_TYPE_CMD_COMPLETE;
+		ev.ev.cmd_done.id = command->id;
+
+		msleep(30);
+
+		atomisp_queue_event(fh, &ev);
+		break;
+	default:
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
+static void psysstub_run_cmd(struct work_struct *work)
+{
+	struct atomisp_fh *fh = container_of(work, struct atomisp_fh, run_cmd);
+
+	struct atomisp_run_cmd *cmd;
+	cmd = list_first_entry(&fh->command, struct atomisp_run_cmd, list);
+	psysstub_command(fh, cmd->command);
+
+	list_del(&cmd->list);
+	kfree(cmd->command);
+	kfree(cmd);
+}
+
 static int atomisp_open(struct inode *inode, struct file *file)
 {
 	struct atomisp_device *isp = inode_to_atomisp_device(inode);
@@ -55,21 +121,26 @@ static int atomisp_open(struct inode *inode, struct file *file)
 	init_waitqueue_head(&fh->wait);
 	INIT_LIST_HEAD(&fh->bufmap);
 	INIT_LIST_HEAD(&fh->eventq);
+	INIT_LIST_HEAD(&fh->command);
 
 	fh->dev = &isp->dev;
 	file->private_data = fh;
 
 	mutex_lock(&isp->mutex);
 	list_add(&fh->list, &isp->fhs);
+
+	fh->run_cmd_queue = alloc_workqueue(caps.driver, WQ_UNBOUND, 1);
+	if (fh->run_cmd_queue == NULL) {
+		dev_err(fh->dev, "Failed to initialize file inject workq\n");
+		mutex_unlock(&isp->mutex);
+		return -ENOMEM;
+	}
+	INIT_WORK(&fh->run_cmd, psysstub_run_cmd);
+
 	mutex_unlock(&isp->mutex);
 
 	return 0;
 }
-
-static const struct atomisp_capability caps = {
-	.version = 1,
-	.driver = "atomisp-psys-stub",
-};
 
 static struct atomisp_kbuffer *atomisp_lookup_kbuffer(struct atomisp_fh *fh, int fd)
 {
@@ -173,63 +244,31 @@ static long atomisp_ioctl_putbuf(struct file *file, struct atomisp_buffer __user
 	return 0;
 }
 
-static int atomisp_queue_event(struct atomisp_fh *fh, struct atomisp_event *e)
-{
-	struct atomisp_eventq *eventq;
-	struct atomisp_event *ev;
-
-	eventq = kzalloc(sizeof(*eventq), GFP_KERNEL);
-	if (!eventq)
-		return -ENOMEM;
-	ev = kzalloc(sizeof(*ev), GFP_KERNEL);
-	if (!ev)
-		goto out;
-	*ev = *e;
-	eventq->ev = ev;
-	dev_dbg(fh->dev, "queue event %u (%p)\n", ev->type, ev);
-	list_add_tail(&eventq->list, &fh->eventq);
-	wake_up_interruptible(&fh->wait);
-	return 0;
-out:
-	kfree(eventq);
-	return -ENOMEM;
-}
-
-/**
- * This should be moved to a separate file as this part will be
- * replaced by the actual PSYS hardware API.
- */
-static int psysstub_command(struct atomisp_fh *fh, struct atomisp_command *command)
-{
-	struct atomisp_event ev;
-	int err = 0;
-
-	switch(command->id) {
-	case ATOMISP_PSYS_STUB_PREVIEW:
-		/* TODO: add some fake processing to the data buffers
-		   passed */
-		ev.type = ATOMISP_EVENT_TYPE_CMD_COMPLETE;
-		ev.ev.cmd_done.id = command->id;
-		atomisp_queue_event(fh, &ev);
-		break;
-	default:
-		err = -EINVAL;
-	}
-
-	return err;
-}
-
 static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user *arg)
 {
 	struct atomisp_fh *fh = file->private_data;
-	struct atomisp_command command;
+	struct atomisp_command *command;
+	struct atomisp_run_cmd *cmd;
 
-	if (copy_from_user(&command, arg, sizeof command))
+	command = kzalloc(sizeof(*command), GFP_KERNEL);
+	if (!command)
+		return -ENOMEM;
+
+	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
+	if (!cmd)
+		return -ENOMEM;
+
+	if (copy_from_user(command, arg, sizeof (*command)))
 		return -EFAULT;
 
-	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", command.bufcount);
+	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", command->bufcount);
 
-	return psysstub_command(fh, &command);
+	cmd->command = command;
+
+	list_add_tail(&cmd->list, &fh->command);
+	queue_work(fh->run_cmd_queue, &fh->run_cmd);
+
+	return 0;
 }
 
 static long atomisp_ioctl_dqevent(struct file *file, struct atomisp_event __user *arg)
@@ -309,12 +348,24 @@ static int atomisp_release(struct inode *inode, struct file *file)
 	struct atomisp_device *isp = inode_to_atomisp_device(inode);
 	struct atomisp_fh *fh = file->private_data;
 	struct atomisp_kbuffer *bm, *bm0;
+	struct atomisp_run_cmd *cmd, *cmd0;
 
 	mutex_lock(&isp->mutex);
 	list_del(&fh->list);
 	list_for_each_entry_safe(bm, bm0, &fh->bufmap, list) {
 		list_del(&bm->list);
 		kfree(bm);
+	}
+
+	cancel_work_sync(&fh->run_cmd);
+	list_for_each_entry_safe(cmd, cmd0, &fh->command, list) {
+		list_del(&cmd->list);
+		kfree(cmd->command);
+		kfree(cmd);
+	}
+	if (fh->run_cmd_queue) {
+		destroy_workqueue(fh->run_cmd_queue);
+		fh->run_cmd_queue = NULL;
 	}
 	mutex_unlock(&isp->mutex);
 	kfree(fh);

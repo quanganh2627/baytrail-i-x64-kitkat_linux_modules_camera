@@ -42,12 +42,20 @@ struct atomisp_eventq {
 	struct list_head list;
 };
 
+struct atomisp_run_cmd {
+	struct atomisp_command *command;
+	struct list_head list;
+};
+
 struct atomisp_fh {
 	struct device *dev;
 	wait_queue_head_t wait;
 	struct list_head list;
 	struct list_head bufmap;
 	struct list_head eventq;
+	struct list_head command;
+	struct workqueue_struct	*run_cmd_queue;
+	struct work_struct run_cmd;
 };
 
 struct atomisp_device {
