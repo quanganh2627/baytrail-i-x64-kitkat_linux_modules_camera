@@ -238,16 +238,18 @@ static unsigned short atomisp_get_sensor_fps(struct atomisp_sub_device *asd)
 /*
  * DFS progress is shown as follows:
  * 1. Target frequency is calculated according to FPS/Resolution/ISP running
- * mode.
- * 2. Ratio is calucated in formula: 2 * (HPLL / target frequency) - 1
+ *    mode.
+ * 2. Ratio is calculated using formula: 2 * HPLL / target frequency - 1
+ *    with proper rounding.
  * 3. Set ratio to ISPFREQ40, 1 to FREQVALID and ISPFREQGUAR40
  *    to 200MHz in ISPSSPM1.
  * 4. Wait for FREQVALID to be cleared by P-Unit.
  * 5. Wait for field ISPFREQSTAT40 in ISPSSPM1 turn to ratio set in 3.
  */
-static int write_target_freq_to_hw(struct atomisp_device *isp, int new_freq)
+static int write_target_freq_to_hw(struct atomisp_device *isp,
+				   unsigned int new_freq)
 {
-	int ratio, timeout;
+	unsigned int ratio, timeout;
 	u32 isp_sspm1 = 0;
 
 	isp_sspm1 = intel_mid_msgbus_read32(PUNIT_PORT, ISPSSPM1);
@@ -257,7 +259,7 @@ static int write_target_freq_to_hw(struct atomisp_device *isp, int new_freq)
 				    isp_sspm1 & ~(1 << ISP_FREQ_VALID_OFFSET));
 	}
 
-	ratio = 2 * (HPLL_FREQ / new_freq) - 1;
+	ratio =  (2 * HPLL_FREQ + new_freq / 2) / new_freq - 1;
 	isp_sspm1 = intel_mid_msgbus_read32(PUNIT_PORT, ISPSSPM1);
 	isp_sspm1 &= ~(0x1F << ISP_REQ_FREQ_OFFSET);
 	intel_mid_msgbus_write32(PUNIT_PORT, ISPSSPM1,
