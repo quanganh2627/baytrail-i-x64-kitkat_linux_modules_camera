@@ -2004,7 +2004,7 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	 * vied BZ:1075
 	 */
 	if (stream_config->online || !stream_config->continuous ||
-			!pipe_extra_configs-> enable_raw_binning) {
+			!pipe_extra_configs->enable_raw_binning) {
 		bayer_ds_out_res->width = 0;
 		bayer_ds_out_res->height = 0;
 	} else if (effective_res->width > out_width * 2 &&
@@ -2099,7 +2099,8 @@ static int __get_frame_info(struct atomisp_sub_device *asd,
 	struct atomisp_device *isp = asd->isp;
 	enum ia_css_err ret;
 	struct ia_css_pipe_info p_info;
-/* FIXME! No need to destroy/recreate all streams */
+
+	/* FIXME! No need to destroy/recreate all streams */
 	if (__destroy_streams(asd, true))
 		dev_warn(isp->dev, "destroy stream failed.\n");
 
