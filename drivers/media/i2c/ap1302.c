@@ -890,6 +890,13 @@ static int ap1302_set_wb_mode(struct v4l2_subdev *sd, s32 val)
 	return ret;
 }
 
+static int ap1302_set_zoom(struct v4l2_subdev *sd, s32 val)
+{
+	ap1302_i2c_write_reg(sd, REG_DZ_TGT_FCT, AP1302_REG16,
+		val * 4 + 0x100);
+	return 0;
+}
+
 static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ap1302_device *dev = container_of(
@@ -904,6 +911,9 @@ static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE:
 		ap1302_set_wb_mode(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_ZOOM_ABSOLUTE:
+		ap1302_set_zoom(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -1013,6 +1023,16 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.min = 0,
 		.def = 0,
 		.max = 9,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_ZOOM_ABSOLUTE,
+		.name = "Zoom Absolute",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 1024,
 		.step = 1,
 	},
 };
