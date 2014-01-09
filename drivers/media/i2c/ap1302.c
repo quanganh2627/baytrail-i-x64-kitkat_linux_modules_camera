@@ -897,6 +897,32 @@ static int ap1302_set_zoom(struct v4l2_subdev *sd, s32 val)
 	return 0;
 }
 
+static u16 ap1302_sfx_values[] = {
+	0x00, /* V4L2_COLORFX_NONE */
+	0x03, /* V4L2_COLORFX_BW */
+	0x0d, /* V4L2_COLORFX_SEPIA */
+	0x07, /* V4L2_COLORFX_NEGATIVE */
+	0x04, /* V4L2_COLORFX_EMBOSS */
+	0x0f, /* V4L2_COLORFX_SKETCH */
+	0x08, /* V4L2_COLORFX_SKY_BLUE */
+	0x09, /* V4L2_COLORFX_GRASS_GREEN */
+	0x0a, /* V4L2_COLORFX_SKIN_WHITEN */
+	0x00, /* V4L2_COLORFX_VIVID */
+	0x00, /* V4L2_COLORFX_AQUA */
+	0x00, /* V4L2_COLORFX_ART_FREEZE */
+	0x00, /* V4L2_COLORFX_SILHOUETTE */
+	0x10, /* V4L2_COLORFX_SOLARIZATION */
+	0x02, /* V4L2_COLORFX_ANTIQUE */
+	0x00, /* V4L2_COLORFX_SET_CBCR */
+};
+
+static int ap1302_set_special_effect(struct v4l2_subdev *sd, s32 val)
+{
+	ap1302_i2c_write_reg(sd, REG_SFX_MODE, AP1302_REG16,
+		ap1302_sfx_values[val]);
+	return 0;
+}
+
 static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ap1302_device *dev = container_of(
@@ -914,6 +940,9 @@ static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_ZOOM_ABSOLUTE:
 		ap1302_set_zoom(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_COLORFX:
+		ap1302_set_special_effect(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -1033,6 +1062,16 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.min = 0,
 		.def = 0,
 		.max = 1024,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_COLORFX,
+		.name = "Color Special Effect",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 15,
 		.step = 1,
 	},
 };

@@ -42,6 +42,7 @@
 #define REG_ERROR		0x0006
 #define REG_CTRL		0x1000
 #define REG_DZ_TGT_FCT		0x1010
+#define REG_SFX_MODE		0x1016
 #define REG_AE_BV_OFF		0x5014
 #define REG_AE_BV_BIAS		0x5016
 #define REG_AWB_CTRL		0x5100
