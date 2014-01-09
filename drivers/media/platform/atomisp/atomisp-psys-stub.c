@@ -71,22 +71,72 @@ out:
 	return -ENOMEM;
 }
 
+static int validate_buffers(struct atomisp_command *command)
+{
+	struct atomisp_buffer *buffer;
+	struct psysparam *params;
+	int err = 0;
+
+	if (command->bufcount < ATOMISP_PSYS_STUB_BUFS_MIN)
+		return -EINVAL;
+
+	buffer = kzalloc(sizeof(*buffer) * command->bufcount, GFP_KERNEL);
+	if (!buffer)
+		return -ENOMEM;
+
+	if (copy_from_user(buffer, command->buffers,
+				sizeof(*buffer) * command->bufcount)) {
+		kfree(buffer);
+		return -EFAULT;
+	}
+
+	/* get params */
+	params = kzalloc(sizeof(*params), GFP_KERNEL);
+	if (!params) {
+		kfree(buffer);
+		return -ENOMEM;
+	}
+
+	if (copy_from_user(params, buffer[ATOMISP_PSYS_STUB_PARAMS_IDX].userptr,
+				sizeof(*params))) {
+		err = -EFAULT;
+		goto out;
+	}
+
+	if (buffer[ATOMISP_PSYS_STUB_VIDEO_INPUT_IDX].len <
+	    params->input.bytesperline * params->input.height) {
+		err = -EINVAL;
+		goto out;
+	}
+
+	if (buffer[ATOMISP_PSYS_STUB_VIDEO_OUTPUT_IDX].len <
+	    params->output.bytesperline * params->output.height) {
+		err = -EINVAL;
+		goto out;
+	}
+
+out:
+	kfree(params);
+	kfree(buffer);
+	return err;
+}
+
 /**
  * This should be moved to a separate file as this part will be
  * replaced by the actual PSYS hardware API.
  */
 static int psysstub_command(struct atomisp_fh *fh, struct atomisp_command *command)
 {
-	int err = 0;
 	struct atomisp_event ev;
+	int err = 0;
 
 	switch(command->id) {
 	case ATOMISP_PSYS_STUB_PREVIEW:
+		err = validate_buffers(command);
+		if (!err)
+			msleep(30);
 		ev.type = ATOMISP_EVENT_TYPE_CMD_COMPLETE;
 		ev.ev.cmd_done.id = command->id;
-
-		msleep(30);
-
 		atomisp_queue_event(fh, &ev);
 		break;
 	default:
