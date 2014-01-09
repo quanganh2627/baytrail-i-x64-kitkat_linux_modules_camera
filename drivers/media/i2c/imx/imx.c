@@ -1626,7 +1626,8 @@ static int __update_imx_device_settings(struct imx_device *dev, u16 sensor_id)
 		}
 		break;
 	case IMX135_ID:
-		if (intel_mid_identify_cpu() == INTEL_MID_CPU_CHIP_CLOVERVIEW) {
+		if (intel_mid_identify_cpu() == INTEL_MID_CPU_CHIP_CLOVERVIEW ||
+		    dev->i2c_id == IMX135_FUJI_ID) {
 			dev->mode_tables = &imx_sets[IMX135_VICTORIABAY];
 			dev->vcm_driver = &imx_vcms[IMX135_VICTORIABAY];
 			dev->otp_driver = &imx_otps[IMX135_VICTORIABAY];
@@ -2077,6 +2078,7 @@ static int imx_probe(struct i2c_client *client,
 
 	mutex_init(&dev->input_lock);
 
+	dev->i2c_id = id->driver_data;
 	dev->fmt_idx = 0;
 	dev->sensor_id = IMX_ID_DEFAULT;
 	dev->vcm_driver = &imx_vcms[IMX_ID_DEFAULT];
@@ -2128,6 +2130,7 @@ out_free:
 static const struct i2c_device_id imx_ids[] = {
 	{IMX_NAME_175, IMX175_ID},
 	{IMX_NAME_135, IMX135_ID},
+	{IMX_NAME_135_FUJI, IMX135_FUJI_ID},
 	{IMX_NAME_134, IMX134_ID},
 	{IMX_NAME_132, IMX132_ID},
 	{}
