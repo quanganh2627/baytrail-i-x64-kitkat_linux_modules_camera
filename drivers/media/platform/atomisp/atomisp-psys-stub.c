@@ -125,23 +125,54 @@ out:
  * This should be moved to a separate file as this part will be
  * replaced by the actual PSYS hardware API.
  */
-static int psysstub_command(struct atomisp_fh *fh, struct atomisp_command *command)
+static int psysstub_command_prepare(struct atomisp_fh *fh,
+				    struct atomisp_command *command)
+{
+	struct atomisp_run_cmd *cmd;
+	int err = 0;
+
+	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
+	if (!cmd)
+		return -ENOMEM;
+
+	switch(command->id) {
+	case ATOMISP_PSYS_STUB_PREVIEW:
+		if (validate_buffers(command)) {
+			err = -EINVAL;
+			goto error;
+		}
+		break;
+	default:
+		err = -EINVAL;
+		goto error;
+	}
+
+	cmd->command = command;
+	list_add_tail(&cmd->list, &fh->command);
+	queue_work(fh->run_cmd_queue, &fh->run_cmd);
+
+	return 0;
+error:
+	kfree(cmd);
+	return err;
+}
+
+static int psysstub_runisp(struct atomisp_fh *fh, struct atomisp_command *command)
 {
 	struct atomisp_event ev;
 	int err = 0;
 
 	switch(command->id) {
 	case ATOMISP_PSYS_STUB_PREVIEW:
-		err = validate_buffers(command);
-		if (!err)
-			msleep(30);
-		ev.type = ATOMISP_EVENT_TYPE_CMD_COMPLETE;
-		ev.ev.cmd_done.id = command->id;
-		atomisp_queue_event(fh, &ev);
+		msleep(30);
 		break;
 	default:
 		err = -EINVAL;
 	}
+
+	ev.type = ATOMISP_EVENT_TYPE_CMD_COMPLETE;
+	ev.ev.cmd_done.id = command->id;
+	atomisp_queue_event(fh, &ev);
 
 	return err;
 }
@@ -152,7 +183,7 @@ static void psysstub_run_cmd(struct work_struct *work)
 
 	struct atomisp_run_cmd *cmd;
 	cmd = list_first_entry(&fh->command, struct atomisp_run_cmd, list);
-	psysstub_command(fh, cmd->command);
+	psysstub_runisp(fh, cmd->command);
 
 	list_del(&cmd->list);
 	kfree(cmd->command);
@@ -298,14 +329,9 @@ static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user 
 {
 	struct atomisp_fh *fh = file->private_data;
 	struct atomisp_command *command;
-	struct atomisp_run_cmd *cmd;
 
 	command = kzalloc(sizeof(*command), GFP_KERNEL);
 	if (!command)
-		return -ENOMEM;
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd)
 		return -ENOMEM;
 
 	if (copy_from_user(command, arg, sizeof (*command)))
@@ -313,12 +339,7 @@ static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user 
 
 	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", command->bufcount);
 
-	cmd->command = command;
-
-	list_add_tail(&cmd->list, &fh->command);
-	queue_work(fh->run_cmd_queue, &fh->run_cmd);
-
-	return 0;
+	return psysstub_command_prepare(fh, command);
 }
 
 static long atomisp_ioctl_dqevent(struct file *file, struct atomisp_event __user *arg)
