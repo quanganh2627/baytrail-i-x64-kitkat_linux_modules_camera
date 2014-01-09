@@ -27,8 +27,6 @@ CFLAGS_s5k8aay.o += -Werror
 obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o
 CFLAGS_libmsrlisthelper.o += -Werror
 
-obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o
-
 #
 # Makefile for flash drivers
 #

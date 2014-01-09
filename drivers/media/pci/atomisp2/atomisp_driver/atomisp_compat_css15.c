@@ -215,7 +215,6 @@ void atomisp_css_init_struct(struct atomisp_sub_device *asd)
 
 int atomisp_q_video_buffer_to_css(struct atomisp_sub_device *asd,
 			struct videobuf_vmalloc_memory *vm_mem,
-			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_buffer_type css_buf_type,
 			enum atomisp_css_pipe_id css_pipe_id)
 {
@@ -230,7 +229,6 @@ int atomisp_q_video_buffer_to_css(struct atomisp_sub_device *asd,
 
 int atomisp_q_s3a_buffer_to_css(struct atomisp_sub_device *asd,
 			struct atomisp_s3a_buf *s3a_buf,
-			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_pipe_id css_pipe_id)
 {
 	if (sh_css_queue_buffer(css_pipe_id, SH_CSS_BUFFER_TYPE_3A_STATISTICS,
@@ -244,7 +242,6 @@ int atomisp_q_s3a_buffer_to_css(struct atomisp_sub_device *asd,
 
 int atomisp_q_dis_buffer_to_css(struct atomisp_sub_device *asd,
 			struct atomisp_dis_buf *dis_buf,
-			enum atomisp_input_stream_id stream_id,
 			enum atomisp_css_pipe_id css_pipe_id)
 {
 	if (sh_css_queue_buffer(css_pipe_id,
@@ -292,7 +289,6 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 }
 
 int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
-			     enum atomisp_input_stream_id stream_id,
 			     enum atomisp_css_pipe_id pipe_id,
 			     enum atomisp_css_buffer_type buf_type,
 			     struct atomisp_css_buffer *isp_css_buffer)
@@ -323,7 +319,6 @@ int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
 }
 
 int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
-				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_pipe_id pipe_id,
 				enum atomisp_css_buffer_type buf_type,
 				struct atomisp_css_buffer *isp_css_buffer)
@@ -422,8 +417,7 @@ void atomisp_css_free_3a_dis_buffers(struct atomisp_sub_device *asd)
 }
 
 int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
-				enum atomisp_css_pipe_id pipe_id,
-				int stream_index)
+				enum atomisp_css_pipe_id pipe_id)
 {
 	enum sh_css_err err;
 	struct atomisp_css_grid_info old_info = asd->params.curr_grid_info;
@@ -601,7 +595,6 @@ void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_css_event *current_event)
 }
 
 int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
-					enum atomisp_input_stream_id stream_id,
 					struct v4l2_mbus_framefmt *ffmt)
 {
 	if (sh_css_input_set_resolution(ffmt->width, ffmt->height)
@@ -612,29 +605,25 @@ int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
 }
 
 void atomisp_css_input_set_binning_factor(struct atomisp_sub_device *asd,
-					enum atomisp_input_stream_id stream_id,
-					unsigned int bin_factor)
+						unsigned int bin_factor)
 {
 	sh_css_input_set_binning_factor(bin_factor);
 }
 
 void atomisp_css_input_set_bayer_order(struct atomisp_sub_device *asd,
-				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_bayer_order bayer_order)
 {
 	sh_css_input_set_bayer_order(bayer_order);
 }
 
 void atomisp_css_input_set_format(struct atomisp_sub_device *asd,
-				enum atomisp_input_stream_id stream_id,
-				enum atomisp_css_stream_format format)
+					enum atomisp_css_stream_format format)
 {
 	sh_css_input_set_format(format);
 }
 
 int atomisp_css_input_set_effective_resolution(
 					struct atomisp_sub_device *asd,
-					enum atomisp_input_stream_id stream_id,
 					unsigned int width, unsigned int height)
 {
 	if (sh_css_input_set_effective_resolution(width, height)
@@ -1559,28 +1548,24 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 		case CSS_EVENT_OUTPUT_FRAME_DONE:
 			frame_done_found[asd->index] = true;
 			atomisp_buf_done(asd, 0, CSS_BUFFER_TYPE_OUTPUT_FRAME,
-					 current_event.pipe, true,
-					 ATOMISP_INPUT_STREAM_GENERAL);
+					 current_event.pipe, true);
 			break;
 		case CSS_EVENT_3A_STATISTICS_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_3A_STATISTICS,
 					 current_event.pipe,
-					 css_pipe_done[asd->index],
-					 ATOMISP_INPUT_STREAM_GENERAL);
+					 css_pipe_done[asd->index]);
 			break;
 		case CSS_EVENT_VF_OUTPUT_FRAME_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_VF_OUTPUT_FRAME,
-					 current_event.pipe, true,
-					 ATOMISP_INPUT_STREAM_GENERAL);
+					 current_event.pipe, true);
 			break;
 		case CSS_EVENT_DIS_STATISTICS_DONE:
 			atomisp_buf_done(asd, 0,
 					 CSS_BUFFER_TYPE_DIS_STATISTICS,
 					 current_event.pipe,
-					 css_pipe_done[asd->index],
-					 ATOMISP_INPUT_STREAM_GENERAL);
+					 css_pipe_done[asd->index]);
 			break;
 		case CSS_EVENT_PIPELINE_DONE:
 			break;

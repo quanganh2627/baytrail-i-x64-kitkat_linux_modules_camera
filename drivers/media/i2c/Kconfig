@@ -96,17 +96,6 @@ config VIDEO_OV5640
 
          It currently only works with the atomisp driver.
 
-config VIDEO_AP1302
-       tristate "AP1302 external ISP support"
-       depends on I2C && VIDEO_V4L2
-       ---help---
-         This is a Video4Linux2 sensor-level driver for the external
-         ISP AP1302.
-
-         AP1302 is an exteral ISP.
-
-         It currently only works with the atomisp driver.
-
 #
 # Kconfig for flash drivers
 #

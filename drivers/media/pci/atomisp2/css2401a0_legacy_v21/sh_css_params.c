@@ -2293,14 +2293,14 @@ sh_css_get_dvs_6axis_config(const struct ia_css_isp_parameters *params,
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_dvs_6axis_config() enter: "
 		"dvs_config=%p\n",dvs_config);
 
-	if ((dvs_config->width_y == params->dvs_6axis_config->width_y) &&
-	    (dvs_config->height_y == params->dvs_6axis_config->height_y) &&
-	    (dvs_config->width_uv == params->dvs_6axis_config->width_uv) &&
-	    (dvs_config->height_uv == params->dvs_6axis_config->height_uv) &&
-	     dvs_config->xcoords_y &&
-	     dvs_config->ycoords_y &&
-	     dvs_config->xcoords_uv &&
-	     dvs_config->ycoords_uv)
+	if((dvs_config->width_y == params->dvs_6axis_config->width_y) &&
+	(dvs_config->height_y == params->dvs_6axis_config->height_y) &&
+	(dvs_config->width_uv == params->dvs_6axis_config->width_uv) &&
+	(dvs_config->height_uv == params->dvs_6axis_config->height_uv) &&
+	dvs_config->xcoords_y &&
+        dvs_config->ycoords_y &&
+        dvs_config->xcoords_uv &&
+	dvs_config->ycoords_uv)
 	{
 		copy_dvs_6axis_table(dvs_config,params->dvs_6axis_config);
 	}
@@ -3074,6 +3074,8 @@ sh_css_params_init(void)
 		}
 	}
 
+	/* We need to use memcpy to initialize the default tables
+	 * because we cannot initialize union fields in C89. */
 #if !defined(IS_ISP_2500_SYSTEM)
 	ia_css_config_gamma_table();
 	ia_css_config_ctc_table();

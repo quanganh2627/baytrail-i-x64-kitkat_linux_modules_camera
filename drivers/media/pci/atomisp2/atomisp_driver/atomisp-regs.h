@@ -153,19 +153,9 @@
 #define MRFLD_PORT3_ENABLE_SHIFT       2
 #define MRFLD_PORT1_LANES_SHIFT        3
 #define MRFLD_PORT2_LANES_SHIFT        7
-
-#ifdef ISP2401_NEW_INPUT_SYSTEM
-#define CHV_PORT3_LANES_SHIFT		9
-#define CHV_PORT_CONFIG_MASK 		0x011f07ff
-#define CHV_CSI_PORT_CONFIG_SHIFT	20
-#define CHV_CSI_PAR_PATH_SHIFT		24
-#define CHV_PORT_CONFIG_NUM  		8
-#define CHV_PORT_NUM         		3
-#endif
-
 #define MRFLD_PORT3_LANES_SHIFT        8
-#define MRFLD_PORT_CONFIG_MASK 0x000f03ff
 #define MRFLD_PORT_CONFIGCODE_SHIFT    16
+#define MRFLD_PORT_CONFIG_MASK 0x000f03ff
 #define MRFLD_ALL_CSI_PORTS_OFF_MASK   0x7
 
 #define ISPSSPM1				0x3a
@@ -184,9 +174,4 @@
 #define ISP_FREQ_200MHZ				0xc8
 #define HPLL_FREQ				0x640
 
-#if defined(ISP2401)
-#define ISP_FREQ_MAX	ISP_FREQ_320MHZ
-#else
-#define ISP_FREQ_MAX	ISP_FREQ_400MHZ
-#endif
 #endif /* ATOMISP_REGS_H */

@@ -671,7 +671,6 @@ struct sh_css_hmm_buffer {
 	 * kernel_ptr is present for host administration purposes only.
 	 * type is uint64_t in order to be 64-bit host compatible.
 	 */
-	CSS_ALIGN(uint64_t cookie_ptr, 8);
 	CSS_ALIGN(uint64_t kernel_ptr, 8);
 };
 #define SIZE_OF_FRAME_STRUCT						\
@@ -689,7 +688,6 @@ struct sh_css_hmm_buffer {
 #define SIZE_OF_SH_CSS_HMM_BUFFER_STRUCT				\
 	(SIZE_OF_PAYLOAD_UNION + 					\
 	CALC_ALIGNMENT_MEMBER(SIZE_OF_PAYLOAD_UNION, 8) +		\
-	sizeof(uint64_t) +						\
 	sizeof(uint64_t))
 
 enum sh_css_queue_type {

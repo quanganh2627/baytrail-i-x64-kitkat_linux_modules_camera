@@ -22,8 +22,7 @@
 #ifndef __IA_CSS_FPN_HOST_H
 #define __IA_CSS_FPN_HOST_H
 
-#include "sh_css_params.h"
-
+#include "ia_css_binary.h"
 #include "ia_css_fpn_types.h"
 #include "ia_css_fpn_param.h"
 
@@ -33,5 +32,15 @@ ia_css_fpn_encode(struct sh_css_isp_fpn_params *to,
 
 void
 ia_css_fpn_dump(const struct sh_css_isp_fpn_params *fpn, unsigned level);
+
+void
+ia_css_fpn_config(
+	struct sh_css_isp_fpn_isp_config      *to,
+	const struct ia_css_fpn_configuration *from);
+
+void
+ia_css_fpn_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *from);
 
 #endif /* __IA_CSS_FPN_HOST_H */

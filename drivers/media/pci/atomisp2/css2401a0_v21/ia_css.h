@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20131225_0532 */
+/* Release Version: ci_master_20131218_0259 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -932,8 +932,6 @@ struct ia_css_buffer {
 		struct ia_css_acc_param          *custom_data; /**< Custom buffer. */
 		struct ia_css_metadata           *metadata;    /**< Sensor metadata. */
 	} data; /**< Buffer data pointer. */
-	// cookie to the external struct
-	uint64_t driver_cookie;
 };
 
 /** The event type, distinguishes the kind of events that

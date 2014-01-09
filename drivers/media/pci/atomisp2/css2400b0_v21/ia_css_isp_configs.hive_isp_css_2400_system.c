@@ -29,6 +29,48 @@
 #include "assert_support.h"
 
 void
+ia_css_configure_fpn(
+	const struct ia_css_binary *binary,
+	const struct ia_css_fpn_configuration *config_dmem)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_fpn() enter:\n");
+
+	{
+		short offset = -1;
+		if (binary->info->mem_offsets.offsets.config)
+			offset = binary->info->mem_offsets.offsets.config->dmem.fpn;
+
+		if (offset >= 0) {
+			ia_css_fpn_config((struct sh_css_isp_fpn_isp_config *)
+					&binary->mem_params.params[IA_CSS_PARAM_CLASS_CONFIG][IA_CSS_ISP_DMEM].address[offset],
+					config_dmem);
+		}
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_fpn() leave:\n");
+}
+
+void
+ia_css_configure_tnr(
+	const struct ia_css_binary *binary,
+	const struct ia_css_tnr_configuration *config_dmem)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_tnr() enter:\n");
+
+	{
+		short offset = -1;
+		if (binary->info->mem_offsets.offsets.config)
+			offset = binary->info->mem_offsets.offsets.config->dmem.tnr;
+
+		if (offset >= 0) {
+			ia_css_tnr_config((struct sh_css_isp_tnr_isp_config *)
+					&binary->mem_params.params[IA_CSS_PARAM_CLASS_CONFIG][IA_CSS_ISP_DMEM].address[offset],
+					config_dmem);
+		}
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_tnr() leave:\n");
+}
+
+void
 ia_css_configure_ref(
 	const struct ia_css_binary *binary,
 	const struct ia_css_ref_configuration *config_dmem)

@@ -51,9 +51,6 @@ extern int pad_h;
 #define IS_ISP24XX(isp)							\
 	(((isp)->media_dev.hw_revision & ATOMISP_HW_REVISION_MASK)	\
 	 >= (ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT))
-#define IS_ISP2401(isp)							\
-	(((isp)->media_dev.hw_revision & ATOMISP_HW_REVISION_MASK)	\
-	 >= (ATOMISP_HW_REVISION_ISP2401_LEGACY << ATOMISP_HW_REVISION_SHIFT))
 
 struct atomisp_format_bridge {
 	unsigned int pixelformat;

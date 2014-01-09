@@ -22,6 +22,8 @@
 #ifndef _IA_CSS_EVENTQ_H
 #define _IA_CSS_EVENTQ_H
 
+#include "sh_css_internal.h"	/*struct sh_css_circular_buf,
+				  struct host_sp_queues */
 #include "ia_css_queue.h"	/* queue APIs */
 
 
@@ -39,7 +41,7 @@ enum ia_css_err ia_css_eventq_recv(
  * @param[in]	evt_payload_1	The event payload.
  * @param[in]	evt_payload_2	The event payload.
  */
-enum ia_css_err ia_css_eventq_send(
+extern void ia_css_eventq_send(
 		ia_css_queue_t *eventq_handle,
 		uint8_t evt_id,
 		uint8_t evt_payload_0,

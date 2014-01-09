@@ -397,7 +397,6 @@ struct imx_device {
 	u16 pixels_per_line;
 	u16 lines_per_frame;
 	u8 fps;
-	const struct imx_reg *regs;
 	u8 res;
 	u8 type;
 	u8 sensor_revision;
