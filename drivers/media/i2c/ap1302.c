@@ -923,6 +923,30 @@ static int ap1302_set_special_effect(struct v4l2_subdev *sd, s32 val)
 	return 0;
 }
 
+static u16 ap1302_scene_mode_values[] = {
+	0x00, /* V4L2_SCENE_MODE_NONE */
+	0x07, /* V4L2_SCENE_MODE_BACKLIGHT */
+	0x0a, /* V4L2_SCENE_MODE_BEACH_SNOW */
+	0x06, /* V4L2_SCENE_MODE_CANDLE_LIGHT */
+	0x00, /* V4L2_SCENE_MODE_DAWN_DUSK */
+	0x00, /* V4L2_SCENE_MODE_FALL_COLORS */
+	0x0d, /* V4L2_SCENE_MODE_FIREWORKS */
+	0x02, /* V4L2_SCENE_MODE_LANDSCAPE */
+	0x05, /* V4L2_SCENE_MODE_NIGHT */
+	0x0c, /* V4L2_SCENE_MODE_PARTY_INDOOR */
+	0x01, /* V4L2_SCENE_MODE_PORTRAIT */
+	0x03, /* V4L2_SCENE_MODE_SPORTS */
+	0x0e, /* V4L2_SCENE_MODE_SUNSET */
+	0x0b, /* V4L2_SCENE_MODE_TEXT */
+};
+
+static int ap1302_set_scene_mode(struct v4l2_subdev *sd, s32 val)
+{
+	ap1302_i2c_write_reg(sd, REG_SCENE_CTRL, AP1302_REG16,
+		ap1302_scene_mode_values[val]);
+	return 0;
+}
+
 static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ap1302_device *dev = container_of(
@@ -943,6 +967,9 @@ static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_COLORFX:
 		ap1302_set_special_effect(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_SCENE_MODE:
+		ap1302_set_scene_mode(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -1072,6 +1099,16 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.min = 0,
 		.def = 0,
 		.max = 15,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_SCENE_MODE,
+		.name = "Scene Mode",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 13,
 		.step = 1,
 	},
 };
