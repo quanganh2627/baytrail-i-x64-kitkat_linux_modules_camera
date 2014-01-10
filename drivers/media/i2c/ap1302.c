@@ -947,6 +947,20 @@ static int ap1302_set_scene_mode(struct v4l2_subdev *sd, s32 val)
 	return 0;
 }
 
+static u16 ap1302_flicker_values[] = {
+	0x0,    /* OFF */
+	0x3201, /* 50HZ */
+	0x3c01, /* 60HZ */
+	0x2     /* AUTO */
+};
+
+static int ap1302_set_flicker_freq(struct v4l2_subdev *sd, s32 val)
+{
+	ap1302_i2c_write_reg(sd, REG_FLICK_CTRL, AP1302_REG16,
+		ap1302_flicker_values[val]);
+	return 0;
+}
+
 static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ap1302_device *dev = container_of(
@@ -970,6 +984,9 @@ static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_SCENE_MODE:
 		ap1302_set_scene_mode(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_POWER_LINE_FREQUENCY:
+		ap1302_set_flicker_freq(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -1109,6 +1126,16 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.min = 0,
 		.def = 0,
 		.max = 13,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_POWER_LINE_FREQUENCY,
+		.name = "Light frequency filter",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 3,
+		.max = 3,
 		.step = 1,
 	},
 };
