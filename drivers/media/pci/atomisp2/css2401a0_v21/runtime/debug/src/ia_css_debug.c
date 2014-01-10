@@ -2637,7 +2637,7 @@ ia_css_debug_pipe_graph_dump_stage(
 			l=strlen(ei);
 
 			/* Replace last ',' with \0 if present */
-			if (enable_info[l-1] == ',')
+			if (l && enable_info[l-1] == ',')
 				enable_info[--l] = '\0';
 
 			if (l<=ENABLE_LINE1_MAX_LENGHT1) {
@@ -2645,11 +2645,11 @@ ia_css_debug_pipe_graph_dump_stage(
 				/* other helper strings with empty string */
 				strcpy(enable_info, ei);
 			} else {
-				/* Too big for one line, find last space */
+				/* Too big for one line, find last comma */
 				p=ENABLE_LINE1_MAX_LENGHT1;
 				while (ei[p] != ',')
 					p--;
-				/* Last space found, copy till that space */
+				/* Last comma found, copy till that comma */
 				strncpy(enable_info1, ei, p);
 				enable_info1[p]='\0';
 

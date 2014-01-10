@@ -270,7 +270,7 @@ struct atomisp_sub_device {
 	struct atomisp_css_params params;
 
 #ifdef CSS20
-	struct atomisp_stream_env stream_env;
+	struct atomisp_stream_env stream_env[ATOMISP_INPUT_STREAM_NUM];
 #endif
 	struct v4l2_pix_format dvs_envelop;
 	unsigned int s3a_bufs_in_css[CSS_PIPE_ID_NUM];
@@ -283,7 +283,11 @@ struct atomisp_sub_device {
 	struct atomisp_css_frame *raw_output_frame;
 	enum atomisp_frame_status frame_status[VIDEO_MAX_FRAME];
 
+	/* This field specifies which MIPI input port is selected. */
 	int input_curr;
+	/* This field specifies which sensor is being selected when there
+	   are multiple sensors connected to the same MIPI port. */
+	int sensor_curr;
 
 	atomic_t sof_count;
 	atomic_t sequence;      /* Sequence value that is assigned to buffer. */
@@ -303,6 +307,8 @@ struct atomisp_sub_device {
 	struct work_struct delayed_init_work;
 
 	unsigned int latest_preview_exp_id; /* CSS ZSL raw buffer id */
+
+	unsigned int mipi_frame_size;
 };
 
 extern const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[];

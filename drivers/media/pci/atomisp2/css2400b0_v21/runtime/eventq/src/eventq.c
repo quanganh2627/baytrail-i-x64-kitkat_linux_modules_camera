@@ -48,7 +48,7 @@ enum ia_css_err ia_css_eventq_recv(
  * @brief The Host sends the event to the SP.
  * Refer to "sh_css_sp.h" for details.
  */
-void ia_css_eventq_send(
+enum ia_css_err ia_css_eventq_send(
 			ia_css_queue_t *eventq_handle,
 			uint8_t evt_id,
 			uint8_t evt_payload_0,
@@ -57,6 +57,7 @@ void ia_css_eventq_send(
 {
 	uint8_t tmp[4];
 	uint32_t sw_event;
+	enum ia_css_err status;
 	/*
 	 * Encode the queue type, the thread ID and
 	 * the queue ID into the event.
@@ -68,6 +69,16 @@ void ia_css_eventq_send(
 	ia_css_event_encode(tmp, 4, &sw_event);
 
 	/* queue the software event (busy-waiting) */
-	while (IA_CSS_SUCCESS != ia_css_queue_enqueue(eventq_handle, sw_event))
+	do {
+		status = ia_css_queue_enqueue(eventq_handle, sw_event);
+		if (IA_CSS_ERR_QUEUE_IS_FULL != status ) {
+			/* We were able to successfully send the event
+			   or had a real failure. return the status*/
+			return status;
+		}
+		/* Wait for the queue to be not full and try again*/
 		hrt_sleep();
+	} while(1);
+
+	return IA_CSS_ERR_INTERNAL_ERROR;
 }

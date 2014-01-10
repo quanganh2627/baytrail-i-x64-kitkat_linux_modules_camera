@@ -324,11 +324,15 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 	struct atomisp_sub_device *isp_sd = v4l2_get_subdevdata(sd);
 	struct atomisp_device *isp = isp_sd->isp;
 	struct v4l2_mbus_framefmt *ffmt[ATOMISP_SUBDEV_PADS_NUM];
+	uint16_t vdev_pad = atomisp_subdev_source_pad(fh->vfh.vdev);
 	struct v4l2_rect *crop[ATOMISP_SUBDEV_PADS_NUM],
 		*comp[ATOMISP_SUBDEV_PADS_NUM];
+	enum atomisp_input_stream_id stream_id;
 	unsigned int i;
 	unsigned int padding_w = pad_w;
 	unsigned int padding_h = pad_h;
+
+	stream_id = atomisp_source_pad_to_stream_id(isp_sd, vdev_pad);
 
 	isp_get_fmt_rect(sd, fh, which, ffmt, crop, comp);
 
@@ -416,7 +420,7 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 			dvs_w = dvs_h = 0;
 
 		atomisp_css_video_set_dis_envelope(isp_sd, dvs_w, dvs_h);
-		atomisp_css_input_set_effective_resolution(isp_sd,
+		atomisp_css_input_set_effective_resolution(isp_sd, stream_id,
 					crop[pad]->width, crop[pad]->height);
 
 		break;
@@ -516,11 +520,15 @@ void atomisp_subdev_set_ffmt(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
 	struct atomisp_device *isp = isp_sd->isp;
 	struct v4l2_mbus_framefmt *__ffmt =
 		atomisp_subdev_get_ffmt(sd, fh, which, pad);
+	uint16_t vdev_pad = atomisp_subdev_source_pad(fh->vfh.vdev);
+	enum atomisp_input_stream_id stream_id;
 
 	dev_dbg(isp->dev, "ffmt: pad %s w %d h %d code 0x%8.8x which %s\n",
 		atomisp_pad_str[pad], ffmt->width, ffmt->height, ffmt->code,
 		which == V4L2_SUBDEV_FORMAT_TRY ? "V4L2_SUBDEV_FORMAT_TRY"
 		: "V4L2_SUBDEV_FORMAT_ACTIVE");
+
+	stream_id = atomisp_source_pad_to_stream_id(isp_sd, vdev_pad);
 
 	switch (pad) {
 	case ATOMISP_SUBDEV_PAD_SINK: {
@@ -540,12 +548,15 @@ void atomisp_subdev_set_ffmt(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
 				     V4L2_SEL_TGT_CROP, 0);
 
 		if (which == V4L2_SUBDEV_FORMAT_ACTIVE) {
-			atomisp_css_input_set_resolution(isp_sd, ffmt);
+			atomisp_css_input_set_resolution(isp_sd,
+				stream_id, ffmt);
 			atomisp_css_input_set_binning_factor(isp_sd,
+				stream_id,
 				atomisp_get_sensor_bin_factor(isp_sd));
-			atomisp_css_input_set_bayer_order(isp_sd,
+			atomisp_css_input_set_bayer_order(isp_sd, stream_id,
 							  fc->bayer_order);
-			atomisp_css_input_set_format(isp_sd, fc->in_sh_fmt);
+			atomisp_css_input_set_format(isp_sd, stream_id,
+						fc->in_sh_fmt);
 		}
 
 		break;

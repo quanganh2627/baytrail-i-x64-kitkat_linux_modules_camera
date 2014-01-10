@@ -1390,12 +1390,15 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 
 	/* Adjust the FPS selection based on the resolution selected */
 	dev->fps_index = __imx_nearest_fps_index(dev->fps, res->fps_options);
+	dev->fps = res->fps_options[dev->fps_index].fps;
+	dev->regs = res->fps_options[dev->fps_index].regs;
+	if (!dev->regs)
+		dev->regs = res->regs;
 
-	ret = imx_write_reg_array(client, res->regs);
+	ret = imx_write_reg_array(client, dev->regs);
 	if (ret)
 		goto out;
 
-	dev->fps = res->fps_options[dev->fps_index].fps;
 	dev->pixels_per_line = res->fps_options[dev->fps_index].pixels_per_line;
 	dev->lines_per_frame = res->fps_options[dev->fps_index].lines_per_frame;
 
@@ -1413,7 +1416,7 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	if (ret)
 		goto out;
 
-	ret = imx_get_intg_factor(client, imx_info, res->regs);
+	ret = imx_get_intg_factor(client, imx_info, dev->regs);
 	if (ret)
 		goto out;
 
@@ -1846,6 +1849,7 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	const struct imx_resolution *res =
 				&dev->curr_res_table[dev->fmt_idx];
 	struct camera_mipi_info *imx_info = NULL;
+	unsigned int fps_index;
 	int ret = 0;
 	int fps;
 
@@ -1870,7 +1874,15 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	if (fps == res->fps_options[dev->fps_index].fps)
 		return 0;
 
-	dev->fps_index = __imx_nearest_fps_index(fps, res->fps_options);
+	fps_index = __imx_nearest_fps_index(fps, res->fps_options);
+
+	if (res->fps_options[fps_index].regs &&
+	    res->fps_options[fps_index].regs != dev->regs) {
+		dev_err(&client->dev, "Sensor is streaming, cannot apply new configuration\n");
+		return -EBUSY;
+	}
+
+	dev->fps_index = fps_index;
 	dev->fps = res->fps_options[dev->fps_index].fps;
 
 	/* Update the new frametimings based on FPS */
@@ -1885,8 +1897,7 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	if (ret)
 		return ret;
 
-	ret = imx_get_intg_factor(client, imx_info,
-			dev->curr_res_table[dev->fmt_idx].regs);
+	ret = imx_get_intg_factor(client, imx_info, dev->regs);
 	if (ret)
 		return ret;
 

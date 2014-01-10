@@ -223,11 +223,19 @@ void copy_dvs_6axis_table(struct ia_css_dvs_6axis_config *dvs_config_dst,
 	unsigned int width_uv;
 	unsigned int height_uv;
 
-	assert(dvs_config_dst != NULL);
 	assert(dvs_config_src!= NULL);
+	assert(dvs_config_dst != NULL);
+	assert(dvs_config_src->xcoords_y != NULL);
+	assert(dvs_config_src->xcoords_uv != NULL);
+	assert(dvs_config_src->ycoords_y != NULL);
+	assert(dvs_config_src->ycoords_uv != NULL);
+	assert(dvs_config_src->width_y == dvs_config_dst->width_y);
+	assert(dvs_config_src->width_uv == dvs_config_dst->width_uv);
+	assert(dvs_config_src->height_y == dvs_config_dst->height_y);
+	assert(dvs_config_src->height_uv == dvs_config_dst->height_uv);
 
 	width_y = dvs_config_src->width_y;
-	height_y =  dvs_config_src->height_y;
+	height_y = dvs_config_src->height_y;
 	width_uv = dvs_config_src->width_uv; /* = Y/2, depens on colour format YUV 4.2.0*/
 	height_uv = dvs_config_src->height_uv;
 		
