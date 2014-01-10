@@ -751,15 +751,21 @@ static int ov5693_s_power(struct v4l2_subdev *sd, int on)
 
 		ret = power_down(sd);
 	} else {
+		ret = power_up(sd);
+		if (ret)
+			goto done;
+
+		ret = ov5693_init(sd);
+		if (ret)
+			goto done;
+
 		if (dev->vcm_driver && dev->vcm_driver->power_up)
 			ret = dev->vcm_driver->power_up(sd);
 		if (ret)
 			dev_err(&client->dev, "vcm power-up failed.\n");
-
-		ret = power_up(sd);
-		if (!ret)
-			ret = ov5693_init(sd);
 	}
+
+done:
 	mutex_unlock(&dev->input_lock);
 	return ret;
 }

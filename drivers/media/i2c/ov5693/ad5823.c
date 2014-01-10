@@ -30,7 +30,7 @@ static int ad5823_i2c_write(struct i2c_client *client, u8 reg, u8 val)
 	buf[1] = val;
 	msg.addr = AD5823_VCM_ADDR;
 	msg.flags = 0;
-	msg.len = AD5823_8BIT;
+	msg.len = AD5823_REG_LENGTH + AD5823_8BIT;
 	msg.buf = &buf[0];
 
 	if (i2c_transfer(client->adapter, &msg, 1) != 1)
@@ -47,7 +47,7 @@ static int ad5823_i2c_read(struct i2c_client *client, u8 reg, u8 *val)
 
 	msg[0].addr = AD5823_VCM_ADDR;
 	msg[0].flags = 0;
-	msg[0].len = AD5823_8BIT;
+	msg[0].len = AD5823_REG_LENGTH;
 	msg[0].buf = &buf[0];
 
 	msg[1].addr = AD5823_VCM_ADDR;
@@ -63,15 +63,46 @@ static int ad5823_i2c_read(struct i2c_client *client, u8 reg, u8 *val)
 
 int ad5823_vcm_power_up(struct v4l2_subdev *sd)
 {
-	int ret = -ENODEV;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = -EINVAL;
+	u8 vcm_mode_reg_val[4] = {
+		AD5823_ARC_RES0,
+		AD5823_ARC_RES1,
+		AD5823_ARC_RES2,
+		AD5823_ESRC
+	};
 
 	/* Enable power */
-	if (ad5823_dev.platform_data)
+	if (ad5823_dev.platform_data) {
 		ret = ad5823_dev.platform_data->power_ctrl(sd, 1);
+		if (ret)
+			return ret;
+	}
 	/*
 	 * waiting time requested by AD5823(vcm)
 	 */
 	usleep_range(1000, 2000);
+
+	/*
+	 * Set vcm ringing control mode.
+	 */
+	if (ad5823_dev.vcm_mode != AD5823_DIRECT) {
+		ret = ad5823_i2c_write(client, AD5823_REG_VCM_CODE_MSB,
+						AD5823_RING_CTRL_ENABLE);
+		if (ret)
+			return ret;
+
+		ret = ad5823_i2c_write(client, AD5823_REG_MODE,
+					vcm_mode_reg_val[ad5823_dev.vcm_mode]);
+		if (ret)
+			return ret;
+	} else {
+		ret = ad5823_i2c_write(client, AD5823_REG_VCM_CODE_MSB,
+						AD5823_RING_CTRL_DISABLE);
+		if (ret)
+			return ret;
+	}
+
 	return ret;
 }
 
@@ -91,29 +122,6 @@ int ad5823_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = -EINVAL;
 	u8 vcm_code;
-	u8 vcm_mode_reg_val[4] = {
-		AD5823_ARC_RES0,
-		AD5823_ARC_RES1,
-		AD5823_ARC_RES2,
-		AD5823_ESRC
-	};
-
-	if (ad5823_dev.vcm_mode != AD5823_DIRECT) {
-		ret = ad5823_i2c_write(client, AD5823_REG_VCM_CODE_MSB,
-						AD5823_RING_CTRL_ENABLE);
-		if (ret)
-			return ret;
-
-		ret = ad5823_i2c_write(client, AD5823_REG_MODE,
-					vcm_mode_reg_val[ad5823_dev.vcm_mode]);
-		if (ret)
-			return ret;
-	} else {
-		ret = ad5823_i2c_write(client, AD5823_REG_VCM_CODE_MSB,
-						AD5823_RING_CTRL_DISABLE);
-		if (ret)
-			return ret;
-	}
 
 	ret = ad5823_i2c_read(client, AD5823_REG_VCM_CODE_MSB, &vcm_code);
 	if (ret)
@@ -126,8 +134,7 @@ int ad5823_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 		return ret;
 
 	/* set reg VCM_CODE_LSB Bit[7:0] */
-	ret = ad5823_i2c_write(client, AD5823_REG_VCM_CODE_LSB,
-							(val & 0x0f));
+	ret = ad5823_i2c_write(client, AD5823_REG_VCM_CODE_LSB, (val & 0xff));
 	if (ret)
 		return ret;
 
