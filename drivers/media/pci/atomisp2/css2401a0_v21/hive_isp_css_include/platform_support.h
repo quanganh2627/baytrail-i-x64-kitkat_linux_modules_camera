@@ -87,6 +87,7 @@ hrt_sleep(void)
  */
 #include "hrt/host.h"
 #include <string.h>
+#include <stdio.h>
 
 #define CSS_ALIGN(d, a) d __attribute__((aligned(a)))
 #if !defined(__ISP) && !defined(__SP)

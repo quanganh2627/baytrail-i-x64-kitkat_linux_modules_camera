@@ -317,29 +317,32 @@ int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 
 int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format);
 
 int atomisp_css_capture_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format);
 
 int atomisp_css_video_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format);
 
 int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 				uint16_t source_pad,
 				struct atomisp_css_frame_info *frame_info);
 
-int atomisp_css_video_configure_viewfinder(
-					struct atomisp_sub_device *asd,
-					unsigned int width,
-					unsigned int height,
+int atomisp_css_video_configure_viewfinder(struct atomisp_sub_device *asd,
+					unsigned int width, unsigned int height,
+					unsigned int min_width,
 					enum atomisp_css_frame_format format);
 
 int atomisp_css_capture_configure_viewfinder(
 					struct atomisp_sub_device *asd,
 					unsigned int width, unsigned int height,
+					unsigned int min_width,
 					enum atomisp_css_frame_format format);
 
 int atomisp_css_video_get_viewfinder_frame_info(

@@ -713,13 +713,15 @@ void atomisp_clear_css_buffer_counters(struct atomisp_sub_device *asd)
 	asd->video_out_capture.buffers_in_css = 0;
 	asd->video_out_vf.buffers_in_css = 0;
 	asd->video_out_preview.buffers_in_css = 0;
+	asd->video_out_video_capture.buffers_in_css = 0;
 }
 
 bool atomisp_buffers_queued(struct atomisp_sub_device *asd)
 {
 	return asd->video_out_capture.buffers_in_css ||
 		asd->video_out_vf.buffers_in_css ||
-		asd->video_out_preview.buffers_in_css ?
+		asd->video_out_preview.buffers_in_css ||
+		asd->video_out_video_capture.buffers_in_css ?
 		    true : false;
 }
 
@@ -808,6 +810,7 @@ void atomisp_flush_bufs_and_wakeup(struct atomisp_sub_device *asd)
 	atomisp_flush_video_pipe(asd, &asd->video_out_capture);
 	atomisp_flush_video_pipe(asd, &asd->video_out_vf);
 	atomisp_flush_video_pipe(asd, &asd->video_out_preview);
+	atomisp_flush_video_pipe(asd, &asd->video_out_video_capture);
 }
 
 
@@ -818,25 +821,37 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 		enum atomisp_css_pipe_id css_pipe_id,
 		enum atomisp_css_buffer_type buf_type)
 {
-
 	if (css_pipe_id == CSS_PIPE_ID_COPY) {
 		switch (stream_id) {
 		case ATOMISP_INPUT_STREAM_PREVIEW:
 			return &asd->video_out_preview;
 		case ATOMISP_INPUT_STREAM_POSTVIEW:
 			return &asd->video_out_vf;
-		case ATOMISP_INPUT_STREAM_CAPTURE:
 		case ATOMISP_INPUT_STREAM_VIDEO:
+			return &asd->video_out_video_capture;
+		case ATOMISP_INPUT_STREAM_CAPTURE:
 		default:
 			return &asd->video_out_capture;
 		}
 	}
 	/* video is same in online as in continuouscapture mode */
-	if (asd->vfpp->val != ATOMISP_VFPP_ENABLE) {
+	if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_LOWLAT) {
+		/*
+		 * Disable vf_pp and run CSS in still capture mode. In this
+		 * mode, CSS does not cause extra latency with buffering, but
+		 * scaling is not available.
+		 */
 		return &asd->video_out_capture;
+	} else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
+		/*
+		 * Disable vf_pp and run CSS in video mode. This allows using
+		 * ISP scaling but it has one frame delay due to CSS internal
+		 * buffering.
+		 */
+		return &asd->video_out_video_capture;
 	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
 		if (buf_type == CSS_BUFFER_TYPE_OUTPUT_FRAME)
-			return &asd->video_out_capture;
+			return &asd->video_out_video_capture;
 		return &asd->video_out_preview;
 	} else if (buf_type == CSS_BUFFER_TYPE_OUTPUT_FRAME) {
 		if (css_pipe_id == CSS_PIPE_ID_PREVIEW)
@@ -1260,6 +1275,12 @@ void atomisp_wdt_work(struct work_struct *work)
 				__func__,
 				asd->video_out_preview.vdev.name,
 				asd->video_out_preview.
+				buffers_in_css);
+			dev_err(isp->dev,
+				"%s, vdev %s buffers in css: %d\n",
+				__func__,
+				asd->video_out_video_capture.vdev.name,
+				asd->video_out_video_capture.
 				buffers_in_css);
 			dev_err(isp->dev,
 				"%s, s3a buffers in css preview pipe:%d\n",
@@ -3359,6 +3380,7 @@ int configure_pp_input_nop(struct atomisp_sub_device *asd,
 
 int configure_output_nop(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format sh_fmt)
 {
 	return 0;
@@ -3430,7 +3452,7 @@ static int css_input_resolution_changed(struct atomisp_device *isp,
 static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			struct atomisp_css_frame_info *output_info,
 			struct atomisp_css_frame_info *raw_output_info,
-			int width, int height, unsigned int pixelformat,
+			struct v4l2_pix_format *pix,
 			unsigned int source_pad)
 {
 	struct camera_mipi_info *mipi_info;
@@ -3442,6 +3464,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	struct v4l2_subdev_fh fh;
 	int (*configure_output)(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format sh_fmt) =
 							configure_output_nop;
 	int (*get_frame_info)(struct atomisp_sub_device *asd,
@@ -3459,7 +3482,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		&asd->subdev, NULL, V4L2_SUBDEV_FORMAT_ACTIVE,
 		ATOMISP_SUBDEV_PAD_SINK, V4L2_SEL_TGT_CROP);
 
-	format = atomisp_get_format_bridge(pixelformat);
+	format = atomisp_get_format_bridge(pix->pixelformat);
 	if (format == NULL)
 		return -EINVAL;
 
@@ -3475,7 +3498,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 
 		if (format->sh_fmt == CSS_FRAME_FORMAT_RAW &&
 		     raw_output_format_match_input(
-			mipi_info->input_format, pixelformat))
+			mipi_info->input_format, pix->pixelformat))
 			return -EINVAL;
 	}
 
@@ -3488,9 +3511,9 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		struct v4l2_rect vf_size = {0};
 		struct v4l2_mbus_framefmt vf_ffmt = {0};
 
-		if (width < 640 || height < 480) {
-			vf_size.width = width;
-			vf_size.height = height;
+		if (pix->width < 640 || pix->height < 480) {
+			vf_size.width = pix->width;
+			vf_size.height = pix->height;
 		} else {
 			vf_size.width = 640;
 			vf_size.height = 480;
@@ -3515,12 +3538,12 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO ||
 		    asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER)
 			atomisp_css_video_configure_viewfinder(asd,
-				vf_size.width, vf_size.height,
+				vf_size.width, vf_size.height, 0,
 				asd->video_out_vf.sh_fmt);
 		else if (source_pad != ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW ||
 			 asd->vfpp->val == ATOMISP_VFPP_DISABLE_LOWLAT)
 			atomisp_css_capture_configure_viewfinder(asd,
-				vf_size.width, vf_size.height,
+				vf_size.width, vf_size.height, 0,
 				asd->video_out_vf.sh_fmt);
 	}
 
@@ -3602,15 +3625,21 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	if (format->sh_fmt == CSS_FRAME_FORMAT_RAW ||
 			isp->inputs[asd->input_curr].type == SOC_CAMERA)
 		ret = atomisp_css_copy_configure_output(asd, stream_index,
-				width, height, format->sh_fmt);
+				pix->width, pix->height, format->sh_fmt);
 	else
-		ret = configure_output(asd, width, height, format->sh_fmt);
+		ret = configure_output(asd, pix->width, pix->height,
+				       format->planar ? pix->bytesperline :
+				       pix->bytesperline * 8 / format->depth,
+				       format->sh_fmt);
 #else
-	ret = configure_output(asd, width, height, format->sh_fmt);
+	ret = configure_output(asd, pix->width, pix->height,
+			       format->planar ? pix->bytesperline :
+			       pix->bytesperline * 8 / format->depth,
+			       format->sh_fmt);
 #endif
 	if (ret) {
 		dev_err(isp->dev, "configure_output %ux%u, format %8.8x\n",
-			width, height, format->sh_fmt);
+			pix->width, pix->height, format->sh_fmt);
 		return -EINVAL;
 	}
 
@@ -3655,7 +3684,8 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	ret = get_frame_info(asd, output_info);
 #endif
 	if (ret) {
-		dev_err(isp->dev, "get_frame_info %ux%u\n", width, height);
+		dev_err(isp->dev, "get_frame_info %ux%u (padded to %u)\n",
+			pix->width, pix->height, pix->bytesperline);
 		return -EINVAL;
 	}
 
@@ -3804,8 +3834,10 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	struct v4l2_subdev_fh fh;
 	int ret;
 
-	dev_dbg(isp->dev, "setting resolution %ux%u on pad %u\n",
-		f->fmt.pix.width, f->fmt.pix.height, source_pad);
+	dev_dbg(isp->dev,
+		"setting resolution %ux%u on pad %u, bytesperline %u\n",
+		f->fmt.pix.width, f->fmt.pix.height, source_pad,
+		f->fmt.pix.bytesperline);
 
 	v4l2_fh_init(&fh.vfh, vdev);
 
@@ -3828,16 +3860,24 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 		&& asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)) {
 #endif
 		if (asd->fmt_auto->val) {
-			struct v4l2_rect *capture_comp =
-				atomisp_subdev_get_rect(
-					&asd->subdev, NULL,
-					V4L2_SUBDEV_FORMAT_ACTIVE,
-					ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE,
-					V4L2_SEL_TGT_COMPOSE);
+			struct v4l2_rect *capture_comp;
 			struct v4l2_rect r = {0};
 
 			r.width = f->fmt.pix.width;
 			r.height = f->fmt.pix.height;
+
+			if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+			    capture_comp = atomisp_subdev_get_rect(
+					&asd->subdev, NULL,
+					V4L2_SUBDEV_FORMAT_ACTIVE,
+					ATOMISP_SUBDEV_PAD_SOURCE_VIDEO,
+					V4L2_SEL_TGT_COMPOSE);
+			else
+			    capture_comp = atomisp_subdev_get_rect(
+					&asd->subdev, NULL,
+					V4L2_SUBDEV_FORMAT_ACTIVE,
+					ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE,
+					V4L2_SEL_TGT_COMPOSE);
 
 			if (capture_comp->width < r.width
 			    || capture_comp->height < r.height) {
@@ -3857,13 +3897,17 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
 			atomisp_css_video_configure_viewfinder(asd,
 				f->fmt.pix.width, f->fmt.pix.height,
-				format_bridge->sh_fmt);
+				format_bridge->planar ? f->fmt.pix.bytesperline
+				: f->fmt.pix.bytesperline * 8
+				/ format_bridge->depth,	format_bridge->sh_fmt);
 			atomisp_css_video_get_viewfinder_frame_info(asd,
 								&output_info);
 		} else {
 			atomisp_css_capture_configure_viewfinder(asd,
 				f->fmt.pix.width, f->fmt.pix.height,
-				format_bridge->sh_fmt);
+				format_bridge->planar ? f->fmt.pix.bytesperline
+				: f->fmt.pix.bytesperline * 8
+				/ format_bridge->depth,	format_bridge->sh_fmt);
 			atomisp_css_capture_get_viewfinder_frame_info(
 								asd,
 								&output_info);
@@ -4020,7 +4064,14 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 					     f->fmt.pix.height);
 		}
 
-		atomisp_subdev_set_selection(&asd->subdev, &fh,
+		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+			atomisp_subdev_set_selection(&asd->subdev, &fh,
+					     V4L2_SUBDEV_FORMAT_ACTIVE,
+					     ATOMISP_SUBDEV_PAD_SOURCE_VIDEO,
+					     V4L2_SEL_TGT_COMPOSE, 0,
+					     &main_compose);
+		else
+			atomisp_subdev_set_selection(&asd->subdev, &fh,
 					     V4L2_SUBDEV_FORMAT_ACTIVE,
 					     ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE,
 					     V4L2_SEL_TGT_COMPOSE, 0,
@@ -4029,8 +4080,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 
 set_fmt_to_isp:
 	ret = atomisp_set_fmt_to_isp(vdev, &output_info, &raw_output_info,
-				     f->fmt.pix.width, f->fmt.pix.height,
-				     f->fmt.pix.pixelformat, source_pad);
+				     &f->fmt.pix, source_pad);
 	if (ret)
 		return -EINVAL;
 done:
@@ -4063,13 +4113,11 @@ done:
 	/*
 	 * If in video 480P case, no GFX throttle
 	 */
-	if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE) {
-		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
-		    f->fmt.pix.width == 720 && f->fmt.pix.height == 480)
-			isp->need_gfx_throttle = false;
-		else
-			isp->need_gfx_throttle = true;
-	}
+	if (asd->run_mode->val == ATOMISP_SUBDEV_PAD_SOURCE_VIDEO &&
+	    f->fmt.pix.width == 720 && f->fmt.pix.height == 480)
+		isp->need_gfx_throttle = false;
+	else
+		isp->need_gfx_throttle = true;
 
 	return 0;
 }

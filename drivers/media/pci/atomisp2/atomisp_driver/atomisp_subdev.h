@@ -50,13 +50,15 @@ enum atomisp_subdev_input_entity {
 };
 
 #define ATOMISP_SUBDEV_PAD_SINK			0
-/* capture output for still and video frames */
+/* capture output for still frames */
 #define ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE	1
 /* viewfinder output for downscaled capture output */
 #define ATOMISP_SUBDEV_PAD_SOURCE_VF		2
 /* preview output for display */
 #define ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW	3
-#define ATOMISP_SUBDEV_PADS_NUM			4
+/* main output for video pipeline */
+#define ATOMISP_SUBDEV_PAD_SOURCE_VIDEO	4
+#define ATOMISP_SUBDEV_PADS_NUM			5
 
 struct atomisp_in_fmt_conv {
 	enum v4l2_mbus_pixelcode code;
@@ -256,6 +258,8 @@ struct atomisp_sub_device {
 	struct atomisp_video_pipe video_out_capture; /* capture output */
 	struct atomisp_video_pipe video_out_vf;      /* viewfinder output */
 	struct atomisp_video_pipe video_out_preview; /* preview output */
+	/* video pipe main output */
+	struct atomisp_video_pipe video_out_video_capture;
 	/* struct isp_subdev_params params; */
 	spinlock_t lock;
 	struct atomisp_device *isp;

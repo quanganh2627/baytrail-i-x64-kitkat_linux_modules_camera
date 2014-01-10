@@ -830,32 +830,12 @@ void atomisp_css_disable_vf_pp(struct atomisp_sub_device *asd,
 	sh_css_disable_vf_pp(disable);
 }
 
-/*
- * HACK: align width to GFX/SGX constraints
- */
-static unsigned int align_to_gfx(int width)
-{
-	/*
-	 * SGX requires 64-byte alignment and
-	 * minimum width of 512.
-	 */
-	unsigned int align;
-
-	if (width <= 512)
-		align = 512;
-	else
-		align = ALIGN(width, 64);
-	return align;
-}
-
 int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	/* HACK: align width to GFX/SGX constraints */
-	unsigned int align = align_to_gfx(width);
-
-	if (sh_css_preview_configure_output(width, height, align, format)
+	if (sh_css_preview_configure_output(width, height, min_width, format)
 	    != sh_css_success)
 		return -EINVAL;
 
@@ -864,12 +844,10 @@ int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
 
 int atomisp_css_capture_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	/* HACK: align width to GFX/SGX constraints */
-	unsigned int align = align_to_gfx(width);
-
-	if (sh_css_capture_configure_output(width, height, align, format)
+	if (sh_css_capture_configure_output(width, height, min_width, format)
 	    != sh_css_success)
 		return -EINVAL;
 
@@ -878,12 +856,10 @@ int atomisp_css_capture_configure_output(struct atomisp_sub_device *asd,
 
 int atomisp_css_video_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	/* HACK: align width to GFX/SGX constraints */
-	unsigned int align = align_to_gfx(width);
-
-	if (sh_css_video_configure_output(width, height, align, format)
+	if (sh_css_video_configure_output(width, height, min_width, format)
 	    != sh_css_success)
 		return -EINVAL;
 
@@ -893,12 +869,10 @@ int atomisp_css_video_configure_output(struct atomisp_sub_device *asd,
 int atomisp_css_video_configure_viewfinder(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	/* HACK: align width to GFX/SGX constraints */
-	unsigned int align = align_to_gfx(width);
-
-	if (sh_css_video_configure_viewfinder(width, height, align, format)
+	if (sh_css_video_configure_viewfinder(width, height, min_width, format)
 	    != sh_css_success)
 		return -EINVAL;
 
@@ -908,13 +882,11 @@ int atomisp_css_video_configure_viewfinder(
 int atomisp_css_capture_configure_viewfinder(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
+				unsigned int min_width,
 				enum atomisp_css_frame_format format)
 {
-	/* HACK: align width to GFX/SGX constraints */
-	unsigned int align = align_to_gfx(width);
-
-	if (sh_css_capture_configure_viewfinder(width, height, align, format)
-	    != sh_css_success)
+	if (sh_css_capture_configure_viewfinder(width, height, min_width,
+						format) != sh_css_success)
 		return -EINVAL;
 
 	return 0;
@@ -990,6 +962,7 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 
 	switch (source_pad) {
 	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
+	case ATOMISP_SUBDEV_PAD_SOURCE_VIDEO:
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO
 		    || asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER)
 			ret = sh_css_video_get_output_frame_info(frame_info);
