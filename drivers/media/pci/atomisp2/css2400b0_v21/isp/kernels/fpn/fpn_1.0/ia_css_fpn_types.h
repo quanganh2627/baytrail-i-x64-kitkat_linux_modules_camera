@@ -34,6 +34,7 @@
  *  ISP1: FPN1 is used.
  *  ISP2: FPN1 is used.
  */
+
 struct ia_css_fpn_table {
 	int16_t *data;		/**< Table content (fixed patterns noise).
 					u0.[13-shift], [0,63] */
@@ -45,6 +46,10 @@ struct ia_css_fpn_table {
 					u8.0, [0,13] */
 	uint32_t enabled;	/**< Fpn is enabled.
 					bool */
+};
+
+struct ia_css_fpn_configuration {
+	const struct ia_css_frame_info *info;
 };
 
 #endif /* __IA_CSS_FPN_TYPES_H */

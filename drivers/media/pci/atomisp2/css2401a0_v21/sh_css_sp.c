@@ -872,11 +872,10 @@ configure_isp_from_args(
 	const struct sh_css_binary_args *args)
 {
 #if !defined(IS_ISP_2500_SYSTEM)
-	ia_css_ref_configure(binary, &args->in_ref_frame->info);
-#else
-	(void)binary;
-	(void)args;
+	ia_css_fpn_configure(binary, &binary->in_frame_info);
 #endif
+	ia_css_ref_configure(binary, &args->in_ref_frame->info);
+	ia_css_tnr_configure(binary, &args->in_tnr_frame->info);
 }
 
 static enum ia_css_err
@@ -1230,11 +1229,11 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 #if defined (SH_CSS_ENABLE_METADATA)
 	if (md_config != NULL && md_config->size > 0) {
 		/* Buffer size is rounded up to DDR bus width. */
-		sh_css_sp_group.pipe[thread_id].md_size = CEIL_MUL(md_config->size,
-				HIVE_ISP_DDR_WORD_BYTES);
+		sh_css_sp_group.pipe[thread_id].metadata.size =
+				CEIL_MUL(md_config->size, HIVE_ISP_DDR_WORD_BYTES);
 		ia_css_isys_convert_stream_format_to_mipi_format(
 				md_config->data_type, MIPI_PREDICTOR_NONE,
-				&sh_css_sp_group.pipe[thread_id].md_format);
+				&sh_css_sp_group.pipe[thread_id].metadata.format);
 	}
 #else
 	(void)md_config;
@@ -1348,7 +1347,8 @@ sh_css_init_host2sp_frame_data(void)
 void
 sh_css_update_host2sp_offline_frame(
 				unsigned frame_num,
-				struct ia_css_frame *frame)
+				struct ia_css_frame *frame,
+				struct ia_css_metadata *metadata)
 {
 	unsigned int HIVE_ADDR_host_sp_com;
 	unsigned int o;
@@ -1362,9 +1362,13 @@ sh_css_update_host2sp_offline_frame(
 	o = offsetof(struct host_sp_communication, host2sp_offline_frames)
 		/ sizeof(int);
 	o += frame_num;
+	store_sp_array_uint(host_sp_com, o, frame ? frame->data : 0);
 
-	store_sp_array_uint(host_sp_com, o,
-				frame ? frame->data : 0);
+	/* Write metadata buffer into SP DMEM */
+	o = offsetof(struct host_sp_communication, host2sp_offline_metadata)
+		/ sizeof(int);
+	o += frame_num;
+	store_sp_array_uint(host_sp_com, o, metadata ? metadata->address : 0);
 }
 
 /**

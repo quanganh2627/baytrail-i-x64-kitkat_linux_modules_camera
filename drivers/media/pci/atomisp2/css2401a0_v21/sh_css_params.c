@@ -148,6 +148,7 @@
 
 #if defined(IS_ISP_2500_SYSTEM)
 static struct sh_css_acc_cluster_parameters acc_cluster_parameters;
+static struct isp_acc_param sh_css_acc_cluster_parameters;
 #endif
 
 /* We keep a second copy of the ptr struct for the SP to access.
@@ -2866,6 +2867,17 @@ ia_css_metadata_free(struct ia_css_metadata *me)
 		"ia_css_metadata_free() leave: return_void\n");
 }
 
+void
+ia_css_metadata_free_multiple(unsigned int num_bufs, struct ia_css_metadata **bufs)
+{
+	unsigned int i;
+
+	if (bufs != NULL) {
+		for (i = 0; i < num_bufs; i++)
+			ia_css_metadata_free(bufs[i]);
+	}
+}
+
 unsigned g_param_buffer_dequeue_count = 0;
 unsigned g_param_buffer_enqueue_count = 0;
 
@@ -2936,6 +2948,13 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	ddr_ptrs->acc_cluster_data_for_sp = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
 				mmgr_malloc(sizeof(sh_css_acc_cluster_parameters_t)));
 	succ &= (ddr_ptrs->acc_cluster_data_for_sp != mmgr_NULL);
+#endif
+
+#if defined(IS_ISP_2500_SYSTEM)
+	ddr_ptrs_size->acc_cluster_params_for_sp = sizeof(struct isp_acc_param);
+	ddr_ptrs->acc_cluster_params_for_sp = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
+				mmgr_malloc(sizeof(struct isp_acc_param)));
+	succ &= (ddr_ptrs->acc_cluster_params_for_sp != mmgr_NULL);
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -3458,6 +3477,7 @@ static void sh_css_update_isp_mem_params_to_ddr(
 void
 sh_css_update_acc_cluster_data_to_ddr(hrt_vaddress ddr_ptr)
 {
+	size_t size = sizeof(sh_css_acc_cluster_parameters_t);
 #ifdef HRT_CSIM
 	/* ispparm struct is read with DMA which reads
 	 * multiples of the DDR word with (32 bytes):
@@ -3466,15 +3486,38 @@ sh_css_update_acc_cluster_data_to_ddr(hrt_vaddress ddr_ptr)
 	unsigned int aligned_width, padding_bytes;
 	hrt_vaddress pad_ptr;
 
-	aligned_width = CEIL_MUL(sizeof(sh_css_acc_cluster_parameters_t),
-				 HIVE_ISP_DDR_WORD_BYTES);
-	padding_bytes = aligned_width - sizeof(sh_css_acc_cluster_parameters_t);
-	pad_ptr = ddr_ptr + sizeof(sh_css_acc_cluster_parameters_t);
+	aligned_width = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
+	padding_bytes = aligned_width - size;
+	pad_ptr = ddr_ptr + size;
 	mmgr_clear(pad_ptr, padding_bytes);
 #endif
 	mmgr_store(ddr_ptr,
 	     &acc_cluster_parameters,
-	     sizeof(sh_css_acc_cluster_parameters_t));
+	     size);
+}
+#endif
+
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_update_acc_cluster_params_to_ddr(hrt_vaddress ddr_ptr)
+{
+	size_t size = sizeof(struct isp_acc_param);
+#if defined(HRT_CSIM)
+	/* ispparm struct is read with DMA which reads
+	 * multiples of the DDR word with (32 bytes):
+	 * So we pad with zeroes to prevent warnings in csim.
+	 */
+	unsigned int aligned_width, padding_bytes;
+	hrt_vaddress pad_ptr;
+
+	aligned_width = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
+	padding_bytes = aligned_width - size;
+	pad_ptr = ddr_ptr + size;
+	mmgr_clear(pad_ptr, padding_bytes);
+#endif
+	mmgr_store(ddr_ptr,
+	     &sh_css_acc_cluster_parameters,
+	     size);
 }
 #endif
 
@@ -3591,6 +3634,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 #else /* defined(IS_ISP_2500_SYSTEM) */
 	sh_css_process_product_specific(&params->isp_parameters,&params->isp_params_changed);
 	sh_css_process_acc_cluster_parameters(stream, &acc_cluster_parameters, &acc_cluster_params_changed );
+	sh_css_process_acc_cluster_parameters2(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed );
 #endif
 
 	/* now make the map available to the sp */
@@ -3704,6 +3748,17 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 				  true,
 				  &err);
 			sh_css_update_acc_cluster_data_to_ddr( cur_map->acc_cluster_data_for_sp );
+		}
+#endif
+#if defined(IS_ISP_2500_SYSTEM)
+		if (acc_cluster_params_changed || params->isp_params_changed)
+		{
+			reallocate_buffer(&cur_map->acc_cluster_params_for_sp ,
+				  &cur_map_size->acc_cluster_params_for_sp ,
+				  cur_map_size->acc_cluster_params_for_sp ,
+				  true,
+				  &err);
+			sh_css_update_acc_cluster_params_to_ddr( cur_map->acc_cluster_params_for_sp );
 		}
 #endif
 

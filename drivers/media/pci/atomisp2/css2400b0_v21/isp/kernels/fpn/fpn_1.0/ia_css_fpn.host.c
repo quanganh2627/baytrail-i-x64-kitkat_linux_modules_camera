@@ -19,11 +19,15 @@
  *
  */
 
+#include "ia_css_frame.h"
+#include "ia_css.h"
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "assert_support.h"
 
+#define IA_CSS_INCLUDE_CONFIGURATIONS
+#include HRTSTR(ia_css_isp_configs.SYSTEM.h)
 #include "ia_css_fpn.host.h"
 
 void
@@ -42,4 +46,35 @@ ia_css_fpn_dump(const struct sh_css_isp_fpn_params *fpn, unsigned level)
 			"fpn_shift", fpn->shift);
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"fpn_enabled", fpn->enabled);
+}
+
+void
+ia_css_fpn_config(struct sh_css_isp_fpn_isp_config *to,
+		 const struct ia_css_fpn_configuration  *from)
+{
+	unsigned elems_a = ISP_NWAY;
+	ia_css_dma_configure_from_info(&to->port_b, from->info);
+	to->width_a_over_b = elems_a / to->port_b.elems;
+
+	/* Assume divisiblity here, may need to generalize to fixed point. */
+	assert (elems_a % to->port_b.elems == 0);
+}
+
+void
+ia_css_fpn_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *info)
+{
+	const struct ia_css_frame_info my_info =
+		{ { CEIL_DIV(info->res.width, 2), /* Packed by 2x */
+		    info->res.height
+		  },
+		  CEIL_DIV(info->padded_width, 2), /* Packed by 2x */
+		  info->format,
+		  info->raw_bit_depth,
+		  info->raw_bayer_order
+		};
+	const struct ia_css_fpn_configuration config =
+		{ &my_info };
+	ia_css_configure_fpn(binary, &config);
 }

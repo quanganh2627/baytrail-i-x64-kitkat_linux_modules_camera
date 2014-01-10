@@ -466,6 +466,22 @@ enum sh_css_port_type {
 
 #define IA_CSS_ACQUIRE_ISP_POS	31
 
+/* Flags for metadata processing */
+#define SH_CSS_METADATA_ENABLED        0x01
+#define SH_CSS_METADATA_PROCESSED      0x02
+#define SH_CSS_METADATA_OFFLINE_MODE   0x04
+#define SH_CSS_METADATA_WAIT_INPUT     0x08
+
+/** @brief Free an array of metadata buffers.
+ *
+ * @param[in]	num_bufs	Number of metadata buffers to be freed.
+ * @param[in]	bufs		Pointer of array of metadata buffers.
+ *
+ * This function frees an array of metadata buffers.
+ */
+void
+ia_css_metadata_free_multiple(unsigned int num_bufs, struct ia_css_metadata **bufs);
+
 /* Information for a pipeline */
 struct sh_css_sp_pipeline {
 	uint32_t	pipe_id;	/* the pipe ID */
@@ -486,8 +502,12 @@ struct sh_css_sp_pipeline {
 	CSS_ALIGN(int32_t num_execs, 8); /* number of times to run if this is
 					  an acceleration pipe. */
 #if defined (SH_CSS_ENABLE_METADATA)
-	uint32_t		md_format;		/* Metadata format in hrt format. */
-	unsigned int	md_size;		/* Rounded up metadata size in bytes. */
+	struct {
+		uint32_t		flag;		/* Processing flags */
+		uint32_t		format;		/* Metadata format in hrt format */
+		uint32_t		size;		/* Rounded up metadata size in bytes */
+		hrt_vaddress	cont_buf;	/* Address of continuous buffer */
+	} metadata;
 #endif
 	union {
 		struct {
@@ -744,6 +764,7 @@ struct host_sp_communication {
 	 *   Remove it when the Host and the SP is decoupled.
 	 */
 	hrt_vaddress host2sp_offline_frames[NUM_CONTINUOUS_FRAMES];
+	hrt_vaddress host2sp_offline_metadata[NUM_CONTINUOUS_FRAMES];
 	hrt_vaddress host2sp_mipi_frames[NUM_MIPI_FRAMES];
 	uint32_t host2sp_cont_avail_num_raw_frames;
 	uint32_t host2sp_cont_extra_num_raw_frames;
@@ -754,7 +775,7 @@ struct host_sp_communication {
 };
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
 	(sizeof(uint32_t) +						\
-	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS) +		\
+	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
 	(NUM_MIPI_FRAMES * SIZE_OF_HRT_VADDRESS) +			\
 	(4 *sizeof(uint32_t)) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
