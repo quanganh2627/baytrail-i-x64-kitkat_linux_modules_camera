@@ -1989,7 +1989,7 @@ static void __configure_capture_pp_input(struct atomisp_sub_device *asd,
 }
 
 /*
- * For CSS2.1, preview pipe could support bayer decimation, yuv decimation and
+ * For CSS2.1, preview pipe could support bayer downscaling, yuv decimation and
  * yuv downscaling, which needs addtional configurations.
  */
 static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
@@ -1997,15 +1997,7 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 				 enum ia_css_pipe_id pipe_id)
 {
 	struct atomisp_device *isp = asd->isp;
-#if 0
-	/*
-	 * FIXME, this is workaround to disable YUV decimation which caused
-	 * vied BZ:1075
-	 */
 	int out_width, out_height, yuv_ds_in_width, yuv_ds_in_height;
-#else
-	int out_width, out_height;
-#endif
 	struct atomisp_stream_env *stream_env =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 	struct ia_css_stream_config *stream_config = &stream_env->stream_config;
@@ -2013,18 +2005,16 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 		&stream_env->pipe_configs[pipe_id];
 	struct ia_css_pipe_extra_config *pipe_extra_configs =
 		&stream_env->pipe_extra_configs[pipe_id];
-#if 0
-	/*
-	 * FIXME, this is workaround to disable bayer downscaling which caused
-	 * vied BZ:1075
-	 */
 	struct ia_css_resolution *bayer_ds_out_res =
 		&pipe_configs->bayer_ds_out_res;
-#endif
 	struct ia_css_resolution *vf_pp_in_res =
 		&pipe_configs->vf_pp_in_res;
 	struct ia_css_resolution  *effective_res =
 		&stream_config->effective_res;
+	const struct bayer_ds_factor bds_fct[] =
+		{{2, 1}, {3, 2}, {5, 4}};
+	const unsigned int yuv_dec_fct[] = {4, 2};
+	unsigned int i;
 
 	if (width == 0 && height == 0)
 		return;
@@ -2041,20 +2031,19 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	out_height = pipe_configs->output_info.res.height;
 
 	/*
-	 * The ISP could do bayer decimation, yuv decimation and yuv
+	 * The ISP could do bayer downscaling, yuv decimation and yuv
 	 * downscaling:
-	 * 1: Bayer Decimimation: between effective resolution and
+	 * 1: Bayer Downscaling: between effective resolution and
 	 * bayer_ds_res_out;
 	 * 2: YUV Decimation: between bayer_ds_res_out and vf_pp_in_res;
-	 * 3: YUV downscaling: between vf_pp_in_res and final vf output
+	 * 3: YUV Downscaling: between vf_pp_in_res and final vf output
 	 *
-	 * Rule for Bayer Decimation: support factor 2, 1.5 and 1.25
-	 * Rule for YUV Decimation: support factor 1,2,4
+	 * Rule for Bayer Downscaling: support factor 2, 1.5 and 1.25
+	 * Rule for YUV Decimation: support factor 2, 4
 	 * Rule for YUV Downscaling: arbitary value below 2
 	 *
 	 * General rule of factor distribution among these stages:
-	 * 1: try to do 2, 1.5, 1.25 in order for Bayer decimation if not in
-	 * online mode.
+	 * 1: try to do Bayer downscaling first if not in online mode.
 	 * 2: try to do maximum of 2 for YUV downscaling
 	 * 3: the remainling for YUV decimation
 	 *
@@ -2062,51 +2051,37 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	 * Do not configure bayer_ds_out_res if:
 	 * online == 1 or continuous == 0 or raw_binning = 0
 	 */
-
-	/*
-	 * calculate bayer decimate factor:
-	 * 1: only 2, 1.5, 1.25 get supported
-	 * 2: Do not configure bayer_ds_out_res if:
-	 * online == 1 or continuous == 0 or raw_binning = 0
-	 */
-#if 0
-	/*
-	 * FIXME, this is workaround to disable bayer downscaling which caused
-	 * vied BZ:1075
-	 */
 	if (stream_config->online || !stream_config->continuous ||
 			!pipe_extra_configs->enable_raw_binning) {
 		bayer_ds_out_res->width = 0;
 		bayer_ds_out_res->height = 0;
-	} else if (effective_res->width > out_width * 2 &&
-			effective_res->height > out_height * 2) {
-		bayer_ds_out_res->width = effective_res->width / 2;
-		bayer_ds_out_res->height = effective_res->height / 2;
-	} else if (effective_res->width > out_width * 3 / 2 &&
-			effective_res->height > out_height * 3 / 2) {
-		bayer_ds_out_res->width = effective_res->width * 2 / 3;
-		bayer_ds_out_res->height = effective_res->height * 2 / 3;
-	} else if (effective_res->width > out_width * 5 / 4 &&
-			effective_res->height > out_height * 5 / 4) {
-		bayer_ds_out_res->width = effective_res->width * 4 / 5;
-		bayer_ds_out_res->height = effective_res->height * 4 / 5;
-
 	} else {
 		bayer_ds_out_res->width = effective_res->width;
 		bayer_ds_out_res->height = effective_res->height;
+
+		for (i = 0; i < ARRAY_SIZE(bds_fct); i++) {
+			if (effective_res->width >= out_width *
+			    bds_fct[i].numerator / bds_fct[i].denominator &&
+			    effective_res->height >= out_height *
+			    bds_fct[i].numerator / bds_fct[i].denominator) {
+				bayer_ds_out_res->width =
+				    effective_res->width *
+				    bds_fct[i].denominator /
+				    bds_fct[i].numerator;
+				bayer_ds_out_res->height =
+				    effective_res->height *
+				    bds_fct[i].denominator /
+				    bds_fct[i].numerator;
+				break;
+			}
+		}
 	}
-#endif
 	/*
 	 * calculate YUV Decimation, YUV downscaling facor:
 	 * YUV Downscaling factor must not exceed 2.
-	 * YUV Decimation factor could be 1, 2 ,4.
+	 * YUV Decimation factor could be 2, 4.
 	 */
 	/* first decide the yuv_ds input resolution */
-#if 0
-	/*
-	 * FIXME, this is workaround to disable YUV decimation which caused
-	 * vied BZ:1075
-	 */
 	if (bayer_ds_out_res->width == 0) {
 		yuv_ds_in_width = effective_res->width;
 		yuv_ds_in_height = effective_res->height;
@@ -2114,26 +2089,21 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 		yuv_ds_in_width = bayer_ds_out_res->width;
 		yuv_ds_in_height = bayer_ds_out_res->height;
 	}
-	if (yuv_ds_in_width > out_width * 4 &&
-			yuv_ds_in_height > out_height * 4) {
-		/* YUV Decimation factor 4 */
-		vf_pp_in_res->width = yuv_ds_in_width / 4;
-		vf_pp_in_res->height = yuv_ds_in_height / 4;
-	} else 	if (yuv_ds_in_width > out_width * 2 &&
-			yuv_ds_in_height > out_height * 2) {
-		/* YUV Decimation factor 2 */
-		vf_pp_in_res->width = yuv_ds_in_width / 2;
-		vf_pp_in_res->height = yuv_ds_in_height / 2;
-	} else {
-		/* YUV Decimation not needed */
-		vf_pp_in_res->width = yuv_ds_in_width;
-		vf_pp_in_res->height = yuv_ds_in_height;
+
+	vf_pp_in_res->width = yuv_ds_in_width;
+	vf_pp_in_res->height = yuv_ds_in_height;
+
+	/* find out the yuv decimation factor */
+	for (i = 0; i < ARRAY_SIZE(yuv_dec_fct); i++) {
+		if (yuv_ds_in_width > out_width * yuv_dec_fct[i] &&
+		    yuv_ds_in_height > out_height * yuv_dec_fct[i]) {
+			vf_pp_in_res->width = yuv_ds_in_width / yuv_dec_fct[i];
+			vf_pp_in_res->height = yuv_ds_in_height / yuv_dec_fct[i];
+			break;
+		}
 	}
-#else
-	vf_pp_in_res->width = effective_res->width;
-	vf_pp_in_res->height = effective_res->height;
-#endif
-	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
+
+	dev_dbg(isp->dev, "configuring pipe[%d]preview pp input w=%d.h=%d.\n",
 		pipe_id, width, height);
 }
 
