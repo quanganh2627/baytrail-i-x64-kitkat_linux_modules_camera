@@ -22,7 +22,7 @@
 #ifndef __IA_CSS_S3A_TYPES_H
 #define __IA_CSS_S3A_TYPES_H
 
-#if defined(SYSTEM_css_skycam_a0t_system) && (! defined(PIPE_GENERATION) )
+#if (defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system)) && (! defined(PIPE_GENERATION) )
 #include "../../../../components/stats_3a/src/stats_3a_public.h"
 #endif
 
@@ -39,7 +39,7 @@
  */
 struct ia_css_3a_grid_info {
 
-#if defined(SYSTEM_css_skycam_a0t_system)
+#if defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system)
 	uint32_t ae_enable;					/**< ae enabled in binary,
 								   0:disabled, 1:enabled */
 	struct ae_public_config_grid_config	ae_grd_info;	/**< see description in ae_public.h*/

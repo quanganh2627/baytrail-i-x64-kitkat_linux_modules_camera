@@ -19,38 +19,10 @@
  *
  */
 
-#ifndef __HOST_BBB_CFG_H_INCLUDED__
-#define __HOST_BBB_CFG_H_INCLUDED__
-
-//#define USE2400
-#define USE2600
-
-
-/* consider to use same naming as cfg.dat from the SDK */
-/* N --> number of lanes per vector
- * B --> bit depth
- * M --> lanes per slice
- * W --> bit depth multiplier (1w = single pre 2w = double
-  */
-
-
-#define NUM_VEC_ELEMS 1
-
-
-#ifdef USE2400
-#define NUM_BITS 14
-#define NUM_SLICE_ELEMS 4
-#define ROUNDMODE           ROUND_NEAREST_EVEN
-
-#elif defined(USE2600)
+#ifndef __ISP2600_CONFIG_H_INCLUDED__
+#define __ISP2600_CONFIG_H_INCLUDED__
 
 #define NUM_BITS 16
 #define NUM_SLICE_ELEMS 8
-#define ROUNDMODE           ROUND_NEAREST_INF
 
-#else
-#error "unsupported system"
-#endif
-
-
-#endif //__HOST_BBB_CFG_H_INCLUDED__
+#endif /* __ISP2600_CONFIG_H_INCLUDED__ */

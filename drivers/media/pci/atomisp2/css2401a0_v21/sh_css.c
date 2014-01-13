@@ -219,7 +219,7 @@ struct sh_css_queues {
 	false,				/* disable_vf_pp */ \
 }
 
-#if defined(SYSTEM_css_skycam_a0t_system)
+#if defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system)
 #define DEFAULT_3A_GRID_INFO \
 { \
  	0,				/* ae_enable */ \

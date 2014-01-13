@@ -882,7 +882,7 @@ ia_css_get_dvs2_statistics(struct ia_css_dvs2_statistics           *host_stats,
 			"sh_css_get_dvs2_statistics() leave: void\n");
 }
 
-#if !defined(HAS_NO_HMEM) &&  !defined(SYSTEM_css_skycam_a0t_system)
+#if !defined(HAS_NO_HMEM) &&  !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
 static void get_3a_stats_from_hmem(struct ia_css_3a_statistics *host_stats,
 		hrt_vaddress ddr_ptr) {
 #if defined(IS_ISP_2500_SYSTEM)
@@ -955,7 +955,7 @@ return;
 }
 #endif
 
-#if !defined(SYSTEM_css_skycam_a0t_system)
+#if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
 static void get_3a_stats_from_dmem(struct ia_css_3a_statistics *host_stats,
 		hrt_vaddress ddr_ptr) {
 
@@ -989,7 +989,7 @@ merge_hi14bit_lo14bit(unsigned short hi, unsigned short lo)
 	return val;
 }
 
-#if !defined(SYSTEM_css_skycam_a0t_system)
+#if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
 static void get_3a_stats_from_vmem(struct ia_css_3a_statistics *host_stats,
 		hrt_vaddress ddr_ptr_hi, hrt_vaddress ddr_ptr_lo) {
 
@@ -2115,7 +2115,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 }
 #endif
 
-#if !defined(SYSTEM_css_skycam_a0t_system)
+#if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
 void
 ia_css_get_3a_statistics(struct ia_css_3a_statistics           *host_stats,
 			 const struct ia_css_isp_3a_statistics *isp_stats)
@@ -2138,7 +2138,7 @@ ia_css_get_3a_statistics(struct ia_css_3a_statistics           *host_stats,
 				       isp_stats->data.vmem.s3a_tbl_hi,
 				       isp_stats->data.vmem.s3a_tbl_lo);
 	}
-#if !defined(HAS_NO_HMEM) && !defined(SYSTEM_css_skycam_a0t_system)
+#if !defined(HAS_NO_HMEM) && !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "3A: HMEM\n");
 	get_3a_stats_from_hmem(host_stats,
 			       isp_stats->data_hmem.rgby_tbl);

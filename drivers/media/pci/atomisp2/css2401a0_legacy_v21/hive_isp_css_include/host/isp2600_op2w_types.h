@@ -19,38 +19,41 @@
  *
  */
 
-#ifndef __HOST_BBB_CFG_H_INCLUDED__
-#define __HOST_BBB_CFG_H_INCLUDED__
+#ifndef __ISP2600_OP2W_TYPES_H_INCLUDED__
+#define __ISP2600_OP2W_TYPES_H_INCLUDED__
 
-//#define USE2400
-#define USE2600
+/*
+ * This file is part of the Multi-precision vector operations exstension package.
+ */
 
+/*
+ * Double-precision vector operations
+ */
 
-/* consider to use same naming as cfg.dat from the SDK */
-/* N --> number of lanes per vector
- * B --> bit depth
- * M --> lanes per slice
- * W --> bit depth multiplier (1w = single pre 2w = double
-  */
+/*
+ * Prerequisites:
+ *
+ */
+#include "mpmath.h"
+#include "isp2600_config.h"
 
-
-#define NUM_VEC_ELEMS 1
-
-
-#ifdef USE2400
-#define NUM_BITS 14
-#define NUM_SLICE_ELEMS 4
-#define ROUNDMODE           ROUND_NEAREST_EVEN
-
-#elif defined(USE2600)
-
-#define NUM_BITS 16
-#define NUM_SLICE_ELEMS 8
-#define ROUNDMODE           ROUND_NEAREST_INF
-
-#else
-#error "unsupported system"
-#endif
+/*
+ * Single-precision data type specification
+ */
 
 
-#endif //__HOST_BBB_CFG_H_INCLUDED__
+typedef mpsdata_t             tvector2w;
+typedef mpsdata_t       tscalar2w;
+typedef spsdata_t        tflags2w; // no double precision in flags
+
+typedef struct {
+	mpsdata_t slice[NUM_SLICE_ELEMS]; // array of slice elements.
+}        tslice2w;
+
+
+typedef struct {
+  tvector2w       d;
+  tflags2w        f;
+} tvector2w_tflags;
+
+#endif /* __ISP2600_OP2W_TYPES_H_INCLUDED__ */

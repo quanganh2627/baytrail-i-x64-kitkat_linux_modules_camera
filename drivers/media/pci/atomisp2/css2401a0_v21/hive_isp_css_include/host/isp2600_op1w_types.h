@@ -19,38 +19,47 @@
  *
  */
 
-#ifndef __HOST_BBB_CFG_H_INCLUDED__
-#define __HOST_BBB_CFG_H_INCLUDED__
+#ifndef __ISP2600_OP1W_TYPES_H_INCLUDED__
+#define __ISP2600_OP1W_TYPES_H_INCLUDED__
 
-//#define USE2400
-#define USE2600
+/*
+ * This file is part of the Multi-precision vector operations exstension package.
+ */
+ 
+/* 
+ * Single-precision vector operations
+ */
+ 
+/*  
+ * Prerequisites:
+ *
+ */
 
+#include "mpmath.h"
+#include "isp2600_config.h"
 
-/* consider to use same naming as cfg.dat from the SDK */
-/* N --> number of lanes per vector
- * B --> bit depth
- * M --> lanes per slice
- * W --> bit depth multiplier (1w = single pre 2w = double
-  */
-
-
-#define NUM_VEC_ELEMS 1
-
-
-#ifdef USE2400
-#define NUM_BITS 14
-#define NUM_SLICE_ELEMS 4
-#define ROUNDMODE           ROUND_NEAREST_EVEN
-
-#elif defined(USE2600)
-
-#define NUM_BITS 16
-#define NUM_SLICE_ELEMS 8
-#define ROUNDMODE           ROUND_NEAREST_INF
-
-#else
-#error "unsupported system"
-#endif
+/*
+ * Single-precision data type specification
+ */
 
 
-#endif //__HOST_BBB_CFG_H_INCLUDED__
+typedef mpsdata_t       tvector1w;
+typedef mpsdata_t       tscalar1w;
+typedef spsdata_t        tflags1w;
+
+typedef struct {
+	mpsdata_t slice[NUM_SLICE_ELEMS]; // array of slice elements.
+}        tslice1w;
+
+
+typedef  struct {
+  tvector1w       d;
+  tflags1w        f;
+} tvector1w_tflags1w;
+
+typedef  struct {
+  tvector1w       d;
+  tslice1w  s;
+} tvector1w_tslice1w;
+
+#endif /* __ISP2600_OP1W_TYPES_H_INCLUDED__ */
