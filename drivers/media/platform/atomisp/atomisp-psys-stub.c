@@ -129,22 +129,14 @@ static int psysstub_command_prepare(struct atomisp_fh *fh,
 				    struct atomisp_command *command)
 {
 	struct atomisp_run_cmd *cmd;
-	int err = 0;
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
 	if (!cmd)
 		return -ENOMEM;
 
-	switch(command->id) {
-	case ATOMISP_PSYS_STUB_PREVIEW:
-		if (validate_buffers(command)) {
-			err = -EINVAL;
-			goto error;
-		}
-		break;
-	default:
-		err = -EINVAL;
-		goto error;
+	if (validate_buffers(command)) {
+		kfree(cmd);
+		return -EINVAL;
 	}
 
 	cmd->command = command;
@@ -152,9 +144,6 @@ static int psysstub_command_prepare(struct atomisp_fh *fh,
 	queue_work(fh->run_cmd_queue, &fh->run_cmd);
 
 	return 0;
-error:
-	kfree(cmd);
-	return err;
 }
 
 static int psysstub_runisp(struct atomisp_fh *fh, struct atomisp_command *command)
@@ -165,6 +154,12 @@ static int psysstub_runisp(struct atomisp_fh *fh, struct atomisp_command *comman
 	switch(command->id) {
 	case ATOMISP_PSYS_STUB_PREVIEW:
 		msleep(30);
+		break;
+	case ATOMISP_PSYS_STUB_VIDEO:
+		usleep_range(14800, 15000);
+		break;
+	case ATOMISP_PSYS_STUB_CAPTURE:
+		msleep(500);
 		break;
 	default:
 		err = -EINVAL;
