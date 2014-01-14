@@ -39,6 +39,7 @@ struct atomisp_device {
 	struct pci_dev *pdev;
 	struct list_head devices;
 	struct atomisp_bus_device *isys_iommu, *isys;
+	struct atomisp_bus_device *psys_iommu, *psys;
 };
 
 #endif

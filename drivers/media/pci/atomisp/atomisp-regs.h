@@ -1,7 +1,5 @@
 /*
- * Support for Medifield PNW Camera Imaging ISP subsystem.
- *
- * Copyright (c) 2012 Intel Corporation. All Rights Reserved.
+ * Copyright (c) 2014 Intel Corporation. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
@@ -26,5 +24,8 @@
 
 #define ATOMISP_BXT_A0_ISYS_IOMMU0_OFFSET		0x000e0000
 #define ATOMISP_BXT_A0_ISYS_IOMMU1_OFFSET		0x000e1000
+
+#define ATOMISP_BXT_A0_PSYS_IOMMU0_OFFSET		0x003c0000
+#define ATOMISP_BXT_A0_PSYS_IOMMU1_OFFSET		0x003c0100
 
 #endif /* ATOMISP_REGS_H */
