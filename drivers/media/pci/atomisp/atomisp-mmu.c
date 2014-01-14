@@ -201,8 +201,8 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 	uint32_t iova_start = iova;
 	unsigned int l2_idx;
 
-	pr_info("mapping l2 page table for l1 index %u (iova %p)\n", l1_idx,
-		(void *)iova);
+	pr_info("mapping l2 page table for l1 index %u (iova %8.8x)\n", l1_idx,
+		(uint32_t)iova);
 
 	if (adom->pgtbl[l1_idx] == INVALID_PAGE) {
 		adom->pgtbl[l1_idx] = virt_to_phys(alloc_page_table(adom)) >> ISP_PADDR_SHIFT;
