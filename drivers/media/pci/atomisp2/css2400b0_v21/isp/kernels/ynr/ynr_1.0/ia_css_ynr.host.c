@@ -23,7 +23,6 @@
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
-#include "assert_support.h"
 
 #include "bnr/bnr_1.0/ia_css_bnr.host.h"
 #include "ia_css_ynr.host.h"

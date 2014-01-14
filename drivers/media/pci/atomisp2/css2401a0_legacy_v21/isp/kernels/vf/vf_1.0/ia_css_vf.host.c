@@ -24,7 +24,6 @@
 #include "ia_css_pipeline.h"
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include HRTSTR(ia_css_isp_configs.SYSTEM.h)
-#include "assert_support.h"
 
 #include "isp.h"
 #include "ia_css_vf.host.h"

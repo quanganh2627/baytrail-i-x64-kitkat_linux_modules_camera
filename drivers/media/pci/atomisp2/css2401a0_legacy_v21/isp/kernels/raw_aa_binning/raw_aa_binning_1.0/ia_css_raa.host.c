@@ -25,7 +25,6 @@
 #include "memory_access.h"
 #include "ia_css_types.h"
 #include "sh_css_internal.h"
-#include "assert_support.h"
 #include "sh_css_frac.h"
 
 #include "ia_css_raa.host.h"
