@@ -218,19 +218,16 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 
 	paddr = ALIGN(paddr, ISP_PAGE_SIZE);
 
-	for (l2_idx = (iova_start & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT;
-	     (iova_start & ISP_L1PT_MASK) + (l2_idx << ISP_L2PT_SHIFT)
-		     < iova_start + size;
-	     l2_idx++) {
-		pr_info("l2_idx %u\n", l2_idx);
-		if (l2_pt[l2_idx] == INVALID_PAGE)
-			l2_pt[l2_idx] = paddr >> ISP_PADDR_SHIFT;
-		else
-			return -EBUSY;
-		pr_info("l2 index %u mapped as 0x%8.8x\n", l2_idx,
-			l2_pt[l2_idx]);
-		paddr += ISP_PAGE_SIZE;
-	}
+	l2_idx = (iova_start & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT;
+
+	pr_info("l2_idx %u, phys 0x%8.8x\n", l2_idx, l2_pt[l2_idx]);
+	if (l2_pt[l2_idx] != INVALID_PAGE)
+		return -EBUSY;
+
+	l2_pt[l2_idx] = paddr >> ISP_PADDR_SHIFT;
+
+	pr_info("l2 index %u mapped as 0x%8.8x\n", l2_idx,
+		l2_pt[l2_idx]);
 
 	page_table_dump(adom);
 
