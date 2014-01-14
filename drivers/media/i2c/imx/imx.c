@@ -304,6 +304,28 @@ static int __imx_nearest_fps_index(int fps,
 	return fps_index;
 }
 
+/*
+ * This is to choose the nearest fps setting above the requested fps
+ * fps_list should be in ascendant order.
+ */
+static int __imx_above_nearest_fps_index(int fps,
+					const struct imx_fps_setting *fps_list)
+{
+	int fps_index = 0;
+	int i;
+
+	for (i = 0; i < MAX_FPS_OPTIONS_SUPPORTED; i++) {
+		if (!fps_list[i].fps)
+			break;
+		if (fps <= fps_list[i].fps) {
+			fps_index = i;
+			break;
+		}
+	}
+
+	return fps_index;
+}
+
 static int __imx_get_max_fps_index(
 				const struct imx_fps_setting *fps_settings)
 {
@@ -1902,9 +1924,11 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	const struct imx_resolution *res =
 				&dev->curr_res_table[dev->fmt_idx];
 	struct camera_mipi_info *imx_info = NULL;
+	unsigned short pixels_per_line;
+	unsigned short lines_per_frame;
 	unsigned int fps_index;
-	int ret = 0;
 	int fps;
+	int ret = 0;
 
 
 	imx_info = v4l2_get_subdev_hostdata(sd);
@@ -1916,6 +1940,9 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 
 	fps = interval->interval.denominator / interval->interval.numerator;
 
+	if (!fps)
+		return -EINVAL;
+
 	/* No need to proceed further if we are not streaming */
 	if (!dev->streaming) {
 		/* Save the new FPS and use it while selecting setting */
@@ -1924,31 +1951,89 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	}
 
 	 /* Ignore if we are already using the required FPS. */
-	if (fps == res->fps_options[dev->fps_index].fps)
+	if (fps == dev->fps)
 		return 0;
 
-	fps_index = __imx_nearest_fps_index(fps, res->fps_options);
+	/*
+	 * Start here, sensor is already streaming, so adjust fps dynamically
+	 */
+	fps_index = __imx_above_nearest_fps_index(fps, res->fps_options);
+	if (fps > res->fps_options[fps_index].fps) {
+		/*
+		 * if does not have high fps setting, not support increase fps
+		 * by adjust lines per frame.
+		 */
+		dev_err(&client->dev, "Could not support fps: %d.\n", fps);
+		return -EINVAL;
+	}
 
 	if (res->fps_options[fps_index].regs &&
 	    res->fps_options[fps_index].regs != dev->regs) {
-		dev_err(&client->dev, "Sensor is streaming, cannot apply new configuration\n");
-		return -EBUSY;
+		/*
+		 * if need a new setting, but the new setting has difference
+		 * with current setting, not use this one, as may have
+		 * unexpected result, e.g. PLL, IQ.
+		 */
+		dev_dbg(&client->dev, "Sensor is streaming, not apply new sensor setting\n");
+		if (fps > res->fps_options[dev->fps_index].fps) {
+			/*
+			 * Does not support increase fps based on low fps
+			 * setting, as the high fps setting could not be used,
+			 * and fps requested is above current setting fps.
+			 */
+			dev_warn(&client->dev, "Could not support fps: %d, keep current: %d.\n",
+					fps, dev->fps);
+			return 0;
+		}
+	} else {
+		dev->fps_index = fps_index;
+		dev->fps = res->fps_options[dev->fps_index].fps;
 	}
 
-	dev->fps_index = fps_index;
-	dev->fps = res->fps_options[dev->fps_index].fps;
-
 	/* Update the new frametimings based on FPS */
-	dev->pixels_per_line =
-		res->fps_options[dev->fps_index].pixels_per_line;
-	dev->lines_per_frame =
-		res->fps_options[dev->fps_index].lines_per_frame;
+	pixels_per_line = res->fps_options[dev->fps_index].pixels_per_line;
+	lines_per_frame = res->fps_options[dev->fps_index].lines_per_frame;
+
+	if (fps > res->fps_options[fps_index].fps) {
+		/*
+		 * if does not have high fps setting, not support increase fps
+		 * by adjust lines per frame.
+		 */
+		dev_warn(&client->dev, "Could not support fps: %d. Use:%d.\n",
+				fps, res->fps_options[fps_index].fps);
+		goto done;
+	}
+
+	/* if the new setting does not match exactly */
+	if (dev->fps != fps) {
+#define MAX_LINES_PER_FRAME	0xffff
+		dev_dbg(&client->dev, "adjusting fps using lines_per_frame\n");
+		/*
+		 * FIXME!
+		 * 1: check DS on max value of lines_per_frame
+		 * 2: consider use pixel per line for more range?
+		 */
+		if (dev->lines_per_frame * dev->fps / fps >
+				MAX_LINES_PER_FRAME) {
+			dev_warn(&client->dev,
+					"adjust lines_per_frame out of range, try to use max value.\n");
+			lines_per_frame = MAX_LINES_PER_FRAME;
+		} else {
+			lines_per_frame = lines_per_frame * dev->fps / fps;
+		}
+	}
+done:
+	/* Update the new frametimings based on FPS */
+	dev->pixels_per_line = pixels_per_line;
+	dev->lines_per_frame = lines_per_frame;
 
 	/* Update the new values so that user side knows the current settings */
 	ret = __imx_update_exposure_timing(client,
 		dev->coarse_itg, dev->pixels_per_line, dev->lines_per_frame);
 	if (ret)
 		return ret;
+
+	dev->fps = fps;
 
 	ret = imx_get_intg_factor(client, imx_info, dev->regs);
 	if (ret)
