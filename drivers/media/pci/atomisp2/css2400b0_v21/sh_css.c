@@ -50,6 +50,7 @@
 #include "ia_css_pipe_util.h"
 #include "ia_css_pipe_binarydesc.h"
 #include "ia_css_pipe_stagedesc.h"
+#include "ia_css_isp_param.h"
 //#include "ia_css_stream_manager.h"
 /* #include "ia_css_rmgr_gen.h" */
 
@@ -2335,6 +2336,48 @@ static void sh_css_pipe_free_acc_binaries (
 	}
 }
 
+static void
+sh_css_pipe_free_pipe_settings(struct ia_css_pipe *pipe)
+{
+	struct ia_css_binary *binary;
+	switch (pipe->mode) {
+		case IA_CSS_PIPE_ID_PREVIEW:
+			binary = &pipe->pipe_settings.preview.copy_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.preview.preview_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.preview.vf_pp_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			break;
+		case IA_CSS_PIPE_ID_VIDEO:
+			binary = &pipe->pipe_settings.video.copy_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.video.video_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.video.vf_pp_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			break;
+		case IA_CSS_PIPE_ID_CAPTURE:
+			binary = &pipe->pipe_settings.capture.copy_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.capture.primary_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.capture.pre_isp_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.capture.anr_gdc_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.capture.post_isp_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.capture.capture_pp_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			binary = &pipe->pipe_settings.video.vf_pp_binary;
+			ia_css_isp_param_destroy_isp_parameters(&binary->mem_params, &binary->css_params);
+			break;
+		default:
+			break;
+	}
+}
+
 enum ia_css_err
 ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 {
@@ -2398,6 +2441,9 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 	sh_css_pipe_free_shading_table(pipe);
 
 	ia_css_pipeline_destroy(&pipe->pipeline);
+
+	sh_css_pipe_free_pipe_settings(pipe);
+
 	pipe_release_pipe_num(ia_css_pipe_get_pipe_num(pipe));
 
 	/* Temporarily, not every sh_css_pipe has an acc_extension. */
