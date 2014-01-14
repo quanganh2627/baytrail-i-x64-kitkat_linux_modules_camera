@@ -25,8 +25,11 @@
 #define ATOMISP_ISYS_NAME ATOMISP_NAME "-isys"
 #define ATOMISP_PSYS_NAME ATOMISP_NAME "-psys"
 
+#define ATOMISP_MMU_MAX_DEVICES		2
+
 struct atomisp_mmu_pdata {
-	void __iomem *base;
+	void __iomem *base[ATOMISP_MMU_MAX_DEVICES];
+	unsigned int nr_base;
 };
 
 struct atomisp_csi2_pdata {

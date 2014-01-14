@@ -22,4 +22,9 @@
 #ifndef ATOMISP_REGS_H
 #define ATOMISP_REGS_H
 
+/* Broxton A0 offsets */
+
+#define ATOMISP_BXT_A0_ISYS_IOMMU0_OFFSET		0x000e0000
+#define ATOMISP_BXT_A0_ISYS_IOMMU1_OFFSET		0x000e1000
+
 #endif /* ATOMISP_REGS_H */

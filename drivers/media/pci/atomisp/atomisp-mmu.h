@@ -44,7 +44,8 @@ struct atomisp_mmu {
 	struct list_head node;
 	unsigned int users;
 
-	void __iomem *base;
+	void __iomem **base;
+	unsigned int nr_base;
 
 	phys_addr_t pgtbl;
 	struct device *dev;

@@ -55,9 +55,18 @@
 #define TBL_PHYS_ADDR(a)	((phys_addr_t)(a) << ISP_PADDR_SHIFT)
 #define TBL_VIRT_ADDR(a)	phys_to_virt(TBL_PHYS_ADDR(a))
 
+static void mmu_writel(struct atomisp_mmu *mmu, uint32_t value,
+		       uint32_t offset)
+{
+	unsigned int i;
+
+	for (i = 0; i < mmu->nr_base; i++)
+		writel(value, mmu->base[i] + offset);
+}
+
 static void tlb_invalidate(struct atomisp_mmu *mmu)
 {
-	writel(TLB_INVALIDATE, mmu->base + REG_TLB_INVALIDATE);
+	mmu_writel(mmu, TLB_INVALIDATE, REG_TLB_INVALIDATE);
 }
 
 static void page_table_dump(struct atomisp_mmu_domain *adom)
@@ -411,7 +420,7 @@ static int atomisp_mmu_probe(struct atomisp_bus_device *adev)
 
 	mmu->base = ((struct atomisp_mmu_pdata *)adev->pdata)->base;
 	mmu->tlb_invalidate = &tlb_invalidate;
-	writel(mmu->pgtbl >> ISP_PADDR_SHIFT, mmu->base + REG_L1_PHYS);
+	mmu_writel(mmu, mmu->pgtbl >> ISP_PADDR_SHIFT, REG_L1_PHYS);
 
 	/*
 	 * FIXME: We can't unload this --- bus_set_iommu() will

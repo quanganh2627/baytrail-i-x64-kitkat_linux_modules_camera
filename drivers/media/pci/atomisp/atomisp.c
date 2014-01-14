@@ -33,15 +33,22 @@
 #define ATOMISP_PCI_BAR		0
 
 static struct atomisp_bus_device *atomisp_mmu_init(
-	struct pci_dev *pdev, void __iomem *base, unsigned int nr)
+	struct pci_dev *pdev, void __iomem *base[], unsigned int nr_base,
+	unsigned int nr)
 {
 	struct atomisp_mmu_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
+	unsigned int i;
 
 	if (!pdata)
 		return ERR_PTR(-ENOMEM);
 
-	pdata->base = base;
+	BUG_ON(nr_base > ATOMISP_MMU_MAX_DEVICES);
+
+	for (i = 0; i < nr_base; i++)
+		pdata->base[i] = base[i];
+
+	pdata->nr_base = nr_base;
 
 	return atomisp_bus_add_device(pdev, pdata, NULL, ATOMISP_MMU_NAME, nr);
 }
@@ -88,6 +95,7 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	struct atomisp_device *isp;
 	phys_addr_t phys;
 	void __iomem *base;
+	void __iomem *mmu_base[ATOMISP_MMU_MAX_DEVICES];
 	int rval;
 
 	rval = pcim_enable_device(pdev);
@@ -119,7 +127,9 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	INIT_LIST_HEAD(&isp->devices);
 	pci_set_drvdata(pdev, isp);
 
-	isp->iommu = atomisp_mmu_init(pdev, base + 0x000e0000, 0);
+	mmu_base[0] = base + ATOMISP_BXT_A0_ISYS_IOMMU0_OFFSET;
+	mmu_base[1] = base + ATOMISP_BXT_A0_ISYS_IOMMU1_OFFSET;
+	isp->iommu = atomisp_mmu_init(pdev, mmu_base, 2, 0);
 	rval = PTR_ERR(isp->iommu);
 	if (IS_ERR(isp->iommu)) {
 		dev_err(&pdev->dev, "can't create iommu device\n");
