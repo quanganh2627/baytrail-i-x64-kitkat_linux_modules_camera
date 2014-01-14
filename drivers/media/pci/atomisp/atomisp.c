@@ -129,17 +129,17 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 
 	mmu_base[0] = base + ATOMISP_BXT_A0_ISYS_IOMMU0_OFFSET;
 	mmu_base[1] = base + ATOMISP_BXT_A0_ISYS_IOMMU1_OFFSET;
-	isp->iommu = atomisp_mmu_init(pdev, mmu_base, 2, 0);
-	rval = PTR_ERR(isp->iommu);
-	if (IS_ERR(isp->iommu)) {
-		dev_err(&pdev->dev, "can't create iommu device\n");
+	isp->isys_iommu = atomisp_mmu_init(pdev, mmu_base, 2, 0);
+	rval = PTR_ERR(isp->isys_iommu);
+	if (IS_ERR(isp->isys_iommu)) {
+		dev_err(&pdev->dev, "can't create isys iommu device\n");
 		return -ENOMEM;
 	}
 
-	pr_info("mmu %p\n", isp->iommu);
-	pr_info("a %p\n", isp->iommu->dev.archdata.iommu);
+	pr_info("mmu %p\n", isp->isys_iommu);
+	pr_info("a %p\n", isp->isys_iommu->dev.archdata.iommu);
 
-	isp->isys = atomisp_isys_init(pdev, &isp->iommu->dev, base, 0);
+	isp->isys = atomisp_isys_init(pdev, &isp->isys_iommu->dev, base, 0);
 	rval = PTR_ERR(isp->isys);
 	if (IS_ERR(isp->isys))
 		goto out_atomisp_bus_del_devices;

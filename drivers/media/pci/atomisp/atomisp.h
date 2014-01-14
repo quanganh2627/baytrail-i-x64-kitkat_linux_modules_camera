@@ -38,7 +38,7 @@ struct list_head;
 struct atomisp_device {
 	struct pci_dev *pdev;
 	struct list_head devices;
-	struct atomisp_bus_device *iommu, *isys;
+	struct atomisp_bus_device *isys_iommu, *isys;
 };
 
 #endif
