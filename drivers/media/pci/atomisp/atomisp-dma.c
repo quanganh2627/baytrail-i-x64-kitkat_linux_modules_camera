@@ -277,7 +277,7 @@ static int atomisp_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 	for_each_sg(sglist, sg, nents, i)
 		size += PAGE_ALIGN(sg->length) >> PAGE_SHIFT;
 
-	dev_info(dev, "mapping sg %d entries, %u pages\n", nents, size);
+	dev_info(dev, "mapping sg %d entries, %zu pages\n", nents, size);
 
 	iova = alloc_iova(&mmu->dmap->iovad, size,
 			  DMA_BIT_MASK(32) >> PAGE_SHIFT, 0);
@@ -291,7 +291,7 @@ static int atomisp_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 
 	for_each_sg(sglist, sg, nents, i) {
 		dev_info(dev,
-			 "mapping entry %d: iova 0x%8.8x, physical 0x%8.8x\n",
+			 "mapping entry %d: iova 0x%8.8x, physical 0x%16.16llx\n",
 			 i, iova_addr << PAGE_SHIFT, page_to_phys(sg_page(sg)));
 		rval = iommu_map(mmu->dmap->domain, iova_addr << PAGE_SHIFT,
 				 page_to_phys(sg_page(sg)),
