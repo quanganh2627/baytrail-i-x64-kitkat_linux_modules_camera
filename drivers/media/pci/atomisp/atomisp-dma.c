@@ -251,6 +251,9 @@ static void atomisp_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
 	struct iova *iova = find_iova(&mmu->dmap->iovad,
 				      sg_dma_address(sglist) >> PAGE_SHIFT);
 
+	if (!nents)
+		return;
+
 	BUG_ON(!iova);
 
 	iommu_unmap(mmu->dmap->domain, iova->pfn_lo << PAGE_SHIFT,
