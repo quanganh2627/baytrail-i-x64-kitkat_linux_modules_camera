@@ -119,7 +119,7 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	INIT_LIST_HEAD(&isp->devices);
 	pci_set_drvdata(pdev, isp);
 
-	isp->iommu = atomisp_mmu_init(pdev, base + 0x00070000, 0);
+	isp->iommu = atomisp_mmu_init(pdev, base + 0x000e0000, 0);
 	rval = PTR_ERR(isp->iommu);
 	if (IS_ERR(isp->iommu)) {
 		dev_err(&pdev->dev, "can't create iommu device\n");
