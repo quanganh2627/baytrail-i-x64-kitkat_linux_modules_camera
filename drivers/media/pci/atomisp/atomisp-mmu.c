@@ -52,6 +52,9 @@
 #define REG_L1_PHYS		0x0004 /* 27-bit pfn */
 #define REG_INFO		0x0008
 
+#define TBL_PHYS_ADDR(a)	((phys_addr_t)(a) << ISP_PADDR_SHIFT)
+#define TBL_VIRT_ADDR(a)	phys_to_virt(TBL_PHYS_ADDR(a))
+
 static void tlb_invalidate(struct atomisp_mmu *mmu)
 {
 	writel(TLB_INVALIDATE, mmu->base + REG_TLB_INVALIDATE);
@@ -65,25 +68,23 @@ static void page_table_dump(struct atomisp_mmu_domain *adom)
 
 	for (l1_idx = 0; l1_idx < ISP_L1PT_PTES; l1_idx++) {
 		uint32_t l2_idx;
-		uint32_t l1_phys_start = (1 << ISP_L1PT_SHIFT) * l1_idx;
+		uint32_t iova = (phys_addr_t)l1_idx << ISP_L1PT_SHIFT;
 
 		if (adom->pgtbl[l1_idx] == INVALID_PAGE)
 			continue;
 		pr_info("l1 entry %u; iovas 0x%8.8x--0x%8.8x, at %p\n", l1_idx,
-			l1_phys_start, l1_phys_start + (1 << ISP_L1PT_SHIFT),
-			(void *)adom->pgtbl[l1_idx]);
+			iova, iova + ISP_PAGE_SIZE,
+			(void *)TBL_PHYS_ADDR(adom->pgtbl[l1_idx]));
 
 		for (l2_idx = 0; l2_idx < ISP_L2PT_PTES; l2_idx++) {
-			uint32_t *l2_pt = (uint32_t *)adom->pgtbl[l1_idx];
-			uint32_t l2_phys_start = l1_phys_start
-				+ l2_idx * (1 << ISP_L2PT_SHIFT);
+			uint32_t *l2_pt = TBL_VIRT_ADDR(adom->pgtbl[l1_idx]);
+			uint32_t iova2 = iova + (l2_idx << ISP_L2PT_SHIFT);
 
 			if (l2_pt[l2_idx] == INVALID_PAGE)
 				continue;
 
-			pr_info("\tl2 entry %u; iova 0x%8.8x, phys 0x%8.8llx\n",
-				l2_idx, l2_phys_start,
-				(phys_addr_t)l2_pt[l2_idx] << ISP_PADDR_SHIFT);
+			pr_info("\tl2 entry %u; iova 0x%8.8x, phys %p\n",
+				l2_idx, iova2, (void *)TBL_PHYS_ADDR(l2_pt[l2_idx]));
 		}
 	}
 
@@ -154,7 +155,7 @@ static void atomisp_mmu_domain_destroy(struct iommu_domain *domain)
 	uint32_t l1_idx;
 
 	for (l1_idx = 0; l1_idx < ISP_L1PT_PTES; l1_idx++)
-		free_page_table((uint32_t *)adom->pgtbl[l1_idx]);
+		free_page_table(TBL_VIRT_ADDR(adom->pgtbl[l1_idx]));
 
 	free_page_table(adom->pgtbl);
 	kfree(adom);
@@ -204,14 +205,14 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 		(void *)iova);
 
 	if (adom->pgtbl[l1_idx] == INVALID_PAGE) {
-		adom->pgtbl[l1_idx] = (unsigned long)alloc_page_table(adom);
+		adom->pgtbl[l1_idx] = ((unsigned long)alloc_page_table(adom)) >> ISP_PADDR_SHIFT;
 		pr_info("allocated page for l1_idx %u\n", l1_idx);
 	}
 
 	if (adom->pgtbl[l1_idx] == INVALID_PAGE)
 		return -ENOMEM;
 
-	l2_pt = (uint32_t *)adom->pgtbl[l1_idx];
+	l2_pt = TBL_VIRT_ADDR(adom->pgtbl[l1_idx]);
 
 	pr_info("l2_pt at %p\n", l2_pt);
 
@@ -242,7 +243,7 @@ static int atomisp_mmu_map(struct iommu_domain *domain, unsigned long iova,
 	uint32_t iova_start = round_down(iova, ISP_PAGE_SIZE);
 	uint32_t iova_end = ALIGN(iova + size, ISP_PAGE_SIZE);
 
-	pr_info("mapping iova 0x%8.8x--0x%8.8x, size %u at paddr 0x%10.10llx\n",
+	pr_info("mapping iova 0x%8.8x--0x%8.8x, size %zu at paddr 0x%10.10llx\n",
 		iova_start, iova_end, size, paddr);
 
 	return l2_map(domain, iova_start, paddr, size);
@@ -253,7 +254,7 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 {
 	struct atomisp_mmu_domain *adom = domain->priv;
 	uint32_t l1_idx = iova >> ISP_L1PT_SHIFT;
-	uint32_t *l2_pt = (uint32_t *)adom->pgtbl[l1_idx];
+	uint32_t *l2_pt = TBL_VIRT_ADDR(adom->pgtbl[l1_idx]);
 	uint32_t iova_start = iova;
 	unsigned int l2_idx;
 
@@ -270,7 +271,7 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 		     < iova_start + size;
 	     l2_idx++) {
 		pr_info("l2 index %u unmapped, was 0x%10.10llx\n",
-			l2_idx, ((phys_addr_t)l2_pt[l2_idx]) << ISP_PAGE_SHIFT);
+			l2_idx, TBL_PHYS_ADDR(l2_pt[l2_idx]));
 		l2_pt[l2_idx] = INVALID_PAGE;
 	}
 
@@ -287,9 +288,9 @@ static phys_addr_t atomisp_mmu_iova_to_phys(struct iommu_domain *domain,
 					    dma_addr_t iova)
 {
 	struct atomisp_mmu_domain *adom = domain->priv;
-	uint32_t *l2_pt = (uint32_t *)adom->pgtbl[iova >> ISP_L1PT_SHIFT];
+	uint32_t *l2_pt = TBL_VIRT_ADDR(adom->pgtbl[iova >> ISP_L1PT_SHIFT]);
 
-	return l2_pt[(iova & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT]
+	return (phys_addr_t)l2_pt[(iova & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT]
 		<< ISP_PAGE_SHIFT;
 }
 
