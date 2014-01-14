@@ -136,10 +136,15 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 
 	pci_set_master(pdev);
 
-	rval = pci_enable_msi(pdev);
-	if (rval) {
-		dev_err(&pdev->dev, "Failed to enable msi (%d)\n", rval);
-		goto out_atomisp_bus_del_devices;
+	switch (isp->pdev->device) {
+	case ATOMISP_HW_BXT_PSS_1:
+		break;
+	default:
+		rval = pci_enable_msi(pdev);
+		if (rval) {
+			dev_err(&pdev->dev, "Failed to enable msi (%d)\n", rval);
+			goto out_atomisp_bus_del_devices;
+		}
 	}
 
 	rval = devm_request_irq(&pdev->dev, pdev->irq, atomisp_isr, IRQF_SHARED,
