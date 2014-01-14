@@ -205,7 +205,7 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 		(void *)iova);
 
 	if (adom->pgtbl[l1_idx] == INVALID_PAGE) {
-		adom->pgtbl[l1_idx] = ((unsigned long)alloc_page_table(adom)) >> ISP_PADDR_SHIFT;
+		adom->pgtbl[l1_idx] = virt_to_phys(alloc_page_table(adom)) >> ISP_PADDR_SHIFT;
 		pr_info("allocated page for l1_idx %u\n", l1_idx);
 	}
 
