@@ -113,6 +113,14 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	void __iomem *mmu_base[ATOMISP_MMU_MAX_DEVICES];
 	int rval;
 
+	isp = devm_kzalloc(&pdev->dev, sizeof(*isp), GFP_KERNEL);
+	if (!isp) {
+		dev_err(&pdev->dev, "Failed to alloc CI ISP structure\n");
+		return -ENOMEM;
+	}
+	isp->pdev = pdev;
+	INIT_LIST_HEAD(&isp->devices);
+
 	rval = pcim_enable_device(pdev);
 	if (rval) {
 		dev_err(&pdev->dev, "Failed to enable CI ISP device (%d)\n",
@@ -133,13 +141,6 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	base = pcim_iomap_table(pdev)[ATOMISP_PCI_BAR];
 	dev_info(&pdev->dev, "mapped as: 0x%p\n", base);
 
-	isp = devm_kzalloc(&pdev->dev, sizeof(*isp), GFP_KERNEL);
-	if (!isp) {
-		dev_err(&pdev->dev, "Failed to alloc CI ISP structure\n");
-		return -ENOMEM;
-	}
-	isp->pdev = pdev;
-	INIT_LIST_HEAD(&isp->devices);
 	pci_set_drvdata(pdev, isp);
 
 	mmu_base[0] = base + ATOMISP_BXT_A0_ISYS_IOMMU0_OFFSET;
