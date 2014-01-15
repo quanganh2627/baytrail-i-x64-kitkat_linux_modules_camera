@@ -2082,7 +2082,7 @@ static int imx_probe(struct i2c_client *client,
 	struct imx_device *dev;
 	struct camera_mipi_info *imx_info = NULL;
 	int ret;
-	char *msr_file_name;
+	char *msr_file_name = NULL;
 
 	/* allocate sensor device & init sub device */
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
@@ -2134,16 +2134,18 @@ static int imx_probe(struct i2c_client *client,
 	}
 
 	/* Load the Noise reduction, Dead pixel registers from cpf file*/
-	if (dev->platform_data->msr_file_name == NULL) {
-		dev_warn(&client->dev, "Drvb file not present");
-	} else {
+	if (dev->platform_data->msr_file_name != NULL)
 		msr_file_name = dev->platform_data->msr_file_name();
+	if (msr_file_name) {
 		ret = load_msr_list(client, msr_file_name, &dev->fw);
 		if (ret) {
 			imx_remove(client);
 			return ret;
 		}
+	} else {
+		dev_warn(&client->dev, "Drvb file not present");
 	}
+
 	return ret;
 
 out_ctrl_handler_free:
