@@ -86,8 +86,8 @@ static void atomisp_bus_release(struct device *dev)
 }
 
 struct atomisp_bus_device *atomisp_bus_add_device(
-	struct pci_dev *pdev, void *pdata, void *iommu, char *name,
-	unsigned int nr)
+	struct pci_dev *pdev, void *pdata, struct atomisp_bus_iommu *iommu,
+	char *name, unsigned int nr)
 {
 	struct atomisp_bus_device *adev;
 	struct atomisp_device *isp = pci_get_drvdata(pdev);

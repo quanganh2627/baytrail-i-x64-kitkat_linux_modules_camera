@@ -32,6 +32,8 @@
 
 #define ATOMISP_PCI_BAR		0
 
+struct atomisp_dma_mapping;
+
 static struct atomisp_bus_device *atomisp_mmu_init(
 	struct pci_dev *pdev, void __iomem *base[], unsigned int nr_base,
 	unsigned int nr)
@@ -50,11 +52,13 @@ static struct atomisp_bus_device *atomisp_mmu_init(
 
 	pdata->nr_base = nr_base;
 
-	return atomisp_bus_add_device(pdev, pdata, NULL, ATOMISP_MMU_NAME, nr);
+	return atomisp_bus_add_device(pdev, pdata, NULL,
+				      ATOMISP_MMU_NAME, nr);
 }
 
 static struct atomisp_bus_device *atomisp_isys_init(
-	struct pci_dev *pdev, void *iommu, void __iomem *base, unsigned int nr)
+	struct pci_dev *pdev, struct atomisp_bus_iommu *iommu,
+	void __iomem *base, unsigned int nr)
 {
 	struct atomisp_isys_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -69,7 +73,8 @@ static struct atomisp_bus_device *atomisp_isys_init(
 }
 
 static struct atomisp_bus_device *atomisp_psys_init(
-	struct pci_dev *pdev, void *iommu, void __iomem *base, unsigned int nr)
+	struct pci_dev *pdev, struct atomisp_bus_iommu *iommu,
+	void __iomem *base, unsigned int nr)
 {
 	struct atomisp_psys_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -111,6 +116,7 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	phys_addr_t phys;
 	void __iomem *base;
 	void __iomem *mmu_base[ATOMISP_MMU_MAX_DEVICES];
+	struct atomisp_bus_iommu *isys_iommu, *psys_iommu;
 	int rval;
 
 	isp = devm_kzalloc(&pdev->dev, sizeof(*isp), GFP_KERNEL);
@@ -120,6 +126,20 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	}
 	isp->pdev = pdev;
 	INIT_LIST_HEAD(&isp->devices);
+
+	isys_iommu = devm_kzalloc(&pdev->dev, sizeof(*isys_iommu), GFP_KERNEL);
+	psys_iommu = devm_kzalloc(&pdev->dev, sizeof(*psys_iommu), GFP_KERNEL);
+	if (!isys_iommu || !psys_iommu) {
+		dev_err(&pdev->dev, "Can't allocate memory for iommu\n");
+		return -ENOMEM;
+	}
+
+	/* Share IOMMU mapping between isys and psys */
+	isys_iommu->m = psys_iommu->m = devm_kzalloc(&pdev->dev, sizeof(*isys_iommu->m), GFP_KERNEL);
+	if (!isys_iommu->m) {
+		dev_err(&pdev->dev, "Can't allocate memory for iommu mapping\n");
+		return -ENOMEM;
+	}
 
 	rval = pcim_enable_device(pdev);
 	if (rval) {
@@ -152,10 +172,12 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 		return -ENOMEM;
 	}
 
+	isys_iommu->dev = &isp->isys_iommu->dev;
+
 	pr_info("mmu %p\n", isp->isys_iommu);
 	pr_info("a %p\n", isp->isys_iommu->dev.archdata.iommu);
 
-	isp->isys = atomisp_isys_init(pdev, &isp->isys_iommu->dev, base, 0);
+	isp->isys = atomisp_isys_init(pdev, isys_iommu, base, 0);
 	rval = PTR_ERR(isp->isys);
 	if (IS_ERR(isp->isys))
 		goto out_atomisp_bus_del_devices;
@@ -169,7 +191,8 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 		goto out_atomisp_bus_del_devices;
 	}
 
-	isp->psys = atomisp_psys_init(pdev, &isp->psys_iommu->dev, base, 0);
+	psys_iommu->dev = &isp->psys_iommu->dev;
+	isp->psys = atomisp_psys_init(pdev, psys_iommu, base, 0);
 	rval = PTR_ERR(isp->isys);
 	if (IS_ERR(isp->isys))
 		goto out_atomisp_bus_del_devices;

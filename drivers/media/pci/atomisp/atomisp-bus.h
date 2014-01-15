@@ -49,13 +49,21 @@ struct atomisp_bus_driver {
 	void			(*isr)(struct atomisp_bus_device *adev);
 };
 
+struct atomisp_bus_iommu_mapping {
+	void *mapping;
+};
+
+struct atomisp_bus_iommu {
+	struct atomisp_bus_iommu_mapping *m;
+	struct device *dev;
+};
 
 #define to_atomisp_bus_driver(_drv) \
 	container_of(_drv, struct atomisp_bus_driver, drv)
 
 struct atomisp_bus_device *atomisp_bus_add_device(
-	struct pci_dev *pdev, void *iommu, void *pdata, char *name,
-	unsigned int nr);
+	struct pci_dev *pdev, void *pdata, struct atomisp_bus_iommu *iommu,
+	char *name, unsigned int nr);
 void atomisp_bus_del_devices(struct pci_dev *pdev);
 
 int atomisp_bus_register_driver(struct atomisp_bus_driver *adrv);

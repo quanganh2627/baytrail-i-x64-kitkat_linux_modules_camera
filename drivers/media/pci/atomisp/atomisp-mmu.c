@@ -345,15 +345,23 @@ static void free_dma_mapping(struct kref *ref)
 
 static int atomisp_mmu_add_device(struct device *dev)
 {
-	struct atomisp_mmu *mmu = dev_get_drvdata(dev->archdata.iommu);
+	struct atomisp_bus_iommu *aiommu = dev->archdata.iommu;
+	struct atomisp_mmu *mmu;
 	struct atomisp_dma_mapping *dmap;
 	struct atomisp_mmu_domain *adom;
 	int rval;
+
+	if (!aiommu)
+		return 0;
+
+	mmu = dev_get_drvdata(aiommu->dev);
 
 	pr_info("dev %s\n", dev_name(dev));
 
 	if (!mmu)
 		return 0;
+
+	mmu->dmap = aiommu->m->mapping;
 
 	if (!mmu->dmap) {
 		mmu->dmap = alloc_dma_mapping(dev);
@@ -365,6 +373,7 @@ static int atomisp_mmu_add_device(struct device *dev)
 
 	adom = dmap->domain->priv;
 	adom->dmap = dmap;
+	aiommu->m->mapping = dmap;
 
 	pr_info("attach %p\n", dmap->domain);
 	pr_info("attach 2 %p\n", dmap->domain->ops);
@@ -383,7 +392,8 @@ static int atomisp_mmu_add_device(struct device *dev)
 
 static void atomisp_mmu_remove_device(struct device *dev)
 {
-	struct atomisp_mmu *mmu = dev_get_drvdata(dev->archdata.iommu);
+	struct atomisp_bus_iommu *aiommu = dev->archdata.iommu;
+	struct atomisp_mmu *mmu = dev_get_drvdata(aiommu->dev);
 
 	kref_put(&mmu->dmap->ref, &free_dma_mapping);
 }
