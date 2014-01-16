@@ -1387,8 +1387,10 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	mutex_lock(&dev->input_lock);
 
 	dev->fmt_idx = nearest_resolution_index(sd, fmt->width, fmt->height);
-	if (dev->fmt_idx == -1)
-		return -EINVAL;
+	if (dev->fmt_idx == -1) {
+		ret = -EINVAL;
+		goto out;
+	}
 	res = &dev->curr_res_table[dev->fmt_idx];
 
 	/* Adjust the FPS selection based on the resolution selected */
