@@ -1112,7 +1112,8 @@ static bool is_valid_device(struct pci_dev *dev,
 
 	switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
-	case ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED:
+	case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
+	case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
 		a0_max_id = ATOMISP_PCI_REV_MRFLD_A0_MAX;
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_BYT:
@@ -1211,7 +1212,8 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 #endif
 	switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
-	case ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED:
+	case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
+	case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
 	case ATOMISP_PCI_DEVICE_SOC_BYT:
 		isp->media_dev.hw_revision =
 			(ATOMISP_HW_REVISION_ISP2400
@@ -1226,8 +1228,11 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			case ATOMISP_PCI_DEVICE_SOC_MRFLD:
 				isp->dfs = &dfs_config_merr;
 				break;
-			case ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED:
+			case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
 				isp->dfs = &dfs_config_merr_1179;
+				break;
+			case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
+				isp->dfs = &dfs_config_merr_117a;
 				break;
 			case ATOMISP_PCI_DEVICE_SOC_BYT:
 				isp->dfs = &dfs_config_byt;
@@ -1443,6 +1448,7 @@ static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
 	/* Merrifield */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1178)},
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1179)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x117a)},
 	/* Baytrail */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0f38)},
 #elif defined(ISP2401)

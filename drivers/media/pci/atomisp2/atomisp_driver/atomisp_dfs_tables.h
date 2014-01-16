@@ -132,6 +132,52 @@ static const struct atomisp_dfs_config dfs_config_merr_1179 = {
 	.dfs_table_size = ARRAY_SIZE(dfs_rules_merr_1179),
 };
 
+static const struct atomisp_freq_scaling_rule dfs_rules_merr_117a[] = {
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_200MHZ,
+		.run_mode = ATOMISP_RUN_MODE_VIDEO,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_200MHZ,
+		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_400MHZ,
+		.run_mode = ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_200MHZ,
+		.run_mode = ATOMISP_RUN_MODE_PREVIEW,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = ISP_FREQ_RULE_ANY,
+		.isp_freq = ISP_FREQ_400MHZ,
+		.run_mode = ATOMISP_RUN_MODE_SDV,
+	},
+};
+
+static const struct atomisp_dfs_config dfs_config_merr_117a = {
+	.lowest_freq = ISP_FREQ_200MHZ,
+	.max_freq_at_vmin = ISP_FREQ_200MHZ,
+	.highest_freq = ISP_FREQ_400MHZ,
+	.dfs_table = dfs_rules_merr_117a,
+	.dfs_table_size = ARRAY_SIZE(dfs_rules_merr_117a),
+};
+
 static const struct atomisp_freq_scaling_rule dfs_rules_byt[] = {
 	{
 		.width = ISP_FREQ_RULE_ANY,
