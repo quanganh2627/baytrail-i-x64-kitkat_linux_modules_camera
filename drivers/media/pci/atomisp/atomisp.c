@@ -101,7 +101,7 @@ static irqreturn_t atomisp_isr(int irq, void *priv)
 	struct atomisp_device *isp = priv;
 
 	switch (isp->pdev->device) {
-	case ATOMISP_HW_BXT_PSS_1:
+	case ATOMISP_HW_BXT_FPGA:
 		atomisp_call_isr(isp->isys);
 		break;
 	}
@@ -200,7 +200,7 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 	pci_set_master(pdev);
 
 	switch (isp->pdev->device) {
-	case ATOMISP_HW_BXT_PSS_1:
+	case ATOMISP_HW_BXT_FPGA:
 		break;
 	default:
 		rval = pci_enable_msi(pdev);
@@ -237,7 +237,7 @@ static void atomisp_pci_remove(struct pci_dev *pdev)
 }
 
 static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, ATOMISP_HW_BXT_PSS_1)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, ATOMISP_HW_BXT_FPGA)},
 	{0,}
 };
 

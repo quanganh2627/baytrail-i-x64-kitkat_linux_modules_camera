@@ -28,7 +28,7 @@
 
 #define ATOMISP_NAME		"atomisp"
 
-#define ATOMISP_HW_BXT_PSS_1	0x22e0
+#define ATOMISP_HW_BXT_FPGA	0x22e0
 
 struct pci_dev;
 struct list_head;
