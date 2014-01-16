@@ -150,14 +150,6 @@ struct atomisp_input_subdev {
 	const struct atomisp_camera_caps *camera_caps;
 };
 
-struct atomisp_freq_scaling_rule {
-	unsigned int width;
-	unsigned int height;
-	unsigned short fps;
-	unsigned int isp_freq;
-	unsigned int run_mode;
-};
-
 enum atomisp_dfs_mode {
 	ATOMISP_DFS_MODE_AUTO = 0,
 	ATOMISP_DFS_MODE_LOW,
@@ -306,6 +298,7 @@ struct atomisp_device {
 	bool need_gfx_throttle;
 
 	unsigned int mipi_frame_size;
+	const struct atomisp_dfs_config *dfs;
 };
 
 #define v4l2_dev_to_atomisp_device(dev) \

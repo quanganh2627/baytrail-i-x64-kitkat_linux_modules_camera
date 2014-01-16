@@ -43,6 +43,7 @@
 #include "atomisp_acc.h"
 #include "atomisp_compat.h"
 #include "atomisp_subdev.h"
+#include "atomisp_dfs_tables.h"
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 
@@ -146,84 +147,6 @@ struct atomisp_video_pipe *atomisp_to_video_pipe(struct video_device *dev)
 	    container_of(dev, struct atomisp_video_pipe, vdev);
 }
 
-/* This is just a draft rules, should be tuned when sensor is ready*/
-static struct atomisp_freq_scaling_rule dfs_rules_isp2400[] = {
-	/*
-	 * TODO: SDV maybe have to use 457MHz on TNG B0,
-	 * add 457MHz option later together with SDV.
-	 */
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_400MHZ,
-		.run_mode = ATOMISP_RUN_MODE_VIDEO,
-	},
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_400MHZ,
-		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
-	},
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_400MHZ,
-		.run_mode = ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE,
-	},
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_400MHZ,
-		.run_mode = ATOMISP_RUN_MODE_PREVIEW,
-	},
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_457MHZ,
-		.run_mode = ATOMISP_RUN_MODE_SDV,
-	},
-};
-
-static struct atomisp_freq_scaling_rule dfs_rules_isp2401[] = {
-	/*
-	 * TODO: SDV maybe have to use 457MHz on TNG B0,
-	 * add 457MHz option later together with SDV.
-	 */
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_320MHZ,
-		.run_mode = ATOMISP_RUN_MODE_VIDEO,
-	},
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_320MHZ,
-		.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE,
-	},
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_320MHZ,
-		.run_mode = ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE,
-	},
-	{
-		.width = ISP_FREQ_RULE_ANY,
-		.height = ISP_FREQ_RULE_ANY,
-		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_320MHZ,
-		.run_mode = ATOMISP_RUN_MODE_PREVIEW,
-	},
-};
-
 static unsigned short atomisp_get_sensor_fps(struct atomisp_sub_device *asd)
 {
 	struct v4l2_subdev_frame_interval frame_interval;
@@ -310,8 +233,6 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 	struct atomisp_sub_device *asd = &isp->asd[0];
 	unsigned int new_freq;
 	struct atomisp_freq_scaling_rule curr_rules;
-	struct atomisp_freq_scaling_rule *dfs_rules;
-	unsigned int rule_number;
 	int i, ret;
 	unsigned short fps = 0;
 
@@ -320,13 +241,20 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 		return -EINVAL;
 	}
 
+	if (isp->dfs->lowest_freq == 0 || isp->dfs->max_freq_at_vmin == 0 ||
+	    isp->dfs->highest_freq == 0 || isp->dfs->dfs_table_size == 0 ||
+	    !isp->dfs->dfs_table) {
+		dev_err(isp->dev, "DFS configuration is invalid.\n");
+		return -EINVAL;
+	}
+
 	if (mode == ATOMISP_DFS_MODE_LOW) {
-		new_freq = ISP_FREQ_200MHZ;
+		new_freq = isp->dfs->lowest_freq;
 		goto done;
 	}
 
 	if (mode == ATOMISP_DFS_MODE_MAX) {
-		new_freq = ISP_FREQ_MAX;
+		new_freq = isp->dfs->highest_freq;
 		goto done;
 	}
 
@@ -347,37 +275,31 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
 			curr_rules.run_mode = ATOMISP_RUN_MODE_SDV;
 		else
-			curr_rules.run_mode = ATOMISP_RUN_MODE_STILL_CAPTURE;
-	}
-
-	if (IS_ISP2401(isp)) {
-		dfs_rules = dfs_rules_isp2401;
-		rule_number = ARRAY_SIZE(dfs_rules_isp2401);
-	} else {
-		dfs_rules = dfs_rules_isp2400;
-		rule_number = ARRAY_SIZE(dfs_rules_isp2400);
+			curr_rules.run_mode =
+				ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE;
 	}
 
 	/* search for the target frequency by looping freq rules*/
-	for (i = 0; i < rule_number; i++) {
-		if (curr_rules.width != dfs_rules[i].width
-			&& dfs_rules[i].width != ISP_FREQ_RULE_ANY)
+	for (i = 0; i < isp->dfs->dfs_table_size; i++) {
+		if (curr_rules.width != isp->dfs->dfs_table[i].width &&
+		    isp->dfs->dfs_table[i].width != ISP_FREQ_RULE_ANY)
 			continue;
-		if (curr_rules.height != dfs_rules[i].height
-			&& dfs_rules[i].height != ISP_FREQ_RULE_ANY)
+		if (curr_rules.height != isp->dfs->dfs_table[i].height &&
+		    isp->dfs->dfs_table[i].height != ISP_FREQ_RULE_ANY)
 			continue;
-		if (curr_rules.fps != dfs_rules[i].fps
-			&& dfs_rules[i].fps != ISP_FREQ_RULE_ANY)
+		if (curr_rules.fps != isp->dfs->dfs_table[i].fps &&
+		    isp->dfs->dfs_table[i].fps != ISP_FREQ_RULE_ANY)
 			continue;
-		if (curr_rules.run_mode != dfs_rules[i].run_mode
-			&& dfs_rules[i].run_mode != ISP_FREQ_RULE_ANY)
+		if (curr_rules.run_mode != isp->dfs->dfs_table[i].run_mode &&
+		    isp->dfs->dfs_table[i].run_mode != ISP_FREQ_RULE_ANY)
 			continue;
 		break;
 	}
-	if (i == rule_number)
-		new_freq = ISP_FREQ_320MHZ;
+
+	if (i == isp->dfs->dfs_table_size)
+		new_freq = isp->dfs->max_freq_at_vmin;
 	else
-		new_freq = dfs_rules[i].isp_freq;
+		new_freq = isp->dfs->dfs_table[i].isp_freq;
 
 done:
 	dev_dbg(isp->dev, "DFS target frequency=%d.\n", new_freq);

@@ -38,6 +38,7 @@
 #include "atomisp_internal.h"
 #include "atomisp_acc.h"
 #include "atomisp-regs.h"
+#include "atomisp_dfs_tables.h"
 #include "hmm/hmm.h"
 
 #include "hrt/hive_isp_css_mm_hrt.h"
@@ -1221,6 +1222,17 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			ATOMISP_HW_STEPPING_B0;
 #endif
 		atomisp_hmm_is_2400 = true;
+		switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
+			case ATOMISP_PCI_DEVICE_SOC_MRFLD:
+				isp->dfs = &dfs_config_merr;
+				break;
+			case ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED:
+				isp->dfs = &dfs_config_merr_1179;
+				break;
+			case ATOMISP_PCI_DEVICE_SOC_BYT:
+				isp->dfs = &dfs_config_byt;
+				break;
+		}
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_ANN:
 	case ATOMISP_PCI_DEVICE_SOC_CHT:
@@ -1233,6 +1245,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			 << ATOMISP_HW_REVISION_SHIFT) |
 			ATOMISP_HW_STEPPING_A0;
 		atomisp_hmm_is_2400 = true;
+		isp->dfs = &dfs_config_isp2401;
 		break;
 	default:
 		/* Medfield and Clovertrail. */
