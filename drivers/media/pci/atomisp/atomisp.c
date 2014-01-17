@@ -100,11 +100,9 @@ static irqreturn_t atomisp_isr(int irq, void *priv)
 {
 	struct atomisp_device *isp = priv;
 
-	switch (isp->pdev->device) {
-	case ATOMISP_HW_BXT_FPGA:
+	if (isp->pdev->device == ATOMISP_HW_BXT_FPGA
+	    && IS_ENABLED(VIDEO_ATOMISP_NG_ISYS))
 		atomisp_call_isr(isp->isys);
-		break;
-	}
 
 	return IRQ_HANDLED;
 }
@@ -201,10 +199,7 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 
 	pci_set_master(pdev);
 
-	switch (isp->pdev->device) {
-	case ATOMISP_HW_BXT_FPGA:
-		break;
-	default:
+	if (isp->pdev->device != ATOMISP_HW_BXT_FPGA) {
 		rval = pci_enable_msi(pdev);
 		if (rval) {
 			dev_err(&pdev->dev, "Failed to enable msi (%d)\n", rval);
