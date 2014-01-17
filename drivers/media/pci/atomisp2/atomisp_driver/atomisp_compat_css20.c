@@ -616,22 +616,6 @@ static void __apply_additional_pipe_config(
 #else
 			    .enable_dz = true;
 #endif
-		/*
-		 * FIXME!
-		 * For ISP2401 legacy input system, online still image pipe
-		 * would cause a watchdog timeout.
-		 * With pipe config, dz=0, image capture could be success.
-		 *
-		 * VIED BZ 1369 on tracking this.
-		 */
-		if (asd->isp->media_dev.hw_revision ==
-		    ATOMISP_HW_REVISION_ISP2401_LEGACY << ATOMISP_HW_REVISION_SHIFT) {
-#ifdef CSS21
-			stream_env->pipe_configs[pipe_id].enable_dz = false;
-#endif
-			dev_dbg(isp->dev,
-				"pipe config enable_dz is overrided for ISP2401 legacy.\n");
-		}
 		break;
 	case IA_CSS_PIPE_ID_VIDEO:
 		/* enable reduced pipe to have binary
@@ -1151,8 +1135,7 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 	 *
 	 * Check if it is Cherry Trail and also new input system
 	 */
-	if (asd->isp->media_dev.hw_revision ==
-		ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT) {
+	if (asd->isp->media_dev.hw_revision == ATOMISP_HW_REVISION_ISP2401) {
 		dev_warn(asd->isp->dev, "%s: ia_css_stream_set_isp_config() not supported!.\n",
 				__func__);
 		return;
