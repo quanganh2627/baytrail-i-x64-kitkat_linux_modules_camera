@@ -1,7 +1,7 @@
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
- * Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+ * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
@@ -2505,17 +2505,23 @@ ia_css_stream_get_isp_config(
 	const struct ia_css_stream *stream,
 	struct ia_css_isp_config *config)
 {
-	struct ia_css_isp_parameters *params = stream->isp_params_configs;
-	assert(params != NULL);
+	struct ia_css_isp_parameters *params = NULL;
+
 	assert(config != NULL);
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_get_isp_config() enter: "
 		"config=%p\n", config);
 
-	(void) stream;
-
 #if defined(IS_ISP_2500_SYSTEM)
-	(void)params;
+	(void) stream;
+	(void) params;
+
+	sh_css_get_config_product_specific(config);
+
 #else
+	params = stream->isp_params_configs;
+	assert(params != NULL);
+
 	sh_css_get_ee_config(params, config->ee_config);
 	sh_css_get_baa_config(params, config->baa_config);
 	sh_css_get_dvs_6axis_config(params, config->dvs_6axis_config);

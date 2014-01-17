@@ -64,6 +64,11 @@ enum frame_info_type {
 	ATOMISP_CSS_RAW_FRAME,
 };
 
+struct bayer_ds_factor {
+	unsigned int numerator;
+	unsigned int denominator;
+};
+
 #ifdef CSS21
 void atomisp_css_debug_dump_sp_sw_debug_info(void)
 {
@@ -448,6 +453,17 @@ static void __dump_stream_config(struct atomisp_sub_device *asd)
 		dev_dbg(isp->dev,
 			"stream_config.channel_id=%d.\n",
 			s_config->channel_id);
+#ifdef CSS21
+		dev_dbg(isp->dev,
+			"stream_config.init_num_cont_raw_buf=%d.\n",
+			s_config->init_num_cont_raw_buf);
+		dev_dbg(isp->dev,
+			"stream_config.target_num_cont_raw_buf=%d.\n",
+			s_config->target_num_cont_raw_buf);
+		dev_dbg(isp->dev,
+			"stream_config.left_padding=%d.\n",
+			s_config->left_padding);
+#endif
 	}
 }
 
@@ -616,6 +632,22 @@ static void __apply_additional_pipe_config(
 #else
 			    .enable_dz = true;
 #endif
+		/*
+		 * FIXME!
+		 * For ISP2401 legacy input system, online still image pipe
+		 * would cause a watchdog timeout.
+		 * With pipe config, dz=0, image capture could be success.
+		 *
+		 * VIED BZ 1369 on tracking this.
+		 */
+		if (asd->isp->media_dev.hw_revision ==
+		    ATOMISP_HW_REVISION_ISP2401_LEGACY << ATOMISP_HW_REVISION_SHIFT) {
+#ifdef CSS21
+			stream_env->pipe_configs[pipe_id].enable_dz = false;
+#endif
+			dev_dbg(isp->dev,
+				"pipe config enable_dz is overrided for ISP2401 legacy.\n");
+		}
 		break;
 	case IA_CSS_PIPE_ID_VIDEO:
 		/* enable reduced pipe to have binary
@@ -1135,7 +1167,8 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 	 *
 	 * Check if it is Cherry Trail and also new input system
 	 */
-	if (asd->isp->media_dev.hw_revision == ATOMISP_HW_REVISION_ISP2401) {
+	if ((asd->isp->media_dev.hw_revision & ATOMISP_HW_REVISION_MASK) ==
+	    (ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT)) {
 		dev_warn(asd->isp->dev, "%s: ia_css_stream_set_isp_config() not supported!.\n",
 				__func__);
 		return;
@@ -1482,21 +1515,23 @@ void atomisp_css_enable_raw_binning(struct atomisp_sub_device *asd,
 {
 	struct atomisp_stream_env *stream_env =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+	unsigned int pipe;
 
-	stream_env->pipe_extra_configs[IA_CSS_PIPE_ID_PREVIEW].
-	    enable_raw_binning = !!enable;
-	stream_env->update_pipe[IA_CSS_PIPE_ID_PREVIEW] = true;
+	if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+		pipe = IA_CSS_PIPE_ID_VIDEO;
+	else
+		pipe = IA_CSS_PIPE_ID_PREVIEW;
+
+	stream_env->pipe_extra_configs[pipe].enable_raw_binning = enable;
+	stream_env->update_pipe[pipe] = true;
 	if (enable) {
 #ifndef CSS21
-		stream_env->pipe_configs[IA_CSS_PIPE_ID_PREVIEW].
-		    bin_out_res.width =
+		stream_env->pipe_configs[pipe].bin_out_res.width =
 		    stream_env->stream_config.effective_res.width;
-		stream_env->pipe_configs[IA_CSS_PIPE_ID_PREVIEW].
-		    bin_out_res.height =
+		stream_env->pipe_configs[pipe].bin_out_res.height =
 		    stream_env->stream_config.effective_res.height;
 #endif /* CSS21 */
-		stream_env->pipe_configs[IA_CSS_PIPE_ID_PREVIEW].
-		    output_info.padded_width =
+		stream_env->pipe_configs[pipe].output_info.padded_width =
 		    stream_env->stream_config.effective_res.width;
 	}
 }
@@ -1533,9 +1568,23 @@ void atomisp_css_input_set_mode(struct atomisp_sub_device *asd,
 				enum atomisp_css_input_mode mode)
 {
 	int i;
+	struct atomisp_device *isp = asd->isp;
 	unsigned int size_mem_words, total_size_mem_words = 0;
 	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++)
 		asd->stream_env[i].stream_config.mode = mode;
+
+	if (isp->inputs[asd->input_curr].type == TEST_PATTERN) {
+		struct ia_css_stream_config *s_config =
+		    &asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_config;
+		s_config->mode = IA_CSS_INPUT_MODE_TPG;
+		s_config->source.tpg.mode = IA_CSS_TPG_MODE_CHECKERBOARD;
+		s_config->source.tpg.x_mask = (1 << 4) - 1;
+		s_config->source.tpg.x_delta = -2;
+		s_config->source.tpg.y_mask = (1 << 4) - 1;
+		s_config->source.tpg.y_delta = 3;
+		s_config->source.tpg.xy_mask = (1 << 8) - 1;
+		return;
+	}
 
 	if (mode != IA_CSS_INPUT_MODE_BUFFERED_SENSOR)
 		return;
@@ -1745,6 +1794,8 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 			ia_css_stream_config_defaults(
 				&stream_env->stream_config);
 		}
+		atomisp_isp_parameters_clean_up(&asd->params.config);
+		asd->params.css_update_params_needed = false;
 	}
 
 	return 0;
@@ -1987,7 +2038,7 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	 * vied BZ:1075
 	 */
 	if (stream_config->online || !stream_config->continuous ||
-			!pipe_extra_configs-> enable_raw_binning) {
+			!pipe_extra_configs->enable_raw_binning) {
 		bayer_ds_out_res->width = 0;
 		bayer_ds_out_res->height = 0;
 	} else if (effective_res->width > out_width * 2 &&
@@ -2048,6 +2099,97 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
 		pipe_id, width, height);
 }
+
+/*
+ * For CSS2.1, offline video pipe could support bayer decimation, and
+ * yuv downscaling, which needs addtional configurations.
+ */
+static void __configure_video_pp_input(struct atomisp_sub_device *asd,
+				 unsigned int width, unsigned int height,
+				 enum ia_css_pipe_id pipe_id)
+{
+	struct atomisp_device *isp = asd->isp;
+	int out_width, out_height;
+	struct atomisp_stream_env *stream_env =
+		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+	struct ia_css_stream_config *stream_config = &stream_env->stream_config;
+	struct ia_css_pipe_config *pipe_configs =
+		&stream_env->pipe_configs[pipe_id];
+	struct ia_css_pipe_extra_config *pipe_extra_configs =
+		&stream_env->pipe_extra_configs[pipe_id];
+	struct ia_css_resolution *bayer_ds_out_res =
+		&pipe_configs->bayer_ds_out_res;
+	struct ia_css_resolution  *effective_res =
+		&stream_config->effective_res;
+	const struct bayer_ds_factor bds_factors[] =
+		{{8, 1}, {4, 1}, {2, 1}, {3, 2}, {5, 4}};
+	unsigned int i;
+
+	if (width == 0 && height == 0)
+		return;
+
+	if (width * 9 / 10 < pipe_configs->output_info.res.width ||
+	    height * 9 / 10 < pipe_configs->output_info.res.height)
+		return;
+
+	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
+	stream_env->update_pipe[pipe_id] = true;
+
+	pipe_extra_configs->enable_yuv_ds = false;
+
+	/*
+	 * If DVS is enabled,  video binary will take care the dvs envelope
+	 * and usually the bayer_ds_out_res should be larger than 120% of
+	 * destination resolution, the extra 20% will be cropped as DVS
+	 * envelope. But,  if the bayer_ds_out_res is less than 120% of the
+	 * destination. The ISP can still work,  but DVS quality is not good.
+	 */
+	/* taking at least 18% as envelope */
+	if (asd->params.video_dis_en) {
+		out_width = pipe_configs->output_info.res.width * 118 / 100;
+		out_height = pipe_configs->output_info.res.height * 118 / 100;
+	} else {
+		out_width = pipe_configs->output_info.res.width;
+		out_height = pipe_configs->output_info.res.height;
+	}
+
+	/*
+	 * calculate bayer decimate factor:
+	 * 1: only 1.25, 1.5, 2, 4 and 8 get supported
+	 * 2: Do not configure bayer_ds_out_res if:
+	 *    online == 1 or continuous == 0 or raw_binning = 0
+	 */
+	if (stream_config->online || !stream_config->continuous ||
+	    !pipe_extra_configs->enable_raw_binning) {
+		bayer_ds_out_res->width = 0;
+		bayer_ds_out_res->height = 0;
+		goto done;
+	}
+
+	bayer_ds_out_res->width = effective_res->width;
+	bayer_ds_out_res->height = effective_res->height;
+
+	for (i = 0; i < sizeof(bds_factors) / sizeof(struct bayer_ds_factor);
+	     i++) {
+		if (effective_res->width >= out_width *
+		    bds_factors[i].numerator / bds_factors[i].denominator &&
+		    effective_res->height >= out_height *
+		    bds_factors[i].numerator / bds_factors[i].denominator) {
+			bayer_ds_out_res->width = effective_res->width *
+			    bds_factors[i].denominator /
+			    bds_factors[i].numerator;
+			bayer_ds_out_res->height = effective_res->height *
+			    bds_factors[i].denominator /
+			    bds_factors[i].numerator;
+			break;
+		}
+	}
+
+done:
+	stream_config->left_padding = 12;
+	dev_dbg(isp->dev, "configuring pipe[%d]video pp input w=%d.h=%d.\n",
+		pipe_id, width, height);
+}
 #endif
 
 static void __configure_vf_output(struct atomisp_sub_device *asd,
@@ -2082,7 +2224,8 @@ static int __get_frame_info(struct atomisp_sub_device *asd,
 	struct atomisp_device *isp = asd->isp;
 	enum ia_css_err ret;
 	struct ia_css_pipe_info p_info;
-/* FIXME! No need to destroy/recreate all streams */
+
+	/* FIXME! No need to destroy/recreate all streams */
 	if (__destroy_streams(asd, true))
 		dev_warn(isp->dev, "destroy stream failed.\n");
 
@@ -2131,18 +2274,17 @@ unsigned int atomisp_get_pipe_index(struct atomisp_sub_device *asd,
 		return IA_CSS_PIPE_ID_COPY;
 
 	switch (source_pad) {
-	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
 	case ATOMISP_SUBDEV_PAD_SOURCE_VIDEO:
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO
 		    || asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER)
 			return IA_CSS_PIPE_ID_VIDEO;
 		else
 			return IA_CSS_PIPE_ID_CAPTURE;
+	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
+		return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_VF:
-		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
-			return IA_CSS_PIPE_ID_VIDEO;
-		else if (!atomisp_is_mbuscode_raw(
-				 asd->fmt[asd->capture_pad].fmt.code))
+		if (!atomisp_is_mbuscode_raw(
+		    asd->fmt[asd->capture_pad].fmt.code))
 			return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
@@ -2354,6 +2496,25 @@ int atomisp_css_capture_configure_pp_input(
 	__configure_capture_pp_input(asd, width, height, IA_CSS_PIPE_ID_CAPTURE);
 #else
 	__configure_pp_input(asd, width, height, IA_CSS_PIPE_ID_CAPTURE);
+#endif
+	return 0;
+}
+
+int atomisp_css_video_configure_pp_input(
+				struct atomisp_sub_device *asd,
+				unsigned int width, unsigned int height)
+{
+#ifdef CSS21
+	struct atomisp_stream_env *stream_env =
+		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+
+	__configure_video_pp_input(asd, width, height,
+			IA_CSS_PIPE_ID_VIDEO);
+
+	if (width > stream_env->pipe_configs[IA_CSS_PIPE_ID_CAPTURE].
+					capt_pp_in_res.width)
+		__configure_capture_pp_input(asd,
+				     width, height, IA_CSS_PIPE_ID_CAPTURE);
 #endif
 	return 0;
 }

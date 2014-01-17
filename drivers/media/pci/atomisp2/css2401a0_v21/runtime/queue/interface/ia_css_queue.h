@@ -1,7 +1,7 @@
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
- * Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+ * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
@@ -26,7 +26,7 @@
 #include "ia_css_queue_comm.h"
 #include "../src/queue_access.h"
 
-#include "sh_css_internal.h"	/* enum sh_css_frame_id */
+#include "sh_css_internal.h"
 
 /* Local Queue object descriptor */
 struct ia_css_queue_local {

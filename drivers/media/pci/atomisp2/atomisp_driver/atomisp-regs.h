@@ -150,23 +150,18 @@
 /* MRFLD CSI lane configuration related */
 #define MRFLD_PORT_CONFIG_NUM  8
 #define MRFLD_PORT_NUM         3
+#define MRFLD_PORT1_ENABLE_SHIFT       0
+#define MRFLD_PORT2_ENABLE_SHIFT       1
 #define MRFLD_PORT3_ENABLE_SHIFT       2
 #define MRFLD_PORT1_LANES_SHIFT        3
 #define MRFLD_PORT2_LANES_SHIFT        7
-
-#ifdef ISP2401_NEW_INPUT_SYSTEM
-#define CHV_PORT3_LANES_SHIFT		9
-#define CHV_PORT_CONFIG_MASK 		0x011f07ff
-#define CHV_CSI_PORT_CONFIG_SHIFT	20
-#define CHV_CSI_PAR_PATH_SHIFT		24
-#define CHV_PORT_CONFIG_NUM  		8
-#define CHV_PORT_NUM         		3
-#endif
-
 #define MRFLD_PORT3_LANES_SHIFT        8
 #define MRFLD_PORT_CONFIG_MASK 0x000f03ff
 #define MRFLD_PORT_CONFIGCODE_SHIFT    16
 #define MRFLD_ALL_CSI_PORTS_OFF_MASK   0x7
+
+#define CHV_PORT3_LANES_SHIFT		9
+#define CHV_PORT_CONFIG_MASK		0x1f07ff
 
 #define ISPSSPM1				0x3a
 #define ISP_FREQ_STAT_MASK			(0x1f << ISP_FREQ_STAT_OFFSET)
@@ -178,6 +173,7 @@
 #define ISP_FREQ_VALID_OFFSET			0x7
 #define ISP_FREQ_RULE_ANY			0x0
 
+#define ISP_FREQ_457MHZ				0x1C9
 #define ISP_FREQ_400MHZ				0x190
 #define ISP_FREQ_320MHZ				0x140
 #define ISP_FREQ_266MHZ				0x10a

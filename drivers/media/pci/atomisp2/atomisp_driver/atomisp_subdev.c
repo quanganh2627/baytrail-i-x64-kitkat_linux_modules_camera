@@ -373,7 +373,8 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 			isp_sd->params.video_dis_en = 0;
 
 		if (isp_sd->params.video_dis_en &&
-		    isp_sd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
+		    isp_sd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
+		    !isp_sd->continuous_mode->val) {
 			/* This resolution contains 20 % of DVS slack
 			 * (of the desired captured image before
 			 * scaling, or 1 / 6 of what we get from the

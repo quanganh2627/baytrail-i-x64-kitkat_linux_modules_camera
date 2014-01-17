@@ -71,7 +71,8 @@ static int tpg_enum_mbus_fmt(struct v4l2_subdev *sd, unsigned int index,
 static int tpg_try_mbus_fmt(struct v4l2_subdev *sd,
 			       struct v4l2_mbus_framefmt *fmt)
 {
-	/*to fake*/
+	/* only raw8 grbg is supported by TPG */
+	fmt->code = V4L2_MBUS_FMT_SGRBG8_1X8;
 	return 0;
 }
 
@@ -85,7 +86,8 @@ static int tpg_g_mbus_fmt(struct v4l2_subdev *sd,
 static int tpg_s_mbus_fmt(struct v4l2_subdev *sd,
 			     struct v4l2_mbus_framefmt *fmt)
 {
-	/*to fake*/
+	/* only raw8 grbg is supported by TPG */
+	fmt->code = V4L2_MBUS_FMT_SGRBG8_1X8;
 	return 0;
 }
 

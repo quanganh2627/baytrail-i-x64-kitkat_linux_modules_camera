@@ -414,7 +414,7 @@ static int __ap1302_s_power(struct v4l2_subdev *sd, int on, int load_fw)
 			"ap1302_s_power error. on=%d ret=%d\n", on, ret);
 		return ret;
 	}
-
+	dev->power_on = on;
 	if (!on || !load_fw)
 		return 0;
 	/* Load firmware after power on. */
@@ -529,7 +529,7 @@ static int ap1302_match_resolution(struct ap1302_context_res *res,
 	s32 w1 = fmt->width;
 	s32 h1 = fmt->height;
 	s32 min_distance = INT_MAX;
-	u32 i, idx = -1;
+	s32 i, idx = -1;
 
 	if (w1 == 0 || h1 == 0)
 		return -1;
@@ -552,44 +552,39 @@ static int ap1302_match_resolution(struct ap1302_context_res *res,
 	return idx;
 }
 
-static int ap1302_try_mbus_fmt_locked(struct v4l2_subdev *sd,
-			       struct v4l2_mbus_framefmt *fmt)
+static s32 ap1302_try_mbus_fmt_locked(struct v4l2_subdev *sd,
+				enum ap1302_contexts context,
+				struct v4l2_mbus_framefmt *fmt)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
-	enum ap1302_contexts context;
 	struct ap1302_res_struct *res_table;
-	u32 res_num, idx;
+	s32 res_num, idx = -1;
 
-	context = ap1302_get_context(sd);
 	res_table = dev->cntx_res[context].res_table;
 	res_num = dev->cntx_res[context].res_num;
 
-	if ((fmt->width > res_table[res_num - 1].width)
-		|| (fmt->height > res_table[res_num - 1].height)) {
-		fmt->width  = res_table[res_num - 1].width;
-		fmt->height = res_table[res_num - 1].height;
-	} else {
+	if ((fmt->width <= res_table[res_num - 1].width) &&
+		(fmt->height <= res_table[res_num - 1].height))
 		idx = ap1302_match_resolution(&dev->cntx_res[context], fmt);
+	if (idx == -1)
+		idx = res_num - 1;
 
-		if (idx == -1) {
-			fmt->width = res_table[res_num - 1].width;
-			fmt->height = res_table[res_num - 1].height;
-		}
-	}
-
+	fmt->width = res_table[idx].width;
+	fmt->height = res_table[idx].height;
 	fmt->code = V4L2_MBUS_FMT_UYVY8_1X16;
-	return 0;
+	return idx;
 }
 
 static int ap1302_try_mbus_fmt(struct v4l2_subdev *sd,
 			       struct v4l2_mbus_framefmt *fmt)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
-	int ret;
+	enum ap1302_contexts context;
 	mutex_lock(&dev->input_lock);
-	ret = ap1302_try_mbus_fmt_locked(sd, fmt);
+	context = ap1302_get_context(sd);
+	ap1302_try_mbus_fmt_locked(sd, context, fmt);
 	mutex_unlock(&dev->input_lock);
-	return ret;
+	return 0;
 }
 
 static int ap1302_get_mbus_fmt(struct v4l2_subdev *sd,
@@ -597,12 +592,16 @@ static int ap1302_get_mbus_fmt(struct v4l2_subdev *sd,
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
 	enum ap1302_contexts context;
+	struct ap1302_res_struct *res_table;
+	s32 cur_res;
 
 	mutex_lock(&dev->input_lock);
 	context = ap1302_get_context(sd);
+	res_table = dev->cntx_res[context].res_table;
+	cur_res = dev->cntx_res[context].cur_res;
 	fmt->code = V4L2_MBUS_FMT_UYVY8_1X16;
-	fmt->width = dev->cntx_config[context].width;
-	fmt->height = dev->cntx_config[context].height;
+	fmt->width = res_table[cur_res].width;
+	fmt->height = res_table[cur_res].height;
 	mutex_unlock(&dev->input_lock);
 	return 0;
 }
@@ -614,14 +613,11 @@ static int ap1302_set_mbus_fmt(struct v4l2_subdev *sd,
 	struct atomisp_input_stream_info *stream_info =
 		(struct atomisp_input_stream_info*)fmt->reserved;
 	enum ap1302_contexts context, main_context;
-	int ret;
 
 	mutex_lock(&dev->input_lock);
-	ret = ap1302_try_mbus_fmt_locked(sd, fmt);
-	if (ret)
-		goto fail_set_fmt;
-
 	context = stream_to_context[stream_info->stream];
+	dev->cntx_res[context].cur_res =
+		ap1302_try_mbus_fmt_locked(sd, context, fmt);
 	dev->cntx_config[context].width = fmt->width;
 	dev->cntx_config[context].height = fmt->height;
 	ap1302_write_context_reg(sd, context, CNTX_WIDTH, AP1302_REG16);
@@ -656,17 +652,16 @@ static int ap1302_set_mbus_fmt(struct v4l2_subdev *sd,
 		}
 	}
 	stream_info->ch_id = context;
-fail_set_fmt:
 	mutex_unlock(&dev->input_lock);
 
-	return ret;
+	return 0;
 }
 
 static int
 ap1302_enum_framesizes(struct v4l2_subdev *sd, struct v4l2_frmsizeenum *fsize)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
-	unsigned int index = fsize->index;
+	s32 index = fsize->index;
 	enum ap1302_contexts context;
 	struct ap1302_res_struct *res_table;
 
@@ -693,8 +688,7 @@ static int ap1302_enum_frameintervals(struct v4l2_subdev *sd,
 	enum ap1302_contexts context;
 	struct ap1302_res_struct *res_table;
 	unsigned int index = fival->index;
-	u32 res_num;
-	int i;
+	s32 res_num, i;
 
 	if (index > 0)
 		return -EINVAL;
@@ -718,6 +712,24 @@ static int ap1302_enum_frameintervals(struct v4l2_subdev *sd,
 	fival->discrete.denominator = res_table[i].fps;
 	mutex_unlock(&dev->input_lock);
 
+	return 0;
+}
+
+static int ap1302_g_frame_interval(struct v4l2_subdev *sd,
+			struct v4l2_subdev_frame_interval *interval)
+{
+	struct ap1302_device *dev = to_ap1302_device(sd);
+	enum ap1302_contexts context;
+	struct ap1302_res_struct *res_table;
+	u32 cur_res;
+
+	mutex_lock(&dev->input_lock);
+	context = ap1302_get_context(sd);
+	res_table = dev->cntx_res[context].res_table;
+	cur_res = dev->cntx_res[context].cur_res;
+	interval->interval.denominator = res_table[cur_res].fps;
+	interval->interval.numerator = 1;
+	mutex_unlock(&dev->input_lock);
 	return 0;
 }
 
@@ -838,6 +850,117 @@ static int ap1302_s_stream(struct v4l2_subdev *sd, int enable)
 	return ret;
 }
 
+static u16 ap1302_ev_values[] = {0xfd00, 0xfe80, 0x0, 0x180, 0x300};
+
+static int ap1302_set_exposure_off(struct v4l2_subdev *sd, s32 val)
+{
+	val -= AP1302_MIN_EV;
+	return ap1302_i2c_write_reg(sd, REG_AE_BV_OFF, AP1302_REG16,
+				ap1302_ev_values[val]);
+}
+
+static u16 ap1302_wb_values[] = {
+	0, /* V4L2_WHITE_BALANCE_MANUAL */
+	0xf, /* V4L2_WHITE_BALANCE_AUTO */
+	0x2, /* V4L2_WHITE_BALANCE_INCANDESCENT */
+	0x4, /* V4L2_WHITE_BALANCE_FLUORESCENT */
+	0x5, /* V4L2_WHITE_BALANCE_FLUORESCENT_H */
+	0x1, /* V4L2_WHITE_BALANCE_HORIZON */
+	0x5, /* V4L2_WHITE_BALANCE_DAYLIGHT */
+	0xf, /* V4L2_WHITE_BALANCE_FLASH */
+	0x6, /* V4L2_WHITE_BALANCE_CLOUDY */
+	0x6, /* V4L2_WHITE_BALANCE_SHADE */
+};
+
+static int ap1302_set_wb_mode(struct v4l2_subdev *sd, s32 val)
+{
+	int ret = 0;
+	u16 reg_val;
+
+	ret = ap1302_i2c_read_reg(sd, REG_AWB_CTRL, AP1302_REG16, &reg_val);
+	if (ret)
+		return ret;
+	reg_val &= ~AWB_CTRL_MODE_MASK;
+	reg_val |= ap1302_wb_values[val] << AWB_CTRL_MODE_OFFSET;
+	if (val == V4L2_WHITE_BALANCE_FLASH)
+		reg_val |= AWB_CTRL_FLASH_MASK;
+	else
+		reg_val &= ~AWB_CTRL_FLASH_MASK;
+	ret = ap1302_i2c_write_reg(sd, REG_AWB_CTRL, AP1302_REG16, reg_val);
+	return ret;
+}
+
+static int ap1302_set_zoom(struct v4l2_subdev *sd, s32 val)
+{
+	ap1302_i2c_write_reg(sd, REG_DZ_TGT_FCT, AP1302_REG16,
+		val * 4 + 0x100);
+	return 0;
+}
+
+static u16 ap1302_sfx_values[] = {
+	0x00, /* V4L2_COLORFX_NONE */
+	0x03, /* V4L2_COLORFX_BW */
+	0x0d, /* V4L2_COLORFX_SEPIA */
+	0x07, /* V4L2_COLORFX_NEGATIVE */
+	0x04, /* V4L2_COLORFX_EMBOSS */
+	0x0f, /* V4L2_COLORFX_SKETCH */
+	0x08, /* V4L2_COLORFX_SKY_BLUE */
+	0x09, /* V4L2_COLORFX_GRASS_GREEN */
+	0x0a, /* V4L2_COLORFX_SKIN_WHITEN */
+	0x00, /* V4L2_COLORFX_VIVID */
+	0x00, /* V4L2_COLORFX_AQUA */
+	0x00, /* V4L2_COLORFX_ART_FREEZE */
+	0x00, /* V4L2_COLORFX_SILHOUETTE */
+	0x10, /* V4L2_COLORFX_SOLARIZATION */
+	0x02, /* V4L2_COLORFX_ANTIQUE */
+	0x00, /* V4L2_COLORFX_SET_CBCR */
+};
+
+static int ap1302_set_special_effect(struct v4l2_subdev *sd, s32 val)
+{
+	ap1302_i2c_write_reg(sd, REG_SFX_MODE, AP1302_REG16,
+		ap1302_sfx_values[val]);
+	return 0;
+}
+
+static u16 ap1302_scene_mode_values[] = {
+	0x00, /* V4L2_SCENE_MODE_NONE */
+	0x07, /* V4L2_SCENE_MODE_BACKLIGHT */
+	0x0a, /* V4L2_SCENE_MODE_BEACH_SNOW */
+	0x06, /* V4L2_SCENE_MODE_CANDLE_LIGHT */
+	0x00, /* V4L2_SCENE_MODE_DAWN_DUSK */
+	0x00, /* V4L2_SCENE_MODE_FALL_COLORS */
+	0x0d, /* V4L2_SCENE_MODE_FIREWORKS */
+	0x02, /* V4L2_SCENE_MODE_LANDSCAPE */
+	0x05, /* V4L2_SCENE_MODE_NIGHT */
+	0x0c, /* V4L2_SCENE_MODE_PARTY_INDOOR */
+	0x01, /* V4L2_SCENE_MODE_PORTRAIT */
+	0x03, /* V4L2_SCENE_MODE_SPORTS */
+	0x0e, /* V4L2_SCENE_MODE_SUNSET */
+	0x0b, /* V4L2_SCENE_MODE_TEXT */
+};
+
+static int ap1302_set_scene_mode(struct v4l2_subdev *sd, s32 val)
+{
+	ap1302_i2c_write_reg(sd, REG_SCENE_CTRL, AP1302_REG16,
+		ap1302_scene_mode_values[val]);
+	return 0;
+}
+
+static u16 ap1302_flicker_values[] = {
+	0x0,    /* OFF */
+	0x3201, /* 50HZ */
+	0x3c01, /* 60HZ */
+	0x2     /* AUTO */
+};
+
+static int ap1302_set_flicker_freq(struct v4l2_subdev *sd, s32 val)
+{
+	ap1302_i2c_write_reg(sd, REG_FLICK_CTRL, AP1302_REG16,
+		ap1302_flicker_values[val]);
+	return 0;
+}
+
 static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ap1302_device *dev = container_of(
@@ -847,11 +970,89 @@ static int ap1302_s_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_RUN_MODE:
 		dev->cur_context = ap1302_cntx_mapping[ctrl->val];
 		break;
+	case V4L2_CID_EXPOSURE:
+		ap1302_set_exposure_off(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE:
+		ap1302_set_wb_mode(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_ZOOM_ABSOLUTE:
+		ap1302_set_zoom(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_COLORFX:
+		ap1302_set_special_effect(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_SCENE_MODE:
+		ap1302_set_scene_mode(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_POWER_LINE_FREQUENCY:
+		ap1302_set_flicker_freq(&dev->sd, ctrl->val);
+		break;
 	default:
 		return -EINVAL;
 	}
 
 	return 0;
+}
+
+static int ap1302_g_register(struct v4l2_subdev *sd,
+			     struct v4l2_dbg_register *reg)
+{
+	struct ap1302_device *dev = to_ap1302_device(sd);
+	int ret;
+	u32 reg_val;
+
+	if (reg->size != AP1302_REG16 &&
+	    reg->size != AP1302_REG32)
+		return -EINVAL;
+
+	mutex_lock(&dev->input_lock);
+	if (dev->power_on)
+		ret = ap1302_i2c_read_reg(sd, reg->reg, reg->size, &reg_val);
+	else
+		ret = -EIO;
+	mutex_unlock(&dev->input_lock);
+	if (ret)
+		return ret;
+
+	reg->val = reg_val;
+
+	return 0;
+}
+
+static int ap1302_s_register(struct v4l2_subdev *sd,
+			     const struct v4l2_dbg_register *reg)
+{
+	struct ap1302_device *dev = to_ap1302_device(sd);
+	int ret;
+
+	if (reg->size != AP1302_REG16 &&
+	    reg->size != AP1302_REG32)
+		return -EINVAL;
+
+	mutex_lock(&dev->input_lock);
+	if (dev->power_on)
+		ret = ap1302_i2c_write_reg(sd, reg->reg, reg->size, reg->val);
+	else
+		ret = -EIO;
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static long ap1302_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
+{
+	long ret = 0;
+	switch (cmd) {
+	case VIDIOC_DBG_G_REGISTER:
+		ret = ap1302_g_register(sd, arg);
+		break;
+	case VIDIOC_DBG_S_REGISTER:
+		ret = ap1302_s_register(sd, arg);
+		break;
+	default:
+		ret = -EINVAL;
+	}
+	return ret;
 }
 
 static const struct v4l2_ctrl_ops ctrl_ops = {
@@ -877,6 +1078,66 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.max = 4,
 		.qmenu = ctrl_run_mode_menu,
 	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_EXPOSURE,
+		.name = "Exposure",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = AP1302_MIN_EV,
+		.def = 0,
+		.max = AP1302_MAX_EV,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE,
+		.name = "White Balance",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 9,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_ZOOM_ABSOLUTE,
+		.name = "Zoom Absolute",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 1024,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_COLORFX,
+		.name = "Color Special Effect",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 15,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_SCENE_MODE,
+		.name = "Scene Mode",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 13,
+		.step = 1,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_POWER_LINE_FREQUENCY,
+		.name = "Light frequency filter",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 3,
+		.max = 3,
+		.step = 1,
+	},
 };
 
 static struct v4l2_subdev_sensor_ops ap1302_sensor_ops = {
@@ -890,6 +1151,7 @@ static const struct v4l2_subdev_video_ops ap1302_video_ops = {
 	.s_stream = ap1302_s_stream,
 	.enum_framesizes = ap1302_enum_framesizes,
 	.enum_frameintervals = ap1302_enum_frameintervals,
+	.g_frame_interval = ap1302_g_frame_interval,
 };
 
 static const struct v4l2_subdev_core_ops ap1302_core_ops = {
@@ -897,6 +1159,11 @@ static const struct v4l2_subdev_core_ops ap1302_core_ops = {
 	.queryctrl	= v4l2_subdev_queryctrl,
 	.g_ctrl		= v4l2_subdev_g_ctrl,
 	.s_ctrl		= v4l2_subdev_s_ctrl,
+	.ioctl		= ap1302_ioctl,
+#ifdef CONFIG_VIDEO_ADV_DEBUG
+	.g_register	= ap1302_g_register,
+	.s_register	= ap1302_s_register,
+#endif
 };
 
 static const struct v4l2_subdev_pad_ops ap1302_pad_ops = {

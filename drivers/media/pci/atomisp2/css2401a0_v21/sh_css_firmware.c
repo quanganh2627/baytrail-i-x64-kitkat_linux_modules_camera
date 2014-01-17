@@ -1,7 +1,7 @@
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
- * Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+ * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
@@ -43,7 +43,7 @@ struct firmware_header {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-static const char* release_version = STR(ci_master_20140103_1003);
+static const char* release_version = STR(ci_master_20140107_1001);
 
 struct ia_css_fw_info	  sh_css_sp_fw;
 struct ia_css_blob_descr *sh_css_blob_info; /* Only ISP blob info (no SP) */

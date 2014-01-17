@@ -99,6 +99,8 @@
 
 #define IMX_SUBDEV_PREFIX "imx"
 #define IMX_DRIVER	"imx1x5"
+
+/* Sensor ids from identification register */
 #define IMX_NAME_134	"imx134"
 #define IMX_NAME_135	"imx135"
 #define IMX_NAME_175	"imx175"
@@ -107,6 +109,11 @@
 #define IMX135_ID	0x0135
 #define IMX134_ID	0x0134
 #define IMX132_ID	0x0132
+
+/* Sensor id based on i2c_device_id table
+ * (Fuji module can not be detected based on sensor registers) */
+#define IMX135_FUJI_ID			0x0136
+#define IMX_NAME_135_FUJI		"imx135fuji"
 
 /* imx175 - use dw9714 vcm */
 #define IMX175_MERRFLD 0x175
@@ -389,7 +396,8 @@ struct imx_device {
 	int vt_pix_clk_freq_mhz;
 	int fps_index;
 	u32 focus;
-	u16 sensor_id;
+	u16 sensor_id;			/* Sensor id from registers */
+	u16 i2c_id;			/* Sensor id from i2c_device_id */
 	u16 coarse_itg;
 	u16 fine_itg;
 	u16 digital_gain;
@@ -407,6 +415,7 @@ struct imx_device {
 	struct imx_otp *otp_driver;
 	const struct imx_resolution *curr_res_table;
 	int entries_curr_table;
+	const struct firmware *fw;
 
 	/* used for h/b blank tuning */
 	struct v4l2_ctrl_handler ctrl_handler;

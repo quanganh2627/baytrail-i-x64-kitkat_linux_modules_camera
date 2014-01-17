@@ -656,6 +656,63 @@ static struct imx_reg const imx135_10m_for_mipi_342[] = {
 	{IMX_TOK_TERM, 0, 0},
 };
 
+static struct imx_reg const imx135_8m_cropped[] = {
+	GROUPED_PARAMETER_HOLD_ENABLE,
+	PLL_SETTINGS_FOR_MIPI_451_2MHZ_SALTBAY,
+	/* Mode setting */
+	{IMX_8BIT, 0x0108, 0x03},
+	{IMX_8BIT, 0x0112, 0x0A},
+	{IMX_8BIT, 0x0113, 0x0A},
+	{IMX_8BIT, 0x0381, 0x01},
+	{IMX_8BIT, 0x0383, 0x01},
+	{IMX_8BIT, 0x0385, 0x01},
+	{IMX_8BIT, 0x0387, 0x01},
+	{IMX_8BIT, 0x0390, 0x00},
+	{IMX_8BIT, 0x0391, 0x11},
+	{IMX_8BIT, 0x0392, 0x00},
+	{IMX_8BIT, 0x0401, 0x00},
+	{IMX_8BIT, 0x0404, 0x00},
+	{IMX_8BIT, 0x0405, 0x10},
+	{IMX_8BIT, 0x4082, 0x01},
+	{IMX_8BIT, 0x4083, 0x01},
+	{IMX_8BIT, 0x4203, 0xFF},
+	{IMX_8BIT, 0x7006, 0x04},
+	/* Size setting */
+	{IMX_8BIT, 0x0344, 0x01},
+	{IMX_8BIT, 0x0345, 0xD0},
+	{IMX_8BIT, 0x0346, 0x01},
+	{IMX_8BIT, 0x0347, 0x48},
+	{IMX_8BIT, 0x0348, 0x0E},
+	{IMX_8BIT, 0x0349, 0x9F},
+	{IMX_8BIT, 0x034A, 0x0A},
+	{IMX_8BIT, 0x034B, 0xE7},
+	{IMX_8BIT, 0x034C, 0x0C}, /* 3280x2464 */
+	{IMX_8BIT, 0x034D, 0xD0},
+	{IMX_8BIT, 0x034E, 0x09},
+	{IMX_8BIT, 0x034F, 0xA0},
+	{IMX_8BIT, 0x0350, 0x00}, /* No Dig crop */
+	{IMX_8BIT, 0x0351, 0x00},
+	{IMX_8BIT, 0x0352, 0x00},
+	{IMX_8BIT, 0x0353, 0x00},
+	{IMX_8BIT, 0x0354, 0x0C}, /* Cut out size same as the size after crop */
+	{IMX_8BIT, 0x0355, 0xD0},
+	{IMX_8BIT, 0x0356, 0x09},
+	{IMX_8BIT, 0x0357, 0xA0},
+	{IMX_8BIT, 0x301D, 0x30}, /* ?? */
+	{IMX_8BIT, 0x3310, 0x0C}, /* Write H and V size  same as output size? */
+	{IMX_8BIT, 0x3311, 0xD0},
+	{IMX_8BIT, 0x3312, 0x09},
+	{IMX_8BIT, 0x3313, 0xA0},
+	{IMX_8BIT, 0x331C, 0x00}, /* ?? */
+	{IMX_8BIT, 0x331D, 0x10},
+	{IMX_8BIT, 0x4084, 0x00}, /* Scaling related? */
+	{IMX_8BIT, 0x4085, 0x00},
+	{IMX_8BIT, 0x4086, 0x00},
+	{IMX_8BIT, 0x4087, 0x00},
+	{IMX_8BIT, 0x4400, 0x00}, /* STATS off */
+	{IMX_TOK_TERM, 0, 0},
+};
+
 static struct imx_reg const imx135_8m_scaled_from_12m[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
 	PLL_SETTINGS_FOR_MIPI_451_2MHZ_SALTBAY,
@@ -2491,6 +2548,24 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
+	},
+	{
+		.desc = "imx135_8m_cropped_video",
+		.regs = imx135_8m_cropped,
+		.width = 3280,
+		.height = 2464,
+		.fps_options = {
+			{ /* Pixel clock: 360.96MHz */
+				 .fps = 30,
+				 .pixels_per_line = 4572,
+				 .lines_per_frame = 2624,
+			},
+			{
+			}
+		},
+		.bin_factor_x = 0,
+		.bin_factor_y = 0,
+		.used = 0,
 	},
 };
 

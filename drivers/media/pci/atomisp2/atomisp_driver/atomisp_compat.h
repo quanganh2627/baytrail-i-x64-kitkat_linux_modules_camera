@@ -384,6 +384,10 @@ int atomisp_css_capture_configure_pp_input(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height);
 
+int atomisp_css_video_configure_pp_input(
+				struct atomisp_sub_device *asd,
+				unsigned int width, unsigned int height);
+
 int atomisp_css_offline_capture_configure(struct atomisp_sub_device *asd,
 			int num_captures, unsigned int skip, int offset);
 
