@@ -37,6 +37,10 @@
 #include "atomisp-isys-subdev.h"
 #include "atomisp-isys-video.h"
 
+static struct atomisp_isys_pixelformat csi2_pfmts[] = {
+	{ }
+};
+
 static const uint32_t csi2_supported_fmts_pad[] = {
 	V4L2_MBUS_FMT_SBGGR10_1X10,
 	V4L2_MBUS_FMT_SGBRG10_1X10,
@@ -97,6 +101,7 @@ int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 
 	snprintf(csi2->av.vdev.name, sizeof(csi2->av.vdev.name),
 		 "AtomISP CSI-2 %u capture", index);
+	csi2->av.pfmts = csi2_pfmts;
 	rval = atomisp_isys_video_init(&csi2->av, csi2->isys);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't init video node\n");

@@ -39,6 +39,11 @@ struct atomisp_isys {
 	struct atomisp_csi2 csi2[MAX_CSI2_PORTS];
 };
 
+struct atomisp_isys_pixelformat {
+	uint32_t pixelformat;
+	uint32_t bpp;
+};
+
 extern const struct v4l2_ioctl_ops atomisp_isys_ioctl_ops;
 extern const struct v4l2_file_operations atomisp_isys_fops;
 

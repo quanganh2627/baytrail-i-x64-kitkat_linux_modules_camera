@@ -24,6 +24,21 @@
 #include "atomisp-isys.h"
 #include "atomisp-isys-video.h"
 
+const struct atomisp_isys_pixelformat *atomisp_isys_get_pixelformat(
+	struct atomisp_isys_video *av, uint32_t pixelformat)
+{
+	const struct atomisp_isys_pixelformat *pfmt, *found = av->pfmts;
+
+	for (pfmt = av->pfmts; pfmt->bpp; pfmt++) {
+		if (pfmt->pixelformat == pixelformat) {
+			found = pfmt;
+			break;
+		}
+	}
+
+	return found;
+}
+
 static int vidioc_querycap(struct file *file, void *fh,
 			   struct v4l2_capability *cap)
 {
@@ -39,18 +54,45 @@ static int vidioc_enum_fmt_vid_cap(struct file *file, void *fh,
 static int vidioc_g_fmt_vid_cap(struct file *file, void *fh,
 				struct v4l2_format *fmt)
 {
+	struct atomisp_isys_video *av = video_drvdata(file);
+
+	fmt->fmt.pix = av->pix;
+
 	return 0;
+}
+
+static const struct atomisp_isys_pixelformat *__vidioc_try_fmt_vid_cap(
+	struct atomisp_isys_video *av, struct v4l2_pix_format *pix)
+{
+	const struct atomisp_isys_pixelformat *pfmt =
+		atomisp_isys_get_pixelformat(av, pix->pixelformat);
+
+	pix->pixelformat = pfmt->pixelformat;
+	pix->bytesperline = max(
+		pix->bytesperline, pix->width * DIV_ROUND_UP(pfmt->bpp, 8));
+	pix->sizeimage = pix->bytesperline * pix->height;
+
+	return pfmt;
 }
 
 static int vidioc_s_fmt_vid_cap(struct file *file, void *fh,
 				struct v4l2_format *fmt)
 {
+	struct atomisp_isys_video *av = video_drvdata(file);
+
+	av->pfmt = __vidioc_try_fmt_vid_cap(av, &fmt->fmt.pix);
+	av->pix = fmt->fmt.pix;
+
 	return 0;
 }
 
 static int vidioc_try_fmt_vid_cap(struct file *file, void *fh,
 				  struct v4l2_format *fmt)
 {
+	struct atomisp_isys_video *av = video_drvdata(file);
+
+	__vidioc_try_fmt_vid_cap(av, &fmt->fmt.pix);
+
 	return 0;
 }
 
@@ -76,6 +118,7 @@ int atomisp_isys_video_init(struct atomisp_isys_video *av,
 	int rval;
 
 	av->isys = isys;
+	av->pfmt = __vidioc_try_fmt_vid_cap(av, &av->pix);
 
 	rval = atomisp_isys_queue_init(&av->aq);
 	if (rval)

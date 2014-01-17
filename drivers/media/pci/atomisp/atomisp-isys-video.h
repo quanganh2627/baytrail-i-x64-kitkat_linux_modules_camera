@@ -20,6 +20,7 @@
 #ifndef ATOMISP_ISYS_VIDEO_H
 #define ATOMISP_ISYS_VIDEO_H
 
+#include <linux/videodev2.h>
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
 
@@ -30,6 +31,9 @@ struct atomisp_isys;
 struct atomisp_isys_video {
 	struct media_pad pad;
 	struct video_device vdev;
+	struct v4l2_pix_format pix;
+	const struct atomisp_isys_pixelformat *pfmts;
+	const struct atomisp_isys_pixelformat *pfmt;
 	struct atomisp_isys_queue aq;
 	struct atomisp_isys *isys;
 };
