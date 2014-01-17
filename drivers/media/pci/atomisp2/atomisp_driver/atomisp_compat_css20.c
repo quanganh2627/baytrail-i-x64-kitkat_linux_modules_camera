@@ -678,6 +678,77 @@ static void __apply_additional_pipe_config(
 	}
 }
 
+static bool is_pipe_valid_to_current_run_mode(struct atomisp_sub_device *asd,
+					enum ia_css_pipe_id pipe_id)
+{
+	if (!asd)
+		return false;
+
+	if (asd->vfpp) {
+		if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
+			if (pipe_id == IA_CSS_PIPE_ID_VIDEO)
+				return true;
+			else
+				return false;
+		} else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_LOWLAT) {
+			if (pipe_id == IA_CSS_PIPE_ID_CAPTURE)
+				return true;
+			else
+				return false;
+		}
+	}
+
+#ifdef ISP2401_NEW_INPUT_SYSTEM
+	if (asd->isp->inputs[asd->input_curr].type == SOC_CAMERA ||
+	    atomisp_is_mbuscode_raw(asd->fmt[asd->capture_pad].fmt.code)) {
+		if (pipe_id == IA_CSS_PIPE_ID_COPY)
+			return true;
+		else
+			return false;
+	}
+#endif
+	if (!asd->run_mode)
+		return false;
+
+	switch (asd->run_mode->val) {
+		case ATOMISP_RUN_MODE_STILL_CAPTURE:
+			if (pipe_id == IA_CSS_PIPE_ID_CAPTURE)
+				return true;
+			else
+				return false;
+		case ATOMISP_RUN_MODE_PREVIEW:
+			if (!asd->continuous_mode->val) {
+				if (pipe_id == IA_CSS_PIPE_ID_PREVIEW)
+					return true;
+				else
+					return false;
+			}
+			/* fall through to ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE */
+		case ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE:
+			if (pipe_id == IA_CSS_PIPE_ID_CAPTURE ||
+			    pipe_id == IA_CSS_PIPE_ID_PREVIEW)
+				return true;
+			else
+				return false;
+		case ATOMISP_RUN_MODE_VIDEO:
+			if (!asd->continuous_mode->val) {
+				if (pipe_id == IA_CSS_PIPE_ID_VIDEO)
+					return true;
+				else
+					return false;
+			}
+			/* fall through to ATOMISP_RUN_MODE_SDV */
+		case ATOMISP_RUN_MODE_SDV:
+			if (pipe_id == IA_CSS_PIPE_ID_CAPTURE ||
+			    pipe_id == IA_CSS_PIPE_ID_VIDEO)
+				return true;
+			else
+				return false;
+	}
+
+	return false;
+}
+
 static int __create_pipe(struct atomisp_sub_device *asd,
 			 struct atomisp_stream_env *stream_env,
 			 enum ia_css_pipe_id pipe_id)
@@ -685,7 +756,8 @@ static int __create_pipe(struct atomisp_sub_device *asd,
 	struct atomisp_device *isp = asd->isp;
 	struct ia_css_pipe_extra_config extra_config;
 	enum ia_css_err ret;
-	if (!stream_env->pipe_configs[pipe_id].output_info.res.width)
+	if (!stream_env->pipe_configs[pipe_id].output_info.res.width ||
+	    !is_pipe_valid_to_current_run_mode(asd, pipe_id))
 		return 0;
 
 	ia_css_pipe_extra_config_defaults(&extra_config);
