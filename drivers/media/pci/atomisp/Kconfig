@@ -8,3 +8,17 @@ config VIDEO_ATOMISP_NG
 	select PHYS_ADDR_T_64BIT
 	---help---
 	Say Y here!
+
+config VIDEO_ATOMISP_NG_ISYS
+	bool "Input system"
+	depends on VIDEO_ATOMISP_NG
+	---help---
+	FPGA based input system. Select if your FPGA based environment
+	contains an input system.
+
+config VIDEO_ATOMISP_NG_PSYS
+	bool "Processing system"
+	depends on VIDEO_ATOMISP_NG
+	---help---
+	FPGA based processing system. Select if your FPGA based
+	environment contains a processing system.

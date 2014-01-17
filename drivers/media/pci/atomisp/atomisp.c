@@ -163,36 +163,41 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 
 	pci_set_drvdata(pdev, isp);
 
-	mmu_base[0] = base + ATOMISP_BXT_A0_ISYS_IOMMU0_OFFSET;
-	mmu_base[1] = base + ATOMISP_BXT_A0_ISYS_IOMMU1_OFFSET;
-	isp->isys_iommu = atomisp_mmu_init(pdev, mmu_base, 2, 0);
-	rval = PTR_ERR(isp->isys_iommu);
-	if (IS_ERR(isp->isys_iommu)) {
-		dev_err(&pdev->dev, "can't create isys iommu device\n");
-		return -ENOMEM;
+	if (pdev->device != ATOMISP_HW_BXT_FPGA || IS_ENABLED(VIDEO_ATOMISP_NG_ISYS)) {
+
+		mmu_base[0] = base + ATOMISP_BXT_A0_ISYS_IOMMU0_OFFSET;
+		mmu_base[1] = base + ATOMISP_BXT_A0_ISYS_IOMMU1_OFFSET;
+		isp->isys_iommu = atomisp_mmu_init(pdev, mmu_base, 2, 0);
+		rval = PTR_ERR(isp->isys_iommu);
+		if (IS_ERR(isp->isys_iommu)) {
+			dev_err(&pdev->dev, "can't create isys iommu device\n");
+			return -ENOMEM;
+		}
+
+		isys_iommu->dev = &isp->isys_iommu->dev;
+
+		isp->isys = atomisp_isys_init(pdev, isys_iommu, base, 0);
+		rval = PTR_ERR(isp->isys);
+		if (IS_ERR(isp->isys))
+			goto out_atomisp_bus_del_devices;
 	}
 
-	isys_iommu->dev = &isp->isys_iommu->dev;
+	if (pdev->device != ATOMISP_HW_BXT_FPGA || IS_ENABLED(VIDEO_ATOMISP_NG_PSYS)) {
+		mmu_base[0] = base + ATOMISP_BXT_A0_PSYS_IOMMU0_OFFSET;
+		mmu_base[1] = base + ATOMISP_BXT_A0_PSYS_IOMMU1_OFFSET;
+		isp->psys_iommu = atomisp_mmu_init(pdev, mmu_base, 2, 1);
+		rval = PTR_ERR(isp->psys_iommu);
+		if (IS_ERR(isp->psys_iommu)) {
+			dev_err(&pdev->dev, "can't create psys iommu device\n");
+			goto out_atomisp_bus_del_devices;
+		}
 
-	isp->isys = atomisp_isys_init(pdev, isys_iommu, base, 0);
-	rval = PTR_ERR(isp->isys);
-	if (IS_ERR(isp->isys))
-		goto out_atomisp_bus_del_devices;
-
-	mmu_base[0] = base + ATOMISP_BXT_A0_PSYS_IOMMU0_OFFSET;
-	mmu_base[1] = base + ATOMISP_BXT_A0_PSYS_IOMMU1_OFFSET;
-	isp->psys_iommu = atomisp_mmu_init(pdev, mmu_base, 2, 1);
-	rval = PTR_ERR(isp->psys_iommu);
-	if (IS_ERR(isp->psys_iommu)) {
-		dev_err(&pdev->dev, "can't create psys iommu device\n");
-		goto out_atomisp_bus_del_devices;
+		psys_iommu->dev = &isp->psys_iommu->dev;
+		isp->psys = atomisp_psys_init(pdev, psys_iommu, base, 0);
+		rval = PTR_ERR(isp->isys);
+		if (IS_ERR(isp->isys))
+			goto out_atomisp_bus_del_devices;
 	}
-
-	psys_iommu->dev = &isp->psys_iommu->dev;
-	isp->psys = atomisp_psys_init(pdev, psys_iommu, base, 0);
-	rval = PTR_ERR(isp->isys);
-	if (IS_ERR(isp->isys))
-		goto out_atomisp_bus_del_devices;
 
 	pci_set_master(pdev);
 
