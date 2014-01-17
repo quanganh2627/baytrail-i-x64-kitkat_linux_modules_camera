@@ -174,9 +174,6 @@ static int atomisp_pci_probe(struct pci_dev *pdev,
 
 	isys_iommu->dev = &isp->isys_iommu->dev;
 
-	pr_info("mmu %p\n", isp->isys_iommu);
-	pr_info("a %p\n", isp->isys_iommu->dev.archdata.iommu);
-
 	isp->isys = atomisp_isys_init(pdev, isys_iommu, base, 0);
 	rval = PTR_ERR(isp->isys);
 	if (IS_ERR(isp->isys))
