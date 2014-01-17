@@ -41,8 +41,7 @@ struct atomisp_isys_video {
 #define atomisp_isys_queue_to_video(__aq) \
 	container_of(__aq, struct atomisp_isys_video, aq)
 
-int atomisp_isys_video_init(struct atomisp_isys_video *av,
-			    struct atomisp_isys *isys);
+int atomisp_isys_video_init(struct atomisp_isys_video *av);
 void atomisp_isys_video_cleanup(struct atomisp_isys_video *av);
 
 #endif /* ATOMISP_ISYS_VIDEO_H */

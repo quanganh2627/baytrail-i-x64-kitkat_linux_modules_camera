@@ -102,7 +102,8 @@ int atomisp_csi2_init(struct atomisp_csi2 *csi2, struct atomisp_isys *isys,
 	snprintf(csi2->av.vdev.name, sizeof(csi2->av.vdev.name),
 		 "AtomISP CSI-2 %u capture", index);
 	csi2->av.pfmts = csi2_pfmts;
-	rval = atomisp_isys_video_init(&csi2->av, csi2->isys);
+	csi2->av.isys = isys;
+	rval = atomisp_isys_video_init(&csi2->av);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't init video node\n");
 		goto fail;

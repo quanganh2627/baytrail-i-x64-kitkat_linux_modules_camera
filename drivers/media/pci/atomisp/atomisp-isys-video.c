@@ -112,12 +112,15 @@ static const struct v4l2_ioctl_ops ioctl_ops = {
 	.vidioc_streamoff = vb2_ioctl_streamoff,
 };
 
-int atomisp_isys_video_init(struct atomisp_isys_video *av,
-			    struct atomisp_isys *isys)
+/*
+ * Do everything that's needed to initialise things related to video
+ * buffer queue, video node, and the related media entity. The caller
+ * is expected to assign isys and pfmts fields.
+ */
+int atomisp_isys_video_init(struct atomisp_isys_video *av)
 {
 	int rval;
 
-	av->isys = isys;
 	av->pfmt = __vidioc_try_fmt_vid_cap(av, &av->pix);
 
 	rval = atomisp_isys_queue_init(&av->aq);
@@ -131,7 +134,7 @@ int atomisp_isys_video_init(struct atomisp_isys_video *av,
 
 	av->vdev.release = video_device_release_empty;
 	av->vdev.fops = &atomisp_isys_fops;
-	av->vdev.v4l2_dev = &isys->v4l2_dev;
+	av->vdev.v4l2_dev = &av->isys->v4l2_dev;
 	av->vdev.ioctl_ops = &ioctl_ops;
 	video_set_drvdata(&av->vdev, av);
 
