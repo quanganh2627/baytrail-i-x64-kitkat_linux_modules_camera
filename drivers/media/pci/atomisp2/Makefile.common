@@ -130,6 +130,8 @@ atomisp-$(postfix)-objs += \
 	css/ia_css_isp_configs.hive_isp_css_2401_system.o 
 else ifneq ($(ISP2400B0), )
 atomisp-$(postfix)-objs += \
+	css/isp/kernels/crop/crop_1.0/ia_css_crop.host.o \
+	css/isp/kernels/qplane/qplane_2/ia_css_qplane.host.o \
 	css/ia_css_isp_params.hive_isp_css_2400_system.o \
 	css/ia_css_isp_configs.hive_isp_css_2400_system.o 
 else ifneq ($(ISP2400), )
@@ -264,6 +266,10 @@ INCLUDES += -I$(srctree)/$(src)/css/css_2401_system \
 	    -I$(srctree)/$(src)/css/css_2401_system/host \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared/host
+endif
+ifneq ($(ISP2400B0), )
+INCLUDES += -I$(srctree)/$(src)/css/isp/kernels/crop/crop_1.0 \
+	    -I$(srctree)/$(src)/css/isp/kernels/qplane/qplane_2
 endif
 
 # Includes for CSS host code, all CSS versions
