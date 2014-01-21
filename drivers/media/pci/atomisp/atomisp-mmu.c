@@ -206,20 +206,33 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 {
 	struct atomisp_mmu_domain *adom = domain->priv;
 	uint32_t l1_idx = iova >> ISP_L1PT_SHIFT;
+	uint32_t l1_entry = adom->pgtbl[l1_idx];
 	uint32_t *l2_pt;
 	uint32_t iova_start = iova;
 	unsigned int l2_idx;
+	unsigned long flags;
 
 	pr_info("mapping l2 page table for l1 index %u (iova %8.8x)\n", l1_idx,
 		(uint32_t)iova);
 
-	if (adom->pgtbl[l1_idx] == INVALID_PAGE) {
-		adom->pgtbl[l1_idx] = virt_to_phys(alloc_page_table(adom)) >> ISP_PADDR_SHIFT;
+	if (l1_entry == INVALID_PAGE) {
+		l1_entry = virt_to_phys(alloc_page_table(adom))
+			>> ISP_PADDR_SHIFT;
 		pr_info("allocated page for l1_idx %u\n", l1_idx);
 	}
 
-	if (adom->pgtbl[l1_idx] == INVALID_PAGE)
+	if (l1_entry == INVALID_PAGE)
 		return -ENOMEM;
+
+	spin_lock_irqsave(&adom->lock, flags);
+
+	if (adom->pgtbl[l1_idx] == INVALID_PAGE) {
+		adom->pgtbl[l1_idx] = l1_entry;
+	} else {
+		spin_unlock_irqrestore(&adom->lock, flags);
+		free_page_table(TBL_VIRT_ADDR(l1_entry));
+		spin_lock_irqsave(&adom->lock, flags);
+	}
 
 	l2_pt = TBL_VIRT_ADDR(adom->pgtbl[l1_idx]);
 
@@ -230,10 +243,14 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 	l2_idx = (iova_start & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT;
 
 	pr_info("l2_idx %u, phys 0x%8.8x\n", l2_idx, l2_pt[l2_idx]);
-	if (l2_pt[l2_idx] != INVALID_PAGE)
+	if (l2_pt[l2_idx] != INVALID_PAGE) {
+		spin_unlock_irqrestore(&adom->lock, flags);
 		return -EBUSY;
+	}
 
 	l2_pt[l2_idx] = paddr >> ISP_PADDR_SHIFT;
+
+	spin_unlock_irqrestore(&adom->lock, flags);
 
 	pr_info("l2 index %u mapped as 0x%8.8x\n", l2_idx,
 		l2_pt[l2_idx]);
@@ -276,9 +293,13 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 	     (iova_start & ISP_L1PT_MASK) + (l2_idx << ISP_PAGE_SHIFT)
 		     < iova_start + size;
 	     l2_idx++) {
+		unsigned long flags;
+
 		pr_info("l2 index %u unmapped, was 0x%10.10llx\n",
 			l2_idx, TBL_PHYS_ADDR(l2_pt[l2_idx]));
+		spin_lock_irqsave(&adom->lock, flags);
 		l2_pt[l2_idx] = INVALID_PAGE;
+		spin_unlock_irqrestore(&adom->lock, flags);
 	}
 
 	return 0;
