@@ -317,6 +317,18 @@ out_fail:
 	return rval;
 }
 
+static void atomisp_dma_sync_single_for_cpu(
+	struct device *dev, dma_addr_t dma_handle, size_t size,
+	enum dma_data_direction dir)
+{
+	struct atomisp_bus_iommu *aiommu = dev->archdata.iommu;
+	struct atomisp_mmu *mmu = dev_get_drvdata(aiommu->dev);
+
+	clflush_cache_range(
+		phys_to_virt(iommu_iova_to_phys(
+				     mmu->dmap->domain, dma_handle)), size);
+}
+
 static void atomisp_dma_sync_sg_for_cpu(
 	struct device *dev, struct scatterlist *sglist, int nents,
 	enum dma_data_direction dir)
@@ -333,6 +345,7 @@ struct dma_map_ops atomisp_dma_ops = {
 	.free = atomisp_dma_free,
 	.map_sg = atomisp_dma_map_sg,
 	.unmap_sg = atomisp_dma_unmap_sg,
+	.sync_single_for_cpu = atomisp_dma_sync_single_for_cpu,
 	.sync_sg_for_cpu = atomisp_dma_sync_sg_for_cpu,
 };
 EXPORT_SYMBOL_GPL(atomisp_dma_ops);
