@@ -73,7 +73,7 @@ static void page_table_dump(struct atomisp_mmu_domain *adom)
 {
 	uint32_t l1_idx;
 
-	pr_info("begin IOMMU page table dump\n");
+	pr_debug("begin IOMMU page table dump\n");
 
 	for (l1_idx = 0; l1_idx < ISP_L1PT_PTES; l1_idx++) {
 		uint32_t l2_idx;
@@ -81,9 +81,9 @@ static void page_table_dump(struct atomisp_mmu_domain *adom)
 
 		if (adom->pgtbl[l1_idx] == INVALID_PAGE)
 			continue;
-		pr_info("l1 entry %u; iovas 0x%8.8x--0x%8.8x, at %p\n", l1_idx,
-			iova, iova + ISP_PAGE_SIZE,
-			(void *)TBL_PHYS_ADDR(adom->pgtbl[l1_idx]));
+		pr_debug("l1 entry %u; iovas 0x%8.8x--0x%8.8x, at %p\n",
+			 l1_idx, iova, iova + ISP_PAGE_SIZE,
+			 (void *)TBL_PHYS_ADDR(adom->pgtbl[l1_idx]));
 
 		for (l2_idx = 0; l2_idx < ISP_L2PT_PTES; l2_idx++) {
 			uint32_t *l2_pt = TBL_VIRT_ADDR(adom->pgtbl[l1_idx]);
@@ -92,12 +92,13 @@ static void page_table_dump(struct atomisp_mmu_domain *adom)
 			if (l2_pt[l2_idx] == INVALID_PAGE)
 				continue;
 
-			pr_info("\tl2 entry %u; iova 0x%8.8x, phys %p\n",
-				l2_idx, iova2, (void *)TBL_PHYS_ADDR(l2_pt[l2_idx]));
+			pr_debug("\tl2 entry %u; iova 0x%8.8x, phys %p\n",
+				 l2_idx, iova2,
+				 (void *)TBL_PHYS_ADDR(l2_pt[l2_idx]));
 		}
 	}
 
-	pr_info("end IOMMU page table dump\n");
+	pr_debug("end IOMMU page table dump\n");
 }
 
 static uint32_t *alloc_page_table(struct atomisp_mmu_domain *adom)
@@ -108,7 +109,7 @@ static uint32_t *alloc_page_table(struct atomisp_mmu_domain *adom)
 	if (!pt)
 		return (uint32_t *)INVALID_PAGE;
 
-	pr_info("__get_free_page() == %p\n", pt);
+	pr_debug("__get_free_page() == %p\n", pt);
 	/* we need an uncacheable page table --- why? */
 #ifdef	CONFIG_X86
 	set_memory_uc((unsigned long)pt, 1);
@@ -125,7 +126,7 @@ static void free_page_table(uint32_t *pt)
 	if (pt == (uint32_t *)INVALID_PAGE)
 		return;
 
-	pr_info("free_page(%p)\n", pt);
+	pr_debug("free_page(%p)\n", pt);
 #ifdef	CONFIG_X86
 	set_memory_wb((unsigned long)pt, 1);
 #endif
@@ -152,8 +153,8 @@ static int atomisp_mmu_domain_init(struct iommu_domain *domain)
 	INIT_LIST_HEAD(&adom->mmu_devs);
 	spin_lock_init(&adom->lock);
 
-	pr_info("domain initialised\n");
-	pr_info("ops %p\n", domain->ops);
+	pr_debug("domain initialised\n");
+	pr_debug("ops %p\n", domain->ops);
 
 	return 0;
 }
@@ -180,7 +181,7 @@ static int atomisp_mmu_attach_dev(struct iommu_domain *domain,
 
 	adom->users++;
 
-	dev_info(dev, "domain attached\n");
+	dev_dbg(dev, "domain attached\n");
 
 	spin_unlock(&adom->lock);
 
@@ -196,7 +197,7 @@ static void atomisp_mmu_detach_dev(struct iommu_domain *domain,
 
 	if (!--adom->users) {
 	}
-	dev_info(dev, "domain detached\n");
+	dev_dbg(dev, "domain detached\n");
 
 	spin_unlock(&adom->lock);
 }
@@ -212,13 +213,13 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 	unsigned int l2_idx;
 	unsigned long flags;
 
-	pr_info("mapping l2 page table for l1 index %u (iova %8.8x)\n", l1_idx,
-		(uint32_t)iova);
+	pr_debug("mapping l2 page table for l1 index %u (iova %8.8x)\n",
+		 l1_idx, (uint32_t)iova);
 
 	if (l1_entry == INVALID_PAGE) {
 		l1_entry = virt_to_phys(alloc_page_table(adom))
 			>> ISP_PADDR_SHIFT;
-		pr_info("allocated page for l1_idx %u\n", l1_idx);
+		pr_debug("allocated page for l1_idx %u\n", l1_idx);
 	}
 
 	if (l1_entry == INVALID_PAGE)
@@ -236,13 +237,13 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 
 	l2_pt = TBL_VIRT_ADDR(adom->pgtbl[l1_idx]);
 
-	pr_info("l2_pt at %p\n", l2_pt);
+	pr_debug("l2_pt at %p\n", l2_pt);
 
 	paddr = ALIGN(paddr, ISP_PAGE_SIZE);
 
 	l2_idx = (iova_start & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT;
 
-	pr_info("l2_idx %u, phys 0x%8.8x\n", l2_idx, l2_pt[l2_idx]);
+	pr_debug("l2_idx %u, phys 0x%8.8x\n", l2_idx, l2_pt[l2_idx]);
 	if (l2_pt[l2_idx] != INVALID_PAGE) {
 		spin_unlock_irqrestore(&adom->lock, flags);
 		return -EBUSY;
@@ -252,8 +253,8 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 
 	spin_unlock_irqrestore(&adom->lock, flags);
 
-	pr_info("l2 index %u mapped as 0x%8.8x\n", l2_idx,
-		l2_pt[l2_idx]);
+	pr_debug("l2 index %u mapped as 0x%8.8x\n", l2_idx,
+		 l2_pt[l2_idx]);
 
 	page_table_dump(adom);
 
@@ -266,8 +267,8 @@ static int atomisp_mmu_map(struct iommu_domain *domain, unsigned long iova,
 	uint32_t iova_start = round_down(iova, ISP_PAGE_SIZE);
 	uint32_t iova_end = ALIGN(iova + size, ISP_PAGE_SIZE);
 
-	pr_info("mapping iova 0x%8.8x--0x%8.8x, size %zu at paddr 0x%10.10llx\n",
-		iova_start, iova_end, size, paddr);
+	pr_debug("mapping iova 0x%8.8x--0x%8.8x, size %zu at paddr 0x%10.10llx\n",
+		 iova_start, iova_end, size, paddr);
 
 	return l2_map(domain, iova_start, paddr, size);
 }
@@ -281,13 +282,13 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 	uint32_t iova_start = iova;
 	unsigned int l2_idx;
 
-	pr_info("unmapping l2 page table for l1 index %u (iova 0x%8.8lx)\n",
-		l1_idx, iova);
+	pr_debug("unmapping l2 page table for l1 index %u (iova 0x%8.8lx)\n",
+		 l1_idx, iova);
 
 	if (adom->pgtbl[l1_idx] == INVALID_PAGE)
 		return -EINVAL;
 
-	pr_info("l2_pt at %p\n", l2_pt);
+	pr_debug("l2_pt at %p\n", l2_pt);
 
 	for (l2_idx = (iova_start & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT;
 	     (iova_start & ISP_L1PT_MASK) + (l2_idx << ISP_PAGE_SHIFT)
@@ -295,8 +296,8 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 	     l2_idx++) {
 		unsigned long flags;
 
-		pr_info("l2 index %u unmapped, was 0x%10.10llx\n",
-			l2_idx, TBL_PHYS_ADDR(l2_pt[l2_idx]));
+		pr_debug("l2 index %u unmapped, was 0x%10.10llx\n",
+			 l2_idx, TBL_PHYS_ADDR(l2_pt[l2_idx]));
 		spin_lock_irqsave(&adom->lock, flags);
 		l2_pt[l2_idx] = INVALID_PAGE;
 		spin_unlock_irqrestore(&adom->lock, flags);
@@ -349,7 +350,7 @@ static struct atomisp_dma_mapping *alloc_dma_mapping(struct device *dev)
 
 	kref_init(&dmap->ref);
 
-	pr_info("alloc mapping\n");
+	pr_debug("alloc mapping\n");
 
 	return dmap;
 }
@@ -377,7 +378,7 @@ static int atomisp_mmu_add_device(struct device *dev)
 
 	mmu = dev_get_drvdata(aiommu->dev);
 
-	pr_info("dev %s\n", dev_name(dev));
+	pr_debug("attach dev %s\n", dev_name(dev));
 
 	if (!mmu)
 		return 0;
@@ -390,15 +391,10 @@ static int atomisp_mmu_add_device(struct device *dev)
 			return -ENOMEM;
 	}
 	dmap = mmu->dmap;
-	pr_info("dmap %p\n", dmap);
 
 	adom = dmap->domain->priv;
 	adom->dmap = dmap;
 	aiommu->m->mapping = dmap;
-
-	pr_info("attach %p\n", dmap->domain);
-	pr_info("attach 2 %p\n", dmap->domain->ops);
-	pr_info("attach 3 %p\n", dmap->domain->ops->attach_dev);
 
 	rval = iommu_attach_device(dmap->domain, dev);
 	if (rval)
@@ -444,7 +440,7 @@ static int atomisp_mmu_probe(struct atomisp_bus_device *adev)
 
 	iova_cache_init();
 
-	dev_info(&adev->dev, "mmu probe %p %p\n", adev, &adev->dev);
+	dev_dbg(&adev->dev, "mmu probe %p %p\n", adev, &adev->dev);
 	atomisp_bus_set_drvdata(adev, mmu);
 
 	atomisp_bus_set_iommu(&atomisp_iommu_ops);
@@ -469,7 +465,7 @@ static int atomisp_mmu_probe(struct atomisp_bus_device *adev)
  */
 static void atomisp_mmu_remove(struct atomisp_bus_device *adev)
 {
-	dev_info(&adev->dev, "removed\n");
+	dev_dbg(&adev->dev, "removed\n");
 }
 
 static void atomisp_mmu_isr(struct atomisp_bus_device *adev)
