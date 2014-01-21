@@ -1632,8 +1632,9 @@ static int __update_imx_device_settings(struct imx_device *dev, u16 sensor_id)
 {
 	switch (sensor_id) {
 	case IMX175_ID:
-		if (INTEL_MID_BOARD(1, PHONE, BYT) ||
-			INTEL_MID_BOARD(1, TABLET, BYT)) {
+		if (INTEL_MID_BOARD(1, TABLET, CHT) ||
+		    INTEL_MID_BOARD(1, PHONE, BYT) ||
+		    INTEL_MID_BOARD(1, TABLET, BYT)) {
 			dev->mode_tables = &imx_sets[IMX175_VALLEYVIEW];
 			dev->vcm_driver = &imx_vcms[IMX175_VALLEYVIEW];
 			dev->otp_driver = &imx_otps[IMX175_VALLEYVIEW];
