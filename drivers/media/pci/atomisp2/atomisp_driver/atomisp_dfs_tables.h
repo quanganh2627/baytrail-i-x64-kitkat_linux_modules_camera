@@ -134,6 +134,27 @@ static const struct atomisp_dfs_config dfs_config_merr_1179 = {
 
 static const struct atomisp_freq_scaling_rule dfs_rules_merr_117a[] = {
 	{
+		.width = 1920,
+		.height = 1080,
+		.fps = 30,
+		.isp_freq = ISP_FREQ_266MHZ,
+		.run_mode = ATOMISP_RUN_MODE_VIDEO,
+	},
+	{
+		.width = 1920,
+		.height = 1080,
+		.fps = 45,
+		.isp_freq = ISP_FREQ_320MHZ,
+		.run_mode = ATOMISP_RUN_MODE_VIDEO,
+	},
+	{
+		.width = ISP_FREQ_RULE_ANY,
+		.height = ISP_FREQ_RULE_ANY,
+		.fps = 60,
+		.isp_freq = ISP_FREQ_320MHZ,
+		.run_mode = ATOMISP_RUN_MODE_VIDEO,
+	},
+	{
 		.width = ISP_FREQ_RULE_ANY,
 		.height = ISP_FREQ_RULE_ANY,
 		.fps = ISP_FREQ_RULE_ANY,
@@ -151,7 +172,7 @@ static const struct atomisp_freq_scaling_rule dfs_rules_merr_117a[] = {
 		.width = ISP_FREQ_RULE_ANY,
 		.height = ISP_FREQ_RULE_ANY,
 		.fps = ISP_FREQ_RULE_ANY,
-		.isp_freq = ISP_FREQ_400MHZ,
+		.isp_freq = ISP_FREQ_200MHZ,
 		.run_mode = ATOMISP_RUN_MODE_CONTINUOUS_CAPTURE,
 	},
 	{
