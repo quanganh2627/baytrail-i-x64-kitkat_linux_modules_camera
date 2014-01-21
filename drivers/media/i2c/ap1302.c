@@ -231,11 +231,11 @@ ap1302_calculate_context_reg_addr(enum ap1302_contexts context, u16 offset)
 			offset -= 2;
 	}
 	if (context == CONTEXT_PREVIEW)
-		reg_addr = REG_SNAPSHOT_BASE + offset;
+		reg_addr = REG_PREVIEW_BASE + offset;
 	else if (context == CONTEXT_VIDEO)
 		reg_addr = REG_VIDEO_BASE + offset;
 	else
-		reg_addr = REG_PREVIEW_BASE + offset;
+		reg_addr = REG_SNAPSHOT_BASE + offset;
 	return reg_addr;
 }
 
