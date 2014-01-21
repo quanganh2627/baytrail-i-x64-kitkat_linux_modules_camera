@@ -639,18 +639,25 @@ static int ap1302_set_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
 	struct ap1302_device *dev = to_ap1302_device(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct atomisp_input_stream_info *stream_info =
 		(struct atomisp_input_stream_info*)fmt->reserved;
 	enum ap1302_contexts context, main_context;
 
 	mutex_lock(&dev->input_lock);
 	context = stream_to_context[stream_info->stream];
+	dev_dbg(&client->dev, "ap1302_set_mbus_fmt. stream=%d context=%d\n",
+		stream_info->stream, context);
 	dev->cntx_res[context].cur_res =
 		ap1302_try_mbus_fmt_locked(sd, context, fmt);
 	dev->cntx_config[context].width = fmt->width;
 	dev->cntx_config[context].height = fmt->height;
 	ap1302_write_context_reg(sd, context, CNTX_WIDTH, AP1302_REG16);
 	ap1302_write_context_reg(sd, context, CNTX_HEIGHT, AP1302_REG16);
+	ap1302_read_context_reg(sd, context, CNTX_OUT_FMT, AP1302_REG16);
+	dev->cntx_config[context].out_fmt &= ~OUT_FMT_TYPE_MASK;
+	dev->cntx_config[context].out_fmt |= AP1302_FMT_UYVY422;
+	ap1302_write_context_reg(sd, context, CNTX_OUT_FMT, AP1302_REG16);
 
 	main_context = ap1302_get_context(sd);
 	if (context == main_context) {
@@ -855,6 +862,7 @@ static int ap1302_s_stream(struct v4l2_subdev *sd, int enable)
 
 	mutex_lock(&dev->input_lock);
 	context = ap1302_get_context(sd);
+	dev_dbg(&client->dev, "ap1302_s_stream. context=%d enable=%d\n", context, enable);
 	/* Switch context */
 	ap1302_i2c_read_reg(sd, REG_CTRL,
 			    AP1302_REG16, &reg_val);
