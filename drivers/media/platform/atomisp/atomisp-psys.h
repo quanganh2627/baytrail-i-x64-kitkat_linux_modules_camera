@@ -57,6 +57,11 @@ struct atomisp_buffer {
 #define ATOMISP_BUFFER_FLAG_OUTPUT	(1 << 1)
 #define ATOMISP_BUFFER_FLAG_MAPPED	(1 << 2)
 
+#define	ATOMISP_CMD_PRIORITY_HIGH	0
+#define	ATOMISP_CMD_PRIORITY_MED	1
+#define	ATOMISP_CMD_PRIORITY_LOW	2
+#define	ATOMISP_CMD_PRIORITY_NUM	3
+
 /**
  * struct atomisp_command - processing command
  * @id:	id of the command
@@ -68,7 +73,7 @@ struct atomisp_buffer {
  */
 struct atomisp_command {
 	uint32_t id;
-	int32_t priority;
+	uint32_t priority;
 	uint32_t bufcount;
 	struct atomisp_buffer __user *buffers;
 	uint32_t reserved[4];

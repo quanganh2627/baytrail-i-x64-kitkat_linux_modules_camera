@@ -65,9 +65,11 @@ struct atomisp_device {
 	/* Serialise access to everything below mutex. */
 	struct mutex mutex;
 	struct list_head fhs;
-	struct list_head commands;
+	struct list_head commands[ATOMISP_CMD_PRIORITY_NUM];
 	struct workqueue_struct	*run_cmd_queue;
 	struct work_struct run_cmd;
+
+	bool queue_empty;
 };
 
 #endif

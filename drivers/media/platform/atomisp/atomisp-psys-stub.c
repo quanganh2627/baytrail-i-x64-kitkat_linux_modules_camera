@@ -49,6 +49,11 @@ static const struct atomisp_capability caps = {
 	.driver = "atomisp-psys-stub",
 };
 
+static inline bool is_priority_valid(uint32_t priority)
+{
+	return priority < ATOMISP_CMD_PRIORITY_NUM;
+}
+
 static int atomisp_queue_event(struct atomisp_fh *fh, struct atomisp_event *e)
 {
 	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
@@ -159,22 +164,37 @@ static int psysstub_runisp(struct atomisp_run_cmd *cmd)
 	return err;
 }
 
+static struct atomisp_run_cmd *psysstub_get_next_cmd(struct atomisp_device *isp)
+{
+	struct atomisp_run_cmd *cmd = NULL;
+	int i;
+
+	mutex_lock(&isp->mutex);
+	/* start from highest piority */
+	for(i = 0; i < ATOMISP_CMD_PRIORITY_NUM; i++) {
+		if (list_empty(&isp->commands[i]))
+			continue;
+		cmd = list_first_entry(&isp->commands[i],
+				struct atomisp_run_cmd, list);
+		list_del(&cmd->list);
+		break;
+	}
+	if (!cmd)
+		isp->queue_empty = true;
+	mutex_unlock(&isp->mutex);
+	return cmd;
+}
+
 static void psysstub_run_cmd(struct work_struct *work)
 {
 	struct atomisp_device *isp = container_of(work, struct atomisp_device, run_cmd);
 	struct atomisp_run_cmd *cmd;
 
-	mutex_lock(&isp->mutex);
-	if (list_empty(&isp->commands)) {
-		mutex_unlock(&isp->mutex);
-		return;
-	}
-	cmd = list_first_entry(&isp->commands, struct atomisp_run_cmd, list);
-	list_del(&cmd->list);
-	mutex_unlock(&isp->mutex);
+	while ((cmd = psysstub_get_next_cmd(isp)) != NULL) {
+		psysstub_runisp(cmd);
 
-	psysstub_runisp(cmd);
-	kfree(cmd);
+		kfree(cmd);
+	}
 }
 
 static int atomisp_open(struct inode *inode, struct file *file)
@@ -322,14 +342,18 @@ static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user 
 
 	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", cmd->command.bufcount);
 
-	if (psysstub_validate_buffers(&cmd->command)) {
+	if (!is_priority_valid(cmd->command.priority) ||
+	    psysstub_validate_buffers(&cmd->command)) {
 		err = -EINVAL;
 		goto error;
 	}
 	cmd->fh = fh;
 
-	list_add_tail(&cmd->list, &isp->commands);
-	queue_work(isp->run_cmd_queue, &isp->run_cmd);
+	list_add_tail(&cmd->list, &isp->commands[cmd->command.priority]);
+	if (isp->queue_empty) {
+		queue_work(isp->run_cmd_queue, &isp->run_cmd);
+		isp->queue_empty = false;
+	}
 
 	return 0;
 
@@ -429,15 +453,18 @@ static int atomisp_release(struct inode *inode, struct file *file)
 	struct atomisp_fh *fh = file->private_data;
 	struct atomisp_kbuffer *bm, *bm0;
 	struct atomisp_run_cmd *cmd, *cmd0;
+	int i;
+
+	cancel_work_sync(&isp->run_cmd);
 
 	mutex_lock(&isp->mutex);
 	list_del(&fh->list);
 
-	cancel_work_sync(&isp->run_cmd);
-	list_for_each_entry_safe(cmd, cmd0, &isp->commands, list) {
-		list_del(&cmd->list);
-		kfree(cmd);
-	}
+	for (i = 0; i < ATOMISP_CMD_PRIORITY_NUM; i++)
+		list_for_each_entry_safe(cmd, cmd0, &isp->commands[i], list) {
+			list_del(&cmd->list);
+			kfree(cmd);
+		}
 
 	list_for_each_entry_safe(bm, bm0, &fh->bufmap, list) {
 		list_del(&bm->list);
@@ -465,6 +492,7 @@ static int atomisp_platform_probe(struct platform_device *pdev)
 {
 	struct atomisp_device *isp;
 	unsigned int minor;
+	int i;
 	int rval = -E2BIG;
 
 	mutex_lock(&atomisp_devices_mutex);
@@ -512,8 +540,10 @@ static int atomisp_platform_probe(struct platform_device *pdev)
 		goto out_unlock;
 	}
 	INIT_WORK(&isp->run_cmd, psysstub_run_cmd);
+	isp->queue_empty = true;
 
-	INIT_LIST_HEAD(&isp->commands);
+	for (i = 0; i < ATOMISP_CMD_PRIORITY_NUM; i++)
+		INIT_LIST_HEAD(&isp->commands[i]);
 
 	mutex_unlock(&atomisp_devices_mutex);
 	mutex_init(&isp->mutex);
