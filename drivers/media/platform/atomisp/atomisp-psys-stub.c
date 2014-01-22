@@ -142,10 +142,10 @@ out:
 	return err;
 }
 
-static int psysstub_runisp(struct atomisp_run_cmd *cmd)
+static int psysstub_runisp(struct atomisp_run_cmd *cmd,
+			   struct atomisp_device *isp)
 {
 	struct atomisp_event ev;
-	int err = 0;
 
 	if (!cmd)
 		return -EINVAL;
@@ -161,34 +161,52 @@ static int psysstub_runisp(struct atomisp_run_cmd *cmd)
 		msleep(500);
 		break;
 	default:
-		err = -EINVAL;
+		return 0;
 	}
+
+	mutex_lock(&isp->mutex);
+	if (cmd->suspended) {
+		cmd->suspended = false;
+		mutex_unlock(&isp->mutex);
+		return -EINTR;
+	}
+	mutex_unlock(&isp->mutex);
 
 	ev.type = ATOMISP_EVENT_TYPE_CMD_COMPLETE;
 	ev.ev.cmd_done.id = cmd->command.id;
 	atomisp_queue_event(cmd->fh, &ev);
 
-	return err;
+	return 0;
 }
 
-static struct atomisp_run_cmd *psysstub_get_next_cmd(struct atomisp_device *isp)
+
+static struct atomisp_run_cmd *__psysstub_next_cmd(struct atomisp_device *isp)
 {
 	struct atomisp_run_cmd *cmd = NULL;
 	int i;
 
-	mutex_lock(&isp->mutex);
 	/* start from highest piority */
 	for(i = 0; i < ATOMISP_CMD_PRIORITY_NUM; i++) {
 		if (list_empty(&isp->commands[i]))
 			continue;
 		cmd = list_first_entry(&isp->commands[i],
 				struct atomisp_run_cmd, list);
-		list_del(&cmd->list);
 		break;
 	}
 	if (!cmd)
 		isp->queue_empty = true;
+	return cmd;
+}
+
+static struct atomisp_run_cmd *psysstub_next_cmd(struct atomisp_device *isp)
+{
+
+	struct atomisp_run_cmd *cmd;
+
+	mutex_lock(&isp->mutex);
+	cmd = __psysstub_next_cmd(isp);
 	mutex_unlock(&isp->mutex);
+
 	return cmd;
 }
 
@@ -197,8 +215,13 @@ static void psysstub_run_cmd(struct work_struct *work)
 	struct atomisp_device *isp = container_of(work, struct atomisp_device, run_cmd);
 	struct atomisp_run_cmd *cmd;
 
-	while ((cmd = psysstub_get_next_cmd(isp)) != NULL) {
-		psysstub_runisp(cmd);
+	while ((cmd = psysstub_next_cmd(isp)) != NULL) {
+		if (psysstub_runisp(cmd, isp) == -EINTR)
+			continue;
+
+		mutex_lock(&isp->mutex);
+		list_del(&cmd->list);
+		mutex_unlock(&isp->mutex);
 
 		kfree(cmd);
 	}
@@ -336,6 +359,7 @@ static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user 
 	struct atomisp_fh *fh = file->private_data;
 	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
 	struct atomisp_run_cmd *cmd;
+	struct atomisp_run_cmd *cur_cmd;
 	int err;
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
@@ -357,7 +381,15 @@ static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user 
 	}
 	cmd->fh = fh;
 
-	list_add_tail(&cmd->list, &isp->commands[cmd->command.priority]);
+	cur_cmd = __psysstub_next_cmd(isp);
+	if (cur_cmd && cur_cmd->command.priority > cmd->command.priority) {
+		cur_cmd->suspended = true;
+		list_add(&cmd->list, &isp->commands[cmd->command.priority]);
+	} else {
+		list_add_tail(&cmd->list,
+			      &isp->commands[cmd->command.priority]);
+	}
+
 	if (isp->queue_empty) {
 		queue_work(isp->run_cmd_queue, &isp->run_cmd);
 		isp->queue_empty = false;

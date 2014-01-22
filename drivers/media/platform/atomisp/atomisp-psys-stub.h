@@ -48,6 +48,7 @@ struct atomisp_run_cmd {
 	struct atomisp_command command;
 	struct atomisp_fh *fh;
 	struct list_head list;
+	bool suspended;
 };
 
 struct atomisp_fh {
