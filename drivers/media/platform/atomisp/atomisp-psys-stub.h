@@ -29,7 +29,8 @@
 #define inode_to_atomisp_device(inode) \
 	container_of((inode)->i_cdev, struct atomisp_device, cdev)
 
-struct atomisp_event;
+#define device_to_atomisp_device(device) \
+	container_of(device, struct atomisp_device, dev)
 
 struct atomisp_kbuffer {
 	void *userptr;

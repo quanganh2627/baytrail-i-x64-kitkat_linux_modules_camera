@@ -51,6 +51,7 @@ static const struct atomisp_capability caps = {
 
 static int atomisp_queue_event(struct atomisp_fh *fh, struct atomisp_event *e)
 {
+	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
 	struct atomisp_eventq *eventq;
 	struct atomisp_event *ev;
 
@@ -63,7 +64,11 @@ static int atomisp_queue_event(struct atomisp_fh *fh, struct atomisp_event *e)
 	*ev = *e;
 	eventq->ev = ev;
 	dev_dbg(fh->dev, "queue event %u (%p)\n", ev->type, ev);
+
+	mutex_lock(&isp->mutex);
 	list_add_tail(&eventq->list, &fh->eventq);
+	mutex_unlock(&isp->mutex);
+
 	wake_up_interruptible(&fh->wait);
 	return 0;
 out:
@@ -155,12 +160,16 @@ static int psysstub_runisp(struct atomisp_fh *fh, struct atomisp_command *comman
 static void psysstub_run_cmd(struct work_struct *work)
 {
 	struct atomisp_fh *fh = container_of(work, struct atomisp_fh, run_cmd);
-
+	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
 	struct atomisp_run_cmd *cmd;
+
+	mutex_lock(&isp->mutex);
 	cmd = list_first_entry(&fh->command, struct atomisp_run_cmd, list);
+	list_del(&cmd->list);
+	mutex_unlock(&isp->mutex);
+
 	psysstub_runisp(fh, &cmd->command);
 
-	list_del(&cmd->list);
 	kfree(cmd);
 }
 
@@ -361,41 +370,54 @@ static long atomisp_ioctl_dqevent(struct file *file, struct atomisp_event __user
 static long atomisp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int err = 0;
+	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
 	void __user *argp = (void __user*)arg;
 
+	mutex_lock(&isp->mutex);
 	switch (cmd) {
 	case ATOMISP_IOC_QUERYCAP:
-		return copy_to_user((void __user*)arg,
-				&caps, sizeof caps);
+		err = copy_to_user(argp, &caps, sizeof caps);
+		break;
 	case ATOMISP_IOC_MAPBUF:
-		return atomisp_ioctl_mapbuf(file, argp);
+		err = atomisp_ioctl_mapbuf(file, argp);
+		break;
 	case ATOMISP_IOC_UNMAPBUF:
-		return atomisp_ioctl_unmapbuf(file, argp);
+		err = atomisp_ioctl_unmapbuf(file, argp);
+		break;
 	case ATOMISP_IOC_GETBUF:
-		return atomisp_ioctl_getbuf(file, argp);
+		err = atomisp_ioctl_getbuf(file, argp);
+		break;
 	case ATOMISP_IOC_PUTBUF:
-		return atomisp_ioctl_putbuf(file, argp);
+		err = atomisp_ioctl_putbuf(file, argp);
+		break;
 	case ATOMISP_IOC_QCMD:
-		return atomisp_ioctl_qcmd(file, argp);
+		err = atomisp_ioctl_qcmd(file, argp);
+		break;
 	case ATOMISP_IOC_DQEVENT:
-		return atomisp_ioctl_dqevent(file, argp);
+		err = atomisp_ioctl_dqevent(file, argp);
+		break;
 	default:
 		err = -ENOTTY;
 	}
+	mutex_unlock(&isp->mutex);
 	return err;
 }
 
 static unsigned int atomisp_poll(struct file *file, struct poll_table_struct *wait)
 {
 	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
 	unsigned int res = 0;
 
 	dev_dbg(fh->dev, "atomisp poll\n");
 
 	poll_wait(file, &fh->wait, wait);
 
+	mutex_lock(&isp->mutex);
 	if (!list_empty(&fh->eventq))
 		res = POLLIN;
+	mutex_unlock(&isp->mutex);
 
 	dev_dbg(fh->dev, "atomisp poll res %u\n", res);
 
