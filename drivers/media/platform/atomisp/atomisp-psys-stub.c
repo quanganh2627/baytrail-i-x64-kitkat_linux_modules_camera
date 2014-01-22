@@ -76,7 +76,11 @@ out:
 	return -ENOMEM;
 }
 
-static int validate_buffers(struct atomisp_command *command)
+/**
+ * This should be moved to a separate file as this part will be
+ * replaced by the actual PSYS hardware API.
+ */
+static int psysstub_validate_buffers(struct atomisp_command *command)
 {
 	struct atomisp_buffer *buffer;
 	struct psysparam *params;
@@ -126,17 +130,15 @@ out:
 	return err;
 }
 
-/**
- * This should be moved to a separate file as this part will be
- * replaced by the actual PSYS hardware API.
- */
-
-static int psysstub_runisp(struct atomisp_fh *fh, struct atomisp_command *command)
+static int psysstub_runisp(struct atomisp_run_cmd *cmd)
 {
 	struct atomisp_event ev;
 	int err = 0;
 
-	switch(command->id) {
+	if (!cmd)
+		return -EINVAL;
+
+	switch(cmd->command.id) {
 	case ATOMISP_PSYS_STUB_PREVIEW:
 		msleep(30);
 		break;
@@ -151,25 +153,27 @@ static int psysstub_runisp(struct atomisp_fh *fh, struct atomisp_command *comman
 	}
 
 	ev.type = ATOMISP_EVENT_TYPE_CMD_COMPLETE;
-	ev.ev.cmd_done.id = command->id;
-	atomisp_queue_event(fh, &ev);
+	ev.ev.cmd_done.id = cmd->command.id;
+	atomisp_queue_event(cmd->fh, &ev);
 
 	return err;
 }
 
 static void psysstub_run_cmd(struct work_struct *work)
 {
-	struct atomisp_fh *fh = container_of(work, struct atomisp_fh, run_cmd);
-	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
+	struct atomisp_device *isp = container_of(work, struct atomisp_device, run_cmd);
 	struct atomisp_run_cmd *cmd;
 
 	mutex_lock(&isp->mutex);
-	cmd = list_first_entry(&fh->command, struct atomisp_run_cmd, list);
+	if (list_empty(&isp->commands)) {
+		mutex_unlock(&isp->mutex);
+		return;
+	}
+	cmd = list_first_entry(&isp->commands, struct atomisp_run_cmd, list);
 	list_del(&cmd->list);
 	mutex_unlock(&isp->mutex);
 
-	psysstub_runisp(fh, &cmd->command);
-
+	psysstub_runisp(cmd);
 	kfree(cmd);
 }
 
@@ -185,21 +189,13 @@ static int atomisp_open(struct inode *inode, struct file *file)
 	init_waitqueue_head(&fh->wait);
 	INIT_LIST_HEAD(&fh->bufmap);
 	INIT_LIST_HEAD(&fh->eventq);
-	INIT_LIST_HEAD(&fh->command);
 
 	fh->dev = &isp->dev;
 	file->private_data = fh;
 
 	mutex_lock(&isp->mutex);
-	list_add(&fh->list, &isp->fhs);
 
-	fh->run_cmd_queue = alloc_workqueue(caps.driver, WQ_UNBOUND, 1);
-	if (fh->run_cmd_queue == NULL) {
-		dev_err(fh->dev, "Failed to initialize file inject workq\n");
-		mutex_unlock(&isp->mutex);
-		return -ENOMEM;
-	}
-	INIT_WORK(&fh->run_cmd, psysstub_run_cmd);
+	list_add(&fh->list, &isp->fhs);
 
 	mutex_unlock(&isp->mutex);
 
@@ -311,6 +307,7 @@ static long atomisp_ioctl_putbuf(struct file *file, struct atomisp_buffer __user
 static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user *arg)
 {
 	struct atomisp_fh *fh = file->private_data;
+	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
 	struct atomisp_run_cmd *cmd;
 	int err;
 
@@ -325,13 +322,14 @@ static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user 
 
 	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", cmd->command.bufcount);
 
-	if (validate_buffers(&cmd->command)) {
+	if (psysstub_validate_buffers(&cmd->command)) {
 		err = -EINVAL;
 		goto error;
 	}
+	cmd->fh = fh;
 
-	list_add_tail(&cmd->list, &fh->command);
-	queue_work(fh->run_cmd_queue, &fh->run_cmd);
+	list_add_tail(&cmd->list, &isp->commands);
+	queue_work(isp->run_cmd_queue, &isp->run_cmd);
 
 	return 0;
 
@@ -434,19 +432,16 @@ static int atomisp_release(struct inode *inode, struct file *file)
 
 	mutex_lock(&isp->mutex);
 	list_del(&fh->list);
-	list_for_each_entry_safe(bm, bm0, &fh->bufmap, list) {
-		list_del(&bm->list);
-		kfree(bm);
-	}
 
-	cancel_work_sync(&fh->run_cmd);
-	list_for_each_entry_safe(cmd, cmd0, &fh->command, list) {
+	cancel_work_sync(&isp->run_cmd);
+	list_for_each_entry_safe(cmd, cmd0, &isp->commands, list) {
 		list_del(&cmd->list);
 		kfree(cmd);
 	}
-	if (fh->run_cmd_queue) {
-		destroy_workqueue(fh->run_cmd_queue);
-		fh->run_cmd_queue = NULL;
+
+	list_for_each_entry_safe(bm, bm0, &fh->bufmap, list) {
+		list_del(&bm->list);
+		kfree(bm);
 	}
 	mutex_unlock(&isp->mutex);
 	kfree(fh);
@@ -510,6 +505,16 @@ static int atomisp_platform_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, isp);
 
+	isp->run_cmd_queue = alloc_workqueue(caps.driver, WQ_UNBOUND, 1);
+	if (isp->run_cmd_queue == NULL) {
+		dev_err(&isp->dev, "Failed to initialize workq\n");
+		rval = -ENOMEM;
+		goto out_unlock;
+	}
+	INIT_WORK(&isp->run_cmd, psysstub_run_cmd);
+
+	INIT_LIST_HEAD(&isp->commands);
+
 	mutex_unlock(&atomisp_devices_mutex);
 	mutex_init(&isp->mutex);
 	INIT_LIST_HEAD(&isp->fhs);
@@ -527,6 +532,11 @@ static int atomisp_platform_remove(struct platform_device *pdev)
 	struct atomisp_device *isp = platform_get_drvdata(pdev);
 
 	mutex_lock(&atomisp_devices_mutex);
+
+	if (isp->run_cmd_queue) {
+		destroy_workqueue(isp->run_cmd_queue);
+		isp->run_cmd_queue = NULL;
+	}
 
 	device_unregister(&isp->dev);
 

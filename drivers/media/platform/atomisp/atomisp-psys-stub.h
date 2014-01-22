@@ -46,6 +46,7 @@ struct atomisp_eventq {
 
 struct atomisp_run_cmd {
 	struct atomisp_command command;
+	struct atomisp_fh *fh;
 	struct list_head list;
 };
 
@@ -55,9 +56,6 @@ struct atomisp_fh {
 	struct list_head list;
 	struct list_head bufmap;
 	struct list_head eventq;
-	struct list_head command;
-	struct workqueue_struct	*run_cmd_queue;
-	struct work_struct run_cmd;
 };
 
 struct atomisp_device {
@@ -67,6 +65,9 @@ struct atomisp_device {
 	/* Serialise access to everything below mutex. */
 	struct mutex mutex;
 	struct list_head fhs;
+	struct list_head commands;
+	struct workqueue_struct	*run_cmd_queue;
+	struct work_struct run_cmd;
 };
 
 #endif
