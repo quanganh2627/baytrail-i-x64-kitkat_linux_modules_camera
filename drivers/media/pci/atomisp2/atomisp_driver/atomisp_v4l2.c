@@ -47,7 +47,7 @@
 #include <linux/intel_mid_pm.h>
 #include <asm/intel-mid.h>
 
-#define ATOMISP_INTERNAL_PM	(IS_BYT || IS_MOFD)
+#define ATOMISP_INTERNAL_PM	(IS_MOFD)
 
 /* set reserved memory pool size in page */
 unsigned int repool_pgnr;
@@ -1202,6 +1202,12 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			ATOMISP_HW_STEPPING_B0;
 #endif
 		atomisp_hmm_is_2400 = true;
+		/*
+		 * for BYT/CHT we are put isp into D3cold to avoid pci registers access
+		 * in power off. Set d3cold_delay to 0 since default 100ms is not
+		 * necessary.
+		 */
+		isp->pdev->d3cold_delay = 0;
 		switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 			case ATOMISP_PCI_DEVICE_SOC_MRFLD:
 				isp->dfs = &dfs_config_merr;
@@ -1240,6 +1246,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			ATOMISP_HW_STEPPING_A0;
 		atomisp_hmm_is_2400 = true;
 		isp->dfs = &dfs_config_cht;
+		isp->pdev->d3cold_delay = 0;
 		break;
 	default:
 		/* Medfield and Clovertrail. */
