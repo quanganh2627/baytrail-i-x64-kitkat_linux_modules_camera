@@ -22,6 +22,7 @@
 
 #include <linux/cdev.h>
 #include <linux/list.h>
+#include "atomisp-psys.h"
 
 #define ATOMISP_PSYS_STUB_NAME		"atomisp-psys-stub"
 
@@ -43,7 +44,7 @@ struct atomisp_eventq {
 };
 
 struct atomisp_run_cmd {
-	struct atomisp_command *command;
+	struct atomisp_command command;
 	struct list_head list;
 };
 

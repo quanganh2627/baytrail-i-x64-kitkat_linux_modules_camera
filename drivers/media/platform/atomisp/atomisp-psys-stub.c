@@ -125,26 +125,6 @@ out:
  * This should be moved to a separate file as this part will be
  * replaced by the actual PSYS hardware API.
  */
-static int psysstub_command_prepare(struct atomisp_fh *fh,
-				    struct atomisp_command *command)
-{
-	struct atomisp_run_cmd *cmd;
-
-	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
-	if (!cmd)
-		return -ENOMEM;
-
-	if (validate_buffers(command)) {
-		kfree(cmd);
-		return -EINVAL;
-	}
-
-	cmd->command = command;
-	list_add_tail(&cmd->list, &fh->command);
-	queue_work(fh->run_cmd_queue, &fh->run_cmd);
-
-	return 0;
-}
 
 static int psysstub_runisp(struct atomisp_fh *fh, struct atomisp_command *command)
 {
@@ -178,10 +158,9 @@ static void psysstub_run_cmd(struct work_struct *work)
 
 	struct atomisp_run_cmd *cmd;
 	cmd = list_first_entry(&fh->command, struct atomisp_run_cmd, list);
-	psysstub_runisp(fh, cmd->command);
+	psysstub_runisp(fh, &cmd->command);
 
 	list_del(&cmd->list);
-	kfree(cmd->command);
 	kfree(cmd);
 }
 
@@ -323,18 +302,33 @@ static long atomisp_ioctl_putbuf(struct file *file, struct atomisp_buffer __user
 static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user *arg)
 {
 	struct atomisp_fh *fh = file->private_data;
-	struct atomisp_command *command;
+	struct atomisp_run_cmd *cmd;
+	int err;
 
-	command = kzalloc(sizeof(*command), GFP_KERNEL);
-	if (!command)
+	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
+	if (!cmd)
 		return -ENOMEM;
 
-	if (copy_from_user(command, arg, sizeof (*command)))
-		return -EFAULT;
+	if (copy_from_user(&cmd->command, arg, sizeof (cmd->command))) {
+		err = -EFAULT;
+		goto error;
+	}
 
-	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", command->bufcount);
+	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", cmd->command.bufcount);
 
-	return psysstub_command_prepare(fh, command);
+	if (validate_buffers(&cmd->command)) {
+		err = -EINVAL;
+		goto error;
+	}
+
+	list_add_tail(&cmd->list, &fh->command);
+	queue_work(fh->run_cmd_queue, &fh->run_cmd);
+
+	return 0;
+
+error:
+	kfree(cmd);
+	return err;
 }
 
 static long atomisp_ioctl_dqevent(struct file *file, struct atomisp_event __user *arg)
@@ -426,7 +420,6 @@ static int atomisp_release(struct inode *inode, struct file *file)
 	cancel_work_sync(&fh->run_cmd);
 	list_for_each_entry_safe(cmd, cmd0, &fh->command, list) {
 		list_del(&cmd->list);
-		kfree(cmd->command);
 		kfree(cmd);
 	}
 	if (fh->run_cmd_queue) {
