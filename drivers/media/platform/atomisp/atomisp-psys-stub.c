@@ -54,6 +54,13 @@ static inline bool is_priority_valid(uint32_t priority)
 	return priority < ATOMISP_CMD_PRIORITY_NUM;
 }
 
+static inline bool is_id_valid(int32_t id)
+{
+	return id == ATOMISP_PSYS_STUB_PREVIEW ||
+	       id == ATOMISP_PSYS_STUB_VIDEO ||
+	       id == ATOMISP_PSYS_STUB_CAPTURE;
+}
+
 static int atomisp_queue_event(struct atomisp_fh *fh, struct atomisp_event *e)
 {
 	struct atomisp_device *isp = device_to_atomisp_device(fh->dev);
@@ -343,6 +350,7 @@ static long atomisp_ioctl_qcmd(struct file *file, struct atomisp_command __user 
 	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", cmd->command.bufcount);
 
 	if (!is_priority_valid(cmd->command.priority) ||
+	    !is_id_valid(cmd->command.id) ||
 	    psysstub_validate_buffers(&cmd->command)) {
 		err = -EINVAL;
 		goto error;
