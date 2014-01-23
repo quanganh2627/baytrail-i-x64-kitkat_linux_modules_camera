@@ -30,6 +30,8 @@ CFLAGS_libmsrlisthelper.o += -Werror
 
 obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o
 
+obj-$(CONFIG_VIDEO_CSI_XACTOR) += xactor_x.o
+
 #
 # Makefile for flash drivers
 #
