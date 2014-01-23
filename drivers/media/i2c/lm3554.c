@@ -175,29 +175,17 @@ static int lm3554_set_config1(struct lm3554 *flash)
  * Hardware reset and trigger
  */
 
-static int lm3554_hw_reset(struct i2c_client *client)
+static void lm3554_hw_reset(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct lm3554 *flash = to_lm3554(sd);
 	struct lm3554_platform_data *pdata = flash->pdata;
-	int ret;
-
-	ret = gpio_request(pdata->gpio_reset, "flash reset");
-	if (ret < 0)
-		return ret;
-
-	ret = gpio_direction_output(pdata->gpio_reset, 1);
-	if (ret < 0)
-		return ret;
 
 	gpio_set_value(pdata->gpio_reset, 0);
 	msleep(50);
 
 	gpio_set_value(pdata->gpio_reset, 1);
 	msleep(50);
-
-	gpio_free(pdata->gpio_reset);
-	return ret;
 }
 
 static void lm3554_flash_off_delay(long unsigned int arg)
@@ -764,18 +752,31 @@ static int lm3554_gpio_init(struct i2c_client *client)
 	struct lm3554_platform_data *pdata = flash->pdata;
 	int ret;
 
-	ret = gpio_request(pdata->gpio_strobe, "flash");
+	ret = gpio_request(pdata->gpio_reset, "flash reset");
 	if (ret < 0)
 		return ret;
 
+	ret = gpio_direction_output(pdata->gpio_reset, 1);
+	if (ret < 0)
+		goto err_gpio_reset;
+
+	ret = gpio_request(pdata->gpio_strobe, "flash");
+	if (ret < 0)
+		goto err_gpio_dir_reset;
+
 	ret = gpio_direction_output(pdata->gpio_strobe, 0);
 	if (ret < 0)
-		goto err_gpio_flash;
+		goto err_gpio_strobe;
 
 	return 0;
 
-err_gpio_flash:
+err_gpio_strobe:
 	gpio_free(pdata->gpio_strobe);
+err_gpio_dir_reset:
+	gpio_direction_output(pdata->gpio_reset, 0);
+err_gpio_reset:
+	gpio_free(pdata->gpio_reset);
+
 	return ret;
 }
 
@@ -790,8 +791,12 @@ static int lm3554_gpio_uninit(struct i2c_client *client)
 	if (ret < 0)
 		return ret;
 
-	gpio_free(pdata->gpio_strobe);
+	ret = gpio_direction_output(pdata->gpio_reset, 0);
+	if (ret < 0)
+		return ret;
 
+	gpio_free(pdata->gpio_strobe);
+	gpio_free(pdata->gpio_reset);
 	return 0;
 }
 
