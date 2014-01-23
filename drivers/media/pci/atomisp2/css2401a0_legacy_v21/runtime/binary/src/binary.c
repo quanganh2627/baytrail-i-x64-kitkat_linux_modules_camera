@@ -131,7 +131,7 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 	dvs_info->num_hor_coefs     = binary->dis_hor_coef_num_3a;
 	dvs_info->num_ver_coefs     = binary->dis_ver_coef_num_3a;
 
-#if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
+#if !defined(SYSTEM_css_skycam_a0t_system)
 	/* 3A statistics grid */
 	s3a_info->enable            = binary->info->sp.enable.s3a;
 	s3a_info->width             = binary->s3atbl_width;
@@ -148,11 +148,11 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 	s3a_info->has_histogram     = 0;
 #endif
 #else	//SYSTEM_css_skycam_a0t_system defined
-	s3a_info->ae_enable         = binary->info->sp.enable.ae;
+        s3a_info->ae_enable         = binary->info->sp.enable.ae;
 	s3a_info->af_enable         = binary->info->sp.enable.af;
 	s3a_info->awb_fr_enable     = binary->info->sp.enable.awb_fr_acc;
 	s3a_info->awb_enable        = binary->info->sp.enable.awb_acc;
-	s3a_info->elem_bit_depth    = SH_CSS_BAYER_BITS;
+        s3a_info->elem_bit_depth    = SH_CSS_BAYER_BITS;
 	//todo grid config	
 #endif
 #if defined(HAS_VAMEM_VERSION_2)

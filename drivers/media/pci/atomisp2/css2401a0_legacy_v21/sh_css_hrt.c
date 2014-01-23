@@ -24,6 +24,7 @@
 #include "sh_css_hrt.h"
 
 #include "device_access.h"
+#include "assert_support.h"
 
 #define __INLINE_EVENT__
 #include "event_fifo.h"

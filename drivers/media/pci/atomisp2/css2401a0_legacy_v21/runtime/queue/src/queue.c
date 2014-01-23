@@ -21,6 +21,7 @@
 
 #include "ia_css_queue.h"
 #include "ia_css_circbuf.h"
+#include "assert_support.h"
 #include "platform_support.h"
 #include "queue_access.h"
 

@@ -44,6 +44,7 @@ hrt_sleep(void)
 #define CSS_ALIGN(d, a) _declspec(align(a)) d
 #define inline      __inline
 #define __func__    __FUNCTION__
+#define OP_std_modadd(base, offset, size) ((base+offset)%(size))
 
 #define snprintf(buffer, size, ...) \
 	_snprintf_s(buffer, size, size, __VA_ARGS__)
@@ -70,6 +71,7 @@ hrt_sleep(void)
 #define UINT32_MAX UINT_MAX
 #define UCHAR_MAX  (255)
 
+#define OP_std_modadd(base, offset, size) ((base+offset)%(size))
 #define CSS_ALIGN(d, a) d __attribute__((aligned(a)))
 
 /*
@@ -87,6 +89,13 @@ hrt_sleep(void)
 #include <stdio.h>
 
 #define CSS_ALIGN(d, a) d __attribute__((aligned(a)))
+#if !defined(__ISP) && !defined(__SP)
+/*
+ * For SP and ISP, SDK provides the definition of OP_std_modadd.
+ * We need it only for host
+ */
+#define OP_std_modadd(base, offset, size) ((base+offset)%(size))
+#endif
 
 #else /* default is for the FIST environment */
 /*

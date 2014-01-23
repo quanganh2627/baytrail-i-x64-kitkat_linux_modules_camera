@@ -84,7 +84,6 @@ struct ia_css_pipe {
 	struct ia_css_frame		out_frame_struct;
 	struct ia_css_frame		vf_frame_struct;
 	struct ia_css_frame		*continuous_frames[NUM_CONTINUOUS_FRAMES];
-	struct ia_css_metadata	*cont_md_buffers[NUM_CONTINUOUS_FRAMES];
 	union {
 		struct ia_css_preview_settings preview;
 		struct ia_css_video_settings   video;
