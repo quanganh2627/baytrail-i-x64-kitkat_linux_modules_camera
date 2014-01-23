@@ -1,2 +1,2 @@
-obj-$(CONFIG_VIDEO_ATOMISP_NG)	+= drivers/media/pci/atomisp/
-obj-$(CONFIG_ATOMISP_NG_STUB)	+= drivers/media/platform/atomisp/
+obj-$(CONFIG_VIDEO_CSS2600)	+= drivers/media/pci/css2600/
+obj-$(CONFIG_CSS2600_STUB)	+= drivers/media/platform/css2600/

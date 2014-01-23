@@ -1,6 +1,6 @@
-source "drivers/media/atomisp/drivers/media/pci/atomisp/Kconfig"
+source "drivers/media/css2600/drivers/media/pci/css2600/Kconfig"
 
-config ATOMISP_NG_STUB
+config CSS2600_STUB
 	tristate "Intel Atom ISP stubs"
 	---help---
 	Why not? :-)
