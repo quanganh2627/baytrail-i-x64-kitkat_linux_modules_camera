@@ -148,7 +148,6 @@
 
 #if defined(IS_ISP_2500_SYSTEM)
 static struct sh_css_acc_cluster_parameters acc_cluster_parameters;
-static struct isp_acc_param sh_css_acc_cluster_parameters;
 #endif
 
 /* We keep a second copy of the ptr struct for the SP to access.
@@ -882,7 +881,7 @@ ia_css_get_dvs2_statistics(struct ia_css_dvs2_statistics           *host_stats,
 			"sh_css_get_dvs2_statistics() leave: void\n");
 }
 
-#if !defined(HAS_NO_HMEM) &&  !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
+#if !defined(HAS_NO_HMEM) &&  !defined(SYSTEM_css_skycam_a0t_system)
 static void get_3a_stats_from_hmem(struct ia_css_3a_statistics *host_stats,
 		hrt_vaddress ddr_ptr) {
 #if defined(IS_ISP_2500_SYSTEM)
@@ -955,7 +954,7 @@ return;
 }
 #endif
 
-#if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
+#if !defined(SYSTEM_css_skycam_a0t_system)
 static void get_3a_stats_from_dmem(struct ia_css_3a_statistics *host_stats,
 		hrt_vaddress ddr_ptr) {
 
@@ -989,7 +988,7 @@ merge_hi14bit_lo14bit(unsigned short hi, unsigned short lo)
 	return val;
 }
 
-#if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
+#if !defined(SYSTEM_css_skycam_a0t_system)
 static void get_3a_stats_from_vmem(struct ia_css_3a_statistics *host_stats,
 		hrt_vaddress ddr_ptr_hi, hrt_vaddress ddr_ptr_lo) {
 
@@ -2115,7 +2114,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 }
 #endif
 
-#if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
+#if !defined(SYSTEM_css_skycam_a0t_system)
 void
 ia_css_get_3a_statistics(struct ia_css_3a_statistics           *host_stats,
 			 const struct ia_css_isp_3a_statistics *isp_stats)
@@ -2138,7 +2137,7 @@ ia_css_get_3a_statistics(struct ia_css_3a_statistics           *host_stats,
 				       isp_stats->data.vmem.s3a_tbl_hi,
 				       isp_stats->data.vmem.s3a_tbl_lo);
 	}
-#if !defined(HAS_NO_HMEM) && !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
+#if !defined(HAS_NO_HMEM) && !defined(SYSTEM_css_skycam_a0t_system)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "3A: HMEM\n");
 	get_3a_stats_from_hmem(host_stats,
 			       isp_stats->data_hmem.rgby_tbl);
@@ -2867,17 +2866,6 @@ ia_css_metadata_free(struct ia_css_metadata *me)
 		"ia_css_metadata_free() leave: return_void\n");
 }
 
-void
-ia_css_metadata_free_multiple(unsigned int num_bufs, struct ia_css_metadata **bufs)
-{
-	unsigned int i;
-
-	if (bufs != NULL) {
-		for (i = 0; i < num_bufs; i++)
-			ia_css_metadata_free(bufs[i]);
-	}
-}
-
 unsigned g_param_buffer_dequeue_count = 0;
 unsigned g_param_buffer_enqueue_count = 0;
 
@@ -2948,13 +2936,6 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	ddr_ptrs->acc_cluster_data_for_sp = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
 				mmgr_malloc(sizeof(sh_css_acc_cluster_parameters_t)));
 	succ &= (ddr_ptrs->acc_cluster_data_for_sp != mmgr_NULL);
-#endif
-
-#if defined(IS_ISP_2500_SYSTEM)
-	ddr_ptrs_size->acc_cluster_params_for_sp = sizeof(struct isp_acc_param);
-	ddr_ptrs->acc_cluster_params_for_sp = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
-				mmgr_malloc(sizeof(struct isp_acc_param)));
-	succ &= (ddr_ptrs->acc_cluster_params_for_sp != mmgr_NULL);
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -3477,7 +3458,6 @@ static void sh_css_update_isp_mem_params_to_ddr(
 void
 sh_css_update_acc_cluster_data_to_ddr(hrt_vaddress ddr_ptr)
 {
-	size_t size = sizeof(sh_css_acc_cluster_parameters_t);
 #ifdef HRT_CSIM
 	/* ispparm struct is read with DMA which reads
 	 * multiples of the DDR word with (32 bytes):
@@ -3486,38 +3466,15 @@ sh_css_update_acc_cluster_data_to_ddr(hrt_vaddress ddr_ptr)
 	unsigned int aligned_width, padding_bytes;
 	hrt_vaddress pad_ptr;
 
-	aligned_width = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
-	padding_bytes = aligned_width - size;
-	pad_ptr = ddr_ptr + size;
+	aligned_width = CEIL_MUL(sizeof(sh_css_acc_cluster_parameters_t),
+				 HIVE_ISP_DDR_WORD_BYTES);
+	padding_bytes = aligned_width - sizeof(sh_css_acc_cluster_parameters_t);
+	pad_ptr = ddr_ptr + sizeof(sh_css_acc_cluster_parameters_t);
 	mmgr_clear(pad_ptr, padding_bytes);
 #endif
 	mmgr_store(ddr_ptr,
 	     &acc_cluster_parameters,
-	     size);
-}
-#endif
-
-#if defined(IS_ISP_2500_SYSTEM)
-void
-sh_css_update_acc_cluster_params_to_ddr(hrt_vaddress ddr_ptr)
-{
-	size_t size = sizeof(struct isp_acc_param);
-#if defined(HRT_CSIM)
-	/* ispparm struct is read with DMA which reads
-	 * multiples of the DDR word with (32 bytes):
-	 * So we pad with zeroes to prevent warnings in csim.
-	 */
-	unsigned int aligned_width, padding_bytes;
-	hrt_vaddress pad_ptr;
-
-	aligned_width = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
-	padding_bytes = aligned_width - size;
-	pad_ptr = ddr_ptr + size;
-	mmgr_clear(pad_ptr, padding_bytes);
-#endif
-	mmgr_store(ddr_ptr,
-	     &sh_css_acc_cluster_parameters,
-	     size);
+	     sizeof(sh_css_acc_cluster_parameters_t));
 }
 #endif
 
@@ -3634,7 +3591,6 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 #else /* defined(IS_ISP_2500_SYSTEM) */
 	sh_css_process_product_specific(&params->isp_parameters,&params->isp_params_changed);
 	sh_css_process_acc_cluster_parameters(stream, &acc_cluster_parameters, &acc_cluster_params_changed );
-	sh_css_process_acc_cluster_parameters2(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed );
 #endif
 
 	/* now make the map available to the sp */
@@ -3748,17 +3704,6 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 				  true,
 				  &err);
 			sh_css_update_acc_cluster_data_to_ddr( cur_map->acc_cluster_data_for_sp );
-		}
-#endif
-#if defined(IS_ISP_2500_SYSTEM)
-		if (acc_cluster_params_changed || params->isp_params_changed)
-		{
-			reallocate_buffer(&cur_map->acc_cluster_params_for_sp ,
-				  &cur_map_size->acc_cluster_params_for_sp ,
-				  cur_map_size->acc_cluster_params_for_sp ,
-				  true,
-				  &err);
-			sh_css_update_acc_cluster_params_to_ddr( cur_map->acc_cluster_params_for_sp );
 		}
 #endif
 

@@ -22,6 +22,7 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "assert_support.h"
 
 #include "ia_css_csc.host.h"
 

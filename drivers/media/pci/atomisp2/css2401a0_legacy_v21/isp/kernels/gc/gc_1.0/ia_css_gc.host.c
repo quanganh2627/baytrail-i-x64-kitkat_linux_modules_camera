@@ -23,6 +23,7 @@
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
+#include "assert_support.h"
 #include "vamem.h"
 
 #include "ia_css_gc.host.h"

@@ -30,7 +30,6 @@
 
 #include "type_support.h"
 #include "platform_support.h"
-#include "math_support.h"
 #include "storage_class.h"
 #include "ia_css_circbuf_comm.h"
 

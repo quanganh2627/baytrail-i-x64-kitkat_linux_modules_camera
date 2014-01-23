@@ -577,7 +577,6 @@ ia_css_dma_configure_from_info(
 	config->stride = info->padded_width * elems_wb;
 	config->width  = info->res.width;
 	config->crop   = 0;
-	assert (config->width <= info->padded_width);
 }
 
 /**************************************************************************
@@ -625,7 +624,7 @@ static void frame_init_raw_single_plane(
 {
 	unsigned int stride;
 	assert(frame != NULL);
-
+	
 	stride = HIVE_ISP_DDR_WORD_BYTES *
 			CEIL_DIV(subpixels_per_line,
 				HIVE_ISP_DDR_WORD_BITS / bits_per_pixel);

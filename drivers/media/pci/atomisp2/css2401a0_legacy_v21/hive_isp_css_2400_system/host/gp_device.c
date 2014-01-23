@@ -19,7 +19,6 @@
  *
  */
 
-#include "assert_support.h"
 #include "gp_device.h"
 
 #ifndef __INLINE_GP_DEVICE__

@@ -26,6 +26,7 @@
 #else
 #include <stdbool.h>
 #endif
+#include <assert_support.h>
 
 
 enum ia_css_err ia_css_rmgr_init(void)
