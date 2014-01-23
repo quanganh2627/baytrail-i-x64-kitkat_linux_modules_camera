@@ -392,67 +392,48 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 	}
 }
 
-static void __dump_stream_config(struct atomisp_sub_device *asd)
+static void __dump_stream_config(struct atomisp_sub_device *asd,
+        struct atomisp_stream_env *stream_env)
 {
 	struct atomisp_device *isp = asd->isp;
 	struct ia_css_stream_config *s_config;
-	int i, j;
-	bool valid_stream;
+	int j;
+	bool valid_stream = false;
 
-	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
-		valid_stream = false;
-		for (j = 0; j < IA_CSS_PIPE_ID_NUM; j++) {
-			if (asd->stream_env[i].pipes[j]) {
-				__dump_pipe_config(asd, &asd->stream_env[i], j);
-				valid_stream = true;
-			}
+	for (j = 0; j < IA_CSS_PIPE_ID_NUM; j++) {
+		if (stream_env->pipes[j]) {
+			__dump_pipe_config(asd, stream_env, j);
+			valid_stream = true;
 		}
-		if (!valid_stream)
-			continue;
-		s_config = &asd->stream_env[i].stream_config;
-		dev_dbg(isp->dev,
-			"dumping stream config[%d]:\n", i);
-		dev_dbg(isp->dev,
-			"stream_config.mode=%d.\n",
-			s_config->mode);
-		dev_dbg(isp->dev,
-			"stream_config.input_res w=%d, h=%d.\n",
+	}
+	if (!valid_stream)
+		return;
+	s_config = &stream_env->stream_config;
+	dev_dbg(isp->dev, "stream_config.mode=%d.\n", s_config->mode);
+	dev_dbg(isp->dev, "stream_config.input_res w=%d, h=%d.\n",
 			s_config->input_res.width,
 			s_config->input_res.height);
-		dev_dbg(isp->dev,
-			"stream_config.effective_res w=%d, h=%d.\n",
+	dev_dbg(isp->dev, "stream_config.effective_res w=%d, h=%d.\n",
 			s_config->effective_res.width,
 			s_config->effective_res.height);
-		dev_dbg(isp->dev,
-			"stream_config.format=%d.\n",
-			s_config->format);
-		dev_dbg(isp->dev,
-			"stream_config.bayer_order=%d.\n",
+	dev_dbg(isp->dev, "stream_config.format=%d.\n", s_config->format);
+	dev_dbg(isp->dev, "stream_config.bayer_order=%d.\n",
 			s_config->bayer_order);
-		dev_dbg(isp->dev,
-			"stream_config.2ppc=%d.\n",
+	dev_dbg(isp->dev, "stream_config.2ppc=%d.\n",
 			s_config->two_pixels_per_clock);
-		dev_dbg(isp->dev,
-			"stream_config.online=%d.\n",
-			s_config->online);
-		dev_dbg(isp->dev,
-			"stream_config.continuous=%d.\n",
+	dev_dbg(isp->dev, "stream_config.online=%d.\n", s_config->online);
+	dev_dbg(isp->dev, "stream_config.continuous=%d.\n",
 			s_config->continuous);
-		dev_dbg(isp->dev,
-			"stream_config.channel_id=%d.\n",
+	dev_dbg(isp->dev, "stream_config.channel_id=%d.\n",
 			s_config->channel_id);
 #ifdef CSS21
-		dev_dbg(isp->dev,
-			"stream_config.init_num_cont_raw_buf=%d.\n",
+	dev_dbg(isp->dev, "stream_config.init_num_cont_raw_buf=%d.\n",
 			s_config->init_num_cont_raw_buf);
-		dev_dbg(isp->dev,
-			"stream_config.target_num_cont_raw_buf=%d.\n",
+	dev_dbg(isp->dev, "stream_config.target_num_cont_raw_buf=%d.\n",
 			s_config->target_num_cont_raw_buf);
-		dev_dbg(isp->dev,
-			"stream_config.left_padding=%d.\n",
+	dev_dbg(isp->dev, "stream_config.left_padding=%d.\n",
 			s_config->left_padding);
 #endif
-	}
 }
 
 static int __destroy_stream(struct atomisp_sub_device *asd,
@@ -518,9 +499,12 @@ static int __create_stream(struct atomisp_sub_device *asd,
 		asd->continuous_raw_buffer_size->val;
 #endif /* CSS21 */
 	stream_env->stream_config.channel_id = stream_env->ch_id;
+
+	__dump_stream_config(asd, stream_env);
 	if (ia_css_stream_create(&stream_env->stream_config,
 	    pipe_index, multi_pipes, &stream_env->stream) != IA_CSS_SUCCESS)
 		return -EINVAL;
+
 	stream_env->stream_state = CSS_STREAM_CREATED;
 	return 0;
 }
@@ -528,7 +512,6 @@ static int __create_stream(struct atomisp_sub_device *asd,
 static int __create_streams(struct atomisp_sub_device *asd)
 {
 	int ret, i;
-	__dump_stream_config(asd);
 	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
 		ret = __create_stream(asd, &asd->stream_env[i]);
 		if (ret)
