@@ -23,7 +23,7 @@
 #define __TYPE_SUPPORT_H_INCLUDED__
 
 /* Per the DLI spec, types are in "type_support.h" and
- * "platform_support.h" is for uncalssified/to be refactored
+ * "platform_support.h" is for unclassified/to be refactored
  * platform specific definitions.
  */
 

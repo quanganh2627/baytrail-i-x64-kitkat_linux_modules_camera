@@ -22,8 +22,8 @@
 #ifndef __HOST_BBB_CFG_H_INCLUDED__
 #define __HOST_BBB_CFG_H_INCLUDED__
 
-#define USE2400
-//#define USE2600
+//#define USE2400
+#define USE2600
 
 
 /* consider to use same naming as cfg.dat from the SDK */
@@ -42,11 +42,11 @@
 #define NUM_SLICE_ELEMS 4
 #define ROUNDMODE           ROUND_NEAREST_EVEN
 
-#elif USE2600
+#elif defined(USE2600)
 
 #define NUM_BITS 16
 #define NUM_SLICE_ELEMS 8
-#define ROUNDMODE           ROUND_NEAREST_EVEN
+#define ROUNDMODE           ROUND_NEAREST_INF
 
 #else
 #error "unsupported system"

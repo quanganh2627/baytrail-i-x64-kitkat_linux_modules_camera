@@ -38,6 +38,7 @@
 #include "atomisp_internal.h"
 #include "atomisp_acc.h"
 #include "atomisp-regs.h"
+#include "atomisp_dfs_tables.h"
 #include "hmm/hmm.h"
 
 #include "hrt/hive_isp_css_mm_hrt.h"
@@ -929,6 +930,8 @@ static int atomisp_register_entities(struct atomisp_device *isp)
 	isp->inputs[isp->input_cnt].port = -1;
 	isp->inputs[isp->input_cnt].shading_table = NULL;
 	isp->inputs[isp->input_cnt].morph_table = NULL;
+	isp->inputs[isp->input_cnt].camera_caps =
+		    atomisp_get_default_camera_caps();
 	isp->inputs[isp->input_cnt++].camera = &isp->file_dev.sd;
 
 	if (isp->input_cnt < ATOM_ISP_MAX_INPUTS) {
@@ -1111,7 +1114,8 @@ static bool is_valid_device(struct pci_dev *dev,
 
 	switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
-	case ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED:
+	case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
+	case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
 		a0_max_id = ATOMISP_PCI_REV_MRFLD_A0_MAX;
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_BYT:
@@ -1210,7 +1214,8 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 #endif
 	switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
-	case ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED:
+	case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
+	case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
 	case ATOMISP_PCI_DEVICE_SOC_BYT:
 		isp->media_dev.hw_revision =
 			(ATOMISP_HW_REVISION_ISP2400
@@ -1221,6 +1226,20 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			ATOMISP_HW_STEPPING_B0;
 #endif
 		atomisp_hmm_is_2400 = true;
+		switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
+			case ATOMISP_PCI_DEVICE_SOC_MRFLD:
+				isp->dfs = &dfs_config_merr;
+				break;
+			case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
+				isp->dfs = &dfs_config_merr_1179;
+				break;
+			case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
+				isp->dfs = &dfs_config_merr_117a;
+				break;
+			case ATOMISP_PCI_DEVICE_SOC_BYT:
+				isp->dfs = &dfs_config_byt;
+				break;
+		}
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_ANN:
 	case ATOMISP_PCI_DEVICE_SOC_CHT:
@@ -1233,6 +1252,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			 << ATOMISP_HW_REVISION_SHIFT) |
 			ATOMISP_HW_STEPPING_A0;
 		atomisp_hmm_is_2400 = true;
+		isp->dfs = &dfs_config_isp2401;
 		break;
 	default:
 		/* Medfield and Clovertrail. */
@@ -1430,6 +1450,7 @@ static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
 	/* Merrifield */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1178)},
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1179)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x117a)},
 	/* Baytrail */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0f38)},
 #elif defined(ISP2401)

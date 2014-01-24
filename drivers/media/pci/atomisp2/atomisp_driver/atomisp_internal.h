@@ -63,7 +63,9 @@
 /* MRFLD with 0x1178: ISP freq can burst to 457MHz */
 #define ATOMISP_PCI_DEVICE_SOC_MRFLD	0x1178
 /* MRFLD with 0x1179: max ISP freq limited to 400MHz */
-#define ATOMISP_PCI_DEVICE_SOC_MRFLD_FREQ_LIMITED	0x1179
+#define ATOMISP_PCI_DEVICE_SOC_MRFLD_1179	0x1179
+/* MRFLD with 0x117a: max ISP freq is 400MHz and max freq at Vmin is 200MHz */
+#define ATOMISP_PCI_DEVICE_SOC_MRFLD_117A	0x117a
 #define ATOMISP_PCI_DEVICE_SOC_BYT	0x0f38
 #define ATOMISP_PCI_DEVICE_SOC_ANN	0x1478
 #define ATOMISP_PCI_DEVICE_SOC_CHT	0x22b8
@@ -148,14 +150,6 @@ struct atomisp_input_subdev {
 	struct atomisp_sub_device *asd;
 
 	const struct atomisp_camera_caps *camera_caps;
-};
-
-struct atomisp_freq_scaling_rule {
-	unsigned int width;
-	unsigned int height;
-	unsigned short fps;
-	unsigned int isp_freq;
-	unsigned int run_mode;
 };
 
 enum atomisp_dfs_mode {
@@ -306,6 +300,7 @@ struct atomisp_device {
 	bool need_gfx_throttle;
 
 	unsigned int mipi_frame_size;
+	const struct atomisp_dfs_config *dfs;
 };
 
 #define v4l2_dev_to_atomisp_device(dev) \

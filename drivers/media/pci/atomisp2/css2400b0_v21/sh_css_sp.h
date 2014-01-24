@@ -100,7 +100,8 @@ sh_css_init_host2sp_frame_data(void);
 void
 sh_css_update_host2sp_offline_frame(
 				unsigned frame_num,
-				struct ia_css_frame *frame);
+				struct ia_css_frame *frame,
+				struct ia_css_metadata *metadata);
 
 /**
  * @brief Get the right queue to operate on
