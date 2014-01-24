@@ -1794,8 +1794,6 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 			ia_css_stream_config_defaults(
 				&stream_env->stream_config);
 		}
-		atomisp_isp_parameters_clean_up(&asd->params.config);
-		asd->params.css_update_params_needed = false;
 	}
 
 	return 0;
