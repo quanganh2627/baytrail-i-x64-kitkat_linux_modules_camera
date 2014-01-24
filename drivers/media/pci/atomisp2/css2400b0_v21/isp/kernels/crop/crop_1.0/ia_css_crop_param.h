@@ -19,41 +19,21 @@
  *
  */
 
-#ifndef __ISP2600_OP2W_TYPES_H_INCLUDED__
-#define __ISP2600_OP2W_TYPES_H_INCLUDED__
+#ifndef __IA_CSS_CROP_PARAM_H
+#define __IA_CSS_CROP_PARAM_H
 
-/*
- * This file is part of the Multi-precision vector operations exstension package.
- */
+#ifdef __KERNEL__
+#include <linux/kernel.h>
+#else
+#include <stdint.h>
+#endif
 
-/*
- * Double-precision vector operations
- */
+#include "dma.h"
 
-/*
- * Prerequisites:
- *
- */
-#include "mpmath.h"
-#include "isp2600_config.h"
+/** Crop frame */
+struct sh_css_isp_crop_isp_config {
+	uint32_t width_a_over_b;
+	struct dma_port_config port_b;
+};
 
-/*
- * Single-precision data type specification
- */
-
-
-typedef mpsdata_t             tvector2w;
-typedef mpsdata_t       tscalar2w;
-typedef spsdata_t        tflags2w; // no double precision in flags
-
-typedef struct {
-	mpsdata_t slice[NUM_SLICE_ELEMS]; // array of slice elements.
-}        tslice2w;
-
-
-typedef struct {
-  tvector2w       d;
-  tflags2w        f;
-} tvector2w_tflags;
-
-#endif /* __ISP2600_OP2W_TYPES_H_INCLUDED__ */
+#endif /* __IA_CSS_CROP_PARAM_H */

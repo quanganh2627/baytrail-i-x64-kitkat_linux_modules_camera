@@ -19,22 +19,35 @@
  *
  */
 
-#ifndef __HOST_VEC_TYPES_H_INCLUDED__
-#define __HOST_VEC_TYPES_H_INCLUDED__
+#ifndef __ISP_OP2W_TYPES_H_INCLUDED__
+#define __ISP_OP2W_TYPES_H_INCLUDED__
 
-#if !defined(__HIVECC) && !defined(__CRUN)
+/*
+ * This file is part of the Multi-precision vector operations exstension package.
+ */
+
+/*
+ * Double-precision vector operations
+ */
+
+/*
+ * Prerequisites:
+ *
+ */
 #include "mpmath.h"
-#include "bbb_cfg.h"
+#include "isp_op1w_types.h"
 
-typedef struct { spudata_t elem[NUM_VEC_ELEMS];}    tvectoru;
-typedef struct { spsdata_t elem[NUM_VEC_ELEMS];}    tvector;
-typedef struct { spsdata_t elem[NUM_SLICE_ELEMS];}    tvectorslice;
-typedef struct { spsdata_t elem[NUM_VEC_ELEMS];}    tflags;
-
-#define __register
-#define MEM(a)
-
-#endif
+/*
+ * Single-precision data type specification
+ */
 
 
-#endif //__HOST_VEC_TYPES_H_INCLUDED__
+typedef mpsdata_t       tvector2w;
+typedef mpsdata_t       tscalar2w;
+
+typedef struct {
+  tvector2w       d;
+  tflags        f;
+} tvector2w_tflags;
+
+#endif /* __ISP_OP2W_TYPES_H_INCLUDED__ */

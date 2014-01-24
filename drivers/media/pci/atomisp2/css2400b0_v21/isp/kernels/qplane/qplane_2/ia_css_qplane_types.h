@@ -19,47 +19,20 @@
  *
  */
 
-#ifndef __ISP2600_OP1W_TYPES_H_INCLUDED__
-#define __ISP2600_OP1W_TYPES_H_INCLUDED__
+#ifndef __IA_CSS_QPLANE_TYPES_H
+#define __IA_CSS_QPLANE_TYPES_H
 
-/*
- * This file is part of the Multi-precision vector operations exstension package.
- */
- 
-/* 
- * Single-precision vector operations
- */
- 
-/*  
- * Prerequisites:
+/** qplane frame
  *
+ *  ISP block: qplane frame
  */
 
-#include "mpmath.h"
-#include "isp2600_config.h"
+#include "ia_css.h"
 
-/*
- * Single-precision data type specification
- */
+struct ia_css_qplane_configuration {
+	const struct sh_css_sp_pipeline *pipe;
+	const struct ia_css_frame_info  *info;
+};
 
+#endif /* __IA_CSS_QPLANE_TYPES_H */
 
-typedef mpsdata_t       tvector1w;
-typedef mpsdata_t       tscalar1w;
-typedef spsdata_t        tflags1w;
-
-typedef struct {
-	mpsdata_t slice[NUM_SLICE_ELEMS]; // array of slice elements.
-}        tslice1w;
-
-
-typedef  struct {
-  tvector1w       d;
-  tflags1w        f;
-} tvector1w_tflags1w;
-
-typedef  struct {
-  tvector1w       d;
-  tslice1w  s;
-} tvector1w_tslice1w;
-
-#endif /* __ISP2600_OP1W_TYPES_H_INCLUDED__ */

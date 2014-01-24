@@ -424,13 +424,20 @@ enum ia_css_err ia_css_frame_init_planes(struct ia_css_frame *frame)
 
 void ia_css_frame_info_set_width(struct ia_css_frame_info *info,
 	unsigned int width,
-	unsigned int aligned)
+	unsigned int min_padded_width)
 {
+	unsigned int align;
+
 	assert(info != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_frame_info_set_width() enter: "
-		"width=%d, aligned=%d\n",
-		width, aligned);
+		"width=%d, min_padded_width=%d\n",
+		width, min_padded_width);
+
+	if (min_padded_width > width)
+		align = min_padded_width;
+	else
+		align = width;
 
 	info->res.width = width;
 	/* frames with a U and V plane of 8 bits per pixel need to have
@@ -439,18 +446,15 @@ void ia_css_frame_info_set_width(struct ia_css_frame_info *info,
 	if (info->format == IA_CSS_FRAME_FORMAT_YUV420 ||
 	    info->format == IA_CSS_FRAME_FORMAT_YV12)
 		info->padded_width =
-		    CEIL_MUL(width, 2 * HIVE_ISP_DDR_WORD_BYTES);
+		    CEIL_MUL(align, 2 * HIVE_ISP_DDR_WORD_BYTES);
 	else if (info->format == IA_CSS_FRAME_FORMAT_YUV_LINE)
-		info->padded_width = CEIL_MUL(width, 2 * ISP_VEC_NELEMS);
+		info->padded_width = CEIL_MUL(align, 2 * ISP_VEC_NELEMS);
 	else if (info->format == IA_CSS_FRAME_FORMAT_RAW ||
 		 info->format == IA_CSS_FRAME_FORMAT_RAW_PACKED)
-		info->padded_width = CEIL_MUL(width, 2 * ISP_VEC_NELEMS);
+		info->padded_width = CEIL_MUL(align, 2 * ISP_VEC_NELEMS);
 	else {
-		info->padded_width = CEIL_MUL(width, HIVE_ISP_DDR_WORD_BYTES);
+		info->padded_width = CEIL_MUL(align, HIVE_ISP_DDR_WORD_BYTES);
 	}
-
-	if (aligned)
-		info->padded_width = CEIL_MUL(info->padded_width, aligned);
 }
 
 void ia_css_frame_info_set_format(struct ia_css_frame_info *info,
@@ -475,14 +479,11 @@ void ia_css_frame_info_init(struct ia_css_frame_info *info,
 	assert(info != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_frame_info_init() enter: "
-		"width=%d, "
-		"height=%d, "
-		"format=%d, "
-		"aligned=%d\n",
-		width, height,
-		format, aligned);
+		"width=%d, height=%d, format=%d, aligned=%d\n",
+		width, height, format, aligned);
+
 	info->res.height = height;
-	info->format = format;
+	info->format     = format;
 	ia_css_frame_info_set_width(info, width, aligned);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_frame_info_init() leave: return_void\n");

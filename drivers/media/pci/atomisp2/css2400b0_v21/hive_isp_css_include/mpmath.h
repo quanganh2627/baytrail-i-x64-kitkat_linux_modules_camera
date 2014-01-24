@@ -68,6 +68,14 @@ typedef enum {
     N_mp_const_ID
 } mp_const_ID_t;
 
+STORAGE_CLASS_MPMATH_FUNC_H bool isValidMpsdata(
+    const mpsdata_t             data,
+    const bitdepth_t            bitdepth);
+
+STORAGE_CLASS_MPMATH_FUNC_H bool isValidMpudata(
+    const mpudata_t             data,
+    const bitdepth_t            bitdepth);
+
 STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_castd (
     const mpsdata_t             in0,
     const bitdepth_t            bitdepth);

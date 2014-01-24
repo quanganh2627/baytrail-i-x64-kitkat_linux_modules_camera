@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20140114_0303 */
+/* Release Version: ci_master_20140124_0451 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -25,16 +25,8 @@
 #ifndef _IA_CSS_H_
 #define _IA_CSS_H_
 
-/* Move to "platform_support.h" */
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#include <linux/types.h>
-#else
-#include <stdbool.h>
-#include <stdint.h>
-//#include <stdarg.h>
-#endif
-
+#include <type_support.h>
+#include <stdarg.h> /* va_list */
 #include "ia_css_types.h"
 
 /* ID's for refcount */
@@ -864,10 +856,6 @@ struct ia_css_css_mem_env {
 	ia_css_ptr (*mmap)(const void *ptr, const size_t size,
 			   uint16_t attribute, void *context);
 	/**< Map an pre-allocated memory region to an address. */
-	void * (*hrt_vaddr_to_host_vaddr)(ia_css_ptr ptr);
-	/**< Address translation from ISP shared memory address to IA address */
-	ia_css_ptr (*host_vaddr_to_hrt_vaddr)(const void *ptr);
-	/**< Address translation from IA address to ISP shared memory address */
 };
 
 /** Environment with function pointers to access the CSS hardware. This includes

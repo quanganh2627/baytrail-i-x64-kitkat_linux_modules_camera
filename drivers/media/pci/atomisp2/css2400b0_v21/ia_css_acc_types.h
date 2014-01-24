@@ -36,20 +36,11 @@
  * code is being included from within the Linux kernel source
  */
 #include <system_types.h>	/* HAS_IRQ_MAP_VERSION_# */
-
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#include <linux/string.h>       /* memcpy() */
-#else
-#include <stdarg.h>             /* printf() */
-#include <stdlib.h>             /* size_t */
-#include <string.h>             /* memcpy() */
-#include "math_support.h"		/* min(), max() */
-#endif
+#include <type_support.h>
+#include <platform_support.h>
 
 #include "ia_css.h"
 #include "ia_css_types.h"
-#include "platform_support.h"
 
 #include "debug_global.h"
 
@@ -299,7 +290,6 @@ struct ia_css_binary_info {
 	} enable;
 	struct {
 /* DMA channel ID: [0,...,HIVE_ISP_NUM_DMA_CHANNELS> */
-		uint8_t	crop_channel;
 		uint8_t	multi_channel;
 		uint8_t	raw_out_channel;
 		uint8_t	ref_y_channel;
@@ -312,6 +302,7 @@ struct ia_css_binary_info {
 		uint8_t	c_channel;
 		uint8_t	vfout_channel;
 		uint8_t	vfout_c_channel;
+		uint8_t	vfdec_bits_per_pixel;
 		uint8_t	claimed_by_isp;
 		uint8_t padding[2];
 		struct ia_css_channel_descr raw;

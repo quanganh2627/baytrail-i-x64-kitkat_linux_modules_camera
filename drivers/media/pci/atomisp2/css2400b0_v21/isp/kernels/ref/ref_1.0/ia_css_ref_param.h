@@ -29,7 +29,6 @@
 #endif
 
 #include "dma.h"
-#include "ia_css_ref_types.h"
 
 /** Reference frame */
 struct sh_css_isp_ref_isp_config {

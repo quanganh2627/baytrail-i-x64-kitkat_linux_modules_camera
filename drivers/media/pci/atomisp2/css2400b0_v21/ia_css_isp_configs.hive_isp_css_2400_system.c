@@ -29,6 +29,27 @@
 #include "assert_support.h"
 
 void
+ia_css_configure_crop(
+	const struct ia_css_binary *binary,
+	const struct ia_css_crop_configuration *config_dmem)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_crop() enter:\n");
+
+	{
+		short offset = -1;
+		if (binary->info->mem_offsets.offsets.config)
+			offset = binary->info->mem_offsets.offsets.config->dmem.crop;
+
+		if (offset >= 0) {
+			ia_css_crop_config((struct sh_css_isp_crop_isp_config *)
+					&binary->mem_params.params[IA_CSS_PARAM_CLASS_CONFIG][IA_CSS_ISP_DMEM].address[offset],
+					config_dmem);
+		}
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_crop() leave:\n");
+}
+
+void
 ia_css_configure_fpn(
 	const struct ia_css_binary *binary,
 	const struct ia_css_fpn_configuration *config_dmem)
@@ -47,6 +68,27 @@ ia_css_configure_fpn(
 		}
 	}
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_fpn() leave:\n");
+}
+
+void
+ia_css_configure_qplane(
+	const struct ia_css_binary *binary,
+	const struct ia_css_qplane_configuration *config_dmem)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_qplane() enter:\n");
+
+	{
+		short offset = -1;
+		if (binary->info->mem_offsets.offsets.config)
+			offset = binary->info->mem_offsets.offsets.config->dmem.qplane;
+
+		if (offset >= 0) {
+			ia_css_qplane_config((struct sh_css_isp_qplane_isp_config *)
+					&binary->mem_params.params[IA_CSS_PARAM_CLASS_CONFIG][IA_CSS_ISP_DMEM].address[offset],
+					config_dmem);
+		}
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_configure_qplane() leave:\n");
 }
 
 void

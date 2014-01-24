@@ -33,9 +33,7 @@
 
 #include "assert_support.h"
 #include "print_support.h"
-#if !defined(__KERNEL__) && !defined(_MSC_VER)
-#include <stdio.h>		/* snprintf() */
-#endif
+#include "string_support.h"
 
 #include "fifo_monitor.h"
 #if !defined(HAS_NO_INPUT_FORMATTER)
@@ -156,6 +154,25 @@ static const char* stream_format2str[] = {
 	/*[IA_CSS_STREAM_FORMAT_RAW_14]          =*/ "raw14",
 	/*[IA_CSS_STREAM_FORMAT_RAW_16]          =*/ "raw16",
 	/*[IA_CSS_STREAM_FORMAT_BINARY_8]        =*/ "binary8",
+	/*[IA_CSS_STREAM_FORMAT_GENERIC_SHORT1]  =*/ "generic-short1",
+	/*[IA_CSS_STREAM_FORMAT_GENERIC_SHORT2]  =*/ "generic-short2",
+	/*[IA_CSS_STREAM_FORMAT_GENERIC_SHORT3]  =*/ "generic-short3",
+	/*[IA_CSS_STREAM_FORMAT_GENERIC_SHORT4]  =*/ "generic-short4",
+	/*[IA_CSS_STREAM_FORMAT_GENERIC_SHORT5]  =*/ "generic-short5",
+	/*[IA_CSS_STREAM_FORMAT_GENERIC_SHORT6]  =*/ "generic-short6",
+	/*[IA_CSS_STREAM_FORMAT_GENERIC_SHORT7]  =*/ "generic-short7",
+	/*[IA_CSS_STREAM_FORMAT_GENERIC_SHORT8]  =*/ "generic-short8",
+	/*[IA_CSS_STREAM_FORMAT_YUV420_8_SHIFT]  =*/ "yuv420-8",
+	/*[IA_CSS_STREAM_FORMAT_YUV420_10_SHIFT] =*/ "yuv420-8",
+	/*[IA_CSS_STREAM_FORMAT_EMBEDDED]        =*/ "embedded-8",
+	/*[IA_CSS_STREAM_FORMAT_USER_DEF1]       =*/ "user-def-8-type-1",
+	/*[IA_CSS_STREAM_FORMAT_USER_DEF2]       =*/ "user-def-8-type-2",
+	/*[IA_CSS_STREAM_FORMAT_USER_DEF3]       =*/ "user-def-8-type-3",
+	/*[IA_CSS_STREAM_FORMAT_USER_DEF4]       =*/ "user-def-8-type-4",
+	/*[IA_CSS_STREAM_FORMAT_USER_DEF5]       =*/ "user-def-8-type-5",
+	/*[IA_CSS_STREAM_FORMAT_USER_DEF6]       =*/ "user-def-8-type-6",
+	/*[IA_CSS_STREAM_FORMAT_USER_DEF7]       =*/ "user-def-8-type-7",
+	/*[IA_CSS_STREAM_FORMAT_USER_DEF8]       =*/ "user-def-8-type-8",
 	/*[N_IA_CSS_STREAM_FORMAT]               =*/ "not_set"
 };
 
@@ -1071,7 +1088,7 @@ void ia_css_debug_frame_print(const struct ia_css_frame *frame,
 			      const char *descr)
 {
 	char *data = NULL;
-	
+
 	assert(frame != NULL);
 	assert(descr != NULL);
 
@@ -1851,7 +1868,7 @@ static void debug_print_isys_ctrl_unit_state(ctrl_unit_state_t *state)
 static void debug_print_isys_state(input_system_state_t *state)
 {
 	int i;
-	
+
 	assert(state != NULL);
 	ia_css_debug_dtrace(2, "InputSystem State:\n");
 
@@ -2231,7 +2248,7 @@ void ia_css_debug_dump_perf_counters(void)
 	const struct ia_css_fw_info *fw;
 	int i;
 	unsigned int HIVE_ADDR_ia_css_isys_sp_error_cnt;
-	int32_t ia_css_sp_input_system_error_cnt[N_MIPI_PORT_ID];
+	int32_t ia_css_sp_input_system_error_cnt[N_MIPI_PORT_ID + 1]; // 3 Capture Units and 1 Acquire Unit.
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "Input System Error Counters:\n");
 
@@ -2246,7 +2263,7 @@ void ia_css_debug_dump_perf_counters(void)
 		     &ia_css_sp_input_system_error_cnt,
 		     sizeof(ia_css_sp_input_system_error_cnt));
 
-	for (i = 0; i < N_MIPI_PORT_ID; i++) {
+	for (i = 0; i < N_MIPI_PORT_ID + 1; i++) {
 	    ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "\tport[%d] = %d\n",
 				i, ia_css_sp_input_system_error_cnt[i]);
 	}
@@ -2643,14 +2660,18 @@ ia_css_debug_pipe_graph_dump_stage(
 			if (l<=ENABLE_LINE1_MAX_LENGHT1) {
 				/* It fits on one line, copy string and init */
 				/* other helper strings with empty string */
-				strcpy(enable_info, ei);
+				strcpy_s(enable_info,
+					sizeof(enable_info),
+					ei);
 			} else {
 				/* Too big for one line, find last comma */
 				p=ENABLE_LINE1_MAX_LENGHT1;
 				while (ei[p] != ',')
 					p--;
 				/* Last comma found, copy till that comma */
-				strncpy(enable_info1, ei, p);
+				strncpy_s(enable_info1,
+					sizeof(enable_info1),
+					ei, p);
 				enable_info1[p]='\0';
 
 				ei+=p+1;
@@ -2661,7 +2682,9 @@ ia_css_debug_pipe_graph_dump_stage(
 					/* we cannot use ei as argument because
 					 * it is not guarenteed dword aligned
 					 */
-					strcpy(enable_info2, ei);
+					strcpy_s(enable_info2,
+						sizeof(enable_info2),
+						ei);
 					snprintf(enable_info, 200, "%s\\n%s",
 						enable_info1, enable_info2);
 
@@ -2670,10 +2693,13 @@ ia_css_debug_pipe_graph_dump_stage(
 					p=ENABLE_LINE2_MAX_LENGHT2;
 					while (ei[p] != ',')
 						p--;
-					strncpy(enable_info2, ei, p);
+					strncpy_s(enable_info2,
+						sizeof(enable_info2),
+						ei, p);
 					enable_info2[p]='\0';
 					ei+=p+1;
-					strcpy(enable_info3, ei);
+					strcpy_s(enable_info3,
+						sizeof(enable_info3), ei);
 					snprintf(enable_info, 200,
 						"%s\\n%s\\n%s",
 						enable_info1, enable_info2,

@@ -21,14 +21,11 @@
 
 #include "ia_css_rmgr.h"
 
-#ifndef __KERNEL__
-#include <stdbool.h>
-#endif
+#include <type_support.h>
 #include <assert_support.h>
-
-#include "memory_access.h"
-
-#include "ia_css_debug.h"
+#include <platform_support.h> /* memset */
+#include <memory_access.h>    /* mmmgr_malloc, mmmgr_free */
+#include <ia_css_debug.h>
 
 /**
  * @brief VBUF resource handles
@@ -242,7 +239,6 @@ void rmgr_pop_handle(struct ia_css_rmgr_vbuf_pool *pool,
 	assert(pool != NULL);
 	assert(pool->recycle);
 	assert(pool->handles != NULL);
-
 	assert(handle != NULL);
 	assert(*handle != NULL);
 	for (i = 0; i < pool->size; i++) {

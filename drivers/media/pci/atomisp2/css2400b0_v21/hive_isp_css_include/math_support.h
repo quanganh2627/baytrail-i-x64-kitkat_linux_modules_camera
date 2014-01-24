@@ -25,6 +25,7 @@
 /* ceil((real)a / b) */
 #define ceil_div(a,b) (((a)+(b)-1)/(b))
 #define IS_ODD(a) ((a) & 0x1)
+#define IS_EVEN(a) (!IS_ODD(a))
 
 /* A => B */
 #define IMPLIES(a, b) (!(a) || (b))

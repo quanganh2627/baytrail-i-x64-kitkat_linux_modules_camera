@@ -27,6 +27,36 @@
 /* for ia_css_binary_max_vf_width() */
 #include "ia_css_binary.h"
 
+
+enum ia_css_err ia_css_convert_errno(
+				int in_err)
+{
+	enum ia_css_err out_err;
+
+	switch (in_err) {
+		case 0:
+			out_err = IA_CSS_SUCCESS;
+			break;
+		case EINVAL:
+			out_err = IA_CSS_ERR_INVALID_ARGUMENTS;
+			break;
+		case ENODATA:
+			out_err = IA_CSS_ERR_QUEUE_IS_EMPTY;
+			break;
+		case ENOSYS:
+		case ENOTSUP:
+			out_err = IA_CSS_ERR_INTERNAL_ERROR;
+			break;
+		case ENOBUFS:
+			out_err = IA_CSS_ERR_QUEUE_IS_FULL;
+			break;
+		default:
+			out_err = IA_CSS_ERR_INTERNAL_ERROR;
+			break;
+	}
+	return out_err;
+}
+
 /* MW: Table look-up ??? */
 unsigned int ia_css_util_input_format_bpp(
 	enum ia_css_stream_format format,

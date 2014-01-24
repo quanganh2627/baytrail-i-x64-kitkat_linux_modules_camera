@@ -21,13 +21,6 @@
 
 #include "ia_css_rmgr.h"
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdbool.h>
-#endif
-
-
 enum ia_css_err ia_css_rmgr_init(void)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;

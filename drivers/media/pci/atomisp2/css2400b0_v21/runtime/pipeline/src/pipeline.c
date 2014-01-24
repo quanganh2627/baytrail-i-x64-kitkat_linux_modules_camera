@@ -422,8 +422,6 @@ static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage)
 		ia_css_frame_free(stage->args.out_vf_frame);
 		stage->args.out_vf_frame = NULL;
 	}
-	if (stage->binary)
-		ia_css_isp_param_destroy_isp_parameters(&stage->binary->mem_params, &stage->binary->css_params);
 	sh_css_free(stage);
 }
 

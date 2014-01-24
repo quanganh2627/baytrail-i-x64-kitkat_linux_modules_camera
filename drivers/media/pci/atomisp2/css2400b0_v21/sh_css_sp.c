@@ -421,7 +421,8 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 	(void)stage_num;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_copy_frame_to_spframe frame id %d ptr 0x%08x\n",id,
+		"sh_css_copy_frame_to_spframe frame id %d ptr 0x%08x\n",
+		id,
 		sh_css_sp_stage.frames.static_frame_data[id]);
 
 
@@ -868,11 +869,16 @@ is_sp_stage(struct ia_css_pipeline_stage *stage)
 
 static void
 configure_isp_from_args(
+	const struct sh_css_sp_pipeline *pipe,
 	const struct ia_css_binary      *binary,
 	const struct sh_css_binary_args *args)
 {
 #if !defined(IS_ISP_2500_SYSTEM)
-	ia_css_fpn_configure(binary, &binary->in_frame_info);
+	ia_css_fpn_configure   (binary,  &binary->in_frame_info);
+	ia_css_crop_configure  (binary, &args->in_ref_frame->info);
+	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
+#else
+	(void)pipe;
 #endif
 	ia_css_ref_configure(binary, &args->in_ref_frame->info);
 	ia_css_tnr_configure(binary, &args->in_tnr_frame->info);
@@ -989,7 +995,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
-	configure_isp_from_args(binary, args);
+	configure_isp_from_args(&sh_css_sp_group.pipe[thread_id], binary, args);
 
 	/* we do this only for preview pipe because in fill_binary_info function
 	 * we assign vf_out res to out res, but for ISP internal processing, we need
@@ -1067,7 +1073,7 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 						: NULL,
 			    &tmp_binary,
 			    NULL,
-			    -1);
+			    -1, true);
 		binary = &tmp_binary;
 		binary->info = info;
 		binary_name = IA_CSS_EXT_ISP_PROG_NAME(firmware);

@@ -99,7 +99,8 @@
 #define SH_CSS_BINARY_ID_RESERVED1           43
 #define SH_CSS_BINARY_ID_ACCELERATION        44
 #define SH_CSS_BINARY_ID_PRE_DE_2            45
-#define SH_CSS_BINARY_NUM_IDS                46
+#define SH_CSS_BINARY_ID_KERNEL_TEST_LOAD_STORE 46
+#define SH_CSS_BINARY_NUM_IDS                47
 
 #define XMEM_WIDTH_BITS              HIVE_ISP_DDR_WORD_BITS
 #define XMEM_SHORTS_PER_WORD         (HIVE_ISP_DDR_WORD_BITS/16)

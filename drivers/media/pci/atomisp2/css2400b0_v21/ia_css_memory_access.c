@@ -80,18 +80,6 @@ mmgr_clear(hrt_vaddress vaddr, const size_t size)
 	my_env.set(vaddr, 0, size);
 }
 
-void * 
-mmgr_hrt_vaddr_to_host_vaddr(hrt_vaddress vaddr)
-{
-	return my_env.hrt_vaddr_to_host_vaddr(vaddr);
-}
-
-hrt_vaddress 
-mmgr_host_vaddr_to_hrt_vaddr(const void * ptr)
-{
-	return my_env.host_vaddr_to_hrt_vaddr(ptr);
-}
-
 void
 mmgr_load(const hrt_vaddress vaddr, void *data, const size_t size)
 {
