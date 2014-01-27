@@ -882,6 +882,7 @@ configure_isp_from_args(
 #endif
 	ia_css_ref_configure(binary, &args->in_ref_frame->info);
 	ia_css_tnr_configure(binary, &args->in_tnr_frame->info);
+	ia_css_raw_configure(pipe, binary, &args->in_frame->info, &binary->in_frame_info);
 }
 
 static enum ia_css_err
@@ -1144,7 +1145,8 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			unsigned int required_bds_factor,
 			enum sh_css_pipe_config_override copy_ovrd,
 			enum ia_css_input_mode input_mode,
-			const struct ia_css_metadata_config *md_config
+			const struct ia_css_metadata_config *md_config,
+			const struct ia_css_metadata_info *md_info
 #if !defined(IS_ISP_2500_SYSTEM)
 			, const mipi_port_ID_t port_id
 #endif
@@ -1233,16 +1235,18 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 	sh_css_sp_group.pipe[thread_id].inout_port_config = me->inout_port_config;
 
 #if defined (SH_CSS_ENABLE_METADATA)
-	if (md_config != NULL && md_config->size > 0) {
-		/* Buffer size is rounded up to DDR bus width. */
-		sh_css_sp_group.pipe[thread_id].metadata.size =
-				CEIL_MUL(md_config->size, HIVE_ISP_DDR_WORD_BYTES);
+	if (md_info != NULL && md_info->size > 0) {
+		sh_css_sp_group.pipe[thread_id].metadata.width  = md_info->resolution.width;
+		sh_css_sp_group.pipe[thread_id].metadata.height = md_info->resolution.height;
+		sh_css_sp_group.pipe[thread_id].metadata.stride = md_info->stride;
+		sh_css_sp_group.pipe[thread_id].metadata.size   = md_info->size;
 		ia_css_isys_convert_stream_format_to_mipi_format(
 				md_config->data_type, MIPI_PREDICTOR_NONE,
 				&sh_css_sp_group.pipe[thread_id].metadata.format);
 	}
 #else
 	(void)md_config;
+	(void)md_info;
 #endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_sp_init_pipeline pipe_id %d port_config %08x\n",pipe_id,sh_css_sp_group.pipe[thread_id].inout_port_config);

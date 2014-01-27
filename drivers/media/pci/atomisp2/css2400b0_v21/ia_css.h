@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20140124_0451 */
+/* Release Version: ci_master_20140127_1200 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -331,24 +331,25 @@ struct ia_css_mipi_buffer_config {
  *  to process sensor metadata.
  */
 struct ia_css_metadata_config {
-	enum ia_css_stream_format    data_type; /**< Data type of CSI-2 embedded
+	enum ia_css_stream_format data_type; /**< Data type of CSI-2 embedded
 			data. The default value is IA_CSS_STREAM_FORMAT_EMBEDDED. For
 			certain sensors, user can choose non-default data type for embedded
 			data. */
-	unsigned int	size;       /**< Size of metadata in bytes. Set to 0 for no
-			metadata. Currently supported metadata size is up to 256 bytes. */
+	struct ia_css_resolution  resolution; /**< Resolution */
 };
 
-/** Structure that holds metadata.
- */
-struct ia_css_metadata {
-	ia_css_ptr	address; /* CSS virtual address */
-	uint32_t	size;
-	uint32_t	exp_id;
+struct ia_css_metadata_info {
+	struct ia_css_resolution resolution; /**< Resolution */
+	uint32_t                 stride;     /**< Stride in bytes */
+	uint32_t                 size;       /**< Total size in bytes */
 };
-#define SIZE_OF_IA_CSS_METADATA_STRUCT					\
-	(SIZE_OF_IA_CSS_PTR +						\
-	(2 * sizeof(uint32_t)))
+
+struct ia_css_metadata {
+	struct ia_css_metadata_info info;    /**< Layout info */
+	ia_css_ptr	            address; /**< CSS virtual address */
+	uint32_t	            exp_id;  /**< Exposure ID */
+};
+#define SIZE_OF_IA_CSS_METADATA_STRUCT sizeof(struct ia_css_metadata)
 
 /** Input stream description. This describes how input will flow into the
  *  CSS. This is used to program the CSS hardware.
@@ -799,6 +800,8 @@ struct ia_css_stream_info {
 	/**< Info about raw buffer resolution. Mainly for continuous capture */
 	struct ia_css_resolution effective_info;
 	/**< Info about effective input buffer resolution. */
+	struct ia_css_metadata_info metadata_info;
+	/**< Info about the metadata layout, this contains the stride. */
 };
 
 /** Memory allocation attributes, for use in ia_css_css_mem_env. */
@@ -1644,15 +1647,14 @@ ia_css_frame_map(struct ia_css_frame **frame,
                  void *context);
 
 /** @brief Allocate a metadata buffer.
- * @param[in] size		Size of metadata in bytes.
- * @return	Pointer of metadata buffer or NULL (if error)
+ * @param[in]   Metadata info struct, contains details on metadata buffers.
+ * @return      Pointer of metadata buffer or NULL (if error)
  *
- * This function allocates a metadata buffer according to requested size.
- * Because of DMA requirement, this function rounds up buffer size to be
- * multiple of 32 bytes before allocating the physical memory.
+ * This function allocates a metadata buffer according to the properties
+ * specified in the metadata_info struct.
  */
 struct ia_css_metadata *
-ia_css_metadata_allocate(unsigned int size);
+ia_css_metadata_allocate(const struct ia_css_metadata_info *metadata_info);
 
 /** @brief Free a metadata buffer.
  *

@@ -19,23 +19,21 @@
  *
  */
 
-#ifndef _SH_CSS_UDS_H_
-#define _SH_CSS_UDS_H_
+#ifndef __IA_CSS_RAW_TYPES_H
+#define __IA_CSS_RAW_TYPES_H
 
-#include <type_support.h>
+/** Raw frame
+ *
+ *  ISP block: Raw frame
+ */
 
-/* Uds types, used in pipeline_global.h and sh_css_internal.h */
+#include "ia_css.h"
 
-struct sh_css_uds_info {
-	uint16_t curr_dx;
-	uint16_t curr_dy;
-	uint16_t xc;
-	uint16_t yc;
+struct ia_css_raw_configuration {
+	const struct sh_css_sp_pipeline *pipe;
+	const struct ia_css_frame_info  *in_info;
+	const struct ia_css_frame_info  *internal_info;
 };
 
-struct sh_css_crop_pos {
-	uint16_t x;
-	uint16_t y;
-};
+#endif /* __IA_CSS_RAW_TYPES_H */
 
-#endif /* _SH_CSS_UDS_H_ */

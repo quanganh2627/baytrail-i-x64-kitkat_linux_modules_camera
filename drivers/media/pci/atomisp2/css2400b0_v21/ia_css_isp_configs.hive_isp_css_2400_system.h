@@ -24,6 +24,7 @@
 #include "isp/kernels/fpn/fpn_1.0/ia_css_fpn.host.h"
 #include "isp/kernels/ob/ob_1.0/ia_css_ob.host.h"
 #include "isp/kernels/qplane/qplane_2/ia_css_qplane.host.h"
+#include "isp/kernels/raw/raw_1.0/ia_css_raw.host.h"
 #include "isp/kernels/ref/ref_1.0/ia_css_ref.host.h"
 #include "isp/kernels/s3a/s3a_1.0/ia_css_s3a.host.h"
 #include "isp/kernels/tnr/tnr_1.0/ia_css_tnr.host.h"

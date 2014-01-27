@@ -2821,26 +2821,23 @@ ia_css_isp_dvs2_statistics_free(struct ia_css_isp_dvs_statistics *me)
 }
 
 struct ia_css_metadata *
-ia_css_metadata_allocate(unsigned int size)
+ia_css_metadata_allocate(const struct ia_css_metadata_info *metadata_info)
 {
 	struct ia_css_metadata *md = NULL;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_metadata_allocate() enter: size=%p\n", size);
+		"ia_css_metadata_allocate() enter\n");
 
-	if (size == 0)
-		return NULL;
-
-	if (size > SH_CSS_MAX_METADATA_BUFFER_SIZE)
+	if (metadata_info->size == 0)
 		return NULL;
 
 	md = sh_css_malloc(sizeof(*md));
 	if (md == NULL)
 		goto error;
 
-	/* Make metadata buffer size multiple of DDR bus width for DMA. */
-	md->size = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
-	md->address = mmgr_malloc(md->size);
+	md->info = *metadata_info;
+	md->exp_id = 0;
+	md->address = mmgr_malloc(metadata_info->size);
 	if (md->address == mmgr_NULL)
 		goto error;
 

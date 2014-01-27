@@ -40,8 +40,8 @@ static enum ia_css_err ifmtr_input_start_line(
 		unsigned int *start_line);
 
 static void ifmtr_set_if_blocking_mode(
-		const input_formatter_cfg_t const *config_a,
-		const input_formatter_cfg_t const *config_b);
+		const input_formatter_cfg_t * const config_a,
+		const input_formatter_cfg_t * const config_b);
 
 /************************************************************
  * Public functions
@@ -443,8 +443,8 @@ bool ifmtr_set_if_blocking_mode_reset = true;
  * Static functions
  ************************************************************/
 static void ifmtr_set_if_blocking_mode(
-		const input_formatter_cfg_t const *config_a,
-		const input_formatter_cfg_t const *config_b)
+		const input_formatter_cfg_t * const config_a,
+		const input_formatter_cfg_t * const config_b)
 {
 	int i;
 	bool block[] = { false, false, false, false };

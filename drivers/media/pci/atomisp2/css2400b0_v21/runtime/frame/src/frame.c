@@ -822,5 +822,7 @@ static struct ia_css_frame *frame_create(unsigned int width,
 static unsigned
 ia_css_elems_bytes_from_info (const struct ia_css_frame_info *info)
 {
+	if (info->format == IA_CSS_FRAME_FORMAT_RGB565)
+		return 2; /* 2 bytes per pixel */
 	return CEIL_DIV(info->raw_bit_depth,8);
 }

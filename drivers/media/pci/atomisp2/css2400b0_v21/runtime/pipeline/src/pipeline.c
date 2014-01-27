@@ -133,7 +133,7 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 	sh_css_sp_init_pipeline(pipeline, pipe_id, pipe_num,
 				false, false, false, true, SH_CSS_BDS_FACTOR_1_00,
 				SH_CSS_PIPE_CONFIG_OVRD_NO_OVRD,
-				IA_CSS_INPUT_MODE_MEMORY, NULL
+				IA_CSS_INPUT_MODE_MEMORY, NULL, NULL
 #if !defined(HAS_NO_INPUT_SYSTEM)
 				, (mipi_port_ID_t) 0
 #endif
