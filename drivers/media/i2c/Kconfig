@@ -38,6 +38,17 @@ config VIDEO_M10MO
 	  It currently depends on internal V4L2 extensions defined in
 	  atomisp driver.
 
+config VIDEO_GC2235
+       tristate "Galaxy gc2235 sensor support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the OVT
+         GC2235 raw camera.
+
+         GC2235 is a 2M raw sensor.
+
+         It currently only works with the atomisp driver.
+
 config VIDEO_OV8830
        tristate "Omnivision ov8830 sensor support"
        depends on I2C && VIDEO_V4L2 && VIDEO_ATOMISP
