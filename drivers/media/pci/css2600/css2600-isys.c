@@ -32,8 +32,6 @@
 #include "css2600-csi2.h"
 #include "css2600-isys.h"
 
-static unsigned int bxt_nlanes[] = { 4, 1, 2, 2 };
-
 static int isys_open(struct file *file)
 {
 	return v4l2_fh_open(file);
@@ -54,21 +52,56 @@ const struct v4l2_file_operations css2600_isys_fops = {
 	.mmap = vb2_fop_mmap,
 };
 
+struct csi2_config {
+	unsigned int nports;
+	unsigned int nlanes[MAX_CSI2_PORTS];
+	unsigned int offsets[MAX_CSI2_PORTS];
+};
+
+struct csi2_config csi2_config_2600 = {
+	.nports = 4,
+	.nlanes = { 4, 1, 2, 2 },
+};
+
+struct csi2_config csi2_config_2401 = {
+	.nports = 3,
+	.nlanes = { 4, 1, 2 },
+};
+
+static struct csi2_config *isys_get_csi2_config(struct css2600_isys *isys)
+{
+	switch (isys->pdata->type) {
+	case CSS2600_ISYS_TYPE_CSS2401:
+		return &csi2_config_2401;
+		break;
+	case CSS2600_ISYS_TYPE_CSS2600:
+		return &csi2_config_2600;
+		break;
+	default:
+		BUG();
+	}
+}
+
 static void isys_unregister_csi2(struct css2600_isys *isys)
 {
+	struct csi2_config *cfg = isys_get_csi2_config(isys);
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(bxt_nlanes); i++)
+	for (i = 0; i < cfg->nports; i++)
 		css2600_csi2_cleanup(&isys->csi2[i]);
 }
 
 static int isys_register_csi2(struct css2600_isys *isys)
 {
 	unsigned int i;
+	struct csi2_config *cfg = isys_get_csi2_config(isys);
 
-	for (i = 0; i < ARRAY_SIZE(bxt_nlanes); i++) {
+	BUG_ON(cfg->nports > MAX_CSI2_PORTS);
+
+	for (i = 0; cfg->nports; i++) {
 		int rval = css2600_csi2_init(
-			&isys->csi2[i], isys, isys->pdata->base, bxt_nlanes[i],
+			&isys->csi2[i], isys,
+			isys->pdata->base + cfg->offsets[i], cfg->nlanes[i],
 			i);
 		if (rval) {
 			isys_unregister_csi2(isys);
