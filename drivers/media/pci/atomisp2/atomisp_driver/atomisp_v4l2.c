@@ -1044,11 +1044,6 @@ load_firmware(struct atomisp_device *isp)
 #else
 	if (isp->media_dev.driver_version == ATOMISP_CSS_VERSION_21) {
 		if (isp->media_dev.hw_revision ==
-		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
-		     | ATOMISP_HW_STEPPING_A0))
-			fw_path = "shisp_2400a0_v21.bin";
-
-		if (isp->media_dev.hw_revision ==
 		    ((ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT)
 		     | ATOMISP_HW_STEPPING_A0))
 			fw_path = "shisp_2401a0_v21.bin";
@@ -1062,22 +1057,7 @@ load_firmware(struct atomisp_device *isp)
 		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
 		     | ATOMISP_HW_STEPPING_B0))
 			fw_path = "shisp_2400b0_v21.bin";
-	} else if (isp->media_dev.driver_version == ATOMISP_CSS_VERSION_20) {
-		if (isp->media_dev.hw_revision ==
-		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
-		     | ATOMISP_HW_STEPPING_A0))
-			fw_path = "shisp_2400_cssv2.bin";
-
-		if (isp->media_dev.hw_revision ==
-		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
-		     | ATOMISP_HW_STEPPING_B0))
-			fw_path = "shisp_2400b0_cssv2.bin";
 	} else if (isp->media_dev.driver_version == ATOMISP_CSS_VERSION_15) {
-		if (isp->media_dev.hw_revision ==
-		    ((ATOMISP_HW_REVISION_ISP2400 << ATOMISP_HW_REVISION_SHIFT)
-		     | ATOMISP_HW_STEPPING_A0))
-			fw_path = "shisp_2400.bin";
-
 		if ((isp->media_dev.hw_revision >> ATOMISP_HW_REVISION_SHIFT)
 			== ATOMISP_HW_REVISION_ISP2300)
 			fw_path = "shisp_css15.bin";
