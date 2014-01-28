@@ -51,6 +51,9 @@
 #define GROUPED_PARAMETER_HOLD_ENABLE  {IMX_8BIT, 0x0104, 0x1}
 #define GROUPED_PARAMETER_HOLD_DISABLE  {IMX_8BIT, 0x0104, 0x0}
 
+#define IMX135_EMBEDDED_DATA_LINE_NUM 2
+#define IMX135_OUTPUT_DATA_FORMAT_REG  0x0112
+#define IMX135_OUTPUT_FORMAT_RAW10  0x0a0a
 /*
  * We use three different MIPI rates for our modes based on the resolution and
  * FPS requirements. So we have three PLL configurationa and these are based

@@ -43,6 +43,14 @@
 #include <media/v4l2-device.h>
 #include "imx.h"
 
+/*
+ * The imx135 embedded data info:
+ * embedded data line num: 2
+ * line 0 effective data size(byte): 76
+ * line 1 effective data size(byte): 113
+ */
+static const uint32_t imx135_embedded_effective_size[IMX135_EMBEDDED_DATA_LINE_NUM]
+	=  {76, 113};
 
 static enum atomisp_bayer_order imx_bayer_order_mapping[] = {
 	atomisp_bayer_order_rggb,
@@ -1422,7 +1430,7 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	const struct imx_resolution *res;
 	int ret;
-	u16 val;
+	u16 data, val;
 
 	imx_info = v4l2_get_subdev_hostdata(sd);
 	if (imx_info == NULL)
@@ -1479,6 +1487,46 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	imx_info->raw_bayer_order = imx_bayer_order_mapping[val];
 	dev->format.code = imx_translate_bayer_order(
 		imx_info->raw_bayer_order);
+
+	/*
+	 * Fill meta data info. add imx135 metadata setting for RAW10 format
+	 */
+	switch (dev->sensor_id) {
+	case IMX135_ID:
+		ret = imx_read_reg(client, 2, IMX135_OUTPUT_DATA_FORMAT_REG, &data);
+		if (ret)
+			goto out;
+		/*
+		 * The IMX135 can support various resolutions like
+		 * RAW6/8/10/12/14.
+		 * 1.The data format is RAW10:
+		 *   matadata width = current resolution width(pixel) * 10 / 8
+		 * 2.The data format is RAW6 or RAW8:
+		 *   matadata width = current resolution width(pixel);
+		 * 3.other data format(RAW12/14 etc):
+		 *   TBD.
+		 */
+		if (data == IMX135_OUTPUT_FORMAT_RAW10)
+			/* the data format is RAW10. */
+			imx_info->metadata_width = res->width * 10 / 8;
+		else
+			/* The data format is RAW6/8/12/14/ etc. */
+			imx_info->metadata_width = res->width;
+
+		imx_info->metadata_height = IMX135_EMBEDDED_DATA_LINE_NUM;
+
+		if (imx_info->metadata_effective_width == NULL)
+			imx_info->metadata_effective_width =
+				imx135_embedded_effective_size;
+
+		break;
+	default:
+		imx_info->metadata_width = 0;
+		imx_info->metadata_height = 0;
+		imx_info->metadata_effective_width = NULL;
+		break;
+	}
+
 out:
 	mutex_unlock(&dev->input_lock);
 	return ret;
