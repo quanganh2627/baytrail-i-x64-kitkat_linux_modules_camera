@@ -78,6 +78,7 @@ static const struct atomisp_freq_scaling_rule dfs_rules_merr[] = {
 	},
 };
 
+/* Merrifield and Moorefield DFS rules */
 static const struct atomisp_dfs_config dfs_config_merr = {
 	.lowest_freq = ISP_FREQ_200MHZ,
 	.max_freq_at_vmin = ISP_FREQ_400MHZ,
@@ -245,7 +246,7 @@ static const struct atomisp_dfs_config dfs_config_byt = {
 	.dfs_table_size = ARRAY_SIZE(dfs_rules_byt),
 };
 
-static const struct atomisp_freq_scaling_rule dfs_rules_isp2401[] = {
+static const struct atomisp_freq_scaling_rule dfs_rules_cht[] = {
 	{
 		.width = ISP_FREQ_RULE_ANY,
 		.height = ISP_FREQ_RULE_ANY,
@@ -283,12 +284,12 @@ static const struct atomisp_freq_scaling_rule dfs_rules_isp2401[] = {
 	},
 };
 
-static const struct atomisp_dfs_config dfs_config_isp2401 = {
+static const struct atomisp_dfs_config dfs_config_cht = {
 	.lowest_freq = ISP_FREQ_200MHZ,
 	.max_freq_at_vmin = ISP_FREQ_320MHZ,
 	.highest_freq = ISP_FREQ_320MHZ,
-	.dfs_table = dfs_rules_isp2401,
-	.dfs_table_size = ARRAY_SIZE(dfs_rules_isp2401),
+	.dfs_table = dfs_rules_cht,
+	.dfs_table_size = ARRAY_SIZE(dfs_rules_cht),
 };
 
 #endif /* __ATOMISP_DFS_TABLES_H__ */

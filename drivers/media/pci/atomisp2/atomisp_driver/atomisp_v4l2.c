@@ -1222,6 +1222,17 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		}
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_ANN:
+		isp->media_dev.hw_revision = (
+#ifdef ISP2401_NEW_INPUT_SYSTEM
+			 ATOMISP_HW_REVISION_ISP2401
+#else
+			 ATOMISP_HW_REVISION_ISP2401_LEGACY
+#endif
+			 << ATOMISP_HW_REVISION_SHIFT) |
+			ATOMISP_HW_STEPPING_A0;
+		atomisp_hmm_is_2400 = true;
+		isp->dfs = &dfs_config_merr;
+		break;
 	case ATOMISP_PCI_DEVICE_SOC_CHT:
 		isp->media_dev.hw_revision = (
 #ifdef ISP2401_NEW_INPUT_SYSTEM
@@ -1232,7 +1243,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			 << ATOMISP_HW_REVISION_SHIFT) |
 			ATOMISP_HW_STEPPING_A0;
 		atomisp_hmm_is_2400 = true;
-		isp->dfs = &dfs_config_isp2401;
+		isp->dfs = &dfs_config_cht;
 		break;
 	default:
 		/* Medfield and Clovertrail. */
