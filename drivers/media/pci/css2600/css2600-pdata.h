@@ -36,8 +36,12 @@ struct css2600_csi2_pdata {
 	void __iomem *base;
 };
 
+#define CSS2600_ISYS_TYPE_CSS2401	2401
+#define CSS2600_ISYS_TYPE_CSS2600	2600
+
 struct css2600_isys_pdata {
 	void __iomem *base;
+	unsigned int type;
 };
 
 struct css2600_psys_pdata {

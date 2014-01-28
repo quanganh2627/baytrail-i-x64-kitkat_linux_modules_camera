@@ -28,6 +28,8 @@
 
 #define CSS2600_NAME		"css2600"
 
+#define CSS2600_HW_MRFLD_2401	0x1478
+#define CSS2600_HW_BXT		0x10000 /* FIXME */
 #define CSS2600_HW_BXT_FPGA	0x22e0
 
 struct pci_dev;
