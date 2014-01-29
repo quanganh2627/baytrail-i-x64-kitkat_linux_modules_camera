@@ -695,6 +695,11 @@ static int __lm3559_s_power(struct lm3559 *flash, int power)
 	if (ret < 0)
 		return ret;
 
+	ret = gpio_direction_output(pdata->gpio_reset, power);
+	if (ret < 0) {
+		gpio_free(pdata->gpio_reset);
+		return ret;
+	}
 	gpio_set_value(pdata->gpio_reset, power);
 	gpio_free(pdata->gpio_reset);
 	usleep_range(100, 100);
