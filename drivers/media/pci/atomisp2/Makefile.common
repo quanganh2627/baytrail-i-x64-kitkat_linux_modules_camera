@@ -1,6 +1,4 @@
-ifneq ($(ISP2400), )
-	css_platform_folder = hive_isp_css_2400_system
-else ifneq ($(ISP2400B0), )
+ifneq ($(ISP2400B0), )
 	css_platform_folder = hive_isp_css_2400_system
 else ifneq ($(ISP2401), )
 	css_platform_folder = hive_isp_css_2400_system
@@ -8,7 +6,6 @@ else
 	css_platform_folder = hive_isp_css_system
 endif
 
-ifneq ($(CSS20), )
 ifneq ($(CSS21), )
 # Objects for CSS 2.1
 atomisp-$(postfix)-objs := \
@@ -134,67 +131,8 @@ atomisp-$(postfix)-objs += \
 	css/isp/kernels/qplane/qplane_2/ia_css_qplane.host.o \
 	css/ia_css_isp_params.hive_isp_css_2400_system.o \
 	css/ia_css_isp_configs.hive_isp_css_2400_system.o 
-else ifneq ($(ISP2400), )
-atomisp-$(postfix)-objs += css/ia_css_isp_params.hive_isp_css_2400A0_system.o
 endif
 
-else
-# Objects for CSS 2.0
-atomisp-$(postfix)-objs := \
-		atomisp_driver/atomisp_ioctl.o \
-		atomisp_driver/atomisp_compat_ioctl32.o \
-		atomisp_driver/atomisp_cmd.o \
-		atomisp_driver/atomisp_fops.o \
-		atomisp_driver/atomisp_subdev.o \
-		atomisp_driver/atomisp_csi2.o \
-		atomisp_driver/atomisp_tpg.o \
-		atomisp_driver/atomisp_file.o \
-		atomisp_driver/atomisp_v4l2.o \
-		atomisp_driver/atomisp_acc.o \
-		atomisp_driver/mmu/isp_mmu.o \
-		atomisp_driver/mmu/sh_mmu_mrfld.o \
-		atomisp_driver/mmu/sh_mmu_mfld.o \
-		atomisp_driver/hmm/hmm.o \
-		atomisp_driver/hmm/hmm_bo.o \
-		atomisp_driver/hmm/hmm_bo_dev.o \
-		atomisp_driver/hmm/hmm_vm.o \
-		atomisp_driver/hmm/hmm_reserved_pool.o \
-		atomisp_driver/hmm/hmm_dynamic_pool.o \
-		atomisp_driver/hrt/hive_isp_css_mm_hrt.o \
-		css/sh_css.o \
-		css/sh_css_binary.o \
-		css/sh_css_debug.o \
-		css/sh_css_hrt.o \
-		css/sh_css_params.o \
-		css/sh_css_sp.o \
-		css/sh_css_sp_start.o \
-		css/sh_css_rx.o \
-		css/sh_css_metrics.o \
-		css/sh_css_firmware.o \
-		css/sh_css_accelerate.o \
-		css/sh_css_refcount.o \
-		css/sh_css_param_shading.o \
-		css/$(css_platform_folder)/host/gdc.o \
-		css/$(css_platform_folder)/host/irq.o \
-		css/$(css_platform_folder)/host/mmu.o \
-		css/$(css_platform_folder)/host/dma.o \
-		css/$(css_platform_folder)/host/sp.o \
-		css/$(css_platform_folder)/host/isp.o \
-		css/hive_isp_css_shared/host/queue.o \
-		css/hive_isp_css_shared/host/ia_css_i_rmgr_shared.o \
-		css/hive_isp_css_shared/host/ia_css_i_rmgr_vbuf_shared.o \
-		css/hive_isp_css_shared/host/tag.o \
-		css/hive_isp_css_shared/host/sw_event.o \
-		css/$(css_platform_folder)/host/fifo_monitor.o \
-		css/$(css_platform_folder)/host/gp_device.o \
-		css/$(css_platform_folder)/host/input_formatter.o \
-		css/$(css_platform_folder)/host/input_system.o \
-		atomisp_driver/atomisp_compat_css20.o \
-		css/input_system_init.o \
-		css/ia_css_memory_access.o \
-		css/ia_css_device_access.o \
-		css/sh_css_param_dvs.o
-endif
 else
 # Objects for CSS 1.5
 atomisp-$(postfix)-objs := \
@@ -286,12 +224,6 @@ INCLUDES += -I$(src)/css \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared/host
 
-ifneq ($(CSS20), )
-# Includes for CSS host code, CSS 2.0 and 2.1
-INCLUDES += -I$(srctree)/$(src)/css/hive_isp_css_kernel/pipeline \
-	    -I$(srctree)/$(src)/css/hive_isp_css_kernel/pipeline/host \
-	    -I$(srctree)/$(src)/css/hive_isp_css_kernel/csc \
-	    -I$(srctree)/$(src)/css/hive_isp_css_kernel/csc/host
 ifneq ($(CSS21), )
 # Includes for CSS host code, CSS 2.1 only
 INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
@@ -320,7 +252,6 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/isp/kernels/vf/vf_1.0 \
 	    -I$(srctree)/$(src)/css/runtime/spctrl/interface
 endif
-endif
 
 DEFINES := -DHRT_HW -DHRT_ISP_CSS_CUSTOM_HOST -DHRT_USE_VIR_ADDRS -DHRT_KERNEL -D__HOST__
 DEFINES += -DUSE_DYNAMIC_BIN
@@ -330,16 +261,13 @@ DEFINES += -DUSE_INTERRUPTS
 DEFINES += -DPUNIT_CAMERA_BUSY
 DEFINES += -DUSE_KMEM_CACHE
 
-ifneq ($(CSS20), )
+ifneq ($(CSS21), )
 ifneq ($(ISP2401), )
 DEFINES += -DSYSTEM_hive_isp_css_2401_system
 DEFINES += -DSYSTEM=hive_isp_css_2401_system
 else ifneq ($(ISP2400B0), )
 DEFINES += -DSYSTEM_hive_isp_css_2400_system
 DEFINES += -DSYSTEM=hive_isp_css_2400_system
-else ifneq ($(ISP2400), )
-DEFINES += -DSYSTEM_hive_isp_css_2400A0_system
-DEFINES += -DSYSTEM=hive_isp_css_2400A0_system
 else
 $(error Undefined HIVE ISP CSS system version)
 endif
