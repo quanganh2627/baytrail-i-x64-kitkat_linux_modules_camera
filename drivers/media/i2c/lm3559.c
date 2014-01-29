@@ -517,6 +517,21 @@ static int lm3559_g_flash_status(struct v4l2_subdev *sd, s32 *val)
 	return 0;
 }
 
+static int lm3559_g_flash_status_register(struct v4l2_subdev *sd, u32 *val)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct lm3559 *flash = to_lm3559(sd);
+	int ret;
+
+	ret = lm3559_read(flash, LM3559_FLAGS_REG);
+
+	if (ret < 0)
+		return ret;
+
+	*val = ret;
+	return 0;
+}
+
 static const struct lm3559_ctrl_id lm3559_ctrls[] = {
 	s_ctrl_id_entry_integer(V4L2_CID_FLASH_TIMEOUT,
 				"Flash Timeout",
@@ -578,6 +593,15 @@ static const struct lm3559_ctrl_id lm3559_ctrls[] = {
 				0,
 				NULL,
 				lm3559_g_flash_status),
+	s_ctrl_id_entry_integer(V4L2_CID_FLASH_STATUS_REGISTER,
+				"Flash Status Register",
+				0,   /* don't assume any enum ID is first */
+				100, /* enum value, may get extended */
+				1,
+				0,
+				0,
+				NULL,
+				lm3559_g_flash_status_register),
 };
 
 static const struct lm3559_ctrl_id *find_ctrl_id(unsigned int id)
@@ -854,18 +878,8 @@ static int lm3559_gpio_init(struct i2c_client *client)
 	if (ret < 0)
 		goto err_gpio_flash;
 
-	ret = gpio_request(pdata->gpio_torch, "torch");
-	if (ret < 0)
-		goto err_gpio_flash;
-
-	ret = gpio_direction_output(pdata->gpio_torch, 0);
-	if (ret < 0)
-		goto err_gpio_torch;
-
 	return 0;
 
-err_gpio_torch:
-	gpio_free(pdata->gpio_torch);
 err_gpio_flash:
 	gpio_free(pdata->gpio_strobe);
 	return ret;
@@ -878,15 +892,9 @@ static int lm3559_gpio_uninit(struct i2c_client *client)
 	struct lm3559_platform_data *pdata = flash->pdata;
 	int ret;
 
-	ret = gpio_direction_output(pdata->gpio_torch, 0);
-	if (ret < 0)
-		return ret;
-
 	ret = gpio_direction_output(pdata->gpio_strobe, 0);
 	if (ret < 0)
 		return ret;
-
-	gpio_free(pdata->gpio_torch);
 
 	gpio_free(pdata->gpio_strobe);
 
