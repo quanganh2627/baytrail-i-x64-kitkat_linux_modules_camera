@@ -203,8 +203,9 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	}
 
 	if (pdev->device == CSS2600_HW_MRFLD_2401) {
-		mmu_base[0] = base + 0 /* FIXME */;
-		isp->isys_iommu = css2600_mmu_init(pdev, mmu_base, 1, 0);
+		mmu_base[0] = base + CSS2600_MRFLD_DATA_IOMMU_OFFSET;
+		mmu_base[1] = base + CSS2600_MRFLD_ICACHE_IOMMU_OFFSET;
+		isp->isys_iommu = css2600_mmu_init(pdev, mmu_base, 2, 0);
 		rval = PTR_ERR(isp->isys_iommu);
 		if (IS_ERR(isp->isys_iommu)) {
 			dev_err(&pdev->dev, "can't create iommu device\n");
@@ -260,6 +261,7 @@ static void css2600_pci_remove(struct pci_dev *pdev)
 
 static DEFINE_PCI_DEVICE_TABLE(css2600_pci_tbl) = {
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, CSS2600_HW_BXT_FPGA)},
+	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, CSS2600_HW_MRFLD_2401)},
 	{0,}
 };
 
