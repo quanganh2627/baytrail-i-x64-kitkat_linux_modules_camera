@@ -438,7 +438,7 @@ static int css2600_mmu_probe(struct css2600_bus_device *adev)
 	if (!mmu)
 		return -ENOMEM;
 
-	iova_cache_init();
+	iova_cache_get();
 
 	dev_dbg(&adev->dev, "mmu probe %p %p\n", adev, &adev->dev);
 	css2600_bus_set_drvdata(adev, mmu);
@@ -465,6 +465,7 @@ static int css2600_mmu_probe(struct css2600_bus_device *adev)
  */
 static void css2600_mmu_remove(struct css2600_bus_device *adev)
 {
+	iova_cache_put();
 	dev_dbg(&adev->dev, "removed\n");
 }
 
