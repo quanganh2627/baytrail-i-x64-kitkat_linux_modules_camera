@@ -100,8 +100,8 @@ struct css2600_bus_device *css2600_bus_add_device(
 	adev->dev.parent = &pdev->dev;
 	adev->dev.bus = &css2600_bus;
 	adev->dev.release = css2600_bus_release;
-	adev->dev.archdata.iommu = iommu;
 	adev->dev.archdata.dma_ops = &css2600_dma_ops;
+	adev->iommu = iommu;
 	adev->pdata = pdata;
 	dev_set_name(&adev->dev, "%s%d", name, nr);
 

@@ -36,6 +36,7 @@ struct css2600_bus_device {
 	struct list_head list;
 	void *pdata;
 	struct css2600_bus_driver *adrv;
+	void *iommu;
 };
 
 #define to_css2600_bus_device(_dev) \

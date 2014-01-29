@@ -176,7 +176,7 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 			       dma_addr_t *dma_handle, gfp_t gfp,
 			       struct dma_attrs *attrs)
 {
-	struct css2600_bus_iommu *aiommu = dev->archdata.iommu;
+	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 	struct page **pages;
 	struct iova *iova;
@@ -228,7 +228,7 @@ out_free_iova:
 static void css2600_dma_free(struct device *dev, size_t size, void *vaddr,
 			     dma_addr_t dma_handle, struct dma_attrs *attrs)
 {
-	struct css2600_bus_iommu *aiommu = dev->archdata.iommu;
+	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 	struct iova *iova =
 		find_iova(&mmu->dmap->iovad, dma_handle >> PAGE_SHIFT);
@@ -249,7 +249,7 @@ static void css2600_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
 				 int nents, enum dma_data_direction dir,
 				 struct dma_attrs *attrs)
 {
-	struct css2600_bus_iommu *aiommu = dev->archdata.iommu;
+	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 	struct iova *iova = find_iova(&mmu->dmap->iovad,
 				      sg_dma_address(sglist) >> PAGE_SHIFT);
@@ -269,7 +269,7 @@ static int css2600_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 			      int nents, enum dma_data_direction dir,
 			      struct dma_attrs *attrs)
 {
-	struct css2600_bus_iommu *aiommu = dev->archdata.iommu;
+	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 	struct scatterlist *sg;
 	struct iova *iova;
@@ -321,7 +321,7 @@ static void css2600_dma_sync_single_for_cpu(
 	struct device *dev, dma_addr_t dma_handle, size_t size,
 	enum dma_data_direction dir)
 {
-	struct css2600_bus_iommu *aiommu = dev->archdata.iommu;
+	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 
 	clflush_cache_range(

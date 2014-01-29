@@ -367,7 +367,7 @@ static void free_dma_mapping(struct kref *ref)
 
 static int css2600_mmu_add_device(struct device *dev)
 {
-	struct css2600_bus_iommu *aiommu = dev->archdata.iommu;
+	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu;
 	struct css2600_dma_mapping *dmap;
 	struct css2600_mmu_domain *adom;
@@ -409,7 +409,7 @@ static int css2600_mmu_add_device(struct device *dev)
 
 static void css2600_mmu_remove_device(struct device *dev)
 {
-	struct css2600_bus_iommu *aiommu = dev->archdata.iommu;
+	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 
 	kref_put(&mmu->dmap->ref, &free_dma_mapping);
