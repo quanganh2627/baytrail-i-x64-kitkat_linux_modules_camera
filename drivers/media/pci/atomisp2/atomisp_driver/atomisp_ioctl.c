@@ -1960,6 +1960,7 @@ static int atomisp_camera_g_ext_ctrls(struct file *file, void *fh,
 		case V4L2_CID_FLASH_TIMEOUT:
 		case V4L2_CID_FLASH_STROBE:
 		case V4L2_CID_FLASH_MODE:
+		case V4L2_CID_FLASH_STATUS_REGISTER:
 			if (isp->flash)
 				ret = v4l2_subdev_call(
 					isp->flash, core, g_ctrl, &ctrl);
@@ -2060,6 +2061,7 @@ static int atomisp_camera_s_ext_ctrls(struct file *file, void *fh,
 		case V4L2_CID_FLASH_TIMEOUT:
 		case V4L2_CID_FLASH_STROBE:
 		case V4L2_CID_FLASH_MODE:
+		case V4L2_CID_FLASH_STATUS_REGISTER:
 			mutex_lock(&isp->mutex);
 			if (isp->flash) {
 				ret = v4l2_subdev_call(isp->flash,
