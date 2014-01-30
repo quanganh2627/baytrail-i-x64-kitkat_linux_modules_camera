@@ -1245,13 +1245,16 @@ static int imx_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 #define LARGEST_ALLOWED_RATIO_MISMATCH 600
 static int distance(struct imx_resolution const *res, u32 w, u32 h)
 {
-	unsigned int w_ratio = ((res->width << 13)/w);
+	unsigned int w_ratio;
 	unsigned int h_ratio;
 	int match;
 
+	if (w == 0)
+		return -1;
+	w_ratio = (res->width << 13) / w;
 	if (h == 0)
 		return -1;
-	h_ratio = ((res->height << 13) / h);
+	h_ratio = (res->height << 13) / h;
 	if (h_ratio == 0)
 		return -1;
 	match   = abs(((w_ratio << 13) / h_ratio) - ((int)8192));
