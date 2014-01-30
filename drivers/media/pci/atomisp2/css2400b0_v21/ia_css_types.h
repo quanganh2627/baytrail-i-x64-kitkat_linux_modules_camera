@@ -1,4 +1,4 @@
-/* Release Version: ci_master_20140127_1200 */
+/* Release Version: irci_master_20140129_1527 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -86,6 +86,13 @@
 
 /* Virtual address within the CSS address space. */
 typedef uint32_t ia_css_ptr;
+
+/** Generic resolution structure.
+ */
+struct ia_css_resolution {
+	unsigned int width;  /**< Width */
+	unsigned int height; /**< Height */
+};
 
 /** Vector with signed values. This is used to indicate motion for
  * Digital Image Stabilization.

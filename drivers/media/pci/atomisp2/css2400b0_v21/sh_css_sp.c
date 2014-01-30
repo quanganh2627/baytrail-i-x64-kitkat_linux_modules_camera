@@ -930,7 +930,12 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		return IA_CSS_SUCCESS;
 	}
 
-	sh_css_sp_stage.deinterleaved = stage == 0 && continuous;
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+	(void)continuous;
+	sh_css_sp_stage.deinterleaved = 0;
+#else
+	sh_css_sp_stage.deinterleaved = ((stage == 0) && continuous);
+#endif
 
 	/*
 	 * TODO: Make the Host dynamically determine

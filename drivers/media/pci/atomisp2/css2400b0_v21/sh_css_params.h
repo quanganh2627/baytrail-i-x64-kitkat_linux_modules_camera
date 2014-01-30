@@ -73,9 +73,9 @@ struct ia_css_isp_parameters {
 	struct ia_css_dz_config     dz_config;
 	struct ia_css_3a_config     s3a_config;
 	struct ia_css_wb_config     wb_config;
-	struct ia_css_cc_config     csc_config;
-	struct ia_css_cc_config     yuv2rgb_config;
-	struct ia_css_cc_config     rgb2yuv_config;
+	struct ia_css_cc_config     cc_config;
+	struct ia_css_cc_config     yuv2rgb_cc_config;
+	struct ia_css_cc_config     rgb2yuv_cc_config;
 	struct ia_css_tnr_config    tnr_config;
 	struct ia_css_ob_config     ob_config;
 	struct ia_css_dp_config     dp_config;

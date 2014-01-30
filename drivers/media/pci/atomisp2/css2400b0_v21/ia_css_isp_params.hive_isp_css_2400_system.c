@@ -193,7 +193,7 @@ ia_css_process_csc(
 		if (offset >= 0) {
 			ia_css_csc_encode((struct sh_css_isp_csc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->csc_config);
+					&params->cc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -421,7 +421,7 @@ ia_css_process_yuv2rgb(
 		if (offset >= 0) {
 			ia_css_yuv2rgb_encode((struct sh_css_isp_csc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->yuv2rgb_config);
+					&params->yuv2rgb_cc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -448,7 +448,7 @@ ia_css_process_rgb2yuv(
 		if (offset >= 0) {
 			ia_css_rgb2yuv_encode((struct sh_css_isp_csc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->rgb2yuv_config);
+					&params->rgb2yuv_cc_config);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -1011,8 +1011,7 @@ void (* ia_css_kernel_process_param[IA_CSS_NUM_PARAMETER_IDS])(
 
 static void
 ia_css_get_dp_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_dp_config *config)
-{
+			struct ia_css_dp_config *config){
 	if (config == NULL)
 		return;
 
@@ -1040,6 +1039,7 @@ ia_css_set_dp_config(struct ia_css_isp_parameters *params,
 	ia_css_dp_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->dp_config = *config;
 	params->config_changed[IA_CSS_DP_ID] = true;
+	params->config_changed[IA_CSS_DP_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_dp_config() leave: "
 		"return_void\n");
@@ -1049,8 +1049,7 @@ ia_css_set_dp_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_wb_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_wb_config *config)
-{
+			struct ia_css_wb_config *config){
 	if (config == NULL)
 		return;
 
@@ -1078,6 +1077,7 @@ ia_css_set_wb_config(struct ia_css_isp_parameters *params,
 	ia_css_wb_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->wb_config = *config;
 	params->config_changed[IA_CSS_WB_ID] = true;
+	params->config_changed[IA_CSS_WB_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_wb_config() leave: "
 		"return_void\n");
@@ -1087,8 +1087,7 @@ ia_css_set_wb_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_tnr_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_tnr_config *config)
-{
+			struct ia_css_tnr_config *config){
 	if (config == NULL)
 		return;
 
@@ -1116,6 +1115,7 @@ ia_css_set_tnr_config(struct ia_css_isp_parameters *params,
 	ia_css_tnr_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->tnr_config = *config;
 	params->config_changed[IA_CSS_TNR_ID] = true;
+	params->config_changed[IA_CSS_TNR_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_tnr_config() leave: "
 		"return_void\n");
@@ -1125,8 +1125,7 @@ ia_css_set_tnr_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_ob_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_ob_config *config)
-{
+			struct ia_css_ob_config *config){
 	if (config == NULL)
 		return;
 
@@ -1154,6 +1153,7 @@ ia_css_set_ob_config(struct ia_css_isp_parameters *params,
 	ia_css_ob_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->ob_config = *config;
 	params->config_changed[IA_CSS_OB_ID] = true;
+	params->config_changed[IA_CSS_OB_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_ob_config() leave: "
 		"return_void\n");
@@ -1163,8 +1163,7 @@ ia_css_set_ob_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_de_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_de_config *config)
-{
+			struct ia_css_de_config *config){
 	if (config == NULL)
 		return;
 
@@ -1192,6 +1191,7 @@ ia_css_set_de_config(struct ia_css_isp_parameters *params,
 	ia_css_de_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->de_config = *config;
 	params->config_changed[IA_CSS_DE_ID] = true;
+	params->config_changed[IA_CSS_DE_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_de_config() leave: "
 		"return_void\n");
@@ -1201,8 +1201,7 @@ ia_css_set_de_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_anr_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_anr_config *config)
-{
+			struct ia_css_anr_config *config){
 	if (config == NULL)
 		return;
 
@@ -1230,6 +1229,7 @@ ia_css_set_anr_config(struct ia_css_isp_parameters *params,
 	ia_css_anr_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->anr_config = *config;
 	params->config_changed[IA_CSS_ANR_ID] = true;
+	params->config_changed[IA_CSS_ANR_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_anr_config() leave: "
 		"return_void\n");
@@ -1239,8 +1239,7 @@ ia_css_set_anr_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_ce_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_ce_config *config)
-{
+			struct ia_css_ce_config *config){
 	if (config == NULL)
 		return;
 
@@ -1268,6 +1267,7 @@ ia_css_set_ce_config(struct ia_css_isp_parameters *params,
 	ia_css_ce_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->ce_config = *config;
 	params->config_changed[IA_CSS_CE_ID] = true;
+	params->config_changed[IA_CSS_CE_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_ce_config() leave: "
 		"return_void\n");
@@ -1277,8 +1277,7 @@ ia_css_set_ce_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_ecd_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_ecd_config *config)
-{
+			struct ia_css_ecd_config *config){
 	if (config == NULL)
 		return;
 
@@ -1306,6 +1305,7 @@ ia_css_set_ecd_config(struct ia_css_isp_parameters *params,
 	ia_css_ecd_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->ecd_config = *config;
 	params->config_changed[IA_CSS_ECD_ID] = true;
+	params->config_changed[IA_CSS_ECD_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_ecd_config() leave: "
 		"return_void\n");
@@ -1315,8 +1315,7 @@ ia_css_set_ecd_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_ynr_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_ynr_config *config)
-{
+			struct ia_css_ynr_config *config){
 	if (config == NULL)
 		return;
 
@@ -1344,6 +1343,7 @@ ia_css_set_ynr_config(struct ia_css_isp_parameters *params,
 	ia_css_ynr_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->ynr_config = *config;
 	params->config_changed[IA_CSS_YNR_ID] = true;
+	params->config_changed[IA_CSS_YNR_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_ynr_config() leave: "
 		"return_void\n");
@@ -1353,8 +1353,7 @@ ia_css_set_ynr_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_fc_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_fc_config *config)
-{
+			struct ia_css_fc_config *config){
 	if (config == NULL)
 		return;
 
@@ -1382,6 +1381,7 @@ ia_css_set_fc_config(struct ia_css_isp_parameters *params,
 	ia_css_fc_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->fc_config = *config;
 	params->config_changed[IA_CSS_FC_ID] = true;
+	params->config_changed[IA_CSS_FC_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_fc_config() leave: "
 		"return_void\n");
@@ -1391,8 +1391,7 @@ ia_css_set_fc_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_cnr_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_cnr_config *config)
-{
+			struct ia_css_cnr_config *config){
 	if (config == NULL)
 		return;
 
@@ -1420,6 +1419,7 @@ ia_css_set_cnr_config(struct ia_css_isp_parameters *params,
 	ia_css_cnr_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->cnr_config = *config;
 	params->config_changed[IA_CSS_CNR_ID] = true;
+	params->config_changed[IA_CSS_CNR_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_cnr_config() leave: "
 		"return_void\n");
@@ -1429,8 +1429,7 @@ ia_css_set_cnr_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_macc_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_macc_config *config)
-{
+			struct ia_css_macc_config *config){
 	if (config == NULL)
 		return;
 
@@ -1458,6 +1457,7 @@ ia_css_set_macc_config(struct ia_css_isp_parameters *params,
 	ia_css_macc_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->macc_config = *config;
 	params->config_changed[IA_CSS_MACC_ID] = true;
+	params->config_changed[IA_CSS_MACC_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_macc_config() leave: "
 		"return_void\n");
@@ -1467,8 +1467,7 @@ ia_css_set_macc_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_ctc_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_ctc_config *config)
-{
+			struct ia_css_ctc_config *config){
 	if (config == NULL)
 		return;
 
@@ -1496,6 +1495,7 @@ ia_css_set_ctc_config(struct ia_css_isp_parameters *params,
 	ia_css_ctc_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->ctc_config = *config;
 	params->config_changed[IA_CSS_CTC_ID] = true;
+	params->config_changed[IA_CSS_CTC_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_ctc_config() leave: "
 		"return_void\n");
@@ -1505,8 +1505,7 @@ ia_css_set_ctc_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_aa_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_aa_config *config)
-{
+			struct ia_css_aa_config *config){
 	if (config == NULL)
 		return;
 
@@ -1534,6 +1533,7 @@ ia_css_set_aa_config(struct ia_css_isp_parameters *params,
 	ia_css_aa_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->aa_config = *config;
 	params->config_changed[IA_CSS_AA_ID] = true;
+	params->config_changed[IA_CSS_AA_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_aa_config() leave: "
 		"return_void\n");
@@ -1551,10 +1551,10 @@ ia_css_get_yuv2rgb_config(const struct ia_css_isp_parameters *params,
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_yuv2rgb_config() enter: "
 		"config=%p\n",config);
 
-	*config = params->yuv2rgb_config;
+	*config = params->yuv2rgb_cc_config;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_yuv2rgb_config() leave\n");
-	ia_css_cc_config_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_yuv2rgb_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
@@ -1568,8 +1568,9 @@ ia_css_set_yuv2rgb_config(struct ia_css_isp_parameters *params,
 
 	assert(params != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_yuv2rgb_config() enter:\n");
-	ia_css_cc_config_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
-	params->yuv2rgb_config = *config;
+	ia_css_yuv2rgb_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->yuv2rgb_cc_config = *config;
+	params->config_changed[IA_CSS_YUV2RGB_ID] = true;
 	params->config_changed[IA_CSS_YUV2RGB_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_yuv2rgb_config() leave: "
@@ -1588,10 +1589,10 @@ ia_css_get_rgb2yuv_config(const struct ia_css_isp_parameters *params,
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_rgb2yuv_config() enter: "
 		"config=%p\n",config);
 
-	*config = params->rgb2yuv_config;
+	*config = params->rgb2yuv_cc_config;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_rgb2yuv_config() leave\n");
-	ia_css_cc_config_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_rgb2yuv_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
@@ -1605,8 +1606,9 @@ ia_css_set_rgb2yuv_config(struct ia_css_isp_parameters *params,
 
 	assert(params != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_rgb2yuv_config() enter:\n");
-	ia_css_cc_config_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
-	params->rgb2yuv_config = *config;
+	ia_css_rgb2yuv_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->rgb2yuv_cc_config = *config;
+	params->config_changed[IA_CSS_RGB2YUV_ID] = true;
 	params->config_changed[IA_CSS_RGB2YUV_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_rgb2yuv_config() leave: "
@@ -1625,10 +1627,10 @@ ia_css_get_csc_config(const struct ia_css_isp_parameters *params,
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_csc_config() enter: "
 		"config=%p\n",config);
 
-	*config = params->csc_config;
+	*config = params->cc_config;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_csc_config() leave\n");
-	ia_css_cc_config_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_csc_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
@@ -1642,8 +1644,9 @@ ia_css_set_csc_config(struct ia_css_isp_parameters *params,
 
 	assert(params != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_csc_config() enter:\n");
-	ia_css_cc_config_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
-	params->csc_config = *config;
+	ia_css_csc_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->cc_config = *config;
+	params->config_changed[IA_CSS_CSC_ID] = true;
 	params->config_changed[IA_CSS_CSC_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_csc_config() leave: "
@@ -1654,8 +1657,7 @@ ia_css_set_csc_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_nr_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_nr_config *config)
-{
+			struct ia_css_nr_config *config){
 	if (config == NULL)
 		return;
 
@@ -1684,6 +1686,7 @@ ia_css_set_nr_config(struct ia_css_isp_parameters *params,
 	params->nr_config = *config;
 	params->config_changed[IA_CSS_BNR_ID] = true;
 	params->config_changed[IA_CSS_NR_ID] = true;
+	params->config_changed[IA_CSS_NR_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_nr_config() leave: "
 		"return_void\n");
@@ -1693,8 +1696,7 @@ ia_css_set_nr_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_gc_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_gc_config *config)
-{
+			struct ia_css_gc_config *config){
 	if (config == NULL)
 		return;
 
@@ -1722,6 +1724,7 @@ ia_css_set_gc_config(struct ia_css_isp_parameters *params,
 	ia_css_gc_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->gc_config = *config;
 	params->config_changed[IA_CSS_GC_ID] = true;
+	params->config_changed[IA_CSS_GC_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_gc_config() leave: "
 		"return_void\n");
@@ -1742,7 +1745,7 @@ ia_css_get_r_gamma_config(const struct ia_css_isp_parameters *params,
 	*config = params->r_gamma_table;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_r_gamma_config() leave\n");
-	ia_css_rgb_gamma_table_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_r_gamma_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
@@ -1756,8 +1759,9 @@ ia_css_set_r_gamma_config(struct ia_css_isp_parameters *params,
 
 	assert(params != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_r_gamma_config() enter:\n");
-	ia_css_rgb_gamma_table_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_r_gamma_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->r_gamma_table = *config;
+	params->config_changed[IA_CSS_R_GAMMA_ID] = true;
 	params->config_changed[IA_CSS_R_GAMMA_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_r_gamma_config() leave: "
@@ -1779,7 +1783,7 @@ ia_css_get_g_gamma_config(const struct ia_css_isp_parameters *params,
 	*config = params->g_gamma_table;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_g_gamma_config() leave\n");
-	ia_css_rgb_gamma_table_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_g_gamma_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
@@ -1793,8 +1797,9 @@ ia_css_set_g_gamma_config(struct ia_css_isp_parameters *params,
 
 	assert(params != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_g_gamma_config() enter:\n");
-	ia_css_rgb_gamma_table_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_g_gamma_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->g_gamma_table = *config;
+	params->config_changed[IA_CSS_G_GAMMA_ID] = true;
 	params->config_changed[IA_CSS_G_GAMMA_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_g_gamma_config() leave: "
@@ -1816,7 +1821,7 @@ ia_css_get_b_gamma_config(const struct ia_css_isp_parameters *params,
 	*config = params->b_gamma_table;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_b_gamma_config() leave\n");
-	ia_css_rgb_gamma_table_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_b_gamma_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
@@ -1830,8 +1835,9 @@ ia_css_set_b_gamma_config(struct ia_css_isp_parameters *params,
 
 	assert(params != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_b_gamma_config() enter:\n");
-	ia_css_rgb_gamma_table_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_b_gamma_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->b_gamma_table = *config;
+	params->config_changed[IA_CSS_B_GAMMA_ID] = true;
 	params->config_changed[IA_CSS_B_GAMMA_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_b_gamma_config() leave: "
@@ -1870,6 +1876,7 @@ ia_css_set_xnr_table_config(struct ia_css_isp_parameters *params,
 	ia_css_xnr_table_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->xnr_table = *config;
 	params->config_changed[IA_CSS_XNR_TABLE_ID] = true;
+	params->config_changed[IA_CSS_XNR_TABLE_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_xnr_table_config() leave: "
 		"return_void\n");
@@ -1879,8 +1886,7 @@ ia_css_set_xnr_table_config(struct ia_css_isp_parameters *params,
 
 static void
 ia_css_get_xnr_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_xnr_config *config)
-{
+			struct ia_css_xnr_config *config){
 	if (config == NULL)
 		return;
 
@@ -1908,6 +1914,7 @@ ia_css_set_xnr_config(struct ia_css_isp_parameters *params,
 	ia_css_xnr_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->xnr_config = *config;
 	params->config_changed[IA_CSS_XNR_ID] = true;
+	params->config_changed[IA_CSS_XNR_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_xnr_config() leave: "
 		"return_void\n");
@@ -1928,7 +1935,7 @@ ia_css_get_s3a_config(const struct ia_css_isp_parameters *params,
 	*config = params->s3a_config;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_s3a_config() leave\n");
-	ia_css_3a_config_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_s3a_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
@@ -1942,9 +1949,10 @@ ia_css_set_s3a_config(struct ia_css_isp_parameters *params,
 
 	assert(params != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_s3a_config() enter:\n");
-	ia_css_3a_config_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_s3a_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->s3a_config = *config;
 	params->config_changed[IA_CSS_BH_ID] = true;
+	params->config_changed[IA_CSS_S3A_ID] = true;
 	params->config_changed[IA_CSS_S3A_ID] = true;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_s3a_config() leave: "

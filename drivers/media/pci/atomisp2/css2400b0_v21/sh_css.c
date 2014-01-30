@@ -1267,52 +1267,107 @@ sh_css_config_input_network(struct ia_css_pipe *pipe,
 	return IA_CSS_SUCCESS;
 }
 
+static struct ia_css_pipe* stream_get_last_pipe(
+		struct ia_css_stream *stream)
+{
+	struct ia_css_pipe *last_pipe = NULL;
+	if (stream != NULL)
+		last_pipe = stream->last_pipe;
+
+	return last_pipe;
+}
+
+static struct ia_css_pipe* stream_get_copy_pipe(
+		struct ia_css_stream *stream)
+{
+	struct ia_css_pipe *copy_pipe = NULL;
+	struct ia_css_pipe *last_pipe = NULL;
+	enum ia_css_pipe_id pipe_id;
+
+	last_pipe = stream_get_last_pipe(stream);
+
+	if ((stream != NULL) &&
+	    (last_pipe != NULL) &&
+	    (stream->config.continuous)) {
+
+		pipe_id = last_pipe->mode;
+		switch (pipe_id) {
+			case IA_CSS_PIPE_ID_PREVIEW:
+				copy_pipe = last_pipe->pipe_settings.preview.copy_pipe;
+				break;
+			case IA_CSS_PIPE_ID_VIDEO:
+				copy_pipe = last_pipe->pipe_settings.video.copy_pipe;
+				break;
+			default:
+				copy_pipe = NULL;
+				break;
+		}
+	}
+
+	return copy_pipe;
+}
+
+
 static enum ia_css_err stream_register_with_csi_rx(
 	struct ia_css_stream *stream)
 {
-	bool rc;
 	enum ia_css_err retval = IA_CSS_ERR_INTERNAL_ERROR;
 	unsigned int	sp_thread_id;
 
-	if (stream && (stream->last_pipe != NULL)) {
-		if (stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
+	struct ia_css_pipe *target_pipe = NULL;
+
+	if ((stream != NULL) && (stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR)) {
+		/* get the pipe that consumes the stream */
+		if (stream->config.continuous) {
+			target_pipe = stream_get_copy_pipe(stream);
+		} else {
+			target_pipe = stream_get_last_pipe(stream);
+		}
+
+		if (target_pipe != NULL) {
+			bool rc;
 			rc = ia_css_pipeline_get_sp_thread_id(
-				ia_css_pipe_get_pipe_num(stream->last_pipe),
+				ia_css_pipe_get_pipe_num(target_pipe),
 				&sp_thread_id);
-			if (rc == true) {
+			if (rc) {
 				retval = ia_css_isys_csi_rx_register_stream(
-					stream->config.source.port.port,
-					sp_thread_id);
+						stream->config.source.port.port,
+						sp_thread_id);
 			}
 		}
 	}
+
 	return retval;
 }
 
 static enum ia_css_err stream_unregister_with_csi_rx(
 	struct ia_css_stream *stream)
 {
-	bool rc;
 	enum ia_css_err retval = IA_CSS_ERR_INTERNAL_ERROR;
 	unsigned int	sp_thread_id;
-	struct ia_css_pipeline *me = NULL;
+	struct ia_css_pipe *target_pipe = NULL;
 
-	if (stream && stream->last_pipe) {
-		me = &stream->last_pipe->pipeline;
-		if ((stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) &&
-		    (stream->last_pipe->config.mode == IA_CSS_PIPE_MODE_COPY) &&
-		    (me->num_stages == 1) &&
-		    (me->stages && me->stages->sp_func == IA_CSS_PIPELINE_ISYS_COPY)) {
+	if ((stream != NULL) && (stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR)) {
+
+		if (stream->config.continuous) {
+			target_pipe = stream_get_copy_pipe(stream);
+		} else {
+			target_pipe = stream_get_last_pipe(stream);
+		}
+
+		if (target_pipe != NULL) {
+			bool rc;
 			rc = ia_css_pipeline_get_sp_thread_id(
-				ia_css_pipe_get_pipe_num(stream->last_pipe),
+				ia_css_pipe_get_pipe_num(target_pipe),
 				&sp_thread_id);
-			if (rc == true) {
+			if (rc) {
 				retval = ia_css_isys_csi_rx_unregister_stream(
-					stream->config.source.port.port,
-					sp_thread_id);
+						stream->config.source.port.port,
+						sp_thread_id);
 			}
 		}
 	}
+
 	return retval;
 }
 #endif
@@ -4077,6 +4132,9 @@ preview_start(struct ia_css_pipe *pipe)
 	struct ia_css_pipe *copy_pipe, *capture_pipe;
 	enum sh_css_pipe_config_override copy_ovrd;
 	enum ia_css_input_mode preview_pipe_input_mode;
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	struct ia_css_pipe *target_pipe = NULL;
+#endif
 
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
@@ -4115,10 +4173,24 @@ preview_start(struct ia_css_pipe *pipe)
 	}
 
 #if !defined(HAS_NO_INPUT_SYSTEM)
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
 	err = sh_css_config_input_network(pipe, copy_binary);
 	if (err != IA_CSS_SUCCESS)
 		goto ERR;
+#elif defined(USE_INPUT_SYSTEM_VERSION_2401)
+	if (pipe->stream->config.continuous) {
+		/* make the copy pipe create/own the ISYS stream */
+		target_pipe = copy_pipe;
+	} else {
+		/* make the preview pipe create/own the ISYS stream */
+		target_pipe = pipe;
+	}
+
+	err = sh_css_config_input_network(target_pipe, NULL);
+	if (err != IA_CSS_SUCCESS)
+		goto ERR;
 #endif
+#endif /* !HAS_NO_INPUT_SYSTEM */
 
 	/* Construct and load the copy pipe */
 	if (pipe->stream->config.continuous) {

@@ -38,11 +38,11 @@
 #include <system_types.h>	/* HAS_IRQ_MAP_VERSION_# */
 #include <type_support.h>
 #include <platform_support.h>
+#include <debug_global.h>
 
-#include "ia_css.h"
 #include "ia_css_types.h"
+#include "ia_css_frame_public.h"
 
-#include "debug_global.h"
 
 /* Types for the acceleration API.
  * These should be moved to sh_css_internal.h once the old acceleration
