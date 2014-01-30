@@ -164,7 +164,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 	if (pdev->device == CSS2600_HW_BXT
 	    || (pdev->device == CSS2600_HW_BXT_FPGA
-		&& IS_ENABLED(VIDEO_CSS2600_ISYS))) {
+		&& IS_ENABLED(CONFIG_VIDEO_CSS2600_ISYS))) {
 		mmu_base[0] = base + CSS2600_BXT_A0_ISYS_IOMMU0_OFFSET;
 		mmu_base[1] = base + CSS2600_BXT_A0_ISYS_IOMMU1_OFFSET;
 		isp->isys_iommu = css2600_mmu_init(pdev, mmu_base, 2, 0);
@@ -185,7 +185,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 	if (pdev->device == CSS2600_HW_BXT
 	    || (pdev->device == CSS2600_HW_BXT_FPGA
-		&& IS_ENABLED(VIDEO_CSS2600_PSYS))) {
+		&& IS_ENABLED(CONFIG_VIDEO_CSS2600_PSYS))) {
 		mmu_base[0] = base + CSS2600_BXT_A0_PSYS_IOMMU0_OFFSET;
 		mmu_base[1] = base + CSS2600_BXT_A0_PSYS_IOMMU1_OFFSET;
 		isp->psys_iommu = css2600_mmu_init(pdev, mmu_base, 2, 1);
