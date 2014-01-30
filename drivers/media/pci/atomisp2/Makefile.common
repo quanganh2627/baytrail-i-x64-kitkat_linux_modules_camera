@@ -1,7 +1,10 @@
+css_common_folder = hive_isp_css_2400_system
 ifneq ($(ISP2400B0), )
 	css_platform_folder = hive_isp_css_2400_system
 else ifneq ($(ISP2401), )
-	css_platform_folder = hive_isp_css_2400_system
+	css_platform_folder = hive_isp_css_2401_system
+else ifneq ($(ISP2401_NEW_INPUT_SYSTEM), )
+	css_platform_folder = hive_isp_css_2401_system
 else
 	css_platform_folder = hive_isp_css_system
 endif
@@ -36,21 +39,23 @@ atomisp-$(postfix)-objs := \
 		css/sh_css_metrics.o \
 		css/sh_css_firmware.o \
 		css/sh_css_param_shading.o \
-		css/$(css_platform_folder)/host/gdc.o \
-		css/$(css_platform_folder)/host/irq.o \
-		css/$(css_platform_folder)/host/mmu.o \
-		css/$(css_platform_folder)/host/dma.o \
-		css/$(css_platform_folder)/host/sp.o \
-		css/$(css_platform_folder)/host/isp.o \
+		css/$(css_common_folder)/host/gdc.o \
+		css/$(css_common_folder)/host/irq.o \
+		css/$(css_common_folder)/host/mmu.o \
+		css/$(css_common_folder)/host/dma.o \
+		css/$(css_common_folder)/host/sp.o \
+		css/$(css_common_folder)/host/isp.o \
 		css/hive_isp_css_shared/host/tag.o \
-		css/$(css_platform_folder)/host/fifo_monitor.o \
-		css/$(css_platform_folder)/host/gp_device.o \
+		css/$(css_common_folder)/host/fifo_monitor.o \
+		css/$(css_common_folder)/host/gp_device.o \
 		atomisp_driver/atomisp_compat_css20.o \
 		css/ia_css_memory_access.o \
 		css/ia_css_device_access.o \
 		css/sh_css_param_dvs.o \
 		css/isp/kernels/ref/ref_1.0/ia_css_ref.host.o \
 		css/isp/kernels/vf/vf_1.0/ia_css_vf.host.o \
+		css/isp/kernels/crop/crop_1.0/ia_css_crop.host.o \
+		css/isp/kernels/qplane/qplane_2/ia_css_qplane.host.o \
 		css/runtime/binary/src/binary.o \
 		css/runtime/debug/src/ia_css_debug.o \
 		css/runtime/isys/src/isys_init.o \
@@ -116,21 +121,19 @@ atomisp-$(postfix)-objs += \
 	css/runtime/isys/src/isys_stream2mmio_rmgr.o
 else
 atomisp-$(postfix)-objs += \
-	css/$(css_platform_folder)/host/input_formatter.o \
-	css/$(css_platform_folder)/host/input_system.o \
+	css/$(css_common_folder)/host/input_formatter.o \
+	css/$(css_common_folder)/host/input_system.o \
 	css/runtime/ifmtr/src/ifmtr.o
 endif
 
 ifneq ($(ISP2401), )
 atomisp-$(postfix)-objs += \
-	css/ia_css_isp_params.hive_isp_css_2401_system.o \
-	css/ia_css_isp_configs.hive_isp_css_2401_system.o 
+	css/$(css_platform_folder)_generated/ia_css_isp_params.o \
+	css/$(css_platform_folder)_generated/ia_css_isp_configs.o
 else ifneq ($(ISP2400B0), )
 atomisp-$(postfix)-objs += \
-	css/isp/kernels/crop/crop_1.0/ia_css_crop.host.o \
-	css/isp/kernels/qplane/qplane_2/ia_css_qplane.host.o \
-	css/ia_css_isp_params.hive_isp_css_2400_system.o \
-	css/ia_css_isp_configs.hive_isp_css_2400_system.o 
+	css/$(css_platform_folder)_generated/ia_css_isp_params.o \
+	css/$(css_platform_folder)_generated/ia_css_isp_configs.o
 endif
 
 else
@@ -169,20 +172,20 @@ atomisp-$(postfix)-objs := \
 		css/sh_css_accelerate.o \
 		css/sh_css_refcount.o \
 		css/sh_css_param_shading.o \
-		css/$(css_platform_folder)/host/gdc.o \
-		css/$(css_platform_folder)/host/irq.o \
-		css/$(css_platform_folder)/host/mmu.o \
-		css/$(css_platform_folder)/host/dma.o \
-		css/$(css_platform_folder)/host/sp.o \
-		css/$(css_platform_folder)/host/isp.o \
+		css/$(css_common_folder)/host/gdc.o \
+		css/$(css_common_folder)/host/irq.o \
+		css/$(css_common_folder)/host/mmu.o \
+		css/$(css_common_folder)/host/dma.o \
+		css/$(css_common_folder)/host/sp.o \
+		css/$(css_common_folder)/host/isp.o \
 		css/hive_isp_css_shared/host/queue.o \
 		css/hive_isp_css_shared/host/ia_css_i_rmgr_shared.o \
 		css/hive_isp_css_shared/host/ia_css_i_rmgr_vbuf_shared.o \
 		css/hive_isp_css_shared/host/tag.o \
 		css/hive_isp_css_shared/host/sw_event.o \
-		css/$(css_platform_folder)/host/fifo_monitor.o \
-		css/$(css_platform_folder)/host/gp_device.o \
-		css/$(css_platform_folder)/host/input_formatter.o \
+		css/$(css_common_folder)/host/fifo_monitor.o \
+		css/$(css_common_folder)/host/gp_device.o \
+		css/$(css_common_folder)/host/input_formatter.o \
 		atomisp_driver/atomisp_compat_css15.o \
 		atomisp_driver/hrt/device_access.o \
 		atomisp_driver/hrt/memory_access.o \
@@ -219,8 +222,9 @@ INCLUDES += -I$(src)/css \
 	    -I$(srctree)/$(src)/css/hive_isp_css_include/host \
 	    -I$(srctree)/$(src)/css/hive_isp_css_include/device_access \
 	    -I$(srctree)/$(src)/css/hive_isp_css_include/memory_access \
-	    -I$(srctree)/$(src)/css/$(css_platform_folder) \
-	    -I$(srctree)/$(src)/css/$(css_platform_folder)/host \
+	    -I$(srctree)/$(src)/css/$(css_common_folder) \
+	    -I$(srctree)/$(src)/css/$(css_common_folder)/host \
+	    -I$(srctree)/$(src)/css/$(css_platform_folder)_generated \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared/host
 
@@ -250,6 +254,8 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
             -I$(srctree)/$(src)/css/runtime/isp_param/interface \
 	    -I$(srctree)/$(src)/css/isp/kernels/ref/ref_1.0 \
 	    -I$(srctree)/$(src)/css/isp/kernels/vf/vf_1.0 \
+	    -I$(srctree)/$(src)/css/isp/kernels/crop/crop_1.0 \
+	    -I$(srctree)/$(src)/css/isp/kernels/qplane/qplane_2 \
 	    -I$(srctree)/$(src)/css/runtime/spctrl/interface
 endif
 
@@ -264,10 +270,8 @@ DEFINES += -DUSE_KMEM_CACHE
 ifneq ($(CSS21), )
 ifneq ($(ISP2401), )
 DEFINES += -DSYSTEM_hive_isp_css_2401_system
-DEFINES += -DSYSTEM=hive_isp_css_2401_system
 else ifneq ($(ISP2400B0), )
 DEFINES += -DSYSTEM_hive_isp_css_2400_system
-DEFINES += -DSYSTEM=hive_isp_css_2400_system
 else
 $(error Undefined HIVE ISP CSS system version)
 endif
