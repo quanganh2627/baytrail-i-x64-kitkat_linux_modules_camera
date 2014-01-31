@@ -146,6 +146,7 @@ static int psysstub_runisp(struct css2600_run_cmd *cmd,
 			   struct css2600_device *isp)
 {
 	struct css2600_event ev;
+	int rval = 0;
 
 	if (!cmd)
 		return -EINVAL;
@@ -166,10 +167,12 @@ static int psysstub_runisp(struct css2600_run_cmd *cmd,
 
 	mutex_lock(&isp->mutex);
 	isp->cur_cmd = NULL;
-	if (cmd->suspended) {
-		cmd->suspended = false;
+	if (cmd->flags) {
+		if (cmd->flags & CSS2600_STUB_CMD_SUSPEND)
+			rval = -EINTR;
+		cmd->flags = 0;
 		mutex_unlock(&isp->mutex);
-		return -EINTR;
+		goto out;
 	}
 	mutex_unlock(&isp->mutex);
 
@@ -177,10 +180,22 @@ static int psysstub_runisp(struct css2600_run_cmd *cmd,
 	ev.ev.cmd_done.id = cmd->command.id;
 	ev.ev.cmd_done.issue_id = cmd->command.issue_id;
 	css2600_queue_event(cmd->fh, &ev);
-
-	return 0;
+out:
+	return rval;
 }
 
+static struct css2600_run_cmd *__psysstub_lookup_cmd(
+		struct css2600_device *isp, struct css2600_command *command)
+{
+	struct css2600_run_cmd *cmd;
+	int i;
+
+	for(i = 0; i < CSS2600_CMD_PRIORITY_NUM; i++)
+		list_for_each_entry(cmd, &isp->commands[i], list)
+			if (cmd->command.issue_id == command->issue_id)
+				return cmd;
+	return 0;
+}
 
 static struct css2600_run_cmd *__psysstub_next_cmd(struct css2600_device *isp)
 {
@@ -381,7 +396,7 @@ static long css2600_ioctl_qcmd(struct file *file, struct css2600_command __user 
 	cmd->fh = fh;
 
 	if (cur_cmd && cur_cmd->command.priority > cmd->command.priority) {
-		cur_cmd->suspended = true;
+		cur_cmd->flags |= CSS2600_STUB_CMD_SUSPEND;
 		list_add(&cur_cmd->list, &isp->commands[cur_cmd->command.priority]);
 		isp->cur_cmd = NULL;
 		list_add(&cmd->list, &isp->commands[cmd->command.priority]);
@@ -429,6 +444,33 @@ static long css2600_ioctl_dqevent(struct file *file, struct css2600_event __user
 	return 0;
 }
 
+static long css2600_ioctl_cmd_cancel(struct file *file,
+				     struct css2600_command __user *arg)
+{
+	struct css2600_fh *fh = file->private_data;
+	struct css2600_device *isp = device_to_css2600_device(fh->dev);
+	struct css2600_run_cmd *cmd;
+	struct css2600_command command;
+
+	if (copy_from_user(&command, arg, sizeof (command)))
+		return -EFAULT;
+
+	if (isp->cur_cmd &&
+	    command.issue_id == isp->cur_cmd->command.issue_id) {
+		isp->cur_cmd->flags |= CSS2600_STUB_CMD_CANCEL;
+		isp->cur_cmd = NULL;
+	} else {
+		cmd = __psysstub_lookup_cmd(isp, &command);
+		if (!cmd)
+			return -EINVAL;
+
+		list_del(&cmd->list);
+		kfree(cmd);
+	}
+
+	return 0;
+}
+
 static long css2600_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int err = 0;
@@ -458,6 +500,9 @@ static long css2600_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 		break;
 	case CSS2600_IOC_DQEVENT:
 		err = css2600_ioctl_dqevent(file, argp);
+		break;
+	case CSS2600_IOC_CMD_CANCEL:
+		err = css2600_ioctl_cmd_cancel(file, argp);
 		break;
 	default:
 		err = -ENOTTY;

@@ -44,11 +44,14 @@ struct css2600_eventq {
 	struct list_head list;
 };
 
+#define CSS2600_STUB_CMD_SUSPEND	(1 << 0)
+#define CSS2600_STUB_CMD_CANCEL		(1 << 1)
+
 struct css2600_run_cmd {
 	struct css2600_command command;
 	struct css2600_fh *fh;
 	struct list_head list;
-	bool suspended;
+	uint32_t flags;
 };
 
 struct css2600_fh {

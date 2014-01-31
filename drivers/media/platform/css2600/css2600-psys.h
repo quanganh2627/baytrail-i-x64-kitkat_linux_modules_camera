@@ -89,5 +89,6 @@ struct css2600_command {
 #define CSS2600_IOC_PUTBUF _IOWR('A', 5, struct css2600_buffer)
 #define CSS2600_IOC_QCMD _IOWR('A', 6, struct css2600_command)
 #define CSS2600_IOC_DQEVENT _IOWR('A', 7, struct css2600_event)
+#define CSS2600_IOC_CMD_CANCEL _IOWR('A', 8, struct css2600_command)
 
 #endif
