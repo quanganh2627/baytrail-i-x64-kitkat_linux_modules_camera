@@ -98,7 +98,7 @@ static int isys_register_csi2(struct css2600_isys *isys)
 
 	BUG_ON(cfg->nports > MAX_CSI2_PORTS);
 
-	for (i = 0; cfg->nports; i++) {
+	for (i = 0; i < cfg->nports; i++) {
 		int rval = css2600_csi2_init(
 			&isys->csi2[i], isys,
 			isys->pdata->base + cfg->offsets[i], cfg->nlanes[i],
