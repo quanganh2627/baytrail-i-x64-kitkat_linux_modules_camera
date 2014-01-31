@@ -127,7 +127,7 @@ int css2600_csi2_init(struct css2600_csi2 *csi2, struct css2600_isys *isys,
 	csi2->asd.sd.internal_ops = &csi2_sd_internal_ops;
 	snprintf(csi2->asd.sd.name, sizeof(csi2->asd.sd.name),
 		 "AtomISP CSI-2 %u", index);
-	v4l2_set_subdevdata(&csi2->asd.sd, csi2);
+	v4l2_set_subdevdata(&csi2->asd.sd, &csi2->asd);
 	rval = v4l2_device_register_subdev(&isys->v4l2_dev, &csi2->asd.sd);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't register v4l2 subdev\n");
