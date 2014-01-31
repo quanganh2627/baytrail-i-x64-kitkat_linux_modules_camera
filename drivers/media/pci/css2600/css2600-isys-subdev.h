@@ -30,12 +30,24 @@ struct css2600_isys_ffmt_entry {
 
 #define CSS2600_ISYS_MAX_PAD		2
 
+enum isys_subdev_prop_tgt {
+	CSS2600_ISYS_SUBDEV_PROP_TGT_SINK_FMT,
+	CSS2600_ISYS_SUBDEV_PROP_TGT_SINK_CROP,
+	CSS2600_ISYS_SUBDEV_PROP_TGT_SINK_COMPOSE,
+	CSS2600_ISYS_SUBDEV_PROP_TGT_SOURCE_CROP,
+};
+#define	CSS2600_ISYS_SUBDEV_PROP_TGT_NR_OF \
+	(CSS2600_ISYS_SUBDEV_PROP_TGT_SOURCE_CROP + 1)
+
 struct css2600_isys_subdev {
 	struct v4l2_subdev sd;
 	uint32_t const * const *supported_fmts;
 	struct media_pad pad[CSS2600_ISYS_MAX_PAD];
 	struct v4l2_mbus_framefmt ffmt[CSS2600_ISYS_MAX_PAD];
+	struct v4l2_rect crop[CSS2600_ISYS_MAX_PAD];
+	struct v4l2_rect compose;
 	struct v4l2_ctrl_handler ctrl_handler;
+	bool valid_tgts[CSS2600_ISYS_SUBDEV_PROP_TGT_NR_OF];
 };
 
 #define to_css2600_isys_subdev(__sd) \
