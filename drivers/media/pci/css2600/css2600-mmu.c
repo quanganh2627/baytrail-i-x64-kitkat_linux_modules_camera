@@ -110,10 +110,6 @@ static uint32_t *alloc_page_table(struct css2600_mmu_domain *adom)
 		return (uint32_t *)INVALID_PAGE;
 
 	pr_debug("__get_free_page() == %p\n", pt);
-	/* we need an uncacheable page table --- why? */
-#ifdef	CONFIG_X86
-	set_memory_uc((unsigned long)pt, 1);
-#endif
 
 	for (i = 0; i < ISP_L1PT_PTES; i++)
 		pt[i] = INVALID_PAGE;
@@ -127,9 +123,6 @@ static void free_page_table(uint32_t *pt)
 		return;
 
 	pr_debug("free_page(%p)\n", pt);
-#ifdef	CONFIG_X86
-	set_memory_wb((unsigned long)pt, 1);
-#endif
 
 	free_page((unsigned long)pt);
 }
@@ -229,6 +222,10 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 
 	if (adom->pgtbl[l1_idx] == INVALID_PAGE) {
 		adom->pgtbl[l1_idx] = l1_entry;
+#ifdef CONFIG_X86
+		clflush_cache_range(&adom->pgtbl[l1_idx],
+				    sizeof(adom->pgtbl[l1_idx]));
+#endif /* CONFIG_X86 */
 	} else {
 		spin_unlock_irqrestore(&adom->lock, flags);
 		free_page_table(TBL_VIRT_ADDR(l1_entry));
@@ -250,6 +247,9 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 	}
 
 	l2_pt[l2_idx] = paddr >> ISP_PADDR_SHIFT;
+#ifdef CONFIG_X86
+	clflush_cache_range(&l2_pt[l2_idx], sizeof(l2_pt[l2_idx]));
+#endif /* CONFIG_X86 */
 
 	spin_unlock_irqrestore(&adom->lock, flags);
 
@@ -300,6 +300,9 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 			 l2_idx, TBL_PHYS_ADDR(l2_pt[l2_idx]));
 		spin_lock_irqsave(&adom->lock, flags);
 		l2_pt[l2_idx] = INVALID_PAGE;
+#ifdef CONFIG_X86
+		clflush_cache_range(&l2_pt[l2_idx], sizeof(l2_pt[l2_idx]));
+#endif /* CONFIG_X86 */
 		spin_unlock_irqrestore(&adom->lock, flags);
 	}
 
