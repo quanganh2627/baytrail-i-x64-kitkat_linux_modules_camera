@@ -188,8 +188,7 @@ static void css2600_mmu_detach_dev(struct iommu_domain *domain,
 
 	spin_lock(&adom->lock);
 
-	if (!--adom->users) {
-	}
+	adom->users--;
 	dev_dbg(dev, "domain detached\n");
 
 	spin_unlock(&adom->lock);

@@ -30,6 +30,6 @@ struct css2600_dma_mapping {
 	struct kref ref;
 };
 
-extern struct dma_map_ops css2600_dma_ops;
+extern const struct dma_map_ops css2600_dma_ops;
 
 #endif /* CSS2600_DMA_H */

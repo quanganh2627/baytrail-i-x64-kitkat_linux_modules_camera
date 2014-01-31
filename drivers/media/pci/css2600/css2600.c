@@ -134,9 +134,11 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	}
 
 	/* Share IOMMU mapping between isys and psys */
-	isys_iommu->m = psys_iommu->m = devm_kzalloc(&pdev->dev, sizeof(*isys_iommu->m), GFP_KERNEL);
+	isys_iommu->m = psys_iommu->m = devm_kzalloc(
+		&pdev->dev, sizeof(*isys_iommu->m), GFP_KERNEL);
 	if (!isys_iommu->m) {
-		dev_err(&pdev->dev, "Can't allocate memory for iommu mapping\n");
+		dev_err(&pdev->dev,
+			"Can't allocate memory for iommu mapping\n");
 		return -ENOMEM;
 	}
 
@@ -228,7 +230,8 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	if (isp->pdev->device != CSS2600_HW_BXT_FPGA) {
 		rval = pci_enable_msi(pdev);
 		if (rval) {
-			dev_err(&pdev->dev, "Failed to enable msi (%d)\n", rval);
+			dev_err(&pdev->dev, "Failed to enable msi (%d)\n",
+				rval);
 			goto out_css2600_bus_del_devices;
 		}
 	}
