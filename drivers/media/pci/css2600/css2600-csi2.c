@@ -135,8 +135,9 @@ int css2600_csi2_init(struct css2600_csi2 *csi2, struct css2600_isys *isys,
 		goto fail;
 	}
 
-	rval = media_entity_create_link(&csi2->asd.sd.entity, CSI2_PAD_SOURCE,
-					&csi2->av.vdev.entity, 0, 0);
+	rval = media_entity_create_link(
+		&csi2->asd.sd.entity, CSI2_PAD_SOURCE, &csi2->av.vdev.entity,
+		0, MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't create link\n");
 		goto fail;
