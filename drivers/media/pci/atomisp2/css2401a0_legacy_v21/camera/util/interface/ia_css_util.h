@@ -23,6 +23,17 @@
 #define __IA_CSS_UTIL_H__
 
 #include "ia_css_pipe.h"
+#include "ia_css.h"
+#include "error_support.h"
+
+/** @brief convert "errno" error code to "ia_css_err" error code
+ *
+ * @param[in]	"errno" error code
+ * @return   	"ia_css_err" error code
+ *
+ */
+enum ia_css_err ia_css_convert_errno(
+				int in_err);
 
 /** @brief check vf frame info.
  *

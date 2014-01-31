@@ -52,7 +52,7 @@ ia_css_stream_get_dvs_binary(const struct ia_css_stream *stream);
 struct ia_css_binary *
 ia_css_stream_get_3a_binary(const struct ia_css_stream *stream);
 
-unsigned int 
+unsigned int
 ia_css_stream_input_format_bits_per_pixel(struct ia_css_stream *stream);
 
 bool

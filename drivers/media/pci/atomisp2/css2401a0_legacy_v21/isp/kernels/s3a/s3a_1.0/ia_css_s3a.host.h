@@ -48,6 +48,6 @@ void
 ia_css_s3a_dump(const struct sh_css_isp_s3a_params *s3a, unsigned level);
 
 void
-ia_css_3a_config_debug_dtrace(const struct ia_css_3a_config *config, unsigned level);
+ia_css_s3a_debug_dtrace(const struct ia_css_3a_config *config, unsigned level);
 
 #endif /* __IA_CSS_S3A_HOST_H */

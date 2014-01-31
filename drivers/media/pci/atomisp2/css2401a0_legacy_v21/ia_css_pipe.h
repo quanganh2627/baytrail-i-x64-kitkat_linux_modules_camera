@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef __IA_CSS_CAMERA_PIPE_H__
-#define __IA_CSS_CAMERA_PIPE_H__
+#ifndef __IA_CSS_PIPE_H__
+#define __IA_CSS_PIPE_H__
 
 #include "ia_css.h"
 #include "ia_css_stream.h"
@@ -60,7 +60,7 @@ struct ia_css_video_settings {
 };
 
 struct ia_css_pipe {
-	//TODO: Remove stop_requested and use stop_requested in the pipeline
+	/* TODO: Remove stop_requested and use stop_requested in the pipeline */
 	bool                            stop_requested;
 	struct ia_css_pipe_config       config;
 	struct ia_css_pipe_extra_config extra_config;
@@ -84,6 +84,7 @@ struct ia_css_pipe {
 	struct ia_css_frame		out_frame_struct;
 	struct ia_css_frame		vf_frame_struct;
 	struct ia_css_frame		*continuous_frames[NUM_CONTINUOUS_FRAMES];
+	struct ia_css_metadata	*cont_md_buffers[NUM_CONTINUOUS_FRAMES];
 	union {
 		struct ia_css_preview_settings preview;
 		struct ia_css_video_settings   video;
@@ -97,4 +98,4 @@ struct ia_css_pipe {
 	unsigned int pipe_num;
 };
 
-#endif /* __IA_CSS_CAMERA_PIPE_H__ */
+#endif /* __IA_CSS_PIPE_H__ */

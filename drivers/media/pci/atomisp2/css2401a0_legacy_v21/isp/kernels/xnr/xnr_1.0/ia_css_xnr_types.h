@@ -64,7 +64,7 @@ struct ia_css_xnr_table {
 struct ia_css_xnr_config {
 	/** XNR threshold.
 	 * type:u0.16 valid range:[0,65535]
-	 * default: 25 */
+	 * default: 6400 */
 	uint16_t threshold;
 };
 

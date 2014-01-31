@@ -62,7 +62,7 @@
 #endif
 
 #define IA_CSS_INCLUDE_CONFIGURATIONS
-#include HRTSTR(ia_css_isp_configs.SYSTEM.h)
+#include "ia_css_isp_configs.h"
 
 struct sh_css_sp_group		sh_css_sp_group;
 struct sh_css_sp_stage		sh_css_sp_stage;
@@ -421,7 +421,8 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 	(void)stage_num;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_copy_frame_to_spframe frame id %d ptr 0x%08x\n",id,
+		"sh_css_copy_frame_to_spframe frame id %d ptr 0x%08x\n",
+		id,
 		sh_css_sp_stage.frames.static_frame_data[id]);
 
 
@@ -469,6 +470,7 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 		break;
 	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
 		sp_frame_out->planes.yuyv.offset = frame_in->planes.yuyv.offset;
 		break;
@@ -572,6 +574,7 @@ set_output_frame_buffer(const struct ia_css_frame *frame,
 	case IA_CSS_FRAME_FORMAT_NV61:
 	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
 	case IA_CSS_FRAME_FORMAT_RGB565:
 	case IA_CSS_FRAME_FORMAT_RGBA888:
@@ -679,7 +682,8 @@ set_view_finder_buffer(const struct ia_css_frame *frame,
 	// the dual output pin
 	case IA_CSS_FRAME_FORMAT_NV12:
 	case IA_CSS_FRAME_FORMAT_YUYV:
-  case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 
 	// for vf_veceven
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
@@ -868,15 +872,20 @@ is_sp_stage(struct ia_css_pipeline_stage *stage)
 
 static void
 configure_isp_from_args(
+	const struct sh_css_sp_pipeline *pipe,
 	const struct ia_css_binary      *binary,
 	const struct sh_css_binary_args *args)
 {
 #if !defined(IS_ISP_2500_SYSTEM)
-	ia_css_ref_configure(binary, &args->in_ref_frame->info);
+	ia_css_fpn_configure   (binary,  &binary->in_frame_info);
+	ia_css_crop_configure  (binary, &args->in_ref_frame->info);
+	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
 #else
-	(void)binary;
-	(void)args;
+	(void)pipe;
 #endif
+	ia_css_ref_configure(binary, &args->in_ref_frame->info);
+	ia_css_tnr_configure(binary, &args->in_tnr_frame->info);
+	ia_css_raw_configure(pipe, binary, &args->in_frame->info, &binary->in_frame_info);
 }
 
 static enum ia_css_err
@@ -924,7 +933,12 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		return IA_CSS_SUCCESS;
 	}
 
-	sh_css_sp_stage.deinterleaved = stage == 0 && continuous;
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+	(void)continuous;
+	sh_css_sp_stage.deinterleaved = 0;
+#else
+	sh_css_sp_stage.deinterleaved = ((stage == 0) && continuous);
+#endif
 
 	/*
 	 * TODO: Make the Host dynamically determine
@@ -990,7 +1004,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
-	configure_isp_from_args(binary, args);
+	configure_isp_from_args(&sh_css_sp_group.pipe[thread_id], binary, args);
 
 	/* we do this only for preview pipe because in fill_binary_info function
 	 * we assign vf_out res to out res, but for ISP internal processing, we need
@@ -1068,7 +1082,7 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 						: NULL,
 			    &tmp_binary,
 			    NULL,
-			    -1);
+			    -1, true);
 		binary = &tmp_binary;
 		binary->info = info;
 		binary_name = IA_CSS_EXT_ISP_PROG_NAME(firmware);
@@ -1139,7 +1153,8 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			unsigned int required_bds_factor,
 			enum sh_css_pipe_config_override copy_ovrd,
 			enum ia_css_input_mode input_mode,
-			const struct ia_css_metadata_config *md_config
+			const struct ia_css_metadata_config *md_config,
+			const struct ia_css_metadata_info *md_info
 #if !defined(IS_ISP_2500_SYSTEM)
 			, const mipi_port_ID_t port_id
 #endif
@@ -1228,16 +1243,18 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 	sh_css_sp_group.pipe[thread_id].inout_port_config = me->inout_port_config;
 
 #if defined (SH_CSS_ENABLE_METADATA)
-	if (md_config != NULL && md_config->size > 0) {
-		/* Buffer size is rounded up to DDR bus width. */
-		sh_css_sp_group.pipe[thread_id].md_size = CEIL_MUL(md_config->size,
-				HIVE_ISP_DDR_WORD_BYTES);
+	if (md_info != NULL && md_info->size > 0) {
+		sh_css_sp_group.pipe[thread_id].metadata.width  = md_info->resolution.width;
+		sh_css_sp_group.pipe[thread_id].metadata.height = md_info->resolution.height;
+		sh_css_sp_group.pipe[thread_id].metadata.stride = md_info->stride;
+		sh_css_sp_group.pipe[thread_id].metadata.size   = md_info->size;
 		ia_css_isys_convert_stream_format_to_mipi_format(
 				md_config->data_type, MIPI_PREDICTOR_NONE,
-				&sh_css_sp_group.pipe[thread_id].md_format);
+				&sh_css_sp_group.pipe[thread_id].metadata.format);
 	}
 #else
 	(void)md_config;
+	(void)md_info;
 #endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_sp_init_pipeline pipe_id %d port_config %08x\n",pipe_id,sh_css_sp_group.pipe[thread_id].inout_port_config);
@@ -1348,7 +1365,8 @@ sh_css_init_host2sp_frame_data(void)
 void
 sh_css_update_host2sp_offline_frame(
 				unsigned frame_num,
-				struct ia_css_frame *frame)
+				struct ia_css_frame *frame,
+				struct ia_css_metadata *metadata)
 {
 	unsigned int HIVE_ADDR_host_sp_com;
 	unsigned int o;
@@ -1362,9 +1380,13 @@ sh_css_update_host2sp_offline_frame(
 	o = offsetof(struct host_sp_communication, host2sp_offline_frames)
 		/ sizeof(int);
 	o += frame_num;
+	store_sp_array_uint(host_sp_com, o, frame ? frame->data : 0);
 
-	store_sp_array_uint(host_sp_com, o,
-				frame ? frame->data : 0);
+	/* Write metadata buffer into SP DMEM */
+	o = offsetof(struct host_sp_communication, host2sp_offline_metadata)
+		/ sizeof(int);
+	o += frame_num;
+	store_sp_array_uint(host_sp_com, o, metadata ? metadata->address : 0);
 }
 
 /**

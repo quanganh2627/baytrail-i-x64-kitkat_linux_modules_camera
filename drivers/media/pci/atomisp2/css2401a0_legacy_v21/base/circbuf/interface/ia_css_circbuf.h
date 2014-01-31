@@ -22,16 +22,16 @@
 #ifndef _IA_CSS_CIRCBUF_H
 #define _IA_CSS_CIRCBUF_H
 
-#include "assert_support.h"
+#include <assert_support.h>
+#include <type_support.h>
+#include <platform_support.h>
+#include <math_support.h>
+#include <storage_class.h>
+#include "ia_css_circbuf_comm.h"
 #ifdef __SP
-#include <hive_isp_css_sp_api_modified.h>
-#include <system_types.h>
+#include <hive_isp_css_sp_api_modified.h> /* OP_std_break(); */
 #endif
 
-#include "type_support.h"
-#include "platform_support.h"
-#include "storage_class.h"
-#include "ia_css_circbuf_comm.h"
 
 /****************************************************************
  *

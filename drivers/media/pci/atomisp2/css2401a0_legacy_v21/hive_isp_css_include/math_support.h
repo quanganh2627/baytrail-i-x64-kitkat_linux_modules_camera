@@ -25,6 +25,7 @@
 /* ceil((real)a / b) */
 #define ceil_div(a,b) (((a)+(b)-1)/(b))
 #define IS_ODD(a) ((a) & 0x1)
+#define IS_EVEN(a) (!IS_ODD(a))
 
 /* A => B */
 #define IMPLIES(a, b) (!(a) || (b))
@@ -44,6 +45,7 @@
 #define _CEIL_SHIFT(a, b) (((a)+(1<<(b))-1)>>(b))
 #define _CEIL_SHIFT_MUL(a, b) (CEIL_SHIFT(a, b) << (b))
 #define _CEIL_MUL2(a, b)  (((a)+(b)-1) & ~((b)-1))
+#define OP_std_modadd(base, offset, size) ((base+offset)%(size))
 
 #ifndef SH_CSS_CEIL_INLINE
 #define MAX(a, b)	 	_MAX(a,b)
@@ -178,6 +180,7 @@ static inline unsigned _ceil_mul2(unsigned a, unsigned b)
 #define _CEIL_SHIFT(a, b) (((a)+(1<<(b))-1)>>(b))
 #define _CEIL_SHIFT_MUL(a, b) (CEIL_SHIFT(a, b) << (b))
 #define _CEIL_MUL2(a, b)  (((a)+(b)-1) & ~((b)-1))
+#define OP_std_modadd(base, offset, size) ((base+offset)%(size))
 
 #ifndef SH_CSS_CEIL_INLINE
 #define MAX(a, b)	 	_MAX(a,b)
@@ -327,6 +330,13 @@ static inline unsigned _ceil_mul2(unsigned a, unsigned b)
 #define _CEIL_SHIFT(a, b) (((a)+(1<<(b))-1)>>(b))
 #define _CEIL_SHIFT_MUL(a, b) (CEIL_SHIFT(a, b) << (b))
 #define _CEIL_MUL2(a, b)  (((a)+(b)-1) & ~((b)-1))
+#if !defined(__ISP) && !defined(__SP)
+/*
+ * For SP and ISP, SDK provides the definition of OP_std_modadd.
+ * We need it only for host
+ */
+#define OP_std_modadd(base, offset, size) ((base+offset)%(size))
+#endif
 
 #ifndef SH_CSS_CEIL_INLINE
 #define MAX(a, b)	 	_MAX(a,b)

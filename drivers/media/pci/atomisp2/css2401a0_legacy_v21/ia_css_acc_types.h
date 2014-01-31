@@ -36,22 +36,13 @@
  * code is being included from within the Linux kernel source
  */
 #include <system_types.h>	/* HAS_IRQ_MAP_VERSION_# */
+#include <type_support.h>
+#include <platform_support.h>
+#include <debug_global.h>
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#include <linux/string.h>       /* memcpy() */
-#else
-#include <stdarg.h>             /* printf() */
-#include <stdlib.h>             /* size_t */
-#include <string.h>             /* memcpy() */
-#include "math_support.h"		/* min(), max() */
-#endif
-
-#include "ia_css.h"
 #include "ia_css_types.h"
-#include "platform_support.h"
+#include "ia_css_frame_public.h"
 
-#include "debug_global.h"
 
 /* Types for the acceleration API.
  * These should be moved to sh_css_internal.h once the old acceleration
@@ -92,10 +83,6 @@ enum ia_css_isp_memories {
 	N_IA_CSS_ISP_MEMORIES
 };
 
-/* Short hands */
-#define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
-#define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
-
 #define IA_CSS_NUM_ISP_MEMORIES 7
 
 #elif defined(IS_ISP_2500_SYSTEM)
@@ -115,6 +102,10 @@ enum ia_css_isp_memories {
 #else
 #error "ia_css_types.h:  SYSTEM must be one of {ISP_2400_SYSTEM, ISP_2500_SYSTEM}"
 #endif
+
+/* Short hands */
+#define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
+#define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
 
 /** CSS data descriptor */
 struct ia_css_data {
@@ -261,7 +252,7 @@ struct ia_css_binary_info {
 		uint8_t	kerneltest;
 		uint8_t	bayer_output;
 		uint8_t	routing_bnr_to_anr;
-                uint8_t routing_anr_to_de;
+		uint8_t routing_anr_to_de;
 #endif
 		uint8_t	reduced_pipe;
 		uint8_t	vf_veceven;
@@ -299,11 +290,11 @@ struct ia_css_binary_info {
 	} enable;
 	struct {
 /* DMA channel ID: [0,...,HIVE_ISP_NUM_DMA_CHANNELS> */
-		uint8_t	crop_channel;
 		uint8_t	multi_channel;
 		uint8_t	raw_out_channel;
 		uint8_t	ref_y_channel;
 		uint8_t	ref_c_channel;
+		uint8_t	tnr_channel;
 		uint8_t	tnr_out_channel;
 		uint8_t	dvs_in_channel;
 		uint8_t	dvs_coords_channel;
@@ -311,12 +302,10 @@ struct ia_css_binary_info {
 		uint8_t	c_channel;
 		uint8_t	vfout_channel;
 		uint8_t	vfout_c_channel;
+		uint8_t	vfdec_bits_per_pixel;
 		uint8_t	claimed_by_isp;
-		/* uint8_t padding[0]; */
-		struct ia_css_channel_descr fpn;
+		uint8_t padding[2];
 		struct ia_css_channel_descr raw;
-		struct ia_css_channel_descr sct;
-		struct ia_css_channel_descr tnr;
 	} dma;
 	struct {
 		uint16_t	bpp;

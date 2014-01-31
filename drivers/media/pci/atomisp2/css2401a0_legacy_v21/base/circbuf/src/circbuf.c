@@ -20,6 +20,13 @@
  */
 
 #include "ia_css_circbuf.h"
+
+#include <assert_support.h>
+
+#ifdef __SP
+#include <hive_isp_css_sp_api_modified.h>
+#endif
+
 /**********************************************************************
  *
  * Forward declarations.

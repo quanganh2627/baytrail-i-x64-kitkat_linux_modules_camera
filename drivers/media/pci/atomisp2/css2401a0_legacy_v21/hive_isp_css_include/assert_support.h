@@ -45,6 +45,7 @@
 
 #define OP___assert(cnd) assert(cnd)
 #define OP_std_break()	OP___assert(0)
+#define OP___BUG() OP___assert(0)
 
 #elif defined(__HIVECC)
 
@@ -54,12 +55,13 @@
  * controller type processors. Presently there are not controls
  * in place for that
  */
-/* #define OP___assert(cnd) OP___csim_assert(cnd) */
-//#if defined(__SP)
-//#define OP___assert(cnd) OP___csim_assert(cnd)
-//#else
+#if defined(HRT_SCHED)
 #define OP___assert(cnd) ((void)0)
-//#endif
+#else
+#define OP___assert(cnd) OP___csim_assert(cnd)
+#endif
+
+#define OP___BUG() OP___csim_assert(0)
 
 #elif defined(__KERNEL__) /* a.o. Android builds */
 #include <linux/bug.h>
@@ -78,6 +80,7 @@
 
 #define OP___assert(cnd) assert(cnd)
 #define OP_std_break()	OP___assert(0)
+#define OP___BUG() OP___assert(0)
 
 #elif defined(__FIST__)
 
@@ -88,6 +91,7 @@
 
 #include "assert.h"
 #define OP___assert(cnd) assert(cnd)
+#define OP___BUG() OP___assert(0)
 #if !defined(__ISP) && !defined(__SP)
 /*
  * For SP and ISP, SDK provides the definition of OP_std_break

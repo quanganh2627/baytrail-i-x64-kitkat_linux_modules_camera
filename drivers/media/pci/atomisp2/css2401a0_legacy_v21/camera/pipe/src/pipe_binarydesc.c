@@ -468,7 +468,10 @@ void ia_css_pipe_get_primary_binarydesc(
 
 	in_info->res = pipe->stream->info.effective_info;
 	in_info->padded_width = in_info->res.width;
-	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
+	if (pipe->stream->config.pack_raw_pixels)
+		in_info->format = IA_CSS_FRAME_FORMAT_RAW_PACKED;
+	else
+		in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
 	pipe_binarydesc_get_offline(pipe, mode,
 			       prim_descr, in_info, out_info, vf_info);
@@ -540,6 +543,7 @@ void ia_css_pipe_get_post_gdc_binarydesc(
 
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_YUV420_16;
+	in_info->raw_bit_depth = 16;
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_POST_ISP,
 			       post_gdc_descr, in_info, out_info, vf_info);
 	post_gdc_descr->isp_pipe_version = pipe->config.isp_pipe_version;

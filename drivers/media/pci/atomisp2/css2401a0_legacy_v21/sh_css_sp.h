@@ -73,7 +73,8 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			unsigned int required_bds_factor,
 			enum sh_css_pipe_config_override copy_ovrd,
 			enum ia_css_input_mode input_mode,
-			const struct ia_css_metadata_config *md_config
+			const struct ia_css_metadata_config *md_config,
+			const struct ia_css_metadata_info *md_info
 #if !defined(IS_ISP_2500_SYSTEM)
 			, const mipi_port_ID_t port_id
 #endif
@@ -100,7 +101,8 @@ sh_css_init_host2sp_frame_data(void);
 void
 sh_css_update_host2sp_offline_frame(
 				unsigned frame_num,
-				struct ia_css_frame *frame);
+				struct ia_css_frame *frame,
+				struct ia_css_metadata *metadata);
 
 /**
  * @brief Get the right queue to operate on
@@ -151,7 +153,7 @@ sh_css_sp_set_sp_running(bool flag);
 bool
 sh_css_sp_is_running(void);
 
-#if SP_DEBUG !=SP_DEBUG_NONE
+#if SP_DEBUG != SP_DEBUG_NONE
 
 void
 sh_css_sp_get_debug_state(struct sh_css_sp_debug_state *state);

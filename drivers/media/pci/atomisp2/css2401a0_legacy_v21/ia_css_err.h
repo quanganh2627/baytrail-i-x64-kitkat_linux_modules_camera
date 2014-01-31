@@ -19,47 +19,27 @@
  *
  */
 
-#ifndef __ISP2600_OP1W_TYPES_H_INCLUDED__
-#define __ISP2600_OP1W_TYPES_H_INCLUDED__
+#ifndef __IA_CSS_ERR_H
+#define __IA_CSS_ERR_H
 
-/*
- * This file is part of the Multi-precision vector operations exstension package.
+/** Errors, these values are used as the return value for most
+ *  functions in this API.
  */
- 
-/* 
- * Single-precision vector operations
- */
- 
-/*  
- * Prerequisites:
- *
- */
+enum ia_css_err {
+	IA_CSS_SUCCESS,
+	IA_CSS_ERR_INTERNAL_ERROR,
+	IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY,
+	IA_CSS_ERR_INVALID_ARGUMENTS,
+	IA_CSS_ERR_SYSTEM_NOT_IDLE,
+	IA_CSS_ERR_MODE_HAS_NO_VIEWFINDER,
+	IA_CSS_ERR_QUEUE_IS_FULL,
+	IA_CSS_ERR_QUEUE_IS_EMPTY,
+	IA_CSS_ERR_RESOURCE_NOT_AVAILABLE,
+	IA_CSS_ERR_RESOURCE_LIST_TO_SMALL,
+	IA_CSS_ERR_RESOURCE_ITEMS_STILL_ALLOCATED,
+	IA_CSS_ERR_RESOURCE_EXHAUSTED,
+	IA_CSS_ERR_RESOURCE_ALREADY_ALLOCATED,
+	IA_CSS_ERR_VERSION_MISMATCH
+};
 
-#include "mpmath.h"
-#include "isp2600_config.h"
-
-/*
- * Single-precision data type specification
- */
-
-
-typedef mpsdata_t       tvector1w;
-typedef mpsdata_t       tscalar1w;
-typedef spsdata_t        tflags1w;
-
-typedef struct {
-	mpsdata_t slice[NUM_SLICE_ELEMS]; // array of slice elements.
-}        tslice1w;
-
-
-typedef  struct {
-  tvector1w       d;
-  tflags1w        f;
-} tvector1w_tflags1w;
-
-typedef  struct {
-  tvector1w       d;
-  tslice1w  s;
-} tvector1w_tslice1w;
-
-#endif /* __ISP2600_OP1W_TYPES_H_INCLUDED__ */
+#endif /* __IA_CSS_ERR_H */

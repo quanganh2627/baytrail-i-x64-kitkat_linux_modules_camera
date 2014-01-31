@@ -22,7 +22,8 @@
 #ifndef __IA_CSS_ISYS_COMM_H
 #define __IA_CSS_ISYS_COMM_H
 
-#include "system_local.h"
+#include <system_types.h>
+
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 /*
  * a) ia_css_isys_stream_h & ia_css_isys_stream_cfg_t come from host.
@@ -39,5 +40,6 @@ typedef virtual_input_system_cfg_t	ia_css_isys_stream_cfg_t;
  * error check for ISYS APIs.
  * */
 typedef bool ia_css_isys_error_t;
+
 #endif  /* USE_INPUT_SYSTEM_VERSION_2401*/
 #endif  /*_IA_CSS_ISYS_COMM_H */

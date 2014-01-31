@@ -22,8 +22,8 @@
 #ifndef __HOST_BBB_CFG_H_INCLUDED__
 #define __HOST_BBB_CFG_H_INCLUDED__
 
-#define USE2400
-//#define USE2600
+//#define USE2400
+#define USE2600
 
 
 /* consider to use same naming as cfg.dat from the SDK */
@@ -34,22 +34,15 @@
   */
 
 
-#define NUM_VEC_ELEMS 1
+#if defined(USE2400)
+#include "isp2400_config.h"
 
+#elif defined(USE2600)
 
-#ifdef USE2400
-#define NUM_BITS 14
-#define NUM_SLICE_ELEMS 4
-#define ROUNDMODE           ROUND_NEAREST_EVEN
-
-#elif USE2600
-
-#define NUM_BITS 16
-#define NUM_SLICE_ELEMS 8
-#define ROUNDMODE           ROUND_NEAREST_EVEN
+#include "isp2600_config.h"
 
 #else
-#error "unsupported system"
+#error "bbb_cfg.h: unsupported system. Specify one of {USE2400, USE2600}"
 #endif
 
 

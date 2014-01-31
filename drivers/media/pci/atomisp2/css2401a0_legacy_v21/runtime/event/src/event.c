@@ -85,7 +85,7 @@ void ia_css_event_decode(
 	assert(payload[2] == 0);
 	assert(payload[3] == 0);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "decode_sp_event() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_event_decode() enter:\n");
 
 	/* First decode according to the common case
 	 * In case of a PORT_EOF event we overwrite with
