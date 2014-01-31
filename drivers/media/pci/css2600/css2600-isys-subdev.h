@@ -50,7 +50,7 @@ int css2600_isys_subdev_get_ffmt(struct v4l2_subdev *sd,
 
 int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
 			     struct v4l2_subdev_ops *ops,
-			     unsigned int nr_ctrls);
+			     unsigned int nr_ctrls, unsigned int num_pads);
 void css2600_isys_subdev_cleanup(struct css2600_isys_subdev *asd);
 
 #endif /* CSS2600_ISYS_SUBDEV_H */

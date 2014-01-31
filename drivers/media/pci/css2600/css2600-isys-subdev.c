@@ -80,17 +80,34 @@ int css2600_isys_subdev_get_ffmt(struct v4l2_subdev *sd,
 }
 
 int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
-			     struct v4l2_subdev_ops *ops, unsigned int nr_ctrls)
+			     struct v4l2_subdev_ops *ops, unsigned int nr_ctrls,
+			     unsigned int num_pads)
 {
+	int rval;
+
 	v4l2_subdev_init(&asd->sd, ops);
 
 	asd->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	asd->sd.owner = THIS_MODULE;
 
-	return v4l2_ctrl_handler_init(&asd->ctrl_handler, nr_ctrls);
+	rval = v4l2_ctrl_handler_init(&asd->ctrl_handler, nr_ctrls);
+	if (rval)
+		return rval;
+
+	rval = media_entity_init(&asd->sd.entity, num_pads, asd->pad, 0);
+	if (rval)
+		goto fail;
+
+	return 0;
+
+fail:
+	v4l2_ctrl_handler_free(&asd->ctrl_handler);
+
+	return rval;
 }
 
 void css2600_isys_subdev_cleanup(struct css2600_isys_subdev *asd)
 {
+	media_entity_cleanup(&asd->sd.entity);
 	v4l2_ctrl_handler_free(&asd->ctrl_handler);
 }

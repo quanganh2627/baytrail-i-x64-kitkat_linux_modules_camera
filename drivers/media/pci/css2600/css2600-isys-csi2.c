@@ -77,7 +77,6 @@ static struct v4l2_subdev_ops csi2_sd_ops = {
 void css2600_isys_csi2_cleanup(struct css2600_isys_csi2 *csi2)
 {
 	v4l2_device_unregister_subdev(&csi2->asd.sd);
-	media_entity_cleanup(&csi2->asd.sd.entity);
 	css2600_isys_subdev_cleanup(&csi2->asd);
 	css2600_isys_video_cleanup(&csi2->av);
 }
@@ -115,16 +114,10 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 	csi2->asd.pad[CSI2_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
 	csi2->asd.pad[CSI2_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
 
-	rval = css2600_isys_subdev_init(&csi2->asd, &csi2_sd_ops, 0);
+	rval = css2600_isys_subdev_init(&csi2->asd, &csi2_sd_ops, 0,
+					NR_OF_CSI2_PADS);
 	if (rval)
 		goto fail;
-
-	rval = media_entity_init(&csi2->asd.sd.entity, NR_OF_CSI2_PADS,
-				 csi2->asd.pad, 0);
-	if (rval) {
-		dev_info(&isys->adev->dev, "can't register media entity\n");
-		goto fail;
-	}
 
 	csi2->asd.supported_fmts = csi2_supported_fmts;
 	css2600_isys_subdev_set_ffmt(&csi2->asd.sd, NULL, &fmt);
