@@ -24,7 +24,7 @@
 #include <media/media-device.h>
 
 #include "css2600.h"
-#include "css2600-csi2.h"
+#include "css2600-isys-csi2.h"
 #include "css2600-pdata.h"
 
 #define MAX_CSI2_PORTS			4
@@ -36,7 +36,7 @@ struct css2600_isys {
 
 	struct css2600_isys_pdata *pdata;
 
-	struct css2600_csi2 csi2[MAX_CSI2_PORTS];
+	struct css2600_isys_csi2 csi2[MAX_CSI2_PORTS];
 };
 
 struct css2600_isys_pixelformat {

@@ -21,7 +21,7 @@
 #define CSS2600_PDATA_H
 
 #define CSS2600_MMU_NAME CSS2600_NAME "-mmu"
-#define CSS2600_CSI2_NAME CSS2600_NAME "-csi2"
+#define CSS2600_ISYS_CSI2_NAME CSS2600_NAME "-csi2"
 #define CSS2600_ISYS_NAME CSS2600_NAME "-isys"
 #define CSS2600_PSYS_NAME CSS2600_NAME "-psys"
 #define CSS2600_BUTTRESS_NAME CSS2600_NAME "-buttress"
@@ -33,7 +33,7 @@ struct css2600_mmu_pdata {
 	unsigned int nr_base;
 };
 
-struct css2600_csi2_pdata {
+struct css2600_isys_csi2_pdata {
 	void __iomem *base;
 };
 

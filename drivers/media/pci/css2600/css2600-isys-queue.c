@@ -26,7 +26,7 @@
 
 #include "css2600.h"
 #include "css2600-bus.h"
-#include "css2600-csi2.h"
+#include "css2600-isys-csi2.h"
 #include "css2600-isys.h"
 
 static int queue_setup(struct vb2_queue *q, const struct v4l2_format *fmt,

@@ -29,7 +29,7 @@
 
 #include "css2600.h"
 #include "css2600-bus.h"
-#include "css2600-csi2.h"
+#include "css2600-isys-csi2.h"
 #include "css2600-isys.h"
 
 static int isys_open(struct file *file)
@@ -88,7 +88,7 @@ static void isys_unregister_csi2(struct css2600_isys *isys)
 	unsigned int i;
 
 	for (i = 0; i < cfg->nports; i++)
-		css2600_csi2_cleanup(&isys->csi2[i]);
+		css2600_isys_csi2_cleanup(&isys->csi2[i]);
 }
 
 static int isys_register_csi2(struct css2600_isys *isys)
@@ -99,7 +99,7 @@ static int isys_register_csi2(struct css2600_isys *isys)
 	BUG_ON(cfg->nports > MAX_CSI2_PORTS);
 
 	for (i = 0; i < cfg->nports; i++) {
-		int rval = css2600_csi2_init(
+		int rval = css2600_isys_csi2_init(
 			&isys->csi2[i], isys,
 			isys->pdata->base + cfg->offsets[i], cfg->nlanes[i],
 			i);

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef CSS2600_CSI2_REG_H
-#define CSS2600_CSI2_REG_H
+#ifndef CSS2600_ISYS_CSI2_REG_H
+#define CSS2600_ISYS_CSI2_REG_H
 
 /* CSI-2 register ranges */
 /* CSI-2 port registers 0..3 (A..D) */
@@ -53,4 +53,4 @@
 #define CSI2_REG_CSI_RX_DLY_CNT_TERMEN_DLANE(n)		(0x2c + (n) * 8)
 #define CSI2_REG_CSI_RX_DLY_CNT_SETTLE_DLANE(n)		(0x30 + (n) * 8)
 
-#endif /* CSS2600_CSI2_REG_H */
+#endif /* CSS2600_ISYS_CSI2_REG_H */

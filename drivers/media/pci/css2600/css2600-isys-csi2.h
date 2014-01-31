@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef CSS2600_CSI2_H
-#define CSS2600_CSI2_H
+#ifndef CSS2600_ISYS_CSI2_H
+#define CSS2600_ISYS_CSI2_H
 
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
@@ -28,7 +28,7 @@
 #include "css2600-isys-video.h"
 #include "css2600-isys-queue.h"
 
-struct css2600_csi2_pdata;
+struct css2600_isys_csi2_pdata;
 struct css2600_isys;
 
 #define CSI2_PAD_SINK			0
@@ -37,16 +37,16 @@ struct css2600_isys;
 
 #define MAX_CSI2_LANES			4
 
-#define CSS2600_CSI2_SENSOR_CFG_LANE_CLOCK	0
-#define CSS2600_CSI2_SENSOR_CFG_LANE_DATA(n)	((n) + 1)
+#define CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_CLOCK	0
+#define CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_DATA(n)	((n) + 1)
 
 /*
- * struct css2600_csi2
+ * struct css2600_isys_csi2
  *
  * @nlanes: number of lanes in the receiver
  */
-struct css2600_csi2 {
-	struct css2600_csi2_pdata *pdata;
+struct css2600_isys_csi2 {
+	struct css2600_isys_csi2_pdata *pdata;
 	struct css2600_isys *isys;
 	struct css2600_isys_subdev asd;
 	struct css2600_isys_video av;
@@ -63,12 +63,12 @@ struct css2600_csi2 {
 	} sensor_cfg;
 };
 
-int css2600_csi2_init(struct css2600_csi2 *csi2, struct css2600_isys *isys,
+int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *isys,
 		      void __iomem *base, unsigned int lanes,
 		      unsigned int index);
-void css2600_csi2_cleanup(struct css2600_csi2 *csi2);
-void css2600_csi2_isr(struct css2600_csi2 *csi2);
+void css2600_isys_csi2_cleanup(struct css2600_isys_csi2 *csi2);
+void css2600_isys_csi2_isr(struct css2600_isys_csi2 *csi2);
 
-void css2600_csi2_set_stream(struct css2600_csi2 *csi2, bool enable);
+void css2600_isys_csi2_set_stream(struct css2600_isys_csi2 *csi2, bool enable);
 
-#endif /* CSS2600_CSI2_H */
+#endif /* CSS2600_ISYS_CSI2_H */

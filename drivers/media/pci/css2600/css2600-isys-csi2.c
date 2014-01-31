@@ -31,8 +31,8 @@
 
 #include "css2600.h"
 #include "css2600-bus.h"
-#include "css2600-csi2.h"
-#include "css2600-csi2-reg.h"
+#include "css2600-isys-csi2.h"
+#include "css2600-isys-csi2-reg.h"
 #include "css2600-isys.h"
 #include "css2600-isys-subdev.h"
 #include "css2600-isys-video.h"
@@ -74,14 +74,14 @@ static struct v4l2_subdev_ops csi2_sd_ops = {
 	.pad = &csi2_sd_pad_ops,
 };
 
-void css2600_csi2_cleanup(struct css2600_csi2 *csi2)
+void css2600_isys_csi2_cleanup(struct css2600_isys_csi2 *csi2)
 {
 	v4l2_device_unregister_subdev(&csi2->asd.sd);
 	media_entity_cleanup(&csi2->asd.sd.entity);
 	css2600_isys_video_cleanup(&csi2->av);
 }
 
-int css2600_csi2_init(struct css2600_csi2 *csi2, struct css2600_isys *isys,
+int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *isys,
 		      void __iomem *base, unsigned int nlanes,
 		      unsigned int index)
 {
@@ -147,16 +147,16 @@ int css2600_csi2_init(struct css2600_csi2 *csi2, struct css2600_isys *isys,
 	return 0;
 
 fail:
-	css2600_csi2_cleanup(csi2);
+	css2600_isys_csi2_cleanup(csi2);
 
 	return rval;
 }
 
-void css2600_csi2_isr(struct css2600_csi2 *csi2)
+void css2600_isys_csi2_isr(struct css2600_isys_csi2 *csi2)
 {
 }
 
-void css2600_csi2_set_stream(struct css2600_csi2 *csi2, bool enable)
+void css2600_isys_csi2_set_stream(struct css2600_isys_csi2 *csi2, bool enable)
 {
 	unsigned int i;
 
@@ -165,22 +165,22 @@ void css2600_csi2_set_stream(struct css2600_csi2 *csi2, bool enable)
 		return;
 	}
 
-	writel(csi2->sensor_cfg.termen[CSS2600_CSI2_SENSOR_CFG_LANE_CLOCK],
+	writel(csi2->sensor_cfg.termen[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_CLOCK],
 	       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_TERMEN_CLANE);
-	writel(csi2->sensor_cfg.settle[CSS2600_CSI2_SENSOR_CFG_LANE_CLOCK],
+	writel(csi2->sensor_cfg.settle[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_CLOCK],
 	       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_SETTLE_CLANE);
 
 	for (i = 0; i < MAX_CSI2_LANES; i++) {
-		writel(csi2->sensor_cfg.termen[CSS2600_CSI2_SENSOR_CFG_LANE_DATA(i)],
+		writel(csi2->sensor_cfg.termen[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_DATA(i)],
 		       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_TERMEN_DLANE(i));
-		writel(csi2->sensor_cfg.settle[CSS2600_CSI2_SENSOR_CFG_LANE_DATA(i)],
+		writel(csi2->sensor_cfg.settle[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_DATA(i)],
 		       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_SETTLE_DLANE(i));
 	}
 
 	writel(CSI2_CSI_RX_ENABLE_ENABLE, csi2->base + CSI2_REG_CSI_RX_ENABLE);
 }
 
-static bool css2600_csi2_is_idle(struct css2600_csi2 *csi2)
+static bool css2600_isys_csi2_is_idle(struct css2600_isys_csi2 *csi2)
 {
 	return readl(csi2->base + CSI2_REG_CSI_RX_STATUS)
 		!= CSI2_CSI_RX_STATUS_BUSY;
