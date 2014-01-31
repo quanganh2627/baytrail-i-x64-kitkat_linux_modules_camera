@@ -165,6 +165,7 @@ static int psysstub_runisp(struct css2600_run_cmd *cmd,
 	}
 
 	mutex_lock(&isp->mutex);
+	isp->cur_cmd = NULL;
 	if (cmd->suspended) {
 		cmd->suspended = false;
 		mutex_unlock(&isp->mutex);
@@ -191,6 +192,7 @@ static struct css2600_run_cmd *__psysstub_next_cmd(struct css2600_device *isp)
 			continue;
 		cmd = list_first_entry(&isp->commands[i],
 				struct css2600_run_cmd, list);
+		list_del(&cmd->list);
 		break;
 	}
 	if (!cmd)
@@ -205,6 +207,7 @@ static struct css2600_run_cmd *psysstub_next_cmd(struct css2600_device *isp)
 
 	mutex_lock(&isp->mutex);
 	cmd = __psysstub_next_cmd(isp);
+	isp->cur_cmd = cmd;
 	mutex_unlock(&isp->mutex);
 
 	return cmd;
@@ -218,11 +221,6 @@ static void psysstub_run_cmd(struct work_struct *work)
 	while ((cmd = psysstub_next_cmd(isp)) != NULL) {
 		if (psysstub_runisp(cmd, isp) == -EINTR)
 			continue;
-
-		mutex_lock(&isp->mutex);
-		list_del(&cmd->list);
-		mutex_unlock(&isp->mutex);
-
 		kfree(cmd);
 	}
 }
@@ -359,7 +357,7 @@ static long css2600_ioctl_qcmd(struct file *file, struct css2600_command __user 
 	struct css2600_fh *fh = file->private_data;
 	struct css2600_device *isp = device_to_css2600_device(fh->dev);
 	struct css2600_run_cmd *cmd;
-	struct css2600_run_cmd *cur_cmd;
+	struct css2600_run_cmd *cur_cmd = isp->cur_cmd;
 	int err;
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
@@ -381,9 +379,10 @@ static long css2600_ioctl_qcmd(struct file *file, struct css2600_command __user 
 	}
 	cmd->fh = fh;
 
-	cur_cmd = __psysstub_next_cmd(isp);
 	if (cur_cmd && cur_cmd->command.priority > cmd->command.priority) {
 		cur_cmd->suspended = true;
+		list_add(&cur_cmd->list, &isp->commands[cur_cmd->command.priority]);
+		isp->cur_cmd = NULL;
 		list_add(&cmd->list, &isp->commands[cmd->command.priority]);
 	} else {
 		list_add_tail(&cmd->list,

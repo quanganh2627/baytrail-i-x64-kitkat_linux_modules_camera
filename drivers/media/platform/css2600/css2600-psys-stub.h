@@ -70,6 +70,7 @@ struct css2600_device {
 	struct workqueue_struct	*run_cmd_queue;
 	struct work_struct run_cmd;
 
+	struct css2600_run_cmd *cur_cmd;
 	bool queue_empty;
 };
 
