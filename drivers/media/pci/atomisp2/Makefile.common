@@ -5,8 +5,6 @@ else ifneq ($(ISP2401), )
 	css_platform_folder = hive_isp_css_2401_system
 else ifneq ($(ISP2401_NEW_INPUT_SYSTEM), )
 	css_platform_folder = hive_isp_css_2401_system
-else
-	css_platform_folder = hive_isp_css_system
 endif
 
 ifneq ($(CSS21), )
@@ -136,60 +134,6 @@ atomisp-$(postfix)-objs += \
 	css/$(css_platform_folder)_generated/ia_css_isp_configs.o
 endif
 
-else
-# Objects for CSS 1.5
-atomisp-$(postfix)-objs := \
-		atomisp_driver/atomisp_ioctl.o \
-		atomisp_driver/atomisp_compat_ioctl32.o \
-		atomisp_driver/atomisp_cmd.o \
-		atomisp_driver/atomisp_fops.o \
-		atomisp_driver/atomisp_subdev.o \
-		atomisp_driver/atomisp_csi2.o \
-		atomisp_driver/atomisp_tpg.o \
-		atomisp_driver/atomisp_file.o \
-		atomisp_driver/atomisp_v4l2.o \
-		atomisp_driver/atomisp_acc.o \
-		atomisp_driver/mmu/isp_mmu.o \
-		atomisp_driver/mmu/sh_mmu_mrfld.o \
-		atomisp_driver/mmu/sh_mmu_mfld.o \
-		atomisp_driver/hmm/hmm.o \
-		atomisp_driver/hmm/hmm_bo.o \
-		atomisp_driver/hmm/hmm_bo_dev.o \
-		atomisp_driver/hmm/hmm_vm.o \
-		atomisp_driver/hmm/hmm_reserved_pool.o \
-		atomisp_driver/hmm/hmm_dynamic_pool.o \
-		atomisp_driver/hrt/hive_isp_css_mm_hrt.o \
-		css/sh_css.o \
-		css/sh_css_binary.o \
-		css/sh_css_debug.o \
-		css/sh_css_hrt.o \
-		css/sh_css_params.o \
-		css/sh_css_sp.o \
-		css/sh_css_sp_start.o \
-		css/sh_css_rx.o \
-		css/sh_css_metrics.o \
-		css/sh_css_firmware.o \
-		css/sh_css_accelerate.o \
-		css/sh_css_refcount.o \
-		css/sh_css_param_shading.o \
-		css/$(css_common_folder)/host/gdc.o \
-		css/$(css_common_folder)/host/irq.o \
-		css/$(css_common_folder)/host/mmu.o \
-		css/$(css_common_folder)/host/dma.o \
-		css/$(css_common_folder)/host/sp.o \
-		css/$(css_common_folder)/host/isp.o \
-		css/hive_isp_css_shared/host/queue.o \
-		css/hive_isp_css_shared/host/ia_css_i_rmgr_shared.o \
-		css/hive_isp_css_shared/host/ia_css_i_rmgr_vbuf_shared.o \
-		css/hive_isp_css_shared/host/tag.o \
-		css/hive_isp_css_shared/host/sw_event.o \
-		css/$(css_common_folder)/host/fifo_monitor.o \
-		css/$(css_common_folder)/host/gp_device.o \
-		css/$(css_common_folder)/host/input_formatter.o \
-		atomisp_driver/atomisp_compat_css15.o \
-		atomisp_driver/hrt/device_access.o \
-		atomisp_driver/hrt/memory_access.o \
-		css/sh_css_pipeline.o
 endif
 
 obj-$(CONFIG_VIDEO_ATOMISP) = atomisp-$(postfix).o
