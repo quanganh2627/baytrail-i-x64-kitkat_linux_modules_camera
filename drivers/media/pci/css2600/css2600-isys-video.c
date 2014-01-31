@@ -136,6 +136,7 @@ int css2600_isys_video_init(struct css2600_isys_video *av)
 	av->vdev.fops = &css2600_isys_fops;
 	av->vdev.v4l2_dev = &av->isys->v4l2_dev;
 	av->vdev.ioctl_ops = &ioctl_ops;
+	set_bit(V4L2_FL_USES_V4L2_FH, &av->vdev.flags);
 	video_set_drvdata(&av->vdev, av);
 
 	rval = video_register_device(&av->vdev, VFL_TYPE_GRABBER, -1);
