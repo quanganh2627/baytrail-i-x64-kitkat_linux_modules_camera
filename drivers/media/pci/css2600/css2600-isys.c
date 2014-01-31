@@ -117,7 +117,7 @@ static int isys_register_devices(struct css2600_isys *isys)
 	int rval;
 
 	isys->media_dev.dev = &isys->adev->dev;
-	strlcpy(isys->media_dev.model, "Intel ISP",
+	strlcpy(isys->media_dev.model, CSS2600_NAME,
 		sizeof(isys->media_dev.model));
 	strlcpy(isys->v4l2_dev.name, isys->media_dev.model,
 		sizeof(isys->v4l2_dev.name));
