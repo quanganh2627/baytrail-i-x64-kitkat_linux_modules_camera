@@ -247,11 +247,12 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 	}
 
 	l2_pt[l2_idx] = paddr >> ISP_PADDR_SHIFT;
+
+	spin_unlock_irqrestore(&adom->lock, flags);
+
 #ifdef CONFIG_X86
 	clflush_cache_range(&l2_pt[l2_idx], sizeof(l2_pt[l2_idx]));
 #endif /* CONFIG_X86 */
-
-	spin_unlock_irqrestore(&adom->lock, flags);
 
 	pr_debug("l2 index %u mapped as 0x%8.8x\n", l2_idx,
 		 l2_pt[l2_idx]);
@@ -300,10 +301,10 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 			 l2_idx, TBL_PHYS_ADDR(l2_pt[l2_idx]));
 		spin_lock_irqsave(&adom->lock, flags);
 		l2_pt[l2_idx] = INVALID_PAGE;
+		spin_unlock_irqrestore(&adom->lock, flags);
 #ifdef CONFIG_X86
 		clflush_cache_range(&l2_pt[l2_idx], sizeof(l2_pt[l2_idx]));
 #endif /* CONFIG_X86 */
-		spin_unlock_irqrestore(&adom->lock, flags);
 	}
 
 	return 0;
