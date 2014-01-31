@@ -50,7 +50,6 @@ struct css2600_csi2 {
 	struct css2600_isys *isys;
 	struct css2600_isys_subdev asd;
 	struct css2600_isys_video av;
-	struct media_pad pad[NR_OF_CSI2_PADS];
 
 	void __iomem *base;
 	unsigned int nlanes;

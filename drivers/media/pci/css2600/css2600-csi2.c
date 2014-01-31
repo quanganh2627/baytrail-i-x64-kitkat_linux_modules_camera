@@ -109,8 +109,9 @@ int css2600_csi2_init(struct css2600_csi2 *csi2, struct css2600_isys *isys,
 		goto fail;
 	}
 
-	csi2->pad[CSI2_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
-	csi2->pad[CSI2_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
+	BUG_ON(CSS2600_ISYS_MAX_PAD < NR_OF_CSI2_PADS);
+	csi2->asd.pad[CSI2_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
+	csi2->asd.pad[CSI2_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
 
 	css2600_isys_subdev_init(&csi2->asd, &csi2_sd_ops);
 
