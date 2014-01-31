@@ -560,7 +560,8 @@ static enum ia_css_frame_format yuv420_copy_formats[] = {
 	IA_CSS_FRAME_FORMAT_NV21,
 	IA_CSS_FRAME_FORMAT_YV12,
 	IA_CSS_FRAME_FORMAT_YUV420,
-	IA_CSS_FRAME_FORMAT_YUV420_16
+	IA_CSS_FRAME_FORMAT_YUV420_16,
+	IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8
 };
 
 static enum ia_css_frame_format yuv422_copy_formats[] = {

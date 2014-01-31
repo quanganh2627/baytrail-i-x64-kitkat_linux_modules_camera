@@ -26,7 +26,7 @@
 #include "ia_css_debug.h"
 
 #define IA_CSS_INCLUDE_CONFIGURATIONS
-#include HRTSTR(ia_css_isp_configs.SYSTEM.h)
+#include "ia_css_isp_configs.h"
 #include "ia_css_fpn.host.h"
 
 void

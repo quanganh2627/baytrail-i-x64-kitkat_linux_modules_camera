@@ -25,7 +25,7 @@
 #include "ia_css_debug.h"
 #include "assert_support.h"
 #define IA_CSS_INCLUDE_CONFIGURATIONS
-#include HRTSTR(ia_css_isp_configs.SYSTEM.h)
+#include "ia_css_isp_configs.h"
 
 #include "ia_css_raw.host.h"
 
@@ -104,10 +104,5 @@ ia_css_raw_configure(
 {
 	const struct ia_css_raw_configuration config =
 		{ pipe, in_info, internal_info };
-#if 0
 	ia_css_configure_raw(binary, &config);
-#else
-	(void)binary;
-	(void)config;
-#endif
 }

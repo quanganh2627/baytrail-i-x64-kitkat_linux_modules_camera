@@ -65,6 +65,14 @@ enum ia_css_frame_format {
 					     number of allocated bytes. */
 	IA_CSS_FRAME_FORMAT_MIPI,	/**< MIPI frame, 1 plane */
 	IA_CSS_FRAME_FORMAT_RAW_PACKED, /**< RAW, 1 plane, packed */
+	IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8,	      /**< 8 bit per Y/U/V.
+							   Y odd line; UYVY
+							   interleaved even line */
+	IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8, /**< Legacy YUV420. UY odd
+							   line; VY even line */
+	IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10,       /**< 10 bit per Y/U/V. Y odd
+							   line; UYVY interleaved
+							   even line */
 };
 /* This one is hardcoded because the ISP firmware requires it known at
  * compile time (preprocessor time in fact). */

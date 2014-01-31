@@ -36,9 +36,9 @@ struct ia_css_isp_parameters;
 #endif
 #include "sh_css_defs.h"	/* SH_CSS_MAX_STAGES */
 #include "ia_css_pipeline.h"
-#include HRTSTR(ia_css_isp_params.SYSTEM.h)
+#include "ia_css_isp_params.h"
 #if defined(IS_ISP_2500_SYSTEM)
-#include HRTSTR(ia_css_isp_acc_params.SYSTEM.h)
+#include "ia_css_isp_acc_params.h"
 #endif
 
 #include "ob/ob_1.0/ia_css_ob_param.h"
@@ -85,9 +85,9 @@ struct ia_css_isp_parameters {
 	struct ia_css_gc_config     gc_config;
 	struct ia_css_anr_config    anr_config;
 	struct ia_css_ce_config     ce_config;
-	
+
 	struct ia_css_dvs_6axis_config	*dvs_6axis_config;
-	
+
 	struct ia_css_ecd_config    ecd_config;
 	struct ia_css_ynr_config    ynr_config;
 	struct ia_css_yee_config    yee_config;
@@ -103,7 +103,7 @@ struct ia_css_isp_parameters {
 	struct ia_css_rgb_gamma_table     b_gamma_table;
 	struct ia_css_anr_thres     anr_thres;
 	struct ia_css_xnr_config    xnr_config;
-	
+
 	bool isp_params_changed;
 	bool isp_mem_params_changed
 		[IA_CSS_PIPE_ID_NUM][SH_CSS_MAX_STAGES]

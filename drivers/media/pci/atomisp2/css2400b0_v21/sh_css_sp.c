@@ -62,7 +62,7 @@
 #endif
 
 #define IA_CSS_INCLUDE_CONFIGURATIONS
-#include HRTSTR(ia_css_isp_configs.SYSTEM.h)
+#include "ia_css_isp_configs.h"
 
 struct sh_css_sp_group		sh_css_sp_group;
 struct sh_css_sp_stage		sh_css_sp_stage;
@@ -470,6 +470,7 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 		break;
 	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
 		sp_frame_out->planes.yuyv.offset = frame_in->planes.yuyv.offset;
 		break;
@@ -573,6 +574,7 @@ set_output_frame_buffer(const struct ia_css_frame *frame,
 	case IA_CSS_FRAME_FORMAT_NV61:
 	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
 	case IA_CSS_FRAME_FORMAT_RGB565:
 	case IA_CSS_FRAME_FORMAT_RGBA888:
@@ -680,7 +682,8 @@ set_view_finder_buffer(const struct ia_css_frame *frame,
 	// the dual output pin
 	case IA_CSS_FRAME_FORMAT_NV12:
 	case IA_CSS_FRAME_FORMAT_YUYV:
-  case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 
 	// for vf_veceven
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:

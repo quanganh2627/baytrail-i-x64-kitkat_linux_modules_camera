@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140129_1527 */
+/* Release Version: irci_master_20140130_0456 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -112,7 +112,7 @@ struct ia_css_vector {
 struct ia_css_dvs_grid_info {
 	uint32_t enable;        /**< DVS statistics enabled.
 					0:disabled, 1:enabled */
-	uint32_t width;	    	/**< Width of DVS grid table.
+	uint32_t width;		/**< Width of DVS grid table.
 					(= Horizontal number of grid cells
 					in table, which cells have effective
 					statistics.)
@@ -232,21 +232,21 @@ struct ia_css_capture_config {
 struct ia_css_isp_config {
 	struct ia_css_wb_config   *wb_config;	/**< White Balance
 							[WB1, 1&2] */
-	struct ia_css_cc_config   *cc_config;  	/**< Color Correction
+	struct ia_css_cc_config   *cc_config;	/**< Color Correction
 							[CSC1, 1only] */
-	struct ia_css_tnr_config  *tnr_config; 	/**< Temporal Noise Reduction
+	struct ia_css_tnr_config  *tnr_config;	/**< Temporal Noise Reduction
 							[TNR1, 1&2] */
-	struct ia_css_ecd_config  *ecd_config; 	/**< Eigen Color Demosaicing
+	struct ia_css_ecd_config  *ecd_config;	/**< Eigen Color Demosaicing
 							[DE2, 2only] */
-	struct ia_css_ynr_config  *ynr_config; 	/**< Y(Luma) Noise Reduction
+	struct ia_css_ynr_config  *ynr_config;	/**< Y(Luma) Noise Reduction
 							[YNR2&YEE2, 2only] */
-	struct ia_css_fc_config   *fc_config;  	/**< Fringe Control
+	struct ia_css_fc_config   *fc_config;	/**< Fringe Control
 							[FC2, 2only] */
-	struct ia_css_cnr_config  *cnr_config; 	/**< Chroma Noise Reduction
+	struct ia_css_cnr_config  *cnr_config;	/**< Chroma Noise Reduction
 							[CNR2, 2only] */
 	struct ia_css_macc_config *macc_config;	/**< MACC
 							[MACC2, 2only] */
-	struct ia_css_ctc_config  *ctc_config; 	/**< Chroma Tone Control
+	struct ia_css_ctc_config  *ctc_config;	/**< Chroma Tone Control
 							[CTC2, 2only] */
 	struct ia_css_aa_config   *aa_config;	/**< YUV Anti-Aliasing
 							[AA2, 2only]

@@ -359,6 +359,7 @@ enum ia_css_err ia_css_frame_init_planes(struct ia_css_frame *frame)
 		 */
 	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 		frame_init_single_plane(frame, &frame->planes.yuyv,
 			frame->info.res.height,
 			frame->info.padded_width * 2, 1);

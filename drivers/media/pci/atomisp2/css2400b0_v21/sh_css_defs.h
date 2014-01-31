@@ -36,7 +36,7 @@
 #if !defined(IS_ISP_2500_SYSTEM)
 /* Bits of bayer is adjusted as 13 in ISP */
 #define SH_CSS_BAYER_BITS                 13
-#else //defined(IS_ISP_2500_SYSTEM)
+#else /* defined(IS_ISP_2500_SYSTEM) */
 /* Bits of bayer is adjusted as 11 in ISP */
 #define SH_CSS_BAYER_BITS                 11
 #endif
@@ -351,9 +351,10 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 
 #if defined(IS_ISP_2500_SYSTEM)
 
-// Nitsan - changed because of new iterator scheme for Stages in the line-loop
-//          it's no longer true that the min width is dependent on num-of-stages (pipelining)
-#define __ISP_MIN_INTERNAL_WIDTH(num_chunks, pipelining, mode) 	256
+/* Nitsan - changed because of new iterator scheme for Stages in the line-loop
+	    it's no longer true that the min width is dependent on num-of-stages (pipelining)
+*/
+#define __ISP_MIN_INTERNAL_WIDTH(num_chunks, pipelining, mode)	256
 
 #else
 
@@ -411,9 +412,9 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 	((enable_ds) ? \
 	   SH_CSS_MAX_SENSOR_WIDTH :\
 	 (enable_fixed_bayer_ds) ? \
-	   CEIL_MUL(SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH_DEC,4*ISP_VEC_NELEMS) : \
+	   CEIL_MUL(SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH_DEC, 4*ISP_VEC_NELEMS) : \
 	 (enable_raw_bin) ? \
-	   CEIL_MUL(SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH,4*ISP_VEC_NELEMS) : \
+	   CEIL_MUL(SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH, 4*ISP_VEC_NELEMS) : \
 	 (enable_continuous) ? \
 	   SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH \
 	   : max_internal_width)

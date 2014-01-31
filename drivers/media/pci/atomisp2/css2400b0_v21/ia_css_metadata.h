@@ -51,7 +51,7 @@ struct ia_css_metadata {
 #define SIZE_OF_IA_CSS_METADATA_STRUCT sizeof(struct ia_css_metadata)
 
 /** @brief Allocate a metadata buffer.
- * @param[in]   Metadata info struct, contains details on metadata buffers.
+ * @param[in]   metadata_info Metadata info struct, contains details on metadata buffers.
  * @return      Pointer of metadata buffer or NULL (if error)
  *
  * This function allocates a metadata buffer according to the properties

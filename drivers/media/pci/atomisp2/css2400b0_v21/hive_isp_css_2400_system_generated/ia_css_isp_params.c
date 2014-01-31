@@ -51,7 +51,7 @@
 
 #include "ia_css.h"
 #include "ia_css_pipeline.h"
-#include HRTSTR(ia_css_isp_params.SYSTEM.h)
+#include "ia_css_isp_params.h"
 #include "ia_css_debug.h"
 #include "assert_support.h"
 

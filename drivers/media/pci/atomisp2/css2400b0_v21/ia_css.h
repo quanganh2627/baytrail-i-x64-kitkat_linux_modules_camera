@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140129_1527 */
+/* Release Version: irci_master_20140130_0456 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -217,7 +217,7 @@ ia_css_unload_firmware(void);
  * @param[in]	l1_base         Base index (isp2400)
  *                              of the L1 page table. This is a physical
  *                              address or index.
- * @param[in]	irq_type 	The type of interrupt to be used (edge or level)
+ * @param[in]	irq_type	The type of interrupt to be used (edge or level)
  * @return				Returns IA_CSS_ERR_INTERNAL_ERROR in case of any
  *				errors and IA_CSS_SUCCESS otherwise.
  *
@@ -275,7 +275,7 @@ void
 ia_css_resume(void);
 
 /** @brief Get hardware properties
- * @param[in,out] 	properties The hardware properties
+ * @param[in,out]	properties The hardware properties
  * @return	None
  *
  * This function returns a number of hardware properties.
@@ -395,7 +395,7 @@ ia_css_morph_table_allocate(unsigned int width, unsigned int height);
 void
 ia_css_morph_table_free(struct ia_css_morph_table *me);
 
-/** @brief Shading table 
+/** @brief Shading table
  * @param[in]	width Width of the shading table.
  * @param[in]	height Height of the shading table.
  * @return		Pointer to the shading table
@@ -456,8 +456,8 @@ ia_css_mipi_frame_specify(const unsigned int	size_mem_words,
  * @return		Return the error in case of failure. E.g. MAX_NOF_ENTRIES REACHED
  *
  * Register size of a CSS MIPI frame to check during capturing. Up to
- * 		IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES entries per port allowed. Entries are reset
- * 		when stream is stopped.
+ *		IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES entries per port allowed. Entries are reset
+ *		when stream is stopped.
  *
  *
  */

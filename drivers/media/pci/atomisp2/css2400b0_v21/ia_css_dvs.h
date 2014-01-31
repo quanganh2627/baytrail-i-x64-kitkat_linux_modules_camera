@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef  __IA_CSS_DVS_H
-#define  __IA_CSS_DVS_H
+#ifndef __IA_CSS_DVS_H
+#define __IA_CSS_DVS_H
 
 #include <type_support.h>
 #include "ia_css_types.h"
@@ -163,4 +163,4 @@ ia_css_dvs2_6axis_config_allocate(const struct ia_css_stream *stream);
 void
 ia_css_dvs2_6axis_config_free(struct ia_css_dvs_6axis_config *dvs_6axis_config);
 
-#endif /*  __IA_CSS_DVS_H */
+#endif /* __IA_CSS_DVS_H */

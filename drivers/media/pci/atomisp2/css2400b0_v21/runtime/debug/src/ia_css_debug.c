@@ -29,7 +29,7 @@
 #include "ia_css_isp_param.h"
 #include "sh_css_params.h"
 
-#include HRTSTR(ia_css_isp_params.SYSTEM.h)
+#include "ia_css_isp_params.h"
 
 #include "assert_support.h"
 #include "print_support.h"
@@ -114,6 +114,9 @@ static const char *format2str[] = {
 	/*[IA_CSS_FRAME_FORMAT_BINARY_8]      = */ "BINARY_8",
 	/*[IA_CSS_FRAME_FORMAT_MIPI]          = */ "MIPI",
 	/*[IA_CSS_FRAME_FORMAT_RAW_PACKED]    = */ "RAW_PACKED",
+	/*[IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8]        = */ "CSI_MIPI_YUV420_8",
+	/*[IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8] = */ "CSI_MIPI_LEGACY_YUV420_8",
+	/*[IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10]       = */ "CSI_MIPI_YUV420_10",
 	/*[N_IA_CSS_FRAME_FORMAT]             = */ "INVALID"
 };
 
@@ -1113,6 +1116,7 @@ void ia_css_debug_frame_print(const struct ia_css_frame *frame,
 		break;
 	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_UYVY:
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
 		ia_css_debug_dtrace(2, "  YUYV = %p\n",
 				    data + frame->planes.yuyv.offset);
