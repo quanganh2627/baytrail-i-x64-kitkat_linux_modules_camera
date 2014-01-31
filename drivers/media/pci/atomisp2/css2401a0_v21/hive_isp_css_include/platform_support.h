@@ -54,7 +54,6 @@ hrt_sleep(void)
  * "assert_support.h", "math_support.h", etc
  */
 #include <string.h>
-
 #define CSS_ALIGN(d, a) d __attribute__((aligned(a)))
 
 #elif defined(__KERNEL__)
@@ -94,7 +93,6 @@ hrt_sleep(void)
  * "assert_support.h", "math_support.h", etc
  */
 #include <string.h>
-
 #endif
 
 #endif /* __PLATFORM_SUPPORT_H_INCLUDED__ */

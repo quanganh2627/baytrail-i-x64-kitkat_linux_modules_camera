@@ -25,15 +25,11 @@
 #define IS_INPUT_FORMATTER_VERSION2
 #define IS_INPUT_SWITCH_VERSION2
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdint.h>
-#endif
-
+#include <type_support.h>
 #include "if_defs.h"
 #include "str2mem_defs.h"
 #include "input_switch_2400_defs.h"
+
 #define _HIVE_INPUT_SWITCH_GET_FSYNC_REG_LSB(ch_id)        ((ch_id) * 3)
 
 #define HIVE_SWITCH_N_CHANNELS				4

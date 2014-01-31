@@ -22,7 +22,7 @@
 #ifndef __CSI_RX_GLOBAL_H_INCLUDED__
 #define __CSI_RX_GLOBAL_H_INCLUDED__
 
-#include "type_support.h"
+#include <type_support.h>
 
 typedef enum {
 	CSI_MIPI_PACKET_TYPE_UNDEFINED = 0,

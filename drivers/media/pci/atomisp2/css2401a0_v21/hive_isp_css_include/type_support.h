@@ -32,6 +32,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <limits.h>
+#include <errno.h>
 #if defined(_M_X64)
 #define HOST_ADDRESS(x) (unsigned long long)(x)
 #else
@@ -48,6 +49,7 @@
 #elif defined(__KERNEL__)
 #include <linux/types.h>
 #include <linux/limits.h>
+#include <linux/errno.h>
 #define HOST_ADDRESS(x) (unsigned long)(x)
 
 #elif defined(__GNUC__)
@@ -55,6 +57,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <limits.h>
+#include <errno.h>
 #define HOST_ADDRESS(x) (unsigned long)(x)
 
 #else /* default is for the FIST environment */
@@ -62,6 +65,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <limits.h>
+#include <errno.h>
 #define HOST_ADDRESS(x) (unsigned long)(x)
 
 #endif

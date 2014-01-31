@@ -34,22 +34,15 @@
   */
 
 
-#define NUM_VEC_ELEMS 1
-
-
-#ifdef USE2400
-#define NUM_BITS 14
-#define NUM_SLICE_ELEMS 4
-#define ROUNDMODE           ROUND_NEAREST_EVEN
+#if defined(USE2400)
+#include "isp2400_config.h"
 
 #elif defined(USE2600)
 
-#define NUM_BITS 16
-#define NUM_SLICE_ELEMS 8
-#define ROUNDMODE           ROUND_NEAREST_INF
+#include "isp2600_config.h"
 
 #else
-#error "unsupported system"
+#error "bbb_cfg.h: unsupported system. Specify one of {USE2400, USE2600}"
 #endif
 
 

@@ -23,6 +23,7 @@
 #define __SYSTEM_GLOBAL_H_INCLUDED__
 
 #include <hive_isp_css_defs.h>
+#include <type_support.h>
 
 /*
  * The longest allowed (uninteruptible) bus transfer, does not
@@ -46,12 +47,6 @@
  *
  * N.B. the 3 input formatters are of 2 different classess
  */
-
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdint.h>
-#endif
 
 #define IS_ISP_2400_SYSTEM
 /*

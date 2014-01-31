@@ -22,12 +22,6 @@
 #ifndef __VMEM_GLOBAL_H_INCLUDED__
 #define __VMEM_GLOBAL_H_INCLUDED__
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stdint.h>
-#endif
-
 #include "isp.h"
 
 #define VMEM_SIZE	ISP_VMEM_DEPTH

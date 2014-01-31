@@ -69,8 +69,13 @@ void input_formatter_rst(
 	addr = HIVE_IF_SRST_ADDRESS[ID];
 	rst = HIVE_IF_SRST_MASK[ID];
 
-	input_formatter_reg_store(ID,
-		 addr, rst);
+	/* TEMPORARY HACK: THIS RESET BREAKS THE METADATA FEATURE
+	 * WICH USES THE STREAM2MEMRY BLOCK.
+	 * MUST BE FIXED PROPERLY
+	 */
+	if (!HIVE_IF_BIN_COPY[ID]) {
+		input_formatter_reg_store(ID, addr, rst);
+	}
 
 	return;
 }

@@ -263,9 +263,7 @@ ia_css_binary_init_infos(void)
 		binary->next = binary_infos[binary->sp.mode];
 		binary_infos[binary->sp.mode] = binary;
 		binary->blob = &sh_css_blob_info[i];
-		/* Cannot copy arrays with assignment */
-		assert (sizeof(binary->mem_offsets) == sizeof(sh_css_blob_info[i].mem_offsets));
-		memcpy (&binary->mem_offsets, &sh_css_blob_info[i].mem_offsets, sizeof(binary->mem_offsets));
+		binary->mem_offsets = sh_css_blob_info[i].mem_offsets;
 	}
 	return IA_CSS_SUCCESS;
 }
@@ -320,7 +318,8 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		 const struct ia_css_frame_info *vf_info, /* can be NULL */
 		 struct ia_css_binary *binary,
 		 struct ia_css_resolution *dvs_env,
-		 int stream_config_left_padding)
+		 int stream_config_left_padding,
+		 bool accelerator)
 {
 	const struct ia_css_binary_info *info = &xinfo->sp;
 	unsigned int dvs_env_width = 0,
@@ -347,9 +346,12 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	assert(binary != NULL);
 
 	binary->info = xinfo;
-	ia_css_isp_param_allocate_isp_parameters(
-		&binary->mem_params, &binary->css_params,
-		&info->mem_initializers);
+	if (!accelerator) {
+		/* binary->css_params has been filled by accelerator itself. */
+		ia_css_isp_param_allocate_isp_parameters(
+			&binary->mem_params, &binary->css_params,
+			&info->mem_initializers);
+	}
 
 	if (in_info != NULL && out_info != NULL) {
 		need_scaling = (in_info->res.width != out_info->res.width) ||
@@ -886,7 +888,8 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				       req_bds_out_info,
 				       req_out_info, req_vf_info,
 				       binary, &dvs_env,
-				       descr->stream_config_left_padding);
+				       descr->stream_config_left_padding,
+				       false);
 
 		if (err)
 			break;
@@ -911,4 +914,12 @@ unsigned
 ia_css_binary_max_vf_width(void)
 {
   return binary_infos[IA_CSS_BINARY_MODE_VF_PP]->sp.max_output_width;
+}
+
+void
+ia_css_binary_destroy_isp_parameters(struct ia_css_binary *binary)
+{
+	ia_css_isp_param_destroy_isp_parameters(
+		&binary->mem_params,
+		&binary->css_params);
 }

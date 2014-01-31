@@ -191,7 +191,8 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		 const struct ia_css_frame_info *vf_info,
 		 struct ia_css_binary *binary,
 		 struct ia_css_resolution *dvs_env,
-		 int stream_config_left_padding);
+		 int stream_config_left_padding,
+		 bool accelerator);
 
 enum ia_css_err
 ia_css_binary_find(struct ia_css_binary_descr *descr,

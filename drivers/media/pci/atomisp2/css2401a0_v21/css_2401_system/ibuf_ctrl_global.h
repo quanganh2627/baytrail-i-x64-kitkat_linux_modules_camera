@@ -22,7 +22,7 @@
 #ifndef __IBUF_CTRL_GLOBAL_H_INCLUDED__
 #define __IBUF_CTRL_GLOBAL_H_INCLUDED__
 
-#include "type_support.h"
+#include <type_support.h>
 
 #include <ibuf_cntrl_defs.h>	/* _IBUF_CNTRL_RECALC_WORDS_STATUS,
 				 * _IBUF_CNTRL_ARBITERS_STATUS,

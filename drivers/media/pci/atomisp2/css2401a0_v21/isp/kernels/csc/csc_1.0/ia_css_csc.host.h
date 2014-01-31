@@ -47,4 +47,6 @@ ia_css_csc_dump(const struct sh_css_isp_csc_params *csc, unsigned level);
 void
 ia_css_cc_config_debug_dtrace(const struct ia_css_cc_config *config, unsigned level);
 
+#define ia_css_csc_debug_dtrace ia_css_cc_config_debug_dtrace
+
 #endif /* __IA_CSS_CSC_HOST_H */

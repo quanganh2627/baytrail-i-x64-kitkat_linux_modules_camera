@@ -23,8 +23,8 @@
 #define _IA_CSS_REFCOUNT_H_
 
 #include "ia_css.h"
-#include "ia_css_binary.h"
-#include "sh_css_internal.h"
+#include <type_support.h>
+#include <system_types.h>
 
 typedef void (*clear_func)(hrt_vaddress ptr);
 

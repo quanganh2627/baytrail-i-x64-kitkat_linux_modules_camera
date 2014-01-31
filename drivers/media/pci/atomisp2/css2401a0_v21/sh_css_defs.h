@@ -36,7 +36,7 @@
 #if !defined(IS_ISP_2500_SYSTEM)
 /* Bits of bayer is adjusted as 13 in ISP */
 #define SH_CSS_BAYER_BITS                 13
-#else //defined(IS_ISP_2500_SYSTEM)
+#else /* defined(IS_ISP_2500_SYSTEM) */
 /* Bits of bayer is adjusted as 11 in ISP */
 #define SH_CSS_BAYER_BITS                 11
 #endif
@@ -191,8 +191,11 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 /* Each line of this table is aligned to the maximum line width. */
 #define SH_CSS_MAX_S3ATBL_WIDTH              SH_CSS_MAX_BQ_GRID_WIDTH
 
-/* Maximal metadata buffer size. */
-#define SH_CSS_MAX_METADATA_BUFFER_SIZE      256
+/* Maximal metadata buffer size.
+ * This is temporary, the next patch will unify metadata code with the
+ * bin_copy module which will then remove the limitation of a max size.
+ */
+#define SH_CSS_MAX_METADATA_BUFFER_SIZE      SH_CSS_MAX_SENSOR_WIDTH
 
 /* Rules: these implement logic shared between the host code and ISP firmware.
    The ISP firmware needs these rules to be applied at pre-processor time,
@@ -348,9 +351,10 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 
 #if defined(IS_ISP_2500_SYSTEM)
 
-// Nitsan - changed because of new iterator scheme for Stages in the line-loop
-//          it's no longer true that the min width is dependent on num-of-stages (pipelining)
-#define __ISP_MIN_INTERNAL_WIDTH(num_chunks, pipelining, mode) 	256
+/* Nitsan - changed because of new iterator scheme for Stages in the line-loop
+	    it's no longer true that the min width is dependent on num-of-stages (pipelining)
+*/
+#define __ISP_MIN_INTERNAL_WIDTH(num_chunks, pipelining, mode)	256
 
 #else
 
@@ -408,9 +412,9 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 	((enable_ds) ? \
 	   SH_CSS_MAX_SENSOR_WIDTH :\
 	 (enable_fixed_bayer_ds) ? \
-	   CEIL_MUL(SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH_DEC,4*ISP_VEC_NELEMS) : \
+	   CEIL_MUL(SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH_DEC, 4*ISP_VEC_NELEMS) : \
 	 (enable_raw_bin) ? \
-	   CEIL_MUL(SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH,4*ISP_VEC_NELEMS) : \
+	   CEIL_MUL(SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH, 4*ISP_VEC_NELEMS) : \
 	 (enable_continuous) ? \
 	   SH_CSS_MAX_CONTINUOUS_SENSOR_WIDTH \
 	   : max_internal_width)

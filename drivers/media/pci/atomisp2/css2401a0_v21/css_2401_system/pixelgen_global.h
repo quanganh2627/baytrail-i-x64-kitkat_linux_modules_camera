@@ -22,7 +22,7 @@
 #ifndef __PIXELGEN_GLOBAL_H_INCLUDED__
 #define __PIXELGEN_GLOBAL_H_INCLUDED__
 
-#include "type_support.h"
+#include <type_support.h>
 
 /**
  * Pixel-generator. ("pixelgen_global.h")

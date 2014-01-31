@@ -38,7 +38,7 @@
  */
 void ia_css_frame_info_set_width(struct ia_css_frame_info *info,
 	unsigned int width,
-	unsigned int aligned);
+	unsigned int min_padded_width);
 
 /** @brief Sets the given format to the frame info
  *

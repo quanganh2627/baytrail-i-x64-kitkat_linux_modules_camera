@@ -25,8 +25,6 @@
 #include "type_support.h"
 
 #include "dma.h"
-#include "ia_css.h"
-#include "ia_css_fpn_types.h"
 
 /* FPNR (Fixed Pattern Noise Reduction) */
 struct sh_css_isp_fpn_params {

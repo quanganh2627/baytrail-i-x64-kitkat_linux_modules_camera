@@ -23,11 +23,13 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "sh_css_frac.h"
 
 #include "ia_css_xnr.host.h"
 
 const struct ia_css_xnr_config default_xnr_config = {
-	25
+	/** default threshold 6400 translates to 25 on ISP. */
+	6400
 };
 
 void
@@ -41,7 +43,8 @@ void
 ia_css_xnr_encode(struct sh_css_isp_xnr_params *to,
 		   const struct ia_css_xnr_config *from)
 {
-	to->threshold = from->threshold;
+	to->threshold =
+		uDIGIT_FITTING(from->threshold, 16, SH_CSS_ISP_YUV_BITS);
 }
 
 void

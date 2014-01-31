@@ -44,6 +44,9 @@
 #define SH_CSS_ISP_GC_TABLE_SIZE 0
 #endif
 
+#define GAMMA_OUTPUT_BITS		8
+#define GAMMA_OUTPUT_MAX_VAL		((1<<GAMMA_OUTPUT_BITS)-1)
+
 /* GC (Gamma Correction) */
 struct sh_css_isp_gc_params {
 	int32_t gain_k1;

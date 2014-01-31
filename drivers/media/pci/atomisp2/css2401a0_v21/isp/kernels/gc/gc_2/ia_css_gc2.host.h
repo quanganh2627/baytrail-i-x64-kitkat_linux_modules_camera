@@ -62,4 +62,10 @@ ia_css_rgb2yuv_dump(const struct sh_css_isp_csc_params *rgb2yuv,
 void
 ia_css_rgb_gamma_table_debug_dtrace(const struct ia_css_rgb_gamma_table *config, unsigned level);
 
+#define ia_css_yuv2rgb_debug_dtrace ia_css_cc_config_debug_dtrace
+#define ia_css_rgb2yuv_debug_dtrace ia_css_cc_config_debug_dtrace
+#define ia_css_r_gamma_debug_dtrace ia_css_rgb_gamma_table_debug_dtrace
+#define ia_css_g_gamma_debug_dtrace ia_css_rgb_gamma_table_debug_dtrace
+#define ia_css_b_gamma_debug_dtrace ia_css_rgb_gamma_table_debug_dtrace
+
 #endif /* __IA_CSS_GC2_HOST_H */

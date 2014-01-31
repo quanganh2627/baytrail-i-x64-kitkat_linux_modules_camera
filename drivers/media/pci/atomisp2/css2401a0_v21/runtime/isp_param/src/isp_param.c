@@ -151,6 +151,8 @@ ia_css_isp_param_destroy_isp_parameters(
 				sh_css_free(mem_params->params[pclass][mem].address);
 			if (css_params->params[pclass][mem].address)
 				mmgr_free(css_params->params[pclass][mem].address);
+			mem_params->params[pclass][mem].address = NULL;
+			css_params->params[pclass][mem].address = 0x0;
 		}
 	}
 }

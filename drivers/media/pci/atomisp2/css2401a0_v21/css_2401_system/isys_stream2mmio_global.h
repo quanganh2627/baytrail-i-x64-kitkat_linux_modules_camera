@@ -22,7 +22,7 @@
 #ifndef __ISYS_STREAM2MMIO_GLOBAL_H_INCLUDED__
 #define __ISYS_STREAM2MMIO_GLOBAL_H_INCLUDED__
 
-#include "type_support.h"
+#include <type_support.h>
 
 typedef struct stream2mmio_cfg_s stream2mmio_cfg_t;
 struct stream2mmio_cfg_s {

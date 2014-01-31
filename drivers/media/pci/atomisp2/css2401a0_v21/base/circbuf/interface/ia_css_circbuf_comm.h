@@ -22,7 +22,8 @@
 #ifndef _IA_CSS_CIRCBUF_COMM_H
 #define _IA_CSS_CIRCBUF_COMM_H
 
-#include "type_support.h"  /*uint8_t, uint32_t */
+#include <type_support.h>  /* uint8_t, uint32_t */
+
 /****************************************************************
  *
  * Portable Data structures

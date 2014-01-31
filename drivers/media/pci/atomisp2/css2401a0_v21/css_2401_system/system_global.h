@@ -23,7 +23,7 @@
 #define __SYSTEM_GLOBAL_H_INCLUDED__
 
 #include <hive_isp_css_defs.h>
-#include "type_support.h"
+#include <type_support.h>
 
 /*
  * The longest allowed (uninteruptible) bus transfer, does not

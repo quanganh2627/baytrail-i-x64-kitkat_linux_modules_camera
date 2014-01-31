@@ -189,7 +189,7 @@ ia_css_s3a_dump(const struct sh_css_isp_s3a_params *s3a, unsigned level)
 }
 
 void
-ia_css_3a_config_debug_dtrace(const struct ia_css_3a_config *config, unsigned level)
+ia_css_s3a_debug_dtrace(const struct ia_css_3a_config *config, unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.ae_y_coef_r=%d, config.ae_y_coef_g=%d, "

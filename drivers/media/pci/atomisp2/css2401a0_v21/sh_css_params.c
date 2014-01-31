@@ -28,7 +28,6 @@
 #endif
 #include "hmem.h"
 #endif /* !defined(HAS_NO_HMEM) */
-
 #define IA_CSS_INCLUDE_PARAMETERS
 #define IA_CSS_INCLUDE_ACC_PARAMETERS
 
@@ -1616,7 +1615,7 @@ static void ia_css_process_zoom_and_motion(
 									: NULL,
 				&tmp_binary,
 				NULL,
-				-1);
+				-1, true);
 			binary = &tmp_binary;
 			binary->info = info;
 		}
@@ -2028,8 +2027,8 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 
 		host_stats->stats_4a_config->af_grd_config.grid_width		= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.grid_width;
 		host_stats->stats_4a_config->af_grd_config.grid_height	 	= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.grid_height;
-		host_stats->stats_4a_config->af_grd_config.x_start 			= (unsigned short)af_acc_cfg.ff_af_config.y_grid_config.grd_start.x_start;
-		host_stats->stats_4a_config->af_grd_config.y_start			= (unsigned short)af_acc_cfg.ff_af_config.y_grid_config.grd_start.y_start;
+		host_stats->stats_4a_config->af_grd_config.x_start 		= (unsigned short)af_acc_cfg.ff_af_config.y_grid_config.grd_start.x_start;
+		host_stats->stats_4a_config->af_grd_config.y_start		= (unsigned short)af_acc_cfg.ff_af_config.y_grid_config.grd_start.y_start;
 		host_stats->stats_4a_config->af_grd_config.block_width	 	= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.block_width;
 		host_stats->stats_4a_config->af_grd_config.block_height		= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.block_height;
 
@@ -2044,14 +2043,18 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 		host_stats->stats_4a_config->ae_grd_config.grid_height 		= ae_acc_grd_cfg.grid_height;
 		host_stats->stats_4a_config->ae_grd_config.grid_width  		= ae_acc_grd_cfg.grid_width;
 		host_stats->stats_4a_config->ae_grd_config.x_start  		= ae_acc_grd_cfg.x_start;
-		host_stats->stats_4a_config->ae_grd_config.y_start		    = ae_acc_grd_cfg.y_start;
+		host_stats->stats_4a_config->ae_grd_config.y_start		= ae_acc_grd_cfg.y_start;
+		host_stats->stats_4a_config->ae_grd_config.x_end 		= ae_acc_grd_cfg.x_end;
+		host_stats->stats_4a_config->ae_grd_config.y_end		= ae_acc_grd_cfg.y_end;
 		host_stats->stats_4a_config->ae_grd_config.block_width		= ae_acc_grd_cfg.block_width;
 		host_stats->stats_4a_config->ae_grd_config.block_height		= ae_acc_grd_cfg.block_height;
 
-		host_stats->stats_4a_config->awb_grd_config.grid_height 	  = (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.grid_height;
-		host_stats->stats_4a_config->awb_grd_config.grid_width  	  = (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.grid_width;
-		host_stats->stats_4a_config->awb_grd_config.grid_x_start	  = awb_acc_grd_cfg.rgbs_grd_start.x_start;
-		host_stats->stats_4a_config->awb_grd_config.grid_y_start	  = awb_acc_grd_cfg.rgbs_grd_start.y_start;
+		host_stats->stats_4a_config->awb_grd_config.grid_height 	= (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.grid_height;
+		host_stats->stats_4a_config->awb_grd_config.grid_width  	= (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.grid_width;
+		host_stats->stats_4a_config->awb_grd_config.grid_x_start	= awb_acc_grd_cfg.rgbs_grd_start.x_start;
+		host_stats->stats_4a_config->awb_grd_config.grid_y_start	= awb_acc_grd_cfg.rgbs_grd_start.y_start;
+		host_stats->stats_4a_config->awb_grd_config.grid_x_end		= awb_acc_grd_cfg.rgbs_grd_end.x_end;
+		host_stats->stats_4a_config->awb_grd_config.grid_y_end		= awb_acc_grd_cfg.rgbs_grd_end.y_end;
 		host_stats->stats_4a_config->awb_grd_config.grid_block_width  = (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.block_width;
 		host_stats->stats_4a_config->awb_grd_config.grid_block_height = (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.block_height;
 
@@ -2818,26 +2821,23 @@ ia_css_isp_dvs2_statistics_free(struct ia_css_isp_dvs_statistics *me)
 }
 
 struct ia_css_metadata *
-ia_css_metadata_allocate(unsigned int size)
+ia_css_metadata_allocate(const struct ia_css_metadata_info *metadata_info)
 {
 	struct ia_css_metadata *md = NULL;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_metadata_allocate() enter: size=%p\n", size);
+		"ia_css_metadata_allocate() enter\n");
 
-	if (size == 0)
-		return NULL;
-
-	if (size > SH_CSS_MAX_METADATA_BUFFER_SIZE)
+	if (metadata_info->size == 0)
 		return NULL;
 
 	md = sh_css_malloc(sizeof(*md));
 	if (md == NULL)
 		goto error;
 
-	/* Make metadata buffer size multiple of DDR bus width for DMA. */
-	md->size = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
-	md->address = mmgr_malloc(md->size);
+	md->info = *metadata_info;
+	md->exp_id = 0;
+	md->address = mmgr_malloc(metadata_info->size);
 	if (md->address == mmgr_NULL)
 		goto error;
 
@@ -3539,7 +3539,7 @@ void ia_css_dequeue_param_buffers(void)
 	}
 
 	/* clean-up old copy */
-	while (IA_CSS_SUCCESS == ia_css_queue_dequeue(q, (uint32_t *)&cpy)) {
+	while (0 == ia_css_queue_dequeue(q, (uint32_t *)&cpy)) {
 		/* TMP: keep track of dequeued param set count
 		 */
 		ia_css_queue_t *eventq;
@@ -3633,7 +3633,6 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 #if !defined(IS_ISP_2500_SYSTEM)
 #else /* defined(IS_ISP_2500_SYSTEM) */
 	sh_css_process_product_specific(&params->isp_parameters,&params->isp_params_changed);
-	sh_css_process_acc_cluster_parameters(stream, &acc_cluster_parameters, &acc_cluster_params_changed );
 	sh_css_process_acc_cluster_parameters2(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed );
 #endif
 
@@ -3788,11 +3787,10 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 			"queue param set %x to %d\n",
 			cpy, thread_id);
 
-		if (IA_CSS_SUCCESS !=
-		    ia_css_queue_enqueue(q, (uint32_t)cpy)) {
-			free_sh_css_ddr_address_map(cpy);
-		}
-		else {
+		    if (0 != ia_css_queue_enqueue(q, (uint32_t)cpy)) {
+				free_sh_css_ddr_address_map(cpy);
+		    }
+		    else {
 			/* TMP: check discrepancy between nr of enqueued
 			 * parameter sets and dequeued sets
 			 */
