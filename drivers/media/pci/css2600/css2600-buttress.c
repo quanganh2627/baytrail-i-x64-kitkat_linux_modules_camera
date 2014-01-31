@@ -50,7 +50,7 @@ static void css2600_buttress_remove(struct css2600_bus_device *adev)
 static struct css2600_bus_driver css2600_buttress_driver = {
 	.probe = css2600_buttress_probe,
 	.remove = css2600_buttress_remove,
-	.wanted = CSS2600_ISYS_NAME,
+	.wanted = CSS2600_BUTTRESS_NAME,
 	.drv = {
 		.name = CSS2600_ISYS_NAME,
 		.owner = THIS_MODULE,
