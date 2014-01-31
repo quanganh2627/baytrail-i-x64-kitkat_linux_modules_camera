@@ -213,22 +213,22 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 		l1_entry = virt_to_phys(alloc_page_table(adom))
 			>> ISP_PADDR_SHIFT;
 		pr_debug("allocated page for l1_idx %u\n", l1_idx);
-	}
+		if (l1_entry == INVALID_PAGE)
+			return -ENOMEM;
 
-	if (l1_entry == INVALID_PAGE)
-		return -ENOMEM;
-
-	spin_lock_irqsave(&adom->lock, flags);
-
-	if (adom->pgtbl[l1_idx] == INVALID_PAGE) {
-		adom->pgtbl[l1_idx] = l1_entry;
+		spin_lock_irqsave(&adom->lock, flags);
+		if (adom->pgtbl[l1_idx] == INVALID_PAGE) {
+			adom->pgtbl[l1_idx] = l1_entry;
 #ifdef CONFIG_X86
-		clflush_cache_range(&adom->pgtbl[l1_idx],
-				    sizeof(adom->pgtbl[l1_idx]));
+			clflush_cache_range(&adom->pgtbl[l1_idx],
+					    sizeof(adom->pgtbl[l1_idx]));
 #endif /* CONFIG_X86 */
+		} else {
+			spin_unlock_irqrestore(&adom->lock, flags);
+			free_page_table(TBL_VIRT_ADDR(l1_entry));
+			spin_lock_irqsave(&adom->lock, flags);
+		}
 	} else {
-		spin_unlock_irqrestore(&adom->lock, flags);
-		free_page_table(TBL_VIRT_ADDR(l1_entry));
 		spin_lock_irqsave(&adom->lock, flags);
 	}
 
