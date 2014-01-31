@@ -191,12 +191,6 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 /* Each line of this table is aligned to the maximum line width. */
 #define SH_CSS_MAX_S3ATBL_WIDTH              SH_CSS_MAX_BQ_GRID_WIDTH
 
-/* Maximal metadata buffer size.
- * This is temporary, the next patch will unify metadata code with the
- * bin_copy module which will then remove the limitation of a max size.
- */
-#define SH_CSS_MAX_METADATA_BUFFER_SIZE      SH_CSS_MAX_SENSOR_WIDTH
-
 /* Rules: these implement logic shared between the host code and ISP firmware.
    The ISP firmware needs these rules to be applied at pre-processor time,
    that's why these are macros, not functions. */

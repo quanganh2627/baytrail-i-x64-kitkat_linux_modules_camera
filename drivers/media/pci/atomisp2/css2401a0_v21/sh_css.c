@@ -7539,12 +7539,9 @@ static enum ia_css_err
 metadata_info_init(const struct ia_css_metadata_config *mdc,
 		   struct ia_css_metadata_info *md)
 {
-	/* Temporary limitation, this will be removed when the metadata
-	 * module gets merged with the bin_copy module.
-	 */
-	if (mdc->resolution.height > 1 ||
-	    mdc->resolution.width > SH_CSS_MAX_METADATA_BUFFER_SIZE)
-		return IA_CSS_ERR_RESOURCE_EXHAUSTED;
+	/* Either both width and height should be set or neither */
+	if ((mdc->resolution.height > 0) ^ (mdc->resolution.width > 0))
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	md->resolution = mdc->resolution;
         /* We round up the stride to a multiple of the width
@@ -8152,7 +8149,13 @@ void ia_css_pipe_get_bds_resolution(const struct ia_css_pipe *pipe, struct ia_cs
 	assert(pipe != NULL);
 
 	*res = pipe->bds_output_info.res;
+}
 
+void ia_css_pipe_get_dvs_envelope(const struct ia_css_pipe *pipe, struct ia_css_resolution *res)
+{
+	assert(pipe != NULL);
+
+	*res = pipe->config.dvs_envelope;
 }
 #endif
 

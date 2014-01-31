@@ -496,7 +496,6 @@ struct sh_css_sp_pipeline {
 					  an acceleration pipe. */
 #if defined (SH_CSS_ENABLE_METADATA)
 	struct {
-		uint32_t	flag;     /* Processing flags */
 		uint32_t	format;   /* Metadata format in hrt format */
 		uint32_t	width;    /* Width of a line */
 		uint32_t	height;   /* Number of lines */
@@ -944,6 +943,9 @@ sh_css_invalidate_shading_tables(struct ia_css_stream *stream);
 #if defined(IS_ISP_2500_SYSTEM)
 void
 ia_css_pipe_get_bds_resolution(const struct ia_css_pipe *pipe, struct ia_css_resolution *res);
+
+void
+ia_css_pipe_get_dvs_envelope(const struct ia_css_pipe *pipe, struct ia_css_resolution *res);
 #endif
 
 struct ia_css_pipeline *
