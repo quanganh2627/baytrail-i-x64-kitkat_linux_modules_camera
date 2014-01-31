@@ -17,6 +17,7 @@
 
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
+#include <media/v4l2-ctrls.h>
 
 #include "css2600-isys-queue.h"
 
@@ -34,6 +35,7 @@ struct css2600_isys_subdev {
 	uint32_t const * const *supported_fmts;
 	struct media_pad pad[CSS2600_ISYS_MAX_PAD];
 	struct v4l2_mbus_framefmt ffmt[CSS2600_ISYS_MAX_PAD];
+	struct v4l2_ctrl_handler ctrl_handler;
 };
 
 #define to_css2600_isys_subdev(__sd) \
@@ -46,7 +48,9 @@ int css2600_isys_subdev_get_ffmt(struct v4l2_subdev *sd,
 				 struct v4l2_subdev_fh *fh,
 				 struct v4l2_subdev_format *fmt);
 
-void css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
-			      struct v4l2_subdev_ops *ops);
+int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
+			     struct v4l2_subdev_ops *ops,
+			     unsigned int nr_ctrls);
+void css2600_isys_subdev_cleanup(struct css2600_isys_subdev *asd);
 
 #endif /* CSS2600_ISYS_SUBDEV_H */

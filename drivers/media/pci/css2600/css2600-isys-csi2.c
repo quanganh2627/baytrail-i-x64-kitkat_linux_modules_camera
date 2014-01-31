@@ -78,6 +78,7 @@ void css2600_isys_csi2_cleanup(struct css2600_isys_csi2 *csi2)
 {
 	v4l2_device_unregister_subdev(&csi2->asd.sd);
 	media_entity_cleanup(&csi2->asd.sd.entity);
+	css2600_isys_subdev_cleanup(&csi2->asd);
 	css2600_isys_video_cleanup(&csi2->av);
 }
 
@@ -114,7 +115,9 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 	csi2->asd.pad[CSI2_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
 	csi2->asd.pad[CSI2_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
 
-	css2600_isys_subdev_init(&csi2->asd, &csi2_sd_ops);
+	rval = css2600_isys_subdev_init(&csi2->asd, &csi2_sd_ops, 0);
+	if (rval)
+		goto fail;
 
 	rval = media_entity_init(&csi2->asd.sd.entity, NR_OF_CSI2_PADS,
 				 csi2->asd.pad, 0);

@@ -79,11 +79,18 @@ int css2600_isys_subdev_get_ffmt(struct v4l2_subdev *sd,
 	return 0;
 }
 
-void css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
-			      struct v4l2_subdev_ops *ops)
+int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
+			     struct v4l2_subdev_ops *ops, unsigned int nr_ctrls)
 {
 	v4l2_subdev_init(&asd->sd, ops);
 
 	asd->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	asd->sd.owner = THIS_MODULE;
+
+	return v4l2_ctrl_handler_init(&asd->ctrl_handler, nr_ctrls);
+}
+
+void css2600_isys_subdev_cleanup(struct css2600_isys_subdev *asd)
+{
+	v4l2_ctrl_handler_free(&asd->ctrl_handler);
 }
