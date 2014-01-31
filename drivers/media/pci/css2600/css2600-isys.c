@@ -56,6 +56,7 @@ struct csi2_config {
 	unsigned int nports;
 	unsigned int nlanes[MAX_CSI2_PORTS];
 	unsigned int offsets[MAX_CSI2_PORTS];
+	unsigned int tpg_offsets[MAX_CSI2_PORTS];
 };
 
 struct csi2_config csi2_config_2600 = {
@@ -87,14 +88,19 @@ static void isys_unregister_csi2(struct css2600_isys *isys)
 	struct csi2_config *cfg = isys_get_csi2_config(isys);
 	unsigned int i;
 
-	for (i = 0; i < cfg->nports; i++)
+	for (i = 0; i < cfg->nports; i++) {
 		css2600_isys_csi2_cleanup(&isys->csi2[i]);
+		if (isys->pdata->type != CSS2600_ISYS_TYPE_CSS2401)
+			continue;
+		css2600_isys_tpg_cleanup(&isys->tpg[i]);
+	}
 }
 
 static int isys_register_csi2(struct css2600_isys *isys)
 {
-	unsigned int i;
 	struct csi2_config *cfg = isys_get_csi2_config(isys);
+	unsigned int i;
+	int rval;
 
 	BUG_ON(cfg->nports > MAX_CSI2_PORTS);
 
@@ -103,13 +109,32 @@ static int isys_register_csi2(struct css2600_isys *isys)
 			&isys->csi2[i], isys,
 			isys->pdata->base + cfg->offsets[i], cfg->nlanes[i],
 			i);
-		if (rval) {
-			isys_unregister_csi2(isys);
-			return rval;
-		}
+		if (rval)
+			goto fail;
+
+		/* In 2401 the TPGs come with the CSI-2 receivers. */
+		if (isys->pdata->type != CSS2600_ISYS_TYPE_CSS2401)
+			continue;
+
+		rval = css2600_isys_tpg_init(
+			&isys->tpg[i], isys,
+			isys->pdata->base + cfg->tpg_offsets[i], i);
+		if (rval)
+			goto fail;
+
+		rval = media_entity_create_link(&isys->tpg[i].asd.sd.entity,
+						TPG_PAD_SOURCE,
+						&isys->csi2[i].asd.sd.entity,
+						CSI2_PAD_SINK, 0);
+		if (rval)
+			goto fail;
 	}
 
 	return 0;
+
+fail:
+	isys_unregister_csi2(isys);
+	return rval;
 }
 
 static int isys_register_devices(struct css2600_isys *isys)
