@@ -31,9 +31,10 @@ struct css2600_event {
 	union {
 		struct {
 			uint32_t id;
+			uint32_t issue_id;
 		} cmd_done;
 	} ev;
-	uint32_t reserved[4];
+	uint32_t reserved[3];
 } __attribute__ ((packed));
 
 #define CSS2600_EVENT_TYPE_CMD_COMPLETE      1
@@ -68,6 +69,7 @@ struct css2600_buffer {
  * @priority:	priority of the command
  * @bufcount:	number of buffers in bufs array
  * @bufs:	userspace pointers to array of css2600_buffer structs
+ * @issue_id:	issue id to link command and event
  *
  * Specifies a processing command including input and output buffers.
  */
@@ -76,7 +78,8 @@ struct css2600_command {
 	uint32_t priority;
 	uint32_t bufcount;
 	struct css2600_buffer __user *buffers;
-	uint32_t reserved[4];
+	uint32_t issue_id;
+	uint32_t reserved[3];
 } __attribute__ ((packed));
 
 #define CSS2600_IOC_QUERYCAP _IOWR('A', 1, struct css2600_capability)

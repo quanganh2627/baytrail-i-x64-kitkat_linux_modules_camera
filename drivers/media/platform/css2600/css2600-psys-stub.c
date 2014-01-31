@@ -175,6 +175,7 @@ static int psysstub_runisp(struct css2600_run_cmd *cmd,
 
 	ev.type = CSS2600_EVENT_TYPE_CMD_COMPLETE;
 	ev.ev.cmd_done.id = cmd->command.id;
+	ev.ev.cmd_done.issue_id = cmd->command.issue_id;
 	css2600_queue_event(cmd->fh, &ev);
 
 	return 0;
