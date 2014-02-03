@@ -664,10 +664,27 @@ struct sh_css_sp_output {
  * The circular buffer is empty if "start == end". The
  * circular buffer is full if "(end + 1) % size == start".
  */
+/* Variable Sized Buffer Queue Elements */
+
+#define  IA_CSS_NUM_ELEMS_HOST2SP_INPUT_QUEUE    6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_OUTPUT_QUEUE   6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_VF_QUEUE       6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_S3A_QUEUE      6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_DIS_QUEUE      6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE    3
+#define  IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE  6
+#if defined (SH_CSS_ENABLE_METADATA)
+#define  IA_CSS_NUM_ELEMS_HOST2SP_METADATA_QUEUE 6
+#endif /* ifdef SH_CSS_ENABLE_METADATA */
+
 #if defined(HAS_SP_2400)
-#define  SH_CSS_CIRCULAR_BUF_NUM_ELEMS             13
+#define  IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE    13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE   13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE    13
 #else
-#define  SH_CSS_CIRCULAR_BUF_NUM_ELEMS              6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE    6
+#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE   6
+#define  IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE    6
 #endif
 
 struct sh_css_hmm_buffer {
@@ -782,33 +799,86 @@ struct host_sp_queues {
 	 * buffer and the "vf_out_frame" buffer.
 	 */
 	ia_css_circbuf_desc_t host2sp_buffer_queues_desc
-		[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES];
-	ia_css_circbuf_elem_t host2sp_buffer_queues_elems
-	[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES]
-	[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES];
+
+	ia_css_circbuf_elem_t host2sp_buffer_input_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_INPUT_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_output_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_OUTPUT_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_vf_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_VF_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_s3a_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_S3A_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_dis_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_DIS_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_param_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_tag_cmd_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE];
+#if defined (SH_CSS_ENABLE_METADATA)
+	ia_css_circbuf_elem_t host2sp_buffer_metadata_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_METADATA_QUEUE];
+#endif
 	ia_css_circbuf_desc_t sp2host_buffer_queues_desc
-		[SH_CSS_NUM_BUFFER_QUEUES];
+	[SH_CSS_NUM_BUFFER_QUEUES];
 	ia_css_circbuf_elem_t sp2host_buffer_queues_elems
-	[SH_CSS_NUM_BUFFER_QUEUES][SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	[SH_CSS_NUM_BUFFER_QUEUES]
+	[IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE];
 
 	/*
 	 * The queue for the events.
 	 */
 	ia_css_circbuf_desc_t host2sp_event_queue_desc;
-	ia_css_circbuf_elem_t host2sp_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	ia_css_circbuf_elem_t host2sp_event_queue_elems
+	[IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE];
 	ia_css_circbuf_desc_t sp2host_event_queue_desc;
-	ia_css_circbuf_elem_t sp2host_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	ia_css_circbuf_elem_t sp2host_event_queue_elems
+	[IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE];
 
 };
-#define SIZE_OF_HOST_SP_QUEUES_STRUCT 													\
-	(((SH_CSS_MAX_SP_THREADS * SH_CSS_NUM_BUFFER_QUEUES) * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +					\
-	((SH_CSS_MAX_SP_THREADS * SH_CSS_NUM_BUFFER_QUEUES * SH_CSS_CIRCULAR_BUF_NUM_ELEMS) * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +	\
-	(SH_CSS_NUM_BUFFER_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +								\
-	((SH_CSS_NUM_BUFFER_QUEUES * SH_CSS_CIRCULAR_BUF_NUM_ELEMS) * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +				\
-	SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT +												\
-	(SH_CSS_CIRCULAR_BUF_NUM_ELEMS * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +							\
-	SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT +												\
-	(SH_CSS_CIRCULAR_BUF_NUM_ELEMS * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT))
+
+#if defined (SH_CSS_ENABLE_METADATA)
+#define COUNT_HOST_SP_QUEUES				\
+	(IA_CSS_NUM_ELEMS_HOST2SP_INPUT_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_OUTPUT_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_VF_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_S3A_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_DIS_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE +	\
+	IA_CSS_NUM_ELEMS_HOST2SP_METADATA_QUEUE)
+#else
+#define COUNT_HOST_SP_QUEUES				\
+	(IA_CSS_NUM_ELEMS_HOST2SP_INPUT_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_OUTPUT_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_VF_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_S3A_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_DIS_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE)
+#endif
+
+#define SIZE_OF_QUEUES_ELEMS							\
+	(SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT * 				\
+	((SH_CSS_MAX_SP_THREADS * (COUNT_HOST_SP_QUEUES))	+		\
+	(SH_CSS_NUM_BUFFER_QUEUES * IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE) +	\
+	(IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE) +				\
+	(IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE)))
+
+#define SIZE_OF_QUEUES_DESC										\
+	((SH_CSS_MAX_SP_THREADS * SH_CSS_NUM_BUFFER_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +	\
+	(SH_CSS_NUM_BUFFER_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +				\
+	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) 	+							\
+	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT))
+
+#define SIZE_OF_HOST_SP_QUEUES_STRUCT		\
+	(SIZE_OF_QUEUES_ELEMS) + (SIZE_OF_QUEUES_DESC)
 
 extern int (*sh_css_printf) (const char *fmt, va_list args);
 
