@@ -48,6 +48,7 @@ struct css2600_isys_subdev {
 	struct v4l2_rect compose;
 	struct v4l2_ctrl_handler ctrl_handler;
 	bool valid_tgts[CSS2600_ISYS_SUBDEV_PROP_TGT_NR_OF];
+	bool allow_source_fmt_change;
 };
 
 #define to_css2600_isys_subdev(__sd) \

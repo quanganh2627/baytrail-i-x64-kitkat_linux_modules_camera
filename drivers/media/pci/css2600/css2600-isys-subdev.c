@@ -143,7 +143,8 @@ int css2600_isys_subdev_set_ffmt(struct v4l2_subdev *sd,
 			      fmt->which);
 	} else {
 		/* Source pad */
-		ffmt->code = fmt->format.code;
+		if (asd->allow_source_fmt_change)
+			ffmt->code = fmt->format.code;
 	}
 
 	fmt->format = *ffmt;
