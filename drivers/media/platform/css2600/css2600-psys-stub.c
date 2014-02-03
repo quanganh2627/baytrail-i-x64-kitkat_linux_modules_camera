@@ -146,7 +146,6 @@ static int psysstub_runisp(struct css2600_run_cmd *cmd,
 			   struct css2600_device *isp)
 {
 	struct css2600_event ev;
-	int rval = 0;
 
 	if (!cmd)
 		return -EINVAL;
@@ -167,12 +166,15 @@ static int psysstub_runisp(struct css2600_run_cmd *cmd,
 
 	mutex_lock(&isp->mutex);
 	isp->cur_cmd = NULL;
-	if (cmd->flags) {
-		if (cmd->flags & CSS2600_STUB_CMD_SUSPEND)
-			rval = -EINTR;
+	if (cmd->flags & CSS2600_STUB_CMD_CANCEL) {
 		cmd->flags = 0;
 		mutex_unlock(&isp->mutex);
-		goto out;
+		return 0;
+	}
+	if (cmd->flags & CSS2600_STUB_CMD_SUSPEND) {
+		cmd->flags = 0;
+		mutex_unlock(&isp->mutex);
+		return -EINTR;
 	}
 	mutex_unlock(&isp->mutex);
 
@@ -180,8 +182,8 @@ static int psysstub_runisp(struct css2600_run_cmd *cmd,
 	ev.ev.cmd_done.id = cmd->command.id;
 	ev.ev.cmd_done.issue_id = cmd->command.issue_id;
 	css2600_queue_event(cmd->fh, &ev);
-out:
-	return rval;
+
+	return 0;
 }
 
 static struct css2600_run_cmd *__psysstub_lookup_cmd(
