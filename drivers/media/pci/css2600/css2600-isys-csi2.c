@@ -64,6 +64,7 @@ static const struct v4l2_subdev_video_ops csi2_sd_video_ops = {
 };
 
 static const struct v4l2_subdev_pad_ops csi2_sd_pad_ops = {
+	.link_validate = v4l2_subdev_link_validate_default,
 	.get_fmt = css2600_isys_subdev_get_ffmt,
 	.set_fmt = css2600_isys_subdev_set_ffmt,
 };
