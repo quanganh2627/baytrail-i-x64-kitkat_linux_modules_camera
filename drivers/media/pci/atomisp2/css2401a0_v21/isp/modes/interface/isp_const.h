@@ -57,50 +57,51 @@
 #define SH_CSS_BINARY_ID_BAYER_DS             1
 #define SH_CSS_BINARY_ID_VF_PP_FULL           2
 #define SH_CSS_BINARY_ID_VF_PP_OPT            3
-#define SH_CSS_BINARY_ID_CAPTURE_PP           4
-#define SH_CSS_BINARY_ID_PRE_ISP              5
-#define SH_CSS_BINARY_ID_PRE_ISP_2            6
-#define SH_CSS_BINARY_ID_GDC                  7
-#define SH_CSS_BINARY_ID_POST_ISP             8
-#define SH_CSS_BINARY_ID_POST_ISP_2           9
-#define SH_CSS_BINARY_ID_ANR                 10
-#define SH_CSS_BINARY_ID_ANR_2               11
-#define SH_CSS_BINARY_ID_PREVIEW_CONT_DS     12
-#define SH_CSS_BINARY_ID_PREVIEW_DS          13
-#define SH_CSS_BINARY_ID_PREVIEW_DEC         14
-#define SH_CSS_BINARY_ID_PREVIEW_125DEC_2    15
-#define SH_CSS_BINARY_ID_PREVIEW_15DEC_2     16
-#define SH_CSS_BINARY_ID_PREVIEW_DEC_2       17
-#define SH_CSS_BINARY_ID_PREVIEW_DZ          18
-#define SH_CSS_BINARY_ID_PREVIEW_DZ_2        19
-#define SH_CSS_BINARY_ID_PRIMARY_DS          20
-#define SH_CSS_BINARY_ID_PRIMARY_VAR         21
-#define SH_CSS_BINARY_ID_PRIMARY_VAR_2       22
-#define SH_CSS_BINARY_ID_PRIMARY_SMALL       23
-#define SH_CSS_BINARY_ID_PRIMARY_STRIPED     24
-#define SH_CSS_BINARY_ID_PRIMARY_STRIPED_2   25
-#define SH_CSS_BINARY_ID_PRIMARY_8MP         26
-#define SH_CSS_BINARY_ID_PRIMARY_14MP        27
-#define SH_CSS_BINARY_ID_PRIMARY_16MP        28
-#define SH_CSS_BINARY_ID_PRIMARY_REF         29
-#define SH_CSS_BINARY_ID_VIDEO_OFFLINE       30
-#define SH_CSS_BINARY_ID_VIDEO_DS            31
-#define SH_CSS_BINARY_ID_VIDEO_YUV_DS        32
-#define SH_CSS_BINARY_ID_VIDEO_DZ            33
-#define SH_CSS_BINARY_ID_VIDEO_DZ_2400_ONLY  34
-#define SH_CSS_BINARY_ID_VIDEO_HIGH          35
-#define SH_CSS_BINARY_ID_VIDEO_NODZ          36
-#define SH_CSS_BINARY_ID_VIDEO_MULTI_DEC_2_MIN 37
-#define SH_CSS_BINARY_ID_VIDEO_15DEC_2_MIN   38
-#define SH_CSS_BINARY_ID_VIDEO_DEC_2_MIN     39
-#define SH_CSS_BINARY_ID_VIDEO_CONT_2_MIN    40
-#define SH_CSS_BINARY_ID_VIDEO_DZ_2_MIN      41
-#define SH_CSS_BINARY_ID_VIDEO_DZ_2          42
-#define SH_CSS_BINARY_ID_RESERVED1           43
-#define SH_CSS_BINARY_ID_ACCELERATION        44
-#define SH_CSS_BINARY_ID_PRE_DE_2            45
-#define SH_CSS_BINARY_ID_KERNEL_TEST_LOAD_STORE 46
-#define SH_CSS_BINARY_NUM_IDS                47
+#define SH_CSS_BINARY_ID_YUV_SCALE            4
+#define SH_CSS_BINARY_ID_CAPTURE_PP           5
+#define SH_CSS_BINARY_ID_PRE_ISP              6
+#define SH_CSS_BINARY_ID_PRE_ISP_2            7
+#define SH_CSS_BINARY_ID_GDC                  8
+#define SH_CSS_BINARY_ID_POST_ISP             9
+#define SH_CSS_BINARY_ID_POST_ISP_2          10
+#define SH_CSS_BINARY_ID_ANR                 11
+#define SH_CSS_BINARY_ID_ANR_2               12
+#define SH_CSS_BINARY_ID_PREVIEW_CONT_DS     13
+#define SH_CSS_BINARY_ID_PREVIEW_DS          14
+#define SH_CSS_BINARY_ID_PREVIEW_DEC         15
+#define SH_CSS_BINARY_ID_PREVIEW_125DEC_2    16
+#define SH_CSS_BINARY_ID_PREVIEW_15DEC_2     17
+#define SH_CSS_BINARY_ID_PREVIEW_DEC_2       18
+#define SH_CSS_BINARY_ID_PREVIEW_DZ          19
+#define SH_CSS_BINARY_ID_PREVIEW_DZ_2        20
+#define SH_CSS_BINARY_ID_PRIMARY_DS          21
+#define SH_CSS_BINARY_ID_PRIMARY_VAR         22
+#define SH_CSS_BINARY_ID_PRIMARY_VAR_2       23
+#define SH_CSS_BINARY_ID_PRIMARY_SMALL       24
+#define SH_CSS_BINARY_ID_PRIMARY_STRIPED     25
+#define SH_CSS_BINARY_ID_PRIMARY_STRIPED_2   26
+#define SH_CSS_BINARY_ID_PRIMARY_8MP         27
+#define SH_CSS_BINARY_ID_PRIMARY_14MP        28
+#define SH_CSS_BINARY_ID_PRIMARY_16MP        29
+#define SH_CSS_BINARY_ID_PRIMARY_REF         30
+#define SH_CSS_BINARY_ID_VIDEO_OFFLINE       31
+#define SH_CSS_BINARY_ID_VIDEO_DS            32
+#define SH_CSS_BINARY_ID_VIDEO_YUV_DS        33
+#define SH_CSS_BINARY_ID_VIDEO_DZ            34
+#define SH_CSS_BINARY_ID_VIDEO_DZ_2400_ONLY  35
+#define SH_CSS_BINARY_ID_VIDEO_HIGH          36
+#define SH_CSS_BINARY_ID_VIDEO_NODZ          37
+#define SH_CSS_BINARY_ID_VIDEO_MULTI_DEC_2_MIN 38
+#define SH_CSS_BINARY_ID_VIDEO_15DEC_2_MIN   39
+#define SH_CSS_BINARY_ID_VIDEO_DEC_2_MIN     40
+#define SH_CSS_BINARY_ID_VIDEO_CONT_2_MIN    41
+#define SH_CSS_BINARY_ID_VIDEO_DZ_2_MIN      42
+#define SH_CSS_BINARY_ID_VIDEO_DZ_2          43
+#define SH_CSS_BINARY_ID_RESERVED1           44
+#define SH_CSS_BINARY_ID_ACCELERATION        45
+#define SH_CSS_BINARY_ID_PRE_DE_2            46
+#define SH_CSS_BINARY_ID_KERNEL_TEST_LOAD_STORE 47
+#define SH_CSS_BINARY_NUM_IDS                48
 
 #define XMEM_WIDTH_BITS              HIVE_ISP_DDR_WORD_BITS
 #define XMEM_SHORTS_PER_WORD         (HIVE_ISP_DDR_WORD_BITS/16)
@@ -145,13 +146,13 @@
 #define UDS_BLI_INTERP_ENVELOPE       1
 #define UDS_BCI_INTERP_ENVELOPE       3
 #define UDS_MAX_ZOOM_FAC              64
-/* Make it always one FPGA vector. 
-   Four FPGA vectors are required and 
+/* Make it always one FPGA vector.
+   Four FPGA vectors are required and
    four of them fit in one ASIC vector.*/
 #define UDS_MAX_CHUNKS                16
 
 /* ************
- * lookup table 
+ * lookup table
  * ************/
 
 #define ISP_LEFT_PADDING	_ISP_LEFT_CROP_EXTRA(ISP_LEFT_CROPPING)

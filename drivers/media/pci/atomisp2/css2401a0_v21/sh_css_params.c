@@ -3633,7 +3633,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 #if !defined(IS_ISP_2500_SYSTEM)
 #else /* defined(IS_ISP_2500_SYSTEM) */
 	sh_css_process_product_specific(&params->isp_parameters,&params->isp_params_changed);
-	sh_css_process_acc_cluster_parameters2(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed );
+	sh_css_process_acc_cluster_parameters(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed);
 #endif
 
 	/* now make the map available to the sp */

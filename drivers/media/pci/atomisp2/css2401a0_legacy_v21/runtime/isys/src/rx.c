@@ -294,76 +294,6 @@ enum ia_css_err ia_css_isys_convert_stream_format_to_mipi_format(
 	return IA_CSS_SUCCESS;
 }
 
-#if defined(HAS_RX_VERSION_1)
-
-/* This is a device function, shouldn't be here */
-static void isys_rx_set_bits(const mipi_port_ID_t port,
-			     const unsigned int reg,
-			     const unsigned int lsb,
-			     const unsigned int bits, const unsigned int val)
-{
-	hrt_data data = receiver_port_reg_load(RX0_ID, port, reg);
-	/* prevent writing out of range */
-	hrt_data tmp = val & ((1U << bits) - 1);
-	/* shift into place */
-	data |= (tmp << lsb);
-	receiver_port_reg_store(RX0_ID, port, reg, data);
-	return;
-}
-
-static void isys_rx_set_num_lanes(const mipi_port_ID_t port,
-				  const unsigned int lanes)
-{
-	isys_rx_set_bits(port,
-			 _HRT_CSS_RECEIVER_FUNC_PROG_REG_IDX,
-			 _HRT_CSS_RECEIVER_AHB_CSI2_NUM_DATA_LANES_IDX,
-			 _HRT_CSS_RECEIVER_AHB_CSI2_NUM_DATA_LANES_BITS, lanes);
-	return;
-}
-
-static void isys_rx_set_timeout(const mipi_port_ID_t port,
-				const unsigned int timeout)
-{
-	isys_rx_set_bits(port,
-			 _HRT_CSS_RECEIVER_FUNC_PROG_REG_IDX,
-			 _HRT_CSS_RECEIVER_DATA_TIMEOUT_IDX,
-			 _HRT_CSS_RECEIVER_DATA_TIMEOUT_BITS, timeout);
-	return;
-}
-
-static void isys_rx_set_compression(const mipi_port_ID_t port,
-				    const mipi_predictor_t comp)
-{
-	unsigned int reg = _HRT_CSS_RECEIVER_COMP_PREDICT_REG_IDX;
-
-	assert(comp < N_MIPI_PREDICTOR_TYPES);
-
-	receiver_port_reg_store(RX0_ID, port, reg, comp);
-	return;
-}
-
-static void isys_rx_set_uncomp_size(const mipi_port_ID_t port,
-				    const unsigned int size)
-{
-	isys_rx_set_bits(port,
-			 _HRT_CSS_RECEIVER_AHB_COMP_FORMAT_REG_IDX,
-			 _HRT_CSS_RECEIVER_AHB_COMP_NUM_BITS_IDX,
-			 _HRT_CSS_RECEIVER_AHB_COMP_NUM_BITS_BITS, size);
-	return;
-}
-
-static void isys_rx_set_comp_size(const mipi_port_ID_t port,
-				  const unsigned int size)
-{
-	isys_rx_set_bits(port,
-			 _HRT_CSS_RECEIVER_AHB_COMP_FORMAT_REG_IDX,
-			 _HRT_CSS_RECEIVER_AHB_COMP_RAW_BITS_IDX,
-			 _HRT_CSS_RECEIVER_AHB_COMP_RAW_BITS_BITS, size);
-	return;
-}
-
-#endif				/* defined(HAS_RX_VERSION_1) */
-
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 void ia_css_isys_rx_configure(const rx_cfg_t *config,
 			      const enum ia_css_input_mode input_mode)
@@ -474,32 +404,8 @@ void ia_css_isys_rx_configure(const rx_cfg_t *config,
 	 *                INPUT_SYSTEM_CSI_RECEIVER_SELECT_BACKENG, 1);
 	 */
 	input_system_reg_store(INPUT_SYSTEM0_ID, 0x207, 1);
-
-#elif defined(HAS_RX_VERSION_1)
-	mipi_port_ID_t port = config->port;
-
-	(void)input_mode;	/*AM: just to satisfy the compiler.*/
-
-	/* turn off all ports just in case */
-	ia_css_isys_rx_disable();
-
-	/* All settings are per port */
-	isys_rx_set_timeout(port, config->timeout);
-	/* configure the selected port */
-	isys_rx_set_num_lanes(port, config->num_lanes);
-	isys_rx_set_compression(port, config->comp);
-	isys_rx_set_uncomp_size(port, config->uncomp_bpp);
-	isys_rx_set_comp_size(port, config->comp_bpp);
-
-	receiver_port_reg_store(RX0_ID, port,
-				_HRT_CSS_RECEIVER_TWO_PIXEL_EN_REG_IDX,
-				config->is_two_ppc);
-
-	/* enable the selected port */
-	receiver_port_reg_store(RX0_ID, port,
-				_HRT_CSS_RECEIVER_DEVICE_READY_REG_IDX, true);
 #else
-#error "rx.c: RX version must be one of {RX_VERSION_1, RX_VERSION_2}"
+#error "rx.c: RX version must be one of {RX_VERSION_2}"
 #endif
 
 	return;

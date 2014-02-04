@@ -133,12 +133,6 @@ struct ia_css_isp_data {
 
 struct ia_css_blob_descr;
 
-struct ia_css_channel_descr {
-	uint8_t		channel;  /* Dma channel used */
-	uint8_t		height;   /* Buffer height */
-	uint16_t	stride;   /* Buffer stride */
-};
-
 /** Blob descriptor.
  * This structure describes an SP or ISP blob.
  * It describes the test, data and bss sections as well as position in a
@@ -305,7 +299,6 @@ struct ia_css_binary_info {
 		uint8_t	vfdec_bits_per_pixel;
 		uint8_t	claimed_by_isp;
 		uint8_t padding[2];
-		struct ia_css_channel_descr raw;
 	} dma;
 	struct {
 		uint16_t	bpp;

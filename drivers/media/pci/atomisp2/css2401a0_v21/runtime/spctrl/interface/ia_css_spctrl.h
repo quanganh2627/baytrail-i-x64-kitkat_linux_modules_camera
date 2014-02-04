@@ -23,8 +23,8 @@
 #define __IA_CSS_SPCTRL_H__
 
 #include <system_global.h>
+#include <ia_css_err.h>
 #include "ia_css_spctrl_comm.h"
-#include "ia_css.h"
 
 
 typedef struct {
