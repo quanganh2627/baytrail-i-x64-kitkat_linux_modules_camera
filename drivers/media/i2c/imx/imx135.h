@@ -1991,6 +1991,7 @@ struct imx_resolution imx135_res_preview[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
 	},
 	{
 		 .desc = "imx135_480p_binning_preview",
@@ -2008,6 +2009,7 @@ struct imx_resolution imx135_res_preview[] = {
 		},
 		 .bin_factor_x = 1,
 		 .bin_factor_y = 1,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_vga_dvs_binning_preview",
@@ -2025,6 +2027,7 @@ struct imx_resolution imx135_res_preview[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_976x736_preview",
@@ -2043,6 +2046,7 @@ struct imx_resolution imx135_res_preview[] = {
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
 		.used = 0,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_1m_preview",
@@ -2061,6 +2065,7 @@ struct imx_resolution imx135_res_preview[] = {
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
 		.used = 0,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_1080p_binning_preview",
@@ -2079,6 +2084,7 @@ struct imx_resolution imx135_res_preview[] = {
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
 		.used = 0,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_3m__cont_cap",
@@ -2097,6 +2103,7 @@ struct imx_resolution imx135_res_preview[] = {
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
 		.used = 0,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_6m_cont_cap",
@@ -2115,6 +2122,7 @@ struct imx_resolution imx135_res_preview[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 451200,
 	},
 	{
 		.desc = "imx135_8m_scaled_from_12m__cont_cap",
@@ -2133,6 +2141,7 @@ struct imx_resolution imx135_res_preview[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 451200,
 	},
 	{
 		.desc = "imx135_10m__cont_cap",
@@ -2151,6 +2160,7 @@ struct imx_resolution imx135_res_preview[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 451200,
 	},
 	{
 		.desc = "imx135_13m__cont_cap",
@@ -2169,6 +2179,7 @@ struct imx_resolution imx135_res_preview[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 451200,
 	},
 };
 
@@ -2199,6 +2210,7 @@ struct imx_resolution imx135_res_still[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
 	},
 	{
 		 .desc = "imx135_480p_binning_still",
@@ -2216,6 +2228,7 @@ struct imx_resolution imx135_res_still[] = {
 		},
 		 .bin_factor_x = 1,
 		 .bin_factor_y = 1,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_1m_still",
@@ -2234,6 +2247,7 @@ struct imx_resolution imx135_res_still[] = {
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
 		.used = 0,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_1080p_binning_still",
@@ -2252,6 +2266,7 @@ struct imx_resolution imx135_res_still[] = {
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
 		.used = 0,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_3m__still",
@@ -2270,6 +2285,7 @@ struct imx_resolution imx135_res_still[] = {
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
 		.used = 0,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_6m_for_mipi_342_still",
@@ -2288,6 +2304,7 @@ struct imx_resolution imx135_res_still[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 342000,
 	},
 	{
 		.desc = "imx135_8m_scaled_from_12m_for_mipi342_still",
@@ -2311,6 +2328,7 @@ struct imx_resolution imx135_res_still[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 342000,
 	},
 	{
 		.desc = "imx135_10m_for_mipi_342_still",
@@ -2329,6 +2347,7 @@ struct imx_resolution imx135_res_still[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 342000,
 	},
 	{
 		.desc = "imx135_13m_still",
@@ -2347,6 +2366,7 @@ struct imx_resolution imx135_res_still[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 342000,
 	},
 };
 
@@ -2372,6 +2392,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_cif_binning_video",
@@ -2389,6 +2410,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_qvga__dvs_binning_video",
@@ -2406,6 +2428,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_436x360_binning_video",
@@ -2423,6 +2446,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_vga_dvs_binning_video",
@@ -2440,6 +2464,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_480p_dvs_binning_video",
@@ -2457,6 +2482,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_720P_dvs_video",
@@ -2479,6 +2505,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
+		.mipi_freq = 451200,
 	},
 	{
 		.desc = "imx135_wvga_dvs_binning_video",
@@ -2496,6 +2523,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
+		.mipi_freq = 209600,
 	},
 	{
 		.desc = "imx135_1936_1096_fullfov_max_clock",
@@ -2518,6 +2546,7 @@ struct imx_resolution imx135_res_video[] = {
 		},
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
+		.mipi_freq = 451200,
 	},
 	{
 		.desc = "imx135_1080P_dvs_video",
@@ -2530,18 +2559,21 @@ struct imx_resolution imx135_res_video[] = {
 				 .pixels_per_line = 4572,
 				 .lines_per_frame = 2632,
 				 .regs = imx135_2336x1320_max_clock,
+				.mipi_freq = 451200,
 			},
 			{/* Pixel Clock : 399.36MHz */
 				 .fps = 60,
 				 .pixels_per_line = 4754,
 				 .lines_per_frame = 1400,
 				 .regs = imx135_2336x1320_cropped_mipi499,
+				.mipi_freq = 499200,
 			},
 			{
 			}
 		},
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
+		.mipi_freq = 451200,
 	},
 	{
 		.desc = "imx135_8m_cropped_video",
@@ -2560,6 +2592,7 @@ struct imx_resolution imx135_res_video[] = {
 		.bin_factor_x = 0,
 		.bin_factor_y = 0,
 		.used = 0,
+		.mipi_freq = 451200,
 	},
 };
 
