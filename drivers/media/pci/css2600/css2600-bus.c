@@ -35,8 +35,8 @@ static int css2600_bus_match(struct device *dev, struct device_driver *drv)
 {
 	struct css2600_bus_driver *adrv = to_css2600_bus_driver(drv);
 
-	dev_info(dev, "bus match: \"%s\" --- \"%s\"\n", dev_name(dev),
-		 adrv->wanted);
+	dev_dbg(dev, "bus match: \"%s\" --- \"%s\"\n", dev_name(dev),
+		adrv->wanted);
 
 	return !strncmp(dev_name(dev), adrv->wanted, strlen(adrv->wanted));
 }
