@@ -3817,6 +3817,10 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 	bool resolution_differs;
 	bool need_vf_pp = false;
 	unsigned num_output_pins;
+	bool need_in_frameinfo_memory = false;
+
+	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"create_host_video_pipeline() enter:\n");
@@ -3833,8 +3837,20 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 	ia_css_pipeline_clean(me);
 
 	me->dvs_frame_delay = pipe->dvs_frame_delay;
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, always enable 'in_frameinfo_memory'
+	 * except for the following: online or continuous
+	 */
+	need_in_frameinfo_memory =
+		!(pipe->stream->config.online || pipe->stream->config.continuous);
+#else
 	/* Construct in_frame info (only in case we have dynamic input */
-	if (pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY) {
+	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
+#endif
+
+	/* Construct in_frame info (only in case we have dynamic input */
+	if (need_in_frameinfo_memory) {
 		err = init_in_frameinfo_memory_defaults(pipe, in_frame);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
@@ -3873,7 +3889,14 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 		in_frame = me->stages->args.out_frame;
 		in_stage = copy_stage;
 	} else if (pipe->stream->config.continuous) {
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+		/* When continous is enabled, configure in_frame with the
+		 * last pipe, which is the copy pipe.
+		 */
+		in_frame = pipe->stream->last_pipe->continuous_frames[0];
+#else
 		in_frame = pipe->continuous_frames[0];
+#endif
 	}
 
 	resolution_differs =
@@ -5387,6 +5410,9 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	enum sh_css_pipe_config_override copy_ovrd;
 	enum ia_css_input_mode video_pipe_input_mode;
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	struct ia_css_pipe *target_pipe = NULL;
+#endif
 	assert(pipe != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "video_start() enter:\n");
@@ -5416,9 +5442,21 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	}
 
 #if !defined(HAS_NO_INPUT_SYSTEM)
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
 	err = sh_css_config_input_network(pipe, copy_binary);
+#elif defined(USE_INPUT_SYSTEM_VERSION_2401)
+	if (pipe->stream->config.continuous) {
+		/* make the copy pipe create/own the ISYS stream */
+		target_pipe = copy_pipe;
+	} else {
+		/* make the video pipe create/own the ISYS stream */
+		target_pipe = pipe;
+	}
+
+	err = sh_css_config_input_network(target_pipe, NULL);
+#endif
 	if (err != IA_CSS_SUCCESS)
-		return err;
+		goto EXIT;
 #endif
 
 	/* Construct and load the copy pipe */
@@ -5465,6 +5503,9 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 
 	err = start_pipe(pipe, copy_ovrd, video_pipe_input_mode);
 
+#if !defined(HAS_NO_INPUT_SYSTEM)
+EXIT:
+#endif
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"video_start() leave: return (%d)\n", err);
 	return err;

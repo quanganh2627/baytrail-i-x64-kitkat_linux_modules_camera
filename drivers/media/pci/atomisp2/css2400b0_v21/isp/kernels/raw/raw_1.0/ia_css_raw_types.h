@@ -22,6 +22,9 @@
 #ifndef __IA_CSS_RAW_TYPES_H
 #define __IA_CSS_RAW_TYPES_H
 
+#include <ia_css_frame_public.h>
+/* need include for sh_css_sp_pipeline but cannot include sh_css_internal.h */
+
 /** Raw frame
  *
  *  ISP block: Raw frame

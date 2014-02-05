@@ -19,13 +19,14 @@
  *
  */
 
-#include "ia_css_frame.h"
-#include "ia_css.h"
+#include "ia_css_ref.host.h"
+#include <assert_support.h>
+#include <ia_css_frame_public.h>
+#include <ia_css_frame.h>
+#include <ia_css_binary.h>
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
-#include "ia_css_ref.host.h"
 
-#include "assert_support.h"
 
 void
 ia_css_ref_config(struct sh_css_isp_ref_isp_config *to,

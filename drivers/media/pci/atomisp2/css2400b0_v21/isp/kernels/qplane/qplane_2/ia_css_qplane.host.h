@@ -22,8 +22,8 @@
 #ifndef __IA_CSS_QPLANE_HOST_H
 #define __IA_CSS_QPLANE_HOST_H
 
-#include "ia_css.h"	 	/* ia_css_frame_info */
-#include "ia_css_binary.h"	/* ia_css_binary */
+#include <ia_css_frame_public.h>
+#include <ia_css_binary.h>
 
 #if 0
 /* Cannot be included, since sh_css_internal.h is too generic

@@ -19,11 +19,13 @@
  *
  */
 
-#include "ia_css_frame.h"
-#include "ia_css.h"
-#include "ia_css_types.h"
-#include "sh_css_defs.h"
-#include "ia_css_debug.h"
+#include <assert_support.h>
+#include <ia_css_frame_public.h>
+#include <ia_css_frame.h>
+#include <ia_css_binary.h>
+#include <ia_css_types.h>
+#include <sh_css_defs.h>
+#include <ia_css_debug.h>
 
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
