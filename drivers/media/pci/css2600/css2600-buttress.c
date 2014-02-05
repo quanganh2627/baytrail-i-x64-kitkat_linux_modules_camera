@@ -52,7 +52,7 @@ static struct css2600_bus_driver css2600_buttress_driver = {
 	.remove = css2600_buttress_remove,
 	.wanted = CSS2600_BUTTRESS_NAME,
 	.drv = {
-		.name = CSS2600_ISYS_NAME,
+		.name = CSS2600_BUTTRESS_NAME,
 		.owner = THIS_MODULE,
 	},
 };
