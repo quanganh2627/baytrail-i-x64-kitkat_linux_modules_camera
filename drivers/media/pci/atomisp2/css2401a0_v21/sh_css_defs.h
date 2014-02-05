@@ -27,6 +27,10 @@
 
 #include "math_support.h"	/* max(), min, etc etc */
 
+/* ID's for refcount */
+#define IA_CSS_REFCOUNT_PARAM_SET_POOL  0xCAFE0001
+#define IA_CSS_REFCOUNT_PARAM_BUFFER    0xCAFE0002
+
 /* Digital Image Stabilization */
 #define SH_CSS_DIS_DECI_FACTOR_LOG2       6
 

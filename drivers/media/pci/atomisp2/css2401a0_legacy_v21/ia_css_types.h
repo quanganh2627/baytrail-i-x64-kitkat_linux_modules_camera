@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140204_0655 */
+/* Release Version: irci_master_20140205_1515 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -100,6 +100,28 @@ struct ia_css_resolution {
 struct ia_css_vector {
 	int32_t x; /**< horizontal motion (in pixels) */
 	int32_t y; /**< vertical motion (in pixels) */
+};
+
+/* Short hands */
+#define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
+#define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
+
+/** CSS data descriptor */
+struct ia_css_data {
+	ia_css_ptr address; /* CSS virtual address */
+	uint32_t   size;    /* Disabled if 0 */
+};
+
+/** Host data descriptor */
+struct ia_css_host_data {
+	char      *address; /* Host address */
+	uint32_t   size;    /* Disabled if 0 */
+};
+
+/** ISP data descriptor */
+struct ia_css_isp_data {
+	uint32_t   address; /* ISP address */
+	uint32_t   size;    /* Disabled if 0 */
 };
 
 /** DVS statistics grid

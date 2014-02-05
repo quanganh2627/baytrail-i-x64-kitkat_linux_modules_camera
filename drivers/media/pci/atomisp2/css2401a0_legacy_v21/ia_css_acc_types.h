@@ -43,7 +43,6 @@
 #include "ia_css_types.h"
 #include "ia_css_frame_public.h"
 
-
 /* Types for the acceleration API.
  * These should be moved to sh_css_internal.h once the old acceleration
  * argument handling has been completed.
@@ -100,30 +99,9 @@ enum ia_css_isp_memories {
 #define IA_CSS_NUM_ISP_MEMORIES 7
 
 #else
-#error "ia_css_types.h:  SYSTEM must be one of {ISP_2400_SYSTEM, ISP_2500_SYSTEM}"
+#error "ia_css_acc_types.h:  SYSTEM must be one of {ISP_2400_SYSTEM, ISP_2500_SYSTEM}"
 #endif
 
-/* Short hands */
-#define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
-#define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
-
-/** CSS data descriptor */
-struct ia_css_data {
-	ia_css_ptr address; /* CSS virtual address */
-	uint32_t   size;    /* Disabled if 0 */
-};
-
-/** Host data descriptor */
-struct ia_css_host_data {
-	char      *address; /* Host address */
-	uint32_t   size;    /* Disabled if 0 */
-};
-
-/** ISP data descriptor */
-struct ia_css_isp_data {
-	uint32_t   address; /* ISP address */
-	uint32_t   size;    /* Disabled if 0 */
-};
 
 /* Should be included without the path.
    However, that requires adding the path to numerous makefiles

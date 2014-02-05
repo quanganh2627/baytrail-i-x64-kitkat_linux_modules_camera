@@ -20,8 +20,10 @@
  */
 
 #include "ia_css_device_access.h"
-#include "device_access.h"
-#include "assert_support.h"
+#include <type_support.h>
+#include <assert_support.h>
+#include <device_access.h>
+#include <ia_css_env.h>
 
 static struct ia_css_hw_access_env my_env;
 
