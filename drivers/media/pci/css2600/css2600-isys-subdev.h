@@ -15,6 +15,8 @@
 #ifndef CSS2600_ISYS_SUBDEV_H
 #define CSS2600_ISYS_SUBDEV_H
 
+#include <linux/mutex.h>
+
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-ctrls.h>
@@ -40,6 +42,8 @@ enum isys_subdev_prop_tgt {
 	(CSS2600_ISYS_SUBDEV_PROP_TGT_SOURCE_CROP + 1)
 
 struct css2600_isys_subdev {
+	/* Serialise access to any other field in the struct */
+	struct mutex mutex;
 	struct v4l2_subdev sd;
 	uint32_t const * const *supported_fmts;
 	struct media_pad pad[CSS2600_ISYS_MAX_PAD];

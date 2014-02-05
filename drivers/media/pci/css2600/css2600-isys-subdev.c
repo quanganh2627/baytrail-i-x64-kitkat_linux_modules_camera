@@ -125,6 +125,8 @@ int css2600_isys_subdev_set_ffmt(struct v4l2_subdev *sd,
 	uint32_t code = asd->supported_fmts[fmt->pad][0];
 	unsigned int i;
 
+	mutex_lock(&asd->mutex);
+
 	for (i = 0; asd->supported_fmts[fmt->pad][i]; i++) {
 		if (asd->supported_fmts[fmt->pad][i] == fmt->format.code) {
 			code = asd->supported_fmts[fmt->pad][i];
@@ -149,6 +151,8 @@ int css2600_isys_subdev_set_ffmt(struct v4l2_subdev *sd,
 
 	fmt->format = *ffmt;
 
+	mutex_unlock(&asd->mutex);
+
 	return 0;
 }
 
@@ -156,7 +160,11 @@ int css2600_isys_subdev_get_ffmt(struct v4l2_subdev *sd,
 				 struct v4l2_subdev_fh *fh,
 				 struct v4l2_subdev_format *fmt)
 {
+	struct css2600_isys_subdev *asd = to_css2600_isys_subdev(sd);
+
+	mutex_lock(&asd->mutex);
 	fmt->format = *__css2600_isys_get_ffmt(sd, fh, fmt->pad, fmt->which);
+	mutex_unlock(&asd->mutex);
 
 	return 0;
 }
@@ -171,6 +179,8 @@ int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
 {
 	int rval;
 
+	mutex_init(&asd->mutex);
+
 	v4l2_subdev_init(&asd->sd, ops);
 
 	asd->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
@@ -178,18 +188,21 @@ int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
 
 	rval = v4l2_ctrl_handler_init(&asd->ctrl_handler, nr_ctrls);
 	if (rval)
-		return rval;
+		goto out_mutex_destroy;
 
 	asd->sd.entity.ops = &entity_ops;
 
 	rval = media_entity_init(&asd->sd.entity, num_pads, asd->pad, 0);
 	if (rval)
-		goto fail;
+		goto out_v4l2_ctrl_handler_free;
 
 	return 0;
 
-fail:
+out_v4l2_ctrl_handler_free:
 	v4l2_ctrl_handler_free(&asd->ctrl_handler);
+
+out_mutex_destroy:
+	mutex_destroy(&asd->mutex);
 
 	return rval;
 }
@@ -198,4 +211,5 @@ void css2600_isys_subdev_cleanup(struct css2600_isys_subdev *asd)
 {
 	media_entity_cleanup(&asd->sd.entity);
 	v4l2_ctrl_handler_free(&asd->ctrl_handler);
+	mutex_destroy(&asd->mutex);
 }
