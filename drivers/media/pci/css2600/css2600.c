@@ -35,8 +35,8 @@
 struct css2600_dma_mapping;
 
 static struct css2600_bus_device *css2600_mmu_init(
-	struct pci_dev *pdev, void __iomem *base[], unsigned int nr_base,
-	unsigned int nr)
+	struct pci_dev *pdev, struct device *parent, void __iomem *base[],
+	unsigned int nr_base, unsigned int nr)
 {
 	struct css2600_mmu_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -52,13 +52,14 @@ static struct css2600_bus_device *css2600_mmu_init(
 
 	pdata->nr_base = nr_base;
 
-	return css2600_bus_add_device(pdev, pdata, NULL,
+	return css2600_bus_add_device(pdev, parent, pdata, NULL,
 				      CSS2600_MMU_NAME, nr);
 }
 
 static struct css2600_bus_device *css2600_isys_init(
-	struct pci_dev *pdev, struct css2600_bus_iommu *iommu,
-	void __iomem *base, unsigned int nr, unsigned int type)
+	struct pci_dev *pdev, struct device *parent,
+	struct css2600_bus_iommu *iommu, void __iomem *base,
+	unsigned int nr, unsigned int type)
 {
 	struct css2600_isys_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -69,13 +70,14 @@ static struct css2600_bus_device *css2600_isys_init(
 	pdata->base = base;
 	pdata->type = type;
 
-	return css2600_bus_add_device(pdev, pdata, iommu, CSS2600_ISYS_NAME,
-				      nr);
+	return css2600_bus_add_device(pdev, parent, pdata, iommu,
+				      CSS2600_ISYS_NAME, nr);
 }
 
 static struct css2600_bus_device *css2600_psys_init(
-	struct pci_dev *pdev, struct css2600_bus_iommu *iommu,
-	void __iomem *base, unsigned int nr)
+	struct pci_dev *pdev, struct device *parent,
+	struct css2600_bus_iommu *iommu, void __iomem *base,
+	unsigned int nr)
 {
 	struct css2600_psys_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -85,8 +87,24 @@ static struct css2600_bus_device *css2600_psys_init(
 
 	pdata->base = base;
 
-	return css2600_bus_add_device(pdev, pdata, iommu, CSS2600_PSYS_NAME,
-				      nr);
+	return css2600_bus_add_device(pdev, parent, pdata, iommu,
+				      CSS2600_PSYS_NAME, nr);
+}
+
+static struct css2600_bus_device *css2600_buttress_init(
+	struct pci_dev *pdev, struct device *parent,
+	void __iomem *base, unsigned int nr)
+{
+	struct css2600_buttress_pdata *pdata =
+		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
+
+	if (!pdata)
+		return ERR_PTR(-ENOMEM);
+
+	pdata->base = base;
+
+	return css2600_bus_add_device(pdev, parent, pdata, NULL,
+				      CSS2600_BUTTRESS_NAME, nr);
 }
 
 static inline void css2600_call_isr(struct css2600_bus_device *adev)
@@ -164,12 +182,18 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 	pci_set_drvdata(pdev, isp);
 
+	if (pdev->device == CSS2600_HW_BXT) {
+		isp->buttress = css2600_buttress_init(pdev, &pdev->dev, base, 0);
+		rval = PTR_ERR(isp->buttress);
+		if (IS_ERR(isp->buttress))
+			goto out_css2600_bus_del_devices;
+	}
 	if (pdev->device == CSS2600_HW_BXT
 	    || (pdev->device == CSS2600_HW_BXT_FPGA
 		&& IS_ENABLED(CONFIG_VIDEO_CSS2600_ISYS))) {
 		mmu_base[0] = base + CSS2600_BXT_A0_ISYS_IOMMU0_OFFSET;
 		mmu_base[1] = base + CSS2600_BXT_A0_ISYS_IOMMU1_OFFSET;
-		isp->isys_iommu = css2600_mmu_init(pdev, mmu_base, 2, 0);
+		isp->isys_iommu = css2600_mmu_init(pdev, &isp->buttress->dev, mmu_base, 2, 0);
 		rval = PTR_ERR(isp->isys_iommu);
 		if (IS_ERR(isp->isys_iommu)) {
 			dev_err(&pdev->dev, "can't create isys iommu device\n");
@@ -178,8 +202,8 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 		isys_iommu->dev = &isp->isys_iommu->dev;
 
-		isp->isys = css2600_isys_init(pdev, isys_iommu, base, 0,
-					      CSS2600_ISYS_TYPE_CSS2600);
+		isp->isys = css2600_isys_init(pdev, &isp->buttress->dev, isys_iommu, base,
+					      0, CSS2600_ISYS_TYPE_CSS2600);
 		rval = PTR_ERR(isp->isys);
 		if (IS_ERR(isp->isys))
 			goto out_css2600_bus_del_devices;
@@ -190,7 +214,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		&& IS_ENABLED(CONFIG_VIDEO_CSS2600_PSYS))) {
 		mmu_base[0] = base + CSS2600_BXT_A0_PSYS_IOMMU0_OFFSET;
 		mmu_base[1] = base + CSS2600_BXT_A0_PSYS_IOMMU1_OFFSET;
-		isp->psys_iommu = css2600_mmu_init(pdev, mmu_base, 2, 1);
+		isp->psys_iommu = css2600_mmu_init(pdev, &isp->isys->dev, mmu_base, 2, 1);
 		rval = PTR_ERR(isp->psys_iommu);
 		if (IS_ERR(isp->psys_iommu)) {
 			dev_err(&pdev->dev, "can't create psys iommu device\n");
@@ -198,7 +222,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		}
 
 		psys_iommu->dev = &isp->psys_iommu->dev;
-		isp->psys = css2600_psys_init(pdev, psys_iommu, base, 0);
+		isp->psys = css2600_psys_init(pdev, &isp->buttress->dev, psys_iommu, base, 0);
 		rval = PTR_ERR(isp->isys);
 		if (IS_ERR(isp->isys))
 			goto out_css2600_bus_del_devices;
@@ -207,19 +231,19 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	if (pdev->device == CSS2600_HW_MRFLD_2401) {
 		mmu_base[0] = base + CSS2600_MRFLD_DATA_IOMMU_OFFSET;
 		mmu_base[1] = base + CSS2600_MRFLD_ICACHE_IOMMU_OFFSET;
-		isp->isys_iommu = css2600_mmu_init(pdev, mmu_base, 2, 0);
+		isp->isys_iommu = css2600_mmu_init(pdev, &pdev->dev, mmu_base, 2, 0);
 		rval = PTR_ERR(isp->isys_iommu);
 		if (IS_ERR(isp->isys_iommu)) {
 			dev_err(&pdev->dev, "can't create iommu device\n");
 			goto out_css2600_bus_del_devices;
 		}
 		isys_iommu->dev = &isp->isys_iommu->dev;
-		isp->isys = css2600_isys_init(pdev, isys_iommu, base, 0,
+		isp->isys = css2600_isys_init(pdev, &pdev->dev, isys_iommu, base, 0,
 					      CSS2600_ISYS_TYPE_CSS2401);
 		rval = PTR_ERR(isp->isys);
 		if (rval < 0)
 			goto out_css2600_bus_del_devices;
-		isp->psys = css2600_psys_init(pdev, isys_iommu, base, 0);
+		isp->psys = css2600_psys_init(pdev, &pdev->dev, isys_iommu, base, 0);
 		rval = PTR_ERR(isp->psys);
 		if (rval < 0)
 			goto out_css2600_bus_del_devices;

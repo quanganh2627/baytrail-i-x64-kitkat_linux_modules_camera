@@ -42,6 +42,7 @@ struct css2600_device {
 	struct list_head devices;
 	struct css2600_bus_device *isys_iommu, *isys;
 	struct css2600_bus_device *psys_iommu, *psys;
+	struct css2600_bus_device *buttress;
 };
 
 #endif

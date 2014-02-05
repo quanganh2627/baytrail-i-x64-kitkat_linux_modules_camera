@@ -63,8 +63,8 @@ struct css2600_bus_iommu {
 	container_of(_drv, struct css2600_bus_driver, drv)
 
 struct css2600_bus_device *css2600_bus_add_device(
-	struct pci_dev *pdev, void *pdata, struct css2600_bus_iommu *iommu,
-	char *name, unsigned int nr);
+	struct pci_dev *pdev, struct device *parent, void *pdata,
+	struct css2600_bus_iommu *iommu, char *name, unsigned int nr);
 void css2600_bus_del_devices(struct pci_dev *pdev);
 
 int css2600_bus_register_driver(struct css2600_bus_driver *adrv);

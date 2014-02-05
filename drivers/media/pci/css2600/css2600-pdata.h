@@ -49,4 +49,8 @@ struct css2600_psys_pdata {
 	void __iomem *base;
 };
 
+struct css2600_buttress_pdata {
+	void __iomem *base;
+};
+
 #endif

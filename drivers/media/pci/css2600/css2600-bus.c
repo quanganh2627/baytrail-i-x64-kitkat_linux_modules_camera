@@ -86,8 +86,8 @@ static void css2600_bus_release(struct device *dev)
 }
 
 struct css2600_bus_device *css2600_bus_add_device(
-	struct pci_dev *pdev, void *pdata, struct css2600_bus_iommu *iommu,
-	char *name, unsigned int nr)
+	struct pci_dev *pdev, struct device *parent, void *pdata,
+	struct css2600_bus_iommu *iommu, char *name, unsigned int nr)
 {
 	struct css2600_bus_device *adev;
 	struct css2600_device *isp = pci_get_drvdata(pdev);
@@ -97,7 +97,7 @@ struct css2600_bus_device *css2600_bus_add_device(
 	if (!adev)
 		return ERR_PTR(-ENOMEM);
 
-	adev->dev.parent = &pdev->dev;
+	adev->dev.parent = parent;
 	adev->dev.bus = &css2600_bus;
 	adev->dev.release = css2600_bus_release;
 	adev->dev.archdata.dma_ops = &css2600_dma_ops;
