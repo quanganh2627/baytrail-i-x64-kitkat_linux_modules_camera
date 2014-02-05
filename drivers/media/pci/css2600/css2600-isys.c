@@ -44,6 +44,188 @@ static int isys_release(struct file *file)
 	return 0;
 }
 
+/*
+ * BEGIN adapted code from drivers/media/platform/omap3isp/isp.c.
+ * FIXME: This (in terms of functionality if not code) should be most
+ * likely generalised in the framework, and use made optional for
+ * drivers.
+ */
+/*
+ * css2600_pipeline_pm_use_count - Count the number of users of a pipeline
+ * @entity: The entity
+ *
+ * Return the total number of users of all video device nodes in the pipeline.
+ */
+static int css2600_pipeline_pm_use_count(struct media_entity *entity)
+{
+	struct media_entity_graph graph;
+	int use = 0;
+
+	media_entity_graph_walk_start(&graph, entity);
+
+	while ((entity = media_entity_graph_walk_next(&graph))) {
+		if (media_entity_type(entity) == MEDIA_ENT_T_DEVNODE)
+			use += entity->use_count;
+	}
+
+	return use;
+}
+
+/*
+ * css2600_pipeline_pm_power_one - Apply power change to an entity
+ * @entity: The entity
+ * @change: Use count change
+ *
+ * Change the entity use count by @change. If the entity is a subdev update its
+ * power state by calling the core::s_power operation when the use count goes
+ * from 0 to != 0 or from != 0 to 0.
+ *
+ * Return 0 on success or a negative error code on failure.
+ */
+static int css2600_pipeline_pm_power_one(struct media_entity *entity,
+					 int change)
+{
+	struct v4l2_subdev *subdev;
+	int ret;
+
+	subdev = media_entity_type(entity) == MEDIA_ENT_T_V4L2_SUBDEV
+	       ? media_entity_to_v4l2_subdev(entity) : NULL;
+
+	if (entity->use_count == 0 && change > 0 && subdev != NULL) {
+		ret = v4l2_subdev_call(subdev, core, s_power, 1);
+		if (ret < 0 && ret != -ENOIOCTLCMD)
+			return ret;
+	}
+
+	entity->use_count += change;
+	WARN_ON(entity->use_count < 0);
+
+	if (entity->use_count == 0 && change < 0 && subdev != NULL)
+		v4l2_subdev_call(subdev, core, s_power, 0);
+
+	return 0;
+}
+
+/*
+ * css2600_pipeline_pm_power - Apply power change to all entities in a pipeline
+ * @entity: The entity
+ * @change: Use count change
+ *
+ * Walk the pipeline to update the use count and the power state of all non-node
+ * entities.
+ *
+ * Return 0 on success or a negative error code on failure.
+ */
+static int css2600_pipeline_pm_power(struct media_entity *entity, int change)
+{
+	struct media_entity_graph graph;
+	struct media_entity *first = entity;
+	int ret = 0;
+
+	if (!change)
+		return 0;
+
+	media_entity_graph_walk_start(&graph, entity);
+
+	while (!ret && (entity = media_entity_graph_walk_next(&graph)))
+		if (media_entity_type(entity) != MEDIA_ENT_T_DEVNODE)
+			ret = css2600_pipeline_pm_power_one(entity, change);
+
+	if (!ret)
+		return 0;
+
+	media_entity_graph_walk_start(&graph, first);
+
+	while ((first = media_entity_graph_walk_next(&graph))
+	       && first != entity)
+		if (media_entity_type(first) != MEDIA_ENT_T_DEVNODE)
+			css2600_pipeline_pm_power_one(first, -change);
+
+	return ret;
+}
+
+/*
+ * css2600_pipeline_pm_use - Update the use count of an entity
+ * @entity: The entity
+ * @use: Use (1) or stop using (0) the entity
+ *
+ * Update the use count of all entities in the pipeline and power entities on or
+ * off accordingly.
+ *
+ * Return 0 on success or a negative error code on failure. Powering entities
+ * off is assumed to never fail. No failure can occur when the use parameter is
+ * set to 0.
+ */
+int css2600_pipeline_pm_use(struct media_entity *entity, int use)
+{
+	int change = use ? 1 : -1;
+	int ret;
+
+	mutex_lock(&entity->parent->graph_mutex);
+
+	/* Apply use count to node. */
+	entity->use_count += change;
+	WARN_ON(entity->use_count < 0);
+
+	/* Apply power change to connected non-nodes. */
+	ret = css2600_pipeline_pm_power(entity, change);
+	if (ret < 0)
+		entity->use_count -= change;
+
+	mutex_unlock(&entity->parent->graph_mutex);
+
+	return ret;
+}
+
+/*
+ * css2600_pipeline_link_notify - Link management notification callback
+ * @link: The link
+ * @flags: New link flags that will be applied
+ * @notification: The link's state change notification type (MEDIA_DEV_NOTIFY_*)
+ *
+ * React to link management on powered pipelines by updating the use count of
+ * all entities in the source and sink sides of the link. Entities are powered
+ * on or off accordingly.
+ *
+ * Return 0 on success or a negative error code on failure. Powering entities
+ * off is assumed to never fail. This function will not fail for disconnection
+ * events.
+ */
+static int css2600_pipeline_link_notify(struct media_link *link, u32 flags,
+					unsigned int notification)
+{
+	struct media_entity *source = link->source->entity;
+	struct media_entity *sink = link->sink->entity;
+	int source_use = css2600_pipeline_pm_use_count(source);
+	int sink_use = css2600_pipeline_pm_use_count(sink);
+	int ret;
+
+	if (notification == MEDIA_DEV_NOTIFY_POST_LINK_CH &&
+	    !(link->flags & MEDIA_LNK_FL_ENABLED)) {
+		/* Powering off entities is assumed to never fail. */
+		css2600_pipeline_pm_power(source, -sink_use);
+		css2600_pipeline_pm_power(sink, -source_use);
+		return 0;
+	}
+
+	if (notification == MEDIA_DEV_NOTIFY_POST_LINK_CH &&
+		(flags & MEDIA_LNK_FL_ENABLED)) {
+
+		ret = css2600_pipeline_pm_power(source, sink_use);
+		if (ret < 0)
+			return ret;
+
+		ret = css2600_pipeline_pm_power(sink, source_use);
+		if (ret < 0)
+			css2600_pipeline_pm_power(source, -sink_use);
+
+		return ret;
+	}
+
+	return 0;
+}
+/* END adapted code from drivers/media/platform/omap3isp/isp.c */
+
 const struct v4l2_file_operations css2600_isys_fops = {
 	.owner = THIS_MODULE,
 	.open = isys_open,
@@ -142,6 +324,7 @@ static int isys_register_devices(struct css2600_isys *isys)
 	int rval;
 
 	isys->media_dev.dev = &isys->adev->dev;
+	isys->media_dev.link_notify = css2600_pipeline_link_notify;
 	strlcpy(isys->media_dev.model, CSS2600_NAME,
 		sizeof(isys->media_dev.model));
 	strlcpy(isys->v4l2_dev.name, isys->media_dev.model,
