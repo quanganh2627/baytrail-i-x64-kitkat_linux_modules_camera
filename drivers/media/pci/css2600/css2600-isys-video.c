@@ -96,6 +96,29 @@ static int vidioc_try_fmt_vid_cap(struct file *file, void *fh,
 	return 0;
 }
 
+static int link_validate(struct media_link *link)
+{
+	struct v4l2_subdev_format fmt = { 0 };
+	struct v4l2_subdev *sd =
+		media_entity_to_v4l2_subdev(link->source->entity);
+	struct css2600_isys_video *av =
+		container_of(link->sink, struct css2600_isys_video, pad);
+	int rval;
+
+	fmt.which = V4L2_SUBDEV_FORMAT_ACTIVE;
+	fmt.pad = link->source->index;
+	rval = v4l2_subdev_call(sd, pad, get_fmt, NULL, &fmt);
+	if (rval)
+		return rval;
+
+	if (fmt.format.width != av->pix.width
+	    || fmt.format.height != av->pix.height
+	    || fmt.format.code != av->pfmt->code)
+		return -EINVAL;
+
+	return 0;
+}
+
 static const struct v4l2_ioctl_ops ioctl_ops = {
 	.vidioc_querycap = vidioc_querycap,
 	.vidioc_enum_fmt_vid_cap = vidioc_enum_fmt_vid_cap,
@@ -110,6 +133,10 @@ static const struct v4l2_ioctl_ops ioctl_ops = {
 	.vidioc_dqbuf = vb2_ioctl_dqbuf,
 	.vidioc_streamon = vb2_ioctl_streamon,
 	.vidioc_streamoff = vb2_ioctl_streamoff,
+};
+
+static const struct media_entity_operations entity_ops = {
+	.link_validate = link_validate,
 };
 
 /*
