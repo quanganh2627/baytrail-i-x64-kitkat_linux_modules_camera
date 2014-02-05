@@ -422,6 +422,7 @@ struct imx_device {
 	struct v4l2_ctrl *pixel_rate;
 	struct v4l2_ctrl *h_blank;
 	struct v4l2_ctrl *v_blank;
+	struct v4l2_ctrl *link_freq;
 };
 
 #define to_imx_sensor(x) container_of(x, struct imx_device, sd)

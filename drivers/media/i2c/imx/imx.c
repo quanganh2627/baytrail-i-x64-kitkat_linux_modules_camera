@@ -1964,6 +1964,7 @@ static int imx_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct imx_device *dev = container_of(ctrl->handler, struct imx_device,
 			ctrl_handler);
+	unsigned int val;
 
 	switch (ctrl->id) {
 	case V4L2_CID_VBLANK:
@@ -1976,6 +1977,15 @@ static int imx_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_PIXEL_RATE:
 		ctrl->val = dev->vt_pix_clk_freq_mhz;
+		break;
+	case V4L2_CID_LINK_FREQ:
+		val = dev->curr_res_table[dev->fmt_idx].
+					fps_options[dev->fps_index].mipi_freq;
+		if (val == 0)
+			val = dev->curr_res_table[dev->fmt_idx].mipi_freq;
+		if (val == 0)
+			return -EINVAL;
+		ctrl->val = val * 1000;			/* To Hz */
 		break;
 	default:
 		return -EINVAL;
@@ -2029,6 +2039,18 @@ static const struct media_entity_operations imx_entity_ops = {
 	.link_setup = NULL,
 };
 
+static const struct v4l2_ctrl_config v4l2_ctrl_link_freq = {
+	.ops = &imx_ctrl_ops,
+	.id = V4L2_CID_LINK_FREQ,
+	.name = "Link Frequency",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 1,
+	.max = 1500000 * 1000,
+	.step = 1,
+	.def = 1,
+	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
+};
+
 static int imx_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
@@ -2067,9 +2089,13 @@ static int __imx_init_ctrl_handler(struct imx_device *dev)
 	dev->v_blank = v4l2_ctrl_new_std(&dev->ctrl_handler,
 					  &imx_ctrl_ops,
 					  V4L2_CID_VBLANK, 0, SHRT_MAX, 1, 0);
+	dev->link_freq = v4l2_ctrl_new_custom(&dev->ctrl_handler,
+					      &v4l2_ctrl_link_freq,
+					      NULL);
 
 	if (dev->ctrl_handler.error || dev->pixel_rate == NULL
-		|| dev->h_blank == NULL || dev->v_blank == NULL) {
+		|| dev->h_blank == NULL || dev->v_blank == NULL
+		|| dev->link_freq == NULL) {
 		return dev->ctrl_handler.error;
 	}
 
