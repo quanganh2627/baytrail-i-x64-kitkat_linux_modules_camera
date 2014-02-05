@@ -706,7 +706,8 @@ void atomisp_css_enable_cont_capt(bool enable, bool stop_copy_preview)
 int atomisp_css_input_configure_port(struct atomisp_sub_device *asd,
 					mipi_port_ID_t port,
 					unsigned int num_lanes,
-					unsigned int timeout)
+					unsigned int timeout,
+					unsigned int mipi_freq)
 {
 	if (sh_css_input_configure_port(port, num_lanes, timeout)
 	    != sh_css_success)

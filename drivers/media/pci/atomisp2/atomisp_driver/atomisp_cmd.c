@@ -3256,6 +3256,14 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 				enum atomisp_input_stream_id stream_id,
 				struct camera_mipi_info *mipi_info)
 {
+	struct v4l2_control ctrl;
+	struct atomisp_device *isp = asd->isp;
+	int mipi_freq = 0;
+
+	ctrl.id = V4L2_CID_LINK_FREQ;
+	if (v4l2_subdev_g_ctrl(isp->inputs[asd->input_curr].camera, &ctrl) == 0)
+		mipi_freq = ctrl.value;
+
 	/* Compatibility for sensors which provide no media bus code
 	 * in s_mbus_framefmt() nor support pad formats. */
 	if (mipi_info->input_format != -1) {
@@ -3266,7 +3274,8 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 	}
 	atomisp_css_input_configure_port(asd, __get_mipi_port(asd->isp,
 							mipi_info->port),
-					mipi_info->num_lanes, 0xffff4);
+					mipi_info->num_lanes,
+					0xffff4, mipi_freq);
 }
 
 static int __enable_continuous_mode(struct atomisp_sub_device *asd,
@@ -4114,7 +4123,7 @@ int atomisp_set_fmt_file(struct video_device *vdev, struct v4l2_format *f)
 	pipe->pix = f->fmt.pix;
 	atomisp_css_input_set_mode(asd, CSS_INPUT_MODE_FIFO);
 	atomisp_css_input_configure_port(asd,
-		__get_mipi_port(isp, ATOMISP_CAMERA_PORT_PRIMARY), 2, 0xffff4);
+		__get_mipi_port(isp, ATOMISP_CAMERA_PORT_PRIMARY), 2, 0xffff4, 0);
 
 	ffmt.width = f->fmt.pix.width;
 	ffmt.height = f->fmt.pix.height;

@@ -1709,15 +1709,32 @@ void atomisp_css_enable_cont_capt(bool enable, bool stop_copy_preview)
 int atomisp_css_input_configure_port(struct atomisp_sub_device *asd,
 					mipi_port_ID_t port,
 					unsigned int num_lanes,
-					unsigned int timeout)
+					unsigned int timeout,
+					unsigned int mipi_freq)
 {
 	int i;
 	struct atomisp_stream_env *stream_env;
+	/*
+	 * Calculate rx_count as follows:
+	 * Input: mipi_freq                 : CSI-2 bus frequency in Hz
+	 * UI = 1 / (2 * mipi_freq)         : period of one bit on the bus
+	 * min = 85e-9 + 6 * UI             : Limits for rx_count in seconds
+	 * max = 145e-9 + 10 * UI
+	 * rxcount0 = min / (4 / mipi_freq) : convert seconds to byte clocks
+	 * rxcount = rxcount0 - 2           : adjust for better results
+	 * The formula below is simplified version of the above with
+	 * 10-bit fixed points for improved accuracy.
+	 */
+	const unsigned int rxcount =
+		min(((mipi_freq / 46000) - 1280) >> 10, 0xffU) * 0x01010101U;
+
 	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
 		stream_env = &asd->stream_env[i];
 		stream_env->stream_config.source.port.port = port;
 		stream_env->stream_config.source.port.num_lanes = num_lanes;
 		stream_env->stream_config.source.port.timeout = timeout;
+		if (mipi_freq)
+			stream_env->stream_config.source.port.rxcount = rxcount;
 	}
 
 	return 0;
