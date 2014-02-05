@@ -1,9 +1,9 @@
 css_common_folder = hive_isp_css_2400_system
 ifneq ($(ISP2400B0), )
 	css_platform_folder = hive_isp_css_2400_system
-else ifneq ($(ISP2401), )
-	css_platform_folder = hive_isp_css_2401_system
 else ifneq ($(ISP2401_NEW_INPUT_SYSTEM), )
+	css_platform_folder = hive_isp_css_2401_system_csi2p
+else ifneq ($(ISP2401), )
 	css_platform_folder = hive_isp_css_2401_system
 endif
 
