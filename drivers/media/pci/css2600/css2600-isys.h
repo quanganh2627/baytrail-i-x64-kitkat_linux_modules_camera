@@ -45,6 +45,8 @@ struct css2600_isys {
 struct css2600_isys_pixelformat {
 	uint32_t pixelformat;
 	uint32_t bpp;
+	uint32_t bpp_packed;
+	uint32_t code;
 };
 
 extern const struct v4l2_ioctl_ops css2600_isys_ioctl_ops;
