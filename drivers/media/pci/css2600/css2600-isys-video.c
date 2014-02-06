@@ -125,6 +125,107 @@ static int link_validate(struct media_link *link)
 	return 0;
 }
 
+int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
+				     unsigned int state)
+{
+	struct media_entity_graph graph;
+	struct media_entity *entity, *entity2;
+	unsigned int entities = 0;
+	unsigned int i;
+	int rval = 0;
+
+	mutex_lock(&av->mutex);
+
+	if (state == av->streaming)
+		goto out_unlock;
+
+	if (state) {
+		rval = media_entity_pipeline_start(&av->vdev.entity,
+						   &av->ip.pipe);
+		if (rval < 0)
+			goto out_unlock;
+
+		av->ip.continuous = true;
+
+		/*
+		 * Any stream from the test pattern generators
+		 * requires kicking them again to receive the next
+		 * frame. Store the information whether this is
+		 * necessary to the pipeline.
+		 */
+		for (i = 0; i < CSS2600_ISYS_MAX_TPGS &&
+			     av->isys->tpg[i].isys; i++) {
+			if (av->isys->tpg[i].asd.sd.entity.pipe != &av->ip.pipe)
+				continue;
+
+			av->ip.continuous = false;
+			break;
+		}
+	}
+
+	media_entity_graph_walk_start(&graph, &av->vdev.entity);
+
+	while ((entity = media_entity_graph_walk_next(&graph))) {
+		struct v4l2_subdev *sd = media_entity_to_v4l2_subdev(entity);
+
+		/*
+		 * Is the entity external or not? This is a little bit
+		 * hackish but entirely local and not intrusive at
+		 * all. The first of such entity is the "sensor".
+		 */
+		if (entity->ops != av->isys->csi2[0].asd.sd.entity.ops)
+			break;
+
+		/* We don't support non-linear pipelines yet. */
+		if (media_entity_type(entity) != MEDIA_ENT_T_V4L2_SUBDEV) {
+			rval = -EINVAL;
+			goto out_media_entity_pipeline_stop;
+		}
+
+		rval = v4l2_subdev_call(sd, video, s_stream, state);
+		if (!state)
+			continue;
+		if (rval)
+			goto out_media_entity_pipeline_stop;
+
+		if (entity->id >= sizeof(entities) << 3) {
+			WARN_ON(1);
+			goto out_media_entity_pipeline_stop;
+		}
+
+		entities |= 1 << entity->id;
+	}
+
+	if (!state)
+		media_entity_pipeline_stop(&av->vdev.entity);
+
+	av->streaming = state;
+
+	mutex_unlock(&av->mutex);
+	return 0;
+
+out_media_entity_pipeline_stop:
+	media_entity_graph_walk_start(&graph, &av->vdev.entity);
+
+	while (state && (entity2 = media_entity_graph_walk_next(&graph))
+		&& entity2 != entity) {
+		struct v4l2_subdev *sd = media_entity_to_v4l2_subdev(entity2);
+
+		if (!(entity2->id << 1 & entities))
+			continue;
+
+		v4l2_subdev_call(sd, video, s_stream, 0);
+	}
+
+	if (state)
+		media_entity_pipeline_stop(&av->vdev.entity);
+
+out_unlock:
+	mutex_unlock(&av->mutex);
+
+	return rval;
+}
+
 static const struct v4l2_ioctl_ops ioctl_ops = {
 	.vidioc_querycap = vidioc_querycap,
 	.vidioc_enum_fmt_vid_cap = vidioc_enum_fmt_vid_cap,

@@ -24,6 +24,7 @@
 #include <linux/videodev2.h>
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
+#include <media/v4l2-subdev.h>
 
 #include "css2600-isys-queue.h"
 
@@ -32,6 +33,7 @@ struct css2600_isys;
 struct css2600_isys_pipeline {
 	struct media_pipeline pipe;
 	struct media_entity *external;
+	bool continuous;
 };
 
 struct css2600_isys_video {
@@ -45,11 +47,14 @@ struct css2600_isys_video {
 	struct css2600_isys_queue aq;
 	struct css2600_isys *isys;
 	struct css2600_isys_pipeline ip;
+	unsigned int streaming;
 };
 
 #define css2600_isys_queue_to_video(__aq) \
 	container_of(__aq, struct css2600_isys_video, aq)
 
+int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
+				     unsigned int state);
 int css2600_isys_video_init(struct css2600_isys_video *av);
 void css2600_isys_video_cleanup(struct css2600_isys_video *av);
 

@@ -20,14 +20,16 @@
 #include <linux/sizes.h>
 #include <linux/string.h>
 
+#include <media/media-entity.h>
 #include <media/videobuf2-core.h>
 #include <media/videobuf2-dma-contig.h>
 #include <media/v4l2-ioctl.h>
 
 #include "css2600.h"
 #include "css2600-bus.h"
-#include "css2600-isys-csi2.h"
 #include "css2600-isys.h"
+#include "css2600-isys-csi2.h"
+#include "css2600-isys-video.h"
 
 static int queue_setup(struct vb2_queue *q, const struct v4l2_format *fmt,
 		       unsigned int *num_buffers, unsigned int *num_planes,
@@ -71,12 +73,22 @@ static void buf_cleanup(struct vb2_buffer *vb)
 
 static int start_streaming(struct vb2_queue *q, unsigned int count)
 {
-	return 0;
+	struct css2600_isys_queue *aq =
+		container_of(q, struct css2600_isys_queue, vbq);
+	struct css2600_isys_video *av =
+		container_of(aq, struct css2600_isys_video, aq);
+
+	return css2600_isys_video_set_streaming(av, 1);
 }
 
 static int stop_streaming(struct vb2_queue *q)
 {
-	return 0;
+	struct css2600_isys_queue *aq =
+		container_of(q, struct css2600_isys_queue, vbq);
+	struct css2600_isys_video *av =
+		container_of(aq, struct css2600_isys_video, aq);
+
+	return css2600_isys_video_set_streaming(av, 0);
 }
 
 static void buf_queue(struct vb2_buffer *vb)
