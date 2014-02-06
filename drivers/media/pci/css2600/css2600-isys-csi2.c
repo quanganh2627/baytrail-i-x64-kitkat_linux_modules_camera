@@ -58,6 +58,20 @@ static const uint32_t *csi2_supported_fmts[] = {
 	csi2_supported_fmts_pad,
 };
 
+static int link_validate(struct v4l2_subdev *sd, struct media_link *link,
+			 struct v4l2_subdev_format *source_fmt,
+			 struct v4l2_subdev_format *sink_fmt)
+{
+	struct css2600_isys_pipeline *pipe =
+		container_of(sd->entity.pipe,
+			     struct css2600_isys_pipeline, pipe);
+
+	pipe->external = &sd->entity;
+
+	return v4l2_subdev_link_validate_default(sd, link, source_fmt,
+						 sink_fmt);
+}
+
 static struct v4l2_subdev_internal_ops csi2_sd_internal_ops = {
 };
 
@@ -68,7 +82,7 @@ static const struct v4l2_subdev_video_ops csi2_sd_video_ops = {
 };
 
 static const struct v4l2_subdev_pad_ops csi2_sd_pad_ops = {
-	.link_validate = v4l2_subdev_link_validate_default,
+	.link_validate = link_validate,
 	.get_fmt = css2600_isys_subdev_get_ffmt,
 	.set_fmt = css2600_isys_subdev_set_ffmt,
 };

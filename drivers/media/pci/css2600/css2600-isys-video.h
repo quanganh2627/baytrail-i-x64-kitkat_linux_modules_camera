@@ -31,6 +31,7 @@ struct css2600_isys;
 
 struct css2600_isys_pipeline {
 	struct media_pipeline pipe;
+	struct media_entity *external;
 };
 
 struct css2600_isys_video {
