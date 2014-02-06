@@ -29,20 +29,9 @@
 
 #include "css2600.h"
 #include "css2600-bus.h"
-#include "css2600-isys-csi2.h"
 #include "css2600-isys.h"
-
-static int isys_open(struct file *file)
-{
-	return v4l2_fh_open(file);
-}
-
-static int isys_release(struct file *file)
-{
-	v4l2_fh_release(file);
-
-	return 0;
-}
+#include "css2600-isys-csi2.h"
+#include "css2600-isys-video.h"
 
 /*
  * BEGIN adapted code from drivers/media/platform/omap3isp/isp.c.
@@ -225,14 +214,6 @@ static int css2600_pipeline_link_notify(struct media_link *link, u32 flags,
 	return 0;
 }
 /* END adapted code from drivers/media/platform/omap3isp/isp.c */
-
-const struct v4l2_file_operations css2600_isys_fops = {
-	.owner = THIS_MODULE,
-	.open = isys_open,
-	.release = isys_release,
-	.poll = vb2_fop_poll,
-	.mmap = vb2_fop_mmap,
-};
 
 struct csi2_config {
 	unsigned int nports;

@@ -51,7 +51,6 @@ struct css2600_isys_pixelformat {
 };
 
 extern const struct v4l2_ioctl_ops css2600_isys_ioctl_ops;
-extern const struct v4l2_file_operations css2600_isys_fops;
 
 int css2600_pipeline_pm_use(struct media_entity *entity, int use);
 

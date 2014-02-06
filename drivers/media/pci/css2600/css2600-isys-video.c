@@ -24,6 +24,38 @@
 #include "css2600-isys.h"
 #include "css2600-isys-video.h"
 
+static int video_open(struct file *file)
+{
+	struct css2600_isys_video *av = video_drvdata(file);
+	int rval;
+
+	rval = v4l2_fh_open(file);
+	if (rval)
+		return rval;
+
+	rval = css2600_pipeline_pm_use(&av->vdev.entity, 1);
+	if (rval)
+		goto out_v4l2_fh_release;
+
+	return 0;
+
+out_v4l2_fh_release:
+	v4l2_fh_release(file);
+
+	return rval;
+}
+
+static int video_release(struct file *file)
+{
+	struct css2600_isys_video *av = video_drvdata(file);
+
+	css2600_pipeline_pm_use(&av->vdev.entity, 0);
+
+	v4l2_fh_release(file);
+
+	return 0;
+}
+
 const struct css2600_isys_pixelformat *css2600_isys_get_pixelformat(
 	struct css2600_isys_video *av, uint32_t pixelformat)
 {
@@ -246,6 +278,14 @@ static const struct media_entity_operations entity_ops = {
 	.link_validate = link_validate,
 };
 
+static const struct v4l2_file_operations isys_fops = {
+	.owner = THIS_MODULE,
+	.open = video_open,
+	.release = video_release,
+	.poll = vb2_fop_poll,
+	.mmap = vb2_fop_mmap,
+};
+
 /*
  * Do everything that's needed to initialise things related to video
  * buffer queue, video node, and the related media entity. The caller
@@ -269,7 +309,7 @@ int css2600_isys_video_init(struct css2600_isys_video *av)
 		goto out_css2600_isys_queue_cleanup;
 
 	av->vdev.release = video_device_release_empty;
-	av->vdev.fops = &css2600_isys_fops;
+	av->vdev.fops = &isys_fops;
 	av->vdev.v4l2_dev = &av->isys->v4l2_dev;
 	av->vdev.ioctl_ops = &ioctl_ops;
 	set_bit(V4L2_FL_USES_V4L2_FH, &av->vdev.flags);
