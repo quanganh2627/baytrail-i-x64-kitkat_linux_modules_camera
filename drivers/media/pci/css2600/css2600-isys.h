@@ -28,7 +28,8 @@
 #include "css2600-isys-tpg.h"
 #include "css2600-pdata.h"
 
-#define MAX_CSI2_PORTS			4
+#define CSS2600_ISYS_MAX_CSI2_PORTS		4
+#define CSS2600_ISYS_MAX_TPGS			CSS2600_ISYS_MAX_CSI2_PORTS
 
 struct css2600_isys {
 	struct media_device media_dev;
@@ -37,9 +38,9 @@ struct css2600_isys {
 
 	struct css2600_isys_pdata *pdata;
 
-	struct css2600_isys_csi2 csi2[MAX_CSI2_PORTS];
+	struct css2600_isys_csi2 csi2[CSS2600_ISYS_MAX_CSI2_PORTS];
 	/* 2401 has a test pattern generator per port */
-	struct css2600_isys_tpg tpg[MAX_CSI2_PORTS];
+	struct css2600_isys_tpg tpg[CSS2600_ISYS_MAX_TPGS];
 };
 
 struct css2600_isys_pixelformat {

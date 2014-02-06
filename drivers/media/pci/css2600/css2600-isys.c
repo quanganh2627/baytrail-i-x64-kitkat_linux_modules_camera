@@ -236,9 +236,9 @@ const struct v4l2_file_operations css2600_isys_fops = {
 
 struct csi2_config {
 	unsigned int nports;
-	unsigned int nlanes[MAX_CSI2_PORTS];
-	unsigned int offsets[MAX_CSI2_PORTS];
-	unsigned int tpg_offsets[MAX_CSI2_PORTS];
+	unsigned int nlanes[CSS2600_ISYS_MAX_CSI2_PORTS];
+	unsigned int offsets[CSS2600_ISYS_MAX_CSI2_PORTS];
+	unsigned int tpg_offsets[CSS2600_ISYS_MAX_TPGS];
 };
 
 struct csi2_config csi2_config_2600 = {
@@ -284,7 +284,7 @@ static int isys_register_csi2(struct css2600_isys *isys)
 	unsigned int i;
 	int rval;
 
-	BUG_ON(cfg->nports > MAX_CSI2_PORTS);
+	BUG_ON(cfg->nports > CSS2600_ISYS_MAX_CSI2_PORTS);
 
 	for (i = 0; i < cfg->nports; i++) {
 		int rval = css2600_isys_csi2_init(
