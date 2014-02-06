@@ -340,7 +340,7 @@ static void css2600_dma_sync_sg_for_cpu(
 		clflush_cache_range(sg_page(sg), sg->length);
 }
 
-const struct dma_map_ops css2600_dma_ops = {
+struct dma_map_ops css2600_dma_ops = {
 	.alloc = css2600_dma_alloc,
 	.free = css2600_dma_free,
 	.map_sg = css2600_dma_map_sg,
