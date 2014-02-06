@@ -29,6 +29,10 @@
 
 struct css2600_isys;
 
+struct css2600_isys_pipeline {
+	struct media_pipeline pipe;
+};
+
 struct css2600_isys_video {
 	/* Serialise access to other fields in the struct. */
 	struct mutex mutex;
@@ -39,6 +43,7 @@ struct css2600_isys_video {
 	const struct css2600_isys_pixelformat *pfmt;
 	struct css2600_isys_queue aq;
 	struct css2600_isys *isys;
+	struct css2600_isys_pipeline ip;
 };
 
 #define css2600_isys_queue_to_video(__aq) \
