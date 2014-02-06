@@ -20,6 +20,7 @@
 #ifndef CSS2600_ISYS_VIDEO_H
 #define CSS2600_ISYS_VIDEO_H
 
+#include <linux/mutex.h>
 #include <linux/videodev2.h>
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
@@ -29,6 +30,8 @@
 struct css2600_isys;
 
 struct css2600_isys_video {
+	/* Serialise access to other fields in the struct. */
+	struct mutex mutex;
 	struct media_pad pad;
 	struct video_device vdev;
 	struct v4l2_pix_format pix;

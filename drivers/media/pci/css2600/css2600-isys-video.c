@@ -56,7 +56,9 @@ static int vidioc_g_fmt_vid_cap(struct file *file, void *fh,
 {
 	struct css2600_isys_video *av = video_drvdata(file);
 
+	mutex_lock(&av->mutex);
 	fmt->fmt.pix = av->pix;
+	mutex_unlock(&av->mutex);
 
 	return 0;
 }
@@ -80,8 +82,12 @@ static int vidioc_s_fmt_vid_cap(struct file *file, void *fh,
 {
 	struct css2600_isys_video *av = video_drvdata(file);
 
+	mutex_lock(&av->mutex);
+
 	av->pfmt = __vidioc_try_fmt_vid_cap(av, &fmt->fmt.pix);
 	av->pix = fmt->fmt.pix;
+
+	mutex_unlock(&av->mutex);
 
 	return 0;
 }
@@ -148,11 +154,13 @@ int css2600_isys_video_init(struct css2600_isys_video *av)
 {
 	int rval;
 
+	mutex_init(&av->mutex);
+
 	av->pfmt = __vidioc_try_fmt_vid_cap(av, &av->pix);
 
 	rval = css2600_isys_queue_init(&av->aq);
 	if (rval)
-		return rval;
+		goto out_mutex_destroy;
 
 	av->pad.flags = MEDIA_PAD_FL_SINK;
 	rval = media_entity_init(&av->vdev.entity, 1, &av->pad, 0);
@@ -178,6 +186,9 @@ out_media_entity_cleanup:
 out_css2600_isys_queue_cleanup:
 	css2600_isys_queue_cleanup(&av->aq);
 
+out_mutex_destroy:
+	mutex_destroy(&av->mutex);
+
 	return rval;
 }
 
@@ -185,4 +196,5 @@ void css2600_isys_video_cleanup(struct css2600_isys_video *av)
 {
 	video_unregister_device(&av->vdev);
 	media_entity_cleanup(&av->vdev.entity);
+	mutex_destroy(&av->mutex);
 }
