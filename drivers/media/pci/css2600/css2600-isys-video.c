@@ -77,12 +77,6 @@ static int vidioc_querycap(struct file *file, void *fh,
 	return 0;
 }
 
-static int vidioc_enum_fmt_vid_cap(struct file *file, void *fh,
-				   struct v4l2_fmtdesc *fmtdesc)
-{
-	return 0;
-}
-
 static int vidioc_g_fmt_vid_cap(struct file *file, void *fh,
 				struct v4l2_format *fmt)
 {
@@ -260,7 +254,6 @@ out_unlock:
 
 static const struct v4l2_ioctl_ops ioctl_ops = {
 	.vidioc_querycap = vidioc_querycap,
-	.vidioc_enum_fmt_vid_cap = vidioc_enum_fmt_vid_cap,
 	.vidioc_g_fmt_vid_cap = vidioc_g_fmt_vid_cap,
 	.vidioc_s_fmt_vid_cap = vidioc_s_fmt_vid_cap,
 	.vidioc_try_fmt_vid_cap = vidioc_try_fmt_vid_cap,
