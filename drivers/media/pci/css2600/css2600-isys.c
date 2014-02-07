@@ -306,8 +306,10 @@ static int isys_register_devices(struct css2600_isys *isys)
 
 	isys->media_dev.dev = &isys->adev->dev;
 	isys->media_dev.link_notify = css2600_pipeline_link_notify;
-	strlcpy(isys->media_dev.model, CSS2600_NAME,
-		sizeof(isys->media_dev.model));
+	snprintf(isys->media_dev.model, sizeof(isys->media_dev.model),
+		 "css%u", isys->pdata->type);
+	strlcpy(isys->media_dev.bus_info, CSS2600_BUS_NAME,
+		sizeof(isys->media_dev.bus_info));
 	strlcpy(isys->v4l2_dev.name, isys->media_dev.model,
 		sizeof(isys->v4l2_dev.name));
 

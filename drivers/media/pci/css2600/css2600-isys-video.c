@@ -103,7 +103,14 @@ const struct css2600_isys_pixelformat *css2600_isys_get_pixelformat(
 static int vidioc_querycap(struct file *file, void *fh,
 			   struct v4l2_capability *cap)
 {
-	return 0;
+	struct css2600_isys_video *av = video_drvdata(file);
+
+	strlcpy(cap->driver, CSS2600_ISYS_NAME, sizeof(cap->driver));
+	strlcpy(cap->card, av->isys->media_dev.model, sizeof(cap->card));
+	strlcpy(cap->bus_info, av->isys->media_dev.bus_info,
+		sizeof(cap->bus_info));
+	cap->capabilities = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
+	cap->device_caps = cap->capabilities;
 }
 
 static int vidioc_g_fmt_vid_cap(struct file *file, void *fh,
