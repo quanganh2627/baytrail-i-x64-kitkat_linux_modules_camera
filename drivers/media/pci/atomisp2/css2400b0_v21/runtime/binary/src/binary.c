@@ -832,8 +832,8 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				IA_CSS_BINARY_INPUT_SENSOR);
 			continue;
 		}
-		if (req_out_info->padded_width < candidate->min_output_width ||
-		    req_out_info->padded_width > candidate->max_output_width) {
+		if (req_out_info->res.width < candidate->min_output_width ||
+		    req_out_info->res.width > candidate->max_output_width) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: (%d > %d) || (%d < %d)\n",
 				__LINE__,
@@ -843,7 +843,6 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				candidate->max_output_width);
 			continue;
 		}
-
 		if (req_in_info->padded_width > candidate->max_input_width) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: (%d > %d)\n",
