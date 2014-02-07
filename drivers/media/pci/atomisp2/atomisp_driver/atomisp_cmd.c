@@ -3497,15 +3497,11 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	atomisp_css_disable_vf_pp(asd,
 			asd->vfpp->val != ATOMISP_VFPP_ENABLE);
 
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
 	/* ISP2401 new input system need to use copy pipe */
-	if (format->sh_fmt == CSS_FRAME_FORMAT_RAW ||
-			isp->inputs[asd->input_curr].type == SOC_CAMERA) {
+	if (asd->copy_mode) {
 		pipe_id = CSS_PIPE_ID_COPY;
-	} else
-#endif
-	/* video same in continuouscapture and online modes */
-	if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
+	} else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
+		/* video same in continuouscapture and online modes */
 		configure_output = atomisp_css_video_configure_output;
 		get_frame_info = atomisp_css_video_get_output_frame_info;
 		pipe_id = CSS_PIPE_ID_VIDEO;
@@ -3583,10 +3579,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			asd->run_mode->val = ATOMISP_RUN_MODE_STILL_CAPTURE;
 		}
 	}
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
-	/* ISP2401 new input system need to use copy pipe */
-	if (format->sh_fmt == CSS_FRAME_FORMAT_RAW ||
-			isp->inputs[asd->input_curr].type == SOC_CAMERA)
+	if (asd->copy_mode)
 		ret = atomisp_css_copy_configure_output(asd, stream_index,
 				pix->width, pix->height, format->sh_fmt);
 	else
@@ -3594,12 +3587,6 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 				       format->planar ? pix->bytesperline :
 				       pix->bytesperline * 8 / format->depth,
 				       format->sh_fmt);
-#else
-	ret = configure_output(asd, pix->width, pix->height,
-			       format->planar ? pix->bytesperline :
-			       pix->bytesperline * 8 / format->depth,
-			       format->sh_fmt);
-#endif
 	if (ret) {
 		dev_err(isp->dev, "configure_output %ux%u, format %8.8x\n",
 			pix->width, pix->height, format->sh_fmt);
@@ -3636,17 +3623,11 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			return -EINVAL;
 		}
 	}
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
-	/* ISP2401 new input system need to use copy pipe */
-	if (format->sh_fmt == CSS_FRAME_FORMAT_RAW ||
-			isp->inputs[asd->input_curr].type == SOC_CAMERA)
+	if (asd->copy_mode)
 		ret = atomisp_css_copy_get_output_frame_info(asd, stream_index,
 				output_info);
 	else
 		ret = get_frame_info(asd, output_info);
-#else
-	ret = get_frame_info(asd, output_info);
-#endif
 	if (ret) {
 		dev_err(isp->dev, "get_frame_info %ux%u (padded to %u)\n",
 			pix->width, pix->height, pix->bytesperline);
@@ -3691,6 +3672,20 @@ static void atomisp_get_dis_envelop(struct atomisp_sub_device *asd,
 
 	asd->params.dis_proj_data_valid = false;
 	asd->params.css_update_params_needed = true;
+}
+
+static void atomisp_check_copy_mode(struct atomisp_sub_device *asd,
+		int source_pad)
+{
+#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+	if (!atomisp_subdev_format_conversion(asd, source_pad))
+		asd->copy_mode = true;
+	else
+#endif
+		/* Only used for the new input system */
+		asd->copy_mode = false;
+
+	dev_dbg(asd->isp->dev, "copy_mode: %d\n", asd->copy_mode);
 }
 
 static int atomisp_set_fmt_to_snr(struct video_device *vdev,
@@ -3971,6 +3966,8 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 
 		crop_needs_override = true;
 	}
+
+	atomisp_check_copy_mode(asd, source_pad);
 
 	isp_sink_crop = *atomisp_subdev_get_rect(&asd->subdev, NULL,
 						 V4L2_SUBDEV_FORMAT_ACTIVE,

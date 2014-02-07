@@ -313,6 +313,8 @@ struct atomisp_sub_device {
 	unsigned int latest_preview_exp_id; /* CSS ZSL/SDV raw buffer id */
 
 	unsigned int mipi_frame_size;
+
+	bool copy_mode; /* CSI2+ use copy mode */
 };
 
 extern const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[];

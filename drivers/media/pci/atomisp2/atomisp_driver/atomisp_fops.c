@@ -482,6 +482,7 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->input_curr = 0;
 
 	asd->mipi_frame_size = 0;
+	asd->copy_mode = false;
 
 	atomisp_css_init_struct(asd);
 }

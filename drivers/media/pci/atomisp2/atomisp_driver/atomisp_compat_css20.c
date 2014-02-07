@@ -653,21 +653,18 @@ static bool is_pipe_valid_to_current_run_mode(struct atomisp_sub_device *asd,
 		}
 	}
 
-#ifdef ISP2401_NEW_INPUT_SYSTEM
-	if (asd->isp->inputs[asd->input_curr].type == SOC_CAMERA ||
-	    atomisp_is_mbuscode_raw(asd->fmt[asd->capture_pad].fmt.code)) {
-		if (pipe_id == IA_CSS_PIPE_ID_COPY)
-			return true;
-		else
-			return false;
-	}
-#endif
 	if (!asd->run_mode)
 		return false;
 
 	switch (asd->run_mode->val) {
 		case ATOMISP_RUN_MODE_STILL_CAPTURE:
-			if (pipe_id == IA_CSS_PIPE_ID_CAPTURE)
+			/* New input system supports copy pipe */
+			if (pipe_id == IA_CSS_PIPE_ID_COPY)
+				if (asd->copy_mode)
+					return true;
+				else
+					return false;
+			else if (pipe_id == IA_CSS_PIPE_ID_CAPTURE)
 				return true;
 			else
 				return false;
@@ -1188,8 +1185,9 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 	 *
 	 * Check if it is Cherry Trail and also new input system
 	 */
-	if (IS_HWREVISION(asd->isp, ATOMISP_HW_REVISION_ISP2401)) {
-		dev_warn(asd->isp->dev, "%s: ia_css_stream_set_isp_config() not supported!.\n",
+	if (asd->copy_mode) {
+		dev_warn(asd->isp->dev,
+			 "%s: ia_css_stream_set_isp_config() not supported in copy mode!.\n",
 				__func__);
 		return;
 	}
@@ -1450,10 +1448,20 @@ int atomisp_css_dequeue_event(struct atomisp_css_event *current_event)
 	return 0;
 }
 
-void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_css_event *current_event)
+void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_sub_device *asd,
+		struct atomisp_css_event *current_event)
 {
-	ia_css_temp_pipe_to_pipe_id(current_event->event.pipe,
-						&current_event->pipe);
+	/*
+	 * FIXME!
+	 * Pipe ID reported in CSS event is not correct for new system's
+	 * copy pipe.
+	 * VIED BZ: 1463
+	 */
+	if (asd && asd->copy_mode)
+		ia_css_temp_pipe_to_pipe_id(NULL, &current_event->pipe);
+	else
+		ia_css_temp_pipe_to_pipe_id(current_event->event.pipe,
+				&current_event->pipe);
 }
 
 int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
@@ -2274,6 +2282,8 @@ unsigned int atomisp_get_pipe_index(struct atomisp_sub_device *asd,
 		else
 			return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
+		if (asd->copy_mode)
+			return IA_CSS_PIPE_ID_COPY;
 		return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_VF:
 		if (!atomisp_is_mbuscode_raw(
@@ -2326,7 +2336,6 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 	return frame_info ? 0 : -EINVAL;
 }
 
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
 int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 				unsigned int stream_index,
 				unsigned int width, unsigned int height,
@@ -2340,7 +2349,6 @@ int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 			   IA_CSS_PIPE_ID_COPY);
 	return 0;
 }
-#endif
 
 int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
@@ -2418,7 +2426,6 @@ int atomisp_css_capture_get_output_raw_frame_info(
 			ATOMISP_CSS_RAW_FRAME, IA_CSS_PIPE_ID_CAPTURE);
 }
 
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
 int atomisp_css_copy_get_output_frame_info(
 					struct atomisp_sub_device *asd,
 					unsigned int stream_index,
@@ -2427,7 +2434,6 @@ int atomisp_css_copy_get_output_frame_info(
 	return __get_frame_info(asd, stream_index, info,
 			ATOMISP_CSS_OUTPUT_FRAME, IA_CSS_PIPE_ID_COPY);
 }
-#endif
 
 int atomisp_css_preview_get_output_frame_info(
 					struct atomisp_sub_device *asd,
@@ -3601,7 +3607,7 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 	struct atomisp_sub_device *asd = &isp->asd[0];
 
 	while (!atomisp_css_dequeue_event(&current_event)) {
-		atomisp_css_temp_pipe_to_pipe_id(&current_event);
+		atomisp_css_temp_pipe_to_pipe_id(asd, &current_event);
 		asd = __get_atomisp_subdev(current_event.event.pipe,
 						  isp, &stream_id);
 		if (!asd) {

@@ -214,7 +214,8 @@ void atomisp_css_get_dis_statistics(struct atomisp_sub_device *asd,
 
 int atomisp_css_dequeue_event(struct atomisp_css_event *current_event);
 
-void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_css_event *current_event);
+void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_sub_device *asd,
+				      struct atomisp_css_event *current_event);
 
 int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
 					enum atomisp_input_stream_id stream_id,
@@ -308,12 +309,10 @@ int atomisp_css_continuous_set_num_raw_frames(
 void atomisp_css_disable_vf_pp(struct atomisp_sub_device *asd,
 			       bool disable);
 
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
 int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 				unsigned int stream_index,
 				unsigned int width, unsigned int height,
 				enum atomisp_css_frame_format format);
-#endif
 
 int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height,
@@ -353,12 +352,10 @@ int atomisp_css_capture_get_viewfinder_frame_info(
 					struct atomisp_sub_device *asd,
 					struct atomisp_css_frame_info *info);
 
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
 int atomisp_css_copy_get_output_frame_info(
 					struct atomisp_sub_device *asd,
 					unsigned int stream_index,
 					struct atomisp_css_frame_info *info);
-#endif
 
 int atomisp_css_capture_get_output_raw_frame_info(
 					struct atomisp_sub_device *asd,

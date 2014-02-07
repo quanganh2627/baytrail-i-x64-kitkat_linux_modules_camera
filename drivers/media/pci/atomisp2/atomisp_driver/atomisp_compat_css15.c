@@ -596,7 +596,8 @@ int atomisp_css_dequeue_event(struct atomisp_css_event *current_event)
 	return 0;
 }
 
-void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_css_event *current_event)
+void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_sub_device *asd,
+		struct atomisp_css_event *current_event)
 {
 }
 
