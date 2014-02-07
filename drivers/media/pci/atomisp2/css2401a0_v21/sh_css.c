@@ -5057,9 +5057,8 @@ static enum ia_css_err sh_css_pipe_configure_output(
 	struct ia_css_pipe *pipe,
 	unsigned int width,
 	unsigned int height,
-	unsigned int min_width,
+	unsigned int padded_width,
 	enum ia_css_frame_format format)
-
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 
@@ -5071,9 +5070,14 @@ static enum ia_css_err sh_css_pipe_configure_output(
 		return err;
 	if (pipe->output_info.res.width != width ||
 	    pipe->output_info.res.height != height ||
-	    pipe->output_info.format != format) {
-		ia_css_frame_info_init(&pipe->output_info, width, height,
-				       format, min_width);
+	    pipe->output_info.format != format)
+	{
+		ia_css_frame_info_init(
+				&pipe->output_info,
+				width,
+				height,
+				format,
+				padded_width);
 	}
 	return IA_CSS_SUCCESS;
 }
@@ -8121,6 +8125,27 @@ ia_css_stream_get_3a_binary(const struct ia_css_stream *stream)
 
 	return ia_css_pipe_get_3a_binary(pipe);
 }
+
+enum ia_css_err
+ia_css_stream_set_output_padded_width(struct ia_css_stream *stream, unsigned int output_padded_width)
+{
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	struct ia_css_pipe *pipe;
+
+	assert(stream != NULL);
+
+	pipe = stream->last_pipe;
+
+	assert(pipe != NULL);
+
+	// set the config also just in case (redundant info? why do we save config in pipe?)
+	pipe->config.output_info.padded_width = output_padded_width;
+	pipe->output_info.padded_width = output_padded_width;
+
+	return err;
+}
+
 
 static struct ia_css_binary *
 ia_css_pipe_get_3a_binary (const struct ia_css_pipe *pipe)

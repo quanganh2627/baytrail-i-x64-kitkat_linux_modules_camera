@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140205_1515 */
+/* Release Version: irci_master_20140206_0205 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -339,6 +339,7 @@ struct ia_css_isp_config {
 	struct ia_css_2500_ae_kernel_config      *ae_2500_config;        /**< Skylake: auto exposure config */
 	struct ia_css_2500_bds_kernel_config     *bds_2500_config;       /**< Skylake: bayer downscaler config */
 	struct ia_css_2500_dvs_kernel_config     *dvs_2500_config;       /**< Skylake: digital video stabilization config */
+	struct ia_css_2500_res_mgr_config        *res_mgr_2500_config;
 };
 
 /** DVS 1.0 Coefficients.
