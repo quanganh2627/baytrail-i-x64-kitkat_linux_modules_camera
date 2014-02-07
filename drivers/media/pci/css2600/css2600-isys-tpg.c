@@ -114,18 +114,12 @@ int css2600_isys_tpg_init(struct css2600_isys_tpg *tpg, struct css2600_isys *isy
 	if (isys->pdata->type == CSS2600_ISYS_TYPE_CSS2401)
 		return 0;
 
-	rval = media_entity_create_link(
-		&tpg->asd.sd.entity, TPG_PAD_SOURCE, &tpg->av.vdev.entity,
-		0, MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE);
-	if (rval) {
-		dev_info(&isys->adev->dev, "can't create link\n");
-		goto fail;
-	}
-
 	snprintf(tpg->av.vdev.name, sizeof(tpg->av.vdev.name),
 		 CSS2600_NAME " TPG %u capture", index);
 	tpg->av.isys = isys;
-	rval = css2600_isys_video_init(&tpg->av);
+	rval = css2600_isys_video_init(
+		&tpg->av, &tpg->asd.sd.entity, TPG_PAD_SOURCE,
+		MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't init video node\n");
 		goto fail;

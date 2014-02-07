@@ -55,7 +55,10 @@ struct css2600_isys_video {
 
 int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 				     unsigned int state);
-int css2600_isys_video_init(struct css2600_isys_video *av);
+int css2600_isys_video_init(struct css2600_isys_video *av,
+			    struct media_entity *source,
+			    unsigned int source_pad,
+			    unsigned int flags);
 void css2600_isys_video_cleanup(struct css2600_isys_video *av);
 
 #endif /* CSS2600_ISYS_VIDEO_H */

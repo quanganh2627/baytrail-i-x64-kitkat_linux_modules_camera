@@ -111,15 +111,6 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 	csi2->nlanes = nlanes;
 	csi2->index = index;
 
-	snprintf(csi2->av.vdev.name, sizeof(csi2->av.vdev.name),
-		 CSS2600_NAME " CSI-2 %u capture", index);
-	csi2->av.isys = isys;
-	rval = css2600_isys_video_init(&csi2->av);
-	if (rval) {
-		dev_info(&isys->adev->dev, "can't init video node\n");
-		goto fail;
-	}
-
 	BUG_ON(CSS2600_ISYS_MAX_PAD < NR_OF_CSI2_PADS);
 	csi2->asd.pad[CSI2_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
 	csi2->asd.pad[CSI2_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
@@ -142,12 +133,15 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 		goto fail;
 	}
 
-	rval = media_entity_create_link(
-		&csi2->asd.sd.entity, CSI2_PAD_SOURCE, &csi2->av.vdev.entity,
-		0, isys->pdata->type == CSS2600_ISYS_TYPE_CSS2401
+	snprintf(csi2->av.vdev.name, sizeof(csi2->av.vdev.name),
+		 CSS2600_NAME " CSI-2 %u capture", index);
+	csi2->av.isys = isys;
+	rval = css2600_isys_video_init(
+		&csi2->av, &csi2->asd.sd.entity, CSI2_PAD_SOURCE,
+		isys->pdata->type == CSS2600_ISYS_TYPE_CSS2401
 		? MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE : 0);
 	if (rval) {
-		dev_info(&isys->adev->dev, "can't create link\n");
+		dev_info(&isys->adev->dev, "can't init video node\n");
 		goto fail;
 	}
 

@@ -298,7 +298,10 @@ static const struct v4l2_file_operations isys_fops = {
  * is expected to assign isys field and set the name of the video
  * device.
  */
-int css2600_isys_video_init(struct css2600_isys_video *av)
+int css2600_isys_video_init(struct css2600_isys_video *av,
+			    struct media_entity *source,
+			    unsigned int source_pad,
+			    unsigned int flags)
 {
 	int rval;
 
@@ -319,6 +322,13 @@ int css2600_isys_video_init(struct css2600_isys_video *av)
 	av->vdev.ioctl_ops = &ioctl_ops;
 	set_bit(V4L2_FL_USES_V4L2_FH, &av->vdev.flags);
 	video_set_drvdata(&av->vdev, av);
+
+	rval = media_entity_create_link(
+		source, source_pad, &av->vdev.entity, 0, flags);
+	if (rval) {
+		dev_info(&av->isys->adev->dev, "can't create link\n");
+		goto out_media_entity_cleanup;
+	}
 
 	av->pfmt = __vidioc_try_fmt_vid_cap(av, &av->pix);
 
