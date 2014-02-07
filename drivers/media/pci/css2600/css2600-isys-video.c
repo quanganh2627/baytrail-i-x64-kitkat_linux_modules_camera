@@ -290,8 +290,6 @@ int css2600_isys_video_init(struct css2600_isys_video *av)
 
 	mutex_init(&av->mutex);
 
-	av->pfmt = __vidioc_try_fmt_vid_cap(av, &av->pix);
-
 	rval = css2600_isys_queue_init(&av->aq);
 	if (rval)
 		goto out_mutex_destroy;
@@ -307,6 +305,8 @@ int css2600_isys_video_init(struct css2600_isys_video *av)
 	av->vdev.ioctl_ops = &ioctl_ops;
 	set_bit(V4L2_FL_USES_V4L2_FH, &av->vdev.flags);
 	video_set_drvdata(&av->vdev, av);
+
+	av->pfmt = __vidioc_try_fmt_vid_cap(av, &av->pix);
 
 	rval = video_register_device(&av->vdev, VFL_TYPE_GRABBER, -1);
 	if (rval)
