@@ -72,16 +72,32 @@ static int video_release(struct file *file)
 const struct css2600_isys_pixelformat *css2600_isys_get_pixelformat(
 	struct css2600_isys_video *av, uint32_t pixelformat)
 {
-	const struct css2600_isys_pixelformat *pfmt, *found = isys_pfmts;
+	struct media_pad *pad = av->vdev.entity.links[0].source;
+	const uint32_t *supported_codes =
+		to_css2600_isys_subdev(
+			media_entity_to_v4l2_subdev(pad->entity))
+		->supported_codes[pad->index];
+	const struct css2600_isys_pixelformat *pfmt;
 
 	for (pfmt = isys_pfmts; pfmt->bpp; pfmt++) {
-		if (pfmt->pixelformat == pixelformat) {
-			found = pfmt;
-			break;
+		unsigned int i;
+
+		if (pfmt->pixelformat != pixelformat)
+			continue;
+
+		for (i = 0; supported_codes[i]; i++) {
+			if (pfmt->code == supported_codes[i])
+				return pfmt;
 		}
 	}
 
-	return found;
+	/* Not found. Get the default, i.e. the first defined one. */
+	for (pfmt = isys_pfmts; pfmt->bpp; pfmt++) {
+		if (pfmt->code == *supported_codes)
+			return pfmt;
+	}
+
+	BUG();
 }
 
 static int vidioc_querycap(struct file *file, void *fh,
