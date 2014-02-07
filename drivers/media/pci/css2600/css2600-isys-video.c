@@ -302,10 +302,11 @@ static const struct media_entity_operations entity_ops = {
 
 static const struct v4l2_file_operations isys_fops = {
 	.owner = THIS_MODULE,
+	.poll = vb2_fop_poll,
+	.unlocked_ioctl = video_ioctl2,
+	.mmap = vb2_fop_mmap,
 	.open = video_open,
 	.release = video_release,
-	.poll = vb2_fop_poll,
-	.mmap = vb2_fop_mmap,
 };
 
 /*
