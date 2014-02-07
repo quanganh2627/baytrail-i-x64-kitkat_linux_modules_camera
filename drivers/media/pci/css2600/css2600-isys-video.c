@@ -24,6 +24,19 @@
 #include "css2600-isys.h"
 #include "css2600-isys-video.h"
 
+static const struct css2600_isys_pixelformat {
+	uint32_t pixelformat;
+	uint32_t bpp;
+	uint32_t bpp_packed;
+	uint32_t code;
+} isys_pfmts[] = {
+	{ V4L2_PIX_FMT_SBGGR10, 16, 10, V4L2_MBUS_FMT_SBGGR10_1X10 },
+	{ V4L2_PIX_FMT_SGBRG10, 16, 10, V4L2_MBUS_FMT_SGBRG10_1X10 },
+	{ V4L2_PIX_FMT_SGRBG10, 16, 10, V4L2_MBUS_FMT_SGRBG10_1X10 },
+	{ V4L2_PIX_FMT_SRGGB10, 16, 10, V4L2_MBUS_FMT_SRGGB10_1X10 },
+	{ }
+};
+
 static int video_open(struct file *file)
 {
 	struct css2600_isys_video *av = video_drvdata(file);
@@ -59,9 +72,9 @@ static int video_release(struct file *file)
 const struct css2600_isys_pixelformat *css2600_isys_get_pixelformat(
 	struct css2600_isys_video *av, uint32_t pixelformat)
 {
-	const struct css2600_isys_pixelformat *pfmt, *found = av->pfmts;
+	const struct css2600_isys_pixelformat *pfmt, *found = isys_pfmts;
 
-	for (pfmt = av->pfmts; pfmt->bpp; pfmt++) {
+	for (pfmt = isys_pfmts; pfmt->bpp; pfmt++) {
 		if (pfmt->pixelformat == pixelformat) {
 			found = pfmt;
 			break;
@@ -282,7 +295,8 @@ static const struct v4l2_file_operations isys_fops = {
 /*
  * Do everything that's needed to initialise things related to video
  * buffer queue, video node, and the related media entity. The caller
- * is expected to assign isys and pfmts fields.
+ * is expected to assign isys field and set the name of the video
+ * device.
  */
 int css2600_isys_video_init(struct css2600_isys_video *av)
 {

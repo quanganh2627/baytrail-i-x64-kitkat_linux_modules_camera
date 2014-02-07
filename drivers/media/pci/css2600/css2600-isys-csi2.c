@@ -37,14 +37,6 @@
 #include "css2600-isys-subdev.h"
 #include "css2600-isys-video.h"
 
-static struct css2600_isys_pixelformat csi2_pfmts[] = {
-	{ V4L2_PIX_FMT_SBGGR10, 16, 10, V4L2_MBUS_FMT_SBGGR10_1X10 },
-	{ V4L2_PIX_FMT_SGBRG10, 16, 10, V4L2_MBUS_FMT_SGBRG10_1X10 },
-	{ V4L2_PIX_FMT_SGRBG10, 16, 10, V4L2_MBUS_FMT_SGRBG10_1X10 },
-	{ V4L2_PIX_FMT_SRGGB10, 16, 10, V4L2_MBUS_FMT_SRGGB10_1X10 },
-	{ }
-};
-
 static const uint32_t csi2_supported_fmts_pad[] = {
 	V4L2_MBUS_FMT_SBGGR10_1X10,
 	V4L2_MBUS_FMT_SGBRG10_1X10,
@@ -121,7 +113,6 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 
 	snprintf(csi2->av.vdev.name, sizeof(csi2->av.vdev.name),
 		 CSS2600_NAME " CSI-2 %u capture", index);
-	csi2->av.pfmts = csi2_pfmts;
 	csi2->av.isys = isys;
 	rval = css2600_isys_video_init(&csi2->av);
 	if (rval) {

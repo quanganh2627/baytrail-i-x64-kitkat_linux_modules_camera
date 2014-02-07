@@ -36,10 +36,6 @@
 #include "css2600-isys-tpg.h"
 #include "css2600-isys-video.h"
 
-static struct css2600_isys_pixelformat tpg_pfmts[] = {
-	{ }
-};
-
 static const uint32_t tpg_supported_fmts_pad[] = {
 	V4L2_MBUS_FMT_SBGGR10_1X10,
 	V4L2_MBUS_FMT_SGBRG10_1X10,
@@ -128,7 +124,6 @@ int css2600_isys_tpg_init(struct css2600_isys_tpg *tpg, struct css2600_isys *isy
 
 	snprintf(tpg->av.vdev.name, sizeof(tpg->av.vdev.name),
 		 CSS2600_NAME " TPG %u capture", index);
-	tpg->av.pfmts = tpg_pfmts;
 	tpg->av.isys = isys;
 	rval = css2600_isys_video_init(&tpg->av);
 	if (rval) {

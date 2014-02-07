@@ -29,6 +29,7 @@
 #include "css2600-isys-queue.h"
 
 struct css2600_isys;
+struct css2600_isys_pixelformat;
 
 struct css2600_isys_pipeline {
 	struct media_pipeline pipe;
@@ -42,7 +43,6 @@ struct css2600_isys_video {
 	struct media_pad pad;
 	struct video_device vdev;
 	struct v4l2_pix_format pix;
-	const struct css2600_isys_pixelformat *pfmts;
 	const struct css2600_isys_pixelformat *pfmt;
 	struct css2600_isys_queue aq;
 	struct css2600_isys *isys;
