@@ -37,7 +37,7 @@
 #include "css2600-isys-subdev.h"
 #include "css2600-isys-video.h"
 
-static const uint32_t csi2_supported_fmts_pad[] = {
+static const uint32_t csi2_supported_codes_pad[] = {
 	V4L2_MBUS_FMT_SBGGR10_1X10,
 	V4L2_MBUS_FMT_SGBRG10_1X10,
 	V4L2_MBUS_FMT_SGRBG10_1X10,
@@ -45,9 +45,9 @@ static const uint32_t csi2_supported_fmts_pad[] = {
 	0,
 };
 
-static const uint32_t *csi2_supported_fmts[] = {
-	csi2_supported_fmts_pad,
-	csi2_supported_fmts_pad,
+static const uint32_t *csi2_supported_codes[] = {
+	csi2_supported_codes_pad,
+	csi2_supported_codes_pad,
 };
 
 static int link_validate(struct v4l2_subdev *sd, struct media_link *link,
@@ -129,7 +129,7 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 	if (rval)
 		goto fail;
 
-	csi2->asd.supported_fmts = csi2_supported_fmts;
+	csi2->asd.supported_codes = csi2_supported_codes;
 	css2600_isys_subdev_set_ffmt(&csi2->asd.sd, NULL, &fmt);
 
 	csi2->asd.sd.internal_ops = &csi2_sd_internal_ops;

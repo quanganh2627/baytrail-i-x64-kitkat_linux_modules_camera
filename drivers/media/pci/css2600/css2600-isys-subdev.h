@@ -45,7 +45,7 @@ struct css2600_isys_subdev {
 	/* Serialise access to any other field in the struct */
 	struct mutex mutex;
 	struct v4l2_subdev sd;
-	uint32_t const * const *supported_fmts;
+	uint32_t const * const *supported_codes;
 	struct media_pad pad[CSS2600_ISYS_MAX_PAD];
 	struct v4l2_mbus_framefmt ffmt[CSS2600_ISYS_MAX_PAD];
 	struct v4l2_rect crop[CSS2600_ISYS_MAX_PAD];

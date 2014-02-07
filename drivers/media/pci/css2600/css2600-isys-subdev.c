@@ -121,14 +121,14 @@ int css2600_isys_subdev_set_ffmt(struct v4l2_subdev *sd,
 	struct css2600_isys_subdev *asd = to_css2600_isys_subdev(sd);
 	struct v4l2_mbus_framefmt *ffmt =
 		__css2600_isys_get_ffmt(sd, fh, fmt->pad, fmt->which);
-	uint32_t code = asd->supported_fmts[fmt->pad][0];
+	uint32_t code = asd->supported_codes[fmt->pad][0];
 	unsigned int i;
 
 	mutex_lock(&asd->mutex);
 
-	for (i = 0; asd->supported_fmts[fmt->pad][i]; i++) {
-		if (asd->supported_fmts[fmt->pad][i] == fmt->format.code) {
-			code = asd->supported_fmts[fmt->pad][i];
+	for (i = 0; asd->supported_codes[fmt->pad][i]; i++) {
+		if (asd->supported_codes[fmt->pad][i] == fmt->format.code) {
+			code = asd->supported_codes[fmt->pad][i];
 			break;
 		}
 	}

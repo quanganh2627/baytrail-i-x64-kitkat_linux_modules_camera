@@ -36,7 +36,7 @@
 #include "css2600-isys-tpg.h"
 #include "css2600-isys-video.h"
 
-static const uint32_t tpg_supported_fmts_pad[] = {
+static const uint32_t tpg_supported_codes_pad[] = {
 	V4L2_MBUS_FMT_SBGGR10_1X10,
 	V4L2_MBUS_FMT_SGBRG10_1X10,
 	V4L2_MBUS_FMT_SGRBG10_1X10,
@@ -44,9 +44,9 @@ static const uint32_t tpg_supported_fmts_pad[] = {
 	0,
 };
 
-static const uint32_t *tpg_supported_fmts[] = {
-	tpg_supported_fmts_pad,
-	tpg_supported_fmts_pad,
+static const uint32_t *tpg_supported_codes[] = {
+	tpg_supported_codes_pad,
+	tpg_supported_codes_pad,
 };
 
 static struct v4l2_subdev_internal_ops tpg_sd_internal_ops = {
@@ -98,7 +98,7 @@ int css2600_isys_tpg_init(struct css2600_isys_tpg *tpg, struct css2600_isys *isy
 
 	css2600_isys_subdev_init(&tpg->asd, &tpg_sd_ops, 0, NR_OF_TPG_PADS);
 
-	tpg->asd.supported_fmts = tpg_supported_fmts;
+	tpg->asd.supported_codes = tpg_supported_codes;
 	css2600_isys_subdev_set_ffmt(&tpg->asd.sd, NULL, &fmt);
 
 	tpg->asd.sd.internal_ops = &tpg_sd_internal_ops;
