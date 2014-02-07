@@ -59,6 +59,10 @@
 #define IS_MFLD (INTEL_MID_BOARD(1, PHONE, MFLD) || \
         INTEL_MID_BOARD(1, TABLET, MFLD))
 
+#define IS_HWREVISION(isp, rev) \
+	(((isp)->media_dev.hw_revision & ATOMISP_HW_REVISION_MASK) == \
+	 ((rev) << ATOMISP_HW_REVISION_SHIFT))
+
 #define MAX_STREAM_NUM	2
 
 #define ATOMISP_PCI_DEVICE_SOC_MASK	0xfff8

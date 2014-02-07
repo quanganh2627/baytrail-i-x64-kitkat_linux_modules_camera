@@ -1188,8 +1188,7 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 	 *
 	 * Check if it is Cherry Trail and also new input system
 	 */
-	if ((asd->isp->media_dev.hw_revision & ATOMISP_HW_REVISION_MASK) ==
-	    (ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT)) {
+	if (IS_HWREVISION(asd->isp, ATOMISP_HW_REVISION_ISP2401)) {
 		dev_warn(asd->isp->dev, "%s: ia_css_stream_set_isp_config() not supported!.\n",
 				__func__);
 		return;
