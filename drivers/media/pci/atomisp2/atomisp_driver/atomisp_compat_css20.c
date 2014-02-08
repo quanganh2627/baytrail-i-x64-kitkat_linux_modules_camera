@@ -2485,8 +2485,8 @@ unsigned int atomisp_get_pipe_index(struct atomisp_sub_device *asd,
 					uint16_t source_pad)
 {
 	struct atomisp_device *isp = asd->isp;
-	if (isp->inputs[asd->input_curr].camera_caps->
-			sensor[asd->sensor_curr].stream_num > 1)
+
+	if (asd->copy_mode)
 		return IA_CSS_PIPE_ID_COPY;
 
 	switch (source_pad) {
@@ -2497,8 +2497,6 @@ unsigned int atomisp_get_pipe_index(struct atomisp_sub_device *asd,
 		else
 			return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
-		if (asd->copy_mode)
-			return IA_CSS_PIPE_ID_COPY;
 		return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_VF:
 		if (!atomisp_is_mbuscode_raw(
