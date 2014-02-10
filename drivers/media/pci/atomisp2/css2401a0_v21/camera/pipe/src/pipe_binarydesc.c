@@ -66,6 +66,7 @@ void ia_css_pipe_get_copy_binarydesc(
 	copy_descr->enable_dvs_6axis = false;
 	copy_descr->enable_reduced_pipe = false;
 	copy_descr->enable_dz = false;
+	copy_descr->enable_xnr = false;
 	copy_descr->enable_fractional_ds = false;
 	copy_descr->dvs_env.width = 0;
 	copy_descr->dvs_env.height = 0;
@@ -104,6 +105,7 @@ static void pipe_binarydesc_get_offline(
 	descr->enable_dvs_6axis = false;
 	descr->enable_reduced_pipe = false;
 	descr->enable_dz = true;
+	descr->enable_xnr = false;
 	descr->enable_fractional_ds = false;
 	descr->dvs_env.width = 0;
 	descr->dvs_env.height = 0;
@@ -446,6 +448,8 @@ void ia_css_pipe_get_capturepp_binarydesc(
 			       capture_pp_descr,
 			       in_info, &pipe->output_info, vf_info);
 	capture_pp_descr->enable_fractional_ds = true;
+	capture_pp_descr->enable_xnr =
+		pipe->config.default_capture_config.enable_xnr;
 }
 
 void ia_css_pipe_get_primary_binarydesc(

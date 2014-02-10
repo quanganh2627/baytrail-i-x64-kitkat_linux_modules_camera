@@ -636,7 +636,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				       *req_vf_info;
 
 	struct ia_css_binary_xinfo *xcandidate;
-	bool need_ds, need_dz, need_dvs;
+	bool need_ds, need_dz, need_dvs, need_xnr;
 	bool enable_yuv_ds;
 	bool enable_high_speed;
 	bool enable_dvs_6axis;
@@ -659,6 +659,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 	req_out_info = descr->out_info;
 	req_vf_info = descr->vf_info;
 
+	need_xnr = descr->enable_xnr;
 	need_ds = descr->enable_fractional_ds;
 	need_dz = false;
 	need_dvs = false;
@@ -745,6 +746,14 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				__LINE__,
 				candidate->enable.high_speed,
 				enable_high_speed);
+			continue;
+		}
+		if (!candidate->enable.xnr && need_xnr) {
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"ia_css_binary_find() [%d] continue: %d && !%d\n",
+				__LINE__,
+				candidate->enable.xnr,
+				need_xnr);
 			continue;
 		}
 		if (!(candidate->enable.ds & 2) && enable_yuv_ds) {

@@ -26,17 +26,19 @@
 #include "ia_css_sc.host.h"
 
 void
-ia_css_sc_encode(struct sh_css_isp_sc_params *to,
-		 struct ia_css_shading_table **from)
+ia_css_sc_encode(
+	struct sh_css_isp_sc_params *to,
+	struct ia_css_shading_table **from)
 {
 	to->gain_shift = (*from)->fraction_bits;
 }
 
 #if 0
 void
-ia_css_process_sc(unsigned pipe_id,
-		  const struct ia_css_pipeline_stage *stage,
-		  struct ia_css_isp_parameters *params)
+ia_css_process_sc(
+	unsigned pipe_id,
+	const struct ia_css_pipeline_stage *stage,
+	struct ia_css_isp_parameters *params)
 {
 	short dmem_offset = stage->binary->info->mem_offsets->dmem.sc;
 
@@ -55,7 +57,9 @@ ia_css_process_sc(unsigned pipe_id,
 #endif
 
 void
-ia_css_sc_dump(const struct sh_css_isp_sc_params *sc, unsigned level)
+ia_css_sc_dump(
+	const struct sh_css_isp_sc_params *sc,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level, "Shading Correction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",

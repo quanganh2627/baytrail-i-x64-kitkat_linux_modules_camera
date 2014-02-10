@@ -29,18 +29,23 @@
 
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
+#include "isp.h"
+
 #include "ia_css_fpn.host.h"
 
 void
-ia_css_fpn_encode(struct sh_css_isp_fpn_params *to,
-		 const struct ia_css_fpn_table *from)
+ia_css_fpn_encode(
+	struct sh_css_isp_fpn_params *to,
+	const struct ia_css_fpn_table *from)
 {
 	to->shift = from->shift;
 	to->enabled = from->data != NULL;
 }
 
 void
-ia_css_fpn_dump(const struct sh_css_isp_fpn_params *fpn, unsigned level)
+ia_css_fpn_dump(
+	const struct sh_css_isp_fpn_params *fpn,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level, "Fixed Pattern Noise Reduction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
@@ -50,10 +55,11 @@ ia_css_fpn_dump(const struct sh_css_isp_fpn_params *fpn, unsigned level)
 }
 
 void
-ia_css_fpn_config(struct sh_css_isp_fpn_isp_config *to,
-		 const struct ia_css_fpn_configuration  *from)
+ia_css_fpn_config(
+	struct sh_css_isp_fpn_isp_config *to,
+	const struct ia_css_fpn_configuration *from)
 {
-	unsigned elems_a = ISP_NWAY;
+	unsigned elems_a = ISP_VEC_NELEMS;
 	ia_css_dma_configure_from_info(&to->port_b, from->info);
 	to->width_a_over_b = elems_a / to->port_b.elems;
 

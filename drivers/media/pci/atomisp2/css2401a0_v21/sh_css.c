@@ -97,6 +97,7 @@ static int thread_alive;
 #include <stdio.h>
 #endif
 #include"ia_css_spctrl.h"
+#include "ia_css_version_data.h"
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
@@ -354,8 +355,10 @@ struct sh_css {
 	bool                           check_system_idle;
 	bool                           stop_copy_preview;
 	unsigned int                   num_cont_raw_frames;
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	unsigned int                   num_mipi_frames;
 	struct ia_css_frame           *mipi_frames[NUM_MIPI_FRAMES];
+#endif
 	hrt_vaddress                   sp_bin_addr;
 	hrt_data                       page_table_base_index;
 	unsigned int                   size_mem_words;
@@ -380,7 +383,9 @@ static struct sh_css my_css;
 
 static struct ia_css_rmgr_vbuf_handle *hmm_buffer_record_h[MAX_HMM_BUFFER_NUM];
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 static uint32_t ref_count_mipi_allocation = 0;
+#endif
 
 #define GPIO_FLASH_PIN_MASK (1 << HIVE_GPIO_STROBE_TRIGGER_PIN)
 
@@ -465,8 +470,13 @@ static enum ia_css_err
 alloc_continuous_frames(
 	struct ia_css_pipe *pipe, bool init_time);
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 static enum ia_css_err
 allocate_mipi_frames(struct ia_css_pipe *pipe);
+
+static void
+free_mipi_frames(struct ia_css_pipe *pipe, bool uninit);
+#endif
 
 static void
 pipe_global_init(void);
@@ -502,9 +512,6 @@ create_host_capture_pipeline(struct ia_css_pipe *pipe);
 
 static enum ia_css_err
 create_host_acc_pipeline(struct ia_css_pipe *pipe);
-
-static void
-free_mipi_frames(struct ia_css_pipe *pipe, bool uninit);
 
 static unsigned int
 sh_css_get_sw_interrupt_value(unsigned int irq);
@@ -552,6 +559,22 @@ static enum ia_css_frame_format yuv422_copy_formats[] = {
 };
 
 #define array_length(array) (sizeof(array)/sizeof(array[0]))
+
+/* Retrieve the CSS version and try to retrieve the FW version too.
+ */
+enum ia_css_err
+ia_css_get_version(char *version, int max_size)
+{
+	if (max_size <= (int)strlen(CSS_VERSION_STRING) + (int)strlen(sh_css_get_fw_version()) + 5)
+		return(IA_CSS_ERR_INVALID_ARGUMENTS);
+	assert(version != NULL);
+	strcpy(version, CSS_VERSION_STRING);
+	strcat(version, "FW:");
+	strcat(version, sh_css_get_fw_version());
+	strcat(version, "; ");
+	return(IA_CSS_SUCCESS);
+}
+
 
 /* Verify whether the selected output format is can be produced
  * by the copy binary given the stream format.
@@ -1517,13 +1540,13 @@ start_copy_on_sp(struct ia_css_pipe *pipe,
 
 void sh_css_binary_args_reset(struct sh_css_binary_args *args)
 {
+	int i;
+	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++)
+		args->tnr_frames[i] = NULL;
+	for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++)
+		args->delay_frames[i] = NULL;
 	args->in_frame      = NULL;
 	args->out_frame     = NULL;
-	args->in_ref_frame  = NULL;
-	args->out_ref_frame = NULL;
-	args->extra_ref_frame = NULL;
-	args->in_tnr_frame  = NULL;
-	args->out_tnr_frame = NULL;
 	args->out_vf_frame  = NULL;
 	args->copy_vf       = false;
 	args->copy_output   = true;
@@ -1700,7 +1723,9 @@ ia_css_reset_defaults(struct sh_css* css)
 	/* Initialize the non zero values*/
 	default_css.check_system_idle = true;
 	default_css.num_cont_raw_frames = NUM_CONTINUOUS_FRAMES;
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	default_css.num_mipi_frames = NUM_MIPI_FRAMES;
+#endif
 	default_css.contiguous = true;
 	default_css.irq_type = IA_CSS_IRQ_TYPE_EDGE;
 
@@ -1846,7 +1871,9 @@ ia_css_init(const struct ia_css_env *env,
 	ia_css_debug_set_dtrace_level(9);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init()\n");
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	ref_count_mipi_allocation = 0;
+#endif
 	/* In case this has been programmed already, update internal
 	   data structure ... DEPRECATED */
 	my_css.page_table_base_index = mmu_get_page_table_base_index(MMU0_ID);
@@ -2167,12 +2194,14 @@ create_host_pipeline(struct ia_css_stream *stream)
 #endif
 	}
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	if((pipe_id != IA_CSS_PIPE_ID_ACC) &&
 	   (main_pipe->config.mode != IA_CSS_PIPE_MODE_COPY)) {
 		err = allocate_mipi_frames(main_pipe);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
 	}
+#endif
 
 	switch (pipe_id) {
 	case IA_CSS_PIPE_ID_PREVIEW:
@@ -2422,7 +2451,7 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 					"destroyed internal copy pipe err=%d\n", err);
 			}
 		}
-		ia_css_frame_free_multiple(NUM_TNR_FRAMES, pipe->pipe_settings.video.tnr_frames);
+		ia_css_frame_free_multiple(NUM_VIDEO_TNR_FRAMES, pipe->pipe_settings.video.tnr_frames);
 		ia_css_frame_free_multiple((pipe->dvs_frame_delay + 1), pipe->pipe_settings.video.ref_frames);
 		break;
 	case IA_CSS_PIPE_MODE_CAPTURE:
@@ -2481,8 +2510,11 @@ ia_css_uninit(void)
 	ia_css_spctrl_unload_fw(SP0_ID);
 
 	sh_css_sp_set_sp_running(false);
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	/* check and free any remaining mipi frames */
 	free_mipi_frames(NULL, true);
+#endif
 
 	sh_css_sp_reset_global_vars();
 
@@ -3053,6 +3085,8 @@ ia_css_alloc_continuous_frame_remain(struct ia_css_stream *stream)
 	return alloc_continuous_frames(stream->continuous_pipe, false);
 }
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
+/* start of MIPI functions */
 static enum ia_css_err
 allocate_mipi_frames(struct ia_css_pipe *pipe)
 {
@@ -3235,6 +3269,8 @@ send_mipi_frames (struct ia_css_pipe *pipe)
 	}
 	/** End of hack of Baytrail **/
 }
+/* end of MIPI functions */
+#endif
 
 static enum ia_css_err
 load_preview_binaries(struct ia_css_pipe *pipe)
@@ -3941,11 +3977,15 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 	ia_css_pipeline_finalize_stages(&pipe->pipeline);
 
 	if (video_stage) {
-		video_stage->args.in_ref_frame = pipe->pipe_settings.video.ref_frames[0];
-		video_stage->args.out_ref_frame = pipe->pipe_settings.video.ref_frames[1];
-		video_stage->args.extra_ref_frame = pipe->pipe_settings.video.ref_frames[2];
-		video_stage->args.in_tnr_frame = pipe->pipe_settings.video.tnr_frames[0];
-		video_stage->args.out_tnr_frame = pipe->pipe_settings.video.tnr_frames[1];
+		int i;
+		for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
+			video_stage->args.tnr_frames[i] =
+				pipe->pipe_settings.video.tnr_frames[i];
+		}
+		for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++) {
+			video_stage->args.delay_frames[i] =
+				pipe->pipe_settings.video.ref_frames[i];
+		}
 	}
 
 	/* update the arguments with the latest info */
@@ -4201,8 +4241,10 @@ preview_start(struct ia_css_pipe *pipe)
 
 	sh_css_metrics_start_frame();
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	/* multi stream video needs mipi buffers */
 	send_mipi_frames(pipe);
+#endif
 	send_raw_frames(pipe);
 
 	{
@@ -4538,7 +4580,10 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			case IA_CSS_BUFFER_TYPE_OUTPUT_FRAME:
 				if ((pipe) && (pipe->stop_requested == true))
 				{
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 					free_mipi_frames(pipe, false);
+#endif
 					pipe->stop_requested = false;
 				}
 			case IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME:
@@ -5339,7 +5384,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	ref_info.raw_bit_depth = SH_CSS_REF_BIT_DEPTH;
 
 	/*Allocate the exact number of required reference buffers */
-	  for (i = 0; i <= (int)pipe->dvs_frame_delay ; i++){
+	for (i = 0; i <= (int)pipe->dvs_frame_delay ; i++){
 		if (pipe->pipe_settings.video.ref_frames[i]) {
 			ia_css_frame_free(pipe->pipe_settings.video.ref_frames[i]);
 			pipe->pipe_settings.video.ref_frames[i] = NULL;
@@ -5376,7 +5421,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	tnr_info.format = IA_CSS_FRAME_FORMAT_YUV_LINE;
 	tnr_info.raw_bit_depth = SH_CSS_TNR_BIT_DEPTH;
 
-	for (i = 0; i < NUM_TNR_FRAMES; i++) {
+	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
 		if (pipe->pipe_settings.video.tnr_frames[i]) {
 			ia_css_frame_free(pipe->pipe_settings.video.tnr_frames[i]);
 			pipe->pipe_settings.video.tnr_frames[i] = NULL;
@@ -5431,7 +5476,11 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	sh_css_metrics_start_frame();
 
 	/* multi stream video needs mipi buffers */
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	send_mipi_frames(pipe);
+#endif
+
 	send_raw_frames(pipe);
 	{
 		unsigned int thread_id;
@@ -6558,9 +6607,12 @@ static enum ia_css_err capture_start(
 		}
 	}
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	/* multi stream video needs mipi buffers */
-	if (pipe->config.mode != IA_CSS_PIPE_MODE_COPY)
+	if (pipe->config.mode != IA_CSS_PIPE_MODE_COPY) {
 		send_mipi_frames(pipe);
+	}
+#endif
 
 	{
 		unsigned int thread_id;
@@ -7195,8 +7247,11 @@ sh_css_init_host_sp_control_vars(void)
 		(unsigned int)sp_address_of(sp_stop_copy_preview),
 		my_css.stop_copy_preview?(uint32_t)(1):(uint32_t)(0));
 	store_sp_array_uint(host_sp_com, o, host2sp_cmd_ready);
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	sh_css_update_host2sp_cont_num_mipi_frames
 			(my_css.num_mipi_frames);
+#endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_init_host_sp_control_vars() leave: return_void\n");

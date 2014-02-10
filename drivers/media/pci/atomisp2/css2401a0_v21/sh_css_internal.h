@@ -95,9 +95,7 @@
 
 #define NUM_ONLINE_INIT_CONTINUOUS_FRAMES      2
 
-#define NUM_TNR_FRAMES		2
-
-#define NUM_VIDEO_REF_FRAMES	(3)  /* SN: Should this not always match NUM_REF_FRAMES ?*/
+#define NUM_VIDEO_REF_FRAMES	3
 #define NUM_VIDEO_TNR_FRAMES	2
 #define NR_OF_PIPELINES			5 /* Must match with IA_CSS_PIPE_ID_NUM */
 
@@ -265,13 +263,10 @@ struct sh_css_ddr_address_map_compound {
 struct sh_css_binary_args {
 	struct ia_css_frame *cc_frame;       /* continuous capture frame */
 	struct ia_css_frame *in_frame;	     /* input frame */
-	struct ia_css_frame *in_ref_frame;   /* reference input frame */
-	struct ia_css_frame *in_tnr_frame;   /* tnr input frame */
+	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];   /* tnr frames */
+	struct ia_css_frame *delay_frames[NUM_VIDEO_REF_FRAMES]; /* video pipe delay frames */
 	struct ia_css_frame *out_frame;      /* output frame */
-	struct ia_css_frame *out_ref_frame;  /* reference output frame */
-	struct ia_css_frame *out_tnr_frame;  /* tnr output frame */
 	struct ia_css_frame *out_vf_frame;   /* viewfinder output frame */
-	struct ia_css_frame *extra_ref_frame;    /* reference extra frame */
 	bool                 copy_vf;
 	bool                 copy_output;
 	unsigned             vf_downscale_log2;
@@ -526,16 +521,16 @@ enum sh_css_frame_id {
 	sh_css_frame_s3a,		/* Dynamic */
 	sh_css_frame_dis,		/* Dynamic */
 	sh_css_frame_metadata,	/* Dynamic */
-	sh_css_frame_ref_in,
-	sh_css_frame_ref_out,
-	sh_css_frame_ref_extra,
-	sh_css_frame_tnr_in,
-	sh_css_frame_tnr_out,
-	sh_css_frame_extra,
-	sh_css_frame_raw_out,
-	sh_css_frame_cust_in,
-	sh_css_frame_cust_out,
+	/* Video pipe can have delay of up to 3 */
+	sh_css_frame_video_delay_0,
+	sh_css_frame_video_delay_1,
+	sh_css_frame_video_delay_2,
+	/* TNR has 2 reference frames (input and output) */
+	sh_css_frame_tnr_0,
+	sh_css_frame_tnr_1,
+	SH_CSS_NUM_FRAME_IDS
 };
+
 /*
  * The first frames (with comment Dynamic) can be dynamic or static
  * The other frames (ref_in and below) can only be static
@@ -548,6 +543,17 @@ enum sh_css_frame_id {
 #define SH_CSS_NUM_DYNAMIC_BUFFER_IDS (5)
 #define SH_CSS_NUM_DYNAMIC_FRAME_IDS (3)
 #define SH_CSS_INVALID_FRAME_ID (-1)
+
+struct ia_css_frames_sp {
+	struct ia_css_frame_sp	in;
+	struct ia_css_frame_sp	out;
+	struct ia_css_resolution effective_in_res;
+	struct ia_css_frame_sp	out_vf;
+	struct ia_css_frame_sp	tnr_frames[NUM_VIDEO_TNR_FRAMES];
+	struct ia_css_frame_sp  delay_frames[NUM_VIDEO_REF_FRAMES];
+	struct ia_css_frame_sp_info internal_frame_info;
+	hrt_vaddress static_frame_data[SH_CSS_NUM_FRAME_IDS];
+};
 
 /* Information for a single pipeline stage for an ISP */
 struct sh_css_isp_stage {
@@ -777,20 +783,31 @@ struct host_sp_communication {
 	 */
 	hrt_vaddress host2sp_offline_frames[NUM_CONTINUOUS_FRAMES];
 	hrt_vaddress host2sp_offline_metadata[NUM_CONTINUOUS_FRAMES];
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	hrt_vaddress host2sp_mipi_frames[NUM_MIPI_FRAMES];
+	uint32_t host2sp_cont_num_mipi_frames;
+#endif
 	uint32_t host2sp_cont_avail_num_raw_frames;
 	uint32_t host2sp_cont_extra_num_raw_frames;
 	uint32_t host2sp_cont_target_num_raw_frames;
-	uint32_t host2sp_cont_num_mipi_frames;
 	struct sh_css_event_irq_mask host2sp_event_irq_mask[NR_OF_PIPELINES];
 
 };
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
 	(NUM_MIPI_FRAMES * SIZE_OF_HRT_VADDRESS) +			\
-	(4 *sizeof(uint32_t)) +						\
+	(4 * sizeof(uint32_t) ) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
+#else
+#define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
+	(sizeof(uint32_t) +						\
+	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
+	(3 * sizeof(uint32_t) ) +						\
+	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
+#endif
 
 struct host_sp_queues {
 	/*

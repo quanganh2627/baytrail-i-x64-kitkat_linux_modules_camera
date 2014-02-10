@@ -28,13 +28,18 @@
 extern const struct ia_css_de_config default_de_config;
 
 void
-ia_css_de_encode(struct sh_css_isp_de_params *to,
-		 const struct ia_css_de_config *from);
+ia_css_de_encode(
+	struct sh_css_isp_de_params *to,
+	const struct ia_css_de_config *from);
 
 void
-ia_css_de_dump(const struct sh_css_isp_de_params *de, unsigned level);
+ia_css_de_dump(
+	const struct sh_css_isp_de_params *de,
+	unsigned level);
 
 void
-ia_css_de_debug_dtrace(const struct ia_css_de_config *config, unsigned level);
+ia_css_de_debug_dtrace(
+	const struct ia_css_de_config *config,
+	unsigned level);
 
 #endif /* __IA_CSS_DE_HOST_H */

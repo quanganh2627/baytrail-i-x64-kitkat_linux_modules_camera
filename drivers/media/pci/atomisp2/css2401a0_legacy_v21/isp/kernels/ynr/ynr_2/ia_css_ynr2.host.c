@@ -50,8 +50,9 @@ const struct ia_css_fc_config default_fc_config = {
 };
 
 void
-ia_css_ynr_encode(struct sh_css_isp_yee2_params *to,
-		   const struct ia_css_ynr_config *from)
+ia_css_ynr_encode(
+	struct sh_css_isp_yee2_params *to,
+	const struct ia_css_ynr_config *from)
 {
 	to->edge_sense_gain_0   = from->edge_sense_gain_0;
 	to->edge_sense_gain_1   = from->edge_sense_gain_1;
@@ -60,8 +61,9 @@ ia_css_ynr_encode(struct sh_css_isp_yee2_params *to,
 }
 
 void
-ia_css_fc_encode(struct sh_css_isp_fc_params *to,
-		 const struct ia_css_fc_config *from)
+ia_css_fc_encode(
+	struct sh_css_isp_fc_params *to,
+	const struct ia_css_fc_config *from)
 {
 	to->gain_exp   = from->gain_exp;
 
@@ -82,13 +84,19 @@ ia_css_fc_encode(struct sh_css_isp_fc_params *to,
 }
 
 void
-ia_css_ynr_dump(const struct sh_css_isp_yee2_params *yee2, unsigned level);
+ia_css_ynr_dump(
+	const struct sh_css_isp_yee2_params *yee2,
+	unsigned level);
 
 void
-ia_css_fc_dump(const struct sh_css_isp_fc_params *fc, unsigned level);
+ia_css_fc_dump(
+	const struct sh_css_isp_fc_params *fc,
+	unsigned level);
 
 void
-ia_css_fc_debug_dtrace(const struct ia_css_fc_config *config, unsigned level)
+ia_css_fc_debug_dtrace(
+	const struct ia_css_fc_config *config,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.gain_exp=%d, "
@@ -108,7 +116,9 @@ ia_css_fc_debug_dtrace(const struct ia_css_fc_config *config, unsigned level)
 }
 
 void
-ia_css_ynr_debug_dtrace(const struct ia_css_ynr_config *config, unsigned level)
+ia_css_ynr_debug_dtrace(
+	const struct ia_css_ynr_config *config,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.edge_sense_gain_0=%d, config.edge_sense_gain_1=%d, "

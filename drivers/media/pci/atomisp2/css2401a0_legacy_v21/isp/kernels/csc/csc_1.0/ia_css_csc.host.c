@@ -31,8 +31,9 @@ const struct ia_css_cc_config default_cc_config = {
 };
 
 void
-ia_css_encode_cc(struct sh_css_isp_csc_params *to,
-		 const struct ia_css_cc_config *from)
+ia_css_encode_cc(
+	struct sh_css_isp_csc_params *to,
+	const struct ia_css_cc_config *from)
 {
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_encode_cc() enter:\n");
 
@@ -51,15 +52,18 @@ ia_css_encode_cc(struct sh_css_isp_csc_params *to,
 }
 
 void
-ia_css_csc_encode(struct sh_css_isp_csc_params *to,
-		  const struct ia_css_cc_config *from)
+ia_css_csc_encode(
+	struct sh_css_isp_csc_params *to,
+	const struct ia_css_cc_config *from)
 {
 	ia_css_encode_cc(to, from);
 }
 
 void
-ia_css_cc_dump(const struct sh_css_isp_csc_params *csc, unsigned level,
-	       const char *name)
+ia_css_cc_dump(
+	const struct sh_css_isp_csc_params *csc,
+	unsigned level,
+	const char *name)
 {
 	ia_css_debug_dtrace(level, "%s\n", name);
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
@@ -95,13 +99,17 @@ ia_css_cc_dump(const struct sh_css_isp_csc_params *csc, unsigned level,
 }
 
 void
-ia_css_csc_dump(const struct sh_css_isp_csc_params *csc, unsigned level)
+ia_css_csc_dump(
+	const struct sh_css_isp_csc_params *csc,
+	unsigned level)
 {
 	ia_css_cc_dump(csc, level, "Color Space Conversion");
 }
 
 void
-ia_css_cc_config_debug_dtrace(const struct ia_css_cc_config *config, unsigned level)
+ia_css_cc_config_debug_dtrace(
+	const struct ia_css_cc_config *config,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.m[0]=%d, "

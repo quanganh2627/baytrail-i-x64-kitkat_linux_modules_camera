@@ -29,4 +29,6 @@ void
 ia_css_uds_encode(struct sh_css_sp_uds_params *to);
 
 void
-ia_css_uds_dump(const struct sh_css_sp_uds_params *uds, unsigned level);
+ia_css_uds_dump(
+	const struct sh_css_sp_uds_params *uds,
+	unsigned level);

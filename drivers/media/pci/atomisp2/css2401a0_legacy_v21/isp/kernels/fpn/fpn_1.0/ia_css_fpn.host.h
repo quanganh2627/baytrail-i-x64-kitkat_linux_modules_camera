@@ -27,11 +27,14 @@
 #include "ia_css_fpn_param.h"
 
 void
-ia_css_fpn_encode(struct sh_css_isp_fpn_params *to,
-		 const struct ia_css_fpn_table *from);
+ia_css_fpn_encode(
+	struct sh_css_isp_fpn_params *to,
+	const struct ia_css_fpn_table *from);
 
 void
-ia_css_fpn_dump(const struct sh_css_isp_fpn_params *fpn, unsigned level);
+ia_css_fpn_dump(
+	const struct sh_css_isp_fpn_params *fpn,
+	unsigned level);
 
 void
 ia_css_fpn_config(

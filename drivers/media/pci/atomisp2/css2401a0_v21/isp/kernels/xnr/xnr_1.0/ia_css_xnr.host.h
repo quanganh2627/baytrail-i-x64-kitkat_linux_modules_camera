@@ -30,17 +30,23 @@
 extern const struct ia_css_xnr_config default_xnr_config;
 
 void
-ia_css_xnr_table_vamem_encode(struct sh_css_isp_xnr_vamem_params *to,
-		  const struct ia_css_xnr_table *from);
+ia_css_xnr_table_vamem_encode(
+	struct sh_css_isp_xnr_vamem_params *to,
+	const struct ia_css_xnr_table *from);
 
 void
-ia_css_xnr_encode(struct sh_css_isp_xnr_params *to,
-		   const struct ia_css_xnr_config *from);
+ia_css_xnr_encode(
+	struct sh_css_isp_xnr_params *to,
+	const struct ia_css_xnr_config *from);
 
 void
-ia_css_xnr_table_debug_dtrace(const struct ia_css_xnr_table *s3a, unsigned level);
+ia_css_xnr_table_debug_dtrace(
+	const struct ia_css_xnr_table *s3a,
+	unsigned level);
 
 void
-ia_css_xnr_debug_dtrace(const struct ia_css_xnr_config *config, unsigned level);
+ia_css_xnr_debug_dtrace(
+	const struct ia_css_xnr_config *config,
+	unsigned level);
 
 #endif /* __IA_CSS_XNR_HOST_H */

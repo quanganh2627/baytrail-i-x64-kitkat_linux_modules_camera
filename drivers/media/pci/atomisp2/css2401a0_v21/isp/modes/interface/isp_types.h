@@ -92,6 +92,10 @@ struct s_isp_frames {
 	char *xmem_base_addr_uv;
 	char *xmem_base_addr_u;
 	char *xmem_base_addr_v;
+	/* 2nd output frame */
+	char *xmem_base_addr_second_out_y;
+	char *xmem_base_addr_second_out_u;
+	char *xmem_base_addr_second_out_v;
 	/* input yuv frame */
 	char *xmem_base_addr_y_in;
 	char *xmem_base_addr_u_in;
