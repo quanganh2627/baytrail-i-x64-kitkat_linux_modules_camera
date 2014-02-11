@@ -108,7 +108,9 @@ atomisp-$(postfix)-objs := \
 		css/camera/util/src/util.o \
 		css/camera/pipe/src/pipe_util.o \
 		css/camera/pipe/src/pipe_stagedesc.o \
-		css/runtime/isp_param/src/isp_param.o  
+		css/runtime/isp_param/src/isp_param.o \
+		css/runtime/bufq/src/bufq.o
+                  
 
 ifneq ($(ISP2401_NEW_INPUT_SYSTEM), )
 atomisp-$(postfix)-objs += \
@@ -200,7 +202,8 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/isp/kernels/vf/vf_1.0 \
 	    -I$(srctree)/$(src)/css/isp/kernels/crop/crop_1.0 \
 	    -I$(srctree)/$(src)/css/isp/kernels/qplane/qplane_2 \
-	    -I$(srctree)/$(src)/css/runtime/spctrl/interface
+	    -I$(srctree)/$(src)/css/runtime/spctrl/interface \
+	    -I$(srctree)/$(src)/css/runtime/bufq/interface
 endif
 
 DEFINES := -DHRT_HW -DHRT_ISP_CSS_CUSTOM_HOST -DHRT_USE_VIR_ADDRS -DHRT_KERNEL -D__HOST__
