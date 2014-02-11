@@ -43,10 +43,13 @@ struct firmware_header {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-static const char* release_version = STR(irci_master_20140209_0003);
+/* The string STR(irci_master_20140211_0614) is a place holder
+ * which will be replaced with the actual RELEASE_VERSION
+ * during package generation. Please do not modify  */
+static const char* release_version = STR(irci_master_20140211_0614);
 
-#define MAX_FW_irci_master_20140209_0003	300
-static char FW_release_version[MAX_FW_irci_master_20140209_0003] = "---";
+#define MAX_FW_RELEASE_VERSION	300
+static char FW_release_version[MAX_FW_RELEASE_VERSION] = "---";
 
 struct ia_css_fw_info	  sh_css_sp_fw;
 struct ia_css_blob_descr *sh_css_blob_info; /* Only ISP blob info (no SP) */
