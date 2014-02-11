@@ -19,20 +19,22 @@
  *
  */
 
-#ifndef __IA_CSS_UDS_HOST_H
-#define __IA_CSS_UDS_HOST_H
+//
+// CSS version file
+//
 
-#include "sh_css_params.h"
+#ifndef CSS_VERSION_H
+#define CSS_VERSION_H
 
-#include "ia_css_uds_param.h"
+#define VER	0
+#define SUBVER	6
 
-void
-ia_css_uds_encode(
-	struct sh_css_sp_uds_params *to);
+/*
+Changelog
+---------
 
-void
-ia_css_uds_dump(
-	const struct sh_css_sp_uds_params *uds,
-	unsigned level);
+VER 0.6, released 05/02/14:
+	- Added versioning
+*/
 
-#endif /* __IA_CSS_UDS_HOST_H */
+#endif

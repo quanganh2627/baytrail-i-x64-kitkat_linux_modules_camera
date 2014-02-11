@@ -26,18 +26,22 @@
 #include "assert_support.h"
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
+#include "isp.h"
 
 #include "ia_css_raw.host.h"
 
 void
-ia_css_raw_encode(struct sh_css_isp_raw_params *to,
-		 const struct ia_css_aa_config *from)
+ia_css_raw_encode(
+	struct sh_css_isp_raw_params *to,
+	const struct ia_css_aa_config *from)
 {
 	to->baf_strength = from->strength;
 }
 
 void
-ia_css_raw_dump(const struct sh_css_isp_raw_params *raw, unsigned level)
+ia_css_raw_dump(
+	const struct sh_css_isp_raw_params *raw,
+	unsigned level)
 {
 	(void)raw;
 	(void)level;
@@ -69,10 +73,11 @@ sh_css_stride_from_info (
 }
 
 void
-ia_css_raw_config(struct sh_css_isp_raw_isp_config *to,
-		 const struct ia_css_raw_configuration  *from)
+ia_css_raw_config(
+	struct sh_css_isp_raw_isp_config *to,
+	const struct ia_css_raw_configuration  *from)
 {
-	unsigned elems_a = ISP_NWAY;
+	unsigned elems_a = ISP_VEC_NELEMS;
 	const struct ia_css_frame_info *in_info = from->in_info;
 	const struct ia_css_frame_info *internal_info = from->internal_info;
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)

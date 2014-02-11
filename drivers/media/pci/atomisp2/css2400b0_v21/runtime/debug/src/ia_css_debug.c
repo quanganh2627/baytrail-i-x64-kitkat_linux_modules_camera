@@ -2578,6 +2578,7 @@ ia_css_debug_pipe_graph_dump_stage(
 
 	char const *blob_name = "<unknow name>";
 	char const *bin_type = "<unknow type>";
+	int i;
 
 	assert(stage != NULL);
 	if (stage->sp_func != IA_CSS_PIPELINE_NO_FUNC)
@@ -2750,28 +2751,20 @@ ia_css_debug_pipe_graph_dump_stage(
 			"in", true);
 	}
 
-	if (stage->args.in_ref_frame) {
-		ia_css_debug_pipe_graph_dump_frame(
-			stage->args.in_ref_frame, id, blob_name,
-			"in_ref", true);
+	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
+		if (stage->args.tnr_frames[i]) {
+			ia_css_debug_pipe_graph_dump_frame(
+					stage->args.tnr_frames[i], id,
+					blob_name, "tnr_frame", true);
+		}
 	}
 
-	if (stage->args.in_tnr_frame) {
-		ia_css_debug_pipe_graph_dump_frame(
-			stage->args.in_tnr_frame, id, blob_name,
-			"in_tnr", true);
-	}
-
-	if (stage->args.out_ref_frame) {
-		ia_css_debug_pipe_graph_dump_frame(
-			stage->args.out_ref_frame, id, blob_name,
-			"out_ref", false);
-	}
-
-	if (stage->args.out_tnr_frame) {
-		ia_css_debug_pipe_graph_dump_frame(
-			stage->args.out_tnr_frame, id, blob_name,
-			"out_tnr", false);
+	for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++) {
+		if (stage->args.delay_frames[i]) {
+			ia_css_debug_pipe_graph_dump_frame(
+					stage->args.delay_frames[i], id,
+					blob_name, "delay_frame", true);
+		}
 	}
 
 	if (stage->args.out_frame) {

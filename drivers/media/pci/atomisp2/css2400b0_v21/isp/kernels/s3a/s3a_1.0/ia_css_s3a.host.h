@@ -29,25 +29,37 @@
 extern const struct ia_css_3a_config default_3a_config;
 
 void
-ia_css_s3a_configure(unsigned int raw_bit_depth);
+ia_css_s3a_configure(
+	unsigned int raw_bit_depth);
 
 void
-ia_css_s3a_encode(struct sh_css_isp_s3a_params *to,
-		  const struct ia_css_3a_config *from);
+ia_css_s3a_encode(
+	struct sh_css_isp_s3a_params *to,
+	const struct ia_css_3a_config *from);
 
 void
-ia_css_ae_dump(const struct sh_css_isp_ae_params *ae, unsigned level);
+ia_css_ae_dump(
+	const struct sh_css_isp_ae_params *ae,
+	unsigned level);
 
 void
-ia_css_awb_dump(const struct sh_css_isp_awb_params *awb, unsigned level);
+ia_css_awb_dump(
+	const struct sh_css_isp_awb_params *awb,
+	unsigned level);
 
 void
-ia_css_af_dump(const struct sh_css_isp_af_params *af, unsigned level);
+ia_css_af_dump(
+	const struct sh_css_isp_af_params *af,
+	unsigned level);
 
 void
-ia_css_s3a_dump(const struct sh_css_isp_s3a_params *s3a, unsigned level);
+ia_css_s3a_dump(
+	const struct sh_css_isp_s3a_params *s3a,
+	unsigned level);
 
 void
-ia_css_s3a_debug_dtrace(const struct ia_css_3a_config *config, unsigned level);
+ia_css_s3a_debug_dtrace(
+	const struct ia_css_3a_config *config,
+	unsigned level);
 
 #endif /* __IA_CSS_S3A_HOST_H */

@@ -19,20 +19,18 @@
  *
  */
 
-#ifndef __IA_CSS_UDS_HOST_H
-#define __IA_CSS_UDS_HOST_H
+// CSS API version file
 
-#include "sh_css_params.h"
+#ifndef CSS_API_VERSION_H
+#define CSS_API_VERSION_H
 
-#include "ia_css_uds_param.h"
+#define CSS_API_VERSION_STRING	"2.0.1.0"
 
-void
-ia_css_uds_encode(
-	struct sh_css_sp_uds_params *to);
+/*
+Change log
+V2.0.1.0, initial version:
+ - added API verioning
+*/
 
-void
-ia_css_uds_dump(
-	const struct sh_css_sp_uds_params *uds,
-	unsigned level);
 
-#endif /* __IA_CSS_UDS_HOST_H */
+#endif

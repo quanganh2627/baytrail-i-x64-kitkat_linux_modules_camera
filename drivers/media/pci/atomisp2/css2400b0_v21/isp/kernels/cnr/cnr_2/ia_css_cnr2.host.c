@@ -37,8 +37,9 @@ const struct ia_css_cnr_config default_cnr_config = {
 };
 
 void
-ia_css_cnr_encode(struct sh_css_isp_cnr_params *to,
-		  const struct ia_css_cnr_config *from)
+ia_css_cnr_encode(
+	struct sh_css_isp_cnr_params *to,
+	const struct ia_css_cnr_config *from)
 {
 	to->coring_u = from->coring_u;
 	to->coring_v = from->coring_v;
@@ -51,10 +52,14 @@ ia_css_cnr_encode(struct sh_css_isp_cnr_params *to,
 }
 
 void
-ia_css_cnr_dump(const struct sh_css_isp_cnr_params *cnr, unsigned level);
+ia_css_cnr_dump(
+	const struct sh_css_isp_cnr_params *cnr,
+	unsigned level);
 
 void
-ia_css_cnr_debug_dtrace(const struct ia_css_cnr_config *config, unsigned level)
+ia_css_cnr_debug_dtrace(
+	const struct ia_css_cnr_config *config,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.coring_u=%d, config.coring_v=%d, "

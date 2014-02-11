@@ -33,8 +33,9 @@ const struct ia_css_de_config default_de_config = {
 };
 
 void
-ia_css_de_encode(struct sh_css_isp_de_params *to,
-		 const struct ia_css_de_config *from)
+ia_css_de_encode(
+	struct sh_css_isp_de_params *to,
+	const struct ia_css_de_config *from)
 {
 	to->pixelnoise =
 	    uDIGIT_FITTING(from->pixelnoise, 16, SH_CSS_BAYER_BITS);
@@ -47,7 +48,9 @@ ia_css_de_encode(struct sh_css_isp_de_params *to,
 }
 
 void
-ia_css_de_dump(const struct sh_css_isp_de_params *de, unsigned level)
+ia_css_de_dump(
+	const struct sh_css_isp_de_params *de,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level, "Demosaic:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
@@ -61,7 +64,9 @@ ia_css_de_dump(const struct sh_css_isp_de_params *de, unsigned level)
 }
 
 void
-ia_css_de_debug_dtrace(const struct ia_css_de_config *config, unsigned level)
+ia_css_de_debug_dtrace(
+	const struct ia_css_de_config *config,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.pixelnoise=%d, "

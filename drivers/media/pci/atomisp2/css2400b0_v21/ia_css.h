@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140207_1503 */
+/* Release Version: irci_master_20140211_0614 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -47,6 +47,9 @@
 #include "ia_css_stream_public.h"
 #include "ia_css_tpg.h"
 
+/* a common size for the version arrays */
+#define MAX_VERSION_SIZE 	500
+
 struct ia_css_properties {
 	int  gdc_coord_one;
 	bool l1_base_is_index; /**< Indicate whether the L1 page base
@@ -55,6 +58,17 @@ struct ia_css_properties {
 };
 
 /* ===== GENERIC ===== */
+
+/** @brief Retrieves the current CSS version
+ * @param[out]	version		A pointer to a buffer where to put the generated
+ *				version string. NULL is ignored.
+ *
+ * This function generates and returns the version string. If FW is loaded, it
+ * attaches the FW version.
+ */
+enum ia_css_err
+ia_css_get_version(char *version, int max_size);
+
 
 /** @brief Get hardware properties
  * @param[in,out]	properties The hardware properties

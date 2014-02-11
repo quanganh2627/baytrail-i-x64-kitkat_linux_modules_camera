@@ -48,8 +48,9 @@ ia_css_s3a_configure(unsigned int raw_bit_depth)
 }
 
 static void
-ia_css_ae_encode(struct sh_css_isp_ae_params *to,
-	 const struct ia_css_3a_config *from)
+ia_css_ae_encode(
+	struct sh_css_isp_ae_params *to,
+	const struct ia_css_3a_config *from)
 {
 	/* coefficients to calculate Y */
 	to->y_coef_r =
@@ -61,8 +62,9 @@ ia_css_ae_encode(struct sh_css_isp_ae_params *to,
 }
 
 static void
-ia_css_awb_encode(struct sh_css_isp_awb_params *to,
-	 const struct ia_css_3a_config *from)
+ia_css_awb_encode(
+	struct sh_css_isp_awb_params *to,
+	const struct ia_css_3a_config *from)
 {
 	/* AWB level gate */
 	to->lg_high_raw =
@@ -74,8 +76,9 @@ ia_css_awb_encode(struct sh_css_isp_awb_params *to,
 }
 
 static void
-ia_css_af_encode(struct sh_css_isp_af_params *to,
-	 const struct ia_css_3a_config *from)
+ia_css_af_encode(
+	struct sh_css_isp_af_params *to,
+	const struct ia_css_3a_config *from)
 {
 	unsigned int i;
 
@@ -91,8 +94,9 @@ ia_css_af_encode(struct sh_css_isp_af_params *to,
 }
 
 void
-ia_css_s3a_encode(struct sh_css_isp_s3a_params *to,
-		  const struct ia_css_3a_config *from)
+ia_css_s3a_encode(
+	struct sh_css_isp_s3a_params *to,
+	const struct ia_css_3a_config *from)
 {
 	ia_css_ae_encode(&to->ae,  from);
 	ia_css_awb_encode(&to->awb, from);
@@ -101,9 +105,10 @@ ia_css_s3a_encode(struct sh_css_isp_s3a_params *to,
 
 #if 0
 void
-ia_css_process_s3a(unsigned pipe_id,
-		  const struct ia_css_pipeline_stage *stage,
-		  struct ia_css_isp_parameters *params)
+ia_css_process_s3a(
+	unsigned pipe_id,
+	const struct ia_css_pipeline_stage *stage,
+	struct ia_css_isp_parameters *params)
 {
 	short dmem_offset = stage->binary->info->mem_offsets->dmem.s3a;
 
@@ -125,7 +130,9 @@ ia_css_process_s3a(unsigned pipe_id,
 #endif
 
 void
-ia_css_ae_dump(const struct sh_css_isp_ae_params *ae, unsigned level)
+ia_css_ae_dump(
+	const struct sh_css_isp_ae_params *ae,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"ae_y_coef_r", ae->y_coef_r);
@@ -136,7 +143,9 @@ ia_css_ae_dump(const struct sh_css_isp_ae_params *ae, unsigned level)
 }
 
 void
-ia_css_awb_dump(const struct sh_css_isp_awb_params *awb, unsigned level)
+ia_css_awb_dump(
+	const struct sh_css_isp_awb_params *awb,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"awb_lg_high_raw", awb->lg_high_raw);
@@ -147,7 +156,9 @@ ia_css_awb_dump(const struct sh_css_isp_awb_params *awb, unsigned level)
 }
 
 void
-ia_css_af_dump(const struct sh_css_isp_af_params *af, unsigned level)
+ia_css_af_dump(
+	const struct sh_css_isp_af_params *af,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"af_fir1[0]", af->fir1[0]);
@@ -180,7 +191,9 @@ ia_css_af_dump(const struct sh_css_isp_af_params *af, unsigned level)
 }
 
 void
-ia_css_s3a_dump(const struct sh_css_isp_s3a_params *s3a, unsigned level)
+ia_css_s3a_dump(
+	const struct sh_css_isp_s3a_params *s3a,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level, "S3A Support:\n");
 	ia_css_ae_dump  (&s3a->ae, level);
@@ -189,7 +202,9 @@ ia_css_s3a_dump(const struct sh_css_isp_s3a_params *s3a, unsigned level)
 }
 
 void
-ia_css_s3a_debug_dtrace(const struct ia_css_3a_config *config, unsigned level)
+ia_css_s3a_debug_dtrace(
+	const struct ia_css_3a_config *config,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.ae_y_coef_r=%d, config.ae_y_coef_g=%d, "
