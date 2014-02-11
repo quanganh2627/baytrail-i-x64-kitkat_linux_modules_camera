@@ -199,6 +199,8 @@ struct atomisp_css_params {
 	   copy_to_user. */
 	struct ia_css_3a_statistics *s3a_user_stat;
 	void *metadata_user;
+	/* The metadata_exp_id is used sensor metadata. */
+	uint32_t metadata_exp_id;
 
 	struct ia_css_dvs2_coefficients *dvs_coeff;
 	struct ia_css_dvs2_statistics *dvs_stat;

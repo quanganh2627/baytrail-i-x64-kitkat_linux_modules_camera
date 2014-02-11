@@ -2132,7 +2132,8 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 	struct atomisp_device *isp = asd->isp;
 	struct ia_css_stream_config *stream_config;
 	struct ia_css_stream_info *stream_info;
-	int ret = -EFAULT;
+	struct camera_mipi_info *mipi_info;
+	int ret, i;
 
 	if (flag != 0)
 		return -EINVAL;
@@ -2161,8 +2162,18 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 		return -EAGAIN;
 	}
 
-	md->exp_id = 0; /* TODO: set this to the correct value once the FW
-			   supports it */
+	mipi_info = atomisp_to_sensor_mipi_info(
+		isp->inputs[asd->input_curr].camera);
+	if (mipi_info == NULL)
+		return -EINVAL;
+
+	if (mipi_info->metadata_effective_width != NULL) {
+		for (i = 0; i < md->height; i++)
+			md->effective_width[i] =
+				mipi_info->metadata_effective_width[i];
+	}
+
+	md->exp_id = asd->params.metadata_exp_id;
 	ret = copy_to_user(md->data, asd->params.metadata_user,
 			   stream_info->metadata_info.size);
 	if (ret) {
@@ -2707,6 +2718,17 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 		config->dvs_envelop.height =
 		    asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipe_configs[IA_CSS_PIPE_ID_VIDEO].
 		    dvs_envelope.height;
+#endif
+#ifdef CSS21
+		/* We always return the resolution and stride even if there is
+		 * no valid metadata. This allows the caller to get the
+		 * information needed to allocate user-space buffers. */
+		config->metadata_config.metadata_height = asd->
+			stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.
+			metadata_info.resolution.height;
+		config->metadata_config.metadata_stride = asd->
+			stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.
+			metadata_info.stride;
 #endif
 		return 0;
 	}

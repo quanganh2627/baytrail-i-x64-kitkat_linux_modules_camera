@@ -1592,6 +1592,7 @@ void atomisp_css_get_metadata(struct atomisp_sub_device *asd,
 		atomisp_css2_mm_load(
 			isp_css_buffer->css_buffer.data.metadata->address,
 			asd->params.metadata_user, md_size);
+		asd->params.metadata_exp_id = isp_css_buffer->css_buffer.exp_id;
 		asd->params.metadata_buf_data_valid = true;
 	}
 }

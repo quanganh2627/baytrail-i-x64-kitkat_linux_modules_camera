@@ -82,6 +82,15 @@ struct atomisp_3a_statistics32 {
 #endif
 };
 
+struct atomisp_metadata32 {
+	compat_uptr_t data;
+	uint32_t width;
+	uint32_t height;
+	uint32_t stride;
+	uint32_t exp_id;
+	compat_uptr_t effective_width;
+};
+
 struct atomisp_morph_table32 {
 #ifdef CSS20
 	unsigned int enabled;
@@ -292,6 +301,15 @@ struct atomisp_dvs_6axis_config32 {
 
 #define ATOMISP_IOC_G_ISP_GDC_TAB32 \
 	_IOR('v', BASE_VIDIOC_PRIVATE + 22, struct atomisp_morph_table32)
+/*
+ * FIXME: BZ:172549
+ * Now the ATOMISP_IOC_G_ISP_GDC_TAB isn't used in current camera system and all
+ * private ioctl ID are used. so ATOMISP_IOC_G_METADATA is temporary to use
+ * private ID 22.
+ */
+#define ATOMISP_IOC_G_METADATA32 \
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 22, struct atomisp_metadata32)
+
 #define ATOMISP_IOC_S_ISP_GDC_TAB32 \
 	_IOW('v', BASE_VIDIOC_PRIVATE + 23, struct atomisp_morph_table32)
 
