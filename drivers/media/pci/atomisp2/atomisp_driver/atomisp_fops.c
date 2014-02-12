@@ -506,6 +506,18 @@ unsigned int atomisp_dev_users(struct atomisp_device *isp)
 	return sum;
 }
 
+static unsigned int atomisp_input_users(struct atomisp_sub_device *asd)
+{
+	struct atomisp_device *isp = asd->isp;
+	unsigned int i, sum;
+
+	for (i = 0, sum = 0; i < isp->num_of_streams; i++)
+		if (asd->input == isp->asd[i].input)
+			sum += atomisp_subdev_users(&isp->asd[i]);
+
+	return sum;
+}
+
 static int atomisp_open(struct file *file)
 {
 	struct video_device *vdev = video_devdata(file);
@@ -663,6 +675,11 @@ static int atomisp_release(struct file *file)
 
 	atomisp_free_3a_dis_buffers(asd);
 	atomisp_free_internal_buffers(asd);
+
+	/* Don't turn off the sensor if some other sub device is using it. */
+	if (atomisp_input_users(asd))
+		goto done;
+
 	ret = v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 				       core, s_power, 0);
 	if (ret)
