@@ -22,8 +22,8 @@
 #ifndef _SH_CSS_PARAMS_SHADING_H_
 #define _SH_CSS_PARAMS_SHADING_H_
 
-#include "ia_css.h"
-#include "ia_css_binary.h"
+#include <ia_css_types.h>
+#include <ia_css_binary.h>
 
 void
 prepare_shading_table(const struct ia_css_shading_table *in_table,

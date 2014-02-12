@@ -223,13 +223,13 @@ struct sh_css_queues {
 #define DEFAULT_3A_GRID_INFO \
 { \
  	0,				/* ae_enable */ \
-   	{0,0,0,0,0,0,0,0},	        /* AE:     width,height,b_width,b_height,x_start,y_start,x_end,y_end*/ \
+	{0,0,0,0,0,0,0,0,0},	        /* AE:     width,height,b_width,b_height,x_start,y_start,x_end,y_end*/ \
 	0,				/* awb_enable */ \
 	{0,0,0,0,0,0,0,0},              /* AWB:    width,height,b_width,b_height,x_start,y_start,x_end,y_end*/ \
 	0,				/* af_enable */ \
-	{0,0,0,0,0,0},			/* AF:     width,height,b_width,b_height,x_start,y_start*/ \
+	{0,0,0,0,0,0,0},		/* AF:     width,height,b_width,b_height,x_start,y_start,ff_en*/ \
   	0,				/* awb_fr_enable */ \
-	{0,0,0,0,0,0},                  /* AWB_FR: width,height,b_width,b_height,x_start,y_start*/ \
+	{0,0,0,0,0,0,0},                  /* AWB_FR: width,height,b_width,b_height,x_start,y_start,ff_en*/ \
   	0,				/* elem_bit_depth */ \
 }
 #else

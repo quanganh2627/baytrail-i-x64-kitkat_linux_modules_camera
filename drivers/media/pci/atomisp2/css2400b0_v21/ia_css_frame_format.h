@@ -34,7 +34,7 @@
    4. YUV444: hor = 1, ver = 1
  */
 enum ia_css_frame_format {
-	IA_CSS_FRAME_FORMAT_NV11,       /**< 12 bit YUV 411, Y, UV plane */
+	IA_CSS_FRAME_FORMAT_NV11=0,     /**< 12 bit YUV 411, Y, UV plane */
 	IA_CSS_FRAME_FORMAT_NV12,       /**< 12 bit YUV 420, Y, UV plane */
 	IA_CSS_FRAME_FORMAT_NV16,       /**< 16 bit YUV 422, Y, UV plane */
 	IA_CSS_FRAME_FORMAT_NV21,       /**< 12 bit YUV 420, Y, VU plane */
@@ -74,7 +74,6 @@ enum ia_css_frame_format {
 							   line; UYVY interleaved
 							   even line */
 };
-/* This one is hardcoded because the ISP firmware requires it known at
- * compile time (preprocessor time in fact). */
-#define IA_CSS_FRAME_FORMAT_NUM 23
+#define IA_CSS_FRAME_FORMAT_NUM (IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10 + 1)
+
 #endif /* __IA_CSS_FRAME_FORMAT_H */
