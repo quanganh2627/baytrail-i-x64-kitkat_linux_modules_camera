@@ -50,7 +50,6 @@
 #include "gp_device.h"		/* gp_device_reg_load */
 #endif
 
-#include "ia_css.h"
 #include "sh_css_internal.h"
 #if !defined(HAS_NO_INPUT_SYSTEM)
 #include "ia_css_isys.h"

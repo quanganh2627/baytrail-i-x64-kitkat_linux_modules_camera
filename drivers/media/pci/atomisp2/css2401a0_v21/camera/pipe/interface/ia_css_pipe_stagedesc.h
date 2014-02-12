@@ -19,13 +19,13 @@
  *
  */
 
-//Stagedesc Module
 #ifndef __IA_CSS_PIPE_STAGEDESC_H__
 #define __IA_CSS_PIPE_STAGEDESC_H__
 
-#include "ia_css.h"
+#include <ia_css_acc_types.h> /* ia_css_fw_info */
+#include <ia_css_frame_public.h>
+#include <ia_css_binary.h>
 #include "ia_css_pipeline.h"
-#include "ia_css_binary.h"
 #include "ia_css_pipeline_common.h"
 
 extern void ia_css_pipe_get_generic_stage_desc(
@@ -56,5 +56,5 @@ extern void ia_css_pipe_get_sp_func_stage_desc(
 	enum ia_css_pipeline_stage_sp_func sp_func,
 	unsigned max_input_width);
 
-#endif /*__IA_CSS_PIPE_STAGEDESC__H__*/
+#endif /*__IA_CSS_PIPE_STAGEDESC__H__ */
 

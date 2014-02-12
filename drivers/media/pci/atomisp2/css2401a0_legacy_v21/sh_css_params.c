@@ -147,7 +147,6 @@
 #define PIX_SHIFT_FILTER_RUN_IN_Y 12
 
 #if defined(IS_ISP_2500_SYSTEM)
-static struct sh_css_acc_cluster_parameters acc_cluster_parameters;
 static struct isp_acc_param sh_css_acc_cluster_parameters;
 #endif
 
@@ -2945,13 +2944,6 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	succ &= (ddr_ptrs->isp_param != mmgr_NULL);
 
 #if defined(IS_ISP_2500_SYSTEM)
-	ddr_ptrs_size->acc_cluster_data_for_sp = sizeof(sh_css_acc_cluster_parameters_t);
-	ddr_ptrs->acc_cluster_data_for_sp = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
-				mmgr_malloc(sizeof(sh_css_acc_cluster_parameters_t)));
-	succ &= (ddr_ptrs->acc_cluster_data_for_sp != mmgr_NULL);
-#endif
-
-#if defined(IS_ISP_2500_SYSTEM)
 	ddr_ptrs_size->acc_cluster_params_for_sp = sizeof(struct isp_acc_param);
 	ddr_ptrs->acc_cluster_params_for_sp = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
 				mmgr_malloc(sizeof(struct isp_acc_param)));
@@ -3476,30 +3468,6 @@ static void sh_css_update_isp_mem_params_to_ddr(
 
 #if defined(IS_ISP_2500_SYSTEM)
 void
-sh_css_update_acc_cluster_data_to_ddr(hrt_vaddress ddr_ptr)
-{
-	size_t size = sizeof(sh_css_acc_cluster_parameters_t);
-#ifdef HRT_CSIM
-	/* ispparm struct is read with DMA which reads
-	 * multiples of the DDR word with (32 bytes):
-	 * So we pad with zeroes to prevent warnings in csim.
-	 */
-	unsigned int aligned_width, padding_bytes;
-	hrt_vaddress pad_ptr;
-
-	aligned_width = CEIL_MUL(size, HIVE_ISP_DDR_WORD_BYTES);
-	padding_bytes = aligned_width - size;
-	pad_ptr = ddr_ptr + size;
-	mmgr_clear(pad_ptr, padding_bytes);
-#endif
-	mmgr_store(ddr_ptr,
-	     &acc_cluster_parameters,
-	     size);
-}
-#endif
-
-#if defined(IS_ISP_2500_SYSTEM)
-void
 sh_css_update_acc_cluster_params_to_ddr(hrt_vaddress ddr_ptr)
 {
 	size_t size = sizeof(struct isp_acc_param);
@@ -3739,17 +3707,6 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 				break;
 			sh_css_update_isp_params_to_ddr(params, cur_map->isp_param);
 		}
-#if defined(IS_ISP_2500_SYSTEM)
-		if (acc_cluster_params_changed || params->isp_params_changed)
-		{
-			reallocate_buffer(&cur_map->acc_cluster_data_for_sp ,
-				  &cur_map_size->acc_cluster_data_for_sp ,
-				  cur_map_size->acc_cluster_data_for_sp ,
-				  true,
-				  &err);
-			sh_css_update_acc_cluster_data_to_ddr( cur_map->acc_cluster_data_for_sp );
-		}
-#endif
 #if defined(IS_ISP_2500_SYSTEM)
 		if (acc_cluster_params_changed || params->isp_params_changed)
 		{

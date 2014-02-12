@@ -27,7 +27,8 @@
  *  ISP block: vfeven_horizontal_downscale
  */
 
-#include "ia_css.h"
+#include <ia_css_frame_public.h>
+#include <type_support.h>
 
 struct ia_css_vf_configuration {
 	uint32_t vf_downscale_bits; /**< Log VF downscale value */
