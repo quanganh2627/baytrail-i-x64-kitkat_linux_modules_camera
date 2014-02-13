@@ -577,8 +577,14 @@ static int atomisp_open(struct file *file)
 		goto error;
 	}
 
-	if (pipe->users)
-		goto done;
+	/*
+	 * atomisp does not allow multiple open
+	 */
+	if (pipe->users) {
+		dev_dbg(isp->dev, "video node already opened\n");
+		mutex_unlock(&isp->mutex);
+		return -EBUSY;
+	}
 
 	ret = atomisp_init_pipe(pipe);
 	if (ret)
