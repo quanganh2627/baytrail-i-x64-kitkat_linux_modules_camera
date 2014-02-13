@@ -3803,6 +3803,11 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 		f->fmt.pix.width, f->fmt.pix.height, source_pad,
 		f->fmt.pix.bytesperline);
 
+	if (asd->streaming == ATOMISP_DEVICE_STREAMING_ENABLED) {
+		dev_warn(isp->dev, "ISP does not support set format while at streaming!\n");
+		return -EBUSY;
+	}
+
 	v4l2_fh_init(&fh.vfh, vdev);
 
 	format_bridge = atomisp_get_format_bridge(f->fmt.pix.pixelformat);
