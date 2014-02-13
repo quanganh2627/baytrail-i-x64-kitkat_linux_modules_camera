@@ -509,43 +509,132 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_2w_cast_to_1w (
 
 /* clipping */
 
+/** @brief Clip asymetrical
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		_a clipped between ~_b and b
+ *
+ * This function will clip the first argument between
+ * the negated version of _b and _b.
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_clip_asym(
     const tvector1w     _a,
     const tvector1w     _b);
 
+/** @brief Clip zero
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		_a clipped beteween 0 and _b
+ *
+ * This function will clip the first argument between
+ * zero and _b.
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_clipz(
     const tvector1w     _a,
     const tvector1w     _b);
 
 /* division */
 
+/** @brief Divide
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		_a / _b
+ *
+ * This function will divide the first argument by
+ * the second argument.
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_div(
     const tvector1w     _a,
     const tvector1w     _b);
 
+/** @brief Modulo
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		_a % _b
+ *
+ * This function will return _a modulo _b.
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mod(
     const tvector1w     _a,
     const tvector1w     _b);
 
+/** @brief Square root
+ *
+ * @param[in] _a	input
+ *
+ * @return		square root of _a
+ *
+ * This function will calculate the square root of _a
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_sqrt(
-    const tvector1w     _a,
-    const tvector1w     _b);
+    const tvector1w     _a);
 
 /* Miscellaneous */
 
+/** @brief Multiplexer
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ * @param[in] _c	condition
+ *
+ * @return		_c ? _a : _b
+ *
+ * This function will return _a if the condition _c
+ * is true and _b otherwise.
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mux(
     const tvector1w     _a,
     const tvector1w     _b,
     const tflags           _c);
 
+/** @brief Average
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		average(_a,_b)
+ *
+ * This function will calculate the average of
+ * the two input arguments.
+ * And depending on the rounding mode of the core
+ * it will round to nearest or to nearest even.
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_avgrnd(
     const tvector1w     _a,
     const tvector1w     _b);
 
+/** @brief Minimum
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		(_a < _b) ? _a : _b;
+ *
+ * This function will return the smallest of both
+ * input arguments.
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_min(
     const tvector1w     _a,
     const tvector1w     _b);
 
+/** @brief Maximum
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		(_a > _b) ? _a : _b;
+ *
+ * This function will return the largest of both
+ * input arguments.
+ */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_max(
     const tvector1w     _a,
     const tvector1w     _b);
