@@ -3925,10 +3925,10 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 				V4L2_SUBDEV_FORMAT_ACTIVE,
 				source_pad, &isp_source_fmt);
 
-	if (!atomisp_subdev_format_conversion(asd, source_pad))
-		padding_w = 0, padding_h = 0;
-
-	if (IS_BYT) {
+	if (!atomisp_subdev_format_conversion(asd, source_pad)) {
+		padding_w = 0;
+		padding_h = 0;
+	} else if (IS_BYT) {
 		padding_w = 12;
 		padding_h = 12;
 	}
