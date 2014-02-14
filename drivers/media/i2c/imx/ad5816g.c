@@ -150,7 +150,7 @@ int ad5816g_t_focus_abs(struct v4l2_subdev *sd, s32 value)
 	int ret;
 
 	value = min(value, AD5816G_MAX_FOCUS_POS);
-	ret = ad5816g_t_focus_vcm(sd, AD5816G_MAX_FOCUS_POS - value);
+	ret = ad5816g_t_focus_vcm(sd, value);
 	if (ret == 0) {
 		ad5816g_dev.number_of_steps = value - ad5816g_dev.focus;
 		ad5816g_dev.focus = value;
