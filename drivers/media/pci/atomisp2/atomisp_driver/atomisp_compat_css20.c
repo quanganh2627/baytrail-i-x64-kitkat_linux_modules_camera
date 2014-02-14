@@ -1683,7 +1683,10 @@ void atomisp_css_enable_continuous(struct atomisp_sub_device *asd,
 	if (stream_env->stream_config.continuous != !!enable) {
 		stream_env->stream_config.continuous = !!enable;
 #ifdef CSS21
-		stream_env->stream_config.pack_raw_pixels = true;
+		/* ISP2401 new input system doesn't support pack_raw_pixels yet
+		 * (ICG BZ 1853). FIXME: make always true when it does. */
+		stream_env->stream_config.pack_raw_pixels =
+			!IS_HWREVISION(asd->isp, ATOMISP_HW_REVISION_ISP2401);
 #endif
 		for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
 			stream_env->update_pipe[i] = true;
