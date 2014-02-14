@@ -29,10 +29,12 @@
 #include "ia_css_pipeline.h"
 #include "ia_css_isp_param.h"
 #include "ia_css_eventq.h"
+#include "ia_css_bufq.h"
 
 #define PIPELINE_NUM_UNMAPPED                   (~0)
 #define PIPELINE_SP_THREAD_EMPTY_TOKEN          (0x0)
 #define PIPELINE_SP_THREAD_RESERVED_TOKEN       (0x1)
+
 
 /*******************************************************
 *** Static variables
@@ -82,17 +84,17 @@ enum ia_css_err ia_css_pipeline_create(
 	return IA_CSS_SUCCESS;
 }
 
-void ia_css_pipeline_map(struct ia_css_pipeline *pipeline, bool map)
+void ia_css_pipeline_map(unsigned int pipe_num, bool map)
 {
-	assert(pipeline != NULL);
+	assert(pipe_num < IA_CSS_PIPELINE_NUM_MAX);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_pipeline_map() enter: pipe_num=%d\n", pipeline->pipe_num);
+		"ia_css_pipeline_map() enter: pipe_num=%d\n", pipe_num);
 
 	if(map) {
-		pipeline_map_num_to_sp_thread(pipeline->pipe_num);
+		pipeline_map_num_to_sp_thread(pipe_num);
 	} else {
-		pipeline_unmap_num_to_sp_thread(pipeline->pipe_num);
+		pipeline_unmap_num_to_sp_thread(pipe_num);
 	}
 }
 
@@ -109,8 +111,8 @@ void ia_css_pipeline_destroy(struct ia_css_pipeline *pipeline)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_destroy() enter: pipe_num=%d\n",
 		pipeline->pipe_num);
-	/* Free the pipeline number */
 
+	/* Free the pipeline number */
 	ia_css_pipeline_clean(pipeline);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -573,7 +575,8 @@ static void pipeline_init_defaults(
 	unsigned int pipe_num)
 {
 	struct ia_css_frame init_frame;
-	init_frame.dynamic_data_index = SH_CSS_INVALID_FRAME_ID;
+	init_frame.dynamic_data_index = (int)SH_CSS_INVALID_QUEUE_ID;
+	init_frame.buf_type = IA_CSS_BUFFER_TYPE_INVALID;
 
 	pipeline->pipe_id = pipe_id;
 	pipeline->stages = NULL;

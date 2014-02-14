@@ -63,6 +63,7 @@ struct ia_css_binary_descr {
 	bool enable_dvs_6axis;
 	bool enable_reduced_pipe;
 	bool enable_dz;
+	bool enable_xnr;
 	bool enable_fractional_ds;
 	struct ia_css_resolution dvs_env;
 	enum ia_css_stream_format stream_format;

@@ -354,7 +354,7 @@ assert(out_frame != NULL);
 	 * TODO: Initialize the static frame data with
 	 * "sh_css_frame_null".
 	 */
-	for (i = 0; i < SH_CSS_NUM_FRAME_IDS; i++)
+	for (i = 0; i < IA_CSS_NUM_BUFFER_TYPE; i++)
 		/* Here, we do not initialize it to zero for now
 		 * to be able to recognize non-updated elements
 		 * This is what it should become:
@@ -412,7 +412,7 @@ static void
 sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 				const struct ia_css_frame *frame_in,
 				unsigned pipe_num, unsigned stage_num,
-				enum sh_css_frame_id id)
+				enum ia_css_buffer_type type)
 {
 	assert(frame_in != NULL);
 
@@ -422,28 +422,29 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_copy_frame_to_spframe frame id %d ptr 0x%08x\n",
-		id,
-		sh_css_sp_stage.frames.static_frame_data[id]);
+		type,
+		sh_css_sp_stage.frames.static_frame_data[type]);
 
 
 	if (frame_in->dynamic_data_index >= 0) {
-		assert((id == sh_css_frame_in) ||
-				(id == sh_css_frame_out) ||
-				(id == sh_css_frame_out_vf));
+		assert((type == IA_CSS_BUFFER_TYPE_INPUT_FRAME) ||
+				(type == IA_CSS_BUFFER_TYPE_OUTPUT_FRAME) ||
+				(type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME));
 		/*
 		 * value >=0 indicates that function init_frame_pointers()
 		 * should use the dynamic data address
 		 */
 		assert(frame_in->dynamic_data_index <
-					SH_CSS_NUM_DYNAMIC_FRAME_IDS);
+					SH_CSS_MAX_NUM_QUEUES);
 		/*
 		 * static_frame_data is overloaded, small values (<3) are
 		 * the dynamic index, large values are the static address
 		 */
-		sh_css_sp_stage.frames.static_frame_data[id] =
+		sh_css_sp_stage.frames.static_frame_data[type] =
 						frame_in->dynamic_data_index;
+		sh_css_sp_stage.frames.buf_type[type] = frame_in->buf_type;
 	} else {
-		sh_css_sp_stage.frames.static_frame_data[id] = frame_in->data;
+		sh_css_sp_stage.frames.static_frame_data[type] = frame_in->data;
 	}
 
 	if (!sp_frame_out)
@@ -547,7 +548,7 @@ set_input_frame_buffer(const struct ia_css_frame *frame,
 	}
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.in, frame,
 					pipe_num, stage_num,
-					sh_css_frame_in);
+					IA_CSS_BUFFER_TYPE_INPUT_FRAME);
 
 	return IA_CSS_SUCCESS;
 }
@@ -589,7 +590,7 @@ set_output_frame_buffer(const struct ia_css_frame *frame,
 	}
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.out, frame,
 					pipe_num, stage_num,
-					sh_css_frame_out);
+					IA_CSS_BUFFER_TYPE_OUTPUT_FRAME);
 	return IA_CSS_SUCCESS;
 }
 
@@ -597,7 +598,7 @@ static enum ia_css_err
 set_video_delay_frame_buffer(const struct ia_css_frame *frame,
 			     unsigned pipe_num, unsigned stage_num, unsigned index)
 {
-	enum sh_css_frame_id id = sh_css_frame_video_delay_0 + index;
+	enum ia_css_buffer_type id = IA_CSS_BUFFER_TYPE_VIDEO_DELAY_0 + index;
 
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -614,7 +615,7 @@ static enum ia_css_err
 set_tnr_frame_buffer(const struct ia_css_frame *frame,
 		     unsigned pipe_num, unsigned stage_num, unsigned index)
 {
-	enum sh_css_frame_id id = sh_css_frame_tnr_0 + index;
+	enum ia_css_buffer_type id = IA_CSS_BUFFER_TYPE_TNR_0 + index;
 
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -650,7 +651,7 @@ set_view_finder_buffer(const struct ia_css_frame *frame,
 
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.out_vf, frame,
 					pipe_num, stage_num,
-					sh_css_frame_out_vf);
+					IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME);
 	return IA_CSS_SUCCESS;
 }
 
@@ -860,6 +861,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	int i;
 
 	unsigned int thread_id;
+	enum sh_css_queue_id queue_id;
 	bool continuous = sh_css_continuous_is_enabled((uint8_t)pipe_num);
 
 	assert(binary != NULL);
@@ -947,7 +949,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	 * TODO: Initialize the static frame data with
 	 * "sh_css_frame_null".
 	 */
-	for (i = 0; i < SH_CSS_NUM_FRAME_IDS; i++)
+	for (i = 0; i < IA_CSS_NUM_BUFFER_TYPE; i++)
 		/* Here, we do not initialize it to zero for now
 		 * to be able to recognize non-updated elements
 		 * This is what it should become:
@@ -956,6 +958,19 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		sh_css_sp_stage.frames.static_frame_data[i] = mmgr_EXCEPTION;
 
 	err = sh_css_sp_write_frame_pointers(args, pipe_num, stage);
+	//TODO: move it to a better place
+	if (binary->info->sp.enable.s3a) {
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_3A_STATISTICS, thread_id, &queue_id);
+		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_3A_STATISTICS] = queue_id;
+	}
+	if (binary->info->sp.enable.dis) {
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_DIS_STATISTICS, thread_id, &queue_id);
+		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_DIS_STATISTICS] = queue_id;
+	}
+#if defined SH_CSS_ENABLE_METADATA
+	ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_METADATA, thread_id, &queue_id);
+	sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_METADATA] = queue_id;
+#endif
 	if (err != IA_CSS_SUCCESS)
 		return err;
 

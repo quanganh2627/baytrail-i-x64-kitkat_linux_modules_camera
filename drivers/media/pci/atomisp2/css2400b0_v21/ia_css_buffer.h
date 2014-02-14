@@ -25,24 +25,6 @@
 #include <type_support.h>
 #include "ia_css_types.h"
 
-/** Enumeration of buffer types. Buffers can be queued and de-queued
- *  to hand them over between IA and ISP.
- *  Note: IA_CSS_BUFFER_TYPE_PARAMETER_SET must be the last one.
- */
-enum ia_css_buffer_type {
-	IA_CSS_BUFFER_TYPE_3A_STATISTICS,
-	IA_CSS_BUFFER_TYPE_DIS_STATISTICS,
-	IA_CSS_BUFFER_TYPE_INPUT_FRAME,
-	IA_CSS_BUFFER_TYPE_OUTPUT_FRAME,
-	IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME,
-	IA_CSS_BUFFER_TYPE_RAW_OUTPUT_FRAME,
-	IA_CSS_BUFFER_TYPE_CUSTOM_INPUT,
-	IA_CSS_BUFFER_TYPE_CUSTOM_OUTPUT,
-	IA_CSS_BUFFER_TYPE_METADATA,
-	IA_CSS_BUFFER_TYPE_PARAMETER_SET,
-};
-#define IA_CSS_BUFFER_TYPE_NUM (IA_CSS_BUFFER_TYPE_PARAMETER_SET + 1)
-
 /** Buffer structure. This is a container structure that enables content
  *  independent buffer queues and access functions.
  */
