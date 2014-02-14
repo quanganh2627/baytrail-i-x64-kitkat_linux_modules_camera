@@ -2275,6 +2275,9 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		err = atomisp_get_dis_stat(asd, arg);
 		break;
 
+	case ATOMISP_IOC_G_DVS2_BQ_RESOLUTIONS:
+		err = atomisp_get_dvs2_bq_resolutions(asd, arg);
+		break;
 	case ATOMISP_IOC_S_DIS_COEFS:
 		err = atomisp_set_dis_coefs(asd, arg);
 		break;

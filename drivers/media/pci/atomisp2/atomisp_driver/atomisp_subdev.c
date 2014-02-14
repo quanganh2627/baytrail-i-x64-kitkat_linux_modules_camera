@@ -404,7 +404,8 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 			break;
 
 		if (isp_sd->params.video_dis_en &&
-		    isp_sd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
+		    isp_sd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
+		    !isp_sd->continuous_mode->val) {
 			dvs_w = rounddown(crop[pad]->width / 5,
 					  ATOM_ISP_STEP_WIDTH);
 			dvs_h = rounddown(crop[pad]->height / 5,

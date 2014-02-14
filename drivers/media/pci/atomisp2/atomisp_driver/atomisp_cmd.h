@@ -184,6 +184,12 @@ int atomisp_get_dis_stat(struct atomisp_sub_device *asd,
 			 struct atomisp_dis_statistics *stats);
 
 /*
+ * Function to get DVS2 BQ resolution settings
+ */
+int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
+			 struct atomisp_dvs2_bq_resolutions *bq_res);
+
+/*
  * Function to set the DIS coefficients.
  */
 int atomisp_set_dis_coefs(struct atomisp_sub_device *asd,

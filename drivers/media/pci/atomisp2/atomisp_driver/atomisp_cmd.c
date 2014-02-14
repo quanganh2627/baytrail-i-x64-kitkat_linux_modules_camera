@@ -2041,6 +2041,64 @@ int atomisp_get_dis_stat(struct atomisp_sub_device *asd,
 	return atomisp_css_get_dis_stat(asd, stats);
 }
 
+/*
+ * Function to get DVS2 BQ resolution settings
+ */
+int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
+			 struct atomisp_dvs2_bq_resolutions *bq_res)
+{
+	struct ia_css_pipe_config *pipe_cfg =
+		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+		.pipe_configs[CSS_PIPE_ID_VIDEO];
+
+	if (!bq_res)
+		return -EINVAL;
+
+	/* the GDC output resolution */
+	bq_res->output_bq.width_bq = pipe_cfg->output_info.res.width / 2;
+	bq_res->output_bq.height_bq = pipe_cfg->output_info.res.height / 2;
+	/*
+	 * ISP filter resolution should be given by CSS/FW, but for now there
+	 * is not such API to query, and it is fixed value, so hardcoded here.
+	 */
+	bq_res->ispfilter_bq.width_bq = 12 / 2;
+	bq_res->ispfilter_bq.height_bq = 12 / 2;
+
+	/* the GDC input resolution */
+	if (!asd->continuous_mode->val) {
+		bq_res->source_bq.width_bq = bq_res->output_bq.width_bq +
+		                             pipe_cfg->dvs_envelope.width / 2;
+		bq_res->source_bq.height_bq = bq_res->output_bq.height_bq +
+		                            pipe_cfg->dvs_envelope.height / 2;
+	} else {
+		bq_res->source_bq.width_bq = pipe_cfg->bayer_ds_out_res.width
+		                             / 2;
+		bq_res->source_bq.height_bq = pipe_cfg->bayer_ds_out_res.height
+		                             / 2;
+	}
+
+	/*
+	 * The DVS envelope resolution which does not include the ISP filter
+	 * resolution.
+	 */
+	if (!asd->params.video_dis_en) {
+		bq_res->envelope_bq.width_bq = 0;
+		bq_res->envelope_bq.height_bq = 0;
+	} else {
+		bq_res->envelope_bq.width_bq = pipe_cfg->dvs_envelope.width
+		                          / 2 - bq_res->ispfilter_bq.width_bq;
+		bq_res->envelope_bq.height_bq = pipe_cfg->dvs_envelope.height
+		                          / 2 - bq_res->ispfilter_bq.height_bq;
+	}
+	dev_dbg(asd->isp->dev, "%s: source_bq.width_bq %d, source_bq.height_bq %d, ispfilter_bq.width_bq %d, ispfilter_bq.height_bq %d, envelope_bq.width_bq %d, envelope_bq.height_bq %d, output_bq.width_bq %d, output_bq.height_bq %d\n",
+	      __func__, bq_res->source_bq.width_bq, bq_res->source_bq.height_bq,
+	      bq_res->ispfilter_bq.width_bq, bq_res->ispfilter_bq.height_bq,
+	      bq_res->envelope_bq.width_bq, bq_res->envelope_bq.height_bq,
+	      bq_res->output_bq.width_bq, bq_res->output_bq.height_bq);
+
+	return 0;
+}
+
 int atomisp_set_dis_coefs(struct atomisp_sub_device *asd,
 			  struct atomisp_dis_coefficients *coefs)
 {
@@ -3669,7 +3727,8 @@ static void atomisp_get_dis_envelop(struct atomisp_sub_device *asd,
 		asd->params.video_dis_en = 0;
 
 	if (asd->params.video_dis_en &&
-	    asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
+	    asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
+	    !asd->continuous_mode->val) {
 		/* envelope is 20% of the output resolution */
 		/*
 		 * dvs envelope cannot be round up.
@@ -3736,7 +3795,8 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 	req_ffmt = ffmt;
 
 	/* Disable dvs if resolution can't be supported by sensor */
-	if (asd->params.video_dis_en) {
+	if (asd->params.video_dis_en &&
+	    source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VIDEO) {
 		ret = v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 			video, try_mbus_fmt, &ffmt);
 		if (ret)
@@ -3770,8 +3830,9 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 	    ffmt.height < ATOM_ISP_STEP_HEIGHT)
 			return -EINVAL;
 
-	if (asd->params.video_dis_en && (ffmt.width < req_ffmt.width ||
-	    ffmt.height < req_ffmt.height)) {
+	if (asd->params.video_dis_en &&
+	    source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VIDEO &&
+	    (ffmt.width < req_ffmt.width || ffmt.height < req_ffmt.height)) {
 		dev_warn(isp->dev,
 			 "can not enable video dis due to sensor limitation.");
 		asd->params.video_dis_en = 0;

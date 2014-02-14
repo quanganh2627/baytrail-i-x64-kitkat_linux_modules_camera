@@ -2203,6 +2203,25 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 		}
 	}
 
+	if (asd->params.video_dis_en) {
+		unsigned int dvs_w, dvs_h, dvs_w_max, dvs_h_max;
+
+		dvs_w = pipe_configs->bayer_ds_out_res.width -
+		        pipe_configs->output_info.res.width;
+		dvs_h = pipe_configs->bayer_ds_out_res.height -
+		        pipe_configs->output_info.res.height;
+		dvs_w_max = rounddown(
+				pipe_configs->output_info.res.width / 5,
+				ATOM_ISP_STEP_WIDTH);
+		dvs_h_max = rounddown(
+				pipe_configs->output_info.res.height / 5,
+				ATOM_ISP_STEP_HEIGHT);
+		pipe_configs->dvs_envelope.width =
+				dvs_w > dvs_w_max ? dvs_w_max : dvs_w;
+		pipe_configs->dvs_envelope.height =
+				dvs_h > dvs_h_max ? dvs_h_max : dvs_h;
+	}
+
 done:
 	stream_config->left_padding = 12;
 	dev_dbg(isp->dev, "configuring pipe[%d]video pp input w=%d.h=%d.\n",
