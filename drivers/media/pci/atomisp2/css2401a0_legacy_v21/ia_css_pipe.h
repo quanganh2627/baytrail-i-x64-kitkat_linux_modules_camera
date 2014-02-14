@@ -99,4 +99,6 @@ struct ia_css_pipe {
 	unsigned int pipe_num;
 };
 
+void ia_css_pipe_map_queue(struct ia_css_pipe *pipe, bool map);
+
 #endif /* __IA_CSS_PIPE_H__ */

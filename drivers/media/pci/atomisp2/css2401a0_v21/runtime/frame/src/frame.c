@@ -815,7 +815,8 @@ static struct ia_css_frame *frame_create(unsigned int width,
 	me->data_bytes = 0;
 	me->data = mmgr_NULL;
 	/* To indicate it is not valid frame. */
-	me->dynamic_data_index = SH_CSS_INVALID_FRAME_ID;
+	me->dynamic_data_index = (int)SH_CSS_INVALID_QUEUE_ID;
+	me->buf_type = IA_CSS_BUFFER_TYPE_INVALID;
 
 	return me;
 }
@@ -824,6 +825,18 @@ static unsigned
 ia_css_elems_bytes_from_info (const struct ia_css_frame_info *info)
 {
 	if (info->format == IA_CSS_FRAME_FORMAT_RGB565)
-		return 2; /* 2 bytes per pixel */
-	return CEIL_DIV(info->raw_bit_depth,8);
+		return 2; /* bytes per pixel */
+
+	if (info->raw_bit_depth)
+		return CEIL_DIV(info->raw_bit_depth,8);
+
+	if (info->format == IA_CSS_FRAME_FORMAT_RAW)
+		return 2; /* bytes per pixel */
+	if (info->format == IA_CSS_FRAME_FORMAT_PLANAR_RGB888)
+		return 3; /* bytes per pixel */
+	if (info->format == IA_CSS_FRAME_FORMAT_RGBA888)
+		return 4; /* bytes per pixel */
+	if (info->format == IA_CSS_FRAME_FORMAT_QPLANE6)
+		return 2; /* bytes per pixel */
+	return 1; /* Default is 1 byte per pixel */
 }

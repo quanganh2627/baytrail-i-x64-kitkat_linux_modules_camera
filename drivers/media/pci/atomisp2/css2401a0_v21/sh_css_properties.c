@@ -19,19 +19,32 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#include "ia_css_properties.h"
+#include <assert_support.h>
+#include "ia_css_types.h"
+#include "gdc_device.h"
 
-#ifndef ACC_VERSION_DATA_H
-#define ACC_VERSION_DATA_H
-
-
-#define CSS_VERSION_STRING "VER:0.6; REL:20140214_07.5_0006; API:2.0.1.0; GIT:irci_20140213_1932__dbe312#dbe312c5d7e8adbf32a3bf9dbd568946fad14d96; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140128_2101; USER:viedifw; "
-
-
+void
+ia_css_get_properties(struct ia_css_properties *properties)
+{
+	assert(properties != NULL);
+#if defined(HAS_GDC_VERSION_2) || defined(HAS_GDC_VERSION_3)
+/*
+ * MW: We don't want to store the coordinates
+ * full range in memory: Truncate
+ */
+	properties->gdc_coord_one = gdc_get_unity(GDC0_ID)/HRT_GDC_COORD_SCALE;
+#else
+#error "Unknown GDC version"
 #endif
 
+	properties->l1_base_is_index = true;
 
+#if defined(HAS_VAMEM_VERSION_1)
+	properties->vamem_type = IA_CSS_VAMEM_TYPE_1;
+#elif defined(HAS_VAMEM_VERSION_2)
+	properties->vamem_type = IA_CSS_VAMEM_TYPE_2;
+#else
+#error "Unknown VAMEM version"
+#endif
+}

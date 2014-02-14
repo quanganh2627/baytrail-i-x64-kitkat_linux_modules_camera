@@ -3490,15 +3490,24 @@ sh_css_update_acc_cluster_params_to_ddr(hrt_vaddress ddr_ptr)
 }
 #endif
 
-void ia_css_dequeue_param_buffers(void)
+void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 {
 	hrt_vaddress cpy;
 	ia_css_queue_t *q;
+	//unsigned int thread_id;
+	enum sh_css_queue_id queue_id;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_param_buffers() enter\n");
+#if 0
 	/* Get queue instance */
+	ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
+	ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
+#else
+	/* use hard-coded value for backward compatibility, will enable above code later */
+	queue_id = IA_CSS_PARAMETER_SET_QUEUE_ID;
+#endif
 	q = sh_css_get_queue(sh_css_sp2host_buffer_queue,
-			     sh_css_param_buffer_queue, -1);
+			     queue_id, -1);
 	if ( NULL == q ) {
 		/* Error as the queue is not initialized */
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -3525,7 +3534,7 @@ void ia_css_dequeue_param_buffers(void)
 		ia_css_eventq_send(eventq,
 				SP_SW_EVENT_ID_2,
 				0,
-				sh_css_param_buffer_queue,
+				queue_id,
 				0);
 
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -3622,6 +3631,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		struct ia_css_pipeline *pipeline;
 		struct ia_css_pipeline_stage *stage;
 		unsigned int thread_id, pipe_num;
+		enum sh_css_queue_id queue_id;
 		ia_css_queue_t *q;
 
 		(void)stage;
@@ -3629,9 +3639,10 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		pipeline = ia_css_pipe_get_pipeline(pipe);
 		pipe_num = ia_css_pipe_get_pipe_num(pipe);
 		ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
 
 		q = sh_css_get_queue(sh_css_host2sp_buffer_queue,
-			     sh_css_param_buffer_queue, thread_id);
+			     queue_id, thread_id);
 		if ( NULL == q ) {
 			/* Error as the queue is not initialized */
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -3771,11 +3782,11 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 			ia_css_eventq_send(eventq,
 					SP_SW_EVENT_ID_1,
 					(uint8_t)thread_id,
-					(uint8_t)sh_css_param_buffer_queue,
+					(uint8_t)queue_id,
 					0);
 		}
 		/* clean-up old copy */
-		ia_css_dequeue_param_buffers();
+		ia_css_dequeue_param_buffers(/*pipe_num*/);
 	} /* end for each 'active' pipeline */
 	/* clear the changed flags after all params
 	   for all pipelines have been updated */

@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140213_0005 */
+/* Release Version: irci_master_20140214_0005 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -46,16 +46,10 @@
 #include "ia_css_stream_format.h"
 #include "ia_css_stream_public.h"
 #include "ia_css_tpg.h"
+#include "ia_css_properties.h"
 
 /* a common size for the version arrays */
 #define MAX_VERSION_SIZE 	500
-
-struct ia_css_properties {
-	int  gdc_coord_one;
-	bool l1_base_is_index; /**< Indicate whether the L1 page base
-				    is a page index or a byte address. */
-	enum ia_css_vamem_type vamem_type;
-};
 
 /* ===== GENERIC ===== */
 
@@ -68,16 +62,6 @@ struct ia_css_properties {
  */
 enum ia_css_err
 ia_css_get_version(char *version, int max_size);
-
-
-/** @brief Get hardware properties
- * @param[in,out]	properties The hardware properties
- * @return	None
- *
- * This function returns a number of hardware properties.
- */
-void
-ia_css_get_properties(struct ia_css_properties *properties);
 
 /** @brief Invalidate the MMU internal cache.
  * @return	None

@@ -26,6 +26,7 @@
 #include "ia_css_err.h"
 #include "ia_css_types.h"
 #include "ia_css_frame_format.h"
+#include "runtime/bufq/interface/ia_css_bufq.h"
 
 /** For RAW input, the bayer order needs to be specified separately. There
  *  are 4 possible orders. The name is constructed by taking the first two
@@ -136,8 +137,15 @@ struct ia_css_frame {
 	 * >=0 if data address can change per pipeline/frame iteration
 	 *     index to dynamic data: ia_css_frame_in, ia_css_frame_out
 	 *                            ia_css_frame_out_vf
+	 *     index to host-sp queue id: queue_0, queue_1 etc.
 	 */
 	int dynamic_data_index;
+	/*
+	 * if it is dynamic frame, buf_type indicates which buffer type it
+	 * should use for event generation. we have this because in vf_pp
+	 * binary, we use output port, but we expect VF_OUTPUT_DONE event
+	 */
+	enum ia_css_buffer_type buf_type;
 	enum ia_css_frame_flash_state flash_state;
 	unsigned int exp_id; /**< exposure id, only valid for continuous
 				capture cases */

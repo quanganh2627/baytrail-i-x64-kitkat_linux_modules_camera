@@ -19,19 +19,26 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __IA_CSS_PROPERTIES_H
+#define __IA_CSS_PROPERTIES_H
 
-#ifndef ACC_VERSION_DATA_H
-#define ACC_VERSION_DATA_H
+#include <type_support.h> /* bool */
+#include <ia_css_types.h> /* ia_css_vamem_type */
 
+struct ia_css_properties {
+	int  gdc_coord_one;
+	bool l1_base_is_index; /**< Indicate whether the L1 page base
+				    is a page index or a byte address. */
+	enum ia_css_vamem_type vamem_type;
+};
 
-#define CSS_VERSION_STRING "VER:0.6; REL:20140214_07.5_0006; API:2.0.1.0; GIT:irci_20140213_1932__dbe312#dbe312c5d7e8adbf32a3bf9dbd568946fad14d96; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140128_2101; USER:viedifw; "
+/** @brief Get hardware properties
+ * @param[in,out]	properties The hardware properties
+ * @return	None
+ *
+ * This function returns a number of hardware properties.
+ */
+void
+ia_css_get_properties(struct ia_css_properties *properties);
 
-
-#endif
-
-
+#endif /* __IA_CSS_PROPERTIES_H */

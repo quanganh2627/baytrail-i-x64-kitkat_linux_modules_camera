@@ -106,6 +106,7 @@ enum ia_css_err ia_css_pipeline_create(
  */
 void ia_css_pipeline_destroy(struct ia_css_pipeline *pipeline);
 
+
 /** @brief Starts a pipeline
  *
  * @param[in] pipe_id
@@ -220,10 +221,10 @@ struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void);
 /**
  * @brief Map an SP thread to this pipeline
  *
- * @param[in]	pipeline
+ * @param[in]	pipe_num
  * @param[in]	map true for mapping and false for unmapping sp threads.
  *
  */
-void ia_css_pipeline_map(struct ia_css_pipeline *pipeline, bool map);
+void ia_css_pipeline_map(unsigned int pipe_num, bool map);
 
 #endif /*__IA_CSS_PIPELINE_H__*/

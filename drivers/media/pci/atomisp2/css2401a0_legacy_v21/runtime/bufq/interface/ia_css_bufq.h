@@ -19,19 +19,29 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef _IA_CSS_BUFQ_H
+#define _IA_CSS_BUFQ_H
 
-#ifndef ACC_VERSION_DATA_H
-#define ACC_VERSION_DATA_H
+#include <type_support.h>
+#include "ia_css_bufq_comm.h"
 
+/**
+ * @brief Query the internal frame ID.
+ *
+ * @param[in]	key	The query key.
+ * @param[out]	val	The query value.
+ *
+ * @return
+ *	true, if the query succeeds;
+ *	false, if the query fails.
+ */
+bool ia_css_query_internal_queue_id(enum ia_css_buffer_type buf_type,
+	unsigned int thread_id,
+	enum sh_css_queue_id *val);
 
-#define CSS_VERSION_STRING "VER:0.6; REL:20140214_07.5_0006; API:2.0.1.0; GIT:irci_20140213_1932__dbe312#dbe312c5d7e8adbf32a3bf9dbd568946fad14d96; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140128_2101; USER:viedifw; "
+void ia_css_queue_map(unsigned int thread_id,
+	enum ia_css_buffer_type buf_type,
+	bool map);
 
-
+void ia_css_queue_map_init(void);
 #endif
-
-

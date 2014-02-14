@@ -112,7 +112,7 @@ sh_css_update_host2sp_offline_frame(
  * @param[in] thread
  */
 ia_css_queue_t*
-sh_css_get_queue(enum sh_css_queue_type type, enum sh_css_buffer_queue_id id,
+sh_css_get_queue(enum sh_css_queue_type type, enum sh_css_queue_id id,
 		 int thread);
 
 #if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
