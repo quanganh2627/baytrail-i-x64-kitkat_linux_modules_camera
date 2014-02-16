@@ -31,13 +31,18 @@
 extern const struct ia_css_dp_config default_dp_config;
 
 void
-ia_css_dp_encode(struct sh_css_isp_dp_params *to,
-		 const struct ia_css_dp_config *from);
+ia_css_dp_encode(
+	struct sh_css_isp_dp_params *to,
+	const struct ia_css_dp_config *from);
 
 void
-ia_css_dp_dump(const struct sh_css_isp_dp_params *dp, unsigned level);
+ia_css_dp_dump(
+	const struct sh_css_isp_dp_params *dp,
+	unsigned level);
 
 void
-ia_css_dp_debug_dtrace(const struct ia_css_dp_config *config, unsigned level);
+ia_css_dp_debug_dtrace(
+	const struct ia_css_dp_config *config,
+	unsigned level);
 
 #endif /* __IA_CSS_DP_HOST_H */

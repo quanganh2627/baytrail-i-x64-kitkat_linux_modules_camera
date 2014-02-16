@@ -22,7 +22,7 @@
 #ifndef _IA_CSS_ISP_PARAM_TYPES_H_
 #define _IA_CSS_ISP_PARAM_TYPES_H_
 
-#include "ia_css_acc_types.h"
+#include "ia_css_types.h"
 
 /* Explicit member numbering to avoid fish type checker bug */
 enum ia_css_param_class {

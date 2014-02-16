@@ -114,6 +114,8 @@ sh_css_update_host2sp_offline_frame(
 ia_css_queue_t*
 sh_css_get_queue(enum sh_css_queue_type type, enum sh_css_buffer_queue_id id,
 		 int thread);
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 /**
  * @brief Update the mipi frame information in host_sp_communication.
  *
@@ -126,20 +128,21 @@ sh_css_update_host2sp_mipi_frame(
 				struct ia_css_frame *frame);
 
 /**
- * @brief Update the nr of offline frames to use in host_sp_communication.
- *
- * @param[in] num_frames The number of raw frames to use.
- */
-void
-sh_css_update_host2sp_cont_num_raw_frames(unsigned num_frames, bool set_avail);
-
-/**
  * @brief Update the nr of mipi frames to use in host_sp_communication.
  *
  * @param[in] num_frames The number of mipi frames to use.
  */
 void
 sh_css_update_host2sp_cont_num_mipi_frames(unsigned num_frames);
+#endif
+
+/**
+ * @brief Update the nr of offline frames to use in host_sp_communication.
+ *
+ * @param[in] num_frames The number of raw frames to use.
+ */
+void
+sh_css_update_host2sp_cont_num_raw_frames(unsigned num_frames, bool set_avail);
 
 void
 sh_css_event_init_irq_mask(void);

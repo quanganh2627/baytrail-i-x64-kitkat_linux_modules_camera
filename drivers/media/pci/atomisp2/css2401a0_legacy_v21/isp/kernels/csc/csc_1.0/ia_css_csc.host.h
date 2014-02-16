@@ -30,22 +30,29 @@
 extern const struct ia_css_cc_config default_cc_config;
 
 void
-ia_css_encode_cc(struct sh_css_isp_csc_params *to,
-		 const struct ia_css_cc_config *from);
+ia_css_encode_cc(
+	struct sh_css_isp_csc_params *to,
+	const struct ia_css_cc_config *from);
 
 void
-ia_css_csc_encode(struct sh_css_isp_csc_params *to,
-		  const struct ia_css_cc_config *from);
+ia_css_csc_encode(
+	struct sh_css_isp_csc_params *to,
+	const struct ia_css_cc_config *from);
 
 void
-ia_css_cc_dump(const struct sh_css_isp_csc_params *csc, unsigned level,
-	       const char *name);
-	       
-void
-ia_css_csc_dump(const struct sh_css_isp_csc_params *csc, unsigned level);
+ia_css_cc_dump(
+	const struct sh_css_isp_csc_params *csc, unsigned level,
+	const char *name);
 
 void
-ia_css_cc_config_debug_dtrace(const struct ia_css_cc_config *config, unsigned level);
+ia_css_csc_dump(
+	const struct sh_css_isp_csc_params *csc,
+	unsigned level);
+
+void
+ia_css_cc_config_debug_dtrace(
+	const struct ia_css_cc_config *config,
+	unsigned level);
 
 #define ia_css_csc_debug_dtrace ia_css_cc_config_debug_dtrace
 

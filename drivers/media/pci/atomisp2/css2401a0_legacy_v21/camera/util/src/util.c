@@ -19,10 +19,10 @@
  *
  */
 
-
 #include "ia_css_util.h"
-#include "assert_support.h"
-#include "math_support.h"
+#include <ia_css_frame.h>
+#include <assert_support.h>
+#include <math_support.h>
 
 /* for ia_css_binary_max_vf_width() */
 #include "ia_css_binary.h"

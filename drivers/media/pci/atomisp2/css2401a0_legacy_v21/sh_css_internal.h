@@ -95,9 +95,7 @@
 
 #define NUM_ONLINE_INIT_CONTINUOUS_FRAMES      2
 
-#define NUM_TNR_FRAMES		2
-
-#define NUM_VIDEO_REF_FRAMES	(3)  /* SN: Should this not always match NUM_REF_FRAMES ?*/
+#define NUM_VIDEO_REF_FRAMES	3
 #define NUM_VIDEO_TNR_FRAMES	2
 #define NR_OF_PIPELINES			5 /* Must match with IA_CSS_PIPE_ID_NUM */
 
@@ -265,13 +263,10 @@ struct sh_css_ddr_address_map_compound {
 struct sh_css_binary_args {
 	struct ia_css_frame *cc_frame;       /* continuous capture frame */
 	struct ia_css_frame *in_frame;	     /* input frame */
-	struct ia_css_frame *in_ref_frame;   /* reference input frame */
-	struct ia_css_frame *in_tnr_frame;   /* tnr input frame */
+	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];   /* tnr frames */
+	struct ia_css_frame *delay_frames[NUM_VIDEO_REF_FRAMES]; /* video pipe delay frames */
 	struct ia_css_frame *out_frame;      /* output frame */
-	struct ia_css_frame *out_ref_frame;  /* reference output frame */
-	struct ia_css_frame *out_tnr_frame;  /* tnr output frame */
 	struct ia_css_frame *out_vf_frame;   /* viewfinder output frame */
-	struct ia_css_frame *extra_ref_frame;    /* reference extra frame */
 	bool                 copy_vf;
 	bool                 copy_output;
 	unsigned             vf_downscale_log2;
@@ -526,16 +521,16 @@ enum sh_css_frame_id {
 	sh_css_frame_s3a,		/* Dynamic */
 	sh_css_frame_dis,		/* Dynamic */
 	sh_css_frame_metadata,	/* Dynamic */
-	sh_css_frame_ref_in,
-	sh_css_frame_ref_out,
-	sh_css_frame_ref_extra,
-	sh_css_frame_tnr_in,
-	sh_css_frame_tnr_out,
-	sh_css_frame_extra,
-	sh_css_frame_raw_out,
-	sh_css_frame_cust_in,
-	sh_css_frame_cust_out,
+	/* Video pipe can have delay of up to 3 */
+	sh_css_frame_video_delay_0,
+	sh_css_frame_video_delay_1,
+	sh_css_frame_video_delay_2,
+	/* TNR has 2 reference frames (input and output) */
+	sh_css_frame_tnr_0,
+	sh_css_frame_tnr_1,
+	SH_CSS_NUM_FRAME_IDS
 };
+
 /*
  * The first frames (with comment Dynamic) can be dynamic or static
  * The other frames (ref_in and below) can only be static
@@ -548,6 +543,17 @@ enum sh_css_frame_id {
 #define SH_CSS_NUM_DYNAMIC_BUFFER_IDS (5)
 #define SH_CSS_NUM_DYNAMIC_FRAME_IDS (3)
 #define SH_CSS_INVALID_FRAME_ID (-1)
+
+struct ia_css_frames_sp {
+	struct ia_css_frame_sp	in;
+	struct ia_css_frame_sp	out;
+	struct ia_css_resolution effective_in_res;
+	struct ia_css_frame_sp	out_vf;
+	struct ia_css_frame_sp	tnr_frames[NUM_VIDEO_TNR_FRAMES];
+	struct ia_css_frame_sp  delay_frames[NUM_VIDEO_REF_FRAMES];
+	struct ia_css_frame_sp_info internal_frame_info;
+	hrt_vaddress static_frame_data[SH_CSS_NUM_FRAME_IDS];
+};
 
 /* Information for a single pipeline stage for an ISP */
 struct sh_css_isp_stage {
@@ -664,10 +670,27 @@ struct sh_css_sp_output {
  * The circular buffer is empty if "start == end". The
  * circular buffer is full if "(end + 1) % size == start".
  */
+/* Variable Sized Buffer Queue Elements */
+
+#define  IA_CSS_NUM_ELEMS_HOST2SP_INPUT_QUEUE    6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_OUTPUT_QUEUE   6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_VF_QUEUE       6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_S3A_QUEUE      6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_DIS_QUEUE      6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE    3
+#define  IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE  6
+#if defined (SH_CSS_ENABLE_METADATA)
+#define  IA_CSS_NUM_ELEMS_HOST2SP_METADATA_QUEUE 6
+#endif /* ifdef SH_CSS_ENABLE_METADATA */
+
 #if defined(HAS_SP_2400)
-#define  SH_CSS_CIRCULAR_BUF_NUM_ELEMS             13
+#define  IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE    13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE   13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE    13
 #else
-#define  SH_CSS_CIRCULAR_BUF_NUM_ELEMS              6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE    6
+#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE   6
+#define  IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE    6
 #endif
 
 struct sh_css_hmm_buffer {
@@ -760,20 +783,31 @@ struct host_sp_communication {
 	 */
 	hrt_vaddress host2sp_offline_frames[NUM_CONTINUOUS_FRAMES];
 	hrt_vaddress host2sp_offline_metadata[NUM_CONTINUOUS_FRAMES];
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	hrt_vaddress host2sp_mipi_frames[NUM_MIPI_FRAMES];
+	uint32_t host2sp_cont_num_mipi_frames;
+#endif
 	uint32_t host2sp_cont_avail_num_raw_frames;
 	uint32_t host2sp_cont_extra_num_raw_frames;
 	uint32_t host2sp_cont_target_num_raw_frames;
-	uint32_t host2sp_cont_num_mipi_frames;
 	struct sh_css_event_irq_mask host2sp_event_irq_mask[NR_OF_PIPELINES];
 
 };
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
 	(NUM_MIPI_FRAMES * SIZE_OF_HRT_VADDRESS) +			\
-	(4 *sizeof(uint32_t)) +						\
+	(4 * sizeof(uint32_t) ) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
+#else
+#define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
+	(sizeof(uint32_t) +						\
+	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
+	(3 * sizeof(uint32_t) ) +						\
+	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
+#endif
 
 struct host_sp_queues {
 	/*
@@ -782,33 +816,86 @@ struct host_sp_queues {
 	 * buffer and the "vf_out_frame" buffer.
 	 */
 	ia_css_circbuf_desc_t host2sp_buffer_queues_desc
-		[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES];
-	ia_css_circbuf_elem_t host2sp_buffer_queues_elems
-	[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES]
-	[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	[SH_CSS_MAX_SP_THREADS][SH_CSS_NUM_BUFFER_QUEUES];
+
+	ia_css_circbuf_elem_t host2sp_buffer_input_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_INPUT_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_output_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_OUTPUT_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_vf_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_VF_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_s3a_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_S3A_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_dis_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_DIS_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_param_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE];
+
+	ia_css_circbuf_elem_t host2sp_buffer_tag_cmd_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE];
+#if defined (SH_CSS_ENABLE_METADATA)
+	ia_css_circbuf_elem_t host2sp_buffer_metadata_queue_elems
+	[SH_CSS_MAX_SP_THREADS][IA_CSS_NUM_ELEMS_HOST2SP_METADATA_QUEUE];
+#endif
 	ia_css_circbuf_desc_t sp2host_buffer_queues_desc
-		[SH_CSS_NUM_BUFFER_QUEUES];
+	[SH_CSS_NUM_BUFFER_QUEUES];
 	ia_css_circbuf_elem_t sp2host_buffer_queues_elems
-	[SH_CSS_NUM_BUFFER_QUEUES][SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	[SH_CSS_NUM_BUFFER_QUEUES]
+	[IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE];
 
 	/*
 	 * The queue for the events.
 	 */
 	ia_css_circbuf_desc_t host2sp_event_queue_desc;
-	ia_css_circbuf_elem_t host2sp_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	ia_css_circbuf_elem_t host2sp_event_queue_elems
+	[IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE];
 	ia_css_circbuf_desc_t sp2host_event_queue_desc;
-	ia_css_circbuf_elem_t sp2host_event_queue_elems[SH_CSS_CIRCULAR_BUF_NUM_ELEMS];
+	ia_css_circbuf_elem_t sp2host_event_queue_elems
+	[IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE];
 
 };
-#define SIZE_OF_HOST_SP_QUEUES_STRUCT 													\
-	(((SH_CSS_MAX_SP_THREADS * SH_CSS_NUM_BUFFER_QUEUES) * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +					\
-	((SH_CSS_MAX_SP_THREADS * SH_CSS_NUM_BUFFER_QUEUES * SH_CSS_CIRCULAR_BUF_NUM_ELEMS) * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +	\
-	(SH_CSS_NUM_BUFFER_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +								\
-	((SH_CSS_NUM_BUFFER_QUEUES * SH_CSS_CIRCULAR_BUF_NUM_ELEMS) * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +				\
-	SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT +												\
-	(SH_CSS_CIRCULAR_BUF_NUM_ELEMS * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT) +							\
-	SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT +												\
-	(SH_CSS_CIRCULAR_BUF_NUM_ELEMS * SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT))
+
+#if defined (SH_CSS_ENABLE_METADATA)
+#define COUNT_HOST_SP_QUEUES				\
+	(IA_CSS_NUM_ELEMS_HOST2SP_INPUT_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_OUTPUT_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_VF_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_S3A_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_DIS_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE +	\
+	IA_CSS_NUM_ELEMS_HOST2SP_METADATA_QUEUE)
+#else
+#define COUNT_HOST_SP_QUEUES				\
+	(IA_CSS_NUM_ELEMS_HOST2SP_INPUT_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_OUTPUT_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_VF_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_S3A_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_DIS_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE +		\
+	IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE)
+#endif
+
+#define SIZE_OF_QUEUES_ELEMS							\
+	(SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT * 				\
+	((SH_CSS_MAX_SP_THREADS * (COUNT_HOST_SP_QUEUES))	+		\
+	(SH_CSS_NUM_BUFFER_QUEUES * IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE) +	\
+	(IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE) +				\
+	(IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE)))
+
+#define SIZE_OF_QUEUES_DESC										\
+	((SH_CSS_MAX_SP_THREADS * SH_CSS_NUM_BUFFER_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +	\
+	(SH_CSS_NUM_BUFFER_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +				\
+	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) 	+							\
+	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT))
+
+#define SIZE_OF_HOST_SP_QUEUES_STRUCT		\
+	(SIZE_OF_QUEUES_ELEMS) + (SIZE_OF_QUEUES_DESC)
 
 extern int (*sh_css_printf) (const char *fmt, va_list args);
 

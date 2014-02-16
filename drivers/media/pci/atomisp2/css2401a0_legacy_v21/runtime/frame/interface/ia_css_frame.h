@@ -22,7 +22,8 @@
 #ifndef __IA_CSS_FRAME_H__
 #define __IA_CSS_FRAME_H__
 
-#include "ia_css.h"
+#include <ia_css_frame_format.h>
+#include <ia_css_frame_public.h>
 #include "dma.h"
 
 /*********************************************************************

@@ -20,11 +20,12 @@
  */
 
 #include "ia_css_pipe_binarydesc.h"
+#include "ia_css_frame_format.h"
 #include "ia_css_pipe_util.h"
 #include "ia_css_util.h"
 #include "ia_css_debug.h"
 #include "sh_css_params.h"
-#include "assert_support.h"
+#include <assert_support.h>
 /* HRT_GDC_N */
 #include "gdc_device.h"
 

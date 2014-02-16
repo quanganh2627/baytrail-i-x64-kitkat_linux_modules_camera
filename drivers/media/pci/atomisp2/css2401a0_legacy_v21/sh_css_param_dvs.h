@@ -22,7 +22,7 @@
 #ifndef _SH_CSS_PARAMS_DVS_H_
 #define _SH_CSS_PARAMS_DVS_H_
 
-#include "ia_css.h"
+#include <ia_css_types.h>
 
 #define DVS_ENV_MIN_X (12)
 #define DVS_ENV_MIN_Y (12)

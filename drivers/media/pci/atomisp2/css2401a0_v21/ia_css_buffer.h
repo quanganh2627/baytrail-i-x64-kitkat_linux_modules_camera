@@ -59,4 +59,14 @@ struct ia_css_buffer {
 	uint64_t driver_cookie; /**< cookie for the driver */
 };
 
+/** @brief Dequeue param buffers from sp2host_queue
+ *
+ * @return                                       None
+ *
+ * This function must be called at every driver interrupt handler to prevent
+ * overflow of sp2host_queue.
+ */
+void
+ia_css_dequeue_param_buffers(void);
+
 #endif /* __IA_CSS_BUFFER_H */

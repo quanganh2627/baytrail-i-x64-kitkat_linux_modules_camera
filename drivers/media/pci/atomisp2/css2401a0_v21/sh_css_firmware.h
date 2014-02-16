@@ -22,10 +22,10 @@
 #ifndef _SH_CSS_FIRMWARE_H_
 #define _SH_CSS_FIRMWARE_H_
 
-#include "system_types.h"
+#include <system_types.h>
 
-#include "ia_css_types.h"
-#include "ia_css_acc_types.h"
+#include <ia_css_err.h>
+#include <ia_css_acc_types.h>
 
 /* This is for the firmware loaded from user space */
 struct  sh_css_fw_bi_file_h {
@@ -37,6 +37,9 @@ struct  sh_css_fw_bi_file_h {
 extern struct ia_css_fw_info     sh_css_sp_fw;
 extern struct ia_css_blob_descr *sh_css_blob_info;
 extern unsigned			 sh_css_num_binaries;
+
+char
+*sh_css_get_fw_version(void);
 
 enum ia_css_err
 sh_css_load_firmware(const char *fw_data,

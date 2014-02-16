@@ -36,8 +36,9 @@ const struct ia_css_dp_config default_dp_config = {
 };
 
 void
-ia_css_dp_encode(struct sh_css_isp_dp_params *to,
-		 const struct ia_css_dp_config *from)
+ia_css_dp_encode(
+	struct sh_css_isp_dp_params *to,
+	const struct ia_css_dp_config *from)
 {
 	int gain = from->gain;
 	int gr   = from->gr;
@@ -70,7 +71,9 @@ ia_css_dp_encode(struct sh_css_isp_dp_params *to,
 }
 
 void
-ia_css_dp_dump(const struct sh_css_isp_dp_params *dp, unsigned level)
+ia_css_dp_dump(
+	const struct sh_css_isp_dp_params *dp,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level, "Defect Pixel Correction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
@@ -100,7 +103,9 @@ ia_css_dp_dump(const struct sh_css_isp_dp_params *dp, unsigned level)
 }
 
 void
-ia_css_dp_debug_dtrace(const struct ia_css_dp_config *config, unsigned level)
+ia_css_dp_debug_dtrace(
+	const struct ia_css_dp_config *config,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.threshold=%d, config.gain=%d\n",

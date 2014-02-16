@@ -28,10 +28,13 @@
 #include "ia_css_sc_param.h"
 
 void
-ia_css_sc_encode(struct sh_css_isp_sc_params *to,
-		 struct ia_css_shading_table **from);
+ia_css_sc_encode(
+	struct sh_css_isp_sc_params *to,
+	struct ia_css_shading_table **from);
 
 void
-ia_css_sc_dump(const struct sh_css_isp_sc_params *sc, unsigned level);
+ia_css_sc_dump(
+	const struct sh_css_isp_sc_params *sc,
+	unsigned level);
 
 #endif /* __IA_CSS_SC_HOST_H */

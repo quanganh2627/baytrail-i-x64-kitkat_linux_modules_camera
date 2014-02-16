@@ -62,6 +62,7 @@ struct ia_css_input_port {
 	enum ia_css_csi2_port port; /**< Physical CSI-2 port */
 	unsigned int num_lanes; /**< Number of lanes used (4-lane port only) */
 	unsigned int timeout;   /**< Timeout value */
+	unsigned int rxcount;   /**< Register value, should include all lanes */
 	struct ia_css_csi2_compression compression; /**< Compression used */
 };
 

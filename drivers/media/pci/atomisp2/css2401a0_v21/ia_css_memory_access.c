@@ -20,8 +20,11 @@
  */
 
 #include "ia_css_memory_access.h"
-#include "memory_access.h"
-#include "assert_support.h"
+#include <type_support.h>
+#include <system_types.h>
+#include <assert_support.h>
+#include <memory_access.h>
+#include <ia_css_env.h>
 
 const hrt_vaddress mmgr_NULL = (hrt_vaddress)0;
 const hrt_vaddress mmgr_EXCEPTION = (hrt_vaddress)-1;

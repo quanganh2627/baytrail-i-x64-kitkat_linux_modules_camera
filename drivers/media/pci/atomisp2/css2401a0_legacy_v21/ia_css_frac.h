@@ -23,8 +23,6 @@
 #define _IA_CSS_FRAC_H_
 
 /* Fixed point types.
- * To comply with Linux coding standards these are #defines instead
- * of typedefs.
  * NOTE: the 16 bit fixed point types actually occupy 32 bits
  * to save on extension operations in the ISP code.
  */

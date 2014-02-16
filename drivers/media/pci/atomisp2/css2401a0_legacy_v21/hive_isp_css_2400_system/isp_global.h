@@ -22,6 +22,8 @@
 #ifndef __ISP_GLOBAL_H_INCLUDED__
 #define __ISP_GLOBAL_H_INCLUDED__
 
+#include <system_types.h>
+
 #if defined (HAS_ISP_2401_MAMOIADA)
 #define IS_ISP_2401_MAMOIADA
 

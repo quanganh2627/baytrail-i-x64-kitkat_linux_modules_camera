@@ -24,8 +24,8 @@
 
 /*! \file */
 
-#include "ia_css.h"
-#include "sh_css_internal.h"
+#include <ia_css_frame_public.h>
+#include <ia_css_stream_public.h>
 #include "ia_css_pipeline.h"
 
 /**

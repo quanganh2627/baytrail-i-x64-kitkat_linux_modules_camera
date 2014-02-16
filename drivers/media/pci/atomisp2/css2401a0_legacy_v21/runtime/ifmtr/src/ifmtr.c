@@ -91,6 +91,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	    vectors_per_buffer,
 	    vectors_per_line = 0,
 	    buffers_per_line = 0,
+	    buf_offset_a = 0,
 	    buf_offset_b = 0,
 	    line_width = 0,
 	    width_b_factor = 1, start_column_b,
@@ -275,9 +276,24 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 			vmem_increment = 2;
 			deinterleaving = 1;
 			width_a = width_b = cropped_width / 2;
+
+			/* When two_ppc is enabled, if_a and if_b gets separate
+			 * bayer components. Therefore, it is not possible to
+			 * correct the bayer order to GRBG in horizontal direction
+			 * by shifting start_column.
+			 * Instead, if_a and if_b output (VMEM) addresses should be
+			 * swapped for this purpose.
+			 */
+			if ((start_column % 2) == 1) {
+				/* Swap buffer start address */
+				buf_offset_a = 1;
+				buf_offset_b = 0;
+			} else {
+				buf_offset_a = 0;
+				buf_offset_b = 1;
+			}
 			start_column /= 2;
 			start_column_b = start_column;
-			buf_offset_b = 1;
 		} else {
 			vmem_increment = 1;
 			deinterleaving = 2;
@@ -377,7 +393,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	if_a_config.cropped_width = width_a;
 	if_a_config.deinterleaving = deinterleaving;
 	if_a_config.buf_vecs = vectors_per_buffer;
-	if_a_config.buf_start_index = 0;
+	if_a_config.buf_start_index = buf_offset_a;
 	if_a_config.buf_increment = vmem_increment;
 	if_a_config.buf_eol_offset =
 	    buffer_width * bits_per_pixel / 8 - line_width;

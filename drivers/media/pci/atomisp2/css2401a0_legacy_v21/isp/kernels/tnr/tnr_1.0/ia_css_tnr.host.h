@@ -29,14 +29,19 @@
 extern const struct ia_css_tnr_config default_tnr_config;
 
 void
-ia_css_tnr_encode(struct sh_css_isp_tnr_params *to,
-		 const struct ia_css_tnr_config *from);
+ia_css_tnr_encode(
+	struct sh_css_isp_tnr_params *to,
+	const struct ia_css_tnr_config *from);
 
 void
-ia_css_tnr_dump(const struct sh_css_isp_tnr_params *tnr, unsigned level);
+ia_css_tnr_dump(
+	const struct sh_css_isp_tnr_params *tnr,
+	unsigned level);
 
 void
-ia_css_tnr_debug_dtrace(const struct ia_css_tnr_config *config, unsigned level);
+ia_css_tnr_debug_dtrace(
+	const struct ia_css_tnr_config *config,
+	unsigned level);
 
 void
 ia_css_tnr_config(

@@ -22,9 +22,12 @@
 #ifndef __IA_CSS_UTIL_H__
 #define __IA_CSS_UTIL_H__
 
-#include "ia_css_pipe.h"
-#include "ia_css.h"
-#include "error_support.h"
+#include <ia_css_err.h>
+#include <error_support.h>
+#include <type_support.h>
+#include <ia_css_frame_public.h>
+#include <ia_css_stream_public.h>
+#include <ia_css_stream_format.h>
 
 /** @brief convert "errno" error code to "ia_css_err" error code
  *
@@ -33,7 +36,7 @@
  *
  */
 enum ia_css_err ia_css_convert_errno(
-				int in_err);
+	int in_err);
 
 /** @brief check vf frame info.
  *

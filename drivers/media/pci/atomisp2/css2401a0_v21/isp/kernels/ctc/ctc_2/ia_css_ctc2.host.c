@@ -68,8 +68,9 @@ static void ctc_gradient(
 }
 
 void
-ia_css_ctc_encode(struct sh_css_isp_ctc_params *to,
-		  const struct ia_css_ctc_config *from)
+ia_css_ctc_encode(
+	struct sh_css_isp_ctc_params *to,
+	const struct ia_css_ctc_config *from)
 {
 	to->y0 = from->y0;
 	to->y1 = from->y1;
@@ -112,4 +113,6 @@ ia_css_ctc_encode(struct sh_css_isp_ctc_params *to,
 }
 
 void
-ia_css_ctc_dump(const struct sh_css_isp_ctc_params *ctc, unsigned level);
+ia_css_ctc_dump(
+	const struct sh_css_isp_ctc_params *ctc,
+	unsigned level);

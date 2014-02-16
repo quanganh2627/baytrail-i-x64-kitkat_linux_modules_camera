@@ -28,11 +28,14 @@
 #include "ia_css_raw_param.h"
 
 void
-ia_css_raw_encode(struct sh_css_isp_raw_params *to,
-		 const struct ia_css_aa_config *from);
+ia_css_raw_encode(
+	struct sh_css_isp_raw_params *to,
+	const struct ia_css_aa_config *from);
 
 void
-ia_css_raw_dump(const struct sh_css_isp_raw_params *raw, unsigned level);
+ia_css_raw_dump(
+	const struct sh_css_isp_raw_params *raw,
+	unsigned level);
 
 void
 ia_css_raw_config(

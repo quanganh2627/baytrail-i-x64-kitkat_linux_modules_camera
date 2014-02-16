@@ -594,80 +594,36 @@ set_output_frame_buffer(const struct ia_css_frame *frame,
 }
 
 static enum ia_css_err
-set_ref_in_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
+set_video_delay_frame_buffer(const struct ia_css_frame *frame,
+			     unsigned pipe_num, unsigned stage_num, unsigned index)
 {
+	enum sh_css_frame_id id = sh_css_frame_video_delay_0 + index;
+
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV420 && frame->info.format != IA_CSS_FRAME_FORMAT_YUV420_16)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.ref_in, frame,
-					pipe_num, stage_num,
-					sh_css_frame_ref_in);
+
+	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.delay_frames[index],
+				     frame, pipe_num, stage_num, id);
 	return IA_CSS_SUCCESS;
 }
 
 static enum ia_css_err
-set_ref_out_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
+set_tnr_frame_buffer(const struct ia_css_frame *frame,
+		     unsigned pipe_num, unsigned stage_num, unsigned index)
 {
-	if (frame == NULL)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	enum sh_css_frame_id id = sh_css_frame_tnr_0 + index;
 
-	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV420 && frame->info.format != IA_CSS_FRAME_FORMAT_YUV420_16)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	sh_css_copy_frame_to_spframe(NULL, frame,
-					pipe_num, stage_num,
-					sh_css_frame_ref_out);
-	return IA_CSS_SUCCESS;
-}
-
-static enum ia_css_err
-set_ref_extra_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
-{
-ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "set_ref_extra_frame_buffer() %p\n",
-			frame);
-
-	if (frame == NULL)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV420)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	sh_css_copy_frame_to_spframe(NULL, frame,
-					pipe_num, stage_num,
-					sh_css_frame_ref_extra);
-	return IA_CSS_SUCCESS;
-}
-
-static enum ia_css_err
-set_tnr_in_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
-{
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV_LINE)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.tnr_in, frame,
-					pipe_num, stage_num,
-					sh_css_frame_tnr_in);
-	return IA_CSS_SUCCESS;
-}
 
-static enum ia_css_err
-set_tnr_out_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
-{
-	if (frame == NULL)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV_LINE)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	sh_css_copy_frame_to_spframe(NULL, frame,
-					pipe_num, stage_num,
-					sh_css_frame_tnr_out);
+	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.tnr_frames[index],
+				     frame, pipe_num, stage_num, id);
 	return IA_CSS_SUCCESS;
 }
 
@@ -778,33 +734,34 @@ sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args,
 				unsigned pipe_num, unsigned stage_num)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
+	int i;
 
 	assert(args != NULL);
 
 	if (args->in_frame)
 		err = set_input_frame_buffer(args->in_frame,
 						pipe_num, stage_num);
-	if (err == IA_CSS_SUCCESS && args->in_ref_frame)
-		err = set_ref_in_frame_buffer(args->in_ref_frame,
-						pipe_num, stage_num);
-	if (err == IA_CSS_SUCCESS && args->in_tnr_frame)
-		err = set_tnr_in_frame_buffer(args->in_tnr_frame,
-						pipe_num, stage_num);
 	if (err == IA_CSS_SUCCESS && args->out_vf_frame)
 		err = set_view_finder_buffer(args->out_vf_frame,
-						pipe_num, stage_num);
-	if (err == IA_CSS_SUCCESS && args->out_ref_frame)
-		err = set_ref_out_frame_buffer(args->out_ref_frame,
-						pipe_num, stage_num);
-	if (err == IA_CSS_SUCCESS && args->out_tnr_frame)
-		err = set_tnr_out_frame_buffer(args->out_tnr_frame,
 						pipe_num, stage_num);
 	if (err == IA_CSS_SUCCESS && args->out_frame)
 		err = set_output_frame_buffer(args->out_frame,
 						pipe_num, stage_num);
-	if (err == IA_CSS_SUCCESS && args->extra_ref_frame)
-		err = set_ref_extra_frame_buffer(args->extra_ref_frame,
-						pipe_num, stage_num);
+	for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++) {
+		if (err == IA_CSS_SUCCESS && args->delay_frames[i]) {
+			err = set_video_delay_frame_buffer(
+					args->delay_frames[i],
+					pipe_num, stage_num, i);
+		}
+	}
+
+	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
+		if (err == IA_CSS_SUCCESS && args->tnr_frames[i]) {
+			err = set_tnr_frame_buffer(
+					args->tnr_frames[i],
+					pipe_num, stage_num, i);
+		}
+	}
 
 	/* we don't pass this error back to the upper layer, so we add a assert here
 	   because we actually hit the error here but it still works by accident... */
@@ -878,13 +835,11 @@ configure_isp_from_args(
 {
 #if !defined(IS_ISP_2500_SYSTEM)
 	ia_css_fpn_configure   (binary,  &binary->in_frame_info);
-	ia_css_crop_configure  (binary, &args->in_ref_frame->info);
+	ia_css_crop_configure  (binary, &args->delay_frames[0]->info);
 	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
-#else
-	(void)pipe;
 #endif
-	ia_css_ref_configure(binary, &args->in_ref_frame->info);
-	ia_css_tnr_configure(binary, &args->in_tnr_frame->info);
+	ia_css_ref_configure(binary, &args->delay_frames[0]->info);
+	ia_css_tnr_configure(binary, &args->tnr_frames[0]->info);
 	ia_css_raw_configure(pipe, binary, &args->in_frame->info, &binary->in_frame_info);
 }
 
@@ -1346,7 +1301,7 @@ sh_css_init_host2sp_frame_data(void)
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 	/*
 	 * rvanimme: don't clean it to save static frame info line ref_in
-	 * ref_out, tnr_in and tnr_out. Once this static data is in a
+	 * ref_out, and tnr_frames. Once this static data is in a
 	 * seperate data struct, this may be enable (but still, there is
 	 * no need for it)
 	 */
@@ -1389,6 +1344,7 @@ sh_css_update_host2sp_offline_frame(
 	store_sp_array_uint(host_sp_com, o, metadata ? metadata->address : 0);
 }
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 /**
  * @brief Update the offline frame information in host_sp_communication.
  * Refer to "sh_css_sp.h" for more details.
@@ -1416,6 +1372,23 @@ sh_css_update_host2sp_mipi_frame(
 }
 
 void
+sh_css_update_host2sp_cont_num_mipi_frames(unsigned num_frames)
+{
+	unsigned int HIVE_ADDR_host_sp_com;
+	unsigned int o;
+
+	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
+
+	/* Write new frame data into SP DMEM */
+	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
+	o = offsetof(struct host_sp_communication, host2sp_cont_num_mipi_frames)
+		/ sizeof(int);
+
+	store_sp_array_uint(host_sp_com, o, num_frames);
+}
+#endif
+
+void
 sh_css_update_host2sp_cont_num_raw_frames(unsigned num_frames, bool set_avail)
 {
 	const struct ia_css_fw_info *fw;
@@ -1439,22 +1412,6 @@ sh_css_update_host2sp_cont_num_raw_frames(unsigned num_frames, bool set_avail)
 	} else
 		o = offsetof(struct host_sp_communication, host2sp_cont_target_num_raw_frames)
 			/ sizeof(int);
-
-	store_sp_array_uint(host_sp_com, o, num_frames);
-}
-
-void
-sh_css_update_host2sp_cont_num_mipi_frames(unsigned num_frames)
-{
-	unsigned int HIVE_ADDR_host_sp_com;
-	unsigned int o;
-
-	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
-
-	/* Write new frame data into SP DMEM */
-	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
-	o = offsetof(struct host_sp_communication, host2sp_cont_num_mipi_frames)
-		/ sizeof(int);
 
 	store_sp_array_uint(host_sp_com, o, num_frames);
 }

@@ -27,15 +27,18 @@
 #include "ia_css_bh_param.h"
 
 void
-ia_css_bh_hmem_decode(struct ia_css_3a_rgby_output *out_ptr,
-		      hrt_vaddress ddr_ptr);
+ia_css_bh_hmem_decode(
+	struct ia_css_3a_rgby_output *out_ptr,
+	hrt_vaddress ddr_ptr);
 
 void
-ia_css_bh_encode(struct sh_css_isp_bh_params *to,
-		  const struct ia_css_3a_config *from);
+ia_css_bh_encode(
+	struct sh_css_isp_bh_params *to,
+	const struct ia_css_3a_config *from);
 
 void
-ia_css_bh_hmem_encode(struct sh_css_isp_bh_hmem_params *to,
-		  const struct ia_css_3a_config *from);
+ia_css_bh_hmem_encode(
+	struct sh_css_isp_bh_hmem_params *to,
+	const struct ia_css_3a_config *from);
 
 #endif /* __IA_CSS_HB_HOST_H */
