@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140131_1505 */
+/* Release Version: irci_master_20140212_0006 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -100,6 +100,28 @@ struct ia_css_resolution {
 struct ia_css_vector {
 	int32_t x; /**< horizontal motion (in pixels) */
 	int32_t y; /**< vertical motion (in pixels) */
+};
+
+/* Short hands */
+#define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
+#define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
+
+/** CSS data descriptor */
+struct ia_css_data {
+	ia_css_ptr address; /* CSS virtual address */
+	uint32_t   size;    /* Disabled if 0 */
+};
+
+/** Host data descriptor */
+struct ia_css_host_data {
+	char      *address; /* Host address */
+	uint32_t   size;    /* Disabled if 0 */
+};
+
+/** ISP data descriptor */
+struct ia_css_isp_data {
+	uint32_t   address; /* ISP address */
+	uint32_t   size;    /* Disabled if 0 */
 };
 
 /** DVS statistics grid
@@ -317,6 +339,7 @@ struct ia_css_isp_config {
 	struct ia_css_2500_ae_kernel_config      *ae_2500_config;        /**< Skylake: auto exposure config */
 	struct ia_css_2500_bds_kernel_config     *bds_2500_config;       /**< Skylake: bayer downscaler config */
 	struct ia_css_2500_dvs_kernel_config     *dvs_2500_config;       /**< Skylake: digital video stabilization config */
+	struct ia_css_2500_res_mgr_config        *res_mgr_2500_config;
 };
 
 /** DVS 1.0 Coefficients.

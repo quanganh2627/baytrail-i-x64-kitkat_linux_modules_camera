@@ -31,15 +31,16 @@
 #include "ia_css_bh.host.h"
 
 void
-ia_css_bh_hmem_decode(struct ia_css_3a_rgby_output *out_ptr,
-		      hrt_vaddress ddr_ptr)
+ia_css_bh_hmem_decode(
+	struct ia_css_3a_rgby_output *out_ptr,
+	hrt_vaddress ddr_ptr)
 {
 	struct ia_css_bh_table *hmem_buf = sh_css_malloc(sizeof(*hmem_buf));
 	int i;
 
 	/*
 	 * No weighted histogram, hence no grid definition
-	 */	
+	 */
 	if(!hmem_buf)
 		return;
 	assert(sizeof_hmem(HMEM0_ID) == sizeof(*hmem_buf));
@@ -58,8 +59,9 @@ ia_css_bh_hmem_decode(struct ia_css_3a_rgby_output *out_ptr,
 }
 
 void
-ia_css_bh_encode(struct sh_css_isp_bh_params *to,
-	 const struct ia_css_3a_config *from)
+ia_css_bh_encode(
+	struct sh_css_isp_bh_params *to,
+	const struct ia_css_3a_config *from)
 {
 	/* coefficients to calculate Y */
 	to->y_coef_r =
@@ -71,8 +73,9 @@ ia_css_bh_encode(struct sh_css_isp_bh_params *to,
 }
 
 void
-ia_css_bh_hmem_encode(struct sh_css_isp_bh_hmem_params *to,
-		  const struct ia_css_3a_config *from)
+ia_css_bh_hmem_encode(
+	struct sh_css_isp_bh_hmem_params *to,
+	const struct ia_css_3a_config *from)
 {
 	(void)from;
 	(void)to;

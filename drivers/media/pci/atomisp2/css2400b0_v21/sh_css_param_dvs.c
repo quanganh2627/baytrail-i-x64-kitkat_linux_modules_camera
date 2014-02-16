@@ -19,16 +19,12 @@
  *
  */
 
-#include "assert_support.h"
-#include "ia_css.h"
 #include "sh_css_param_dvs.h"
+#include <assert_support.h>
+#include <type_support.h>
+#include <ia_css_err.h>
+#include <ia_css_types.h>
 #include "ia_css_debug.h"
-
-#ifdef __KERNEL__
-#include <linux/string.h>	/* memcpy() */
-#else
-#include <string.h>		/* memcpy() */
-#endif
 
 struct ia_css_dvs_6axis_config *
 generate_dvs_6axis_table(const struct ia_css_resolution	*frame_res, const struct ia_css_resolution *dvs_offset)

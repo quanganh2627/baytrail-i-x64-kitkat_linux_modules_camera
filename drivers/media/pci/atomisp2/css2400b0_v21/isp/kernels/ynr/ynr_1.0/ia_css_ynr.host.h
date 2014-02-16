@@ -31,23 +31,33 @@ extern const struct ia_css_nr_config default_nr_config;
 extern const struct ia_css_ee_config default_ee_config;
 
 void
-ia_css_nr_encode(struct sh_css_isp_ynr_params *to,
-		  const struct ia_css_nr_config *from);
+ia_css_nr_encode(
+	struct sh_css_isp_ynr_params *to,
+	const struct ia_css_nr_config *from);
 
 void
-ia_css_yee_encode(struct sh_css_isp_yee_params *to,
-		  const struct ia_css_yee_config *from);
+ia_css_yee_encode(
+	struct sh_css_isp_yee_params *to,
+	const struct ia_css_yee_config *from);
 
 void
-ia_css_nr_dump(const struct sh_css_isp_ynr_params *ynr, unsigned level);
+ia_css_nr_dump(
+	const struct sh_css_isp_ynr_params *ynr,
+	unsigned level);
 
 void
-ia_css_yee_dump(const struct sh_css_isp_yee_params *yee, unsigned level);
+ia_css_yee_dump(
+	const struct sh_css_isp_yee_params *yee,
+	unsigned level);
 
 void
-ia_css_nr_debug_dtrace(const struct ia_css_nr_config *config, unsigned level);
+ia_css_nr_debug_dtrace(
+	const struct ia_css_nr_config *config,
+	unsigned level);
 
 void
-ia_css_ee_debug_dtrace(const struct ia_css_ee_config *config, unsigned level);
+ia_css_ee_debug_dtrace(
+	const struct ia_css_ee_config *config,
+	unsigned level);
 
 #endif /* __IA_CSS_YNR_HOST_H */

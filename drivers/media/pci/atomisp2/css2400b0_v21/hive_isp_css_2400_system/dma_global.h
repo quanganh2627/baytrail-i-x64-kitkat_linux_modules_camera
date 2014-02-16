@@ -22,6 +22,8 @@
 #ifndef __DMA_GLOBAL_H_INCLUDED__
 #define __DMA_GLOBAL_H_INCLUDED__
 
+#include <type_support.h>
+
 #define IS_DMA_VERSION_2
 
 #define HIVE_ISP_NUM_DMA_CONNS		3

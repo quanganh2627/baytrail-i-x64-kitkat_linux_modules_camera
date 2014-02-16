@@ -22,6 +22,7 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
+#include "isp.h"
 
 #include "ia_css_ob.host.h"
 
@@ -42,18 +43,20 @@ const struct ia_css_ob_config default_ob_config = {
 #define AREA_LENGTH_UNIT (1<<12)
 
 void
-ia_css_ob_configure(struct sh_css_isp_ob_stream_config *config,
-		    unsigned int isp_pipe_version,
-		    unsigned int raw_bit_depth)
+ia_css_ob_configure(
+	struct sh_css_isp_ob_stream_config *config,
+	unsigned int isp_pipe_version,
+	unsigned int raw_bit_depth)
 {
 	config->isp_pipe_version = isp_pipe_version;
 	config->raw_bit_depth    = raw_bit_depth;
 }
 
 void
-ia_css_ob_encode(struct sh_css_isp_ob_params *to,
-		 const struct ia_css_ob_config *from,
-		 const struct sh_css_isp_ob_stream_config *config)
+ia_css_ob_encode(
+	struct sh_css_isp_ob_params *to,
+	const struct ia_css_ob_config *from,
+	const struct sh_css_isp_ob_stream_config *config)
 {
 	unsigned int ob_bit_depth
 		= config->isp_pipe_version == 2 ? SH_CSS_BAYER_BITS : config->raw_bit_depth;
@@ -92,9 +95,10 @@ ia_css_ob_encode(struct sh_css_isp_ob_params *to,
 }
 
 void
-ia_css_ob_vmem_encode(struct sh_css_isp_ob_vmem_params *to,
-		 const struct ia_css_ob_config *from,
-		 const struct sh_css_isp_ob_stream_config *config)
+ia_css_ob_vmem_encode(
+	struct sh_css_isp_ob_vmem_params *to,
+	const struct ia_css_ob_config *from,
+	const struct sh_css_isp_ob_stream_config *config)
 {
 	struct sh_css_isp_ob_params tmp;
 	struct sh_css_isp_ob_params *ob = &tmp;
@@ -110,13 +114,15 @@ ia_css_ob_vmem_encode(struct sh_css_isp_ob_vmem_params *to,
 		unsigned all_ones = ~0;
 
 		for (i = 0; i < OBAREA_MASK_SIZE; i++) {
-			to->vmask[i/ISP_NWAY][i%ISP_NWAY] = (i >= low && i < high) * all_ones;
+			to->vmask[i/ISP_VEC_NELEMS][i%ISP_VEC_NELEMS] = (i >= low && i < high) * all_ones;
 		}
 	}
 }
 
 void
-ia_css_ob_dump(const struct sh_css_isp_ob_params *ob, unsigned level)
+ia_css_ob_dump(
+	const struct sh_css_isp_ob_params *ob,
+	unsigned level)
 {
 	if (!ob) return;
 	ia_css_debug_dtrace(level, "Optical Black:\n");
@@ -139,7 +145,9 @@ ia_css_ob_dump(const struct sh_css_isp_ob_params *ob, unsigned level)
 
 
 void
-ia_css_ob_debug_dtrace(const struct ia_css_ob_config *config, unsigned level)
+ia_css_ob_debug_dtrace(
+	const struct ia_css_ob_config *config,
+	unsigned level)
 {
 	ia_css_debug_dtrace(level,
 		"config.mode=%d, "

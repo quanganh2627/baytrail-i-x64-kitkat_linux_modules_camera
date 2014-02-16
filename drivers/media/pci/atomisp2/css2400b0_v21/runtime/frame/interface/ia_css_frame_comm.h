@@ -21,11 +21,10 @@
 
 #ifndef __IA_CSS_FRAME_COMM_H__
 #define __IA_CSS_FRAME_COMM_H__
+
 #include "type_support.h"
 #include "platform_support.h"
 #include <system_types.h>	 /* hrt_vaddress */
-
-#define SH_CSS_NUM_FRAME_IDS (14)
 
 /*
  * These structs are derived from structs defined in ia_css_types.h
@@ -98,19 +97,6 @@ struct ia_css_frame_sp {
 		struct ia_css_frame_sp_plane6 plane6;
 		struct ia_css_frame_sp_binary_plane binary;
 	} planes;
-};
-
-struct ia_css_frames_sp {
-	struct ia_css_frame_sp	in;
-	struct ia_css_frame_sp	out;
-	struct ia_css_resolution effective_in_res;
-	struct ia_css_frame_sp	out_vf;
-	struct ia_css_frame_sp	ref_in;
-	/* ref_out_frame is same as ref_in_frame */
-	struct ia_css_frame_sp	tnr_in;
-	/* trn_out_frame is same as tnr_in_frame */
-	struct ia_css_frame_sp_info internal_frame_info;
-	hrt_vaddress static_frame_data[SH_CSS_NUM_FRAME_IDS];
 };
 
 #endif /*__IA_CSS_FRAME_COMM_H__*/

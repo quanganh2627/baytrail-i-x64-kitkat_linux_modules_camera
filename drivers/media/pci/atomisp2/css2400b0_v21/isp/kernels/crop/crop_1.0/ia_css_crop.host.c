@@ -19,19 +19,21 @@
  *
  */
 
-#include "ia_css_frame.h"
-#include "ia_css.h"
+#include <assert_support.h>
+#include <ia_css_frame_public.h>
+#include <ia_css_frame.h>
+#include <ia_css_binary.h>
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
+#include "isp.h"
 #include "ia_css_crop.host.h"
 
-#include "assert_support.h"
-
 void
-ia_css_crop_config(struct sh_css_isp_crop_isp_config *to,
-		 const struct ia_css_crop_configuration  *from)
+ia_css_crop_config(
+	struct sh_css_isp_crop_isp_config *to,
+	const struct ia_css_crop_configuration  *from)
 {
-	unsigned elems_a = ISP_NWAY;
+	unsigned elems_a = ISP_VEC_NELEMS;
 	ia_css_dma_configure_from_info(&to->port_b, from->info);
 	to->width_a_over_b = elems_a / to->port_b.elems;
 

@@ -19,22 +19,24 @@
  *
  */
 
-#include "ia_css_frame.h"
-#include "ia_css.h"
-#include "ia_css_pipeline.h"
+#include "ia_css_vf.host.h"
+#include <assert_support.h>
+#include <ia_css_err.h>
+#include <ia_css_frame.h>
+#include <ia_css_frame_public.h>
+#include <ia_css_pipeline.h>
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
-#include "assert_support.h"
+#include <assert_support.h>
 
 #include "isp.h"
-#include "ia_css_vf.host.h"
 
 void
 ia_css_vf_config(
 	struct sh_css_isp_vf_isp_config *to,
 	const struct ia_css_vf_configuration  *from)
 {
-	unsigned elems_a = ISP_NWAY;
+	unsigned elems_a = ISP_VEC_NELEMS;
 
 	to->vf_downscale_bits = from->vf_downscale_bits;
 
@@ -52,9 +54,10 @@ ia_css_vf_config(
  * be smaller than the requested viewfinder resolution.
  */
 enum ia_css_err
-sh_css_vf_downscale_log2(const struct ia_css_frame_info *out_info,
-			const struct ia_css_frame_info *vf_info,
-			unsigned int *downscale_log2)
+sh_css_vf_downscale_log2(
+	const struct ia_css_frame_info *out_info,
+	const struct ia_css_frame_info *vf_info,
+	unsigned int *downscale_log2)
 {
        unsigned int ds_log2 = 0;
        unsigned int out_width;

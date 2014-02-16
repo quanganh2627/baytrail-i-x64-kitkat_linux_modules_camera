@@ -97,6 +97,7 @@ static int thread_alive;
 #include <stdio.h>
 #endif
 #include"ia_css_spctrl.h"
+#include "ia_css_version_data.h"
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
@@ -222,13 +223,13 @@ struct sh_css_queues {
 #define DEFAULT_3A_GRID_INFO \
 { \
  	0,				/* ae_enable */ \
-   	{0,0,0,0,0,0,0,0},	        /* AE:     width,height,b_width,b_height,x_start,y_start,x_end,y_end*/ \
+	{0,0,0,0,0,0,0,0,0},	        /* AE:     width,height,b_width,b_height,x_start,y_start,x_end,y_end*/ \
 	0,				/* awb_enable */ \
 	{0,0,0,0,0,0,0,0},              /* AWB:    width,height,b_width,b_height,x_start,y_start,x_end,y_end*/ \
 	0,				/* af_enable */ \
-	{0,0,0,0,0,0},			/* AF:     width,height,b_width,b_height,x_start,y_start*/ \
+	{0,0,0,0,0,0,0},		/* AF:     width,height,b_width,b_height,x_start,y_start,ff_en*/ \
   	0,				/* awb_fr_enable */ \
-	{0,0,0,0,0,0},                  /* AWB_FR: width,height,b_width,b_height,x_start,y_start*/ \
+	{0,0,0,0,0,0,0},                  /* AWB_FR: width,height,b_width,b_height,x_start,y_start,ff_en*/ \
   	0,				/* elem_bit_depth */ \
 }
 #else
@@ -354,8 +355,10 @@ struct sh_css {
 	bool                           check_system_idle;
 	bool                           stop_copy_preview;
 	unsigned int                   num_cont_raw_frames;
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	unsigned int                   num_mipi_frames;
 	struct ia_css_frame           *mipi_frames[NUM_MIPI_FRAMES];
+#endif
 	hrt_vaddress                   sp_bin_addr;
 	hrt_data                       page_table_base_index;
 	unsigned int                   size_mem_words;
@@ -368,47 +371,21 @@ struct sh_css {
 	struct sh_css_queues	       queues;
 };
 
-#if defined(HAS_RX_VERSION_2)
-
-#define DEFAULT_MIPI_CONFIG \
-{ \
-	MONO_4L_1L_0L, \
-	MIPI_PORT0_ID, \
-	0xffff4, \
-	0, \
-	0x28282828, \
-	0x04040404, \
-	MIPI_PREDICTOR_NONE, \
-	false \
-}
-
-#elif defined(HAS_RX_VERSION_1) || defined(HAS_NO_RX)
-
-#define DEFAULT_MIPI_CONFIG \
-{ \
-	MIPI_PORT1_ID, \
-	1, \
-	0xffff4, \
-	0, \
-	0, \
-	MIPI_PREDICTOR_NONE, \
-	false \
-}
-
-#else
-#error "sh_css.c: RX version must be one of {RX_VERSION_1, RX_VERSION_2, NO_RX}"
-#endif
-
 int (*sh_css_printf) (const char *fmt, va_list args) = NULL;
 
 static struct sh_css my_css;
 
 /* pqiao NOTICE: this is for css internal buffer recycling when stopping pipeline,
    this array is temporary and will be replaced by resource manager*/
-#define MAX_HMM_BUFFER_NUM (SH_CSS_NUM_BUFFER_QUEUES * (SH_CSS_CIRCULAR_BUF_NUM_ELEMS + 2))
+/* Taking the biggest Size for number of Elements */
+#define MAX_HMM_BUFFER_NUM	\
+	(SH_CSS_NUM_BUFFER_QUEUES * (IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE + 2))
+
 static struct ia_css_rmgr_vbuf_handle *hmm_buffer_record_h[MAX_HMM_BUFFER_NUM];
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 static uint32_t ref_count_mipi_allocation = 0;
+#endif
 
 #define GPIO_FLASH_PIN_MASK (1 << HIVE_GPIO_STROBE_TRIGGER_PIN)
 
@@ -493,8 +470,13 @@ static enum ia_css_err
 alloc_continuous_frames(
 	struct ia_css_pipe *pipe, bool init_time);
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 static enum ia_css_err
 allocate_mipi_frames(struct ia_css_pipe *pipe);
+
+static void
+free_mipi_frames(struct ia_css_pipe *pipe, bool uninit);
+#endif
 
 static void
 pipe_global_init(void);
@@ -530,9 +512,6 @@ create_host_capture_pipeline(struct ia_css_pipe *pipe);
 
 static enum ia_css_err
 create_host_acc_pipeline(struct ia_css_pipe *pipe);
-
-static void
-free_mipi_frames(struct ia_css_pipe *pipe, bool uninit);
 
 static unsigned int
 sh_css_get_sw_interrupt_value(unsigned int irq);
@@ -580,6 +559,22 @@ static enum ia_css_frame_format yuv422_copy_formats[] = {
 };
 
 #define array_length(array) (sizeof(array)/sizeof(array[0]))
+
+/* Retrieve the CSS version and try to retrieve the FW version too.
+ */
+enum ia_css_err
+ia_css_get_version(char *version, int max_size)
+{
+	if (max_size <= (int)strlen(CSS_VERSION_STRING) + (int)strlen(sh_css_get_fw_version()) + 5)
+		return(IA_CSS_ERR_INVALID_ARGUMENTS);
+	assert(version != NULL);
+	strcpy(version, CSS_VERSION_STRING);
+	strcat(version, "FW:");
+	strcat(version, sh_css_get_fw_version());
+	strcat(version, "; ");
+	return(IA_CSS_SUCCESS);
+}
+
 
 /* Verify whether the selected output format is can be produced
  * by the copy binary given the stream format.
@@ -1545,13 +1540,13 @@ start_copy_on_sp(struct ia_css_pipe *pipe,
 
 void sh_css_binary_args_reset(struct sh_css_binary_args *args)
 {
+	int i;
+	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++)
+		args->tnr_frames[i] = NULL;
+	for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++)
+		args->delay_frames[i] = NULL;
 	args->in_frame      = NULL;
 	args->out_frame     = NULL;
-	args->in_ref_frame  = NULL;
-	args->out_ref_frame = NULL;
-	args->extra_ref_frame = NULL;
-	args->in_tnr_frame  = NULL;
-	args->out_tnr_frame = NULL;
 	args->out_vf_frame  = NULL;
 	args->copy_vf       = false;
 	args->copy_output   = true;
@@ -1728,7 +1723,9 @@ ia_css_reset_defaults(struct sh_css* css)
 	/* Initialize the non zero values*/
 	default_css.check_system_idle = true;
 	default_css.num_cont_raw_frames = NUM_CONTINUOUS_FRAMES;
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	default_css.num_mipi_frames = NUM_MIPI_FRAMES;
+#endif
 	default_css.contiguous = true;
 	default_css.irq_type = IA_CSS_IRQ_TYPE_EDGE;
 
@@ -1814,7 +1811,6 @@ ia_css_init(const struct ia_css_env *env,
 	/* Check struct sh_css_ddr_address_map */
 	COMPILATION_ERROR_IF( sizeof(struct sh_css_ddr_address_map)		!= SIZE_OF_SH_CSS_DDR_ADDRESS_MAP_STRUCT	);
 #endif
-
 	/* Check struct host_sp_queues */
 	COMPILATION_ERROR_IF( sizeof(struct host_sp_queues)			!= SIZE_OF_HOST_SP_QUEUES_STRUCT		);
 	COMPILATION_ERROR_IF( sizeof(struct ia_css_circbuf_desc_s)		!= SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT		);
@@ -1875,7 +1871,9 @@ ia_css_init(const struct ia_css_env *env,
 	ia_css_debug_set_dtrace_level(9);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init()\n");
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	ref_count_mipi_allocation = 0;
+#endif
 	/* In case this has been programmed already, update internal
 	   data structure ... DEPRECATED */
 	my_css.page_table_base_index = mmu_get_page_table_base_index(MMU0_ID);
@@ -2196,12 +2194,14 @@ create_host_pipeline(struct ia_css_stream *stream)
 #endif
 	}
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	if((pipe_id != IA_CSS_PIPE_ID_ACC) &&
 	   (main_pipe->config.mode != IA_CSS_PIPE_MODE_COPY)) {
 		err = allocate_mipi_frames(main_pipe);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
 	}
+#endif
 
 	switch (pipe_id) {
 	case IA_CSS_PIPE_ID_PREVIEW:
@@ -2451,7 +2451,7 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 					"destroyed internal copy pipe err=%d\n", err);
 			}
 		}
-		ia_css_frame_free_multiple(NUM_TNR_FRAMES, pipe->pipe_settings.video.tnr_frames);
+		ia_css_frame_free_multiple(NUM_VIDEO_TNR_FRAMES, pipe->pipe_settings.video.tnr_frames);
 		ia_css_frame_free_multiple((pipe->dvs_frame_delay + 1), pipe->pipe_settings.video.ref_frames);
 		break;
 	case IA_CSS_PIPE_MODE_CAPTURE:
@@ -2510,8 +2510,11 @@ ia_css_uninit(void)
 	ia_css_spctrl_unload_fw(SP0_ID);
 
 	sh_css_sp_set_sp_running(false);
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	/* check and free any remaining mipi frames */
 	free_mipi_frames(NULL, true);
+#endif
 
 	sh_css_sp_reset_global_vars();
 
@@ -3082,6 +3085,8 @@ ia_css_alloc_continuous_frame_remain(struct ia_css_stream *stream)
 	return alloc_continuous_frames(stream->continuous_pipe, false);
 }
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
+/* start of MIPI functions */
 static enum ia_css_err
 allocate_mipi_frames(struct ia_css_pipe *pipe)
 {
@@ -3264,6 +3269,8 @@ send_mipi_frames (struct ia_css_pipe *pipe)
 	}
 	/** End of hack of Baytrail **/
 }
+/* end of MIPI functions */
+#endif
 
 static enum ia_css_err
 load_preview_binaries(struct ia_css_pipe *pipe)
@@ -3595,26 +3602,43 @@ static enum ia_css_err add_capture_pp_stage(
 }
 
 static void
+ia_css_connect_buf_queues(unsigned int host2sp_addr,
+			unsigned int desc_addr,
+			unsigned int elems_addr,
+			ia_css_queue_t *qhandle)
+{
+	ia_css_queue_remote_t remoteq;
+	/* Setup queue location as SP and proc id as SP0_ID*/
+	remoteq.location = IA_CSS_QUEUE_LOC_SP;
+	remoteq.proc_id = SP0_ID;
+
+	remoteq.cb_desc_addr = host2sp_addr + desc_addr;
+	remoteq.cb_elems_addr = host2sp_addr + elems_addr;
+
+	/* Initialize the queue instance and obtain handle */
+	ia_css_queue_remote_init(qhandle, &remoteq);
+}
+
+
+static void
 sh_css_init_buffer_queues(void)
 {
 	const struct ia_css_fw_info *fw;
 	unsigned int HIVE_ADDR_host_sp_queues_initialized;
 	unsigned int HIVE_ADDR_ia_css_bufq_host_sp_queue;
 	ia_css_queue_remote_t remoteq;
-	unsigned int i, j;
+	int i;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_init_buffer_queues() enter:\n");
 
 	for (i = 0; i < MAX_HMM_BUFFER_NUM; i++)
 		hmm_buffer_record_h[i] = NULL;
 
-
 	sh_css_event_init_irq_mask();
 
 	fw = &sh_css_sp_fw;
 	HIVE_ADDR_host_sp_queues_initialized =
 		fw->info.sp.host_sp_queues_initialized;
-
 #ifdef C_RUN
 	HIVE_ADDR_ia_css_bufq_host_sp_queue = (unsigned int)
 		sp_address_of(ia_css_bufq_host_sp_queue);
@@ -3625,58 +3649,91 @@ sh_css_init_buffer_queues(void)
 	remoteq.location = IA_CSS_QUEUE_LOC_SP;
 	remoteq.proc_id = SP0_ID;
 
-	/* Setup all the local queue descriptors for Host2SP Buffer Queues */
-	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++)
-		for (j = 0; j < SH_CSS_NUM_BUFFER_QUEUES; j++) {
-			remoteq.cb_desc_addr =
-				HIVE_ADDR_ia_css_bufq_host_sp_queue
-					+ offsetof(struct host_sp_queues,
-					 host2sp_buffer_queues_desc[i][j]);
+	/* Setup local queue descriptors for all Host2SP Buffer Queues. */
+	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++) {
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_queues_desc[i][sh_css_input_buffer_queue]),
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_input_queue_elems[i]),
+			&my_css.queues.host2sp_buffer_queue_handles[i][sh_css_input_buffer_queue]);
 
-			remoteq.cb_elems_addr =
-				HIVE_ADDR_ia_css_bufq_host_sp_queue
-					+ offsetof(struct host_sp_queues,
-					 host2sp_buffer_queues_elems[i][j]);
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_queues_desc[i][sh_css_output_buffer_queue]),
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_output_queue_elems[i]),
+			&my_css.queues.host2sp_buffer_queue_handles[i][sh_css_output_buffer_queue]);
 
-			/* Initialize the queue instance and obtain handle */
-			ia_css_queue_remote_init(
-				&my_css.queues.host2sp_buffer_queue_handles[i][j],
-				&remoteq);
-		}
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_queues_desc[i][sh_css_vf_output_buffer_queue]),
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_vf_queue_elems[i]),
+			&my_css.queues.host2sp_buffer_queue_handles[i][sh_css_vf_output_buffer_queue]);
+
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_queues_desc[i][sh_css_s3a_buffer_queue]),
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_s3a_queue_elems[i]),
+			&my_css.queues.host2sp_buffer_queue_handles[i][sh_css_s3a_buffer_queue]);
+
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_queues_desc[i][sh_css_dis_buffer_queue]),
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_dis_queue_elems[i]),
+			&my_css.queues.host2sp_buffer_queue_handles[i][sh_css_dis_buffer_queue]);
+
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_queues_desc[i][sh_css_param_buffer_queue]),
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_param_queue_elems[i]),
+			&my_css.queues.host2sp_buffer_queue_handles[i][sh_css_param_buffer_queue]);
+
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_queues_desc[i][sh_css_tag_cmd_queue]),
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_tag_cmd_queue_elems[i]),
+			&my_css.queues.host2sp_buffer_queue_handles[i][sh_css_tag_cmd_queue]);
+#if defined (SH_CSS_ENABLE_METADATA)
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_queues_desc[i][sh_css_metadata_buffer_queue]),
+			offsetof(struct host_sp_queues,
+				host2sp_buffer_metadata_queue_elems[i]),
+			&my_css.queues.host2sp_buffer_queue_handles[i][sh_css_metadata_buffer_queue]);
+#endif
+	}
 
 	/* Setup all the local queue descriptors for SP2Host Buffer Queues */
 	for (i = 0; i < SH_CSS_NUM_BUFFER_QUEUES; i++) {
-		remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue
-			+ offsetof(struct host_sp_queues,
-				 sp2host_buffer_queues_desc[i]);
-
-		remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue
-			+ offsetof(struct host_sp_queues,
-				 sp2host_buffer_queues_elems[i]);
-
-		/* Initialize the queue instance and obtain handle */
-		ia_css_queue_remote_init(
-			&my_css.queues.sp2host_buffer_queue_handles[i],
-			&remoteq);
+		ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+			offsetof(struct host_sp_queues,
+				sp2host_buffer_queues_desc[i]),
+			offsetof(struct host_sp_queues,
+				sp2host_buffer_queues_elems[i]),
+			&my_css.queues.sp2host_buffer_queue_handles[i]);
 	}
 
 	/* Host2SP event queue */
-	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, host2sp_event_queue_desc);
-	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, host2sp_event_queue_elems);
-	/* Initialize the queue instance and obtain handle */
-	ia_css_queue_remote_init(&my_css.queues.host2sp_event_queue_handle,
-		&remoteq);
+	ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+		offsetof(struct host_sp_queues,
+			host2sp_event_queue_desc),
+		offsetof(struct host_sp_queues,
+			host2sp_event_queue_elems),
+		&my_css.queues.host2sp_event_queue_handle);
 
 	/* SP2Host queues event queue*/
-	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, sp2host_event_queue_desc);
-	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, sp2host_event_queue_elems);
-	/* Initialize the queue instance and obtain handle */
-	ia_css_queue_remote_init(&my_css.queues.sp2host_event_queue_handle,
-		&remoteq);
+	ia_css_connect_buf_queues(HIVE_ADDR_ia_css_bufq_host_sp_queue,
+		offsetof(struct host_sp_queues,
+			sp2host_event_queue_desc),
+		offsetof(struct host_sp_queues,
+			sp2host_event_queue_elems),
+		&my_css.queues.sp2host_event_queue_handle);
 
 	/* set "host_sp_queues_initialized" to "true" */
 	sp_dmem_store_uint32(SP0_ID,
@@ -3796,6 +3853,10 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 	bool resolution_differs;
 	bool need_vf_pp = false;
 	unsigned num_output_pins;
+	bool need_in_frameinfo_memory = false;
+
+	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"create_host_video_pipeline() enter:\n");
@@ -3812,8 +3873,20 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 	ia_css_pipeline_clean(me);
 
 	me->dvs_frame_delay = pipe->dvs_frame_delay;
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* When the input system is 2401, always enable 'in_frameinfo_memory'
+	 * except for the following: online or continuous
+	 */
+	need_in_frameinfo_memory =
+		!(pipe->stream->config.online || pipe->stream->config.continuous);
+#else
 	/* Construct in_frame info (only in case we have dynamic input */
-	if (pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY) {
+	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
+#endif
+
+	/* Construct in_frame info (only in case we have dynamic input */
+	if (need_in_frameinfo_memory) {
 		err = init_in_frameinfo_memory_defaults(pipe, in_frame);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
@@ -3852,7 +3925,14 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 		in_frame = me->stages->args.out_frame;
 		in_stage = copy_stage;
 	} else if (pipe->stream->config.continuous) {
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+		/* When continous is enabled, configure in_frame with the
+		 * last pipe, which is the copy pipe.
+		 */
+		in_frame = pipe->stream->last_pipe->continuous_frames[0];
+#else
 		in_frame = pipe->continuous_frames[0];
+#endif
 	}
 
 	resolution_differs =
@@ -3897,11 +3977,15 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 	ia_css_pipeline_finalize_stages(&pipe->pipeline);
 
 	if (video_stage) {
-		video_stage->args.in_ref_frame = pipe->pipe_settings.video.ref_frames[0];
-		video_stage->args.out_ref_frame = pipe->pipe_settings.video.ref_frames[1];
-		video_stage->args.extra_ref_frame = pipe->pipe_settings.video.ref_frames[2];
-		video_stage->args.in_tnr_frame = pipe->pipe_settings.video.tnr_frames[0];
-		video_stage->args.out_tnr_frame = pipe->pipe_settings.video.tnr_frames[1];
+		int i;
+		for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
+			video_stage->args.tnr_frames[i] =
+				pipe->pipe_settings.video.tnr_frames[i];
+		}
+		for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++) {
+			video_stage->args.delay_frames[i] =
+				pipe->pipe_settings.video.ref_frames[i];
+		}
 	}
 
 	/* update the arguments with the latest info */
@@ -4157,8 +4241,10 @@ preview_start(struct ia_css_pipe *pipe)
 
 	sh_css_metrics_start_frame();
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	/* multi stream video needs mipi buffers */
 	send_mipi_frames(pipe);
+#endif
 	send_raw_frames(pipe);
 
 	{
@@ -4494,7 +4580,10 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			case IA_CSS_BUFFER_TYPE_OUTPUT_FRAME:
 				if ((pipe) && (pipe->stop_requested == true))
 				{
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 					free_mipi_frames(pipe, false);
+#endif
 					pipe->stop_requested = false;
 				}
 			case IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME:
@@ -5013,9 +5102,8 @@ static enum ia_css_err sh_css_pipe_configure_output(
 	struct ia_css_pipe *pipe,
 	unsigned int width,
 	unsigned int height,
-	unsigned int min_width,
+	unsigned int padded_width,
 	enum ia_css_frame_format format)
-
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 
@@ -5027,9 +5115,14 @@ static enum ia_css_err sh_css_pipe_configure_output(
 		return err;
 	if (pipe->output_info.res.width != width ||
 	    pipe->output_info.res.height != height ||
-	    pipe->output_info.format != format) {
-		ia_css_frame_info_init(&pipe->output_info, width, height,
-				       format, min_width);
+	    pipe->output_info.format != format)
+	{
+		ia_css_frame_info_init(
+				&pipe->output_info,
+				width,
+				height,
+				format,
+				padded_width);
 	}
 	return IA_CSS_SUCCESS;
 }
@@ -5291,7 +5384,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	ref_info.raw_bit_depth = SH_CSS_REF_BIT_DEPTH;
 
 	/*Allocate the exact number of required reference buffers */
-	  for (i = 0; i <= (int)pipe->dvs_frame_delay ; i++){
+	for (i = 0; i <= (int)pipe->dvs_frame_delay ; i++){
 		if (pipe->pipe_settings.video.ref_frames[i]) {
 			ia_css_frame_free(pipe->pipe_settings.video.ref_frames[i]);
 			pipe->pipe_settings.video.ref_frames[i] = NULL;
@@ -5328,7 +5421,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	tnr_info.format = IA_CSS_FRAME_FORMAT_YUV_LINE;
 	tnr_info.raw_bit_depth = SH_CSS_TNR_BIT_DEPTH;
 
-	for (i = 0; i < NUM_TNR_FRAMES; i++) {
+	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
 		if (pipe->pipe_settings.video.tnr_frames[i]) {
 			ia_css_frame_free(pipe->pipe_settings.video.tnr_frames[i]);
 			pipe->pipe_settings.video.tnr_frames[i] = NULL;
@@ -5366,6 +5459,9 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	enum sh_css_pipe_config_override copy_ovrd;
 	enum ia_css_input_mode video_pipe_input_mode;
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	struct ia_css_pipe *target_pipe = NULL;
+#endif
 	assert(pipe != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "video_start() enter:\n");
@@ -5380,7 +5476,11 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	sh_css_metrics_start_frame();
 
 	/* multi stream video needs mipi buffers */
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	send_mipi_frames(pipe);
+#endif
+
 	send_raw_frames(pipe);
 	{
 		unsigned int thread_id;
@@ -5395,9 +5495,21 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	}
 
 #if !defined(HAS_NO_INPUT_SYSTEM)
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
 	err = sh_css_config_input_network(pipe, copy_binary);
+#elif defined(USE_INPUT_SYSTEM_VERSION_2401)
+	if (pipe->stream->config.continuous) {
+		/* make the copy pipe create/own the ISYS stream */
+		target_pipe = copy_pipe;
+	} else {
+		/* make the video pipe create/own the ISYS stream */
+		target_pipe = pipe;
+	}
+
+	err = sh_css_config_input_network(target_pipe, NULL);
+#endif
 	if (err != IA_CSS_SUCCESS)
-		return err;
+		goto EXIT;
 #endif
 
 	/* Construct and load the copy pipe */
@@ -5444,6 +5556,9 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 
 	err = start_pipe(pipe, copy_ovrd, video_pipe_input_mode);
 
+#if !defined(HAS_NO_INPUT_SYSTEM)
+EXIT:
+#endif
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"video_start() leave: return (%d)\n", err);
 	return err;
@@ -6492,9 +6607,12 @@ static enum ia_css_err capture_start(
 		}
 	}
 
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	/* multi stream video needs mipi buffers */
-	if (pipe->config.mode != IA_CSS_PIPE_MODE_COPY)
+	if (pipe->config.mode != IA_CSS_PIPE_MODE_COPY) {
 		send_mipi_frames(pipe);
+	}
+#endif
 
 	{
 		unsigned int thread_id;
@@ -7129,8 +7247,11 @@ sh_css_init_host_sp_control_vars(void)
 		(unsigned int)sp_address_of(sp_stop_copy_preview),
 		my_css.stop_copy_preview?(uint32_t)(1):(uint32_t)(0));
 	store_sp_array_uint(host_sp_com, o, host2sp_cmd_ready);
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
 	sh_css_update_host2sp_cont_num_mipi_frames
 			(my_css.num_mipi_frames);
+#endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_init_host_sp_control_vars() leave: return_void\n");
@@ -7213,6 +7334,10 @@ void ia_css_stream_config_defaults(struct ia_css_stream_config *stream_config)
 	memset(stream_config, 0, sizeof(*stream_config));
 	stream_config->online = true;
 	stream_config->left_padding = -1;
+	/* temporary default value for backwards compatibility.
+	 * This field used to be hardcoded within CSS but this has now
+	 * been moved to the stream_config struct. */
+	stream_config->source.port.rxcount = 0x04040404;
 }
 
 static enum ia_css_err
@@ -7398,41 +7523,13 @@ ia_css_pipe_get_info(const struct ia_css_pipe *pipe,
 	return IA_CSS_SUCCESS;
 }
 
-#if !defined(HAS_NO_INPUT_SYSTEM)
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
+/* Configuration of INPUT_SYSTEM_VERSION_2401 is done on SP */
 static enum ia_css_err
 ia_css_stream_configure_rx(struct ia_css_stream *stream)
 {
-#if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	struct ia_css_input_port *config;
-#endif
 	assert(stream != NULL);
-#if defined(HAS_RX_VERSION_1)
-
-	config = &stream->config.source.port;
-	if (config->port == IA_CSS_CSI2_PORT1)
-		stream->csi_rx_config.port = MIPI_PORT1_ID;
-	else if (config->port == IA_CSS_CSI2_PORT0)
-		stream->csi_rx_config.port = MIPI_PORT0_ID;
-	else
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	stream->csi_rx_config.num_lanes  = config->num_lanes;
-	stream->csi_rx_config.timeout    = config->timeout;
-	stream->csi_rx_config.uncomp_bpp =
-		config->compression.uncompressed_bits_per_pixel;
-	stream->csi_rx_config.comp_bpp   =
-		config->compression.compressed_bits_per_pixel;
-	if (config->compression.type == IA_CSS_CSI2_COMPRESSION_TYPE_NONE)
-		stream->csi_rx_config.comp = MIPI_PREDICTOR_NONE;
-	else if (config->compression.type == IA_CSS_CSI2_COMPRESSION_TYPE_1)
-		stream->csi_rx_config.comp = MIPI_PREDICTOR_TYPE1;
-	else if (config->compression.type == IA_CSS_CSI2_COMPRESSION_TYPE_2)
-		stream->csi_rx_config.comp = MIPI_PREDICTOR_TYPE2;
-	else
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	stream->csi_rx_config.is_two_ppc = (stream->config.pixels_per_clock == 2);
-	stream->reconfigure_css_rx = true;
-#elif defined(HAS_RX_VERSION_2) && !defined(USE_INPUT_SYSTEM_VERSION_2401)
 
 	config = &stream->config.source.port;
 // AM: this code is not reliable, especially for 2400
@@ -7458,7 +7555,7 @@ ia_css_stream_configure_rx(struct ia_css_stream *stream)
 	stream->csi_rx_config.timeout    = config->timeout;
 	stream->csi_rx_config.initcount  = 0;
 	stream->csi_rx_config.synccount  = 0x28282828;
-	stream->csi_rx_config.rxcount    = 0x04040404;
+	stream->csi_rx_config.rxcount    = config->rxcount;
 	if (config->compression.type == IA_CSS_CSI2_COMPRESSION_TYPE_NONE)
 		stream->csi_rx_config.comp = MIPI_PREDICTOR_NONE;
 	else {
@@ -7468,10 +7565,6 @@ ia_css_stream_configure_rx(struct ia_css_stream *stream)
 	}
 	stream->csi_rx_config.is_two_ppc = (stream->config.pixels_per_clock == 2);
 	stream->reconfigure_css_rx = true;
-#else
-	/* No CSS receiver */
-	(void)stream;
-#endif
 	return IA_CSS_SUCCESS;
 }
 #endif
@@ -7610,23 +7703,6 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	memset(curr_stream, 0, sizeof(struct ia_css_stream));
 	curr_stream->info.metadata_info = md_info;
 
-#if !defined(HAS_NO_INPUT_SYSTEM) && !defined(USE_INPUT_SYSTEM_VERSION_2401)
-	/* default mipi config */
-#if defined(HAS_RX_VERSION_2)
-	curr_stream->csi_rx_config.mode = MONO_4L_1L_0L; /* The HW config */
-	curr_stream->csi_rx_config.port = MIPI_PORT0_ID; /* The port ID to apply the control on */
-	curr_stream->csi_rx_config.timeout = 0xffff4;
-	curr_stream->csi_rx_config.initcount = 0;
-	curr_stream->csi_rx_config.synccount = 0x28282828;
-	curr_stream->csi_rx_config.rxcount = 0x04040404;
-	curr_stream->csi_rx_config.comp = MIPI_PREDICTOR_NONE;	/* Just for backward compatibility */
-	curr_stream->csi_rx_config.is_two_ppc = false;
-	curr_stream->reconfigure_css_rx = true;
-#else
-	curr_stream->csi_rx_config = (rx_cfg_t)DEFAULT_MIPI_CONFIG;
-#endif
-#endif
-
 	/* allocate pipes */
 	curr_stream->num_pipes = num_pipes;
 	curr_stream->pipes = sh_css_malloc(num_pipes * sizeof(struct ia_css_pipe *));
@@ -7658,11 +7734,7 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	switch (curr_stream->config.mode) {
 		case IA_CSS_INPUT_MODE_SENSOR:
 		case IA_CSS_INPUT_MODE_BUFFERED_SENSOR:
-#if !defined(HAS_NO_INPUT_SYSTEM)
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-							"ia_css_stream_create: mode %d\n",
-							curr_stream->config.mode);
-		/* CSI RX configuration */
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
 		ia_css_stream_configure_rx(curr_stream);
 #endif
 		break;
@@ -8108,6 +8180,27 @@ ia_css_stream_get_3a_binary(const struct ia_css_stream *stream)
 
 	return ia_css_pipe_get_3a_binary(pipe);
 }
+
+enum ia_css_err
+ia_css_stream_set_output_padded_width(struct ia_css_stream *stream, unsigned int output_padded_width)
+{
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	struct ia_css_pipe *pipe;
+
+	assert(stream != NULL);
+
+	pipe = stream->last_pipe;
+
+	assert(pipe != NULL);
+
+	// set the config also just in case (redundant info? why do we save config in pipe?)
+	pipe->config.output_info.padded_width = output_padded_width;
+	pipe->output_info.padded_width = output_padded_width;
+
+	return err;
+}
+
 
 static struct ia_css_binary *
 ia_css_pipe_get_3a_binary (const struct ia_css_pipe *pipe)

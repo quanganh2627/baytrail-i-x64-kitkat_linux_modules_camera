@@ -30,14 +30,18 @@
 extern const struct ia_css_ecd_config default_ecd_config;
 
 void
-ia_css_ecd_encode(struct sh_css_isp_ecd_params *to,
-		 const struct ia_css_ecd_config *from);
+ia_css_ecd_encode(
+	struct sh_css_isp_ecd_params *to,
+	const struct ia_css_ecd_config *from);
 
 void
-ia_css_ecd_dump(const struct sh_css_isp_ecd_params *ecd, unsigned level);
+ia_css_ecd_dump(
+	const struct sh_css_isp_ecd_params *ecd,
+	unsigned level);
 
 void
-ia_css_ecd_debug_dtrace(const struct ia_css_ecd_config *config, unsigned level)
+ia_css_ecd_debug_dtrace(
+	const struct ia_css_ecd_config *config, unsigned level)
 ;
 
 #endif /* __IA_CSS_DE2_HOST_H */

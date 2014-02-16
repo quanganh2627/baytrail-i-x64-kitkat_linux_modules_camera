@@ -19,20 +19,19 @@
  *
  */
 
-#ifndef __IA_CSS_UDS_HOST_H
-#define __IA_CSS_UDS_HOST_H
+//
+// This file contains the version data for the CSS
+//
+// === Do not change - automatically generated ===
+//
 
-#include "sh_css_params.h"
+#ifndef ACC_VERSION_DATA_H
+#define ACC_VERSION_DATA_H
 
-#include "ia_css_uds_param.h"
 
-void
-ia_css_uds_encode(
-	struct sh_css_sp_uds_params *to);
+#define CSS_VERSION_STRING "VER:0.6; REL:20140212_07.3_0006; API:2.0.1.0; GIT:irci_20140211_1929__11ecd5#11ecd58f25f6e3ee7f19a2f92e16b4e1b53cc29d; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140128_2101; USER:viedifw; "
 
-void
-ia_css_uds_dump(
-	const struct sh_css_sp_uds_params *uds,
-	unsigned level);
 
-#endif /* __IA_CSS_UDS_HOST_H */
+#endif
+
+
