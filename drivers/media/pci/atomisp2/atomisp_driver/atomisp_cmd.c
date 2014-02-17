@@ -1066,6 +1066,8 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 		atomisp_css_start(asd, css_pipe_id, true);
 
 		asd->streaming = ATOMISP_DEVICE_STREAMING_ENABLED;
+
+		atomisp_csi2_configure(asd);
 	}
 
 	if (!isp->sw_contex.file_input) {
