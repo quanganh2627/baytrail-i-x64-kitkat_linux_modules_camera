@@ -583,64 +583,6 @@ out_nowake:
 	return IRQ_HANDLED;
 }
 
-/*
- * Background:
- * The IUNITPHY register CSI_CONTROL bit definition was changed since PNW C0.
- * For PNW A0 and B0, CSI4_TERM_EN_COUNT is bit 23:20 (4 bits).
- * Starting from PWN C0, including all CLV and CLV+ steppings,
- * CSI4_TERM_EN_COUNT is bit 30:24 (7 bits).
- *
- * ------------------------------------------
- * Silicon	Stepping	PCI revision
- * Penwell	A0		0x00
- * Penwell	B0		0x04
- * Penwell	C0		0x06
- * Penwell	D0		0x06
- * Penwell	D1		0x06
- * Penwell	D2		0x06
- * Cloverview	A0		0x06
- * Cloverview	B0		0x05
- * Cloverview	C0		0x04
- * Cloverview+	A0		0x08
- * Cloverview+	B0		0x0C
- *
- */
-
-#define TERM_EN_COUNT_1LANE_OFFSET		16	/* bit 22:16 */
-#define TERM_EN_COUNT_1LANE_MASK		0x7f0000
-#define TERM_EN_COUNT_4LANE_OFFSET		24	/* bit 30:24 */
-#define TERM_EN_COUNT_4LANE_MASK		0x7f000000
-#define TERM_EN_COUNT_4LANE_PWN_B0_OFFSET	20	/* bit 23:20 */
-#define TERM_EN_COUNT_4LANE_PWN_B0_MASK		0xf00000
-
-void atomisp_set_term_en_count(struct atomisp_device *isp)
-{
-	uint32_t val;
-	int pwn_b0 = 0;
-
-	/* For MRFLD, there is no Tescape-clock cycles control. */
-	if (IS_ISP24XX(isp))
-		return;
-
-	if (IS_MFLD && isp->pdev->device == 0x0148 &&
-		isp->pdev->revision < 0x6)
-		pwn_b0 = 1;
-
-	val = intel_mid_msgbus_read32(MFLD_IUNITPHY_PORT, MFLD_CSI_CONTROL);
-
-	/* set TERM_EN_COUNT_1LANE to 0xf */
-	val &= ~TERM_EN_COUNT_1LANE_MASK;
-	val |= 0xf << TERM_EN_COUNT_1LANE_OFFSET;
-
-	/* set TERM_EN_COUNT_4LANE to 0xf */
-	val &= pwn_b0 ? ~TERM_EN_COUNT_4LANE_PWN_B0_MASK :
-				~TERM_EN_COUNT_4LANE_MASK;
-	val |= 0xf << (pwn_b0 ? TERM_EN_COUNT_4LANE_PWN_B0_OFFSET :
-				TERM_EN_COUNT_4LANE_OFFSET);
-
-	intel_mid_msgbus_write32(MFLD_IUNITPHY_PORT, MFLD_CSI_CONTROL, val);
-}
-
 void atomisp_clear_css_buffer_counters(struct atomisp_sub_device *asd)
 {
 	memset(asd->s3a_bufs_in_css, 0, sizeof(asd->s3a_bufs_in_css));
@@ -1133,8 +1075,6 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
 #endif
-
-		atomisp_set_term_en_count(isp);
 
 		if (IS_ISP24XX(isp) &&
 		    atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)

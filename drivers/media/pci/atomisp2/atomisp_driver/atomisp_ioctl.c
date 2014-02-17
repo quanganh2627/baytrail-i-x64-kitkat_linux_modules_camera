@@ -1495,8 +1495,6 @@ start_sensor:
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
 #endif
-		atomisp_set_term_en_count(isp);
-
 		if (IS_ISP24XX(isp) &&
 			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");

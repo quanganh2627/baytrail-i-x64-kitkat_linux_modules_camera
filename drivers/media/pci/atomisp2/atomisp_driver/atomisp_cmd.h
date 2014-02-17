@@ -92,11 +92,6 @@ int atomisp_get_frame_pgnr(struct atomisp_device *isp,
 void atomisp_delayed_init_work(struct work_struct *work);
 
 /*
- * CSI-2 receiver configuration
- */
-void atomisp_set_term_en_count(struct atomisp_device *isp);
-
-/*
  * Get internal fmt according to V4L2 fmt
  */
 
