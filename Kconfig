@@ -1,6 +1,0 @@
-source "drivers/media/css2600/drivers/media/pci/css2600/Kconfig"
-
-config CSS2600_STUB
-	tristate "Intel Atom ISP stubs"
-	---help---
-	Why not? :-)
