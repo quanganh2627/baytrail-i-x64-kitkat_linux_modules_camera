@@ -283,7 +283,6 @@ static int ov2722_g_fnumber_range(struct v4l2_subdev *sd, s32 *val)
 	return 0;
 }
 
-
 static int ov2722_get_intg_factor(struct i2c_client *client,
 				struct camera_mipi_info *info,
 				const struct ov2722_resolution *res)
@@ -597,6 +596,28 @@ struct ov2722_control ov2722_controls[] = {
 	},
 };
 #define N_CONTROLS (ARRAY_SIZE(ov2722_controls))
+
+static int ov2722_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
+{
+	struct ov2722_device *dev = container_of(ctrl->handler, struct ov2722_device,
+			ctrl_handler);
+	unsigned int val;
+
+	switch (ctrl->id) {
+	case V4L2_CID_LINK_FREQ:
+		val = ov2722_res[dev->fmt_idx].mipi_freq;
+		if (val == 0)
+			return -EINVAL;
+
+		ctrl->val = val * 1000;			/* To Hz */
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 
 static struct ov2722_control *ov2722_find_control(u32 id)
 {
@@ -1264,6 +1285,22 @@ static const struct v4l2_subdev_sensor_ops ov2722_sensor_ops = {
 	.g_skip_frames	= ov2722_g_skip_frames,
 };
 
+static struct v4l2_ctrl_ops ov2722_ctrl_ops = {
+	.g_volatile_ctrl = ov2722_g_volatile_ctrl,
+};
+
+static const struct v4l2_ctrl_config v4l2_ctrl_link_freq = {
+	.ops = &ov2722_ctrl_ops,
+	.id = V4L2_CID_LINK_FREQ,
+	.name = "Link Frequency",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 1,
+	.max = 1500000 * 1000,
+	.step = 1,
+	.def = 1,
+	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
+};
+
 static const struct v4l2_subdev_video_ops ov2722_video_ops = {
 	.s_stream = ov2722_s_stream,
 	.g_parm = ov2722_g_parm,
@@ -1309,7 +1346,7 @@ static int ov2722_remove(struct i2c_client *client)
 		dev->platform_data->platform_deinit();
 
 	dev->platform_data->csi_cfg(sd, 0);
-
+	v4l2_ctrl_handler_free(&dev->ctrl_handler);
 	v4l2_device_unregister_subdev(sd);
 	media_entity_cleanup(&dev->sd.entity);
 	kfree(dev);
@@ -1317,6 +1354,26 @@ static int ov2722_remove(struct i2c_client *client)
 	return 0;
 }
 
+static int __ov2722_init_ctrl_handler(struct ov2722_device *dev)
+{
+	struct v4l2_ctrl_handler *hdl;
+
+	hdl = &dev->ctrl_handler;
+
+	v4l2_ctrl_handler_init(&dev->ctrl_handler, 3);
+
+	dev->link_freq = v4l2_ctrl_new_custom(&dev->ctrl_handler,
+					      &v4l2_ctrl_link_freq,
+					      NULL);
+
+	if (dev->ctrl_handler.error || dev->link_freq == NULL) {
+		return dev->ctrl_handler.error;
+	}
+
+	dev->sd.ctrl_handler = hdl;
+
+	return 0;
+}
 static int ov2722_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
@@ -1341,6 +1398,10 @@ static int ov2722_probe(struct i2c_client *client,
 			goto out_free;
 	}
 
+	ret = __ov2722_init_ctrl_handler(dev);
+	if (ret)
+		goto out_ctrl_handler_free;
+
 	dev->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	dev->pad.flags = MEDIA_PAD_FL_SOURCE;
 	dev->format.code = V4L2_MBUS_FMT_SBGGR10_1X10;
@@ -1351,6 +1412,10 @@ static int ov2722_probe(struct i2c_client *client,
 		ov2722_remove(client);
 
 	return ret;
+
+out_ctrl_handler_free:
+	v4l2_ctrl_handler_free(&dev->ctrl_handler);
+
 out_free:
 	v4l2_device_unregister_subdev(&dev->sd);
 	kfree(dev);

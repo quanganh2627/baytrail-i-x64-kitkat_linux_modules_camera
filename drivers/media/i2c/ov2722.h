@@ -32,6 +32,7 @@
 #include <media/v4l2-chip-ident.h>
 #include <linux/v4l2-mediabus.h>
 #include <media/media-entity.h>
+#include <media/v4l2-ctrls.h>
 
 #include <linux/atomisp_platform.h>
 
@@ -183,6 +184,7 @@ struct ov2722_resolution {
 	u8 bin_factor_y;
 	u8 bin_mode;
 	bool used;
+	int mipi_freq;
 };
 
 struct ov2722_format {
@@ -212,6 +214,9 @@ struct ov2722_device {
 	int run_mode;
 	u8 res;
 	u8 type;
+
+	struct v4l2_ctrl_handler ctrl_handler;
+	struct v4l2_ctrl *link_freq;
 };
 
 enum ov2722_tok_type {
