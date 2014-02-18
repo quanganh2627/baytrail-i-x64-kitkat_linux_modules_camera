@@ -72,24 +72,4 @@ enum ia_css_err
 sh_css_set_black_frame(struct ia_css_stream *stream,
 			const struct ia_css_frame *raw_black_frame);
 
-/** @brief Calculate the size of a mipi frame.
- *
- * @param[in]	width		The width (in pixels) of the frame.
- * @param[in]	height		The height (in lines) of the frame.
- * @param[in]	format		The frame (MIPI) format.
- * @param[in]	hasSOLandEOL	Whether frame (MIPI) contains (optional) SOL and EOF packets.
- * @param[in]	embedded_data_size_words		Embedded data size in memory words.
- * @param		size_mem_words					The mipi frame size in memory words (32B).
- * @return		The error code.
- *
- * Calculate the size of a mipi frame, based on the resolution and format. 
- */
-enum ia_css_err
-ia_css_mipi_frame_calculate_size(const unsigned int width,
-				const unsigned int height,
-				const enum ia_css_stream_format format,
-				const bool hasSOLandEOL,
-				const unsigned int embedded_data_size_words,
-				unsigned int *size_mem_words);
-
 #endif /* _SH_CSS_LEGACY_H_ */

@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140214_0005 */
+/* Release Version: irci_master_20140215_0148 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -41,12 +41,13 @@
 #include "ia_css_input_port.h"
 #include "ia_css_irq.h"
 #include "ia_css_metadata.h"
+#include "ia_css_mipi.h"
 #include "ia_css_pipe_public.h"
 #include "ia_css_prbs.h"
+#include "ia_css_properties.h"
 #include "ia_css_stream_format.h"
 #include "ia_css_stream_public.h"
 #include "ia_css_tpg.h"
-#include "ia_css_properties.h"
 
 /* a common size for the version arrays */
 #define MAX_VERSION_SIZE 	500
@@ -105,38 +106,5 @@ ia_css_shading_table_alloc(unsigned int width,
 */
 void
 ia_css_shading_table_free(struct ia_css_shading_table *table);
-
-/** Backward compatible for CSS API 2.0 only
- * TO BE REMOVED when all drivers move to CSS API 2.1.
- */
-/** @brief Specify a CSS MIPI frame buffer.
- *
- * @param[in]	size_mem_words	The frame size in memory words (32B).
- * @param[in]	contiguous	Allocate memory physically contiguously or not.
- * @return		The error code.
- *
- * Specifies a CSS MIPI frame buffer: size in memory words (32B).
- */
-enum ia_css_err
-ia_css_mipi_frame_specify(const unsigned int	size_mem_words,
-				const bool contiguous);
-
-#if !defined(HAS_NO_INPUT_SYSTEM)
-/** @brief Register size of a CSS MIPI frame for check during capturing.
- *
- * @param[in]	port	CSI-2 port this check is registered.
- * @param[in]	size_mem_words	The frame size in memory words (32B).
- * @return		Return the error in case of failure. E.g. MAX_NOF_ENTRIES REACHED
- *
- * Register size of a CSS MIPI frame to check during capturing. Up to
- *		IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES entries per port allowed. Entries are reset
- *		when stream is stopped.
- *
- *
- */
-enum ia_css_err
-ia_css_mipi_frame_enable_check_on_size(const enum ia_css_csi2_port port,
-				const unsigned int	size_mem_words);
-#endif
 
 #endif /* _IA_CSS_H_ */

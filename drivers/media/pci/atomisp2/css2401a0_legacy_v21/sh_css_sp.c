@@ -606,6 +606,9 @@ set_video_delay_frame_buffer(const struct ia_css_frame *frame,
 	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV420 && frame->info.format != IA_CSS_FRAME_FORMAT_YUV420_16)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
+	if (index >= NUM_VIDEO_REF_FRAMES) /* this cannot happen but Klocwok does not see this */
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.delay_frames[index],
 				     frame, pipe_num, stage_num, id);
 	return IA_CSS_SUCCESS;
@@ -839,9 +842,11 @@ configure_isp_from_args(
 	ia_css_crop_configure  (binary, &args->delay_frames[0]->info);
 	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
 #endif
-	ia_css_ref_configure(binary, &args->delay_frames[0]->info);
-	ia_css_tnr_configure(binary, &args->tnr_frames[0]->info);
-	ia_css_raw_configure(pipe, binary, &args->in_frame->info, &binary->in_frame_info);
+	ia_css_ref_configure   (binary, &args->delay_frames[0]->info);
+	ia_css_tnr_configure   (binary, &args->tnr_frames[0]->info);
+	ia_css_dvs_configure   (binary, &args->out_frame->info);
+	ia_css_output_configure(binary, &args->out_frame->info);
+	ia_css_raw_configure   (pipe, binary, &args->in_frame->info, &binary->in_frame_info);
 }
 
 static enum ia_css_err
