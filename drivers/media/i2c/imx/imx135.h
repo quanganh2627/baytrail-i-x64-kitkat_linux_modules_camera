@@ -2313,8 +2313,8 @@ struct imx_resolution imx135_res_still[] = {
 		.height = 2464,
 		.fps_options = {
 			{ /* Pixel clock: 273.6MHz */
-				 .fps = 9,
-				 .pixels_per_line = 7050,
+				 .fps = 8,
+				 .pixels_per_line = 7672,
 				 .lines_per_frame = 4458,
 			},
 			{ /* Pixel clock: 273.6MHz */
@@ -2356,9 +2356,9 @@ struct imx_resolution imx135_res_still[] = {
 		.height = 3120,
 		.fps_options = {
 			{ /* Pixel clock: 273.6MHz */
-				 .fps = 9,
+				 .fps = 5,
 				 .pixels_per_line = 9144,
-				 .lines_per_frame = 3328,
+				 .lines_per_frame = 5990,
 			},
 			{
 			}
