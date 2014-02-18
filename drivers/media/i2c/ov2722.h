@@ -1117,6 +1117,7 @@ struct ov2722_resolution ov2722_res_preview[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_1452_1092_30fps,
+		.mipi_freq = 422400,
 	},
 	{
 		.desc = "ov2722_1080P_30fps",
@@ -1132,6 +1133,7 @@ struct ov2722_resolution ov2722_res_preview[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_1080p_30fps,
+		.mipi_freq = 422400,
 	},
 };
 #define N_RES_PREVIEW (ARRAY_SIZE(ov2722_res_preview))
@@ -1151,6 +1153,7 @@ struct ov2722_resolution ov2722_res_still[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_1452_1092_30fps,
+		.mipi_freq = 422400,
 	},
 	{
 		.desc = "ov2722_1080P_30fps",
@@ -1166,6 +1169,7 @@ struct ov2722_resolution ov2722_res_still[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_1080p_30fps,
+		.mipi_freq = 422400,
 	},
 };
 #define N_RES_STILL (ARRAY_SIZE(ov2722_res_still))
@@ -1185,6 +1189,7 @@ struct ov2722_resolution ov2722_res_video[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_QCIF_30fps,
+		.mipi_freq = 364800,
 	},
 	{
 		.desc = "ov2722_QVGA_30fps",
@@ -1200,6 +1205,7 @@ struct ov2722_resolution ov2722_res_video[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_QVGA_30fps,
+		.mipi_freq = 364800,
 	},
 	{
 		.desc = "ov2722_CIF_30fps",
@@ -1215,6 +1221,7 @@ struct ov2722_resolution ov2722_res_video[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_CIF_30fps,
+		.mipi_freq = 364800,
 	},
 	{
 		.desc = "ov2722_VGA_30fps",
@@ -1230,6 +1237,7 @@ struct ov2722_resolution ov2722_res_video[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_VGA_30fps,
+		.mipi_freq = 364800,
 	},
 	{
 		.desc = "ov2722_720p_30fps",
@@ -1245,6 +1253,7 @@ struct ov2722_resolution ov2722_res_video[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_720p_30fps,
+		.mipi_freq = 364800,
 	},
 	{
 		.desc = "ov2722_1M3_30fps",
@@ -1260,6 +1269,7 @@ struct ov2722_resolution ov2722_res_video[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_1M3_30fps,
+		.mipi_freq = 364800,
 	},
 	{
 		.desc = "ov2722_1080P_30fps",
@@ -1275,6 +1285,7 @@ struct ov2722_resolution ov2722_res_video[] = {
 		.bin_mode = 0,
 		.skip_frames = 3,
 		.regs = ov2722_1080p_30fps,
+		.mipi_freq = 422400,
 	},
 };
 #define N_RES_VIDEO (ARRAY_SIZE(ov2722_res_video))
