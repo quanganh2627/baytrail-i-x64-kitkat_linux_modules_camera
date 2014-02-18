@@ -19,41 +19,21 @@
  *
  */
 
-//
-// CSS version file
-//
+#ifndef __IA_CSS_OUTPUT_PARAM_H
+#define __IA_CSS_OUTPUT_PARAM_H
 
-#ifndef CSS_VERSION_H
-#define CSS_VERSION_H
-
-#define VER	0
-#define SUBVER	6
-
-/*
-Changelog
----------
-
-
-VER 0.5, released 05/02/14:
-	- Added versioning
-
-VER 0.6, released 11/02/14:
-	- Version release mainly for driver and AIC bug fixes 
-
-	Changes/Fixes:
-		AIC bugs  : 1399,1588,1590,1589,1703 (Linearization hang)
-		FW versioning added
-		FW tracer for debug in DMEM2
-		Removed A0 support from code
-		Fixed corrupted fields of gird x/y_end for AWB & AE
-
-	Known issues:
-		RGB Gamma isn’t available yet for AIC  WIP by Yair.
-		Still WIP on AIC bugs which seen  in that version.
-		Warning storm printouts in test application run (storing to data memory (dmem_mem) at address…)
-
-
-
-*/
-
+#ifdef __KERNEL__
+#include <linux/kernel.h>
+#else
+#include <stdint.h>
 #endif
+
+#include "dma.h"
+
+/** output frame */
+struct sh_css_isp_output_isp_config {
+	uint32_t width_a_over_b;
+	struct dma_port_config port_b;
+};
+
+#endif /* __IA_CSS_OUTPUT_PARAM_H */

@@ -244,4 +244,10 @@
 #define SCTBL_VECTORS_PER_LINE \
 	(SCTBL_VECTORS_PER_LINE_PER_COLOR * IA_CSS_SC_NUM_COLORS)
 
+/*************/
+
+/* Format for fixed primaries */
+
+#define ISP_FIXED_PRIMARY_FORMAT IA_CSS_FRAME_FORMAT_NV12
+
 #endif /* _COMMON_ISP_CONST_H_ */

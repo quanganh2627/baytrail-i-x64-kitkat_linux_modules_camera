@@ -498,13 +498,13 @@ ia_css_alloc_continuous_frame_remain(struct ia_css_stream *stream);
 
 /** @brief allocate continuous raw frames for continuous capture
  * @param[in]	stream The stream.
- * @return	None
+ * @return	IA_CSS_SUCCESS or error code.
  *
  *  because this allocation takes a long time (around 120ms per frame),
  *  we separate the allocation part and update part to let driver call
  *  this function without locking. This function is the update part
  */
-void
+enum ia_css_err
 ia_css_update_continuous_frames(struct ia_css_stream *stream);
 
 #endif /* __IA_CCS_STREAM_PUBLIC_H */

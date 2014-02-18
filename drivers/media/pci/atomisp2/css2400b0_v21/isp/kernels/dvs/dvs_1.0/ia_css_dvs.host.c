@@ -19,41 +19,33 @@
  *
  */
 
-//
-// CSS version file
-//
+#include "ia_css_frame.h"
+#include "math_support.h"
+#define IA_CSS_INCLUDE_CONFIGURATIONS
+#include "ia_css_isp_configs.h"
 
-#ifndef CSS_VERSION_H
-#define CSS_VERSION_H
+#include "sh_css_param_dvs.h"
 
-#define VER	0
-#define SUBVER	6
-
-/*
-Changelog
----------
+#include "ia_css_dvs.host.h"
 
 
-VER 0.5, released 05/02/14:
-	- Added versioning
+void
+ia_css_dvs_config(
+	struct sh_css_isp_dvs_isp_config *to,
+	const struct ia_css_dvs_configuration  *from)
+{
+	to->num_horizontal_blocks =
+	    DVS_NUM_BLOCKS_X(from->info->res.width);
+	to->num_vertical_blocks =
+	    DVS_NUM_BLOCKS_Y(from->info->res.height);
+}
 
-VER 0.6, released 11/02/14:
-	- Version release mainly for driver and AIC bug fixes 
-
-	Changes/Fixes:
-		AIC bugs  : 1399,1588,1590,1589,1703 (Linearization hang)
-		FW versioning added
-		FW tracer for debug in DMEM2
-		Removed A0 support from code
-		Fixed corrupted fields of gird x/y_end for AWB & AE
-
-	Known issues:
-		RGB Gamma isn’t available yet for AIC  WIP by Yair.
-		Still WIP on AIC bugs which seen  in that version.
-		Warning storm printouts in test application run (storing to data memory (dmem_mem) at address…)
-
-
-
-*/
-
-#endif
+void
+ia_css_dvs_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *info)
+{
+	const struct ia_css_dvs_configuration config =
+		{ info };
+	ia_css_configure_dvs(binary, &config);
+}
