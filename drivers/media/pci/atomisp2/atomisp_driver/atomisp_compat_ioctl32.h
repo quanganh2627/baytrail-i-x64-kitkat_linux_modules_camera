@@ -285,77 +285,71 @@ struct atomisp_dvs_6axis_config32 {
 };
 
 #define ATOMISP_IOC_G_HISTOGRAM32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 6, struct atomisp_histogram32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 3, struct atomisp_histogram32)
 #define ATOMISP_IOC_S_HISTOGRAM32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 7, struct atomisp_histogram32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 3, struct atomisp_histogram32)
 
 #define ATOMISP_IOC_G_DIS_STAT32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 14, struct atomisp_dis_statistics32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 6, struct atomisp_dis_statistics32)
 #define ATOMISP_IOC_S_DIS_COEFS32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 15, struct atomisp_dis_coefficients32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 6, struct atomisp_dis_coefficients32)
 
 #define ATOMISP_IOC_S_DIS_VECTOR32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 16, struct atomisp_dvs_6axis_config32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 6, struct atomisp_dvs_6axis_config32)
 
 #define ATOMISP_IOC_G_3A_STAT32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 17, struct atomisp_3a_statistics32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 7, struct atomisp_3a_statistics32)
 
 #define ATOMISP_IOC_G_ISP_GDC_TAB32 \
-	_IOR('v', BASE_VIDIOC_PRIVATE + 22, struct atomisp_morph_table32)
-/*
- * FIXME: BZ:172549
- * Now the ATOMISP_IOC_G_ISP_GDC_TAB isn't used in current camera system and all
- * private ioctl ID are used. so ATOMISP_IOC_G_METADATA is temporary to use
- * private ID 22.
- */
-#define ATOMISP_IOC_G_METADATA32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 22, struct atomisp_metadata32)
-
+	_IOR('v', BASE_VIDIOC_PRIVATE + 10, struct atomisp_morph_table32)
 #define ATOMISP_IOC_S_ISP_GDC_TAB32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 23, struct atomisp_morph_table32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 10, struct atomisp_morph_table32)
 
 #define ATOMISP_IOC_S_ISP_FPN_TABLE32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 35, struct v4l2_framebuffer32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 17, struct v4l2_framebuffer32)
 
 #define ATOMISP_IOC_G_ISP_OVERLAY32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 36, struct atomisp_overlay32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 18, struct atomisp_overlay32)
 #define ATOMISP_IOC_S_ISP_OVERLAY32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 37, struct atomisp_overlay32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 18, struct atomisp_overlay32)
 
 #define ATOMISP_IOC_G_SENSOR_CALIBRATION_GROUP32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 41, struct atomisp_calibration_group32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 22, struct atomisp_calibration_group32)
 
 #define ATOMISP_IOC_ACC_LOAD32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 44, struct atomisp_acc_fw_load32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 24, struct atomisp_acc_fw_load32)
 
 #define ATOMISP_IOC_ACC_S_ARG32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 46, struct atomisp_acc_fw_arg32)
-
-#define ATOMISP_IOC_G_SENSOR_PRIV_INT_DATA32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 50, struct v4l2_private_int_data32)
-
-#define ATOMISP_IOC_S_ISP_SHD_TAB32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 51, struct atomisp_shading_table32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 24, struct atomisp_acc_fw_arg32)
 
 #define ATOMISP_IOC_ACC_DESTAB32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 54, struct atomisp_acc_fw_arg32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 25, struct atomisp_acc_fw_arg32)
+
+#define ATOMISP_IOC_G_SENSOR_PRIV_INT_DATA32 \
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 26, struct v4l2_private_int_data32)
+
+#define ATOMISP_IOC_S_ISP_SHD_TAB32 \
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 27, struct atomisp_shading_table32)
 
 #define ATOMISP_IOC_G_MOTOR_PRIV_INT_DATA32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 57, struct v4l2_private_int_data32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 29, struct v4l2_private_int_data32)
 
 #define ATOMISP_IOC_ACC_MAP32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 58, struct atomisp_acc_map32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 30, struct atomisp_acc_map32)
 
 #define ATOMISP_IOC_ACC_UNMAP32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 59, struct atomisp_acc_map32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 30, struct atomisp_acc_map32)
 
 #define ATOMISP_IOC_ACC_S_MAPPED_ARG32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 60, struct atomisp_acc_s_mapped_arg32)
-
-#define ATOMISP_IOC_S_PARAMETERS32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 61, struct atomisp_parameters32)
+	_IOW('v', BASE_VIDIOC_PRIVATE + 30, struct atomisp_acc_s_mapped_arg32)
 
 #define ATOMISP_IOC_ACC_LOAD_TO_PIPE32 \
-	_IOWR('v', BASE_VIDIOC_PRIVATE + 63, struct atomisp_acc_fw_load_to_pipe32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 31, struct atomisp_acc_fw_load_to_pipe32)
+
+#define ATOMISP_IOC_S_PARAMETERS32 \
+	_IOW('v', BASE_VIDIOC_PRIVATE + 32, struct atomisp_parameters32)
+
+#define ATOMISP_IOC_G_METADATA32 \
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 34, struct atomisp_metadata32)
 
 #endif /* __ATOMISP_COMPAT_IOCTL32_H__ */
