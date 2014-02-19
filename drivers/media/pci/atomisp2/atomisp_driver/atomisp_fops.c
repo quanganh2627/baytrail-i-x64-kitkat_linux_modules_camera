@@ -48,7 +48,6 @@
 #include "memory_access/memory_access.h"
 
 #include "atomisp_acc.h"
-#include "atomisp_fw.h"
 
 #define ISP_LEFT_PAD			128	/* equal to 2*NWAY */
 
