@@ -261,6 +261,13 @@ static bool create_input_system_channel(
 			&(me->stream2mmio_sid_id))) {
 		return false;
 	}
+	if ((cfg->csi_port_attr.fmt_type >= MIPI_FORMAT_CUSTOM0) &&
+	    (cfg->csi_port_attr.fmt_type <= MIPI_FORMAT_CUSTOM7)) {
+		/* set up for store_words's width for MIPI user defined types */
+		cfg->input_port_resolution.lines_per_frame =
+			ceil_div(cfg->input_port_resolution.pixels_per_line, HIVE_ISP_DDR_WORD_BYTES);
+		cfg->input_port_resolution.pixels_per_line = HIVE_ISP_DDR_WORD_BYTES;
+	}
 
 	if (!acquire_ib_buffer(
 			cfg->input_port_resolution.bits_per_pixel,
@@ -695,7 +702,12 @@ static bool calculate_ibuf_ctrl_cfg(
 
 
 	cfg->stream2mmio_cfg.sync_cmd	= _STREAM2MMIO_CMD_TOKEN_SYNC_FRAME;
-	cfg->stream2mmio_cfg.store_cmd	= _STREAM2MMIO_CMD_TOKEN_STORE_PACKETS;
+	if ((isys_cfg->csi_port_attr.fmt_type >= MIPI_FORMAT_CUSTOM0) &&
+	    (isys_cfg->csi_port_attr.fmt_type <= MIPI_FORMAT_CUSTOM7))
+		/* setup store_words for JPEG and other MIPI USER-DEFINED data types */
+		cfg->stream2mmio_cfg.store_cmd	= _STREAM2MMIO_CMD_TOKEN_STORE_WORDS;
+	else
+		cfg->stream2mmio_cfg.store_cmd	= _STREAM2MMIO_CMD_TOKEN_STORE_PACKETS;
 
 	return true;
 }

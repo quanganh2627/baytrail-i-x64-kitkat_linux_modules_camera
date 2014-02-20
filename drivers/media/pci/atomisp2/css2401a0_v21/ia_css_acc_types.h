@@ -200,7 +200,6 @@ struct ia_css_binary_info {
 		uint8_t	obgrid;
 		uint8_t	lin;
 		uint8_t	dpc_acc;
-		uint8_t	dpc_ff;
 		uint8_t	bds_acc;
 		uint8_t	shd_acc;
 		uint8_t	shd_ff;
@@ -213,7 +212,6 @@ struct ia_css_binary_info {
 		uint8_t	rgbpp_acc;
 		uint8_t	rgbpp_ff;
 		uint8_t	demosaic_acc;
-		uint8_t	demosaic_ff;
 		uint8_t	yuvp1_acc;
 		uint8_t	yuvp2_acc;
 		uint8_t	ae;
@@ -222,7 +220,6 @@ struct ia_css_binary_info {
 		uint8_t	rgb2yuv;
 		uint8_t	high_quality;
 		uint8_t	kerneltest;
-		uint8_t	bayer_output;
 		uint8_t	routing_bnr_to_anr;
 		uint8_t routing_anr_to_de;
 #endif
@@ -235,40 +232,31 @@ struct ia_css_binary_info {
 		uint8_t	block_output;
 		uint8_t	streaming_dma;
 		uint8_t	ds;
-		uint8_t	fixed_bayer_ds;
 		uint8_t	bayer_fir_6db;
 		uint8_t	raw_binning;
 		uint8_t	continuous;
 		uint8_t	s3a;
 		uint8_t	fpnr;
 		uint8_t	sc;
-		uint8_t	dis_crop;
 		uint8_t	macc;
 		uint8_t	output;
 		uint8_t	ref_frame;
 		uint8_t	tnr;
 		uint8_t	xnr;
-		uint8_t	raw;
 		uint8_t	params;
-		uint8_t	gamma;
-		uint8_t	ctc;
 		uint8_t	ca_gdc;
 		uint8_t	isp_addresses;
 		uint8_t	in_frame;
 		uint8_t	out_frame;
 		uint8_t	high_speed;
-		uint8_t	input_chunking;
 		uint8_t padding[2];
 	} enable;
 	struct {
 /* DMA channel ID: [0,...,HIVE_ISP_NUM_DMA_CHANNELS> */
-		uint8_t	multi_channel;
-		uint8_t	raw_out_channel;
 		uint8_t	ref_y_channel;
 		uint8_t	ref_c_channel;
 		uint8_t	tnr_channel;
 		uint8_t	tnr_out_channel;
-		uint8_t	dvs_in_channel;
 		uint8_t	dvs_coords_channel;
 		uint8_t	output_channel;
 		uint8_t	c_channel;

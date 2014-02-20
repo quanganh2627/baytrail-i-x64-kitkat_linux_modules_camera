@@ -40,6 +40,10 @@
 				 */
 #include "pixelgen.h"
 
+
+#define INPUT_SYSTEM_N_STREAM_ID  6	/* maximum number of simultaneous
+					virtual channels supported*/
+
 typedef enum {
 	INPUT_SYSTEM_ERR_NO_ERROR = 0,
 	INPUT_SYSTEM_ERR_CREATE_CHANNEL_FAIL,

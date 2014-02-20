@@ -54,6 +54,7 @@ ia_css_tnr_dump(
 	const struct sh_css_isp_tnr_params *tnr,
 	unsigned level)
 {
+	if (!tnr) return;
 	ia_css_debug_dtrace(level, "Temporal Noise Reduction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"tnr_coef", tnr->coef);

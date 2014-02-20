@@ -34,7 +34,27 @@ ia_css_output_config(
 	const struct ia_css_output_configuration *from);
 
 void
+ia_css_output0_config(
+	struct sh_css_isp_output_isp_config      *to,
+	const struct ia_css_output0_configuration *from);
+
+void
+ia_css_output1_config(
+	struct sh_css_isp_output_isp_config      *to,
+	const struct ia_css_output1_configuration *from);
+
+void
 ia_css_output_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *from);
+
+void
+ia_css_output0_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *from);
+
+void
+ia_css_output1_configure(
 	const struct ia_css_binary     *binary,
 	const struct ia_css_frame_info *from);
 

@@ -65,6 +65,7 @@ ia_css_cc_dump(
 	unsigned level,
 	const char *name)
 {
+	if (!csc) return;
 	ia_css_debug_dtrace(level, "%s\n", name);
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 		"m_shift",

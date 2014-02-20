@@ -61,6 +61,7 @@ ia_css_sc_dump(
 	const struct sh_css_isp_sc_params *sc,
 	unsigned level)
 {
+	if (!sc) return;
 	ia_css_debug_dtrace(level, "Shading Correction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"sc_gain_shift", sc->gain_shift);

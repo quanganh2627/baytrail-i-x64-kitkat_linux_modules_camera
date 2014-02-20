@@ -33,5 +33,13 @@ struct ia_css_output_configuration {
 	const struct ia_css_frame_info *info;
 };
 
+struct ia_css_output0_configuration {
+	const struct ia_css_frame_info *info;
+};
+
+struct ia_css_output1_configuration {
+	const struct ia_css_frame_info *info;
+};
+
 #endif /* __IA_CSS_OUTPUT_TYPES_H */
 

@@ -209,4 +209,8 @@ ia_css_binary_max_vf_width(void);
 void
 ia_css_binary_destroy_isp_parameters(struct ia_css_binary *binary);
 
+void
+ia_css_binary_get_isp_binaries(struct ia_css_binary_xinfo **binaries,
+	uint32_t *num_isp_binaries);
+
 #endif /* _IA_CSS_BINARY_H_ */

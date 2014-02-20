@@ -22,9 +22,12 @@
 #ifndef __IA_CSS_ISYS_COMM_H
 #define __IA_CSS_ISYS_COMM_H
 
-#include <system_types.h>
+#include <type_support.h>
+#include <input_system.h>
 
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
+#include <input_system_global.h>
+
 /*
  * a) ia_css_isys_stream_h & ia_css_isys_stream_cfg_t come from host.
  *

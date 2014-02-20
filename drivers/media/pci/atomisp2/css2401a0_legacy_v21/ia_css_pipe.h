@@ -53,7 +53,7 @@ struct ia_css_video_settings {
 	struct ia_css_binary copy_binary;
 	struct ia_css_binary video_binary;
 	struct ia_css_binary vf_pp_binary;
-	struct ia_css_frame *ref_frames[NUM_VIDEO_REF_FRAMES];
+	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES];
 	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];
 	struct ia_css_frame *vf_pp_in_frame;
 	struct ia_css_pipe *copy_pipe;

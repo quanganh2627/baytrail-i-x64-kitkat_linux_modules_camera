@@ -47,6 +47,7 @@ ia_css_anr_dump(
 	const struct sh_css_isp_anr_params *anr,
 	unsigned level)
 {
+	if (!anr) return;
 	ia_css_debug_dtrace(level, "Advance Noise Reduction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"anr_threshold", anr->threshold);

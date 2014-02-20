@@ -78,7 +78,7 @@
 #define SH_CSS_MAX_SP_THREADS	1 /* preview */
 #else
 #if defined(HAS_SP_2500)
-#define SH_CSS_MAX_SP_THREADS	3 /* preview, capture, acceleration */
+#define SH_CSS_MAX_SP_THREADS	2 /* (preview, capture), acceleration */
 #else
 #define SH_CSS_MAX_SP_THREADS	4 /* raw_copy, preview, capture, acceleration */
 #endif
@@ -96,7 +96,7 @@
 
 #define NUM_ONLINE_INIT_CONTINUOUS_FRAMES      2
 
-#define NUM_VIDEO_REF_FRAMES	3
+#define NUM_VIDEO_DELAY_FRAMES	3
 #define NUM_VIDEO_TNR_FRAMES	2
 #define NR_OF_PIPELINES			5 /* Must match with IA_CSS_PIPE_ID_NUM */
 
@@ -265,7 +265,7 @@ struct sh_css_binary_args {
 	struct ia_css_frame *cc_frame;       /* continuous capture frame */
 	struct ia_css_frame *in_frame;	     /* input frame */
 	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];   /* tnr frames */
-	struct ia_css_frame *delay_frames[NUM_VIDEO_REF_FRAMES]; /* video pipe delay frames */
+	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES]; /* video pipe delay frames */
 	struct ia_css_frame *out_frame;      /* output frame */
 	struct ia_css_frame *out_vf_frame;   /* viewfinder output frame */
 	bool                 copy_vf;
@@ -479,7 +479,6 @@ struct sh_css_sp_pipeline {
 	uint32_t	pipe_config;	/* the pipe config */
 	uint32_t    inout_port_config;
 	uint32_t	required_bds_factor;
-	uint32_t	dvs_frame_delay;
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	uint32_t	input_system_mode;	/* enum ia_css_input_mode */
 	mipi_port_ID_t	port_id;	/* port_id for input system */
@@ -524,7 +523,6 @@ struct sh_css_sp_pipeline {
  *
  * s3a and dis are now also dynamic but (stil) handled seperately
  */
-#define SH_CSS_NUM_DYNAMIC_BUFFER_IDS (5)
 #define SH_CSS_NUM_DYNAMIC_FRAME_IDS (3)
 #define SH_CSS_INVALID_FRAME_ID (-1)
 
@@ -534,7 +532,7 @@ struct ia_css_frames_sp {
 	struct ia_css_resolution effective_in_res;
 	struct ia_css_frame_sp	out_vf;
 	struct ia_css_frame_sp	tnr_frames[NUM_VIDEO_TNR_FRAMES];
-	struct ia_css_frame_sp  delay_frames[NUM_VIDEO_REF_FRAMES];
+	struct ia_css_frame_sp  delay_frames[NUM_VIDEO_DELAY_FRAMES];
 	struct ia_css_frame_sp_info internal_frame_info;
 	/* PQ TODO: should be a separate host-sp communication array which
 	is used for all dynamic objects through queue. */
@@ -600,6 +598,7 @@ struct sh_css_sp_stage {
 	struct sh_css_crop_pos		sp_out_crop_pos;
 	struct ia_css_frames_sp		frames;
 	struct ia_css_resolution	dvs_envelope;
+	uint32_t			dvs_frame_delay;
 	struct sh_css_uds_info		uds;
 	hrt_vaddress			isp_stage_addr;
 	hrt_vaddress			xmem_bin_addr;

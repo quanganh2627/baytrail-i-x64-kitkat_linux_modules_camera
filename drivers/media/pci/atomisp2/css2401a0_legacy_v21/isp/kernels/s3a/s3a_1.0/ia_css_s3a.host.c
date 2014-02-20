@@ -134,6 +134,7 @@ ia_css_ae_dump(
 	const struct sh_css_isp_ae_params *ae,
 	unsigned level)
 {
+	if (!ae) return;
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"ae_y_coef_r", ae->y_coef_r);
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",

@@ -606,7 +606,7 @@ set_video_delay_frame_buffer(const struct ia_css_frame *frame,
 	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV420 && frame->info.format != IA_CSS_FRAME_FORMAT_YUV420_16)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	if (index >= NUM_VIDEO_REF_FRAMES) /* this cannot happen but Klocwok does not see this */
+	if (index >= NUM_VIDEO_DELAY_FRAMES) /* this cannot happen but Klocwok does not see this */
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.delay_frames[index],
@@ -751,7 +751,7 @@ sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args,
 	if (err == IA_CSS_SUCCESS && args->out_frame)
 		err = set_output_frame_buffer(args->out_frame,
 						pipe_num, stage_num);
-	for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++) {
+	for (i = 0; i < NUM_VIDEO_DELAY_FRAMES; i++) {
 		if (err == IA_CSS_SUCCESS && args->delay_frames[i]) {
 			err = set_video_delay_frame_buffer(
 					args->delay_frames[i],
@@ -841,6 +841,8 @@ configure_isp_from_args(
 	ia_css_fpn_configure   (binary,  &binary->in_frame_info);
 	ia_css_crop_configure  (binary, &args->delay_frames[0]->info);
 	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
+	ia_css_output0_configure(binary, &args->out_frame->info);
+	ia_css_output1_configure(binary, &args->out_vf_frame->info);
 #endif
 	ia_css_ref_configure   (binary, &args->delay_frames[0]->info);
 	ia_css_tnr_configure   (binary, &args->tnr_frames[0]->info);
@@ -858,7 +860,8 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		    unsigned stage,
 		    bool xnr,
 		    const struct ia_css_isp_param_css_segments *isp_mem_if,
-		    unsigned int if_config_index)
+		    unsigned int if_config_index,
+		    enum ia_css_frame_delay frame_delay)
 {
 	const struct ia_css_binary_xinfo *xinfo;
 	const struct ia_css_binary_info  *info;
@@ -927,6 +930,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 				&binary->internal_frame_info);
 	sh_css_sp_stage.dvs_envelope.width    = binary->dvs_envelope.width;
 	sh_css_sp_stage.dvs_envelope.height   = binary->dvs_envelope.height;
+	sh_css_sp_stage.dvs_frame_delay       = (uint32_t)frame_delay;
 	sh_css_sp_stage.isp_pipe_version      = (uint8_t)info->isp_pipe_version;
 	sh_css_sp_stage.isp_deci_log_factor   = (uint8_t)binary->deci_factor_log2;
 	sh_css_sp_stage.isp_vf_downscale_bits = (uint8_t)binary->vf_downscale_log2;
@@ -1007,7 +1011,8 @@ static enum ia_css_err
 sp_init_stage(struct ia_css_pipeline_stage *stage,
 	      unsigned int pipe_num,
 	      bool xnr,
-	      unsigned int if_config_index)
+	      unsigned int if_config_index,
+	      enum ia_css_frame_delay frame_delay)
 {
 	struct ia_css_binary *binary;
 	const struct ia_css_fw_info *firmware;
@@ -1085,7 +1090,8 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 			     stage_num,
 			     xnr,
 			     mem_if,
-			     if_config_index);
+			     if_config_index,
+			     frame_delay);
 	return err;
 }
 
@@ -1201,7 +1207,6 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 						= (uint32_t)input_mode;
 	sh_css_sp_group.pipe[thread_id].port_id = port_id;
 #endif
-	sh_css_sp_group.pipe[thread_id].dvs_frame_delay = (uint32_t)me->dvs_frame_delay;
 
 	/* TODO: next indicates from which queues parameters need to be
 		 sampled, needs checking/improvement */
@@ -1240,12 +1245,16 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			sp_init_sp_stage(stage, pipe_num, two_ppc,
 				copy_ovrd, if_config_index);
 		} else {
+			enum ia_css_frame_delay frame_delay = me->dvs_frame_delay;
+			/* only the video binary has multiple stages */
+			if (stage->binary && stage->binary->info->sp.mode != IA_CSS_BINARY_MODE_VIDEO)
+				frame_delay = IA_CSS_FRAME_DELAY_0;
 			if ((stage->stage_num != 0) || SH_CSS_PIPE_PORT_CONFIG_IS_CONTINUOUS(me->inout_port_config))
 				tmp_if_config_index = SH_CSS_IF_CONFIG_NOT_NEEDED;
 			else
 				tmp_if_config_index = if_config_index;
 			sp_init_stage(stage, pipe_num,
-				      xnr, tmp_if_config_index);
+				      xnr, tmp_if_config_index, frame_delay);
 		}
 
 		store_sp_stage_data(pipe_id, pipe_num, num);

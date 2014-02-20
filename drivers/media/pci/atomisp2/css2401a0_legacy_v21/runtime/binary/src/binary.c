@@ -931,3 +931,20 @@ ia_css_binary_destroy_isp_parameters(struct ia_css_binary *binary)
 		&binary->mem_params,
 		&binary->css_params);
 }
+
+void
+ia_css_binary_get_isp_binaries(struct ia_css_binary_xinfo **binaries,
+	uint32_t *num_isp_binaries)
+{
+	assert(binaries != NULL);
+
+	if(num_isp_binaries)
+		*num_isp_binaries = 0;
+
+	*binaries = all_binaries;
+	if(all_binaries && num_isp_binaries) {
+		/* -1 to account for sp binary which is not stored in all_binaries */
+		if(sh_css_num_binaries > 0)
+			*num_isp_binaries = sh_css_num_binaries - 1;
+	}
+}

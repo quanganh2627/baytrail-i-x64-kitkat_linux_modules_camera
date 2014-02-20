@@ -319,7 +319,7 @@ static int thread_alive;
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* copy_binary */ \
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* video_binary */ \
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* vf_pp_binary */ \
-	{ NULL },			/* ref_frames */ \
+	{ NULL },			/* delay_frames */ \
 	{ NULL },			/* tnr_frames */ \
 	NULL,				/* vf_pp_in_frame */ \
 	NULL,				/* copy_pipe */ \
@@ -1125,9 +1125,7 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_resolution(
 	if (max_subpixels_per_line == 0)
 		return false;
 
-	/* for jpeg/embedded data with odd number of lines, round up to even.
-	   this is required by hw ISYS2401 */
-	lines_per_frame = CEIL_MUL2(stream_cfg->input_res.height, 2);
+	lines_per_frame = stream_cfg->input_res.height;
 	if (lines_per_frame == 0)
 		return false;
 
@@ -1482,7 +1480,7 @@ void sh_css_binary_args_reset(struct sh_css_binary_args *args)
 	int i;
 	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++)
 		args->tnr_frames[i] = NULL;
-	for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++)
+	for (i = 0; i < NUM_VIDEO_DELAY_FRAMES; i++)
 		args->delay_frames[i] = NULL;
 	args->in_frame      = NULL;
 	args->out_frame     = NULL;
@@ -2387,7 +2385,7 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 			}
 		}
 		ia_css_frame_free_multiple(NUM_VIDEO_TNR_FRAMES, pipe->pipe_settings.video.tnr_frames);
-		ia_css_frame_free_multiple((pipe->dvs_frame_delay + 1), pipe->pipe_settings.video.ref_frames);
+		ia_css_frame_free_multiple((pipe->dvs_frame_delay + 1), pipe->pipe_settings.video.delay_frames);
 		break;
 	case IA_CSS_PIPE_MODE_CAPTURE:
 #if 0
@@ -2957,12 +2955,14 @@ alloc_continuous_frames(
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	}
 
+#if !defined(HAS_NO_PACKED_RAW_PIXELS)
 	if (pipe->stream->config.pack_raw_pixels) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			"alloc_continuous_frames() IA_CSS_FRAME_FORMAT_RAW_PACKED\n");
 		ref_info.format = IA_CSS_FRAME_FORMAT_RAW_PACKED;
-	}
-	else {
+	} else
+#endif
+	{
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			"alloc_continuous_frames() IA_CSS_FRAME_FORMAT_RAW\n");
 		ref_info.format = IA_CSS_FRAME_FORMAT_RAW;
@@ -3918,9 +3918,9 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 			video_stage->args.tnr_frames[i] =
 				pipe->pipe_settings.video.tnr_frames[i];
 		}
-		for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++) {
+		for (i = 0; i < NUM_VIDEO_DELAY_FRAMES; i++) {
 			video_stage->args.delay_frames[i] =
-				pipe->pipe_settings.video.ref_frames[i];
+				pipe->pipe_settings.video.delay_frames[i];
 		}
 	}
 
@@ -5110,11 +5110,11 @@ static enum ia_css_err alloc_frame_from_file(
 
 	assert(pipe != NULL);
 
-	out_base_addr = pipe->pipe_settings.video.ref_frames[0]->data;
+	out_base_addr = pipe->pipe_settings.video.delay_frames[0]->data;
 	out_y_addr  = out_base_addr
-		+ pipe->pipe_settings.video.ref_frames[0]->planes.yuv.y.offset;
+		+ pipe->pipe_settings.video.delay_frames[0]->planes.yuv.y.offset;
 	out_uv_addr = out_base_addr
-		+ pipe->pipe_settings.video.ref_frames[0]->planes.yuv.u.offset;
+		+ pipe->pipe_settings.video.delay_frames[0]->planes.yuv.u.offset;
 
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "alloc_frame_from_file() enter:\n");
@@ -5171,9 +5171,9 @@ static enum ia_css_err alloc_frame_from_file(
 	mmgr_store(out_y_addr, y_buf, len);
 	mmgr_store(out_uv_addr, uv_buf, len/2);
 
-	out_base_addr = pipe->pipe_settings.video.ref_frames[1]->data;
-	out_y_addr  = out_base_addr + pipe->pipe_settings.video.ref_frames[1]->planes.yuv.y.offset;
-	out_uv_addr = out_base_addr + pipe->pipe_settings.video.ref_frames[1]->planes.yuv.u.offset;
+	out_base_addr = pipe->pipe_settings.video.delay_frames[1]->data;
+	out_y_addr  = out_base_addr + pipe->pipe_settings.video.delay_frames[1]->planes.yuv.y.offset;
+	out_uv_addr = out_base_addr + pipe->pipe_settings.video.delay_frames[1]->planes.yuv.u.offset;
 	mmgr_store(out_y_addr, y_buf, len);
 	mmgr_store(out_uv_addr, uv_buf, len/2);
 
@@ -5323,15 +5323,15 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 
 	/*Allocate the exact number of required reference buffers */
 	for (i = 0; i <= (int)pipe->dvs_frame_delay ; i++){
-		if (pipe->pipe_settings.video.ref_frames[i]) {
-			ia_css_frame_free(pipe->pipe_settings.video.ref_frames[i]);
-			pipe->pipe_settings.video.ref_frames[i] = NULL;
+		if (pipe->pipe_settings.video.delay_frames[i]) {
+			ia_css_frame_free(pipe->pipe_settings.video.delay_frames[i]);
+			pipe->pipe_settings.video.delay_frames[i] = NULL;
 		}
 		err = ia_css_frame_allocate_from_info(
-				&pipe->pipe_settings.video.ref_frames[i],
+				&pipe->pipe_settings.video.delay_frames[i],
 				&ref_info);
 #ifdef HRT_CSIM
-		ia_css_frame_zero(pipe->pipe_settings.video.ref_frames[i]);
+		ia_css_frame_zero(pipe->pipe_settings.video.delay_frames[i]);
 #endif
 		if (err != IA_CSS_SUCCESS)
 			return err;
@@ -7040,7 +7040,7 @@ void ia_css_pipe_config_defaults(struct ia_css_pipe_config *pipe_config)
 			false  /* enable_raw_output */
 		},      /* default_capture_config */
 		{0, 0}, /* dvs_envelope */
-		1,      /* dvs_frame_delay */
+		IA_CSS_FRAME_DELAY_1, /* dvs_frame_delay */
 		-1,     /* acc_num_execs */
 		true,   /* enable_dz */
 	};
@@ -7113,6 +7113,9 @@ ia_css_pipe_create_extra(const struct ia_css_pipe_config *config,
 
 	(void)extra_config;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_pipe_create()\n");
+	ia_css_debug_dump_pipe_config(config);
+	ia_css_debug_dump_pipe_extra_config(extra_config);
+
 	if (pipe == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
@@ -7190,6 +7193,13 @@ ia_css_pipe_create_extra(const struct ia_css_pipe_config *config,
 	}
 	/* handle output info, asume always needed */
 	if (internal_pipe->config.output_info.res.width) {
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+		if ( internal_pipe->config.output_info.format == IA_CSS_FRAME_FORMAT_BINARY_8) {
+			internal_pipe->config.output_info.res.height =
+				ceil_div(internal_pipe->config.output_info.res.width, HIVE_ISP_DDR_WORD_BYTES);
+			internal_pipe->config.output_info.res.width = HIVE_ISP_DDR_WORD_BYTES;
+		}
+#endif
 		err = sh_css_pipe_configure_output(
 				internal_pipe,
 				internal_pipe->config.output_info.res.width,
@@ -7402,6 +7412,8 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_stream_create() enter, num_pipes=%d\n", num_pipes);
+	ia_css_debug_dump_stream_config(stream_config, num_pipes);
+
 	/* some checks */
 	if (num_pipes == 0 ||
 		stream == NULL ||
@@ -7596,9 +7608,18 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		/* set current stream */
 		curr_pipe->stream = curr_stream;
 		/* take over effective info */
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+		if ((curr_stream->config.format >= IA_CSS_STREAM_FORMAT_USER_DEF1) &&
+		    (curr_stream->config.format <= IA_CSS_STREAM_FORMAT_USER_DEF8)) {
+			curr_stream->config.effective_res.height =
+				ceil_div(curr_stream->config.effective_res.width, HIVE_ISP_DDR_WORD_BYTES);
+			curr_stream->config.effective_res.width = HIVE_ISP_DDR_WORD_BYTES;
+		}
+#endif
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: effective_res=%dx%d\n",
 			curr_stream->config.effective_res.width,
 			curr_stream->config.effective_res.height);
+
 		err = ia_css_util_check_res(
 			curr_stream->config.effective_res.width,
 			curr_stream->config.effective_res.height);
