@@ -47,6 +47,7 @@ ia_css_fpn_dump(
 	const struct sh_css_isp_fpn_params *fpn,
 	unsigned level)
 {
+	if (!fpn) return;
 	ia_css_debug_dtrace(level, "Fixed Pattern Noise Reduction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"fpn_shift", fpn->shift);

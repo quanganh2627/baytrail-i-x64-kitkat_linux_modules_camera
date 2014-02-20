@@ -117,6 +117,7 @@ ia_css_nr_dump(
 	const struct sh_css_isp_ynr_params *ynr,
 	unsigned level)
 {
+	if (!ynr) return;
 	ia_css_debug_dtrace(level,
 		"Y Noise Reduction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",

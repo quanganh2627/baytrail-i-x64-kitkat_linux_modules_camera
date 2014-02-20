@@ -2610,7 +2610,7 @@ ia_css_debug_pipe_graph_dump_stage(
 		 * parameters per call "reasonable"
 		 */
 		snprintf( enable_info1, sizeof(enable_info1),
-			"%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+			"%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 			bi->enable.reduced_pipe ?	"rp," : "",
 			bi->enable.vf_veceven ?		"vfve," : "",
 			bi->enable.dis ?		"dis," : "",
@@ -2619,33 +2619,27 @@ ia_css_debug_pipe_graph_dump_stage(
 			bi->enable.dvs_6axis ?		"dvs6," : "",
 			bi->enable.block_output ?	"bo," : "",
 			bi->enable.ds ?			"ds," : "",
-			bi->enable.fixed_bayer_ds ?	"fbds," : "",
 			bi->enable.bayer_fir_6db ?	"bf6," : "",
 			bi->enable.raw_binning ?	"rawb," : "",
 			bi->enable.continuous ?		"cont," : "",
 			bi->enable.s3a ?		"s3a," : "",
 			bi->enable.fpnr ?		"fpnr," : "",
-			bi->enable.sc ?			"sc," : "",
-			bi->enable.dis_crop ?		"disc," : ""
+			bi->enable.sc ?			"sc," : ""
 			);
 
 		snprintf( enable_info2, sizeof(enable_info2),
-			"%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+			"%s%s%s%s%s%s%s%s%s%s%s",
 			bi->enable.macc ?		"macc," : "",
 			bi->enable.output ?		"outp," : "",
 			bi->enable.ref_frame ?		"reff," : "",
 			bi->enable.tnr ?		"tnr," : "",
 			bi->enable.xnr ?		"xnr," : "",
-			bi->enable.raw ?		"raw," : "",
 			bi->enable.params ?		"par," : "",
-			bi->enable.gamma ?		"gam," : "",
-			bi->enable.ctc ?		"ctc," : "",
 			bi->enable.ca_gdc ?		"cagdc," : "",
 			bi->enable.isp_addresses ?	"ispa," : "",
 			bi->enable.in_frame ?		"inf," : "",
 			bi->enable.out_frame ?		"outf," : "",
-			bi->enable.high_speed ?		"hs," : "",
-			bi->enable.input_chunking ?	"inpc," : ""
+			bi->enable.high_speed ?		"hs," : ""
 			);
 
 		/* And merge them into one string */
@@ -2758,7 +2752,7 @@ ia_css_debug_pipe_graph_dump_stage(
 		}
 	}
 
-	for (i = 0; i < NUM_VIDEO_REF_FRAMES; i++) {
+	for (i = 0; i < NUM_VIDEO_DELAY_FRAMES; i++) {
 		if (stage->args.delay_frames[i]) {
 			ia_css_debug_pipe_graph_dump_frame(
 					stage->args.delay_frames[i], id,
@@ -2816,14 +2810,229 @@ ia_css_debug_pipe_graph_dump_sp_raw_copy(
 }
 
 void
-ia_css_debug_pipe_graph_dump_stream_config
-(const struct ia_css_stream_config *stream_config)
+ia_css_debug_pipe_graph_dump_stream_config(
+	const struct ia_css_stream_config *stream_config)
 {
 	pg_inst.width = stream_config->input_res.width;
 	pg_inst.height = stream_config->input_res.height;
 	pg_inst.eff_width = stream_config->effective_res.width;
 	pg_inst.eff_height = stream_config->effective_res.height;
 	pg_inst.stream_format = stream_config->format;
+}
+
+void
+ia_css_debug_dump_resolution(
+	const struct ia_css_resolution *res,
+	const char *label)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s: =%d x =%d\n",
+			label, res->width, res->height);
+}
+
+void
+ia_css_debug_dump_frame_info(
+	const struct ia_css_frame_info *info,
+	const char *label)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s\n", label);
+	ia_css_debug_dump_resolution(&info->res, "res");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "padded_width: %d\n",
+			info->padded_width);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "format: %d\n", info->format);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "raw_bit_depth: %d\n",
+			info->raw_bit_depth);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "raw_bayer_order: %d\n",
+			info->raw_bayer_order);
+}
+
+void
+ia_css_debug_dump_capture_config(
+	const struct ia_css_capture_config *config)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s\n", __func__);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "mode: %d\n", config->mode);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "enable_xnr:  %d\n",
+			config->enable_xnr);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "enable_raw_output: %d\n",
+			config->enable_raw_output);
+}
+
+void
+ia_css_debug_dump_pipe_extra_config(
+	const struct ia_css_pipe_extra_config *extra_config)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s\n", __func__);
+	if (extra_config) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"enable_raw_binning: %d\n",
+				extra_config->enable_raw_binning);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "enable_yuv_ds: %d\n",
+				extra_config->enable_yuv_ds);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"enable_high_speed:  %d\n",
+				extra_config->enable_high_speed);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"enable_dvs_6axis: %d\n",
+				extra_config->enable_dvs_6axis);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"enable_reduced_pipe: %d\n",
+				extra_config->enable_reduced_pipe);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"enable_fractional_ds: %d\n",
+				extra_config->enable_fractional_ds);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "disable_vf_pp: %d\n",
+				extra_config->disable_vf_pp);
+	}
+}
+
+void
+ia_css_debug_dump_pipe_config(
+	const struct ia_css_pipe_config *config)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s()\n", __func__);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "mode: %d\n", config->mode);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isp_pipe_version: %d\n",
+			config->isp_pipe_version);
+	ia_css_debug_dump_resolution(&config->bayer_ds_out_res,
+			"bayer_ds_out_res");
+	ia_css_debug_dump_resolution(&config->capt_pp_in_res,
+			"capt_pp_in_res");
+	ia_css_debug_dump_resolution(&config->vf_pp_in_res, "vf_pp_in_res");
+	ia_css_debug_dump_resolution(&config->dvs_crop_out_res,
+			"dvs_crop_out_res");
+	ia_css_debug_dump_frame_info(&config->output_info, "output_info");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "acc_extension: 0x%x\n",
+			config->acc_extension);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "num_acc_stages: %d\n",
+			config->num_acc_stages);
+	ia_css_debug_dump_frame_info(&config->vf_output_info,
+			"vf_output_info");
+	ia_css_debug_dump_capture_config(&config->default_capture_config);
+	ia_css_debug_dump_resolution(&config->dvs_envelope, "dvs_envelope");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "dvs_frame_delay: %d\n",
+			config->dvs_frame_delay);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "acc_num_execs: %d\n",
+			config->acc_num_execs);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "enable_dz: %d\n",
+			config->enable_dz);
+}
+
+void
+ia_css_debug_dump_stream_config_source(
+	const struct ia_css_stream_config *config)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s()\n", __func__);
+	switch (config->mode) {
+	case IA_CSS_INPUT_MODE_SENSOR:
+	case IA_CSS_INPUT_MODE_BUFFERED_SENSOR:
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "source.port\n");
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "port: %d\n",
+				config->source.port.port);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "num_lanes: %d\n",
+				config->source.port.num_lanes);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "timeout: %d\n",
+				config->source.port.timeout);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "compression: %d\n",
+				config->source.port.compression);
+		break;
+	case IA_CSS_INPUT_MODE_TPG:
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "source.tpg\n");
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "id: %d\n",
+				config->source.tpg.id);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "mode: %d\n",
+				config->source.tpg.mode);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "x_mask: 0x%x\n",
+				config->source.tpg.x_mask);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "x_delta: %d\n",
+				config->source.tpg.x_delta);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "y_mask: 0x%x\n",
+				config->source.tpg.y_mask);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "y_delta: %d\n",
+				config->source.tpg.y_delta);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "xy_mask: 0x%x\n",
+				config->source.tpg.xy_mask);
+		break;
+	case IA_CSS_INPUT_MODE_PRBS:
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "source.prbs\n");
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "id: %d\n",
+				config->source.prbs.id);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "h_blank: %d\n",
+				config->source.prbs.h_blank);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "v_blank: %d\n",
+				config->source.prbs.v_blank);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "seed: 0x%x\n",
+				config->source.prbs.seed);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "seed1: 0x%x\n",
+				config->source.prbs.seed1);
+		break;
+	default:
+	case IA_CSS_INPUT_MODE_FIFO:
+	case IA_CSS_INPUT_MODE_MEMORY:
+		break;
+	}
+}
+
+void
+ia_css_debug_dump_mipi_buffer_config(
+	const struct ia_css_mipi_buffer_config *config)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s()\n", __func__);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "size_mem_words: %d\n",
+			config->size_mem_words);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "continuous: %d\n",
+			config->contiguous);
+}
+
+void
+ia_css_debug_dump_metadata_config(
+	const struct ia_css_metadata_config *config)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s()\n", __func__);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "data_type: %d\n",
+			config->data_type);
+	ia_css_debug_dump_resolution(&config->resolution, "resolution");
+}
+
+void
+ia_css_debug_dump_stream_config(
+	const struct ia_css_stream_config *config,
+	int num_pipes)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s()\n", __func__);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "num_pipes: %d\n", num_pipes);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "mode: %d\n", config->mode);
+	ia_css_debug_dump_stream_config_source(config);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "channel_id: %d\n",
+			config->channel_id);
+	ia_css_debug_dump_resolution(&config->input_res, "input_res");
+	ia_css_debug_dump_resolution(&config->effective_res, "effective_res");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "format: %d\n",
+			config->format);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "bayer_order: %d\n",
+			config->bayer_order);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sensor_binning_factor: %d\n",
+			config->sensor_binning_factor);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "two_pixels_per_clock: %d\n",
+			config->two_pixels_per_clock);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "pixels_per_clock: %d\n",
+			config->pixels_per_clock);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "online: %d\n",
+			config->online);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "init_num_cont_raw_buf: %d\n",
+			config->init_num_cont_raw_buf);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"target_num_cont_raw_buf: %d\n",
+			config->target_num_cont_raw_buf);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "pack_raw_pixels: %d\n",
+			config->pack_raw_pixels);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "continuous: %d\n",
+			config->continuous);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "flash_gpio_pin: %d\n",
+			config->flash_gpio_pin);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "left_padding: %d\n",
+			config->left_padding);
+	ia_css_debug_dump_mipi_buffer_config(&config->mipi_buffer_config);
+	ia_css_debug_dump_metadata_config(&config->metadata_config);
 }
 
 #if defined(HRT_SCHED) || defined(SH_CSS_DEBUG_SPMEM_DUMP_SUPPORT)

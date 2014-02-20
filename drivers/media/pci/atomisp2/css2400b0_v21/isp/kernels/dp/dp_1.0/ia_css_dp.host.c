@@ -75,6 +75,7 @@ ia_css_dp_dump(
 	const struct sh_css_isp_dp_params *dp,
 	unsigned level)
 {
+	if (!dp) return;
 	ia_css_debug_dtrace(level, "Defect Pixel Correction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 		"dp_threshold_single_w_2adj_on",

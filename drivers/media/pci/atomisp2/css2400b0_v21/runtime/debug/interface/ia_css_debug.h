@@ -263,6 +263,93 @@ ia_css_debug_dump_isp_binary(void);
 
 extern void sh_css_dump_sp_raw_copy_linecount(bool reduced);
 
+/*! \brief Dump the resolution info to the trace output
+ * Dumps the resolution info to the trace output.
+ * \param[in]	res	pointer to struct ia_css_resolution
+ * \param[in]	label	description of resolution output
+ * \return	None
+ */
+extern void
+ia_css_debug_dump_resolution(
+	const struct ia_css_resolution *res,
+	const char *label);
+
+/*! \brief Dump the frame info to the trace output
+ * Dumps the frame info to the trace output.
+ * \param[in]	info	pointer to struct ia_css_frame_info
+ * \param[in]	label	description of frame_info output
+ * \return	None
+ */
+extern void
+ia_css_debug_dump_frame_info(
+	const struct ia_css_frame_info *info,
+	const char *label);
+
+/*! \brief Dump the capture config info to the trace output
+ * Dumps the capture config info to the trace output.
+ * \param[in]	info	pointer to struct ia_css_capture_config
+ * \return	None
+ */
+extern void
+ia_css_debug_dump_capture_config(
+	const struct ia_css_capture_config *config);
+
+/*! \brief Dump the pipe extra config info to the trace output
+ * Dumps the pipe extra config info to the trace output.
+ * \param[in]	info	pointer to struct ia_css_pipe_extra_config
+ * \return	None
+ */
+extern void
+ia_css_debug_dump_pipe_extra_config(
+	const struct ia_css_pipe_extra_config *extra_config);
+
+/*! \brief Dump the pipe config info to the trace output
+ * Dumps the pipe config info to the trace output.
+ * \param[in]	info	pointer to struct ia_css_pipe_config
+ * \return	None
+ */
+extern void
+ia_css_debug_dump_pipe_config(
+	const struct ia_css_pipe_config *config);
+
+extern void
+/*! \brief Dump the stream config source info to the trace output
+ * Dumps the stream config source info to the trace output.
+ * \param[in]	info	pointer to struct ia_css_stream_config
+ * \return	None
+ */
+ia_css_debug_dump_stream_config_source(
+	const struct ia_css_stream_config *config);
+
+/*! \brief Dump the mipi buffer config info to the trace output
+ * Dumps the mipi buffer config info to the trace output.
+ * \param[in]	info	pointer to struct ia_css_mipi_buffer_config
+ * \return	None
+ */
+extern void
+ia_css_debug_dump_mipi_buffer_config(
+	const struct ia_css_mipi_buffer_config *config);
+
+/*! \brief Dump the metadata config info to the trace output
+ * Dumps the metadata config info to the trace output.
+ * \param[in]	info	pointer to struct ia_css_metadata_config
+ * \return	None
+ */
+extern void
+ia_css_debug_dump_metadata_config(
+	const struct ia_css_metadata_config *config);
+
+/*! \brief Dump the stream config info to the trace output
+ * Dumps the stream config info to the trace output.
+ * \param[in]	info		pointer to struct ia_css_stream_config
+ * \param[in]	num_pipes	number of pipes for the stream
+ * \return	None
+ */
+extern void
+ia_css_debug_dump_stream_config(
+	const struct ia_css_stream_config *config,
+	int num_pipes);
+
 /*
 extern void sh_css_init_ddr_debug_queue(void);
 extern void sh_css_load_ddr_debug_queue(void);

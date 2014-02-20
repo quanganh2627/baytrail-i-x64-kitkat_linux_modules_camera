@@ -61,6 +61,7 @@ ia_css_wb_dump(
 	const struct sh_css_isp_wb_params *wb,
 	unsigned level)
 {
+	if (!wb) return;
 	ia_css_debug_dtrace(level, "White Balance:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"wb_gain_shift", wb->gain_shift);
