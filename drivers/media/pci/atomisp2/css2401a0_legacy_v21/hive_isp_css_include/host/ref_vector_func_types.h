@@ -55,7 +55,7 @@ typedef struct {
   tvector1w     v00  ; tvector1w     v01 ; tvector1w     v02  ;
   tvector1w     v10  ; tvector1w     v11 ; tvector1w     v12  ;
   tvector1w     v20  ; tvector1w     v21 ; tvector1w     v22  ;
-} s_3x3_matrix;
+} s_1w_3x3_matrix;
 
 typedef struct {
   tvector1w     v00  ; tvector1w     v01 ; tvector1w     v02  ;
