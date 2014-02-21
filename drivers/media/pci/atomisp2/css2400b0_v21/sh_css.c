@@ -3214,6 +3214,7 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 				 prev_bds_out_info,
 				 prev_out_info,
 				 prev_vf_info;
+	struct ia_css_binary_descr preview_descr;
 	bool online;
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	bool continuous, need_vf_pp = false;
@@ -3255,16 +3256,15 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 	 * 2. Digital zoom.
 	 * 3. An output format that is not supported by the preview binary.
 	 *    In practice this means something other than yuv_line or nv12.
+	 * The decision if the vf_pp binary is needed for YUV downscaling is
+	 * made after the preview binary selection, since some preview binaries
+	 * can perform the requested YUV downscaling.
 	 * */
-	if (pipe->vf_yuv_ds_input_info.res.width) {
-		need_vf_pp = pipe->vf_yuv_ds_input_info.res.width != pipe->output_info.res.width &&
-			pipe->vf_yuv_ds_input_info.res.height != pipe->output_info.res.height;
-	}
-	need_vf_pp |= pipe->config.enable_dz;
+	need_vf_pp = pipe->config.enable_dz;
 	need_vf_pp |= pipe->output_info.format != IA_CSS_FRAME_FORMAT_YUV_LINE &&
 		      pipe->output_info.format != IA_CSS_FRAME_FORMAT_NV12;
 
-	/* Preview */
+	/* Preview step 1 */
 	if (pipe->vf_yuv_ds_input_info.res.width)
 		prev_vf_info = pipe->vf_yuv_ds_input_info;
 	else
@@ -3278,8 +3278,34 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 		ia_css_frame_info_set_format(&prev_vf_info,
 					     IA_CSS_FRAME_FORMAT_YUV_LINE);
 
-	{
-		struct ia_css_binary_descr preview_descr;
+	err = ia_css_pipe_get_preview_binarydesc(pipe, &preview_descr,
+		&prev_in_info, &prev_bds_out_info, &prev_out_info, &prev_vf_info);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+	err = ia_css_binary_find(&preview_descr,
+				 &pipe->pipe_settings.preview.preview_binary);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+
+	/* The vf_pp binary is needed when (further) YUV downscaling is required */
+	need_vf_pp |= pipe->pipe_settings.preview.preview_binary.out_frame_info.res.width != pipe->output_info.res.width;
+	need_vf_pp |= pipe->pipe_settings.preview.preview_binary.out_frame_info.res.height != pipe->output_info.res.height;
+
+	/* When vf_pp is needed, then the output format of the selected
+	 * preview binary must be yuv_line. If this is not the case,
+	 * then the preview binary selection is done again.
+	 */
+	if (need_vf_pp &&
+	    (pipe->pipe_settings.preview.preview_binary.out_frame_info.format != IA_CSS_FRAME_FORMAT_YUV_LINE)) {
+
+		/* Preview step 2 */
+		if (pipe->vf_yuv_ds_input_info.res.width)
+			prev_vf_info = pipe->vf_yuv_ds_input_info;
+		else
+			prev_vf_info = pipe->output_info;
+
+		ia_css_frame_info_set_format(&prev_vf_info,
+					     IA_CSS_FRAME_FORMAT_YUV_LINE);
 
 		err = ia_css_pipe_get_preview_binarydesc(pipe, &preview_descr,
 			&prev_in_info, &prev_bds_out_info, &prev_out_info, &prev_vf_info);

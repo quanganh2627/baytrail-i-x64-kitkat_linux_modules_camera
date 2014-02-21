@@ -70,7 +70,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph3 (
 	const s_1w_1x3_matrix		m);
 
 STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_calc_coeff (
-	const s_1w_1x3_matrix		m);
+	const s_1w_1x3_matrix		m, tscalar1w coeff);
 
 /*
  * Normalised FIR with coefficients [1,1,1], -9dB at Fs/2
@@ -133,7 +133,6 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w_1x2 fir3x3m_9dB_out2x1_nrm (
 	const s_1w_4x3_matrix		m);
 
 STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir5x5m_12dB_nrm (
-	s_1w_5x5_matrix	m);
-
+	const s_1w_5x5_matrix	m);
 #endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/
 
