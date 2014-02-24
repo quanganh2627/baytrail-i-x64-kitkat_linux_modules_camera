@@ -343,15 +343,15 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 
 
 	if (asd->params.curr_grid_info.s3a_grid.enable) {
-		if (css_capture_pipe_id < CSS_PIPE_ID_NUM)
+		if (css_capture_pipe_id == asd->params.s3a_enabled_pipe)
 			atomisp_q_s3a_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
 					css_capture_pipe_id);
-		if (css_preview_pipe_id < CSS_PIPE_ID_NUM)
+		if (css_preview_pipe_id == asd->params.s3a_enabled_pipe)
 			atomisp_q_s3a_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
 					css_preview_pipe_id);
-		if (css_video_pipe_id < CSS_PIPE_ID_NUM)
+		if (css_video_pipe_id == asd->params.s3a_enabled_pipe)
 			atomisp_q_s3a_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
 					css_video_pipe_id);
@@ -511,6 +511,9 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 #ifdef CSS20
 	asd->params.dvs_6axis = NULL;
 #endif
+	/* s3a grid not enabled for any pipe */
+	asd->params.s3a_enabled_pipe = CSS_PIPE_ID_NUM;
+
 	asd->params.offline_parm.num_captures = 1;
 	asd->params.offline_parm.skip_frames = 0;
 	asd->params.offline_parm.offset = 0;

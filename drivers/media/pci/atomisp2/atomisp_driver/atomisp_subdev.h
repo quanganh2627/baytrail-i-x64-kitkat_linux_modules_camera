@@ -126,6 +126,7 @@ struct atomisp_css_params {
 
 	/* Current grid info */
 	struct atomisp_css_grid_info curr_grid_info;
+	enum atomisp_css_pipe_id s3a_enabled_pipe;
 
 	int s3a_output_bytes;
 	bool s3a_buf_data_valid;

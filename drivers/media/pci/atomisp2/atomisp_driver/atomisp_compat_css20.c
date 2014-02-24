@@ -1475,6 +1475,16 @@ int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
 					sizeof(struct ia_css_grid_info));
 	memcpy(&asd->params.curr_grid_info, &p_info.grid_info,
 					sizeof(struct ia_css_grid_info));
+	/*
+	 * Record which css pipe enables s3a_grid.
+	 * Currently would have one css pipe that need it
+	 */
+	if (asd->params.curr_grid_info.s3a_grid.enable) {
+		if (asd->params.s3a_enabled_pipe != CSS_PIPE_ID_NUM)
+			dev_warn(isp->dev, "css pipe %d enabled s3a grid replaced by: %d.\n",
+					asd->params.s3a_enabled_pipe, pipe_id);
+		asd->params.s3a_enabled_pipe = pipe_id;
+	}
 
 	/* If the grid info has not changed and the buffers for 3A and
 	 * DIS statistics buffers are allocated or buffer size would be zero
