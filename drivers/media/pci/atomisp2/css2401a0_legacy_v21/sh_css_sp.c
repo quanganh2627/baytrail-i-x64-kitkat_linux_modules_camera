@@ -76,8 +76,7 @@ static struct sh_css_sp_per_frame_data per_frame_data;
 static bool sp_running;
 
 static enum ia_css_err
-set_output_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num);
+set_output_frame_buffer(const struct ia_css_frame *frame);
 
 /* This data is stored every frame */
 void
@@ -222,7 +221,7 @@ sh_css_sp_start_binary_copy(unsigned int pipe_num, struct ia_css_frame *out_fram
 	sh_css_sp_stage.func =
 		(unsigned int)IA_CSS_PIPELINE_BIN_COPY;
 
-	set_output_frame_buffer(out_frame,pipe_num, stage_num);
+	set_output_frame_buffer(out_frame);
 
 	/* sp_bin_copy_init on the SP does not deal with dynamica/static yet */
 	/* For now always update the dynamic data from out frames. */
@@ -302,7 +301,7 @@ sh_css_sp_start_raw_copy(struct ia_css_frame *out_frame,
 	sh_css_sp_stage.stage_type = SH_CSS_SP_STAGE_TYPE;
 	sh_css_sp_stage.func = (unsigned int)IA_CSS_PIPELINE_RAW_COPY;
 	sh_css_sp_stage.if_config_index = (uint8_t) if_config_index;
-	set_output_frame_buffer(out_frame, (unsigned)pipe_id, stage_num);
+	set_output_frame_buffer(out_frame);
 
 #if 0
 	/* sp_raw_copy_init on the SP does not deal with dynamica/static yet */
@@ -367,7 +366,7 @@ assert(out_frame != NULL);
 	sh_css_sp_stage.stage_type = SH_CSS_SP_STAGE_TYPE;
 	sh_css_sp_stage.func = (unsigned int)IA_CSS_PIPELINE_ISYS_COPY;
 
-	set_output_frame_buffer(out_frame, (unsigned)pipe_id, stage_num);
+	set_output_frame_buffer(out_frame);
 
 	ia_css_debug_pipe_graph_dump_sp_raw_copy(out_frame);
 }
@@ -411,14 +410,9 @@ sh_css_frame_info_to_sp(struct ia_css_frame_sp_info *sp,
 static void
 sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 				const struct ia_css_frame *frame_in,
-				unsigned pipe_num, unsigned stage_num,
 				enum ia_css_buffer_type type)
 {
 	assert(frame_in != NULL);
-
-	/* TODO: remove pipe and stage from interface */
-	(void)pipe_num;
-	(void)stage_num;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_copy_frame_to_spframe frame id %d ptr 0x%08x\n",
@@ -436,13 +430,29 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 		 */
 		assert(frame_in->dynamic_data_index <
 					SH_CSS_MAX_NUM_QUEUES);
-		/*
-		 * static_frame_data is overloaded, small values (<3) are
-		 * the dynamic index, large values are the static address
+
+		/* Klocwork assumes assert can be disabled; 
+		   Since we can get there with any type, and it does not
+		   know that frame_in->dynamic_data_index can only be set
+		   for one of the types in the assert) it has to assume we
+		   can get here for any type. however this could lead to an
+		   out of bounds reference when indexing buf_type about 10
+		   lines below. In order to satisfy KW an additional if 
+		   has been added. This one will always yield true.
 		 */
-		sh_css_sp_stage.frames.static_frame_data[type] =
-						frame_in->dynamic_data_index;
-		sh_css_sp_stage.frames.buf_type[type] = frame_in->buf_type;
+		if (((type == IA_CSS_BUFFER_TYPE_INPUT_FRAME) ||
+		     (type == IA_CSS_BUFFER_TYPE_OUTPUT_FRAME) ||
+		     (type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME))  &&
+		    (frame_in->dynamic_data_index < SH_CSS_MAX_NUM_QUEUES))
+		{
+			/*
+			 * static_frame_data is overloaded, small values (<3) are
+			 * the dynamic index, large values are the static address
+			 */
+			sh_css_sp_stage.frames.static_frame_data[type] =
+							frame_in->dynamic_data_index;
+			sh_css_sp_stage.frames.buf_type[type] = frame_in->buf_type;
+		}
 	} else {
 		sh_css_sp_stage.frames.static_frame_data[type] = frame_in->data;
 	}
@@ -528,8 +538,7 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 }
 
 static enum ia_css_err
-set_input_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
+set_input_frame_buffer(const struct ia_css_frame *frame)
 {
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -547,15 +556,13 @@ set_input_frame_buffer(const struct ia_css_frame *frame,
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.in, frame,
-					pipe_num, stage_num,
 					IA_CSS_BUFFER_TYPE_INPUT_FRAME);
 
 	return IA_CSS_SUCCESS;
 }
 
 static enum ia_css_err
-set_output_frame_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
+set_output_frame_buffer(const struct ia_css_frame *frame)
 {
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -589,14 +596,12 @@ set_output_frame_buffer(const struct ia_css_frame *frame,
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.out, frame,
-					pipe_num, stage_num,
 					IA_CSS_BUFFER_TYPE_OUTPUT_FRAME);
 	return IA_CSS_SUCCESS;
 }
 
 static enum ia_css_err
-set_video_delay_frame_buffer(const struct ia_css_frame *frame,
-			     unsigned pipe_num, unsigned stage_num, unsigned index)
+set_video_delay_frame_buffer(const struct ia_css_frame *frame, unsigned index)
 {
 	enum ia_css_buffer_type id = IA_CSS_BUFFER_TYPE_VIDEO_DELAY_0 + index;
 
@@ -606,17 +611,15 @@ set_video_delay_frame_buffer(const struct ia_css_frame *frame,
 	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV420 && frame->info.format != IA_CSS_FRAME_FORMAT_YUV420_16)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	if (index >= NUM_VIDEO_DELAY_FRAMES) /* this cannot happen but Klocwok does not see this */
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	if (index >= NUM_VIDEO_DELAY_FRAMES) /* this cannot happen but Klocwork does not see this */
+		return IA_CSS_ERR_INTERNAL_ERROR;
 
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.delay_frames[index],
-				     frame, pipe_num, stage_num, id);
+	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.delay_frames[index], frame, id);
 	return IA_CSS_SUCCESS;
 }
 
 static enum ia_css_err
-set_tnr_frame_buffer(const struct ia_css_frame *frame,
-		     unsigned pipe_num, unsigned stage_num, unsigned index)
+set_tnr_frame_buffer(const struct ia_css_frame *frame, unsigned index)
 {
 	enum ia_css_buffer_type id = IA_CSS_BUFFER_TYPE_TNR_0 + index;
 
@@ -626,14 +629,15 @@ set_tnr_frame_buffer(const struct ia_css_frame *frame,
 	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV_LINE)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.tnr_frames[index],
-				     frame, pipe_num, stage_num, id);
+	if (index >= NUM_VIDEO_TNR_FRAMES) /* this cannot happen but Klocwork does not see this */
+		return IA_CSS_ERR_INTERNAL_ERROR;
+
+	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.tnr_frames[index], frame, id);
 	return IA_CSS_SUCCESS;
 }
 
 static enum ia_css_err
-set_view_finder_buffer(const struct ia_css_frame *frame,
-			unsigned pipe_num, unsigned stage_num)
+set_view_finder_buffer(const struct ia_css_frame *frame)
 {
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -653,7 +657,6 @@ set_view_finder_buffer(const struct ia_css_frame *frame,
 	}
 
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.out_vf, frame,
-					pipe_num, stage_num,
 					IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME);
 	return IA_CSS_SUCCESS;
 }
@@ -733,9 +736,8 @@ sh_css_sp_configure_prbs(int seed)
 }
 #endif
 
-enum ia_css_err
-sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args,
-				unsigned pipe_num, unsigned stage_num)
+static enum ia_css_err
+sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	int i;
@@ -743,27 +745,21 @@ sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args,
 	assert(args != NULL);
 
 	if (args->in_frame)
-		err = set_input_frame_buffer(args->in_frame,
-						pipe_num, stage_num);
+		err = set_input_frame_buffer(args->in_frame);
 	if (err == IA_CSS_SUCCESS && args->out_vf_frame)
-		err = set_view_finder_buffer(args->out_vf_frame,
-						pipe_num, stage_num);
+		err = set_view_finder_buffer(args->out_vf_frame);
 	if (err == IA_CSS_SUCCESS && args->out_frame)
-		err = set_output_frame_buffer(args->out_frame,
-						pipe_num, stage_num);
+		err = set_output_frame_buffer(args->out_frame);
 	for (i = 0; i < NUM_VIDEO_DELAY_FRAMES; i++) {
 		if (err == IA_CSS_SUCCESS && args->delay_frames[i]) {
 			err = set_video_delay_frame_buffer(
-					args->delay_frames[i],
-					pipe_num, stage_num, i);
+					args->delay_frames[i], i);
 		}
 	}
 
 	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
 		if (err == IA_CSS_SUCCESS && args->tnr_frames[i]) {
-			err = set_tnr_frame_buffer(
-					args->tnr_frames[i],
-					pipe_num, stage_num, i);
+			err = set_tnr_frame_buffer( args->tnr_frames[i], i);
 		}
 	}
 
@@ -966,7 +962,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		 */
 		sh_css_sp_stage.frames.static_frame_data[i] = mmgr_EXCEPTION;
 
-	err = sh_css_sp_write_frame_pointers(args, pipe_num, stage);
+	err = sh_css_sp_write_frame_pointers(args);
 	//TODO: move it to a better place
 	if (binary->info->sp.enable.s3a) {
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_3A_STATISTICS, thread_id, &queue_id);

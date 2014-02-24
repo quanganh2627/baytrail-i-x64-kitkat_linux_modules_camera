@@ -43,15 +43,18 @@ struct firmware_header {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140221_0200) is a place holder
+/* The string STR(irci_master_20140223_0200) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char* release_version = STR(irci_master_20140221_0200);
+static const char* release_version = STR(irci_master_20140223_0200);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";
 
 struct ia_css_fw_info	  sh_css_sp_fw;
+#if defined(IS_ISP_2500_SYSTEM)
+struct ia_css_fw_info	  sh_css_sp1_fw;
+#endif
 struct ia_css_blob_descr *sh_css_blob_info; /* Only ISP blob info (no SP) */
 unsigned		  sh_css_num_binaries; /* This includes 1 SP binary */
 
@@ -65,9 +68,9 @@ char *sh_css_get_fw_version(void)
  * Split the loaded firmware into blobs
  */
 
-/* Setup sp binary */
+/* Setup sp/sp1 binary */
 static void
-setup_sp(struct ia_css_fw_info *fw, const char *fw_data)
+setup_sp(struct ia_css_fw_info *fw, const char *fw_data, struct ia_css_fw_info *sh_css_sp_sp1_fw)
 {
 	const char *blob_data;
 
@@ -76,12 +79,11 @@ setup_sp(struct ia_css_fw_info *fw, const char *fw_data)
 
 	blob_data = fw_data + fw->blob.offset;
 
-	sh_css_sp_fw = *fw;
+	*sh_css_sp_sp1_fw = *fw;
 	/* MW: code starts at "offset" */
-	sh_css_sp_fw.blob.code = blob_data /* + fw->blob.text_source */;
-	sh_css_sp_fw.blob.data = blob_data + fw->blob.data_source;
+	sh_css_sp_sp1_fw->blob.code = blob_data /* + fw->blob.text_source */;
+	sh_css_sp_sp1_fw->blob.data = blob_data + fw->blob.data_source;
 }
-
 enum ia_css_err
 sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia_css_blob_descr *bd)
 {
@@ -145,7 +147,7 @@ sh_css_load_firmware(const char *fw_data,
 
 	sh_css_num_binaries = file_header->binary_nr;
 	/* Only allocate memory for ISP blob info */
-	sh_css_blob_info = sh_css_malloc((sh_css_num_binaries - 1) *
+	sh_css_blob_info = sh_css_malloc((sh_css_num_binaries - NUM_OF_SPS) *
 						sizeof(*sh_css_blob_info));
 
 	if (sh_css_blob_info == NULL)
@@ -164,17 +166,22 @@ sh_css_load_firmware(const char *fw_data,
 			return IA_CSS_ERR_INTERNAL_ERROR;
 
 		if (bi->type == ia_css_sp_firmware) {
-			/* The first binary (i==0) is always the SP firmware */
-			if (i != 0)
+			if (i != SP_FIRMWARE)
 				return IA_CSS_ERR_INTERNAL_ERROR;
-			setup_sp(bi, fw_data);
+			setup_sp(bi, fw_data, &sh_css_sp_fw);
+#if defined(IS_ISP_2500_SYSTEM)
+		} else if (bi->type == ia_css_sp1_firmware) {
+			if (i != SP1_FIRMWARE)
+				return IA_CSS_ERR_INTERNAL_ERROR;
+			setup_sp(bi, fw_data, &sh_css_sp1_fw);
+#endif
 		} else {
-			/* All subsequent binaries (i>=1) are ISP firmware */
-			if (i == 0)
+			/* All subsequent binaries (i>NUM_OF_SPS) are ISP firmware */
+			if (i < NUM_OF_SPS)
 				return IA_CSS_ERR_INTERNAL_ERROR;
 			if (bi->type != ia_css_isp_firmware)
 				return IA_CSS_ERR_INTERNAL_ERROR;
-			sh_css_blob_info[i-1] = bd;
+			sh_css_blob_info[i-NUM_OF_SPS] = bd;
 		}
 	}
 	return IA_CSS_SUCCESS;
@@ -183,6 +190,9 @@ sh_css_load_firmware(const char *fw_data,
 void sh_css_unload_firmware(void)
 {
 	memset(&sh_css_sp_fw, 0, sizeof(sh_css_sp_fw));
+#if defined(IS_ISP_2500_SYSTEM)
+	memset(&sh_css_sp1_fw, 0, sizeof(sh_css_sp1_fw));
+#endif
 	if (sh_css_blob_info) {
 		sh_css_free(sh_css_blob_info);
 		sh_css_blob_info = NULL;

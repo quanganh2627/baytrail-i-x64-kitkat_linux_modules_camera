@@ -348,7 +348,9 @@ struct ia_css_acc_info {
 union ia_css_fw_union {
 	struct ia_css_binary_xinfo	isp; /**< ISP info */
 	struct ia_css_sp_info		sp;  /**< SP info */
-	struct ia_css_sp_info		sp1;  /**< SP info */
+#if defined(IS_ISP_2500_SYSTEM)
+	struct ia_css_sp_info		sp1;  /**< SP1 info */
+#endif
 	struct ia_css_acc_info		acc; /**< Accelerator info */
 };
 

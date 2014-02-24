@@ -109,6 +109,10 @@
 #define SH_CSS_ENABLE_METADATA
 #endif
 
+#if defined(SH_CSS_ENABLE_METADATA) && defined(USE_INPUT_SYSTEM_VERSION_2)
+#define SH_CSS_ENABLE_METADATA_THREAD
+#endif
+
 /**
  * The C99 standard does not specify the exact object representation of structs;
  * the representation is compiler dependent.
@@ -151,6 +155,20 @@
  * BUILD_BUG_ON to find other methods.
  */
 #define COMPILATION_ERROR_IF( condition ) ((void)sizeof(char[1 - 2*!!(condition)]))
+
+/* Number of SP's */
+#if defined(IS_ISP_2500_SYSTEM)
+#define NUM_OF_SPS 2
+#else
+#define NUM_OF_SPS 1
+#endif
+
+/* Enum for Number of Binaries */
+enum sh_css_num_binaries {
+	SP_FIRMWARE = 0,
+	SP1_FIRMWARE,
+	ISP_FIRMWARE
+};
 
  /*
  * JB: keep next enum in sync with thread id's

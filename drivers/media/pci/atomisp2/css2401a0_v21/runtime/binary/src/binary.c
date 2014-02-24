@@ -242,7 +242,7 @@ enum ia_css_err
 ia_css_binary_init_infos(void)
 {
 	unsigned int i;
-	unsigned int num_of_isp_binaries = sh_css_num_binaries - 1;
+	unsigned int num_of_isp_binaries = sh_css_num_binaries - NUM_OF_SPS;
 
 	all_binaries = sh_css_malloc(num_of_isp_binaries *
 						sizeof(*all_binaries));

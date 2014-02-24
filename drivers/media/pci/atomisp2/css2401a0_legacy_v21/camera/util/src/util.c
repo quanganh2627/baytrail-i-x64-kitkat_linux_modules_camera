@@ -70,6 +70,7 @@ unsigned int ia_css_util_input_format_bpp(
 	case IA_CSS_STREAM_FORMAT_RGB_888:
 	case IA_CSS_STREAM_FORMAT_RAW_8:
 	case IA_CSS_STREAM_FORMAT_BINARY_8:
+	case IA_CSS_STREAM_FORMAT_EMBEDDED:
 		rval = 8;
 		break;
 	case IA_CSS_STREAM_FORMAT_YUV420_10:

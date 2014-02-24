@@ -194,10 +194,6 @@ sh_css_sp_configure_prbs(int seed);
 void
 sh_css_sp_reset_global_vars(void);
 
-enum ia_css_err
-sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args,
-				unsigned pipe_num, unsigned stage_num);
-
 /**
  * @brief Initialize the DMA software-mask in the debug mode.
  * This API should be ONLY called in the debugging mode.
