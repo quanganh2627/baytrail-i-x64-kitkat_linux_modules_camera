@@ -225,12 +225,17 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 			av->ip.continuous = false;
 			break;
 		}
+
+		dev_dbg(&av->isys->adev->dev, "continuous %d\n",
+			av->ip.continuous);
 	}
 
 	media_entity_graph_walk_start(&graph, &av->vdev.entity);
 
 	while ((entity = media_entity_graph_walk_next(&graph))) {
 		struct v4l2_subdev *sd = media_entity_to_v4l2_subdev(entity);
+
+		dev_dbg(&av->isys->adev->dev, "entity %s\n", entity->name);
 
 		/*
 		 * Is the entity external or not? This is a little bit
@@ -246,6 +251,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 			goto out_media_entity_pipeline_stop;
 		}
 
+		dev_dbg(&av->isys->adev->dev, "s_stream %s\n", entity->name);
 		rval = v4l2_subdev_call(sd, video, s_stream, state);
 		if (!state)
 			continue;
