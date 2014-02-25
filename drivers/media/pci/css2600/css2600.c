@@ -243,7 +243,8 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		rval = PTR_ERR(isp->isys);
 		if (rval < 0)
 			goto out_css2600_bus_del_devices;
-		isp->psys = css2600_psys_init(pdev, &pdev->dev, isys_iommu, base, 0);
+		isp->psys = css2600_psys_init(pdev, &isp->isys->dev, isys_iommu,
+					      base, 0);
 		rval = PTR_ERR(isp->psys);
 		if (rval < 0)
 			goto out_css2600_bus_del_devices;
