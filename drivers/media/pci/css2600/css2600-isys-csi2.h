@@ -72,6 +72,4 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 void css2600_isys_csi2_cleanup(struct css2600_isys_csi2 *csi2);
 void css2600_isys_csi2_isr(struct css2600_isys_csi2 *csi2);
 
-void css2600_isys_csi2_set_stream(struct css2600_isys_csi2 *csi2, bool enable);
-
 #endif /* CSS2600_ISYS_CSI2_H */

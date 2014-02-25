@@ -57,6 +57,4 @@ int css2600_isys_tpg_init(struct css2600_isys_tpg *tpg, struct css2600_isys *isy
 void css2600_isys_tpg_cleanup(struct css2600_isys_tpg *tpg);
 void css2600_isys_tpg_isr(struct css2600_isys_tpg *tpg);
 
-void css2600_isys_tpg_set_stream(struct css2600_isys_tpg *tpg, bool enable);
-
 #endif /* CSS2600_ISYS_TPG_H */

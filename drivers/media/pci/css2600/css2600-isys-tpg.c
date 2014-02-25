@@ -55,7 +55,17 @@ static struct v4l2_subdev_internal_ops tpg_sd_internal_ops = {
 static const struct v4l2_subdev_core_ops tpg_sd_core_ops = {
 };
 
+static int set_stream(struct v4l2_subdev *sd, int enable)
+{
+	struct css2600_isys_tpg *tpg = to_css2600_isys_tpg(sd);
+
+	dev_dbg(&tpg->isys->adev->dev, "tpg s_stream %d\n", enable);
+
+	return 0;
+}
+
 static const struct v4l2_subdev_video_ops tpg_sd_video_ops = {
+	.s_stream = set_stream,
 };
 
 static const struct v4l2_subdev_pad_ops tpg_sd_pad_ops = {
@@ -134,9 +144,5 @@ fail:
 }
 
 void css2600_isys_tpg_isr(struct css2600_isys_tpg *tpg)
-{
-}
-
-void css2600_isys_tpg_set_stream(struct css2600_isys_tpg *tpg, bool enable)
 {
 }
