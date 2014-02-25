@@ -62,9 +62,9 @@ static int video_release(struct file *file)
 {
 	struct css2600_isys_video *av = video_drvdata(file);
 
-	css2600_pipeline_pm_use(&av->vdev.entity, 0);
+	vb2_fop_release(file);
 
-	v4l2_fh_release(file);
+	css2600_pipeline_pm_use(&av->vdev.entity, 0);
 
 	return 0;
 }
