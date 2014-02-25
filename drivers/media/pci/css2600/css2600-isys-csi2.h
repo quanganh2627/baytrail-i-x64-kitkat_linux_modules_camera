@@ -63,6 +63,9 @@ struct css2600_isys_csi2 {
 	} sensor_cfg;
 };
 
+#define to_css2600_isys_csi2(sd)					\
+	container_of(to_css2600_isys_subdev(sd), struct css2600_isys_csi2, asd)
+
 int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *isys,
 		      void __iomem *base, unsigned int lanes,
 		      unsigned int index);

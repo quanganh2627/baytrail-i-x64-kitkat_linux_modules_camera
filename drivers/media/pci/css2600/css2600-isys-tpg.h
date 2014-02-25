@@ -49,6 +49,9 @@ struct css2600_isys_tpg {
 	unsigned int index;
 };
 
+#define to_css2600_isys_tpg(sd)					\
+	container_of(to_css2600_isys_subdev(sd), struct css2600_isys_tpg, asd)
+
 int css2600_isys_tpg_init(struct css2600_isys_tpg *tpg, struct css2600_isys *isys,
 		      void __iomem *base, unsigned int index);
 void css2600_isys_tpg_cleanup(struct css2600_isys_tpg *tpg);
