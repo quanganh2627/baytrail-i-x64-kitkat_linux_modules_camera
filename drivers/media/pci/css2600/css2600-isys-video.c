@@ -204,10 +204,18 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 		goto out_unlock;
 
 	if (state) {
+		av->ip.external = NULL;
+
 		rval = media_entity_pipeline_start(&av->vdev.entity,
 						   &av->ip.pipe);
 		if (rval < 0)
 			goto out_unlock;
+
+		if (!av->ip.external) {
+			dev_err(&av->isys->adev->dev,
+				"no external entity set! Driver bug?\n");
+			goto out_media_entity_pipeline_stop;
+		}
 
 		av->ip.continuous = true;
 
@@ -248,7 +256,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 		/* We don't support non-linear pipelines yet. */
 		if (media_entity_type(entity) != MEDIA_ENT_T_V4L2_SUBDEV) {
 			rval = -EINVAL;
-			goto out_media_entity_pipeline_stop;
+			goto out_media_entity_stop_streaming;
 		}
 
 		dev_dbg(&av->isys->adev->dev, "s_stream %s\n", entity->name);
@@ -256,11 +264,11 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 		if (!state)
 			continue;
 		if (rval)
-			goto out_media_entity_pipeline_stop;
+			goto out_media_entity_stop_streaming;
 
 		if (entity->id >= sizeof(entities) << 3) {
 			WARN_ON(1);
-			goto out_media_entity_pipeline_stop;
+			goto out_media_entity_stop_streaming;
 		}
 
 		entities |= 1 << entity->id;
@@ -274,7 +282,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 	mutex_unlock(&av->mutex);
 	return 0;
 
-out_media_entity_pipeline_stop:
+out_media_entity_stop_streaming:
 	media_entity_graph_walk_start(&graph, &av->vdev.entity);
 
 	while (state && (entity2 = media_entity_graph_walk_next(&graph))
@@ -287,6 +295,7 @@ out_media_entity_pipeline_stop:
 		v4l2_subdev_call(sd, video, s_stream, 0);
 	}
 
+out_media_entity_pipeline_stop:
 	if (state)
 		media_entity_pipeline_stop(&av->vdev.entity);
 
