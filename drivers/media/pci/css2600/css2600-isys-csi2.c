@@ -58,7 +58,7 @@ static int link_validate(struct v4l2_subdev *sd, struct media_link *link,
 		container_of(sd->entity.pipe,
 			     struct css2600_isys_pipeline, pipe);
 
-	pipe->external = &sd->entity;
+	pipe->external = link->source->entity;
 
 	return v4l2_subdev_link_validate_default(sd, link, source_fmt,
 						 sink_fmt);
