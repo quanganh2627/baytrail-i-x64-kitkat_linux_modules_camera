@@ -369,6 +369,7 @@ int css2600_isys_video_init(struct css2600_isys_video *av,
 	if (rval)
 		goto out_css2600_isys_queue_cleanup;
 
+	av->vdev.entity.ops = &entity_ops;
 	av->vdev.release = video_device_release_empty;
 	av->vdev.fops = &isys_fops;
 	av->vdev.v4l2_dev = &av->isys->v4l2_dev;
