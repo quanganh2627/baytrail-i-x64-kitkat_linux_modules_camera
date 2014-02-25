@@ -122,8 +122,8 @@ static void buf_queue(struct vb2_buffer *vb)
 
 struct vb2_ops css2600_isys_queue_ops = {
 	.queue_setup = queue_setup,
-	.wait_prepare = css2600_isys_queue_lock,
-	.wait_finish = css2600_isys_queue_unlock,
+	.wait_prepare = css2600_isys_queue_unlock,
+	.wait_finish = css2600_isys_queue_lock,
 	.buf_init = buf_init,
 	.buf_prepare = buf_prepare,
 	.buf_finish = buf_finish,
