@@ -41,34 +41,58 @@ static int queue_setup(struct vb2_queue *q, const struct v4l2_format *fmt,
 void css2600_isys_queue_lock(struct vb2_queue *q)
 {
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 
+	dev_dbg(&av->isys->adev->dev, "queue lock\n");
 	mutex_lock(&aq->mutex);
 }
 
 void css2600_isys_queue_unlock(struct vb2_queue *q)
 {
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 
+	dev_dbg(&av->isys->adev->dev, "queue unlock\n");
 	mutex_unlock(&aq->mutex);
 }
 
 static int buf_init(struct vb2_buffer *vb)
 {
+	struct css2600_isys_queue *aq =
+		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+
+	dev_dbg(&av->isys->adev->dev, "buf_init\n");
 	return 0;
 }
 
 static int buf_prepare(struct vb2_buffer *vb)
 {
+	struct css2600_isys_queue *aq =
+		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+
+	dev_dbg(&av->isys->adev->dev, "buf_prepare\n");
 	return 0;
 }
 
 static int buf_finish(struct vb2_buffer *vb)
 {
+	struct css2600_isys_queue *aq =
+		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+
+	dev_dbg(&av->isys->adev->dev, "buf_finish\n");
 	return 0;
 }
 
 static void buf_cleanup(struct vb2_buffer *vb)
 {
+	struct css2600_isys_queue *aq =
+		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+
+	dev_dbg(&av->isys->adev->dev, "buf_cleanup\n");
 }
 
 static int start_streaming(struct vb2_queue *q, unsigned int count)
@@ -89,6 +113,11 @@ static int stop_streaming(struct vb2_queue *q)
 
 static void buf_queue(struct vb2_buffer *vb)
 {
+	struct css2600_isys_queue *aq =
+		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+
+	dev_dbg(&av->isys->adev->dev, "buf_queue\n");
 }
 
 struct vb2_ops css2600_isys_queue_ops = {
