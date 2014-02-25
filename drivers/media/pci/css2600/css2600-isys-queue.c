@@ -40,14 +40,14 @@ static int queue_setup(struct vb2_queue *q, const struct v4l2_format *fmt,
 
 void css2600_isys_queue_lock(struct vb2_queue *q)
 {
-	struct css2600_isys_queue *aq = vb2_get_drv_priv(q);
+	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 
 	mutex_lock(&aq->mutex);
 }
 
 void css2600_isys_queue_unlock(struct vb2_queue *q)
 {
-	struct css2600_isys_queue *aq = vb2_get_drv_priv(q);
+	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 
 	mutex_unlock(&aq->mutex);
 }
@@ -73,20 +73,16 @@ static void buf_cleanup(struct vb2_buffer *vb)
 
 static int start_streaming(struct vb2_queue *q, unsigned int count)
 {
-	struct css2600_isys_queue *aq =
-		container_of(q, struct css2600_isys_queue, vbq);
-	struct css2600_isys_video *av =
-		container_of(aq, struct css2600_isys_video, aq);
+	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 
 	return css2600_isys_video_set_streaming(av, 1);
 }
 
 static int stop_streaming(struct vb2_queue *q)
 {
-	struct css2600_isys_queue *aq =
-		container_of(q, struct css2600_isys_queue, vbq);
-	struct css2600_isys_video *av =
-		container_of(aq, struct css2600_isys_video, aq);
+	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 
 	return css2600_isys_video_set_streaming(av, 0);
 }
