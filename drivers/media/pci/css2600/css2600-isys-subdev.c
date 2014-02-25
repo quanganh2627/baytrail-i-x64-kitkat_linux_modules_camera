@@ -62,6 +62,21 @@ struct v4l2_rect *__css2600_isys_get_selection(
 	BUG();
 }
 
+static int target_valid(struct v4l2_subdev *sd, unsigned int target,
+			unsigned int pad)
+{
+	struct css2600_isys_subdev *asd = to_css2600_isys_subdev(sd);
+
+	switch (target) {
+	case V4L2_SEL_TGT_CROP:
+		return asd->valid_tgts[pad].crop;
+	case V4L2_SEL_TGT_COMPOSE:
+		return asd->valid_tgts[pad].compose;
+	default:
+		return 0;
+	}
+}
+
 static void fmt_propagate(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
 			  struct v4l2_mbus_framefmt *ffmt, struct v4l2_rect *r,
 			  enum isys_subdev_prop_tgt tgt, unsigned int pad,
@@ -164,6 +179,48 @@ int css2600_isys_subdev_get_ffmt(struct v4l2_subdev *sd,
 	mutex_lock(&asd->mutex);
 	fmt->format = *__css2600_isys_get_ffmt(sd, fh, fmt->pad, fmt->which);
 	mutex_unlock(&asd->mutex);
+
+	return 0;
+}
+
+int css2600_isys_subdev_set_sel(struct v4l2_subdev *sd,
+				struct v4l2_subdev_fh *fh,
+				struct v4l2_subdev_selection *fmt)
+{
+	struct css2600_isys_subdev *asd = to_css2600_isys_subdev(sd);
+	struct media_pad *pad = &asd->sd.entity.pads[fmt->pad];
+	unsigned int tgt;
+
+	if (!target_valid(sd, fmt->target, fmt->pad))
+		return -EINVAL;
+
+	switch (fmt->target) {
+	case V4L2_SEL_TGT_CROP:
+		tgt = pad->flags & MEDIA_PAD_FL_SINK
+			? CSS2600_ISYS_SUBDEV_PROP_TGT_SINK_CROP
+			: CSS2600_ISYS_SUBDEV_PROP_TGT_SOURCE_CROP;
+		break;
+	case V4L2_SEL_TGT_COMPOSE:
+		tgt = CSS2600_ISYS_SUBDEV_PROP_TGT_SINK_COMPOSE;
+		break;
+	default:
+		BUG();
+	}
+
+	fmt_propagate(sd, fh, NULL, &fmt->r, tgt, fmt->pad, fmt->which);
+
+	return 0;
+}
+
+int css2600_isys_subdev_get_sel(struct v4l2_subdev *sd,
+				struct v4l2_subdev_fh *fh,
+				struct v4l2_subdev_selection *fmt)
+{
+	if (!target_valid(sd, fmt->target, fmt->pad))
+		return -EINVAL;
+
+	fmt->r = *__css2600_isys_get_selection(sd, fh, fmt->target, fmt->pad,
+					       fmt->which);
 
 	return 0;
 }
