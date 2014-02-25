@@ -340,8 +340,23 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 			 p_config->dvs_envelope.width,
 			 p_config->dvs_envelope.height);
 		dev_dbg(isp->dev,
+			 "pipe_config.dvs_frame_delay=%d.\n",
+			 p_config->dvs_frame_delay);
+		dev_dbg(isp->dev,
 			 "pipe_config.isp_pipe_version:%d.\n",
 			p_config->isp_pipe_version);
+		dev_dbg(isp->dev,
+			 "pipe_config.acc_extension=%p.\n",
+			 p_config->acc_extension);
+		dev_dbg(isp->dev,
+			 "pipe_config.acc_stages=%p.\n",
+			 p_config->acc_stages);
+		dev_dbg(isp->dev,
+			 "pipe_config.num_acc_stages=%d.\n",
+			 p_config->num_acc_stages);
+		dev_dbg(isp->dev,
+			 "pipe_config.acc_num_execs=%d.\n",
+			 p_config->acc_num_execs);
 		dev_dbg(isp->dev,
 			 "pipe_config.default_capture_config.capture_mode=%d.\n",
 			 p_config->default_capture_config.mode);
@@ -410,6 +425,53 @@ static void __dump_stream_config(struct atomisp_sub_device *asd,
 		return;
 	s_config = &stream_env->stream_config;
 	dev_dbg(isp->dev, "stream_config.mode=%d.\n", s_config->mode);
+
+	if (s_config->mode == IA_CSS_INPUT_MODE_SENSOR ||
+	    s_config->mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
+		dev_dbg(isp->dev, "stream_config.source.port.port=%d.\n",
+				s_config->source.port.port);
+		dev_dbg(isp->dev, "stream_config.source.port.num_lanes=%d.\n",
+				s_config->source.port.num_lanes);
+		dev_dbg(isp->dev, "stream_config.source.port.timeout=%d.\n",
+				s_config->source.port.timeout);
+		dev_dbg(isp->dev, "stream_config.source.port.rxcount=0x%x.\n",
+				s_config->source.port.rxcount);
+		dev_dbg(isp->dev, "stream_config.source.port.compression.type=%d.\n",
+				s_config->source.port.compression.type);
+		dev_dbg(isp->dev, "stream_config.source.port.compression.compressed_bits_per_pixel=%d.\n",
+				s_config->source.port.compression.
+				compressed_bits_per_pixel);
+		dev_dbg(isp->dev, "stream_config.source.port.compression.uncompressed_bits_per_pixel=%d.\n",
+				s_config->source.port.compression.
+				uncompressed_bits_per_pixel);
+	} else if (s_config->mode == IA_CSS_INPUT_MODE_TPG) {
+		dev_dbg(isp->dev, "stream_config.source.tpg.id=%d.\n",
+				s_config->source.tpg.id);
+		dev_dbg(isp->dev, "stream_config.source.tpg.mode=%d.\n",
+				s_config->source.tpg.mode);
+		dev_dbg(isp->dev, "stream_config.source.tpg.x_mask=%d.\n",
+				s_config->source.tpg.x_mask);
+		dev_dbg(isp->dev, "stream_config.source.tpg.x_delta=%d.\n",
+				s_config->source.tpg.x_delta);
+		dev_dbg(isp->dev, "stream_config.source.tpg.y_mask=%d.\n",
+				s_config->source.tpg.y_mask);
+		dev_dbg(isp->dev, "stream_config.source.tpg.y_delta=%d.\n",
+				s_config->source.tpg.y_delta);
+		dev_dbg(isp->dev, "stream_config.source.tpg.xy_mask=%d.\n",
+				s_config->source.tpg.xy_mask);
+	} else if (s_config->mode == IA_CSS_INPUT_MODE_PRBS) {
+		dev_dbg(isp->dev, "stream_config.source.prbs.id=%d.\n",
+				s_config->source.prbs.id);
+		dev_dbg(isp->dev, "stream_config.source.prbs.h_blank=%d.\n",
+				s_config->source.prbs.h_blank);
+		dev_dbg(isp->dev, "stream_config.source.prbs.v_blank=%d.\n",
+				s_config->source.prbs.v_blank);
+		dev_dbg(isp->dev, "stream_config.source.prbs.seed=%d.\n",
+				s_config->source.prbs.seed);
+		dev_dbg(isp->dev, "stream_config.source.prbs.seed1=%d.\n",
+				s_config->source.prbs.seed1);
+	}
+
 	dev_dbg(isp->dev, "stream_config.input_res w=%d, h=%d.\n",
 			s_config->input_res.width,
 			s_config->input_res.height);
@@ -434,6 +496,23 @@ static void __dump_stream_config(struct atomisp_sub_device *asd,
 	dev_dbg(isp->dev, "stream_config.left_padding=%d.\n",
 			s_config->left_padding);
 #endif
+	dev_dbg(isp->dev, "stream_config.sensor_binning_factor=%d.\n",
+			s_config->sensor_binning_factor);
+	dev_dbg(isp->dev, "stream_config.pixels_per_clock=%d.\n",
+			s_config->pixels_per_clock);
+	dev_dbg(isp->dev, "stream_config.pack_raw_pixels=%d.\n",
+			s_config->pack_raw_pixels);
+	dev_dbg(isp->dev, "stream_config.flash_gpio_pin=%d.\n",
+			s_config->flash_gpio_pin);
+	dev_dbg(isp->dev, "stream_config.mipi_buffer_config.size_mem_words=%d.\n",
+			s_config->mipi_buffer_config.size_mem_words);
+	dev_dbg(isp->dev, "stream_config.mipi_buffer_config.contiguous=%d.\n",
+			s_config->mipi_buffer_config.contiguous);
+	dev_dbg(isp->dev, "stream_config.metadata_config.data_type=%d.\n",
+			s_config->metadata_config.data_type);
+	dev_dbg(isp->dev, "stream_config.metadata_config.resolution w=%d, h=%d.\n",
+			s_config->metadata_config.resolution.width,
+			s_config->metadata_config.resolution.height);
 }
 
 static int __destroy_stream(struct atomisp_sub_device *asd,
