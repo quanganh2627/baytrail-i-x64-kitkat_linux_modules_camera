@@ -304,6 +304,9 @@ static int css2600_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 		if (rval)
 			goto out_fail;
 		sg_dma_address(sg) = iova_addr << PAGE_SHIFT;
+#ifdef CONFIG_NEED_SG_DMA_LENGTH
+		sg_dma_len(sg) = sg->length;
+#endif /* CONFIG_NEED_SG_DMA_LENGTH */
 
 		iova_addr += PAGE_ALIGN(sg->length) >> PAGE_SHIFT;
 	}
