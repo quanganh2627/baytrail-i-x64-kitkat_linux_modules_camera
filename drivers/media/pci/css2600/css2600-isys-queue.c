@@ -142,7 +142,8 @@ int css2600_isys_queue_init(struct css2600_isys_queue *aq)
 	aq->vbq.lock = &aq->mutex;
 	aq->vbq.io_modes = VB2_USERPTR | VB2_DMABUF;
 	aq->vbq.drv_priv = aq;
-	aq->vbq.buf_struct_size = sizeof(struct css2600_isys_buffer);
+	aq->vbq.buf_struct_size = sizeof(struct css2600_isys_buffer)
+		+ sizeof(struct vb2_buffer);
 	aq->vbq.ops = &css2600_isys_queue_ops;
 	aq->vbq.mem_ops = &vb2_dma_contig_memops;
 	aq->vbq.timestamp_type = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
