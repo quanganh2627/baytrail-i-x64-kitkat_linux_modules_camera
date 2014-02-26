@@ -230,8 +230,6 @@ static void css2600_dma_free(struct device *dev, size_t size, void *vaddr,
 {
 	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
-	struct iova *iova =
-		find_iova(&mmu->dmap->iovad, dma_handle >> PAGE_SHIFT);
 	struct page **pages = __iommu_get_pages(vaddr, attrs);
 
 	if (WARN_ON(!pages))
@@ -240,7 +238,7 @@ static void css2600_dma_free(struct device *dev, size_t size, void *vaddr,
 	unmap_kernel_range((unsigned long)vaddr, size);
 	vunmap(vaddr);
 
-	__free_iova(&mmu->dmap->iovad, iova);
+	free_iova(&mmu->dmap->iovad, dma_handle >> PAGE_SHIFT);
 
 	__iommu_free_buffer(dev, pages, size, attrs);
 }
