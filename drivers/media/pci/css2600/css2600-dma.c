@@ -261,6 +261,8 @@ static void css2600_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
 		    (iova->pfn_hi - iova->pfn_lo + 1) << PAGE_SHIFT);
 
 	mmu->tlb_invalidate(mmu);
+
+	__free_iova(&mmu->dmap->iovad, iova);
 }
 
 static int css2600_dma_map_sg(struct device *dev, struct scatterlist *sglist,
