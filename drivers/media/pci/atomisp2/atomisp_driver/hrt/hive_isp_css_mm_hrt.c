@@ -40,21 +40,21 @@ int hrt_isp_css_mm_set(ia_css_ptr virt_addr, int c, size_t bytes)
 	if (virt_addr)
 		return hmm_set(virt_addr, c, bytes);
 
-	return -EINVAL;
+	return -EFAULT;
 }
 
 int hrt_isp_css_mm_load(ia_css_ptr virt_addr, void *data, size_t bytes)
 {
 	if (virt_addr && data)
 		return hmm_load(virt_addr, data, bytes);
-	return -EINVAL;
+	return -EFAULT;
 }
 
 int hrt_isp_css_mm_store(ia_css_ptr virt_addr, const void *data, size_t bytes)
 {
 	if (virt_addr && data)
 		return hmm_store(virt_addr, data, bytes);
-	return -EINVAL;
+	return -EFAULT;
 }
 
 void hrt_isp_css_mm_free(ia_css_ptr virt_addr)
