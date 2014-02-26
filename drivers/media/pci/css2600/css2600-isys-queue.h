@@ -36,6 +36,8 @@ struct css2600_isys_buffer {
 #define to_css2600_isys_buffer(vb) \
 	((struct css2600_isys_buffer *)((vb) + 1))
 
+#define css2600_isys_buffer_to_vb2_buffer(ib) ((struct vb2_buffer *)(ib) - 1)
+
 void css2600_isys_queue_lock(struct vb2_queue *q);
 void css2600_isys_queue_unlock(struct vb2_queue *q);
 
