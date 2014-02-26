@@ -309,7 +309,7 @@ static int css2600_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 
 	mmu->tlb_invalidate(mmu);
 
-	return 0;
+	return nents;
 
 out_fail:
 	css2600_dma_unmap_sg(dev, sglist, i, dir, attrs);
