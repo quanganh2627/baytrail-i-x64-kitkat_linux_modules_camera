@@ -3761,14 +3761,6 @@ void atomisp_css_destroy_acc_pipe(struct atomisp_sub_device *asd)
 	asd->isp->acc.acc_stages = NULL;
 
 	atomisp_freq_scaling(asd->isp, ATOMISP_DFS_MODE_LOW);
-
-	/* Force power cycling when binary finished */
-	atomisp_css_suspend();
-	if (pm_runtime_put_sync(asd->isp->dev) < 0)
-		dev_err(asd->isp->dev, "can not disable ISP power\n");
-	else if (pm_runtime_get_sync(asd->isp->dev) < 0)
-		dev_err(asd->isp->dev, "can not enable ISP power\n");
-	atomisp_css_resume(asd->isp);
 }
 
 int atomisp_css_load_acc_binary(struct atomisp_sub_device *asd,
