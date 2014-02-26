@@ -59,6 +59,9 @@ struct css2600_isys_video {
 #define css2600_isys_queue_to_video(__aq) \
 	container_of(__aq, struct css2600_isys_video, aq)
 
+const struct css2600_isys_pixelformat *css2600_isys_get_pixelformat(
+	struct css2600_isys_video *av, uint32_t pixelformat);
+
 int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 				     unsigned int state);
 int css2600_isys_video_init(struct css2600_isys_video *av,
