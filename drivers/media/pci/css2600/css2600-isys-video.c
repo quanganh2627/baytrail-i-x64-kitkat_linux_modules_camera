@@ -24,12 +24,7 @@
 #include "css2600-isys.h"
 #include "css2600-isys-video.h"
 
-static const struct css2600_isys_pixelformat {
-	uint32_t pixelformat;
-	uint32_t bpp;
-	uint32_t bpp_packed;
-	uint32_t code;
-} isys_pfmts[] = {
+static const struct css2600_isys_pixelformat isys_pfmts[] = {
 	{ V4L2_PIX_FMT_SBGGR10, 16, 10, V4L2_MBUS_FMT_SBGGR10_1X10 },
 	{ V4L2_PIX_FMT_SGBRG10, 16, 10, V4L2_MBUS_FMT_SGBRG10_1X10 },
 	{ V4L2_PIX_FMT_SGRBG10, 16, 10, V4L2_MBUS_FMT_SGRBG10_1X10 },

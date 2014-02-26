@@ -29,7 +29,13 @@
 #include "css2600-isys-queue.h"
 
 struct css2600_isys;
-struct css2600_isys_pixelformat;
+
+struct css2600_isys_pixelformat {
+	uint32_t pixelformat;
+	uint32_t bpp;
+	uint32_t bpp_packed;
+	uint32_t code;
+};
 
 struct css2600_isys_pipeline {
 	struct media_pipeline pipe;
