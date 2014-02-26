@@ -276,7 +276,6 @@ static int css2600_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 	size_t size = 0;
 	uint32_t iova_addr;
 	int i;
-	int rval;
 
 	for_each_sg(sglist, sg, nents, i)
 		size += PAGE_ALIGN(sg->length) >> PAGE_SHIFT;
@@ -286,7 +285,7 @@ static int css2600_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 	iova = alloc_iova(&mmu->dmap->iovad, size,
 			  DMA_BIT_MASK(32) >> PAGE_SHIFT, 0);
 	if (!iova)
-		return -ENOMEM;
+		return 0;
 
 	dev_dbg(dev, "iova low pfn %lu, high pfn %lu\n", iova->pfn_lo,
 		iova->pfn_hi);
@@ -294,6 +293,8 @@ static int css2600_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 	iova_addr = iova->pfn_lo;
 
 	for_each_sg(sglist, sg, nents, i) {
+		int rval;
+
 		dev_dbg(dev,
 			"mapping entry %d: iova 0x%8.8x, physical 0x%16.16llx\n",
 			i, iova_addr << PAGE_SHIFT, page_to_phys(sg_page(sg)));
@@ -314,7 +315,7 @@ static int css2600_dma_map_sg(struct device *dev, struct scatterlist *sglist,
 out_fail:
 	css2600_dma_unmap_sg(dev, sglist, i, dir, attrs);
 
-	return rval;
+	return 0;
 }
 
 static void css2600_dma_sync_single_for_cpu(
