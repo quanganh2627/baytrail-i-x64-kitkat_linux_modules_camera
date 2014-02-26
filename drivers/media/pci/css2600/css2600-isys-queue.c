@@ -35,6 +35,26 @@ static int queue_setup(struct vb2_queue *q, const struct v4l2_format *fmt,
 		       unsigned int *num_buffers, unsigned int *num_planes,
 		       unsigned int sizes[], void *alloc_ctxs[])
 {
+	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	const struct css2600_isys_pixelformat *pfmt;
+	const struct v4l2_pix_format *pix;
+
+	if (fmt)
+		pix = &fmt->fmt.pix;
+	else
+		pix = &av->pix;
+
+	pfmt = css2600_isys_get_pixelformat(av, pix->pixelformat);
+
+	*num_planes = 1;
+
+	sizes[0] = pfmt->bpp * pix->width * pix->height / 8;
+	alloc_ctxs[0] = aq->ctx;
+
+	dev_dbg(&av->isys->adev->dev, "queue setup: buffer size %d\n",
+		sizes[0]);
+
 	return 0;
 }
 
@@ -72,7 +92,14 @@ static int buf_prepare(struct vb2_buffer *vb)
 		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 
-	dev_dbg(&av->isys->adev->dev, "buf_prepare\n");
+	dev_dbg(&av->isys->adev->dev, "configured size %u, buffer size %lu\n",
+		av->pix.sizeimage, vb2_plane_size(vb, 0));
+
+	if (av->pix.sizeimage > vb2_plane_size(vb, 0))
+		return -EINVAL;
+
+	vb2_set_plane_payload(vb, 0, av->pix.sizeimage);
+
 	return 0;
 }
 
