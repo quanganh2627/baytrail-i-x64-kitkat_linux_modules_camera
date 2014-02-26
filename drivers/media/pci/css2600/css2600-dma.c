@@ -337,11 +337,18 @@ static void css2600_dma_sync_sg_for_cpu(
 	struct device *dev, struct scatterlist *sglist, int nents,
 	enum dma_data_direction dir)
 {
+	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
+	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 	struct scatterlist *sg;
 	int i;
 
-	for_each_sg(sglist, sg, nents, i)
-		clflush_cache_range(sg_page(sg), sg->length);
+	for_each_sg(sglist, sg, nents, i) {
+		clflush_cache_range(
+			phys_to_virt(iommu_iova_to_phys(
+					     mmu->dmap->domain,
+					     sg_dma_address(sg))),
+			sg->length);
+	}
 }
 
 struct dma_map_ops css2600_dma_ops = {
