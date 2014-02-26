@@ -271,14 +271,15 @@ static int css2600_mmu_map(struct iommu_domain *domain, unsigned long iova,
 	return l2_map(domain, iova_start, paddr, size);
 }
 
-static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
-		    phys_addr_t dummy, size_t size)
+static size_t l2_unmap(struct iommu_domain *domain, unsigned long iova,
+		       phys_addr_t dummy, size_t size)
 {
 	struct css2600_mmu_domain *adom = domain->priv;
 	uint32_t l1_idx = iova >> ISP_L1PT_SHIFT;
 	uint32_t *l2_pt = TBL_VIRT_ADDR(adom->pgtbl[l1_idx]);
 	uint32_t iova_start = iova;
 	unsigned int l2_idx;
+	size_t unmapped = 0;
 
 	pr_debug("unmapping l2 page table for l1 index %u (iova 0x%8.8lx)\n",
 		 l1_idx, iova);
@@ -290,7 +291,7 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 
 	for (l2_idx = (iova_start & ISP_L2PT_MASK) >> ISP_L2PT_SHIFT;
 	     (iova_start & ISP_L1PT_MASK) + (l2_idx << ISP_PAGE_SHIFT)
-		     < iova_start + size;
+		     < iova_start + size && l2_idx < ISP_L2PT_PTES;
 	     l2_idx++) {
 		unsigned long flags;
 
@@ -302,9 +303,10 @@ static int l2_unmap(struct iommu_domain *domain, unsigned long iova,
 #ifdef CONFIG_X86
 		clflush_cache_range(&l2_pt[l2_idx], sizeof(l2_pt[l2_idx]));
 #endif /* CONFIG_X86 */
+		unmapped++;
 	}
 
-	return 0;
+	return unmapped << ISP_PAGE_SHIFT;
 }
 
 static size_t css2600_mmu_unmap(struct iommu_domain *domain, unsigned long iova,
