@@ -81,7 +81,9 @@ static int buf_finish(struct vb2_buffer *vb)
 	struct css2600_isys_queue *aq =
 		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
 
+	list_del(&ib->head);
 	dev_dbg(&av->isys->adev->dev, "buf_finish\n");
 	return 0;
 }
@@ -107,8 +109,18 @@ static int stop_streaming(struct vb2_queue *q)
 {
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	struct css2600_isys_buffer *ib, *safe;
 
-	return css2600_isys_video_set_streaming(av, 0);
+	css2600_isys_video_set_streaming(av, 0);
+
+	list_for_each_entry_safe(ib, safe, &aq->queued, head) {
+		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
+
+		vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
+		list_del(&ib->head);
+	}
+
+	return 0;
 }
 
 static void buf_queue(struct vb2_buffer *vb)
@@ -116,8 +128,10 @@ static void buf_queue(struct vb2_buffer *vb)
 	struct css2600_isys_queue *aq =
 		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
 
 	dev_dbg(&av->isys->adev->dev, "buf_queue\n");
+	list_add(&ib->head, &aq->queued);
 }
 
 struct vb2_ops css2600_isys_queue_ops = {
@@ -159,6 +173,7 @@ int css2600_isys_queue_init(struct css2600_isys_queue *aq)
 	}
 
 	mutex_init(&aq->mutex);
+	INIT_LIST_HEAD(&aq->queued);
 
 	return 0;
 }

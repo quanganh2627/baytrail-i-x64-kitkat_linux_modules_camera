@@ -15,6 +15,7 @@
 #ifndef CSS2600_ISYS_QUEUE_H
 #define CSS2600_ISYS_QUEUE_H
 
+#include <linux/list.h>
 #include <linux/mutex.h>
 
 #include <media/videobuf2-core.h>
@@ -25,9 +26,11 @@ struct css2600_isys_queue {
 	struct vb2_queue vbq;
 	struct vb2_alloc_ctx *ctx;
 	struct mutex mutex;
+	struct list_head queued;
 };
 
 struct css2600_isys_buffer {
+	struct list_head head;
 };
 
 #define vb2_queue_to_css2600_isys_queue(__vb2) \
