@@ -256,8 +256,6 @@ static int l2_map(struct iommu_domain *domain, unsigned long iova,
 	pr_debug("l2 index %u mapped as 0x%8.8x\n", l2_idx,
 		 l2_pt[l2_idx]);
 
-	page_table_dump(adom);
-
 	return 0;
 }
 
