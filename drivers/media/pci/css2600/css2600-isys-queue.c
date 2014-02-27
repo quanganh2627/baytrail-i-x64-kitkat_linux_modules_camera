@@ -181,7 +181,7 @@ int css2600_isys_queue_init(struct css2600_isys_queue *aq)
 
 	aq->vbq.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	aq->vbq.lock = &aq->mutex;
-	aq->vbq.io_modes = VB2_USERPTR | VB2_DMABUF;
+	aq->vbq.io_modes = VB2_USERPTR;
 	aq->vbq.drv_priv = aq;
 	aq->vbq.buf_struct_size = sizeof(struct css2600_isys_buffer)
 		+ sizeof(struct vb2_buffer);
