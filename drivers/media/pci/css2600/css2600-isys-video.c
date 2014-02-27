@@ -140,15 +140,22 @@ static int vidioc_s_fmt_vid_cap(struct file *file, void *fh,
 				struct v4l2_format *fmt)
 {
 	struct css2600_isys_video *av = video_drvdata(file);
+	int rval = 0;
 
 	mutex_lock(&av->mutex);
+
+	if (av->streaming) {
+		rval = -EBUSY;
+		goto out;
+	}
 
 	av->pfmt = __vidioc_try_fmt_vid_cap(av, &fmt->fmt.pix);
 	av->pix = fmt->fmt.pix;
 
+out:
 	mutex_unlock(&av->mutex);
 
-	return 0;
+	return rval;
 }
 
 static int vidioc_try_fmt_vid_cap(struct file *file, void *fh,
