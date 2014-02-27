@@ -607,6 +607,7 @@ struct imx_resolution imx132_res_preview[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1200p_30fps",
@@ -626,6 +627,7 @@ struct imx_resolution imx132_res_preview[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 403200,
 	},
 	{
 		.desc = "imx132_1456x1096_30fps",
@@ -645,6 +647,7 @@ struct imx_resolution imx132_res_preview[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 };
 
@@ -667,6 +670,7 @@ struct imx_resolution imx132_res_still[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1200p_30fps",
@@ -686,6 +690,7 @@ struct imx_resolution imx132_res_still[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 403200,
 	},
 	{
 		.desc = "imx132_1456x1096_30fps",
@@ -705,6 +710,7 @@ struct imx_resolution imx132_res_still[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 };
 
@@ -727,6 +733,7 @@ struct imx_resolution imx132_res_video[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1456x1096_30fps",
@@ -746,6 +753,7 @@ struct imx_resolution imx132_res_video[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1636x1096_30fps",
@@ -765,6 +773,7 @@ struct imx_resolution imx132_res_video[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1080p_30fps",
@@ -784,6 +793,7 @@ struct imx_resolution imx132_res_video[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 };
 #endif
