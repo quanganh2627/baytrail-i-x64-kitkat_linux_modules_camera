@@ -9,6 +9,19 @@ config VIDEO_CSS2600
 	---help---
 	Say Y here!
 
+choice
+	prompt "css2600 target hardware"
+	depends on VIDEO_CSS2600
+	default VIDEO_CSS2600_2600
+
+config VIDEO_CSS2600_2401
+	bool "Compile for 2401"
+
+config VIDEO_CSS2600_2600
+	bool "Compile for 2600"
+
+endchoice
+
 config VIDEO_CSS2600_ISYS
 	bool "Input system"
 	depends on VIDEO_CSS2600
