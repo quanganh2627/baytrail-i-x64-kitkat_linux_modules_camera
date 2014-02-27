@@ -615,7 +615,8 @@ static int __destroy_stream_pipes(struct atomisp_sub_device *asd,
 				  bool force)
 {
 	struct atomisp_device *isp = asd->isp;
-	int ret, i;
+	int ret = 0;
+	int i;
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
 		if (!stream_env->pipes[i] ||
 		    !(force || stream_env->update_pipe[i]))
@@ -629,7 +630,7 @@ static int __destroy_stream_pipes(struct atomisp_sub_device *asd,
 		stream_env->pipes[i] = NULL;
 		stream_env->update_pipe[i] = false;
 	}
-	return 0;
+	return ret;
 }
 
 static int __destroy_pipes(struct atomisp_sub_device *asd, bool force)
