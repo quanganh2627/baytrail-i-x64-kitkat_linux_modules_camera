@@ -111,7 +111,7 @@ static int buf_finish(struct vb2_buffer *vb)
 	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
 
 	list_del(&ib->head);
-	dev_dbg(&av->isys->adev->dev, "buf_finish\n");
+	dev_dbg(&av->isys->adev->dev, "buf_finish %u\n", vb->v4l2_buf.index);
 	return 0;
 }
 
@@ -145,6 +145,8 @@ static int stop_streaming(struct vb2_queue *q)
 
 		vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
 		list_del(&ib->head);
+		dev_dbg(&av->isys->adev->dev, "stop_streaming %u\n",
+			vb->v4l2_buf.index);
 	}
 
 	return 0;
@@ -157,7 +159,7 @@ static void buf_queue(struct vb2_buffer *vb)
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
 
-	dev_dbg(&av->isys->adev->dev, "buf_queue\n");
+	dev_dbg(&av->isys->adev->dev, "buf_queue %d\n", vb->v4l2_buf.index);
 	list_add(&ib->head, &aq->queued);
 }
 
