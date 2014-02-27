@@ -403,4 +403,4 @@ module_css2600_bus_driver(isys_driver);
 
 MODULE_AUTHOR("Sakari Ailus <sakari.ailus@intel.com>");
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Intel Atom ISP driver");
+MODULE_DESCRIPTION("Intel css2600 input system driver");

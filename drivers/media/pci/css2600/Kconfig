@@ -1,5 +1,5 @@
 config VIDEO_CSS2600
-	tristate "Intel Atom ISP driver prototype"
+	tristate "Intel css2600 driver"
 	depends on VIDEO_V4L2
 	select IOMMU_API
 	select IOMMU_IOVA

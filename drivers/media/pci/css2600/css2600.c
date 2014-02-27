@@ -340,4 +340,4 @@ module_exit(css2600_exit);
 
 MODULE_AUTHOR("Sakari Ailus <sakari.ailus@intel.com>");
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Intel Atom ISP driver");
+MODULE_DESCRIPTION("Intel css2600 pci driver");

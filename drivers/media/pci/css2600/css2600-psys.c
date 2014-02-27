@@ -61,4 +61,4 @@ module_css2600_bus_driver(css2600_psys_driver);
 
 MODULE_AUTHOR("Sakari Ailus <sakari.ailus@intel.com>");
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Intel Atom ISP driver");
+MODULE_DESCRIPTION("Intel css2600 processing system driver");
