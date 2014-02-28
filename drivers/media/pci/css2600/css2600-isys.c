@@ -26,6 +26,7 @@
 #include "css2600-bus.h"
 #include "css2600-isys.h"
 #include "css2600-isys-csi2.h"
+#include "css2600-isys-csi2-2401.h"
 #include "css2600-isys-video.h"
 
 /*
@@ -246,10 +247,17 @@ static void isys_unregister_csi2(struct css2600_isys *isys)
 	struct csi2_config *cfg = isys_get_csi2_config(isys);
 	unsigned int i;
 
-	for (i = 0; i < cfg->nports; i++) {
+	for (i = 0; i < cfg->nports; i++)
 		css2600_isys_csi2_cleanup(&isys->csi2[i]);
-		if (isys->pdata->type != CSS2600_ISYS_TYPE_CSS2401)
-			continue;
+}
+
+static void isys_unregister_csi2_2401(struct css2600_isys *isys)
+{
+	struct csi2_config *cfg = isys_get_csi2_config(isys);
+	unsigned int i;
+
+	for (i = 0; i < cfg->nports; i++) {
+		css2600_isys_csi2_2401_cleanup(&isys->csi2_2401[i]);
 		css2600_isys_tpg_cleanup(&isys->tpg[i]);
 	}
 }
@@ -269,10 +277,30 @@ static int isys_register_csi2(struct css2600_isys *isys)
 			i);
 		if (rval)
 			goto fail;
+	}
 
-		/* In 2401 the TPGs come with the CSI-2 receivers. */
-		if (isys->pdata->type != CSS2600_ISYS_TYPE_CSS2401)
-			continue;
+	return 0;
+
+fail:
+	isys_unregister_csi2(isys);
+	return rval;
+}
+
+static int isys_register_csi2_2401(struct css2600_isys *isys)
+{
+	struct csi2_config *cfg = isys_get_csi2_config(isys);
+	unsigned int i;
+	int rval;
+
+	BUG_ON(cfg->nports > CSS2600_ISYS_MAX_CSI2_PORTS);
+
+	for (i = 0; i < cfg->nports; i++) {
+		int rval = css2600_isys_csi2_2401_init(
+			&isys->csi2_2401[i], isys,
+			isys->pdata->base + cfg->offsets[i], cfg->nlanes[i],
+			i);
+		if (rval)
+			goto fail;
 
 		rval = css2600_isys_tpg_init(
 			&isys->tpg[i], isys,
@@ -280,10 +308,10 @@ static int isys_register_csi2(struct css2600_isys *isys)
 		if (rval)
 			goto fail;
 
-		rval = media_entity_create_link(&isys->tpg[i].asd.sd.entity,
-						TPG_PAD_SOURCE,
-						&isys->csi2[i].asd.sd.entity,
-						CSI2_PAD_SINK, 0);
+		rval = media_entity_create_link(
+			&isys->tpg[i].asd.sd.entity, TPG_PAD_SOURCE,
+			&isys->csi2_2401[i].asd.sd.entity, CSI2_PAD_SINK,
+			0);
 		if (rval)
 			goto fail;
 	}
@@ -322,7 +350,10 @@ static int isys_register_devices(struct css2600_isys *isys)
 		goto out_media_device_unregister;
 	}
 
-	rval = isys_register_csi2(isys);
+	if (isys->pdata->type == CSS2600_ISYS_TYPE_CSS2401)
+		rval = isys_register_csi2_2401(isys);
+	else
+		rval = isys_register_csi2(isys);
 	if (rval) {
 		dev_info(&isys->adev->dev, "can't register csi2 devices\n");
 		goto out_v4l2_device_unregister;
@@ -348,7 +379,10 @@ out_media_device_unregister:
 
 static void isys_unregister_devices(struct css2600_isys *isys)
 {
-	isys_unregister_csi2(isys);
+	if (isys->pdata->type == CSS2600_ISYS_TYPE_CSS2401)
+		isys_unregister_csi2_2401(isys);
+	else
+		isys_unregister_csi2(isys);
 	v4l2_device_unregister(&isys->v4l2_dev);
 	media_device_unregister(&isys->media_dev);
 }

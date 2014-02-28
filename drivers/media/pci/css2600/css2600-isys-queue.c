@@ -110,8 +110,8 @@ static int buf_finish(struct vb2_buffer *vb)
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
 
-	list_del(&ib->head);
 	dev_dbg(&av->isys->adev->dev, "buf_finish %u\n", vb->v4l2_buf.index);
+	list_del(&ib->head);
 	return 0;
 }
 
