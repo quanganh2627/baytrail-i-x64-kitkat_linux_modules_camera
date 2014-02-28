@@ -101,7 +101,10 @@ int css2600_isys_tpg_init(struct css2600_isys_tpg *tpg, struct css2600_isys *isy
 	BUG_ON(CSS2600_ISYS_MAX_PAD < NR_OF_TPG_PADS);
 	tpg->asd.pad[TPG_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
 
-	css2600_isys_subdev_init(&tpg->asd, &tpg_sd_ops, 0, NR_OF_TPG_PADS);
+	rval = css2600_isys_subdev_init(&tpg->asd, &tpg_sd_ops, 0,
+					NR_OF_TPG_PADS);
+	if (rval)
+		return rval;
 
 	tpg->asd.supported_codes = tpg_supported_codes;
 	css2600_isys_subdev_set_ffmt(&tpg->asd.sd, NULL, &fmt);
