@@ -26,6 +26,8 @@
 
 #include "css2600.h"
 #include "css2600-bus.h"
+#include "css2600-mmu.h"
+#include "css2600-dma.h"
 #include "css2600-isys.h"
 #include "css2600-isys-csi2.h"
 #include "css2600-isys-csi2-2401.h"
@@ -432,12 +434,26 @@ static int isys_runtime_pm(int on)
 }
 #endif /* CONFIG_PM_RUNTIME */
 
+static void isys_remove(struct css2600_bus_device *adev)
+{
+	struct css2600_isys *isys = css2600_bus_get_drvdata(adev);
+
+	dev_info(&adev->dev, "removed\n");
+	isys_unregister_devices(isys);
+	isys_runtime_pm(0);
+}
+
 static int isys_probe(struct css2600_bus_device *adev)
 {
+	struct css2600_bus_iommu *aiommu =
+		to_css2600_bus_device(&adev->dev)->iommu;
+	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
+	struct css2600_mmu_domain *adom = mmu->dmap->domain->priv;
+	struct ia_css_isys_device_cfg_data isys_cfg = { };
 	struct css2600_isys *isys;
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 	struct ia_css_fwctrl_devconfig devconfig;
-#endif
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 	int rval = 0;
 
 	isys = devm_kzalloc(&adev->dev, sizeof(*isys), GFP_KERNEL);
@@ -494,7 +510,22 @@ static int isys_probe(struct css2600_bus_device *adev)
 	}
 
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
-	return isys_register_devices(isys);
+
+	rval = isys_register_devices(isys);
+	if (rval)
+		goto err_power_off;
+
+	isys_cfg.driver_sys.mmio_base_address = isys->pdata->base;
+	isys_cfg.driver_sys.page_table_base_address = adom->pgtbl;
+	isys_cfg.driver_sys.firmware_address = lib2401_get_sp_fw(); /* FIXME */
+	rval = -ia_css_isys_device_configure(&isys->ssi, &isys_cfg);
+	if (rval < 0)
+		goto err_remove;
+
+	return 0;
+
+err_remove:
+	isys_remove(adev);
 
 err_power_off:
 	isys_runtime_pm(0);
@@ -503,15 +534,6 @@ err_release_firmware:
 	release_firmware(isys->fw);
 
 	return rval;
-}
-
-static void isys_remove(struct css2600_bus_device *adev)
-{
-	struct css2600_isys *isys = css2600_bus_get_drvdata(adev);
-
-	dev_info(&adev->dev, "removed\n");
-	isys_unregister_devices(isys);
-	isys_runtime_pm(0);
 }
 
 static void isys_isr(struct css2600_bus_device *adev)

@@ -44,6 +44,7 @@
  *
  * @lock: serialise access to pipes
  * @pipes: pipelines per stream ID
+ * @ssi: ssi library private pointer
  */
 struct css2600_isys {
 	struct media_device media_dev;
@@ -51,6 +52,7 @@ struct css2600_isys {
 	struct css2600_bus_device *adev;
 	spinlock_t lock;
 	struct css2600_isys_pipeline *pipes[N_IA_CSS_ISYS_STREAM_SRC];
+	void *ssi;
 
 	struct css2600_isys_pdata *pdata;
 
