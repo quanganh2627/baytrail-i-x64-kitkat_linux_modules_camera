@@ -213,6 +213,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 		if (!av->ip.external) {
 			dev_err(&av->isys->adev->dev,
 				"no external entity set! Driver bug?\n");
+			rval = -EINVAL;
 			goto out_media_entity_pipeline_stop;
 		}
 		dev_dbg(&av->isys->adev->dev, "external entity %s\n",
