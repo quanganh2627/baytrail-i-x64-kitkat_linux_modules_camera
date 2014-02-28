@@ -1483,6 +1483,8 @@ int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
 	struct ia_css_grid_info old_info;
 	struct atomisp_device *isp = asd->isp;
 	int stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
+	int md_width = asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+		stream_config.metadata_config.resolution.width;
 
 	memset(&p_info, 0, sizeof(struct ia_css_pipe_info));
 	memset(&old_info, 0, sizeof(struct ia_css_grid_info));
@@ -1512,20 +1514,23 @@ int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
 	/* If the grid info has not changed and the buffers for 3A and
 	 * DIS statistics buffers are allocated or buffer size would be zero
 	 * then no need to do anything. */
-	if ((!memcmp(&old_info, &asd->params.curr_grid_info, sizeof(old_info))
+	if (((!memcmp(&old_info, &asd->params.curr_grid_info, sizeof(old_info))
 	    && asd->params.s3a_user_stat && asd->params.dvs_stat)
 	    || asd->params.curr_grid_info.s3a_grid.width == 0
-	    || asd->params.curr_grid_info.s3a_grid.height == 0) {
-		dev_dbg(isp->dev,
+	    || asd->params.curr_grid_info.s3a_grid.height == 0)
+	    && asd->params.metadata_width_size == md_width) {
+		dev_err(isp->dev,
 			"grid info change escape. memcmp=%d, s3a_user_stat=%d,"
-			"dvs_stat=%d, s3a.width=%d, s3a.height=%d\n",
+			"dvs_stat=%d, s3a.width=%d, s3a.height=%d, metadata width =%d\n",
 			!memcmp(&old_info, &asd->params.curr_grid_info,
 				 sizeof(old_info)),
 			 !!asd->params.s3a_user_stat, !!asd->params.dvs_stat,
 			 asd->params.curr_grid_info.s3a_grid.width,
-			 asd->params.curr_grid_info.s3a_grid.height);
+			 asd->params.curr_grid_info.s3a_grid.height,
+			 asd->params.metadata_width_size);
 		return -EINVAL;
 	}
+	asd->params.metadata_width_size = md_width;
 
 	return 0;
 }
