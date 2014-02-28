@@ -250,7 +250,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 		 * hackish but entirely local and not intrusive at
 		 * all. The first of such entity is the "sensor".
 		 */
-		if (entity->ops != av->isys->csi2[0].asd.sd.entity.ops)
+		if (sd->owner != THIS_MODULE)
 			break;
 
 		/* We don't support non-linear pipelines yet. */

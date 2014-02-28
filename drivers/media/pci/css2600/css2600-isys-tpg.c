@@ -74,6 +74,10 @@ static struct v4l2_subdev_ops tpg_sd_ops = {
 	.pad = &tpg_sd_pad_ops,
 };
 
+static struct media_entity_operations tpg_entity_ops = {
+	.link_validate = v4l2_subdev_link_validate,
+};
+
 void css2600_isys_tpg_cleanup(struct css2600_isys_tpg *tpg)
 {
 	v4l2_device_unregister_subdev(&tpg->asd.sd);
@@ -100,6 +104,7 @@ int css2600_isys_tpg_init(struct css2600_isys_tpg *tpg, struct css2600_isys *isy
 
 	BUG_ON(CSS2600_ISYS_MAX_PAD < NR_OF_TPG_PADS);
 	tpg->asd.pad[TPG_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
+	tpg->asd.sd.entity.ops = &tpg_entity_ops;
 
 	rval = css2600_isys_subdev_init(&tpg->asd, &tpg_sd_ops, 0,
 					NR_OF_TPG_PADS);

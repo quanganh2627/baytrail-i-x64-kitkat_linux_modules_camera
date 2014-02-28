@@ -225,10 +225,6 @@ int css2600_isys_subdev_get_sel(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static struct media_entity_operations entity_ops = {
-	.link_validate = v4l2_subdev_link_validate,
-};
-
 int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
 			     struct v4l2_subdev_ops *ops, unsigned int nr_ctrls,
 			     unsigned int num_pads)
@@ -245,8 +241,6 @@ int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
 	rval = v4l2_ctrl_handler_init(&asd->ctrl_handler, nr_ctrls);
 	if (rval)
 		goto out_mutex_destroy;
-
-	asd->sd.entity.ops = &entity_ops;
 
 	rval = media_entity_init(&asd->sd.entity, num_pads, asd->pad, 0);
 	if (rval)

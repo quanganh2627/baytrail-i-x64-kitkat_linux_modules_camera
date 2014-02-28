@@ -110,6 +110,10 @@ static struct v4l2_subdev_ops csi2_sd_ops = {
 	.pad = &csi2_sd_pad_ops,
 };
 
+static struct media_entity_operations csi2_entity_ops = {
+	.link_validate = v4l2_subdev_link_validate,
+};
+
 void css2600_isys_csi2_cleanup(struct css2600_isys_csi2 *csi2)
 {
 	v4l2_device_unregister_subdev(&csi2->asd.sd);
@@ -139,6 +143,7 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 	BUG_ON(CSS2600_ISYS_MAX_PAD < NR_OF_CSI2_PADS);
 	csi2->asd.pad[CSI2_PAD_SINK].flags = MEDIA_PAD_FL_SINK;
 	csi2->asd.pad[CSI2_PAD_SOURCE].flags = MEDIA_PAD_FL_SOURCE;
+	csi2->asd.sd.entity.ops = &csi2_entity_ops;
 
 	rval = css2600_isys_subdev_init(&csi2->asd, &csi2_sd_ops, 0,
 					NR_OF_CSI2_PADS);
