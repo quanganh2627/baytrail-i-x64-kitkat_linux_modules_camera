@@ -29,6 +29,7 @@
 #include "css2600-isys.h"
 #include "css2600-isys-csi2.h"
 #include "css2600-isys-csi2-2401.h"
+#include "css2600-isys-lib.h"
 #include "css2600-isys-video.h"
 #include "css2600-regs.h"
 
@@ -515,7 +516,20 @@ static void isys_remove(struct css2600_bus_device *adev)
 
 static void isys_isr(struct css2600_bus_device *adev)
 {
-	dev_info(&adev->dev, "Yeah!\n");
+	struct css2600_isys *isys = css2600_bus_get_drvdata(adev);
+	struct ia_css_isys_resp_info resp;
+	int rval;
+
+	rval = -ia_css_isys_stream_handle_response(isys->ssi, &resp);
+	if (rval < 0) {
+		dev_dbg(&adev->dev, "isys_isr: error %d\n", rval);
+		return;
+	}
+
+	dev_dbg(&adev->dev, "resp type %u\n", resp.type);
+	dev_dbg(&adev->dev, "resp error %d\n", resp.error);
+	dev_dbg(&adev->dev, "resp stream %u\n", resp.stream_handle);
+	dev_dbg(&adev->dev, "resp stream %u\n", resp.stream_handle);
 }
 
 static struct css2600_bus_driver isys_driver = {
