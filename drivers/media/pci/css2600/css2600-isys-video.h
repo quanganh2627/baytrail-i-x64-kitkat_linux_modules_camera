@@ -30,6 +30,8 @@ struct css2600_isys_pixelformat {
 	uint32_t bpp;
 	uint32_t bpp_packed;
 	uint32_t code;
+	uint32_t css_pixelformat;
+	uint32_t mipi_data_type;
 };
 
 struct css2600_isys_pipeline {
