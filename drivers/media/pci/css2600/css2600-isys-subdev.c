@@ -246,6 +246,8 @@ int css2600_isys_subdev_init(struct css2600_isys_subdev *asd,
 	if (rval)
 		goto out_v4l2_ctrl_handler_free;
 
+	asd->source = -1;
+
 	return 0;
 
 out_v4l2_ctrl_handler_free:

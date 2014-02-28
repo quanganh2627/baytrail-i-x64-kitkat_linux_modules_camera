@@ -56,6 +56,7 @@ struct css2600_isys_subdev {
 		bool compose;
 	} valid_tgts[CSS2600_ISYS_MAX_PAD];
 	bool allow_source_fmt_change;
+	int source; /* SSI stream source; -1 if unset */
 };
 
 #define to_css2600_isys_subdev(__sd) \

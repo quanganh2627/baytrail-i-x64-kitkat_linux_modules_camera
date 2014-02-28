@@ -27,6 +27,7 @@
 #include "css2600.h"
 #include "css2600-bus.h"
 #include "css2600-isys.h"
+#include "css2600-isys-lib.h"
 #include "css2600-isys-subdev.h"
 #include "css2600-isys-tpg.h"
 #include "css2600-isys-video.h"
@@ -111,6 +112,7 @@ int css2600_isys_tpg_init(struct css2600_isys_tpg *tpg, struct css2600_isys *isy
 	if (rval)
 		return rval;
 
+	tpg->asd.source = IA_CSS_ISYS_STREAM_SRC_MIPIGEN_PORT0 + index;
 	tpg->asd.supported_codes = tpg_supported_codes;
 	css2600_isys_subdev_set_ffmt(&tpg->asd.sd, NULL, &fmt);
 

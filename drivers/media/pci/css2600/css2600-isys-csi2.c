@@ -26,9 +26,10 @@
 
 #include "css2600.h"
 #include "css2600-bus.h"
+#include "css2600-isys.h"
 #include "css2600-isys-csi2.h"
 #include "css2600-isys-csi2-reg.h"
-#include "css2600-isys.h"
+#include "css2600-isys-lib.h"
 #include "css2600-isys-subdev.h"
 #include "css2600-isys-video.h"
 
@@ -150,6 +151,7 @@ int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *
 	if (rval)
 		goto fail;
 
+	csi2->asd.source = IA_CSS_ISYS_STREAM_SRC_CSI2_PORT0 + index;
 	csi2->asd.supported_codes = csi2_supported_codes;
 	css2600_isys_subdev_set_ffmt(&csi2->asd.sd, NULL, &fmt);
 
