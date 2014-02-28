@@ -111,7 +111,9 @@ static int buf_finish(struct vb2_buffer *vb)
 	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
 
 	dev_dbg(&av->isys->adev->dev, "buf_finish %u\n", vb->v4l2_buf.index);
+	mutex_lock(&aq->mutex);
 	list_del(&ib->head);
+	mutex_unlock(&aq->mutex);
 	return 0;
 }
 
@@ -140,6 +142,7 @@ static int stop_streaming(struct vb2_queue *q)
 
 	css2600_isys_video_set_streaming(av, 0);
 
+	mutex_lock(&aq->mutex);
 	list_for_each_entry_safe(ib, safe, &aq->queued, head) {
 		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
@@ -148,6 +151,7 @@ static int stop_streaming(struct vb2_queue *q)
 		dev_dbg(&av->isys->adev->dev, "stop_streaming %u\n",
 			vb->v4l2_buf.index);
 	}
+	mutex_unlock(&aq->mutex);
 
 	return 0;
 }
