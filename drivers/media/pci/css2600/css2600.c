@@ -114,9 +114,18 @@ static irqreturn_t css2600_isr(int irq, void *priv)
 {
 	struct css2600_device *isp = priv;
 
-	if (isp->pdev->device == CSS2600_HW_BXT_FPGA
-	    && IS_ENABLED(VIDEO_CSS2600_ISYS))
+	switch (isp->pdev->device) {
+	case CSS2600_HW_BXT_FPGA:
+		if (IS_ENABLED(VIDEO_CSS2600_ISYS))
+			css2600_call_isr(isp->isys);
+		if (IS_ENABLED(VIDEO_CSS2600_PSYS))
+			css2600_call_isr(isp->psys);
+		break;
+	case CSS2600_HW_MRFLD_2401:
 		css2600_call_isr(isp->isys);
+		css2600_call_isr(isp->psys);
+		break;
+	}
 
 	return IRQ_HANDLED;
 }
