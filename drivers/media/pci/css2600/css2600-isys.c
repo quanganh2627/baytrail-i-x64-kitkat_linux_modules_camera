@@ -401,6 +401,11 @@ static int isys_probe(struct css2600_bus_device *adev)
 	dev_info(&adev->dev, "isys probe %p %p\n", adev, &adev->dev);
 	css2600_bus_set_drvdata(adev, isys);
 
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+	css2600_isys_wrapper_init(&adev->dev, &isys->css_env,
+				  isys->pdata->base);
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
+
 	return isys_register_devices(isys);
 }
 

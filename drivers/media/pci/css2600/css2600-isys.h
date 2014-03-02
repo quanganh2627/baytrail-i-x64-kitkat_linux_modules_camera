@@ -22,7 +22,11 @@
 #include "css2600-isys-csi2-2401.h"
 #include "css2600-isys-csi2.h"
 #include "css2600-isys-tpg.h"
+#include "css2600-isys-wrapper-2401.h"
 #include "css2600-pdata.h"
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+#include "lib2401/ia_css_env.h"
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 
 #define CSS2600_ISYS_MAX_CSI2_PORTS		4
 #define CSS2600_ISYS_MAX_TPGS			CSS2600_ISYS_MAX_CSI2_PORTS
@@ -38,6 +42,10 @@ struct css2600_isys {
 	struct css2600_isys_csi2_2401 csi2_2401[CSS2600_ISYS_MAX_CSI2_PORTS];
 	/* 2401 has a test pattern generator per port */
 	struct css2600_isys_tpg tpg[CSS2600_ISYS_MAX_TPGS];
+
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+	struct ia_css_env css_env;
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 };
 
 extern const struct v4l2_ioctl_ops css2600_isys_ioctl_ops;
