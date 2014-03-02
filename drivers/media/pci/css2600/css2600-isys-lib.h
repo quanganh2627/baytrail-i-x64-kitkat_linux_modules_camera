@@ -15,8 +15,8 @@
 #ifndef CSS2600_ISYS_SSI_H
 #define CSS2600_ISYS_SSI_H
 
-#ifdef CONFIG_VIDEO_CSS2600_2401
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 #include "lib2401/bxt_sandbox/isyspoc/interface/ia_css_isysapi.h"
-#endif /* CONFIG_VIDEO_CSS2600_2401 */
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 
 #endif /* CSS2600_ISYS_SSI_H */
