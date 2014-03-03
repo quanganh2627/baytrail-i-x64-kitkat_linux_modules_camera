@@ -39,6 +39,8 @@ struct css2600_isys_pipeline {
 	struct media_entity *external;
 	bool continuous;
 	int source; /* SSI stream source */
+	struct completion stream_start_completion;
+	struct completion stream_stop_completion;
 };
 
 struct css2600_isys_video {

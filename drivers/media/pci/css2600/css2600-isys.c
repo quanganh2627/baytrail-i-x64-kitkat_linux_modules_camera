@@ -540,6 +540,7 @@ static void isys_isr(struct css2600_bus_device *adev)
 {
 	struct css2600_isys *isys = css2600_bus_get_drvdata(adev);
 	struct ia_css_isys_resp_info resp;
+	struct css2600_isys_pipeline *pipe;
 	int rval;
 
 	rval = -ia_css_isys_stream_handle_response(isys->ssi, &resp);
@@ -552,6 +553,28 @@ static void isys_isr(struct css2600_bus_device *adev)
 	dev_dbg(&adev->dev, "resp error %d\n", resp.error);
 	dev_dbg(&adev->dev, "resp stream %u\n", resp.stream_handle);
 	dev_dbg(&adev->dev, "resp stream %u\n", resp.stream_handle);
+
+	if (resp.stream_handle >= N_IA_CSS_ISYS_STREAM_SRC) {
+		dev_err(&adev->dev, "bad stream handle %u\n",
+			resp.stream_handle);
+		return;
+	}
+
+	pipe = isys->pipes[resp.stream_handle];
+	if (!pipe) {
+		dev_err(&adev->dev, "no pipeline for stream %u\n",
+			resp.stream_handle);
+		return;
+	}
+
+	switch (resp.type) {
+	case IA_CSS_ISYS_RESP_TYPE_STREAM_START_ACK:
+		complete(&pipe->stream_start_completion);
+		break;
+	case IA_CSS_ISYS_RESP_TYPE_STREAM_STOP_ACK:
+		complete(&pipe->stream_stop_completion);
+		break;
+	}
 }
 
 static struct css2600_bus_driver isys_driver = {

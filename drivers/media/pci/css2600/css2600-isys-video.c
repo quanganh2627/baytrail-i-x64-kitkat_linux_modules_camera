@@ -364,6 +364,8 @@ int css2600_isys_video_init(struct css2600_isys_video *av,
 	int rval;
 
 	mutex_init(&av->mutex);
+	init_completion(&av->ip.stream_start_completion);
+	init_completion(&av->ip.stream_stop_completion);
 
 	rval = css2600_isys_queue_init(&av->aq);
 	if (rval)
