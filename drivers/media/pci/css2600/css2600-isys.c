@@ -12,8 +12,10 @@
  *
  */
 
+#include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/dma-attrs.h>
+#include <linux/intel_mid_pm.h>
 #include <linux/iommu.h>
 #include <linux/mm.h>
 #include <linux/module.h>
@@ -28,6 +30,7 @@
 #include "css2600-isys-csi2.h"
 #include "css2600-isys-csi2-2401.h"
 #include "css2600-isys-video.h"
+#include "css2600-regs.h"
 
 /*
  * BEGIN adapted code from drivers/media/platform/omap3isp/isp.c.
@@ -386,6 +389,47 @@ static void isys_unregister_devices(struct css2600_isys *isys)
 	v4l2_device_unregister(&isys->v4l2_dev);
 	media_device_unregister(&isys->media_dev);
 }
+
+#ifdef CONFIG_PM_RUNTIME
+static int isys_runtime_pm(int on)
+{
+	unsigned long timeout;
+	u32 reg_value;
+	u32 power;
+
+	if (on)
+		power = CSS2401_REG_ISPSSPM0_IUNIT_POWER_ON;
+	else
+		power = CSS2401_REG_ISPSSPM0_IUNIT_POWER_OFF;
+
+	/* writing 0x0 to ISPSSPM0 bit[1:0] to power off the IUNIT */
+	reg_value = intel_mid_msgbus_read32(CSS2401_PUNIT_PORT,
+					    CSS2401_REG_ISPSSPM0);
+	reg_value &= ~CSS2401_REG_ISPSSPM0_ISPSSC_MASK;
+	reg_value |= power;
+	intel_mid_msgbus_write32(CSS2401_PUNIT_PORT, CSS2401_REG_ISPSSPM0,
+				 reg_value);
+
+	/*
+	 * There should be no iunit access while power-down is
+	 * in progress HW sighting: 4567865
+	 */
+	timeout = jiffies + msecs_to_jiffies(50);
+	while (!time_after(jiffies, timeout)) {
+		reg_value = intel_mid_msgbus_read32(CSS2401_PUNIT_PORT,
+						    CSS2401_REG_ISPSSPM0);
+
+		/* wait until ISPSSPM0 bit[25:24] shows correct value */
+		if ((reg_value >> CSS2401_REG_ISPSSPM0_ISPSSS_SHIFT &
+		    ~CSS2401_REG_ISPSSPM0_IUNIT_POWER_MASK) == power)
+			return 0;
+
+		usleep_range(100, 150);
+	};
+
+	return -EBUSY;
+}
+#endif /* CONFIG_PM_RUNTIME */
 
 static int isys_probe(struct css2600_bus_device *adev)
 {
