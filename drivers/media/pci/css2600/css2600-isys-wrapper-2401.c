@@ -12,6 +12,8 @@
  *
  */
 
+#include <asm/cacheflush.h>
+
 #include <linux/iommu.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
@@ -125,8 +127,10 @@ static int glue_css_load(ia_css_ptr ptr, void *data, size_t bytes)
 {
 	/*Translate ISP MMU address to IA address*/
 	void *cpu_ptr = phys_to_virt(glue_virt_to_phys(ptr));
-	/*Read from ia_css_ptr to data*/
+
+	clflush_cache_range(cpu_ptr, bytes);
 	memcpy(data, cpu_ptr, bytes);
+
 	return 0;
 }
 
@@ -134,8 +138,10 @@ static int glue_css_store(ia_css_ptr ptr, const void *data, size_t bytes)
 {
 	/*Translate ISP address to IA  address*/
 	void *cpu_ptr = phys_to_virt(glue_virt_to_phys(ptr));
-	/*Write data to ia_css_ptr memory*/
+
 	memcpy(cpu_ptr, data, bytes);
+	clflush_cache_range(cpu_ptr, bytes);
+
 	return 0;
 }
 
