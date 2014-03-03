@@ -19,13 +19,17 @@
 #include <lib2401.h>
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 #include <linux/firmware.h>
+#include <linux/spinlock.h>
+
 #include <media/v4l2-device.h>
 #include <media/media-device.h>
 
 #include "css2600.h"
 #include "css2600-isys-csi2-2401.h"
 #include "css2600-isys-csi2.h"
+#include "css2600-isys-lib.h"
 #include "css2600-isys-tpg.h"
+#include "css2600-isys-video.h"
 #include "css2600-isys-wrapper-2401.h"
 #include "css2600-pdata.h"
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
@@ -35,10 +39,18 @@
 #define CSS2600_ISYS_MAX_CSI2_PORTS		4
 #define CSS2600_ISYS_MAX_TPGS			CSS2600_ISYS_MAX_CSI2_PORTS
 
+/*
+ * struct css2600_isys
+ *
+ * @lock: serialise access to pipes
+ * @pipes: pipelines per stream ID
+ */
 struct css2600_isys {
 	struct media_device media_dev;
 	struct v4l2_device v4l2_dev;
 	struct css2600_bus_device *adev;
+	spinlock_t lock;
+	struct css2600_isys_pipeline *pipes[N_IA_CSS_ISYS_STREAM_SRC];
 
 	struct css2600_isys_pdata *pdata;
 

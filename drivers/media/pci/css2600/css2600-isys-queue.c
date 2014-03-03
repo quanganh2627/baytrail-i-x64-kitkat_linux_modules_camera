@@ -130,8 +130,18 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 {
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	unsigned long flags;
+	int rval;
 
-	return css2600_isys_video_set_streaming(av, 1);
+	rval = css2600_isys_video_set_streaming(av, 1);
+	if (rval)
+		return rval;
+
+	spin_lock_irqsave(&av->isys->lock, flags);
+	av->isys->pipes[av->ip.source] = &av->ip;
+	spin_unlock_irqrestore(&av->isys->lock, flags);
+
+	return 0;
 }
 
 static int stop_streaming(struct vb2_queue *q)
@@ -139,6 +149,7 @@ static int stop_streaming(struct vb2_queue *q)
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 	struct css2600_isys_buffer *ib, *safe;
+	unsigned long flags;
 
 	css2600_isys_video_set_streaming(av, 0);
 
@@ -152,6 +163,10 @@ static int stop_streaming(struct vb2_queue *q)
 			vb->v4l2_buf.index);
 	}
 	mutex_unlock(&aq->mutex);
+
+	spin_lock_irqsave(&av->isys->lock, flags);
+	av->isys->pipes[av->ip.source] = NULL;
+	spin_unlock_irqrestore(&av->isys->lock, flags);
 
 	return 0;
 }

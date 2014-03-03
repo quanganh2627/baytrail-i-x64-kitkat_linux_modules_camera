@@ -446,6 +446,8 @@ static int isys_probe(struct css2600_bus_device *adev)
 	isys->adev = adev;
 	isys->pdata = adev->pdata;
 
+	spin_lock_init(&isys->lock);
+
 	dev_info(&adev->dev, "isys probe %p %p\n", adev, &adev->dev);
 	css2600_bus_set_drvdata(adev, isys);
 
