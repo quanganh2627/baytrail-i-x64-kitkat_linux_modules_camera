@@ -207,6 +207,8 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 	if (!addr)
 		goto out_unmap;
 
+	*dma_handle = iova->pfn_lo << PAGE_SHIFT;
+
 	return addr;
 
 out_unmap:
