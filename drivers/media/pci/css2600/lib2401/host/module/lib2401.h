@@ -17,5 +17,9 @@
 #include <ia_css.h>
 #include <ia_css_env.h>
 #include <ia_css_isysapi.h>
+#include <sh_css_firmware.h>
+#include <ia_css_fwctrl_public.h>
+
+struct ia_css_fw_info *lib2401_get_sp_fw(void);
 
 #endif

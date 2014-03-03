@@ -15,6 +15,8 @@
 #include "lib2401.h"
 
 EXPORT_SYMBOL_GPL(ia_css_init);
+EXPORT_SYMBOL_GPL(ia_css_load_firmware);
+EXPORT_SYMBOL_GPL(ia_css_fwctrl_device_open);
 EXPORT_SYMBOL_GPL(ia_css_isys_device_configure);
 EXPORT_SYMBOL_GPL(ia_css_isys_stream_open);
 EXPORT_SYMBOL_GPL(ia_css_isys_stream_close);
@@ -23,6 +25,12 @@ EXPORT_SYMBOL_GPL(ia_css_isys_stream_stop);
 EXPORT_SYMBOL_GPL(ia_css_isys_stream_flush);
 EXPORT_SYMBOL_GPL(ia_css_isys_stream_capture_indication);
 EXPORT_SYMBOL_GPL(ia_css_isys_stream_handle_response);
+
+struct ia_css_fw_info *lib2401_get_sp_fw(void)
+{
+	return &sh_css_sp_fw;
+}
+EXPORT_SYMBOL_GPL(lib2401_get_sp_fw);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Intel css2401 library");
