@@ -2027,6 +2027,9 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 	struct ia_css_pipe_config *pipe_cfg =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
 		.pipe_configs[CSS_PIPE_ID_VIDEO];
+	struct ia_css_stream_config *stream_cfg =
+		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+		.stream_config;
 
 	if (!bq_res)
 		return -EINVAL;
@@ -2034,12 +2037,7 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 	/* the GDC output resolution */
 	bq_res->output_bq.width_bq = pipe_cfg->output_info.res.width / 2;
 	bq_res->output_bq.height_bq = pipe_cfg->output_info.res.height / 2;
-	/*
-	 * ISP filter resolution should be given by CSS/FW, but for now there
-	 * is not such API to query, and it is fixed value, so hardcoded here.
-	 */
-	bq_res->ispfilter_bq.width_bq = 12 / 2;
-	bq_res->ispfilter_bq.height_bq = 12 / 2;
+
 
 	/* the GDC input resolution */
 	if (!asd->continuous_mode->val) {
@@ -2047,11 +2045,58 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 		                             pipe_cfg->dvs_envelope.width / 2;
 		bq_res->source_bq.height_bq = bq_res->output_bq.height_bq +
 		                            pipe_cfg->dvs_envelope.height / 2;
+		/*
+		 * Bad pixels caused by spatial filter processing
+		 * ISP filter resolution should be given by CSS/FW, but for now
+		 * there is not such API to query, and it is fixed value, so
+		 * hardcoded here.
+		 */
+		bq_res->ispfilter_bq.width_bq = 12 / 2;
+		bq_res->ispfilter_bq.height_bq = 12 / 2;
+		/* spatial filter shift, always 4 pixels */
+		bq_res->gdc_shift_bq.width_bq = 4 / 2;
+		bq_res->gdc_shift_bq.height_bq = 4 / 2;
+
 	} else {
-		bq_res->source_bq.width_bq = pipe_cfg->bayer_ds_out_res.width
-		                             / 2;
-		bq_res->source_bq.height_bq = pipe_cfg->bayer_ds_out_res.height
-		                             / 2;
+		unsigned int w_padding;
+
+		/*
+		 * the GDC input is:
+		 *     (effective_input + 12 filter padding) / bayer_ds_ratio
+		 */
+		bq_res->source_bq.width_bq = ((stream_cfg->effective_res.width + 12) *
+					pipe_cfg->bayer_ds_out_res.width /
+					stream_cfg->effective_res.width + 1) / 2;
+		bq_res->source_bq.height_bq = ((stream_cfg->effective_res.height + 12) *
+					pipe_cfg->bayer_ds_out_res.height /
+					stream_cfg->effective_res.height + 1) / 2;
+
+		/*
+		 * Bad pixels caused by spatial filter processing
+		 * FIXME: see vied bz 1786, 32 is the experience value,
+		 * we need firmware team to explain why 8 does not work
+		 */
+		bq_res->ispfilter_bq.width_bq = 32 / 2;
+		bq_res->ispfilter_bq.height_bq = 32 / 2;
+
+		/*
+		 * spatial filter shift and more left padding in SDV case,
+		 * the left padding is (w_padding + 24) / Bayer_DS_Ratio
+		 *          w_padding = ceiling(effective_width/128, 1) * 128 -
+		 *                      effective_width
+		 * FIXME: see vied bz 1786, w_padding + 24 is experience value,
+		 *        we need firmware team to explain why w_padding - 12
+		 *        does not work.
+		 *
+		 * and there is still 4 pixel spatial filter shift
+		 */
+		w_padding = roundup(stream_cfg->effective_res.width, 128) -
+				stream_cfg->effective_res.width;
+		bq_res->gdc_shift_bq.width_bq = 4 / 2 +
+				((w_padding + 24) *
+				pipe_cfg->bayer_ds_out_res.width /
+				stream_cfg->effective_res.width + 1) / 2;
+		bq_res->gdc_shift_bq.height_bq = 4 / 2;
 	}
 
 	/*
@@ -2067,9 +2112,10 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 		bq_res->envelope_bq.height_bq = pipe_cfg->dvs_envelope.height
 		                          / 2 - bq_res->ispfilter_bq.height_bq;
 	}
-	dev_dbg(asd->isp->dev, "%s: source_bq.width_bq %d, source_bq.height_bq %d, ispfilter_bq.width_bq %d, ispfilter_bq.height_bq %d, envelope_bq.width_bq %d, envelope_bq.height_bq %d, output_bq.width_bq %d, output_bq.height_bq %d\n",
-	      __func__, bq_res->source_bq.width_bq, bq_res->source_bq.height_bq,
+	dev_dbg(asd->isp->dev, "source_bq.width_bq %d, source_bq.height_bq %d,\nispfilter_bq.width_bq %d, ispfilter_bq.height_bq %d,\ngdc_shift_bq.width_bq %d, gdc_shift_bq.height_bq %d,\nenvelope_bq.width_bq %d, envelope_bq.height_bq %d,\noutput_bq.width_bq %d, output_bq.height_bq %d\n",
+	      bq_res->source_bq.width_bq, bq_res->source_bq.height_bq,
 	      bq_res->ispfilter_bq.width_bq, bq_res->ispfilter_bq.height_bq,
+	      bq_res->gdc_shift_bq.width_bq, bq_res->gdc_shift_bq.height_bq,
 	      bq_res->envelope_bq.width_bq, bq_res->envelope_bq.height_bq,
 	      bq_res->output_bq.width_bq, bq_res->output_bq.height_bq);
 
