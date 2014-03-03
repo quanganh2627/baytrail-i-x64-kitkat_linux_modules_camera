@@ -141,7 +141,23 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	av->isys->pipes[av->ip.source] = &av->ip;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
 
+	rval = -ia_css_isys_stream_start(av->isys->ssi, av->ip.source,
+					 NULL);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev, "can't start streaning (%d)\n",
+			rval);
+		goto out;
+	}
+
 	return 0;
+
+out_fail:
+	css2600_isys_video_set_streaming(av, 0);
+	spin_lock_irqsave(&av->isys->lock, flags);
+	av->isys->pipes[av->ip.source] = NULL;
+	spin_unlock_irqrestore(&av->isys->lock, flags);
+
+	return rval;
 }
 
 static int stop_streaming(struct vb2_queue *q)
@@ -162,6 +178,7 @@ static int stop_streaming(struct vb2_queue *q)
 		dev_dbg(&av->isys->adev->dev, "stop_streaming %u\n",
 			vb->v4l2_buf.index);
 	}
+	ia_css_isys_stream_stop(av->isys->ssi, av->ip.source);
 	mutex_unlock(&aq->mutex);
 
 	spin_lock_irqsave(&av->isys->lock, flags);
@@ -177,8 +194,28 @@ static void buf_queue(struct vb2_buffer *vb)
 		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
+	struct ia_css_isys_frame_buff_set buf = {
+		.output_pins = {
+			{
+				.payload.addr =
+					*(dma_addr_t *)vb2_plane_cookie(vb, 0),
+			}
+		},
+		.send_irq_sof = 1,
+		.send_irq_eof = 1,
+	};
+	int rval;
 
 	dev_dbg(&av->isys->adev->dev, "buf_queue %d\n", vb->v4l2_buf.index);
+
+	rval = -ia_css_isys_stream_capture_indication(av->isys->ssi,
+						      av->ip.source, &buf);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev,
+			"capture indication failed (%d)\n", rval);
+		return;
+	}
+
 	list_add(&ib->head, &aq->queued);
 }
 
