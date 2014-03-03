@@ -15,6 +15,7 @@
 #ifndef CSS2600_ISYS_H
 #define CSS2600_ISYS_H
 
+#include <linux/firmware.h>
 #include <media/v4l2-device.h>
 #include <media/media-device.h>
 
@@ -45,11 +46,14 @@ struct css2600_isys {
 
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 	struct ia_css_env css_env;
+	const struct firmware *fw;
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 };
 
 extern const struct v4l2_ioctl_ops css2600_isys_ioctl_ops;
 
 int css2600_pipeline_pm_use(struct media_entity *entity, int use);
+
+#define CSS2401_FIRMWARE "shisp_2401a0_v21_bxtpoc.bin"
 
 #endif /* CSS2600_ISYS_H */
