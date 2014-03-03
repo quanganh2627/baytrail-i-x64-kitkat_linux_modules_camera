@@ -180,6 +180,8 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 	int i;
 	int rval;
 
+	size = roundup(size, PAGE_SIZE);
+
 	iova = alloc_iova(&mmu->dmap->iovad, size >> PAGE_SHIFT,
 			  DMA_BIT_MASK(32) >> PAGE_SHIFT, 0);
 	if (!iova)
@@ -229,6 +231,8 @@ static void css2600_dma_free(struct device *dev, size_t size, void *vaddr,
 
 	if (WARN_ON(!pages))
 		return;
+
+	size = roundup(size, PAGE_SIZE);
 
 	unmap_kernel_range((unsigned long)vaddr, size);
 	vunmap(vaddr);
