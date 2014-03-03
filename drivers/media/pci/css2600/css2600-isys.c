@@ -434,6 +434,10 @@ static int isys_runtime_pm(int on)
 static int isys_probe(struct css2600_bus_device *adev)
 {
 	struct css2600_isys *isys;
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+	struct ia_css_fwctrl_devconfig devconfig;
+#endif
+	int rval = 0;
 
 	isys = devm_kzalloc(&adev->dev, sizeof(*isys), GFP_KERNEL);
 	if (!isys)
@@ -451,8 +455,49 @@ static int isys_probe(struct css2600_bus_device *adev)
 
 	css2600_isys_wrapper_init(&adev->dev, &isys->css_env,
 				  isys->pdata->base);
+
+	isys->css_fw.data = (void *)isys->fw->data;
+	isys->css_fw.bytes = isys->fw->size;
+
+	rval = isys_runtime_pm(1);
+	if (rval) {
+		dev_err(&adev->dev, "isys_runtime_pm failed: %d\n", rval);
+		goto err_release_firmware;
+	}
+
+	rval = ia_css_load_firmware(&isys->css_env, &isys->css_fw);
+	if (rval) {
+		dev_err(&adev->dev, "css load fw failed (%d)\n", rval);
+		rval = -EIO;
+		goto err_power_off;
+	}
+
+	rval = ia_css_init(&isys->css_env, NULL, 0, IA_CSS_IRQ_TYPE_PULSE);
+	if (rval) {
+		dev_err(&adev->dev, "ia_css_init failed (%d)\n", rval);
+		rval = -EIO;
+		goto err_power_off;
+	}
+
+	devconfig.firmware_address = lib2401_get_sp_fw();
+	rval = ia_css_fwctrl_device_open(&devconfig);
+	if (rval) {
+		dev_err(&adev->dev,
+			"ia_css_fwctrl_device_open() failed: %d\n", rval);
+		rval = -EIO;
+		goto err_power_off;
+	}
+
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 	return isys_register_devices(isys);
+
+err_power_off:
+	isys_runtime_pm(0);
+
+err_release_firmware:
+	release_firmware(isys->fw);
+
+	return rval;
 }
 
 static void isys_remove(struct css2600_bus_device *adev)
@@ -461,6 +506,7 @@ static void isys_remove(struct css2600_bus_device *adev)
 
 	dev_info(&adev->dev, "removed\n");
 	isys_unregister_devices(isys);
+	isys_runtime_pm(0);
 }
 
 static void isys_isr(struct css2600_bus_device *adev)

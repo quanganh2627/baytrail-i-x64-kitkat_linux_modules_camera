@@ -15,6 +15,9 @@
 #ifndef CSS2600_ISYS_H
 #define CSS2600_ISYS_H
 
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+#include <lib2401.h>
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 #include <linux/firmware.h>
 #include <media/v4l2-device.h>
 #include <media/media-device.h>
@@ -46,6 +49,7 @@ struct css2600_isys {
 
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 	struct ia_css_env css_env;
+	struct ia_css_fw css_fw;
 	const struct firmware *fw;
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 };
