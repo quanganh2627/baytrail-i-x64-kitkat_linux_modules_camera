@@ -12,6 +12,7 @@
  *
  */
 
+#include <linux/completion.h>
 #include <linux/device.h>
 #include <linux/dma-attrs.h>
 #include <linux/iommu.h>
@@ -141,13 +142,17 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	av->isys->pipes[av->ip.source] = &av->ip;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
 
+	reinit_completion(&av->ip.stream_start_completion);
 	rval = -ia_css_isys_stream_start(av->isys->ssi, av->ip.source,
 					 NULL);
 	if (rval < 0) {
 		dev_dbg(&av->isys->adev->dev, "can't start streaning (%d)\n",
 			rval);
-		goto out;
+		goto out_fail;
 	}
+
+	wait_for_completion(&av->ip.stream_start_completion);
+	dev_dbg(&av->isys->adev->dev, "stream start complete\n");
 
 	return 0;
 
@@ -166,6 +171,7 @@ static int stop_streaming(struct vb2_queue *q)
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 	struct css2600_isys_buffer *ib, *safe;
 	unsigned long flags;
+	int rval;
 
 	css2600_isys_video_set_streaming(av, 0);
 
@@ -178,9 +184,20 @@ static int stop_streaming(struct vb2_queue *q)
 		dev_dbg(&av->isys->adev->dev, "stop_streaming %u\n",
 			vb->v4l2_buf.index);
 	}
-	ia_css_isys_stream_stop(av->isys->ssi, av->ip.source);
+	reinit_completion(&av->ip.stream_stop_completion);
+	rval = -ia_css_isys_stream_stop(av->isys->ssi, av->ip.source);
 	mutex_unlock(&aq->mutex);
 
+	if (rval < 0) {
+		dev_err(&av->isys->adev->dev,
+			"ia_css_isys_stream_stop failed (%d)\n", rval);
+		goto out;
+	}
+
+	wait_for_completion(&av->ip.stream_stop_completion);
+	dev_dbg(&av->isys->adev->dev, "stream stop complete\n");
+
+out:
 	spin_lock_irqsave(&av->isys->lock, flags);
 	av->isys->pipes[av->ip.source] = NULL;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
