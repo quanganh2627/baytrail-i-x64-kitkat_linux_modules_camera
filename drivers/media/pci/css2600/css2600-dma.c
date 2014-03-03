@@ -180,7 +180,7 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 	int i;
 	int rval;
 
-	iova = alloc_iova(&mmu->dmap->iovad, size,
+	iova = alloc_iova(&mmu->dmap->iovad, size >> PAGE_SHIFT,
 			  DMA_BIT_MASK(32) >> PAGE_SHIFT, 0);
 	if (!iova)
 		return NULL;
