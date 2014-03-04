@@ -2357,13 +2357,13 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 	 * 2: Do not configure bayer_ds_out_res if:
 	 *    online == 1 or continuous == 0 or raw_binning = 0
 	 */
-	if (stream_config->online || !stream_config->continuous ||
-	    !pipe_extra_configs->enable_raw_binning) {
+	if (stream_config->online || !stream_config->continuous) {
 		bayer_ds_out_res->width = 0;
 		bayer_ds_out_res->height = 0;
 		goto done;
 	}
 
+	pipe_extra_configs->enable_raw_binning = true;
 	bayer_ds_out_res->width = effective_res->width;
 	bayer_ds_out_res->height = effective_res->height;
 
