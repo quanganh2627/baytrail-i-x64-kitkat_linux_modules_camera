@@ -17,6 +17,7 @@
 #include <ia_css.h>
 #include <ia_css_env.h>
 #include <ia_css_isysapi.h>
+#include <ia_css_isys_ext_public.h>
 #include <sh_css_firmware.h>
 #include <ia_css_fwctrl_public.h>
 

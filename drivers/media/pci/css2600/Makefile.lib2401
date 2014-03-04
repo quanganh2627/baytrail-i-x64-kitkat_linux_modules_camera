@@ -88,6 +88,7 @@ lib2401-mod-objs := lib2401/sh_css.o \
 		    lib2401/runtime/bufq/src/bufq.o \
 		    lib2401/bxt_sandbox/fwctrlpoc/src/fwctrl.o \
 		    lib2401/bxt_sandbox/isyspoc/src/isyspoc_2401.o \
+		    lib2401/bxt_sandbox/isyspoc/src/isyspoc_csi_rx.o \
 		    lib2401/bxt_sandbox/isyspoc/src/isyspoc.o \
 		    lib2401/bxt_sandbox/psyspoc/src/psyspoc.o \
 		    lib2401/host/module/lib2401.o
