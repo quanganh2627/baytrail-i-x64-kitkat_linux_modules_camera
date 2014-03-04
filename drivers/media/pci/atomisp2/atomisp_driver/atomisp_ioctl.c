@@ -1572,9 +1572,21 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 		 * css more than once! Warn here, if HAL has not dequeued all
 		 * buffers back before calling streamoff.
 		 */
-		if (pipe->buffers_in_css != 0)
+		if (pipe->buffers_in_css != 0) {
 			WARN(1, "%s: buffers of vdev %s still in CSS!\n",
 			     __func__, pipe->vdev.name);
+
+			/*
+			 * Buffers remained in css maybe dequeued out in the
+			 * next stream on, while this will causes serious
+			 * issues as buffers already get invalid after
+			 * previous stream off.
+			 *
+			 * No way to flush buffers but to reset the whole css
+			 */
+			dev_warn(isp->dev, "Reset CSS to clean up css buffers.\n");
+			atomisp_css_flush(isp);
+		}
 
 		return videobuf_streamoff(&pipe->capq);
 	}
