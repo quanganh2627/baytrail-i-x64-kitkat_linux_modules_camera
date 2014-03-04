@@ -147,6 +147,14 @@ static void buf_queue(struct vb2_buffer *vb)
 
 	dev_dbg(&av->isys->adev->dev, "buf_queue %d\n", vb->v4l2_buf.index);
 
+	if (!vb->vb2_queue->streaming) {
+		dev_dbg(&av->isys->adev->dev,
+			"not streaming yet, adding to pre_streamon_queue\n",
+			vb->v4l2_buf.index);
+		list_add(&ib->head, &aq->pre_streamon_queue);
+		return;
+	}
+
 	rval = -ia_css_isys_stream_capture_indication(av->isys->ssi,
 						      av->ip.source, &buf);
 	if (rval < 0) {
@@ -162,6 +170,7 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 {
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	struct css2600_isys_buffer *ib, *safe;
 	unsigned long flags;
 	int rval;
 
@@ -185,6 +194,17 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	wait_for_completion(&av->ip.stream_start_completion);
 	dev_dbg(&av->isys->adev->dev, "stream start complete\n");
 
+	list_for_each_entry_safe(ib, safe, &aq->pre_streamon_queue, head) {
+		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
+
+		list_del(&ib->head);
+
+		dev_dbg(&av->isys->adev->dev,
+			"queueing buffer %u from pre_streamon_queued\n",
+			vb->v4l2_buf.index);
+		buf_queue(vb);
+	}
+
 	return 0;
 
 out_fail:
@@ -207,6 +227,7 @@ static int stop_streaming(struct vb2_queue *q)
 	css2600_isys_video_set_streaming(av, 0);
 
 	mutex_lock(&aq->mutex);
+	BUG_ON(!list_empty(&av->pre_streamon_queued));
 	list_for_each_entry_safe(ib, safe, &aq->queued, head) {
 		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
@@ -276,6 +297,7 @@ int css2600_isys_queue_init(struct css2600_isys_queue *aq)
 
 	mutex_init(&aq->mutex);
 	INIT_LIST_HEAD(&aq->queued);
+	INIT_LIST_HEAD(&aq->pre_streamon_queued);
 
 	return 0;
 }

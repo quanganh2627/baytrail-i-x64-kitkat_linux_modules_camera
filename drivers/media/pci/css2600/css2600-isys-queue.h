@@ -27,6 +27,7 @@ struct css2600_isys_queue {
 	struct vb2_alloc_ctx *ctx;
 	struct mutex mutex;
 	struct list_head queued;
+	struct list_head pre_streamon_queued;
 };
 
 struct css2600_isys_buffer {
