@@ -16,8 +16,8 @@
 
 #include <linux/iommu.h>
 #include <linux/module.h>
-#include <linux/mutex.h>
 #include <linux/slab.h>
+#include <linux/spinlock.h>
 
 #include "css2600-bus.h"
 #include "css2600-dma.h"
@@ -38,7 +38,7 @@ struct {
 	void __iomem *isp_base; /*IUNIT PCI base address*/
 	struct iommu_domain *domain;
 	struct list_head buffers;
-	struct mutex lock;
+	spinlock_t lock;
 } mine;
 
 /*Virtual address to physical address convert*/
@@ -70,6 +70,7 @@ static ia_css_ptr glue_css_alloc(size_t bytes, uint32_t attributes)
 {
 	struct dma_map_ops *dma_ops = mine.dev->archdata.dma_ops;
 	struct my_css_memory_buffer_item *buf;
+	unsigned long flags;
 
 	might_sleep();
 
@@ -93,9 +94,9 @@ static ia_css_ptr glue_css_alloc(size_t bytes, uint32_t attributes)
 
 	pr_debug("glue: mapping %d bytes to %p\n", buf->bytes, buf->addr);
 
-	mutex_lock(&mine.lock);
+	spin_lock_irqsave(&mine.lock, flags);
 	list_add(&buf->list, &mine.buffers);
-	mutex_unlock(&mine.lock);
+	spin_unlock_irqrestore(&mine.lock, flags);
 
 	return buf->iova;
 }
@@ -104,27 +105,28 @@ static void glue_css_free(ia_css_ptr iova)
 {
 	struct dma_map_ops *dma_ops = mine.dev->archdata.dma_ops;
 	struct my_css_memory_buffer_item *buf = NULL;
+	unsigned long flags;
 
 	might_sleep();
 
 	pr_debug("looking for iova %8.8x\n", iova);
 
-	mutex_lock(&mine.lock);
+	spin_lock_irqsave(&mine.lock, flags);
 	list_for_each_entry(buf, &mine.buffers, list) {
 		pr_debug("buffer iova %8.8x\n", (uint32_t)buf->iova);
 		if (buf->iova != iova)
 			continue;
 
 		pr_debug("found it!\n");
+		list_del(&buf->list);
+		spin_unlock_irqrestore(&mine.lock, flags);
 		dma_ops->free(mine.dev, buf->bytes, buf->addr,
 			      buf->iova, &buf->attrs);
-		list_del(&buf->list);
 		kfree(buf);
-		goto out;
+		return;
 	}
 	pr_warn("Can't find iova object %8.8x\n", iova);
-out:
-	mutex_unlock(&mine.lock);
+	spin_lock_irqrestore(&mine.lock);
 }
 
 static int glue_css_load(ia_css_ptr ptr, void *data, size_t bytes)
@@ -236,7 +238,7 @@ void css2600_isys_wrapper_init(
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 
 	INIT_LIST_HEAD(&mine.buffers);
-	mutex_init(&mine.lock);
+	spin_lock_init(&mine.lock);
 
 	/*Store Needed device pointers locally*/
 	mine.dev = dev;
