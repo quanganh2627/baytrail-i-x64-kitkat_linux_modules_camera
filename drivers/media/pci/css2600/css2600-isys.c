@@ -264,7 +264,7 @@ static void isys_unregister_csi2_2401(struct css2600_isys *isys)
 
 	for (i = 0; i < cfg->nports; i++) {
 		css2600_isys_csi2_2401_cleanup(&isys->csi2_2401[i]);
-		css2600_isys_tpg_cleanup(&isys->tpg[i]);
+		css2600_isys_tpg_2401_cleanup(&isys->tpg_2401[i]);
 	}
 }
 
@@ -308,14 +308,14 @@ static int isys_register_csi2_2401(struct css2600_isys *isys)
 		if (rval)
 			goto fail;
 
-		rval = css2600_isys_tpg_init(
-			&isys->tpg[i], isys,
+		rval = css2600_isys_tpg_2401_init(
+			&isys->tpg_2401[i], isys,
 			isys->pdata->base + cfg->tpg_offsets[i], i);
 		if (rval)
 			goto fail;
 
 		rval = media_entity_create_link(
-			&isys->tpg[i].asd.sd.entity, TPG_PAD_SOURCE,
+			&isys->tpg_2401[i].asd.sd.entity, TPG_PAD_SOURCE,
 			&isys->csi2_2401[i].asd.sd.entity, CSI2_PAD_SINK,
 			0);
 		if (rval)
