@@ -22,13 +22,7 @@
 #ifndef __IA_CSS_DVS_PARAM_H
 #define __IA_CSS_DVS_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
-#include "dma.h"
+#include <type_support.h>
 
 /** dvserence frame */
 struct sh_css_isp_dvs_isp_config {

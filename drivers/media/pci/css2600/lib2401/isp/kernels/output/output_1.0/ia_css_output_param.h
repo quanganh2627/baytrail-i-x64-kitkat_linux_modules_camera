@@ -22,17 +22,13 @@
 #ifndef __IA_CSS_OUTPUT_PARAM_H
 #define __IA_CSS_OUTPUT_PARAM_H
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
-
+#include <type_support.h>
 #include "dma.h"
 
 /** output frame */
 struct sh_css_isp_output_isp_config {
 	uint32_t width_a_over_b;
+	uint32_t height;
 	struct dma_port_config port_b;
 };
 

@@ -26,6 +26,7 @@
 #define _IA_CSS_POCAPP_COMM_H
 
 #include "ia_css_circbuf_comm.h" /* ia_css_circbuf_desc_t*/
+#include <input_system.h>
 
 #define BXTPOC_COMM_QUEUE_SIZE	(10)
 
@@ -41,8 +42,8 @@ struct bxt_poc_host_sp_queues {
 	/*
 	 * ISYS event queues.
 	 */
-	ia_css_circbuf_desc_t host2sp_isys_cmd_queue_desc;
-	ia_css_circbuf_elem_t host2sp_isys_cmd_queue_elems[BXTPOC_COMM_QUEUE_SIZE];
+	ia_css_circbuf_desc_t host2sp_isys_cmd_queue_desc[INPUT_SYSTEM_N_STREAM_ID];
+	ia_css_circbuf_elem_t host2sp_isys_cmd_queue_elems[INPUT_SYSTEM_N_STREAM_ID][BXTPOC_COMM_QUEUE_SIZE];
 	ia_css_circbuf_desc_t sp2host_isys_event_queue_desc;
 	ia_css_circbuf_elem_t sp2host_isys_event_queue_elems[BXTPOC_COMM_QUEUE_SIZE];
 

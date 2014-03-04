@@ -23,11 +23,11 @@
 // CSS version file
 //
 
-#ifndef CSS_VERSION_H
-#define CSS_VERSION_H
+#ifndef __CSS_VERSION_H
+#define __CSS_VERSION_H
 
 #define VER	0
-#define SUBVER	6
+#define SUBVER	7
 
 /*
 Changelog
@@ -52,8 +52,18 @@ VER 0.6, released 11/02/14:
 		Still WIP on AIC bugs which seen  in that version.
 		Warning storm printouts in test application run (storing to data memory (dmem_mem) at address…)
 
+VER 0.7, released 17/02/14:
+        - Version release mainly for driver and AIC bug fixes
+
+        Changes/Fixes:
+                AIC bugs  : 1703 RGB gamma enable
+		1st striping pipe in smoketest - if_striped
+
+        Known issues:
+                Still WIP on AIC bugs which seen  in that version.
+                Warning storm printouts in test application run (storing to data memory (dmem_mem) at address…)
 
 
 */
 
-#endif
+#endif /* __CSS_VERSION_H */

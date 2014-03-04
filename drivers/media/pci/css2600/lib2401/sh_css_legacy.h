@@ -32,9 +32,10 @@ enum ia_css_pipe_id {
 	IA_CSS_PIPE_ID_COPY,
 	IA_CSS_PIPE_ID_VIDEO,
 	IA_CSS_PIPE_ID_CAPTURE,
+	IA_CSS_PIPE_ID_YUVPP,
 	IA_CSS_PIPE_ID_ACC,
+	IA_CSS_PIPE_ID_NUM
 };
-#define IA_CSS_PIPE_ID_NUM (IA_CSS_PIPE_ID_ACC + 1)
 
 struct ia_css_pipe_extra_config {
 	bool enable_raw_binning;

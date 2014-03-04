@@ -420,6 +420,16 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 #define _ISP_INPUT_WIDTH(internal_width, ds_input_width, enable_ds) \
 	((enable_ds) ? (ds_input_width) : (internal_width))
 
+#define _ISP_MAX_INPUT_HEIGHT(max_internal_height, enable_ds, enable_fixed_bayer_ds, enable_raw_bin, \
+				enable_continuous) \
+	((enable_ds) ? \
+	   SH_CSS_MAX_SENSOR_HEIGHT :\
+	 (enable_fixed_bayer_ds) ? \
+	   SH_CSS_MAX_CONTINUOUS_SENSOR_HEIGHT_DEC : \
+	 (enable_raw_bin || enable_continuous) ? \
+	   SH_CSS_MAX_CONTINUOUS_SENSOR_HEIGHT \
+	   : max_internal_height)
+
 #define _ISP_INPUT_HEIGHT(internal_height, ds_input_height, enable_ds) \
 	((enable_ds) ? (ds_input_height) : (internal_height))
 

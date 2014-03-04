@@ -279,6 +279,31 @@ enum ia_css_err ia_css_isys_convert_stream_format_to_mipi_format(
 		 */
 		*fmt_type = MIPI_FORMAT_RAW16;
 		break;
+#else
+	case IA_CSS_STREAM_FORMAT_USER_DEF1:
+		*fmt_type = MIPI_FORMAT_CUSTOM0;
+		break;
+	case IA_CSS_STREAM_FORMAT_USER_DEF2:
+		*fmt_type = MIPI_FORMAT_CUSTOM1;
+		break;
+	case IA_CSS_STREAM_FORMAT_USER_DEF3:
+		*fmt_type = MIPI_FORMAT_CUSTOM2;
+		break;
+	case IA_CSS_STREAM_FORMAT_USER_DEF4:
+		*fmt_type = MIPI_FORMAT_CUSTOM3;
+		break;
+	case IA_CSS_STREAM_FORMAT_USER_DEF5:
+		*fmt_type = MIPI_FORMAT_CUSTOM4;
+		break;
+	case IA_CSS_STREAM_FORMAT_USER_DEF6:
+		*fmt_type = MIPI_FORMAT_CUSTOM5;
+		break;
+	case IA_CSS_STREAM_FORMAT_USER_DEF7:
+		*fmt_type = MIPI_FORMAT_CUSTOM6;
+		break;
+	case IA_CSS_STREAM_FORMAT_USER_DEF8:
+		*fmt_type = MIPI_FORMAT_CUSTOM7;
+		break;
 #endif
 #if defined(HAS_RX_VERSION_2)
 	default:

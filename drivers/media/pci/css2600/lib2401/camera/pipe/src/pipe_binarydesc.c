@@ -34,7 +34,7 @@ static void pipe_binarydesc_get_offline(
 	const int mode,
 	struct ia_css_binary_descr *descr,
 	struct ia_css_frame_info *in_info,
-	struct ia_css_frame_info *out_info,
+	struct ia_css_frame_info *out_info[],
 	struct ia_css_frame_info *vf_info);
 
 /* This module provides a binary descriptions to used to find a binary. Since,
@@ -46,8 +46,10 @@ void ia_css_pipe_get_copy_binarydesc(
 	struct ia_css_pipe const * const pipe,
 	struct ia_css_binary_descr *copy_descr,
 	struct ia_css_frame_info *in_info,
-	struct ia_css_frame_info *out_info)
+	struct ia_css_frame_info *out_info,
+	struct ia_css_frame_info *vf_info)
 {
+	unsigned int i;
 	/* out_info can be NULL */
 	assert(pipe != NULL);
 	assert(in_info != NULL);
@@ -73,11 +75,13 @@ void ia_css_pipe_get_copy_binarydesc(
 	copy_descr->stream_format = pipe->stream->config.format;
 	copy_descr->in_info = in_info;
 	copy_descr->bds_out_info = NULL;
-	copy_descr->out_info = out_info;
-	copy_descr->vf_info = NULL;
+	copy_descr->out_info[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		copy_descr->out_info[i] = NULL;
+	}
+	copy_descr->vf_info = vf_info;
 	copy_descr->isp_pipe_version = 1;
 	copy_descr->required_bds_factor = SH_CSS_BDS_FACTOR_1_00;
-	copy_descr->enable_fractional_ds = false;
 	copy_descr->stream_config_left_padding = -1;
 }
 
@@ -87,9 +91,10 @@ static void pipe_binarydesc_get_offline(
 	const int mode,
 	struct ia_css_binary_descr *descr,
 	struct ia_css_frame_info *in_info,
-	struct ia_css_frame_info *out_info,
+	struct ia_css_frame_info *out_info[],
 	struct ia_css_frame_info *vf_info)
 {
+	unsigned int i;
 	/* in_info, out_info, vf_info can be NULL */
 	assert(pipe != NULL);
 	assert(descr != NULL);
@@ -112,7 +117,9 @@ static void pipe_binarydesc_get_offline(
 	descr->stream_format = pipe->stream->config.format;
 	descr->in_info = in_info;
 	descr->bds_out_info = NULL;
-	descr->out_info = out_info;
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		descr->out_info[i] = out_info[i];
+	}
 	descr->vf_info = vf_info;
 	descr->isp_pipe_version = pipe->config.isp_pipe_version;
 	descr->required_bds_factor = SH_CSS_BDS_FACTOR_1_00;
@@ -125,6 +132,8 @@ void ia_css_pipe_get_vfpp_binarydesc(
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *out_info)
 {
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+	unsigned int i;
 	/* out_info can be NULL ??? */
 	assert(pipe != NULL);
 	assert(in_info != NULL);
@@ -132,8 +141,12 @@ void ia_css_pipe_get_vfpp_binarydesc(
 			    "ia_css_pipe_get_vfpp_binarydesc() enter:\n");
 
 	in_info->raw_bit_depth = 0;
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_VF_PP,
-			       vf_pp_descr, in_info, out_info, NULL);
+			       vf_pp_descr, in_info, out_infos, NULL);
 	vf_pp_descr->enable_fractional_ds = true;
 }
 
@@ -204,7 +217,9 @@ enum ia_css_err ia_css_pipe_get_preview_binarydesc(
 	struct ia_css_frame_info *vf_info)
 {
 	enum ia_css_err err;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	int mode = IA_CSS_BINARY_MODE_PREVIEW;
+	unsigned int i;
 
 	assert(pipe != NULL);
 	assert(in_info != NULL);
@@ -221,8 +236,12 @@ enum ia_css_err ia_css_pipe_get_preview_binarydesc(
 	else
 		in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, mode,
-			       preview_descr, in_info, out_info, vf_info);
+			       preview_descr, in_info, out_infos, vf_info);
 	if (pipe->stream->config.online) {
 		preview_descr->online = pipe->stream->config.online;
 		preview_descr->two_ppc =
@@ -310,6 +329,8 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	int stream_config_left_padding)
 {
 	int mode = IA_CSS_BINARY_MODE_VIDEO;
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	bool stream_dz_config = false;
 
@@ -326,8 +347,12 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	in_info->padded_width = in_info->res.width;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	out_infos[0] = &pipe->output_info[0];
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, mode,
-	       video_descr, in_info, &pipe->output_info, vf_info);
+	       video_descr, in_info, out_infos, vf_info);
 	if (pipe->stream->config.online) {
 		video_descr->online = pipe->stream->config.online;
 		video_descr->two_ppc =
@@ -422,12 +447,48 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	return err;
 }
 
+void ia_css_pipe_get_yuvscaler_binarydesc(
+	struct ia_css_pipe * const pipe,
+	struct ia_css_binary_descr *yuv_scaler_descr,
+	struct ia_css_frame_info *in_info,
+	struct ia_css_frame_info *out_info,
+	struct ia_css_frame_info *internal_out_info,
+	struct ia_css_frame_info *vf_info)
+{
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
+	assert(pipe != NULL);
+	assert(in_info != NULL);
+	assert(IA_CSS_BINARY_MAX_OUTPUT_PORTS >= 2);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			    "ia_css_pipe_get_yuvscaler_binarydesc() enter:\n");
+
+	in_info->padded_width = in_info->res.width;
+	in_info->format = IA_CSS_FRAME_FORMAT_YUV420;
+	in_info->raw_bit_depth = 0;
+	ia_css_frame_info_set_width(in_info, in_info->res.width, 0);
+	out_infos[0] = out_info;
+	out_infos[1] = internal_out_info;
+	for (i = 2; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
+	pipe_binarydesc_get_offline(pipe,
+			       IA_CSS_BINARY_MODE_CAPTURE_PP,
+			       yuv_scaler_descr,
+			       in_info, out_infos, vf_info);
+	yuv_scaler_descr->enable_fractional_ds = true;
+}
+
 void ia_css_pipe_get_capturepp_binarydesc(
 	struct ia_css_pipe * const pipe,
 	struct ia_css_binary_descr *capture_pp_descr,
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *vf_info)
 {
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(vf_info != NULL);
@@ -439,14 +500,18 @@ void ia_css_pipe_get_capturepp_binarydesc(
 	if (pipe->out_yuv_ds_input_info.res.width)
 		*in_info = pipe->out_yuv_ds_input_info;
 	else
-		*in_info = pipe->output_info;
+		*in_info = pipe->output_info[0];
 	in_info->format = IA_CSS_FRAME_FORMAT_YUV420;
 	in_info->raw_bit_depth = 0;
 	ia_css_frame_info_set_width(in_info, in_info->res.width, 0);
+	out_infos[0] = &pipe->output_info[0];
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe,
 			       IA_CSS_BINARY_MODE_CAPTURE_PP,
 			       capture_pp_descr,
-			       in_info, &pipe->output_info, vf_info);
+			       in_info, out_infos, vf_info);
 	capture_pp_descr->enable_fractional_ds = true;
 	capture_pp_descr->enable_xnr =
 		pipe->config.default_capture_config.enable_xnr;
@@ -460,6 +525,8 @@ void ia_css_pipe_get_primary_binarydesc(
 	struct ia_css_frame_info *vf_info)
 {
 	int mode = IA_CSS_BINARY_MODE_PRIMARY;
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 
 	assert(pipe != NULL);
 	assert(in_info != NULL);
@@ -473,13 +540,21 @@ void ia_css_pipe_get_primary_binarydesc(
 
 	in_info->res = pipe->stream->info.effective_info;
 	in_info->padded_width = in_info->res.width;
+
+#if !defined(HAS_NO_PACKED_RAW_PIXELS)
 	if (pipe->stream->config.pack_raw_pixels)
 		in_info->format = IA_CSS_FRAME_FORMAT_RAW_PACKED;
 	else
+#endif
 		in_info->format = IA_CSS_FRAME_FORMAT_RAW;
+
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, mode,
-			       prim_descr, in_info, out_info, vf_info);
+			       prim_descr, in_info, out_infos, vf_info);
 	if (pipe->stream->config.online &&
 	    pipe->stream->config.mode != IA_CSS_INPUT_MODE_MEMORY) {
 		prim_descr->online = true;
@@ -500,6 +575,9 @@ void ia_css_pipe_get_pre_gdc_binarydesc(
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *out_info)
 {
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(out_info != NULL);
@@ -509,8 +587,12 @@ void ia_css_pipe_get_pre_gdc_binarydesc(
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_PRE_ISP,
-			       pre_gdc_descr, in_info, out_info, NULL);
+			       pre_gdc_descr, in_info, out_infos, NULL);
 	pre_gdc_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }
 
@@ -520,6 +602,9 @@ void ia_css_pipe_get_gdc_binarydesc(
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *out_info)
 {
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(out_info != NULL);
@@ -528,8 +613,12 @@ void ia_css_pipe_get_gdc_binarydesc(
 
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_QPLANE6;
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_GDC,
-			       gdc_descr, in_info, out_info, NULL);
+			       gdc_descr, in_info, out_infos, NULL);
 }
 
 void ia_css_pipe_get_post_gdc_binarydesc(
@@ -539,6 +628,9 @@ void ia_css_pipe_get_post_gdc_binarydesc(
 	struct ia_css_frame_info *out_info,
 	struct ia_css_frame_info *vf_info)
 {
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(out_info != NULL);
@@ -549,8 +641,12 @@ void ia_css_pipe_get_post_gdc_binarydesc(
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_YUV420_16;
 	in_info->raw_bit_depth = 16;
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_POST_ISP,
-			       post_gdc_descr, in_info, out_info, vf_info);
+			       post_gdc_descr, in_info, out_infos, vf_info);
 	post_gdc_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }
 
@@ -560,6 +656,9 @@ void ia_css_pipe_get_pre_de_binarydesc(
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *out_info)
 {
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(out_info != NULL);
@@ -569,12 +668,16 @@ void ia_css_pipe_get_pre_de_binarydesc(
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	if (pipe->config.isp_pipe_version == 1)
 		pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_PRE_ISP,
-				       pre_de_descr, in_info, out_info, NULL);
+				       pre_de_descr, in_info, out_infos, NULL);
 	else {
 		pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_PRE_DE,
-				       pre_de_descr, in_info, out_info, NULL);
+				       pre_de_descr, in_info, out_infos, NULL);
 	}
 	if (pipe->stream->config.online) {
 		pre_de_descr->online = true;
@@ -591,6 +694,9 @@ void ia_css_pipe_get_pre_anr_binarydesc(
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *out_info)
 {
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(out_info != NULL);
@@ -600,8 +706,12 @@ void ia_css_pipe_get_pre_anr_binarydesc(
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_PRE_ISP,
-			       pre_anr_descr, in_info, out_info, NULL);
+			       pre_anr_descr, in_info, out_infos, NULL);
 	if (pipe->stream->config.online) {
 		pre_anr_descr->online = true;
 		pre_anr_descr->two_ppc =
@@ -617,6 +727,9 @@ void ia_css_pipe_get_anr_binarydesc(
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *out_info)
 {
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(out_info != NULL);
@@ -626,8 +739,12 @@ void ia_css_pipe_get_anr_binarydesc(
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_ANR,
-			       anr_descr, in_info, out_info, NULL);
+			       anr_descr, in_info, out_infos, NULL);
 	anr_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }
 
@@ -639,6 +756,9 @@ void ia_css_pipe_get_post_anr_binarydesc(
 	struct ia_css_frame_info *out_info,
 	struct ia_css_frame_info *vf_info)
 {
+	unsigned int i;
+	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
+
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(out_info != NULL);
@@ -649,7 +769,11 @@ void ia_css_pipe_get_post_anr_binarydesc(
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	out_infos[0] = out_info;
+	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_infos[i] = NULL;
+	}
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_POST_ISP,
-			       post_anr_descr, in_info, out_info, vf_info);
+			       post_anr_descr, in_info, out_infos, vf_info);
 	post_anr_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }

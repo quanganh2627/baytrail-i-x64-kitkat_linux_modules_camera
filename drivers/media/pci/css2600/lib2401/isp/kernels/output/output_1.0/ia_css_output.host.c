@@ -36,9 +36,28 @@ ia_css_output_config(
 	unsigned elems_a = ISP_VEC_NELEMS;
 	ia_css_dma_configure_from_info(&to->port_b, from->info);
 	to->width_a_over_b = elems_a / to->port_b.elems;
+	to->height = from->info->res.height;
 
 	/* Assume divisiblity here, may need to generalize to fixed point. */
 	assert (elems_a % to->port_b.elems == 0);
+}
+
+void
+ia_css_output0_config(
+	struct sh_css_isp_output_isp_config      *to,
+	const struct ia_css_output0_configuration *from)
+{
+	ia_css_output_config (
+		to, (const struct ia_css_output_configuration *)from);
+}
+
+void
+ia_css_output1_config(
+	struct sh_css_isp_output_isp_config      *to,
+	const struct ia_css_output1_configuration *from)
+{
+	ia_css_output_config (
+		to, (const struct ia_css_output_configuration *)from);
 }
 
 void
@@ -48,5 +67,28 @@ ia_css_output_configure(
 {
 	const struct ia_css_output_configuration config =
 		{ info };
-	ia_css_configure_output(binary, &config);
+	if (info)
+		ia_css_configure_output(binary, &config);
+}
+
+void
+ia_css_output0_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *info)
+{
+	const struct ia_css_output0_configuration config =
+		{ info };
+	if (info)
+		ia_css_configure_output0(binary, &config);
+}
+
+void
+ia_css_output1_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *info)
+{
+	const struct ia_css_output1_configuration config =
+		{ info };
+	if (info)
+		ia_css_configure_output1(binary, &config);
 }

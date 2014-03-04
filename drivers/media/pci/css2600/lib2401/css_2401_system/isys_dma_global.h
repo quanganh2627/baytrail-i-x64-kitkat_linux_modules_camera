@@ -25,6 +25,7 @@
 #include <type_support.h>
 
 #define HIVE_ISYS2401_DMA_IBUF_DDR_CONN	0
+#define HIVE_ISYS2401_DMA_IBUF_VMEM_CONN	1
 #define _DMA_V2_ZERO_EXTEND		0
 #define _DMA_V2_SIGN_EXTEND		1
 
@@ -71,7 +72,8 @@ struct isys2401_dma_port_cfg_s {
  *
  ************************************************/
 typedef enum {
-	isys2401_dma_ibuf_to_ddr_connection = HIVE_ISYS2401_DMA_IBUF_DDR_CONN
+	isys2401_dma_ibuf_to_ddr_connection	= HIVE_ISYS2401_DMA_IBUF_DDR_CONN,
+	isys2401_dma_ibuf_to_vmem_connection	= HIVE_ISYS2401_DMA_IBUF_VMEM_CONN
 } isys2401_dma_connection;
 
 typedef enum {

@@ -53,11 +53,21 @@ struct ia_css_video_settings {
 	struct ia_css_binary copy_binary;
 	struct ia_css_binary video_binary;
 	struct ia_css_binary vf_pp_binary;
-	struct ia_css_frame *ref_frames[NUM_VIDEO_REF_FRAMES];
+	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES];
 	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];
 	struct ia_css_frame *vf_pp_in_frame;
 	struct ia_css_pipe *copy_pipe;
 	struct ia_css_pipe *capture_pipe;
+};
+
+struct ia_css_yuvpp_settings {
+	struct ia_css_binary copy_binary;
+	struct ia_css_binary *yuv_scaler_binary;
+	struct ia_css_binary *vf_pp_binary;
+	bool *is_output_stage;
+	unsigned int num_yuv_scaler;
+	unsigned int num_vf_pp;
+	unsigned int num_output;
 };
 
 struct ia_css_pipe {
@@ -69,9 +79,9 @@ struct ia_css_pipe {
 	enum ia_css_pipe_id		mode;
 	struct ia_css_shading_table	*shading_table;
 	struct ia_css_pipeline		pipeline;
-	struct ia_css_frame_info	output_info;
+	struct ia_css_frame_info	output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	struct ia_css_frame_info	bds_output_info;
-	struct ia_css_frame_info	vf_output_info;
+	struct ia_css_frame_info	vf_output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	struct ia_css_frame_info	out_yuv_ds_input_info;
 	struct ia_css_frame_info	vf_yuv_ds_input_info;
 	struct ia_css_fw_info		*output_stage;	/* extra output stage */
@@ -90,6 +100,7 @@ struct ia_css_pipe {
 		struct ia_css_preview_settings preview;
 		struct ia_css_video_settings   video;
 		struct ia_css_capture_settings capture;
+		struct ia_css_yuvpp_settings yuvpp;
 	} pipe_settings;
 
 	/* This number is unique per pipe each instance of css. This number is

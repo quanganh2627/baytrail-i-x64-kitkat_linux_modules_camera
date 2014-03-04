@@ -23,6 +23,8 @@
 #include "math_support.h"
 #include "virtual_isys.h"
 #include "isp.h"
+#include "sh_css_defs.h"
+
 
 /*************************************************
  *
@@ -260,6 +262,13 @@ static bool create_input_system_channel(
 	if (!acquire_sid(me->stream2mmio_id,
 			&(me->stream2mmio_sid_id))) {
 		return false;
+	}
+	if ((cfg->csi_port_attr.fmt_type >= MIPI_FORMAT_CUSTOM0) &&
+	    (cfg->csi_port_attr.fmt_type <= MIPI_FORMAT_CUSTOM7)) {
+		/* set up for store_words's width for MIPI user defined types */
+		cfg->input_port_resolution.lines_per_frame =
+			ceil_div(cfg->input_port_resolution.pixels_per_line, HIVE_ISP_DDR_WORD_BYTES);
+		cfg->input_port_resolution.pixels_per_line = HIVE_ISP_DDR_WORD_BYTES;
 	}
 
 	if (!acquire_ib_buffer(
@@ -657,7 +666,10 @@ static bool calculate_ibuf_ctrl_cfg(
 	input_system_cfg_t		*isys_cfg,
 	ibuf_ctrl_cfg_t			*cfg)
 {
+
 	(void)input_port;
+
+	cfg->online	= isys_cfg->online;
 
 	cfg->dma_cfg.channel	= channel->dma_channel;
 	cfg->dma_cfg.cmd	= _DMA_V2_MOVE_A2B_NO_SYNC_CHK_COMMAND;
@@ -678,7 +690,17 @@ static bool calculate_ibuf_ctrl_cfg(
 	 * TODO: move "dest_buf_cfg" to the input system output
 	 * port configuration.
 	 */
-	cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
+
+	 /* input_buf addr only available in sched mode;
+	this buffer is allocated in isp, crun mode addr
+	can be passed by after ISP allocation */
+	if (cfg->online) {
+		cfg->dest_buf_cfg.start_addr	= ISP_INPUT_BUF_START_ADDR;
+		cfg->dest_buf_cfg.stride	= ISP_INPUT_BUF_STRIDE;
+		cfg->dest_buf_cfg.lines		= LINES_OF_ISP_INPUT_BUF;
+	} else {
+		cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
+	}
 
 	/*
 	 * zhengjie.lu@intel.com:
@@ -695,7 +717,12 @@ static bool calculate_ibuf_ctrl_cfg(
 
 
 	cfg->stream2mmio_cfg.sync_cmd	= _STREAM2MMIO_CMD_TOKEN_SYNC_FRAME;
-	cfg->stream2mmio_cfg.store_cmd	= _STREAM2MMIO_CMD_TOKEN_STORE_PACKETS;
+	if ((isys_cfg->csi_port_attr.fmt_type >= MIPI_FORMAT_CUSTOM0) &&
+	    (isys_cfg->csi_port_attr.fmt_type <= MIPI_FORMAT_CUSTOM7))
+		/* setup store_words for JPEG and other MIPI USER-DEFINED data types */
+		cfg->stream2mmio_cfg.store_cmd	= _STREAM2MMIO_CMD_TOKEN_STORE_WORDS;
+	else
+		cfg->stream2mmio_cfg.store_cmd	= _STREAM2MMIO_CMD_TOKEN_STORE_PACKETS;
 
 	return true;
 }
@@ -707,16 +734,15 @@ static bool calculate_isys2401_dma_cfg(
 	isys2401_dma_cfg_t		*cfg)
 {
 	(void)input_port;
-	(void)isys_cfg;
 
 	cfg->channel	= channel->dma_channel;
 
-	/**
-	 * zhengjie.lu@intel.com:
-	 * The connection is hard coded to "ibuf => ddr". It is not
-	 * applicable for the offline case.
-	 */
-	cfg->connection = isys2401_dma_ibuf_to_ddr_connection;
+	/* only online/sensor mode goto vmem
+	   offline/buffered_sensor, tpg and prbs will go to ddr */
+	if (isys_cfg->online)
+		cfg->connection = isys2401_dma_ibuf_to_vmem_connection;
+	else
+		cfg->connection = isys2401_dma_ibuf_to_ddr_connection;
 
 	cfg->extension	= isys2401_dma_zero_extension;
 	cfg->height	= 1;

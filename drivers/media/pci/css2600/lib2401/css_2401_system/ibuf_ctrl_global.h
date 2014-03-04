@@ -42,6 +42,9 @@ struct	ib_buffer_s {
 
 typedef struct ibuf_ctrl_cfg_s ibuf_ctrl_cfg_t;
 struct ibuf_ctrl_cfg_s {
+
+	bool online;
+
 	struct {
 		/* DMA configuration */
 		uint32_t channel;
@@ -57,6 +60,8 @@ struct ibuf_ctrl_cfg_s {
 
 	struct {
 		uint32_t stride;
+		uint32_t start_addr;
+		uint32_t lines;
 	} dest_buf_cfg;
 
 	uint32_t items_per_store;

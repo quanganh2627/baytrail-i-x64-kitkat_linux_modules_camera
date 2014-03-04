@@ -45,7 +45,9 @@ struct ia_css_cpu_mem_env {
 	/**< Allocation function with boolean argument to indicate whether
 	     the allocated memory should be zeroed out or not, true (or 1)
 	     meaning the memory given to CSS must be zeroed */
-	void (*free)(void *ptr); /**< Corresponding free function. */
+	void (*free)(void *ptr);
+	/**< Corresponding free function. The function must also accept
+	     a NULL argument, similar to C89 free(). */
 	void (*flush) (struct ia_css_acc_fw *fw);
 	/**< Flush function to flush the cache for given accelerator. */
 };
@@ -63,7 +65,8 @@ struct ia_css_css_mem_env {
 	ia_css_ptr (*alloc)(size_t bytes, uint32_t attributes);
 	/**< Allocate memory, cached or uncached, zeroed out or not. */
 	void     (*free)(ia_css_ptr ptr);
-	/**< Free ISP shared memory. */
+	/**< Free ISP shared memory. The function must also accept
+	     a NULL argument, similar to C89 free(). */
 	int      (*load)(ia_css_ptr ptr, void *data, size_t bytes);
 	/**< Load from ISP shared memory. This function is necessary because
 	     the IA MMU does not share page tables with the ISP MMU. This means

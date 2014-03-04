@@ -88,6 +88,11 @@ int ia_css_isys_device_configure(
 
 	ctx = (struct ia_css_isys_context *)HOST_MALLOC(sizeof(struct ia_css_isys_context));
 	assert(ctx != NULL);
+	if(ctx == NULL) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR,
+			"ia_css_isys_device_configure(): Failed to allocate ctx memory\n");
+		return ENOMEM;
+	}
 	*context = (HANDLE)ctx;
 
 	for (stream_handle = 0; stream_handle < STREAM_ID_MAX; stream_handle++) {
@@ -112,7 +117,6 @@ int ia_css_isys_stream_open(
 	ia_css_isys_descr_t			isys_stream_descr;
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
 	ia_css_isyspoc_cmd_msg_t isys_msg;
-	hrt_vaddress xmem_isys_msg;
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -120,6 +124,12 @@ int ia_css_isys_stream_open(
 	assert(ctx->stream_state_array[stream_handle] == IA_CSS_ISYS_STREAM_STATE_IDLE);
 
 	assert(stream_cfg != NULL);
+
+	/* Note: This should be done first.
+	 * as it will overwrite entire contents of isys_stream_descr*/
+	memcpy(&isys_stream_descr,
+		&ctx->port_cfg[stream_cfg->src],
+		sizeof(input_system_cfg_t));
 
 	rc = ia_css_isys_translate_stream_cfg_to_isys_stream_descr(
 				stream_cfg,
@@ -150,13 +160,7 @@ int ia_css_isys_stream_open(
 	isys_msg.ret = 0;
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
 
-	xmem_isys_msg = mmgr_malloc(sizeof(ia_css_isyspoc_cmd_msg_t));
-	if (xmem_isys_msg == mmgr_NULL) {
-		return ENOMEM;
-	}
-	mmgr_store(xmem_isys_msg, &isys_msg, sizeof(ia_css_isyspoc_cmd_msg_t));
-
-	if ((retval =  ia_css_fwctrl_isys_send_msg(xmem_isys_msg)) == 0) {
+	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
         ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_OPENED;
 		ctx->stream_nof_output_pins[stream_handle] = stream_cfg->nof_output_pins;
     }
@@ -174,7 +178,6 @@ int ia_css_isys_stream_close(
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
 	ia_css_isyspoc_cmd_msg_t isys_msg;
-	hrt_vaddress xmem_isys_msg;
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -185,13 +188,7 @@ int ia_css_isys_stream_close(
 	isys_msg.ret = 0;
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
 
-	xmem_isys_msg = mmgr_malloc(sizeof(ia_css_isyspoc_cmd_msg_t));
-	if (xmem_isys_msg == mmgr_NULL) {
-		return ENOMEM;
-	}
-	mmgr_store(xmem_isys_msg, &isys_msg, sizeof(ia_css_isyspoc_cmd_msg_t));
-
-	if ((retval =  ia_css_fwctrl_isys_send_msg(xmem_isys_msg)) == 0) {
+	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
 		ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_IDLE;
 		ctx->stream_nof_output_pins[stream_handle] = 0;
 	}
@@ -210,7 +207,6 @@ int ia_css_isys_stream_start(
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
 	ia_css_isyspoc_cmd_msg_t isys_msg;
-	hrt_vaddress xmem_isys_msg;
 	unsigned int i;
 	int retval = 0;
 
@@ -253,13 +249,7 @@ int ia_css_isys_stream_start(
 		isys_msg.send_type = IA_CSS_ISYS_SEND_TYPE_STREAM_START;
 	}
 
-	xmem_isys_msg = mmgr_malloc(sizeof(ia_css_isyspoc_cmd_msg_t));
-	if (xmem_isys_msg == mmgr_NULL) {
-		return ENOMEM;
-	}
-	mmgr_store(xmem_isys_msg, &isys_msg, sizeof(ia_css_isyspoc_cmd_msg_t));
-
-	if ((retval =  ia_css_fwctrl_isys_send_msg(xmem_isys_msg)) == 0) {
+	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
         ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_STARTED;
     }
 
@@ -276,7 +266,6 @@ int ia_css_isys_stream_start(
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
 	ia_css_isyspoc_cmd_msg_t isys_msg;
-	hrt_vaddress xmem_isys_msg;
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -287,13 +276,7 @@ int ia_css_isys_stream_start(
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
 	isys_msg.send_type = IA_CSS_ISYS_SEND_TYPE_STREAM_STOP;
 
-	xmem_isys_msg = mmgr_malloc(sizeof(ia_css_isyspoc_cmd_msg_t));
-	if (xmem_isys_msg == mmgr_NULL) {
-		return ENOMEM;
-	}
-	mmgr_store(xmem_isys_msg, &isys_msg, sizeof(ia_css_isyspoc_cmd_msg_t));
-
-	if ((retval =  ia_css_fwctrl_isys_send_msg(xmem_isys_msg)) == 0) {
+	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
         ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_OPENED;
 	}
 
@@ -310,7 +293,6 @@ int ia_css_isys_stream_start(
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
 	ia_css_isyspoc_cmd_msg_t isys_msg;
-	hrt_vaddress xmem_isys_msg;
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -321,13 +303,7 @@ int ia_css_isys_stream_start(
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
 	isys_msg.send_type = IA_CSS_ISYS_SEND_TYPE_STREAM_FLUSH;
 
-	xmem_isys_msg = mmgr_malloc(sizeof(ia_css_isyspoc_cmd_msg_t));
-	if (xmem_isys_msg == mmgr_NULL) {
-		return ENOMEM;
-	}
-	mmgr_store(xmem_isys_msg, &isys_msg, sizeof(ia_css_isyspoc_cmd_msg_t));
-
-	if ((retval =  ia_css_fwctrl_isys_send_msg(xmem_isys_msg)) == 0) {
+	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
         ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_OPENED;
 	}
 
@@ -345,7 +321,6 @@ int ia_css_isys_stream_capture_indication(
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
 	ia_css_isyspoc_cmd_msg_t isys_msg;
-	hrt_vaddress xmem_isys_msg;
 	unsigned int i;
 	int retval = 0;
 
@@ -380,13 +355,7 @@ int ia_css_isys_stream_capture_indication(
 	memcpy(&(isys_msg.payload.next_frame), next_frame,
 			sizeof(struct ia_css_isys_frame_buff_set));
 
-	xmem_isys_msg = mmgr_malloc(sizeof(ia_css_isyspoc_cmd_msg_t));
-	if (xmem_isys_msg == mmgr_NULL) {
-		return ENOMEM;
-	}
-	mmgr_store(xmem_isys_msg, &isys_msg, sizeof(ia_css_isyspoc_cmd_msg_t));
-
-	retval =  ia_css_fwctrl_isys_send_msg(xmem_isys_msg);
+	retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg);
 
 	return retval;
 }
@@ -401,18 +370,13 @@ int ia_css_isys_stream_capture_indication(
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
 	ia_css_isyspoc_cmd_msg_t isys_msg;
-	hrt_vaddress xmem_isys_response;
 	int ret = 0;
 
 	assert(received_response != NULL);
 	assert(ctx != NULL);
 
-	ret =  ia_css_fwctrl_isys_receive_msg(&xmem_isys_response);
+	ret =  ia_css_fwctrl_isys_receive_msg(&isys_msg);
 	if (0 == ret) {
-		mmgr_load(xmem_isys_response, (void*)(&isys_msg),
-				sizeof(ia_css_isyspoc_cmd_msg_t));
-		mmgr_free(xmem_isys_response);
-
 		ret = isyspoc_create_reponse(received_response, &isys_msg);
     }
 

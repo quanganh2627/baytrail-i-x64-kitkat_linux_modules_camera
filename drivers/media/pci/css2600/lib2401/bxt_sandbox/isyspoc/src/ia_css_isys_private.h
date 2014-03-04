@@ -61,6 +61,7 @@ struct ia_css_isys_context {
 #endif /* VERIFY_DEVSTATE */
 	enum stream_state stream_state_array[STREAM_ID_MAX];
 	virtual_input_system_t virtual_input_system[STREAM_ID_MAX];
+	input_system_cfg_t port_cfg[N_IA_CSS_ISYS_STREAM_SRC];
 };
 
 #endif /*__IA_CSS_ISYS_PRIVATE_H_INCLUDED__*/

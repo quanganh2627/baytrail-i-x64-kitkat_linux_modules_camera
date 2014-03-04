@@ -25,11 +25,17 @@
 /* The following is needed for the function arguments */
 #include "ia_css_isysapi_fw_types.h"
 #include "ia_css_isys.h"
+#include <input_system.h>
 
-bool ia_css_isys_translate_stream_cfg_to_isys_stream_descr(
+extern bool ia_css_isys_translate_stream_cfg_to_isys_stream_descr(
 		const struct ia_css_isys_stream_cfg_data *stream_cfg,
 		ia_css_isys_descr_t	*isys_stream_descr,
 		unsigned int ip_num
 );
 
+extern bool isys_convert_mipi_dt_to_mipi_format(
+	enum ia_css_isys_mipi_data_type dt,
+	mipi_predictor_t compression,
+	unsigned int *fmt_type
+);
 #endif

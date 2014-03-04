@@ -40,6 +40,8 @@ enum ia_css_pipe_mode {
 	IA_CSS_PIPE_MODE_CAPTURE,	/**< Still capture pipe */
 	IA_CSS_PIPE_MODE_ACC,		/**< Accelerated pipe */
 	IA_CSS_PIPE_MODE_COPY,		/**< Copy pipe, only used for embedded/image data copying */
+	IA_CSS_PIPE_MODE_YUVPP,		/**< YUV post processing pipe, used for all use cases with YUV input,
+									for SoC sensor and external ISP */
 };
 /* Temporary define  */
 #define IA_CSS_PIPE_MODE_NUM (IA_CSS_PIPE_MODE_COPY + 1)

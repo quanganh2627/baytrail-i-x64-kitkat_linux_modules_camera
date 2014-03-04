@@ -40,6 +40,10 @@
 				 */
 #include "pixelgen.h"
 
+
+#define INPUT_SYSTEM_N_STREAM_ID  6	/* maximum number of simultaneous
+					virtual channels supported*/
+
 typedef enum {
 	INPUT_SYSTEM_ERR_NO_ERROR = 0,
 	INPUT_SYSTEM_ERR_CREATE_CHANNEL_FAIL,
@@ -114,8 +118,9 @@ typedef struct input_system_cfg_s input_system_cfg_t;
 struct input_system_cfg_s {
 	input_system_input_port_ID_t	input_port_id;
 
-	/*input_system_source_type_t	input_port_type;*/
 	input_system_source_type_t	mode;
+
+	bool online;
 
 	struct {
 		int32_t	active_lanes;
@@ -139,6 +144,7 @@ typedef struct virtual_input_system_s virtual_input_system_t;
 struct virtual_input_system_s {
 	input_system_input_port_t	input_port;
 	input_system_channel_t		channel;
+	bool online;
 };
 
 typedef struct virtual_input_system_cfg_s virtual_input_system_cfg_t;
@@ -146,5 +152,12 @@ struct virtual_input_system_cfg_s {
 	input_system_input_port_cfg_t	input_port_cfg;
 	input_system_channel_cfg_t	channel_cfg;
 };
+
+#define ISP_INPUT_BUF_START_ADDR	0
+#define NUM_OF_INPUT_BUF		2
+#define NUM_OF_LINES_PER_BUF		2
+#define LINES_OF_ISP_INPUT_BUF		(NUM_OF_INPUT_BUF * NUM_OF_LINES_PER_BUF)
+#define ISP_INPUT_BUF_STRIDE		SH_CSS_MAX_SENSOR_WIDTH
+
 
 #endif /* __INPUT_SYSTEM_GLOBAL_H_INCLUDED__ */

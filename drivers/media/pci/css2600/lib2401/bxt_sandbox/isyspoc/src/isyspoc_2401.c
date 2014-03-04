@@ -24,12 +24,7 @@
 #include "input_system.h"
 #include "isyspoc_2401.h"
 
-#define	ISYS_CSI_VIRTUAL_CH0	0
-#define	ISYS_CSI_VIRTUAL_CH1	1
-#define	ISYS_CSI_VIRTUAL_CH2	2
-#define	ISYS_CSI_VIRTUAL_CH3	3
 
-#define	MAX_ISYS_SENSOR_LANES	2
 
 static bool ia_css_isys_translate_stream_cfg_to_input_system_input_port_type(
 	const struct ia_css_isys_stream_cfg_data *stream_cfg,
@@ -41,23 +36,12 @@ static bool ia_css_isys_translate_stream_cfg_to_input_port_id(
 	ia_css_isys_descr_t	*isys_stream_descr
 );
 
-static bool ia_css_isys_translate_stream_cfg_to_input_port_attr(
-	const struct ia_css_isys_stream_cfg_data *stream_cfg,
-	ia_css_isys_descr_t	*isys_stream_descr,
-	unsigned int ip_num
-);
-
 static bool ia_css_isys_translate_stream_cfg_to_input_port_resolution(
 	const struct ia_css_isys_stream_cfg_data *stream_cfg,
 	ia_css_isys_descr_t	*isys_stream_descr,
 	unsigned int ip_num
 );
 
-static bool isys_convert_mipi_dt_to_mipi_format(
-	enum ia_css_isys_mipi_data_type dt,
-	mipi_predictor_t compression,
-	unsigned int *fmt_type
-);
 
 static unsigned int isys_mipi_dt_to_bits_per_subpixel(
 	enum ia_css_isys_mipi_data_type dt
@@ -66,10 +50,6 @@ static unsigned int isys_mipi_dt_to_bits_per_subpixel(
 static unsigned int csi2_calc_max_subpixels_per_line(
 	enum ia_css_isys_mipi_data_type dt,
 	unsigned int pixels_per_line
-);
-
-static void init_tpg_config_defaults(
-	pixelgen_tpg_cfg_t *attr
 );
 
 /**
@@ -88,11 +68,6 @@ bool ia_css_isys_translate_stream_cfg_to_isys_stream_descr(
 	rc  &= ia_css_isys_translate_stream_cfg_to_input_port_id(stream_cfg,
 		isys_stream_descr);
 
-	rc &= ia_css_isys_translate_stream_cfg_to_input_port_attr(
-		stream_cfg,
-		isys_stream_descr,
-		ip_num);
-
 	rc &= ia_css_isys_translate_stream_cfg_to_input_port_resolution(
 		stream_cfg,
 		isys_stream_descr,
@@ -108,6 +83,8 @@ static bool ia_css_isys_translate_stream_cfg_to_input_system_input_port_type(
 	bool rc;
 
 	rc = true;
+
+	isys_stream_descr->online = false;
 
 	switch (stream_cfg->src) {
 	case IA_CSS_ISYS_STREAM_SRC_MIPIGEN_PORT0:
@@ -162,81 +139,6 @@ static bool ia_css_isys_translate_stream_cfg_to_input_port_id(
 	return rc;
 }
 
-static bool ia_css_isys_translate_stream_cfg_to_input_port_attr(
-	const struct ia_css_isys_stream_cfg_data *stream_cfg,
-	ia_css_isys_descr_t	*isys_stream_descr,
-	unsigned int ip_num
-) {
-	bool rc;
-	unsigned int fmt_type=0;
-
-	rc = true;
-
-	switch (isys_stream_descr->mode) {
-	case INPUT_SYSTEM_SOURCE_TYPE_TPG: {
-
-		isys_stream_descr->tpg_port_attr.color_cfg.R1 = 51;
-		isys_stream_descr->tpg_port_attr.color_cfg.G1 = 102;
-		isys_stream_descr->tpg_port_attr.color_cfg.B1 = 255;
-		isys_stream_descr->tpg_port_attr.color_cfg.R2 = 0;
-		isys_stream_descr->tpg_port_attr.color_cfg.G2 = 100;
-		isys_stream_descr->tpg_port_attr.color_cfg.B2 = 160;
-
-		init_tpg_config_defaults(&(isys_stream_descr->tpg_port_attr));
-
-		isys_stream_descr->tpg_port_attr.sync_gen_cfg.hblank_cycles = 100;
-		isys_stream_descr->tpg_port_attr.sync_gen_cfg.vblank_cycles = 100;
-		isys_stream_descr->tpg_port_attr.sync_gen_cfg.nr_of_frames = ~(0x0);
-		isys_stream_descr->tpg_port_attr.sync_gen_cfg.pixels_per_line = stream_cfg->input_pins[ip_num].input_res.width;
-		isys_stream_descr->tpg_port_attr.sync_gen_cfg.lines_per_frame = stream_cfg->input_pins[ip_num].input_res.height;
-		break;
-		}
-	case INPUT_SYSTEM_SOURCE_TYPE_PRBS: {
-		isys_stream_descr->prbs_port_attr.seed0 = 0x355FFAA5;
-		isys_stream_descr->prbs_port_attr.seed1 = 0xA3300FFB;
-
-		isys_stream_descr->prbs_port_attr.sync_gen_cfg.hblank_cycles = 100;
-		isys_stream_descr->prbs_port_attr.sync_gen_cfg.vblank_cycles = 100;
-		isys_stream_descr->prbs_port_attr.sync_gen_cfg.pixels_per_clock = 1;
-		isys_stream_descr->prbs_port_attr.sync_gen_cfg.nr_of_frames = ~(0x0);
-		isys_stream_descr->prbs_port_attr.sync_gen_cfg.pixels_per_line = stream_cfg->input_pins[ip_num].input_res.width;
-		isys_stream_descr->prbs_port_attr.sync_gen_cfg.lines_per_frame = stream_cfg->input_pins[ip_num].input_res.height;
-
-		break;
-		}
-	case INPUT_SYSTEM_SOURCE_TYPE_SENSOR: {
-		isys_stream_descr->csi_port_attr.active_lanes = MAX_ISYS_SENSOR_LANES;
-
-		rc = isys_convert_mipi_dt_to_mipi_format(
-				stream_cfg->input_pins[ip_num].dt,
-				MIPI_PREDICTOR_NONE,
-				&fmt_type);
-		isys_stream_descr->csi_port_attr.fmt_type = fmt_type;
-
-		switch (stream_cfg->vc) {
-		case IA_CSS_ISYS_MIPI_VC_0:
-			isys_stream_descr->csi_port_attr.ch_id = ISYS_CSI_VIRTUAL_CH0;
-			break;
-		case IA_CSS_ISYS_MIPI_VC_1:
-			isys_stream_descr->csi_port_attr.ch_id = ISYS_CSI_VIRTUAL_CH1;
-			break;
-		case IA_CSS_ISYS_MIPI_VC_2:
-			isys_stream_descr->csi_port_attr.ch_id = ISYS_CSI_VIRTUAL_CH2;
-			break;
-		case IA_CSS_ISYS_MIPI_VC_3:
-			isys_stream_descr->csi_port_attr.ch_id = ISYS_CSI_VIRTUAL_CH3;
-			break;
-		default:
-			rc = false;
-		}
-		break;
-	}
-	default:
-			rc = false;
-	}
-	return rc;
-}
-
 static bool ia_css_isys_translate_stream_cfg_to_input_port_resolution(
 	const struct ia_css_isys_stream_cfg_data *stream_cfg,
 	ia_css_isys_descr_t	*isys_stream_descr,
@@ -274,7 +176,7 @@ static bool ia_css_isys_translate_stream_cfg_to_input_port_resolution(
 	return true;
 }
 
-static bool isys_convert_mipi_dt_to_mipi_format(
+bool isys_convert_mipi_dt_to_mipi_format(
 	enum ia_css_isys_mipi_data_type dt,
 	mipi_predictor_t compression,
 	unsigned int *fmt_type
@@ -545,14 +447,3 @@ static unsigned int csi2_calc_max_subpixels_per_line(
 	return rval;
 }
 
-static void init_tpg_config_defaults(pixelgen_tpg_cfg_t *attr)
-{
-		attr->mode = PIXELGEN_TPG_MODE_CHBO;
-		attr->mask_cfg.h_mask = (1 << 4)-1;
-		attr->mask_cfg.v_mask = (1 << 4)-1;
-		attr->mask_cfg.hv_mask = (1 << 8)-1;
-
-		attr->delta_cfg.h_delta = -2;
-		attr->delta_cfg.v_delta = 3;
-		attr->sync_gen_cfg.pixels_per_clock = 1;
-}

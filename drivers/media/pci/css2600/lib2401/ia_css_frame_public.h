@@ -149,6 +149,7 @@ struct ia_css_frame {
 	enum ia_css_frame_flash_state flash_state;
 	unsigned int exp_id; /**< exposure id, only valid for continuous
 				capture cases */
+	uint32_t isp_config_id; /**< Unique ID to track which config was actually applied to a particular frame */
 	bool valid; /**< First video output frame is not valid */
 	bool contiguous; /**< memory is allocated physically contiguously */
 	union {

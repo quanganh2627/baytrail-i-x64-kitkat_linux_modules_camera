@@ -93,7 +93,7 @@
 #define HAS_TIMED_CTRL_VERSION_1
 #define HAS_RX_VERSION_2
 #define HAS_NO_INPUT_FORMATTER
-
+#define HAS_NO_PACKED_RAW_PIXELS
 /*
  * Semi global. "HRT" is accessible from SP, but
  * the HRT types do not fully apply
@@ -412,5 +412,22 @@ typedef enum {
 	ISYS2401_DMA_CHANNEL_11,
 	N_ISYS2401_DMA_CHANNEL
 } isys2401_dma_channel;
+
+enum ia_css_isp_memories {
+	IA_CSS_ISP_PMEM0 = 0,
+	IA_CSS_ISP_DMEM0,
+	IA_CSS_ISP_VMEM0,
+	IA_CSS_ISP_VAMEM0,
+	IA_CSS_ISP_VAMEM1,
+	IA_CSS_ISP_VAMEM2,
+	IA_CSS_ISP_HMEM0,
+	IA_CSS_SP_DMEM0,
+	IA_CSS_DDR,
+	N_IA_CSS_MEMORIES
+};
+#define IA_CSS_NUM_MEMORIES 9
+/* For driver compatability */
+#define N_IA_CSS_ISP_MEMORIES   IA_CSS_NUM_MEMORIES
+#define IA_CSS_NUM_ISP_MEMORIES IA_CSS_NUM_MEMORIES
 
 #endif /* __SYSTEM_GLOBAL_H_INCLUDED__ */

@@ -37,15 +37,18 @@ struct ia_css_pipe;
  */
 enum ia_css_event_type {
 	IA_CSS_EVENT_TYPE_OUTPUT_FRAME_DONE	= 1 << 0, /**< Output frame ready. */
-	IA_CSS_EVENT_TYPE_VF_OUTPUT_FRAME_DONE	= 1 << 1, /**< Viewfinder Output frame ready. */
-	IA_CSS_EVENT_TYPE_3A_STATISTICS_DONE	= 1 << 2, /**< Indication that 3A statistics are available. */
-	IA_CSS_EVENT_TYPE_DIS_STATISTICS_DONE	= 1 << 3, /**< Indication that DIS statistics are available. */
-	IA_CSS_EVENT_TYPE_PIPELINE_DONE		= 1 << 4, /**< Pipeline Done event, sent after last pipeline stage. */
-	IA_CSS_EVENT_TYPE_FRAME_TAGGED		= 1 << 5, /**< Frame tagged. */
-	IA_CSS_EVENT_TYPE_INPUT_FRAME_DONE	= 1 << 6, /**< Input frame ready. */
-	IA_CSS_EVENT_TYPE_METADATA_DONE		= 1 << 7, /**< Metadata ready. */
+	IA_CSS_EVENT_TYPE_SECOND_OUTPUT_FRAME_DONE	= 1 << 1, /**< Second output frame ready. */
+	IA_CSS_EVENT_TYPE_VF_OUTPUT_FRAME_DONE	= 1 << 2, /**< Viewfinder Output frame ready. */
+	IA_CSS_EVENT_TYPE_SECOND_VF_OUTPUT_FRAME_DONE	= 1 << 3, /**< Second viewfinder Output frame ready. */
+	IA_CSS_EVENT_TYPE_3A_STATISTICS_DONE	= 1 << 4, /**< Indication that 3A statistics are available. */
+	IA_CSS_EVENT_TYPE_DIS_STATISTICS_DONE	= 1 << 5, /**< Indication that DIS statistics are available. */
+	IA_CSS_EVENT_TYPE_PIPELINE_DONE		= 1 << 6, /**< Pipeline Done event, sent after last pipeline stage. */
+	IA_CSS_EVENT_TYPE_FRAME_TAGGED		= 1 << 7, /**< Frame tagged. */
+	IA_CSS_EVENT_TYPE_INPUT_FRAME_DONE	= 1 << 8, /**< Input frame ready. */
+	IA_CSS_EVENT_TYPE_METADATA_DONE		= 1 << 9, /**< Metadata ready. */
+	IA_CSS_EVENT_TYPE_LACE_STATISTICS_DONE	= 1 << 10, /**< Indication that LACE statistics are available. */
 	/* NOTE: Add new enums before IA_CSS_EVENT_TYPE_PORT_EOF MUST, see comment below */
-	IA_CSS_EVENT_TYPE_PORT_EOF		= 1 << 8, /**< End Of Frame event, sent when in buffered sensor mode. This enum MUST be last */
+	IA_CSS_EVENT_TYPE_PORT_EOF		= 1 << 11, /**< End Of Frame event, sent when in buffered sensor mode. This enum MUST be last */
 };
 
 #define IA_CSS_EVENT_TYPE_NONE 0

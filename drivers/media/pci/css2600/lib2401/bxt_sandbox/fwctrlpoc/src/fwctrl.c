@@ -32,16 +32,19 @@
 #include "ia_css_queue.h"        /* ia_css_queue_t */
 #include "ia_css_fwctrl_public.h"
 #include "ia_css_fwctrl.h"
+#include "memory_access.h"
+#include "ia_css_buffer_pool.h"
 
 #define SP_START_TIMEOUT_US		200000
 #define SP_STOP_TIMEOUT_US		200000
+#define MAX_ISYS_MSGS 			100
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
 
 /* host side handles of all queues */
 struct fwctrl_comm_queues_s {
-	ia_css_queue_t host2sp_isys_q_handle;
+	ia_css_queue_t host2sp_isys_q_handle[INPUT_SYSTEM_N_STREAM_ID];
 	ia_css_queue_t sp2host_isys_q_handle;
 	ia_css_queue_t host2sp_psys_q_handle;
 	ia_css_queue_t sp2host_psys_q_handle;
@@ -53,6 +56,9 @@ typedef struct fwctrl_comm_queues_s fwctrl_comm_queues_t;
 /* Host SP communication queues */
 fwctrl_comm_queues_t fwctrl_comm_queues;
 
+/* ISYS buffer pool of messages */
+static struct ia_css_buffer_pool isys_buf_pool;
+
 /*This is used to maintain the state for device open/close
 if PSYS/ISYS driver separately call this API*/
 static int ref_count = 0;
@@ -62,6 +68,9 @@ static bool fwctrl_configure_spctrl(
 	const char * program,
 	ia_css_spctrl_cfg  *spctrl_cfg
 );
+
+static int fwctrl_init_bufpool(void);
+static void fwctrl_uinit_bufpool(void);
 
 static bool fwctrl_configure_spctrl(
 	const struct ia_css_fw_info *fw,
@@ -152,6 +161,7 @@ static void fwctrl_init_queues(
 	ia_css_queue_remote_t remoteq;
 	unsigned int HIVE_ADDR_ia_css_bufq_host_sp_queue;
 	const struct ia_css_fw_info *fw;
+	unsigned int i;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "fwctrl_init_queues()entered \n ");
 
@@ -193,15 +203,16 @@ static void fwctrl_init_queues(
 						sp2host_event_queue_elems));
 	ia_css_queue_remote_init(&fwctrl_comm_queues.sp2host_generic_q_handle, &remoteq);
 
-       /*initialize isys host2sp queue */
+    for (i = 0;  i < INPUT_SYSTEM_N_STREAM_ID; i++) {
+	/*initialize isys host2sp queue */
 	remoteq.cb_desc_addr =  (uint32_t)(HIVE_ADDR_ia_css_bufq_host_sp_queue
 				+ offsetof(struct bxt_poc_host_sp_queues,
-						host2sp_isys_cmd_queue_desc));
+						host2sp_isys_cmd_queue_desc[i]));
 	remoteq.cb_elems_addr = (uint32_t)(HIVE_ADDR_ia_css_bufq_host_sp_queue
 				+ offsetof(struct bxt_poc_host_sp_queues,
-						host2sp_isys_cmd_queue_elems));
-	ia_css_queue_remote_init(&fwctrl_comm_queues.host2sp_isys_q_handle, &remoteq);
-
+						host2sp_isys_cmd_queue_elems[i]));
+	ia_css_queue_remote_init(&fwctrl_comm_queues.host2sp_isys_q_handle[i], &remoteq);
+  }
 
        /*initialize isys sp2host queue */
 	remoteq.cb_desc_addr =  (uint32_t)(HIVE_ADDR_ia_css_bufq_host_sp_queue
@@ -233,6 +244,24 @@ static void fwctrl_init_queues(
 	ia_css_queue_remote_init(&fwctrl_comm_queues.sp2host_psys_q_handle, &remoteq);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "fwctrl_init_queues() exit\n ");
+}
+
+static int fwctrl_init_bufpool(void)
+{
+	int ret = 0;
+
+	ia_css_create_isys_bufpool(&isys_buf_pool);
+	ret = isys_buf_pool.init(&isys_buf_pool, MAX_ISYS_MSGS);
+	if(ret != 0)
+		return ret;
+
+	return ret;
+}
+
+static void fwctrl_uinit_bufpool(void)
+{
+	isys_buf_pool.uinit(&isys_buf_pool);
+	return;
 }
 
 static int fwctrl_sp_has_finished()
@@ -269,6 +298,10 @@ int ia_css_fwctrl_device_open(
 		if( status != 0)
 			return status;
 		fwctrl_init_queues(device_config);
+
+		status = fwctrl_init_bufpool();
+		if( status != 0)
+			return status;
 	}
 	else
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "Device is already open ref_count =%d\n", ref_count);
@@ -281,6 +314,7 @@ int ia_css_fwctrl_device_close(void)
 	ref_count = ref_count - 1 ;
 	if(ref_count == 0)
 	{
+		fwctrl_uinit_bufpool();
 		ret = fwctrl_sp_sync_stop();
 		if( ret != 0)
 			return ret;
@@ -291,15 +325,24 @@ int ia_css_fwctrl_device_close(void)
 /**********************************************************************************/
 /* TODO: This function will be made generic by passing queue handle and message */
 /**********************************************************************************/
-int ia_css_fwctrl_isys_send_msg(
-	const hrt_vaddress payload
+int ia_css_fwctrl_isys_stream_send_msg(
+	int stream_handle,
+	const ia_css_isyspoc_cmd_msg_t *isys_msg
 )
 {
+	hrt_vaddress payload;
+
+	payload = isys_buf_pool.acquire_buf(&isys_buf_pool);
+	if (payload == mmgr_NULL) {
+		return ENOMEM;
+	}
+	mmgr_store(payload, isys_msg, sizeof(ia_css_isyspoc_cmd_msg_t));
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isyspoc_send_msg() : entered  payload = 0x%x \n", payload);
 
 	/* enqueue it in ISYS command queue*/
 	if (IA_CSS_SUCCESS != ia_css_queue_enqueue(
-				&fwctrl_comm_queues.host2sp_isys_q_handle,
+				&fwctrl_comm_queues.host2sp_isys_q_handle[stream_handle],
 				payload)){
 		return ENOTCONN;
 	}
@@ -323,17 +366,23 @@ int ia_css_fwctrl_isys_send_msg(
 /* TODO: This function will be made generic by passing queue handle and message */
 /**********************************************************************************/
 int ia_css_fwctrl_isys_receive_msg(
-	hrt_vaddress *payload
+	ia_css_isyspoc_cmd_msg_t *isys_msg
 )
 {
 	int ret = 0;
+	hrt_vaddress payload;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isyspoc_receive_msg() : entered \n");
 
 	if (IA_CSS_SUCCESS != ia_css_queue_dequeue(
 				&fwctrl_comm_queues.sp2host_isys_q_handle,
-				payload)){
+				&payload)){
 		ret = ENOTCONN;
 	}
+
+	mmgr_load(payload, (void*)(isys_msg),
+			sizeof(ia_css_isyspoc_cmd_msg_t));
+
+	isys_buf_pool.release_buf(&isys_buf_pool, payload);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isyspoc_receive_msg() : leaving \n");
 
@@ -367,7 +416,6 @@ int ia_css_fwctrl_dequeue_event(
 	}
 	else
 	{
-		ia_css_debug_dtrace(IA_CSS_DEBUG_INFO, "Failed to receive event \n");
 		ret = ENOTCONN;
 	}
 

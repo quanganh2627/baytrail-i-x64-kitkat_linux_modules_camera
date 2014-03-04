@@ -34,6 +34,8 @@ struct ia_css_buffer {
 	union {
 		struct ia_css_isp_3a_statistics  *stats_3a;    /**< 3A statistics & optionally RGBY statistics. */
 		struct ia_css_isp_dvs_statistics *stats_dvs;   /**< DVS statistics. */
+		ia_css_ptr                        stats_acc_dvs;  /**< ACC DVS statistics. */
+		ia_css_ptr                        stats_acc_lace; /**< LACE statistics. */
 		struct ia_css_frame              *frame;       /**< Frame buffer. */
 		struct ia_css_acc_param          *custom_data; /**< Custom buffer. */
 		struct ia_css_metadata           *metadata;    /**< Sensor metadata. */

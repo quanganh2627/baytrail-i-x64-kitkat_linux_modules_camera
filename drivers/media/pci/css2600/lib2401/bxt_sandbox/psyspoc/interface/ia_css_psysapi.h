@@ -75,7 +75,7 @@
  *     ia_css_psysapi_init();
  *
  *     // to create a task
- *     ia_css_psysapi_task_create(&task,program_group_id,task_buffer,cookie);
+ *     ia_css_psysapi_task_create(&task, &pg_info, task_buffer,cookie);
  *
  *     // to configure a tasks
  *     ia_css_psysapi_task_attach_buffer(task,terminal_id,bufffer,status);
@@ -102,8 +102,8 @@
 /*--------------------------------------------------------------------------------------
 *  Include section
 */
-#include "type_support.h"        /* for <errno.h>, for uint32_t etc. */
-
+#include "type_support.h"       /* for <errno.h>, for uint32_t etc. */
+#include "ia_css_pg_info.h"
 
 /*--------------------------------------------------------------------------------------
 * firmware and driver virtual addresses
@@ -123,30 +123,8 @@ typedef uint64_t ia_css_psys_drv_addr_t;
 */
 #define IA_CSS_PSYS_SUCCESS  (0)
 
-/*
- * Using this temporary till we implement the PSYS API
-*/
-#define NOT_USED(a)         ((a) = (a))
-/*--------------------------------------------------------------------------------------*/
-
-/*--------------------------------------------------------------------------------------
-*   program group IDs
-*
-* A program group ID is a GUID that uniquely identifies a program group.
-* Defining constants for these IDs is left to the user
-*
-*	MY_PROGRAM_GROUP_ID_TNR,       //< temporal noise reduction
-*	MY_PROGRAM_GROUP_ID_GDC,       //< geometrical distortion correction
-*	MY_PROGRAM_GROUP_ID_LIN_SCALE, //< linear scaling
-*
-*/
-typedef struct ia_css_psys_program_group_id
-{
-   uint32_t u32;
-   uint16_t u16[2];
-   uint16_t u8[8];
-} ia_css_psys_program_group_id_t;
-
+/*Silent the compiler*/
+#define NOT_USED(a)            ((a) = (a))
 /*--------------------------------------------------------------------------------------
 *   terminal IDs
 *
@@ -164,12 +142,6 @@ typedef struct ia_css_psys_program_group_id
 *	MY_PROGRAM_GROUP_LATE_PARAMETER_TERMINAL
 */
 typedef uint32_t ia_css_psys_terminal_id_t;
-
-/*--------------------------------------------------------------------------------------*/
-enum ia_css_psys_buffer_status {
-	FULL,                 /**<  written */
-	EMPTY,                /**<  read    */
-};
 
 /*--------------------------------------------------------------------------------------
 *  singular buffer definition
@@ -297,8 +269,7 @@ enum ia_css_psysapi_resource_enumerator
 	IA_CSS_PSYSAPI_ACCELERATOR_CE,        /* Color Enhancement  */
 	IA_CSS_PSYSAPI_ACCELERATOR_LACE_STAT, /* Local histogram statistics  */
 	IA_CSS_PSYSAPI_ACCELERATOR_DVS_STAT,  /* DVS statistics (DVS stat) */
-	
-	IA_CSS_PSYSAPI_RESOURCE_ENUM_TOTAL_NR
+	IA_CSS_PSYSAPI_N_RESOURCE
 };
 // TODO: Mark wrote: the Psys has 6 accelerators, each with different capabilities, not a list of FF's
 
@@ -380,7 +351,7 @@ int ia_css_psysapi_init(unsigned int* task_buffer_size, unsigned int time_to_liv
  * See: ia_css_psysapi_task_destroy()
  *
  * @param [out] task               pointer to receive the created task.
- * @param [in]  pg_id              defines the main structure of the task
+ * @param [in]  pg_info            defines the program group structure for the task
  * @param [in]  task_buffer        shared IPC buffer used to transfer the task to the firmware
  * @param [in]  originator_cookie  pointer to client defined originator context structure
  *
@@ -392,7 +363,7 @@ int ia_css_psysapi_init(unsigned int* task_buffer_size, unsigned int time_to_liv
  */
 int ia_css_psysapi_task_create(
 	struct ia_css_psys_task** task,
-	ia_css_psys_program_group_id_t pg_id,
+	struct ia_css_pg_info *pg_info,
 	struct ia_css_psysapi_task_buffer* task_buffer,
 	void* originator_cookie
 );
@@ -426,19 +397,16 @@ int ia_css_psysapi_task_create(
  * @param [in]  task           the associated task
  * @param [in]  terminal_id    the terminal to attach to
  * @param [in]  buffer         the buffer
- * @param [in]  status         EMPTY in case of a still empty input buffer, else FULL
  *
  * @retval 0            on success
  * @retval EINVAL       when 'task' does not point to a valid task
- * @retval EBADR        when 'program id' does not support attaching a buffer with this status.
  * @retval EBADE        the size of 'buffer' is too small to match the current task construction status
  *
  */
 int ia_css_psysapi_task_attach_buffer(
 	struct ia_css_psys_task* task,
 	ia_css_psys_terminal_id_t terminal_id,
-	struct ia_css_psys_buffer* buffer,
-	enum ia_css_psys_buffer_status status
+	struct ia_css_psys_buffer* buffer
 );
 
 /*--------------------------------------------------------------------------------------*/
@@ -634,8 +602,7 @@ int ia_css_psysapi_task_translate_event(
 int ia_css_psysapi_task_detach_buffer(
 	struct ia_css_psys_task* task,
 	ia_css_psys_terminal_id_t* terminal_id,
-	struct ia_css_psys_buffer** buffer,
-	enum ia_css_psys_buffer_status* status
+	struct ia_css_psys_buffer** buffer
 );
 
 /*--------------------------------------------------------------------------------------*/
@@ -660,6 +627,7 @@ int ia_css_psysapi_task_destroy(
 /*--------------------------------------------------------------------------------------*/
 
 #endif /* __IA_CSS_PSYSAPI_H_INCLUDED__  */
+
 
 
 

@@ -72,6 +72,7 @@ ia_css_gc_dump(
 	const struct sh_css_isp_gc_params *gc,
 	unsigned level)
 {
+	if (!gc) return;
 	ia_css_debug_dtrace(level, "Gamma Correction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"gamma_gain_k1", gc->gain_k1);

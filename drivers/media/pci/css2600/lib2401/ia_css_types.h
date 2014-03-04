@@ -1,4 +1,5 @@
-/* Release Version: irci_master_20140218_0200 */
+/* Release Version: irci_master_20140303_1500 */
+/* Release Version: irci_master_20140303_1500 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -32,16 +33,8 @@
  * directly but still need to forward parameters for it.
  */
 
-/* This code is also used by Silicon Hive in a simulation environment
- * Therefore, the following macro is used to differentiate when this
- * code is being included from within the Linux kernel source
- */
+#include <type_support.h>
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
 #if defined(IS_ISP_2500_SYSTEM)
 #if defined(__HOST__)
 #include "components_types.host.h"                /* Skylake kernel settings structs */
@@ -328,6 +321,7 @@ struct ia_css_isp_config {
 	struct ia_css_2500_shd_kernel_config     *shd_2500_config;       /**< Skylake: shading config */
 	struct ia_css_2500_dm_kernel_config      *dm_2500_config;        /**< Skylake: demosaic config */
 	struct ia_css_2500_rgbpp_kernel_config   *rgbpp_2500_config;     /**< Skylake: RGBPP config */
+	struct ia_css_2500_lace_stat_kernel_config *lace_stat_2500_config; /**< Skylake: LACE STAT config */
 	struct ia_css_2500_yuvp1_kernel_config   *yuvp1_2500_config;     /**< Skylake: yuvp1 config */
 	struct ia_css_2500_yuvp2_kernel_config   *yuvp2_2500_config;     /**< Skylake: yuvp2 config */
 	struct ia_css_2500_tnr_kernel_config     *tnr_2500_config;       /**< Skylake: TNR config */
@@ -340,6 +334,9 @@ struct ia_css_isp_config {
 	struct ia_css_2500_bds_kernel_config     *bds_2500_config;       /**< Skylake: bayer downscaler config */
 	struct ia_css_2500_dvs_kernel_config     *dvs_2500_config;       /**< Skylake: digital video stabilization config */
 	struct ia_css_2500_res_mgr_config        *res_mgr_2500_config;
+
+	struct ia_css_frame	*output_frame;	/**< Output frame the config is to be applied to (optional) */
+	uint32_t 			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
 };
 
 /** DVS 1.0 Coefficients.

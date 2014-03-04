@@ -86,6 +86,11 @@ sh_css_sp_uninit_pipeline(unsigned int pipe_num);
 void
 sh_css_write_host2sp_command(enum host2sp_commands host2sp_command);
 
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command);
+#endif
+
 enum host2sp_commands
 sh_css_read_host2sp_command(void);
 
@@ -149,9 +154,18 @@ sh_css_event_init_irq_mask(void);
 
 void
 sh_css_sp_start_isp(void);
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_sp1_start(void);
+#endif
 
 void
 sh_css_sp_set_sp_running(bool flag);
+
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_sp1_set_sp1_running(bool flag);
+#endif
 
 bool
 sh_css_sp_is_running(void);
@@ -193,10 +207,6 @@ sh_css_sp_configure_prbs(int seed);
 
 void
 sh_css_sp_reset_global_vars(void);
-
-enum ia_css_err
-sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args,
-				unsigned pipe_num, unsigned stage_num);
 
 /**
  * @brief Initialize the DMA software-mask in the debug mode.

@@ -42,6 +42,10 @@
 #define IA_CSS_BINARY_INPUT_MEMORY   1
 #define IA_CSS_BINARY_INPUT_VARIABLE 2
 
+/* now these ports only include output ports but not vf output ports */
+#define IA_CSS_BINARY_OUTPUT_PORT_0 	0
+#define IA_CSS_BINARY_OUTPUT_PORT_1 	1
+#define IA_CSS_BINARY_MAX_OUTPUT_PORTS 	2
 
 #include "ia_css.h"
 #include "sh_css_metrics.h"
@@ -52,6 +56,16 @@
    that have nothing to do with isp parameters.
  */
 #include "runtime/isp_param/interface/ia_css_isp_param_types.h"
+
+struct ia_css_cas_binary_descr {
+	unsigned int num_stage;
+	unsigned int num_output_stage;
+	struct ia_css_frame_info *in_info;
+	struct ia_css_frame_info *internal_out_info;
+	struct ia_css_frame_info *out_info;
+	struct ia_css_frame_info *vf_info;
+	bool *is_output_stage;
+};
 
 struct ia_css_binary_descr {
 	int mode;
@@ -69,7 +83,7 @@ struct ia_css_binary_descr {
 	enum ia_css_stream_format stream_format;
 	struct ia_css_frame_info *in_info;
 	struct ia_css_frame_info *bds_out_info;
-	struct ia_css_frame_info *out_info;
+	struct ia_css_frame_info *out_info[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_frame_info *vf_info;
 	unsigned int isp_pipe_version;
 	unsigned int required_bds_factor;
@@ -81,7 +95,7 @@ struct ia_css_binary {
 	enum ia_css_stream_format input_format;
 	struct ia_css_frame_info in_frame_info;
 	struct ia_css_frame_info internal_frame_info;
-	struct ia_css_frame_info out_frame_info;
+	struct ia_css_frame_info out_frame_info[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_resolution effective_in_frame_res;
 	struct ia_css_frame_info vf_frame_info;
 	int                      input_buf_vectors;
@@ -136,7 +150,7 @@ struct ia_css_binary {
 	IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY, \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO}, \
 	{ 0,0 },/* effective_in_frame_res */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	0,	/* input_buf_vectors */ \
@@ -188,7 +202,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		 enum ia_css_stream_format stream_format,
 		 const struct ia_css_frame_info *in_info,
 		 const struct ia_css_frame_info *bds_out_info,
-		 const struct ia_css_frame_info *out_info,
+		 const struct ia_css_frame_info *out_info[],
 		 const struct ia_css_frame_info *vf_info,
 		 struct ia_css_binary *binary,
 		 struct ia_css_resolution *dvs_env,
@@ -208,5 +222,9 @@ ia_css_binary_max_vf_width(void);
 
 void
 ia_css_binary_destroy_isp_parameters(struct ia_css_binary *binary);
+
+void
+ia_css_binary_get_isp_binaries(struct ia_css_binary_xinfo **binaries,
+	uint32_t *num_isp_binaries);
 
 #endif /* _IA_CSS_BINARY_H_ */

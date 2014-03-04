@@ -155,6 +155,9 @@ typedef struct s_isp_addresses {
     PVECTOR  uds_ibuf_via_sp;
     PVECTOR  uds_obuf_via_sp;
     PVECTOR  aa_buf;
+    PVECTOR  raw_fir_buf;
+    PVECTOR  raw_fir1_buf;
+    PVECTOR  raw_fir2_buf;
   } vmem;
   struct {
     unsigned uds_params;
@@ -162,6 +165,9 @@ typedef struct s_isp_addresses {
     unsigned g_sdis_vertproj_tbl;
     unsigned vf_tmp;
     unsigned aa_buf;
+    unsigned raw_fir_buf;
+    unsigned raw_fir1_buf;
+    unsigned raw_fir2_buf;
   } sizes;
 } s_isp_addresses;
 

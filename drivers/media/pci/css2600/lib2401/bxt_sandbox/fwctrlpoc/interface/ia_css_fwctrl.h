@@ -22,6 +22,7 @@
 #ifndef __IA_CSS_FWCTRL_H__
 #define __IA_CSS_FWCTRL_H__
 
+#include "ia_css_isyspoc_comm.h"
 #include "type_support.h"
 #include "sp.h"
 
@@ -51,8 +52,9 @@ extern int ia_css_fwctrl_psys_receive_msg(
  * @return:
  *     int  : status of the API execution
  */
-extern int ia_css_fwctrl_isys_send_msg(
-	const hrt_vaddress payload
+extern int ia_css_fwctrl_isys_stream_send_msg(
+	int stream_handle,
+	const ia_css_isyspoc_cmd_msg_t *isys_msg
 );
 
 /*
@@ -62,7 +64,7 @@ extern int ia_css_fwctrl_isys_send_msg(
  *     int  : status of the API execution
  */
 extern int ia_css_fwctrl_isys_receive_msg(
-	hrt_vaddress *payload
+	ia_css_isyspoc_cmd_msg_t *isys_msg
 );
 
 #endif
