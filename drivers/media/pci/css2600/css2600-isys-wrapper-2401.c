@@ -91,6 +91,8 @@ static ia_css_ptr glue_css_alloc(size_t bytes, uint32_t attributes)
 		return 0;
 	}
 
+	pr_debug("glue: mapping %d bytes to %p\n", buf->bytes, buf->addr);
+
 	mutex_lock(&mine.lock);
 	list_add(&buf->list, &mine.buffers);
 	mutex_unlock(&mine.lock);
@@ -116,6 +118,8 @@ static void glue_css_free(ia_css_ptr iova)
 		pr_debug("found it!\n");
 		dma_ops->free(mine.dev, buf->bytes, buf->addr,
 			      buf->iova, &buf->attrs);
+		list_del(&buf->list);
+		kfree(buf);
 		goto out;
 	}
 	pr_warn("Can't find iova object %8.8x\n", iova);
@@ -128,6 +132,7 @@ static int glue_css_load(ia_css_ptr ptr, void *data, size_t bytes)
 	/*Translate ISP MMU address to IA address*/
 	void *cpu_ptr = phys_to_virt(glue_virt_to_phys(ptr));
 
+	pr_debug("glue: reading %d bytes at %p\n", bytes, cpu_ptr);
 	clflush_cache_range(cpu_ptr, bytes);
 	memcpy(data, cpu_ptr, bytes);
 
@@ -139,6 +144,7 @@ static int glue_css_store(ia_css_ptr ptr, const void *data, size_t bytes)
 	/*Translate ISP address to IA  address*/
 	void *cpu_ptr = phys_to_virt(glue_virt_to_phys(ptr));
 
+	pr_debug("glue: writing %d bytes at %p\n", bytes, cpu_ptr);
 	memcpy(cpu_ptr, data, bytes);
 	clflush_cache_range(cpu_ptr, bytes);
 
