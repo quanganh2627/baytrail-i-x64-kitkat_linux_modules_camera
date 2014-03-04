@@ -450,8 +450,10 @@ static int isys_probe(struct css2600_bus_device *adev)
 	css2600_bus_set_drvdata(adev, isys);
 
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
-	if (request_firmware(&isys->fw, CSS2401_FIRMWARE, &adev->dev))
+	if (request_firmware(&isys->fw, CSS2401_FIRMWARE, &adev->dev)) {
 		dev_err(&adev->dev, "requesting firmware for 2401 failed\n");
+		return -ENOENT;
+	}
 
 	css2600_isys_wrapper_init(&adev->dev, &isys->css_env,
 				  isys->pdata->base);
