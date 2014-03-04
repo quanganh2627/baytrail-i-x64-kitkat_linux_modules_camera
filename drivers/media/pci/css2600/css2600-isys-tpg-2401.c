@@ -57,8 +57,30 @@ static const struct v4l2_subdev_core_ops tpg_sd_core_ops = {
 static int set_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct css2600_isys_tpg_2401 *tpg = to_css2600_isys_tpg_2401(sd);
+	struct v4l2_mbus_framefmt *ffmt = __css2600_isys_get_ffmt(
+		sd, NULL, TPG_PAD_SOURCE, V4L2_SUBDEV_FORMAT_ACTIVE);
+	struct pixelgen_tpg_cfg_s cfg = {
+		.color_cfg = { 51, 102, 255, 0, 100, 160 },
+		.sync_gen_cfg = {
+			 .hblank_cycles = 100,
+			 .vblank_cycles = 100,
+			 .nr_of_frames = 1,
+			 .pixels_per_line = ffmt->width,
+			 .lines_per_frame = ffmt->height,
+		 },
+	};
+	int rval;
 
 	dev_dbg(&tpg->isys->adev->dev, "tpg s_stream %d\n", enable);
+
+	rval = ia_css_isysapi_rx_set_tpg_cfg(tpg->isys->ssi, tpg->asd.source,
+					     &cfg);
+
+	if (rval) {
+		dev_info(&tpg->isys->adev->dev,
+			 "tpg configuration failed (%d)\n", rval);
+		return -EINVAL;
+	}
 
 	return 0;
 }

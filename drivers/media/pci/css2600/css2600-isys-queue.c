@@ -171,7 +171,6 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 	struct css2600_isys_buffer *ib, *safe;
 	struct ia_css_isys_stream_cfg_data stream_cfg = {
-		.src = av->ip.source,
 		.vc = 0,
 		.nof_input_pins = 1,
 		.input_pins = {
@@ -209,6 +208,7 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	if (rval)
 		return rval;
 
+	stream_cfg.src = av->ip.source;
 	spin_lock_irqsave(&av->isys->lock, flags);
 	av->isys->pipes[av->ip.source] = &av->ip;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
