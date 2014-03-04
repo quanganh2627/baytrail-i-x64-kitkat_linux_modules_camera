@@ -41,12 +41,6 @@ struct {
 	spinlock_t lock;
 } mine;
 
-/*Virtual address to physical address convert*/
-static phys_addr_t glue_virt_to_phys(ia_css_ptr virt)
-{
-	return iommu_iova_to_phys(mine.domain, virt);
-}
-
 /*Small buffers for CSS layer internal usage*/
 static void *glue_ia_alloc(size_t bytes, bool zero_mem)
 {
@@ -92,7 +86,7 @@ static ia_css_ptr glue_css_alloc(size_t bytes, uint32_t attributes)
 		return 0;
 	}
 
-	pr_debug("glue: mapping %d bytes to %p\n", buf->bytes, buf->addr);
+	pr_debug("glue: mapping %lu bytes to %p\n", buf->bytes, buf->addr);
 
 	spin_lock_irqsave(&mine.lock, flags);
 	list_add(&buf->list, &mine.buffers);
@@ -126,33 +120,55 @@ static void glue_css_free(ia_css_ptr iova)
 		return;
 	}
 	pr_warn("Can't find iova object %8.8x\n", iova);
-	spin_lock_irqrestore(&mine.lock);
+	spin_unlock_irqrestore(&mine.lock, flags);
+}
+
+static int read_or_write(dma_addr_t iova, void *data, size_t bytes, int write)
+{
+	struct my_css_memory_buffer_item *buf;
+	unsigned long flags;
+
+	pr_debug("looking for iova %8.8x\n", iova);
+
+	spin_lock_irqsave(&mine.lock, flags);
+	list_for_each_entry(buf, &mine.buffers, list) {
+		pr_debug("buffer iova %8.8x, size %d\n", (uint32_t)buf->iova,
+			buf->bytes);
+		if (iova < buf->iova || iova + bytes > buf->iova + buf->bytes)
+			continue;
+
+		pr_debug("glue: %sing %d bytes at %p\n",
+			 write ? "writ" : "read", bytes, buf->addr);
+		if (write) {
+			memcpy(buf->addr, data, bytes);
+			clflush_cache_range(buf->addr, bytes);
+		} else {
+			clflush_cache_range(buf->addr, bytes);
+			memcpy(data, buf->addr, bytes);
+		}
+
+		goto out;
+	}
+
+	pr_warn("Can't find virtual address for buffer %ul\n", iova);
+
+out:
+	spin_unlock_irqrestore(&mine.lock, flags);
+
+	return 0;
 }
 
 static int glue_css_load(ia_css_ptr ptr, void *data, size_t bytes)
 {
-	/*Translate ISP MMU address to IA address*/
-	void *cpu_ptr = phys_to_virt(glue_virt_to_phys(ptr));
-
-	pr_debug("glue: reading %d bytes at %p\n", bytes, cpu_ptr);
-	clflush_cache_range(cpu_ptr, bytes);
-	memcpy(data, cpu_ptr, bytes);
-
+	read_or_write(ptr, data, bytes, 0);
 	return 0;
 }
 
 static int glue_css_store(ia_css_ptr ptr, const void *data, size_t bytes)
 {
-	/*Translate ISP address to IA  address*/
-	void *cpu_ptr = phys_to_virt(glue_virt_to_phys(ptr));
-
-	pr_debug("glue: writing %d bytes at %p\n", bytes, cpu_ptr);
-	memcpy(cpu_ptr, data, bytes);
-	clflush_cache_range(cpu_ptr, bytes);
-
+	read_or_write(ptr, (void *)data, bytes, 1);
 	return 0;
 }
-
 
 static ia_css_ptr glue_css_mmap(const void *ptr, const size_t size,
 				uint16_t attribute, void *context)
