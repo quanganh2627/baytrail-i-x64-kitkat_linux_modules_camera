@@ -99,6 +99,7 @@ int css2600_isys_tpg_2401_init(struct css2600_isys_tpg_2401 *tpg,
 		.format = {
 			.width = 4096,
 			.height = 3072,
+			.code = V4L2_MBUS_FMT_SGRBG8_1X8,
 		},
 	};
 	int rval;
