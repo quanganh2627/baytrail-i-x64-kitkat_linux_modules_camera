@@ -198,7 +198,6 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 	struct media_entity *entity, *entity2;
 	unsigned int entities = 0;
 	unsigned int i;
-	int source = -1;
 	int rval = 0;
 
 	mutex_lock(&av->mutex);
@@ -248,7 +247,6 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 
 	while ((entity = media_entity_graph_walk_next(&graph))) {
 		struct v4l2_subdev *sd = media_entity_to_v4l2_subdev(entity);
-		struct css2600_isys_subdev *asd = to_css2600_isys_subdev(sd);
 
 		dev_dbg(&av->isys->adev->dev, "entity %s\n", entity->name);
 
@@ -265,9 +263,6 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 			rval = -EINVAL;
 			goto out_media_entity_stop_streaming;
 		}
-
-		if (asd->source != -1)
-			source = asd->source;
 
 		if (entity != av->ip.external) {
 			dev_dbg(&av->isys->adev->dev, "s_stream %s\n",
@@ -296,10 +291,11 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 
 	if (!state)
 		media_entity_pipeline_stop(&av->vdev.entity);
+	else
+		dev_dbg(&av->isys->adev->dev, "source %d\n", av->ip.source);
 
 	av->streaming = state;
 
-	dev_dbg(&av->isys->adev->dev, "source %d\n", source);
 	mutex_unlock(&av->mutex);
 	return 0;
 

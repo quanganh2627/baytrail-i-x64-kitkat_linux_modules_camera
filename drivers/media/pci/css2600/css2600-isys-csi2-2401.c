@@ -53,11 +53,24 @@ static int link_validate(struct v4l2_subdev *sd, struct media_link *link,
 			 struct v4l2_subdev_format *source_fmt,
 			 struct v4l2_subdev_format *sink_fmt)
 {
+	struct css2600_isys_csi2_2401 *csi2 = to_css2600_isys_csi2_2401(sd);
 	struct css2600_isys_pipeline *pipe =
 		container_of(sd->entity.pipe,
 			     struct css2600_isys_pipeline, pipe);
+	struct v4l2_subdev *ext_sd =
+		media_entity_to_v4l2_subdev(link->source->entity);
+	struct css2600_isys_subdev *ext_asd;
 
 	pipe->external = link->source->entity;
+
+	if (ext_sd->owner == THIS_MODULE) {
+		ext_asd = to_css2600_isys_subdev(ext_sd);
+		pipe->source = ext_asd->source;
+		dev_dbg(&csi2->isys->adev->dev, "csi2: using source %d\n",
+			ext_asd->source);
+	} else {
+		pipe->source = csi2->asd.source;
+	}
 
 	return v4l2_subdev_link_validate_default(sd, link, source_fmt,
 						 sink_fmt);
