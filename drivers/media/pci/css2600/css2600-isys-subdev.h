@@ -62,6 +62,10 @@ struct css2600_isys_subdev {
 #define to_css2600_isys_subdev(__sd) \
 	container_of(__sd, struct css2600_isys_subdev, sd)
 
+struct v4l2_mbus_framefmt *__css2600_isys_get_ffmt(
+	struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
+	unsigned int pad, unsigned int which);
+
 int css2600_isys_subdev_set_ffmt(struct v4l2_subdev *sd,
 				 struct v4l2_subdev_fh *fh,
 				 struct v4l2_subdev_format *fmt);
