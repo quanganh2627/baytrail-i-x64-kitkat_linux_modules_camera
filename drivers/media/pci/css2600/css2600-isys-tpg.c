@@ -42,7 +42,6 @@ static const uint32_t tpg_supported_codes_pad[] = {
 
 static const uint32_t *tpg_supported_codes[] = {
 	tpg_supported_codes_pad,
-	tpg_supported_codes_pad,
 };
 
 static struct v4l2_subdev_internal_ops tpg_sd_internal_ops = {
