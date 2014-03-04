@@ -127,6 +127,37 @@ static void buf_cleanup(struct vb2_buffer *vb)
 	dev_dbg(&av->isys->adev->dev, "buf_cleanup\n");
 }
 
+static void buf_queue(struct vb2_buffer *vb)
+{
+	struct css2600_isys_queue *aq =
+		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
+	struct ia_css_isys_frame_buff_set buf = {
+		.output_pins = {
+			{
+				.payload.addr =
+					*(dma_addr_t *)vb2_plane_cookie(vb, 0),
+			}
+		},
+		.send_irq_sof = 1,
+		.send_irq_eof = 1,
+	};
+	int rval;
+
+	dev_dbg(&av->isys->adev->dev, "buf_queue %d\n", vb->v4l2_buf.index);
+
+	rval = -ia_css_isys_stream_capture_indication(av->isys->ssi,
+						      av->ip.source, &buf);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev,
+			"capture indication failed (%d)\n", rval);
+		return;
+	}
+
+	list_add(&ib->head, &aq->queued);
+}
+
 static int start_streaming(struct vb2_queue *q, unsigned int count)
 {
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
@@ -203,37 +234,6 @@ out:
 	spin_unlock_irqrestore(&av->isys->lock, flags);
 
 	return 0;
-}
-
-static void buf_queue(struct vb2_buffer *vb)
-{
-	struct css2600_isys_queue *aq =
-		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
-	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
-	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
-	struct ia_css_isys_frame_buff_set buf = {
-		.output_pins = {
-			{
-				.payload.addr =
-					*(dma_addr_t *)vb2_plane_cookie(vb, 0),
-			}
-		},
-		.send_irq_sof = 1,
-		.send_irq_eof = 1,
-	};
-	int rval;
-
-	dev_dbg(&av->isys->adev->dev, "buf_queue %d\n", vb->v4l2_buf.index);
-
-	rval = -ia_css_isys_stream_capture_indication(av->isys->ssi,
-						      av->ip.source, &buf);
-	if (rval < 0) {
-		dev_dbg(&av->isys->adev->dev,
-			"capture indication failed (%d)\n", rval);
-		return;
-	}
-
-	list_add(&ib->head, &aq->queued);
 }
 
 struct vb2_ops css2600_isys_queue_ops = {
