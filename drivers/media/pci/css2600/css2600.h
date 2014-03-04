@@ -40,4 +40,13 @@ struct css2600_device {
 	struct css2600_bus_device *buttress;
 };
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)
+/* FIXME: remove once no need to support old kernels */
+static inline void reinit_completion(struct completion *x)
+{
+	x->done = 0;
+}
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0) */
+
 #endif
