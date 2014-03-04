@@ -568,6 +568,12 @@ static void isys_isr(struct css2600_bus_device *adev)
 	}
 
 	switch (resp.type) {
+	case IA_CSS_ISYS_RESP_TYPE_STREAM_OPEN_DONE:
+		complete(&pipe->stream_open_completion);
+		break;
+	case IA_CSS_ISYS_RESP_TYPE_STREAM_CLOSE_ACK:
+		complete(&pipe->stream_close_completion);
+		break;
 	case IA_CSS_ISYS_RESP_TYPE_STREAM_START_ACK:
 	case IA_CSS_ISYS_RESP_TYPE_STREAM_START_AND_CAPTURE_ACK:
 		complete(&pipe->stream_start_completion);
