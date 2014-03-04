@@ -123,38 +123,6 @@ static int __iommu_free_buffer(struct device *dev, struct page **pages,
 	return 0;
 }
 
-/*
- * Create a CPU mapping for a specified pages
- */
-static void *
-__iommu_alloc_remap(struct page **pages, size_t size, gfp_t gfp, pgprot_t prot,
-		    const void *caller)
-{
-	unsigned int i, nr_pages = PAGE_ALIGN(size) >> PAGE_SHIFT;
-	struct vm_struct *area;
-	unsigned long p;
-
-	area = get_vm_area_caller(size, VM_USERMAP, caller);
-	if (!area)
-		return NULL;
-
-	area->pages = pages;
-	area->nr_pages = nr_pages;
-	p = (unsigned long)area->addr;
-
-	for (i = 0; i < nr_pages; i++) {
-		phys_addr_t phys = page_to_pfn(pages[i]) << PAGE_SHIFT;
-		if (ioremap_page_range(p, p + PAGE_SIZE, phys, prot))
-			goto err;
-		p += PAGE_SIZE;
-	}
-	return area->addr;
-err:
-	unmap_kernel_range((unsigned long)area->addr, size);
-	vunmap(area->addr);
-	return NULL;
-}
-
 static struct page **__iommu_get_pages(void *cpu_addr, struct dma_attrs *attrs)
 {
 	struct vm_struct *area;
@@ -202,8 +170,7 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 		iova_addr++;
 	}
 
-	addr = __iommu_alloc_remap(pages, size, gfp, __pgprot(0),
-				   __builtin_return_address(0));
+	addr = vm_map_ram(pages, size >> PAGE_SHIFT, 0, PAGE_KERNEL);
 	if (!addr)
 		goto out_unmap;
 
@@ -236,8 +203,7 @@ static void css2600_dma_free(struct device *dev, size_t size, void *vaddr,
 
 	size = roundup(size, PAGE_SIZE);
 
-	unmap_kernel_range((unsigned long)vaddr, size);
-	vunmap(vaddr);
+	vm_unmap_ram(vaddr, size >> PAGE_SHIFT);
 
 	free_iova(&mmu->dmap->iovad, dma_handle >> PAGE_SHIFT);
 
