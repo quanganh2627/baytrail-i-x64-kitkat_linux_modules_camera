@@ -31,7 +31,7 @@ enum ia_css_bayer_order {
 	IA_CSS_BAYER_ORDER_GRBG, /**< GRGRGRGRGR .. BGBGBGBGBG */
 	IA_CSS_BAYER_ORDER_RGGB, /**< RGRGRGRGRG .. GBGBGBGBGB */
 	IA_CSS_BAYER_ORDER_BGGR, /**< BGBGBGBGBG .. GRGRGRGRGR */
-	IA_CSS_BAYER_ORDER_GBRG, /**< GBGBGBGBGB .. RGRGRGRGRG */
+	IA_CSS_BAYER_ORDER_GBRG  /**< GBGBGBGBGB .. RGRGRGRGRG */
 };
 
 /** Frame formats, some of these come from fourcc.org, others are
@@ -76,7 +76,7 @@ enum ia_css_frame_format {
 					     height to 1 and the width to the
 					     number of allocated bytes. */
 	IA_CSS_FRAME_FORMAT_MIPI,	/**< MIPI frame, 1 plane */
-	IA_CSS_FRAME_FORMAT_RAW_PACKED, /**< RAW, 1 plane, packed */
+	IA_CSS_FRAME_FORMAT_RAW_PACKED  /**< RAW, 1 plane, packed */
 };
 
 /** Fractional bits for CTC gain (used only for ISP1).
@@ -1342,7 +1342,7 @@ enum ia_css_pipe_id {
 	IA_CSS_PIPE_ID_COPY,
 	IA_CSS_PIPE_ID_VIDEO,
 	IA_CSS_PIPE_ID_CAPTURE,
-	IA_CSS_PIPE_ID_ACC,
+	IA_CSS_PIPE_ID_ACC
 };
 
 #define IA_CSS_PIPE_ID_NUM (IA_CSS_PIPE_ID_ACC + 1)
