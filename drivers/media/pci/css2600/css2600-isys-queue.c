@@ -109,13 +109,8 @@ static int buf_finish(struct vb2_buffer *vb)
 	struct css2600_isys_queue *aq =
 		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
-	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
-	unsigned long flags;
 
 	dev_dbg(&av->isys->adev->dev, "buf_finish %u\n", vb->v4l2_buf.index);
-	spin_lock_irqsave(&aq->lock, flags);
-	list_del(&ib->head);
-	spin_unlock_irqrestore(&aq->lock, flags);
 	return 0;
 }
 
@@ -365,6 +360,28 @@ out:
 	spin_unlock_irqrestore(&av->isys->lock, flags);
 
 	return 0;
+}
+
+void css2600_isys_queue_buf_done(struct css2600_isys_pipeline *ip,
+				 struct ia_css_isys_resp_info *info)
+{
+	struct css2600_isys_video *av =
+		container_of(ip, struct css2600_isys_video, ip);
+	struct css2600_isys_queue *aq = &av->aq;
+	struct css2600_isys_buffer *ib;
+	struct vb2_buffer *vb;
+	unsigned long flags;
+
+	spin_lock_irqsave(&aq->lock, flags);
+	BUG_ON(list_empty(&aq->queued));
+	ib = list_last_entry(&aq->queued, struct css2600_isys_buffer, head);
+	dev_dbg(&av->isys->adev->dev, "dequeued buffer %p\n", ib);
+	list_del(&ib->head);
+	spin_unlock_irqrestore(&aq->lock, flags);
+
+	vb = css2600_isys_buffer_to_vb2_buffer(ib);
+
+	vb2_buffer_done(vb, VB2_BUF_STATE_DONE);
 }
 
 struct vb2_ops css2600_isys_queue_ops = {

@@ -22,6 +22,8 @@
 #include <media/videobuf2-core.h>
 
 struct css2600_isys;
+struct css2600_isys_pipeline;
+struct ia_css_isys_resp_info;
 
 /*
  * @lock: serialise access to queued and pre_streamon_queued
@@ -49,6 +51,9 @@ struct css2600_isys_buffer {
 
 void css2600_isys_queue_lock(struct vb2_queue *q);
 void css2600_isys_queue_unlock(struct vb2_queue *q);
+
+void css2600_isys_queue_buf_done(struct css2600_isys_pipeline *ip,
+				 struct ia_css_isys_resp_info *info);
 
 int css2600_isys_queue_init(struct css2600_isys_queue *aq);
 void css2600_isys_queue_cleanup(struct css2600_isys_queue *aq);
