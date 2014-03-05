@@ -1591,6 +1591,8 @@ int atomisp_css_get_3a_statistics(struct atomisp_sub_device *asd,
 		/* To avoid racing with atomisp_3a_stat() */
 		ia_css_get_3a_statistics(asd->params.s3a_user_stat,
 				 isp_css_buffer->css_buffer.data.stats_3a);
+		asd->params.s3a_exp_id = isp_css_buffer->css_buffer.data.
+			stats_3a->exp_id;
 		asd->params.s3a_buf_data_valid = true;
 	}
 

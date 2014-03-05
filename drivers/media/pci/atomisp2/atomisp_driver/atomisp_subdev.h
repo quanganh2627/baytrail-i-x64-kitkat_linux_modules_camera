@@ -199,6 +199,7 @@ struct atomisp_css_params {
 	   CSS and user space. These are needed to perform the
 	   copy_to_user. */
 	struct ia_css_3a_statistics *s3a_user_stat;
+	uint32_t s3a_exp_id;
 	void *metadata_user;
 	/* The metadata_exp_id is used sensor metadata. */
 	uint32_t metadata_exp_id;

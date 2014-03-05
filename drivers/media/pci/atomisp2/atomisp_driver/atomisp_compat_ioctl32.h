@@ -80,6 +80,7 @@ struct atomisp_3a_statistics32 {
 #ifdef CSS20
 	compat_uptr_t rgby_data;
 #endif
+	uint32_t exp_id;
 };
 
 struct atomisp_metadata32 {

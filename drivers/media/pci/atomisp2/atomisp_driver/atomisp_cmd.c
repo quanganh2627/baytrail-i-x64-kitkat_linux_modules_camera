@@ -2162,6 +2162,8 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 				ret);
 		return -EFAULT;
 	}
+	config->exp_id = asd->params.s3a_exp_id;
+
 	return 0;
 }
 
