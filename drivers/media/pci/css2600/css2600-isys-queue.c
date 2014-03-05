@@ -254,8 +254,8 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	spin_lock_irqsave(&aq->lock, flags);
 	while (!list_empty(&aq->pre_streamon_queued)) {
 		struct css2600_isys_buffer *ib =
-			list_first_entry(&aq->pre_streamon_queued,
-					 struct css2600_isys_buffer, head);
+			list_last_entry(&aq->pre_streamon_queued,
+					struct css2600_isys_buffer, head);
 		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
 		list_del(&ib->head);
