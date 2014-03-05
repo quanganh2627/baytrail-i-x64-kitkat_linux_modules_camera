@@ -47,6 +47,8 @@ static inline void reinit_completion(struct completion *x)
 {
 	x->done = 0;
 }
+#define list_last_entry(ptr, type, member) \
+	list_entry((ptr)->prev, type, member)
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0) */
 
 #endif
