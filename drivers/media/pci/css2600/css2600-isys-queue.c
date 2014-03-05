@@ -128,7 +128,7 @@ static void buf_cleanup(struct vb2_buffer *vb)
 	dev_dbg(&av->isys->adev->dev, "buf_cleanup\n");
 }
 
-static void buf_queue(struct vb2_buffer *vb)
+static void __buf_queue(struct vb2_buffer *vb, bool force)
 {
 	struct css2600_isys_queue *aq =
 		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
@@ -149,7 +149,7 @@ static void buf_queue(struct vb2_buffer *vb)
 
 	dev_dbg(&av->isys->adev->dev, "buf_queue %d\n", vb->v4l2_buf.index);
 
-	if (!vb->vb2_queue->streaming) {
+	if (!vb->vb2_queue->streaming && !force) {
 		dev_dbg(&av->isys->adev->dev,
 			"not streaming yet, adding to pre_streamon_queued\n");
 		spin_lock_irqsave(&aq->lock, flags);
@@ -169,6 +169,11 @@ static void buf_queue(struct vb2_buffer *vb)
 	spin_lock_irqsave(&aq->lock, flags);
 	list_add(&ib->head, &aq->queued);
 	spin_unlock_irqrestore(&aq->lock, flags);
+}
+
+static void buf_queue(struct vb2_buffer *vb)
+{
+	__buf_queue(vb, false);
 }
 
 static int start_streaming(struct vb2_queue *q, unsigned int count)
@@ -256,7 +261,7 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 		dev_dbg(&av->isys->adev->dev,
 			"queueing buffer %u from pre_streamon_queued\n",
 			vb->v4l2_buf.index);
-		buf_queue(vb);
+		__buf_queue(vb, true);
 
 		spin_lock_irqsave(&aq->lock, flags);
 	}
