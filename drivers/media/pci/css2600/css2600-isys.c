@@ -509,6 +509,8 @@ static int isys_probe(struct css2600_bus_device *adev)
 		goto err_power_off;
 	}
 
+	writel(CSS2401_CSI_RECEIVER_SELECTION_INTEL,
+	       isys->pdata->base + CSS2401_REG_CSI_RECEIVER_SELECTION);
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 
 	rval = isys_register_devices(isys);
