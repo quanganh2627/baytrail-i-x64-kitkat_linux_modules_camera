@@ -430,11 +430,14 @@ struct iommu_ops css2600_iommu_ops = {
 
 static int css2600_mmu_probe(struct css2600_bus_device *adev)
 {
+	struct css2600_mmu_pdata *pdata;
 	struct css2600_mmu *mmu;
 
 	mmu = devm_kzalloc(&adev->dev, sizeof(*mmu), GFP_KERNEL);
 	if (!mmu)
 		return -ENOMEM;
+
+	pdata = adev->pdata;
 
 	iova_cache_get();
 
@@ -443,7 +446,8 @@ static int css2600_mmu_probe(struct css2600_bus_device *adev)
 
 	css2600_bus_set_iommu(&css2600_iommu_ops);
 
-	mmu->base = ((struct css2600_mmu_pdata *)adev->pdata)->base;
+	mmu->base = pdata->base;
+	mmu->nr_base = pdata->nr_base;
 	mmu->tlb_invalidate = &tlb_invalidate;
 	mmu_writel(mmu, mmu->pgtbl >> ISP_PADDR_SHIFT, REG_L1_PHYS);
 
