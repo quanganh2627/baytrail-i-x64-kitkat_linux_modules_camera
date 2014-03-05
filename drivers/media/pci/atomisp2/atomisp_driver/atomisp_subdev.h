@@ -296,7 +296,7 @@ struct atomisp_sub_device {
 	struct atomisp_css_frame *raw_output_frame;
 	enum atomisp_frame_status frame_status[VIDEO_MAX_FRAME];
 
-	/* This field specifies which MIPI input port is selected. */
+	/* This field specifies which camera (v4l2 input) is selected. */
 	int input_curr;
 	/* This field specifies which sensor is being selected when there
 	   are multiple sensors connected to the same MIPI port. */

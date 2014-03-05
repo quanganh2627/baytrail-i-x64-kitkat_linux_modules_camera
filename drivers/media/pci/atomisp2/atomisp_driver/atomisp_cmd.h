@@ -336,4 +336,13 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 void atomisp_css_flush(struct atomisp_device *isp);
 int atomisp_source_pad_to_stream_id(struct atomisp_sub_device *asd,
 					   uint16_t source_pad);
+
+/*
+ * Events. Only one event has to be exported for now.
+ */
+void atomisp_eof_event(struct atomisp_sub_device *asd);
+
+mipi_port_ID_t __get_mipi_port(struct atomisp_device *isp,
+				enum atomisp_camera_port port);
+
 #endif /* __ATOMISP_CMD_H__ */

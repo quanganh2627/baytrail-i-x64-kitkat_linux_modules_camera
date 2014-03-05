@@ -423,6 +423,16 @@ static void atomisp_sof_event(struct atomisp_sub_device *asd)
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }
 
+void atomisp_eof_event(struct atomisp_sub_device *asd)
+{
+	struct v4l2_event event = {0};
+
+	event.type = V4L2_EVENT_FRAME_END;
+	event.u.frame_sync.frame_sequence = atomic_inc_return(&asd->eof_count);
+
+	v4l2_event_queue(asd->subdev.devnode, &event);
+}
+
 static void atomisp_3a_stats_ready_event(struct atomisp_sub_device *asd)
 {
 	struct v4l2_event event = {0};
@@ -3366,8 +3376,8 @@ atomisp_try_fmt_file(struct atomisp_device *isp, struct v4l2_format *f)
 	return 0;
 }
 
-static mipi_port_ID_t __get_mipi_port(struct atomisp_device *isp,
-				      enum atomisp_camera_port port)
+mipi_port_ID_t __get_mipi_port(struct atomisp_device *isp,
+				enum atomisp_camera_port port)
 {
 	switch (port) {
 	case ATOMISP_CAMERA_PORT_PRIMARY:

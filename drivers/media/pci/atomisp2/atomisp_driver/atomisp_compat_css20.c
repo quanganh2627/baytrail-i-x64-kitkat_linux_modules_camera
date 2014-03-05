@@ -3825,39 +3825,23 @@ static struct atomisp_sub_device *__get_atomisp_subdev(
 }
 
 static struct atomisp_sub_device *
-	__get_asd_from_port(struct atomisp_device *isp, int port)
+	__get_asd_from_port(struct atomisp_device *isp, mipi_port_ID_t port)
 {
-	struct atomisp_sub_device *asd = NULL;
 	int i;
 
 	/* Check which isp subdev to send eof */
-	for (i = 0; i < MAX_STREAM_NUM; i++) {
+	for (i = 0; i < isp->num_of_streams; i++) {
+		struct atomisp_sub_device *asd = &isp->asd[i];
+		struct camera_mipi_info *mipi_info =
+				atomisp_to_sensor_mipi_info(
+					isp->inputs[asd->input_curr].camera);
 		if (isp->asd[i].streaming == ATOMISP_DEVICE_STREAMING_ENABLED &&
-		    isp->asd[i].input_curr == port) {
-			asd = &isp->asd[i];
-			break;
+		    __get_mipi_port(isp, mipi_info->port) == port) {
+			return &isp->asd[i];
 		}
 	}
 
-	return asd;
-}
-
-static void atomisp_eof_event(struct atomisp_device *isp, int port)
-{
-	struct atomisp_sub_device *asd = NULL;
-	struct v4l2_event event = {0};
-
-	asd = __get_asd_from_port(isp, port);
-
-	if (asd == NULL) {
-		dev_err(isp->dev, "%s:invalid eof port:%d",  __func__, port);
-		return;
-	}
-
-	event.type = V4L2_EVENT_FRAME_END;
-	event.u.frame_sync.frame_sequence = atomic_inc_return(&asd->eof_count);
-
-	v4l2_event_queue(asd->subdev.devnode, &event);
+	return NULL;
 }
 
 int atomisp_css_isr_thread(struct atomisp_device *isp,
@@ -3880,7 +3864,7 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			asd = __get_atomisp_subdev(current_event.event.pipe,
 					isp, &stream_id);
 		if (!asd) {
-			dev_err(isp->dev, "%s:no subdev. event:%d",  __func__,
+			dev_err(isp->dev, "%s:no subdev.event:%d",  __func__,
 					current_event.event.type);
 			return -EINVAL;
 		}
@@ -3920,7 +3904,7 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			css_pipe_done[asd->index] = true;
 			break;
 		case CSS_EVENT_PORT_EOF:
-			atomisp_eof_event(isp, current_event.event.port);
+			atomisp_eof_event(asd);
 			/*
 			 * If sequence_temp and sequence are the same
 			 * there was no frame lost so we can increase
@@ -3963,7 +3947,7 @@ bool atomisp_css_valid_sof(struct atomisp_device *isp)
 	unsigned int i, j;
 
 	/* Loop for each css stream */
-	for (i = 0; i < MAX_STREAM_NUM; i++) {
+	for (i = 0; i < isp->num_of_streams; i++) {
 		struct atomisp_sub_device *asd = &isp->asd[i];
 		/* Loop for each css vc stream */
 		for (j = 0; j < ATOMISP_INPUT_STREAM_NUM; j++) {
