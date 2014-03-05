@@ -129,11 +129,7 @@ sh_css_load_firmware(const char *fw_data,
 	binaries = (struct ia_css_fw_info *)&firmware_header->binary_header;
 	strcpy(FW_rel_ver_name, file_header->version);
 	if (strcmp(file_header->version, release_version) != 0) {
-#if (!defined HRT_CSIM && !defined HRT_RTL)
 		ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "CSS code and firmware version mismatch!\n");
-		assert(false);
-		return IA_CSS_ERR_VERSION_MISMATCH;
-#endif
 	} else {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "successfully load firmware version %s\n", release_version);
 	}
