@@ -545,6 +545,12 @@ static void isys_isr(struct css2600_bus_device *adev)
 	struct css2600_isys_pipeline *pipe;
 	int rval;
 
+	if (!isys->ssi) {
+		dev_dbg(&isys->adev->dev,
+			"got interrupt but device not configured yet\n");
+		return;
+	}
+
 	rval = -ia_css_isys_stream_handle_response(isys->ssi, &resp);
 	if (rval < 0) {
 		dev_dbg(&adev->dev, "isys_isr: error %d\n", rval);
