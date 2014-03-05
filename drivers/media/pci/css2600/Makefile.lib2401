@@ -91,7 +91,9 @@ lib2401-mod-objs := lib2401/sh_css.o \
 		    lib2401/bxt_sandbox/isyspoc/src/isyspoc_2401.o \
 		    lib2401/bxt_sandbox/isyspoc/src/isyspoc_csi_rx.o \
 		    lib2401/bxt_sandbox/isyspoc/src/isyspoc.o \
-		    lib2401/bxt_sandbox/psyspoc/src/psyspoc.o \
+		    lib2401/bxt_sandbox/psyspoc/src/psysapi.o \
+		    lib2401/bxt_sandbox/psyspoc/src/psys_sppipeline.o \
+		    lib2401/bxt_sandbox/ia_camera/frameadapter/src/psys_frameadapter.o \
 		    lib2401/host/module/lib2401.o
 
 obj-$(CONFIG_VIDEO_CSS2600)	+= lib2401-mod.o
@@ -145,7 +147,9 @@ INCLUDES := -I$(srctree)/$(src)/lib2401 \
 	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/isyspoc/interface \
 	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/isyspoc/src \
 	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/psyspoc/interface \
-	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/pocapp/interface
+	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/pocapp/interface \
+	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/frameadapter/interface \
+	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/pgvfpp/src
 
 DEFINES := -DHRT_HW -DHRT_ISP_CSS_CUSTOM_HOST -DHRT_USE_VIR_ADDRS -DHRT_KERNEL -D__HOST__
 DEFINES += -DUSE_DYNAMIC_BIN
