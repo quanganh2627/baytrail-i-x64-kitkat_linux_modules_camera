@@ -17,15 +17,20 @@
 
 #include <linux/list.h>
 #include <linux/mutex.h>
+#include <linux/spinlock.h>
 
 #include <media/videobuf2-core.h>
 
 struct css2600_isys;
 
+/*
+ * @lock: serialise access to queued and pre_streamon_queued
+ */
 struct css2600_isys_queue {
 	struct vb2_queue vbq;
 	struct vb2_alloc_ctx *ctx;
 	struct mutex mutex;
+	spinlock_t lock;
 	struct list_head queued;
 	struct list_head pre_streamon_queued;
 };
