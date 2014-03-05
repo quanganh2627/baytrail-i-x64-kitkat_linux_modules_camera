@@ -2223,9 +2223,6 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	if (width == 0 && height == 0)
 		return;
 
-	if (width * 9 / 10 < pipe_configs->output_info.res.width ||
-	    height * 9 / 10 < pipe_configs->output_info.res.height)
-		return;
 	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
