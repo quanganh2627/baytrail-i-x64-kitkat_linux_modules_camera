@@ -103,7 +103,6 @@ static bool fwctrl_configure_spctrl(
 static int fwctrl_sp_start(struct ia_css_fwctrl_devconfig *device_config)
 {
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "fwctrl_sp_start() enter: void\n");
-	if (IA_CSS_SP_SW_TERMINATED == ia_css_spctrl_get_state(SP0_ID))
 	{
 		enum ia_css_err err;
 		ia_css_spctrl_cfg spctrl_cfg;
