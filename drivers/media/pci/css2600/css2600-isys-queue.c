@@ -148,6 +148,8 @@ static void __buf_queue(struct vb2_buffer *vb, bool force)
 	int rval;
 
 	dev_dbg(&av->isys->adev->dev, "buf_queue %d\n", vb->v4l2_buf.index);
+	dev_dbg(&av->isys->adev->dev, "iova %lu\n",
+		(unsigned long)*(dma_addr_t *)vb2_plane_cookie(vb, 0));
 
 	if (!vb->vb2_queue->streaming && !force) {
 		dev_dbg(&av->isys->adev->dev,
@@ -213,6 +215,13 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	};
 	unsigned long flags;
 	int rval;
+
+	dev_dbg(&av->isys->adev->dev, "input mipi data type %u\n",
+		av->pfmt->mipi_data_type);
+	dev_dbg(&av->isys->adev->dev, "width %u, height %u\n",
+		av->pix.width, av->pix.height);
+	dev_dbg(&av->isys->adev->dev, "css pixelformat %u\n",
+		av->pfmt->css_pixelformat);
 
 	rval = css2600_isys_video_set_streaming(av, 1);
 	if (rval)
