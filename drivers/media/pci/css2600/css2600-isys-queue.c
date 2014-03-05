@@ -142,7 +142,8 @@ static void __buf_queue(struct vb2_buffer *vb, bool force)
 	unsigned long flags;
 	int rval;
 
-	dev_dbg(&av->isys->adev->dev, "buf_queue %d\n", vb->v4l2_buf.index);
+	dev_dbg(&av->isys->adev->dev, "buf_queue %d/%p\n", vb->v4l2_buf.index,
+		ib);
 	dev_dbg(&av->isys->adev->dev, "iova %lu\n",
 		(unsigned long)*(dma_addr_t *)vb2_plane_cookie(vb, 0));
 
@@ -163,6 +164,7 @@ static void __buf_queue(struct vb2_buffer *vb, bool force)
 		return;
 	}
 
+	dev_dbg(&av->isys->adev->dev, "queued buffer\n");
 	spin_lock_irqsave(&aq->lock, flags);
 	list_add(&ib->head, &aq->queued);
 	spin_unlock_irqrestore(&aq->lock, flags);
@@ -263,8 +265,8 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 		spin_unlock_irqrestore(&aq->lock, flags);
 
 		dev_dbg(&av->isys->adev->dev,
-			"queueing buffer %u from pre_streamon_queued\n",
-			vb->v4l2_buf.index);
+			"queueing buffer %u/%p from pre_streamon_queued\n",
+			vb->v4l2_buf.index, ib);
 		__buf_queue(vb, true);
 
 		spin_lock_irqsave(&aq->lock, flags);
@@ -335,8 +337,8 @@ static int stop_streaming(struct vb2_queue *q)
 
 		vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
 
-		dev_dbg(&av->isys->adev->dev, "stop_streaming %u\n",
-			vb->v4l2_buf.index);
+		dev_dbg(&av->isys->adev->dev, "stop_streaming %u/%p\n",
+			vb->v4l2_buf.index, ib);
 
 		spin_lock_irqsave(&aq->lock, flags);
 	}
