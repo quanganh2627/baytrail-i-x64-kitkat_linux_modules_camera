@@ -62,7 +62,7 @@
 /* Force generation of output event. Used by acceleration pipe. */
 #define IA_CSS_POST_OUT_EVENT_FORCE		2
 
-#define SH_CSS_MAX_BINARY_NAME	32
+#define SH_CSS_MAX_BINARY_NAME	64
 
 #define SP_DEBUG_NONE	(0)
 #define SP_DEBUG_DUMP	(1)
@@ -98,7 +98,7 @@
 
 #define NUM_VIDEO_DELAY_FRAMES	3
 #define NUM_VIDEO_TNR_FRAMES	2
-#define NR_OF_PIPELINES			5 /* Must match with IA_CSS_PIPE_ID_NUM */
+#define NR_OF_PIPELINES			IA_CSS_PIPE_ID_NUM /* Must match with IA_CSS_PIPE_ID_NUM */
 
 #define SH_CSS_MAX_IF_CONFIGS	3 /* Must match with IA_CSS_NR_OF_CONFIGS (not defined yet).*/
 #define SH_CSS_IF_CONFIG_NOT_NEEDED	0xFF
@@ -201,13 +201,16 @@ enum host2sp_commands {
  */
 enum sh_css_sp_event_type {
 	SH_CSS_SP_EVENT_OUTPUT_FRAME_DONE,
+	SH_CSS_SP_EVENT_SECOND_OUTPUT_FRAME_DONE,
 	SH_CSS_SP_EVENT_VF_OUTPUT_FRAME_DONE,
+	SH_CSS_SP_EVENT_SECOND_VF_OUTPUT_FRAME_DONE,
 	SH_CSS_SP_EVENT_3A_STATISTICS_DONE,
 	SH_CSS_SP_EVENT_DIS_STATISTICS_DONE,
 	SH_CSS_SP_EVENT_PIPELINE_DONE,
 	SH_CSS_SP_EVENT_FRAME_TAGGED,
 	SH_CSS_SP_EVENT_INPUT_FRAME_DONE,
 	SH_CSS_SP_EVENT_METADATA_DONE,
+	SH_CSS_SP_EVENT_LACE_STATISTICS_DONE,
 	SH_CSS_SP_EVENT_PORT_EOF,
 	SH_CSS_SP_EVENT_NR_OF_TYPES		/* must be last */
 };
@@ -216,7 +219,7 @@ enum sh_css_sp_event_type {
 /* xmem address map allocation per pipeline, css pointers */
 struct sh_css_ddr_address_map {
 	hrt_vaddress isp_param;
-	hrt_vaddress isp_mem_param[SH_CSS_MAX_STAGES][IA_CSS_NUM_ISP_MEMORIES];
+	hrt_vaddress isp_mem_param[SH_CSS_MAX_STAGES][IA_CSS_NUM_MEMORIES];
 	hrt_vaddress macc_tbl;
 	hrt_vaddress fpn_tbl;
 	hrt_vaddress sc_tbl;
@@ -239,7 +242,7 @@ struct sh_css_ddr_address_map {
 };
 #define SIZE_OF_SH_CSS_DDR_ADDRESS_MAP_STRUCT					\
 	(SIZE_OF_HRT_VADDRESS +							\
-	(SH_CSS_MAX_STAGES * IA_CSS_NUM_ISP_MEMORIES * SIZE_OF_HRT_VADDRESS) +	\
+	(SH_CSS_MAX_STAGES * IA_CSS_NUM_MEMORIES * SIZE_OF_HRT_VADDRESS) +	\
 	(19 * SIZE_OF_HRT_VADDRESS))
 #endif
 
@@ -247,7 +250,7 @@ struct sh_css_ddr_address_map {
 /* xmem address map allocation per pipeline */
 struct sh_css_ddr_address_map_size {
 	size_t isp_param;
-	size_t isp_mem_param[SH_CSS_MAX_STAGES][IA_CSS_NUM_ISP_MEMORIES];
+	size_t isp_mem_param[SH_CSS_MAX_STAGES][IA_CSS_NUM_MEMORIES];
 	size_t macc_tbl;
 	size_t fpn_tbl;
 	size_t sc_tbl;
@@ -277,6 +280,14 @@ struct sh_css_ddr_address_map_compound {
 };
 #endif
 
+#if !defined(IS_ISP_2500_SYSTEM)
+struct ia_css_isp_parameter_set_info {
+	struct sh_css_ddr_address_map  mem_map;/**< pointers to Parameters in ISP format IMPT: this should be first member of this struct */
+	uint32_t                       isp_parameters_id;/**< Unique ID to track which config was actually applied to a particular frame */
+	ia_css_ptr                     output_frame_ptr;/**< Output frame to which this config has to be applied (optional) */
+};
+#endif
+
 /* this struct contains all arguments that can be passed to
    a binary. It depends on the binary which ones are used. */
 struct sh_css_binary_args {
@@ -284,7 +295,7 @@ struct sh_css_binary_args {
 	struct ia_css_frame *in_frame;	     /* input frame */
 	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];   /* tnr frames */
 	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES]; /* video pipe delay frames */
-	struct ia_css_frame *out_frame;      /* output frame */
+	struct ia_css_frame *out_frame[IA_CSS_BINARY_MAX_OUTPUT_PORTS];      /* output frame */
 	struct ia_css_frame *out_vf_frame;   /* viewfinder output frame */
 	bool                 copy_vf;
 	bool                 copy_output;
@@ -546,7 +557,7 @@ struct sh_css_sp_pipeline {
 
 struct ia_css_frames_sp {
 	struct ia_css_frame_sp	in;
-	struct ia_css_frame_sp	out;
+	struct ia_css_frame_sp	out[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_resolution effective_in_res;
 	struct ia_css_frame_sp	out_vf;
 	struct ia_css_frame_sp	tnr_frames[NUM_VIDEO_TNR_FRAMES];
@@ -609,6 +620,8 @@ struct sh_css_sp_stage {
 		uint8_t		vf_output;
 		uint8_t		s3a;
 		uint8_t		sdis;
+		uint8_t		dvs_stats;
+		uint8_t		lace_stats;
 	} enable;
 	/* Add padding to come to a word boundary */
 	/* unsigned char			padding[0]; */
@@ -669,6 +682,19 @@ struct sh_css_sp_output {
 	unsigned int		sw_interrupt_value[SH_CSS_NUM_SDW_IRQS];
 };
 
+#if defined(IS_ISP_2500_SYSTEM)
+#define CONFIG_ON_FRAME_ENQUEUE() 1
+#else
+#define CONFIG_ON_FRAME_ENQUEUE() 0
+#endif
+
+#if CONFIG_ON_FRAME_ENQUEUE()
+/* On frame queue late configuration */
+struct sh_css_config_on_frame_enqueue {
+	uint32_t padded_width;
+};
+#endif
+
 /**
  * @brief Data structure for the circular buffer.
  * The circular buffer is empty if "start == end". The
@@ -694,11 +720,17 @@ struct sh_css_hmm_buffer {
 	union {
 		struct ia_css_isp_3a_statistics  s3a;
 		struct ia_css_isp_dvs_statistics dis;
+		ia_css_ptr skc_dvs_statistics;
+		ia_css_ptr lace_stat;
 		struct ia_css_metadata	metadata;
-		struct {
+		struct frame_data_wrapper{
 			hrt_vaddress	frame_data;
 			uint32_t	flashed;
 			uint32_t	exp_id;
+			uint32_t	isp_parameters_id; /**< Unique ID to track which config was actually applied to a particular frame */
+#if CONFIG_ON_FRAME_ENQUEUE()
+			struct sh_css_config_on_frame_enqueue config_on_frame_enqueue;
+#endif
 		} frame;
 		hrt_vaddress ddr_ptrs;
 	} payload;
@@ -762,9 +794,10 @@ struct host_sp_communication {
 	 */
 	hrt_vaddress host2sp_offline_frames[NUM_CONTINUOUS_FRAMES];
 	hrt_vaddress host2sp_offline_metadata[NUM_CONTINUOUS_FRAMES];
-#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
+
+#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	hrt_vaddress host2sp_mipi_frames[NUM_MIPI_FRAMES];
-	uint32_t host2sp_cont_num_mipi_frames;
+	uint32_t host2sp_num_mipi_frames;
 #endif
 	uint32_t host2sp_cont_avail_num_raw_frames;
 	uint32_t host2sp_cont_extra_num_raw_frames;
@@ -773,7 +806,7 @@ struct host_sp_communication {
 
 };
 
-#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
+#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\

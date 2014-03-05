@@ -28,6 +28,7 @@
 #include "ia_css_input_port.h"
 #include "ia_css_debug.h"
 #include "sh_css_struct.h"
+#include "sh_css_defs.h"
 
 enum ia_css_err
 ia_css_mipi_frame_specify(const unsigned int size_mem_words,
@@ -73,11 +74,20 @@ ia_css_mipi_frame_calculate_size(const unsigned int width,
 	unsigned int mem_words_for_first_line = 0;
 	unsigned int mem_words_for_EOF = 0;
 	unsigned int mem_words = 0;
+	unsigned int width_padded = width;
+
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+	/* The changes will be reverted as soon as RAW
+	 * Buffers are deployed by the 2401 Input System
+	 * in the non-continuous use scenario.
+	 */
+	width_padded += (2 * ISP_VEC_NELEMS);
+#endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_mipi_frame_calculate_size() "
-		"enter: width=%d, height=%d, format=%d, hasSOLandEOL=%d, embedded_data_size_words=%d\n",
-		width, height, format, hasSOLandEOL, embedded_data_size_words);
+		"enter: padded_width=%d, height=%d, format=%d, hasSOLandEOL=%d, embedded_data_size_words=%d\n",
+		width_padded, height, format, hasSOLandEOL, embedded_data_size_words);
 
 	switch (format) {
 		case IA_CSS_STREAM_FORMAT_RAW_6:			/* 4p, 3B, 24bits */
@@ -90,7 +100,16 @@ ia_css_mipi_frame_calculate_size(const unsigned int width,
 			bits_per_pixel = 8;		break;
 		case IA_CSS_STREAM_FORMAT_YUV420_10:		/* odd 4p, 5B, 40bits, even 4p, 10B, 80bits */
 		case IA_CSS_STREAM_FORMAT_RAW_10:		/* 4p, 5B, 40bits */
-			bits_per_pixel = 10;	break;
+#if !defined(HAS_NO_PACKED_RAW_PIXELS)
+			/* The changes will be reverted as soon as RAW
+			 * Buffers are deployed by the 2401 Input System
+			 * in the non-continuous use scenario.
+			 */
+			bits_per_pixel = 10;
+#else
+			bits_per_pixel = 16;
+#endif
+			break;
 		case IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY:	/* 2p, 3B, 24bits */
 		case IA_CSS_STREAM_FORMAT_RAW_12:			/* 2p, 3B, 24bits */
 			bits_per_pixel = 12;	break;
@@ -113,12 +132,12 @@ ia_css_mipi_frame_calculate_size(const unsigned int width,
 			return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
 
-	odd_line_bytes = (width * bits_per_pixel + 7) >> 3; /* ceil ( bits per line / 8 ) */
+	odd_line_bytes = (width_padded * bits_per_pixel + 7) >> 3; /* ceil ( bits per line / 8 ) */
 
 	/* Even lines for YUV420 formats are double in bits_per_pixel. */
 	if (format == IA_CSS_STREAM_FORMAT_YUV420_8
 		|| format == IA_CSS_STREAM_FORMAT_YUV420_10) {
-		even_line_bytes = (width * 2 * bits_per_pixel + 7) >> 3; /* ceil ( bits per line / 8 ) */
+		even_line_bytes = (width_padded * 2 * bits_per_pixel + 7) >> 3; /* ceil ( bits per line / 8 ) */
 	} else {
 		even_line_bytes = odd_line_bytes;
 	}

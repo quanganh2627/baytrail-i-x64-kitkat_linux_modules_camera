@@ -1040,6 +1040,7 @@ static void debug_binary_info_print(const struct ia_css_binary_xinfo *info)
 
 void ia_css_debug_binary_print(const struct ia_css_binary *bi)
 {
+	unsigned int i;
 	debug_binary_info_print(bi->info);
 	ia_css_debug_dtrace(2,
 			    "input:  %dx%d, format = %d, padded width = %d\n",
@@ -1053,12 +1054,17 @@ void ia_css_debug_binary_print(const struct ia_css_binary *bi)
 			    bi->internal_frame_info.res.height,
 			    bi->internal_frame_info.format,
 			    bi->internal_frame_info.padded_width);
-	ia_css_debug_dtrace(2,
-			    "out:    %dx%d, format = %d, padded width = %d\n",
-			    bi->out_frame_info.res.width,
-			    bi->out_frame_info.res.height,
-			    bi->out_frame_info.format,
-			    bi->out_frame_info.padded_width);
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		if (bi->out_frame_info[i].res.width != 0) {
+			ia_css_debug_dtrace(2,
+				    "out%d:    %dx%d, format = %d, padded width = %d\n",
+					i,
+				    bi->out_frame_info[i].res.width,
+				    bi->out_frame_info[i].res.height,
+				    bi->out_frame_info[i].format,
+				    bi->out_frame_info[i].padded_width);
+		}
+	}
 	ia_css_debug_dtrace(2,
 			    "vf out: %dx%d, format = %d, padded width = %d\n",
 			    bi->vf_frame_info.res.width,
@@ -2760,10 +2766,12 @@ ia_css_debug_pipe_graph_dump_stage(
 		}
 	}
 
-	if (stage->args.out_frame) {
-		ia_css_debug_pipe_graph_dump_frame(
-			stage->args.out_frame, id, blob_name,
-			"out", false);
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		if (stage->args.out_frame[i]) {
+			ia_css_debug_pipe_graph_dump_frame(
+				stage->args.out_frame[i], id, blob_name,
+				"out", false);
+		}
 	}
 
 	if (stage->args.out_vf_frame) {
@@ -2901,12 +2909,16 @@ ia_css_debug_dump_pipe_config(
 	ia_css_debug_dump_resolution(&config->dvs_crop_out_res,
 			"dvs_crop_out_res");
 	ia_css_debug_dump_frame_info(&config->output_info, "output_info");
+	ia_css_debug_dump_frame_info(&config->vf_output_info,
+			"vf_output_info");
+	ia_css_debug_dump_frame_info(&config->second_output_info,
+			"second_output_info");
+	ia_css_debug_dump_frame_info(&config->second_vf_output_info,
+			"second_vf_output_info");
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "acc_extension: 0x%x\n",
 			config->acc_extension);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "num_acc_stages: %d\n",
 			config->num_acc_stages);
-	ia_css_debug_dump_frame_info(&config->vf_output_info,
-			"vf_output_info");
 	ia_css_debug_dump_capture_config(&config->default_capture_config);
 	ia_css_debug_dump_resolution(&config->dvs_envelope, "dvs_envelope");
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "dvs_frame_delay: %d\n",

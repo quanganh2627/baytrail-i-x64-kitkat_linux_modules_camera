@@ -23,8 +23,8 @@
 // CSS version file
 //
 
-#ifndef CSS_VERSION_H
-#define CSS_VERSION_H
+#ifndef __CSS_VERSION_H
+#define __CSS_VERSION_H
 
 #define VER	0
 #define SUBVER	7
@@ -66,4 +66,4 @@ VER 0.7, released 17/02/14:
 
 */
 
-#endif
+#endif /* __CSS_VERSION_H */

@@ -31,10 +31,6 @@
  * directly but still need to forward parameters for it.
  */
 
-/* This code is also used by Silicon Hive in a simulation environment
- * Therefore, the following macro is used to differentiate when this
- * code is being included from within the Linux kernel source
- */
 #include <system_types.h>	/* HAS_IRQ_MAP_VERSION_# */
 #include <type_support.h>
 #include <platform_support.h>
@@ -69,39 +65,6 @@ enum ia_css_fw_type {
 	ia_css_isp_firmware,	/**< Firmware for the ISP */
 	ia_css_acc_firmware		/**< Firmware for accelrations */
 };
-
-#if defined(IS_ISP_2400_SYSTEM)
-enum ia_css_isp_memories {
-	IA_CSS_ISP_PMEM0 = 0,
-	IA_CSS_ISP_DMEM0,
-	IA_CSS_ISP_VMEM0,
-	IA_CSS_ISP_VAMEM0,
-	IA_CSS_ISP_VAMEM1,
-	IA_CSS_ISP_VAMEM2,
-	IA_CSS_ISP_HMEM0,
-	N_IA_CSS_ISP_MEMORIES
-};
-
-#define IA_CSS_NUM_ISP_MEMORIES 7
-
-#elif defined(IS_ISP_2500_SYSTEM)
-enum ia_css_isp_memories {
-	IA_CSS_ISP_PMEM0 = 0,
-	IA_CSS_ISP_DMEM0,
-	IA_CSS_ISP_VMEM0,
-	IA_CSS_ISP_VAMEM0,
-	IA_CSS_ISP_VAMEM1,
-	IA_CSS_ISP_VAMEM2,
-	IA_CSS_ISP_HMEM0,
-	N_IA_CSS_ISP_MEMORIES
-};
-
-#define IA_CSS_NUM_ISP_MEMORIES 7
-
-#else
-#error "ia_css_acc_types.h:  SYSTEM must be one of {ISP_2400_SYSTEM, ISP_2500_SYSTEM}"
-#endif
-
 
 /* Should be included without the path.
    However, that requires adding the path to numerous makefiles
@@ -212,6 +175,8 @@ struct ia_css_binary_info {
 		uint8_t	rgbpp_acc;
 		uint8_t	rgbpp_ff;
 		uint8_t	demosaic_acc;
+		uint8_t	dvs_stats;
+		uint8_t	lace_stats;
 		uint8_t	yuvp1_acc;
 		uint8_t	yuvp2_acc;
 		uint8_t	ae;

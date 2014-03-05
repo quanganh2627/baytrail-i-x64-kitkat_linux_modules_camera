@@ -84,7 +84,12 @@ ia_css_raw_config(
 	/* 2401 input system uses input width width */
 	in_info = internal_info;
 #else
-	(void)internal_info;
+	/*in some cases, in_info is NULL*/
+	if (in_info)
+		(void)internal_info;
+	else
+		in_info = internal_info;
+
 #endif
 	ia_css_dma_configure_from_info(&to->port_b, in_info);
 	to->width_a_over_b = elems_a / to->port_b.elems;

@@ -24,6 +24,7 @@
 
 #include <type_support.h>
 #include "ia_css_types.h"
+#include "system_global.h"
 
 enum ia_css_3a_tables {
 	IA_CSS_S3A_TBL_HI,

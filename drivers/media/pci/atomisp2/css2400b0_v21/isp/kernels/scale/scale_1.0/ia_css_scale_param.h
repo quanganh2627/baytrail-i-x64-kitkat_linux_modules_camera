@@ -19,21 +19,9 @@
  *
  */
 
-#ifndef __IA_CSS_CROP_PARAM_H
-#define __IA_CSS_CROP_PARAM_H
+#ifndef _IA_CSS_SCALE_PARAM_H
+#define _IA_CSS_SCALE_PARAM_H
 
-#include <type_support.h>
-#include "dma.h"
-#include "sh_css_internal.h" /* sh_css_crop_pos */
+#include "uds/uds_1.0/ia_css_uds_param.h"
 
-/** Crop frame */
-struct sh_css_isp_crop_isp_config {
-	uint32_t width_a_over_b;
-	struct dma_port_config port_b;
-};
-
-struct sh_css_isp_crop_isp_params {
-	struct sh_css_crop_pos crop_pos;
-};
-
-#endif /* __IA_CSS_CROP_PARAM_H */
+#endif /* _IA_CSS_SCALE_PARAM_H */

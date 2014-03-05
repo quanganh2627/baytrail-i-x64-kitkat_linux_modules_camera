@@ -31,7 +31,6 @@
 #include "sh_css_internal.h"
 #include "ia_css_types.h"
 #include "ia_css_pipeline.h"
-#include "ia_css_queue.h"
 
 /* Function to initialize the data and bss section descr of the binary */
 void
@@ -86,6 +85,11 @@ sh_css_sp_uninit_pipeline(unsigned int pipe_num);
 void
 sh_css_write_host2sp_command(enum host2sp_commands host2sp_command);
 
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command);
+#endif
+
 enum host2sp_commands
 sh_css_read_host2sp_command(void);
 
@@ -104,18 +108,7 @@ sh_css_update_host2sp_offline_frame(
 				struct ia_css_frame *frame,
 				struct ia_css_metadata *metadata);
 
-/**
- * @brief Get the right queue to operate on
- *
- * @param[in] type
- * @param[in] id
- * @param[in] thread
- */
-ia_css_queue_t*
-sh_css_get_queue(enum sh_css_queue_type type, enum sh_css_queue_id id,
-		 int thread);
-
-#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
+#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 /**
  * @brief Update the mipi frame information in host_sp_communication.
  *
@@ -133,7 +126,7 @@ sh_css_update_host2sp_mipi_frame(
  * @param[in] num_frames The number of mipi frames to use.
  */
 void
-sh_css_update_host2sp_cont_num_mipi_frames(unsigned num_frames);
+sh_css_update_host2sp_num_mipi_frames(unsigned num_frames);
 #endif
 
 /**
@@ -149,9 +142,18 @@ sh_css_event_init_irq_mask(void);
 
 void
 sh_css_sp_start_isp(void);
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_sp1_start(void);
+#endif
 
 void
 sh_css_sp_set_sp_running(bool flag);
+
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_sp1_set_sp1_running(bool flag);
+#endif
 
 bool
 sh_css_sp_is_running(void);

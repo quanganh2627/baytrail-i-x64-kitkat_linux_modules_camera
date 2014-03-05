@@ -186,7 +186,8 @@ bool ia_css_util_is_input_format_yuv(enum ia_css_stream_format format)
 
 enum ia_css_err ia_css_util_check_input(
 	const struct ia_css_stream_config * const stream_config,
-	bool must_be_raw)
+	bool must_be_raw,
+	bool must_be_yuv)
 {
 	assert(stream_config != NULL);
 
@@ -199,6 +200,10 @@ enum ia_css_err ia_css_util_check_input(
 
 	if (must_be_raw &&
 	    !ia_css_util_is_input_format_raw(stream_config->format))
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
+	if (must_be_yuv &&
+	    !ia_css_util_is_input_format_yuv(stream_config->format))
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	return IA_CSS_SUCCESS;

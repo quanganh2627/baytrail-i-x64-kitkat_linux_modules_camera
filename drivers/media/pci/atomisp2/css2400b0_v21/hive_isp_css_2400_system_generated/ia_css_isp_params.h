@@ -31,6 +31,7 @@ enum ia_css_parameter_ids {
 	IA_CSS_ANR_ID,
 	IA_CSS_BH_ID,
 	IA_CSS_CNR_ID,
+	IA_CSS_CROP_ID,
 	IA_CSS_CSC_ID,
 	IA_CSS_DP_ID,
 	IA_CSS_BNR_ID,
@@ -44,6 +45,7 @@ enum ia_css_parameter_ids {
 	IA_CSS_R_GAMMA_ID,
 	IA_CSS_G_GAMMA_ID,
 	IA_CSS_B_GAMMA_ID,
+	IA_CSS_UDS_ID,
 	IA_CSS_RAA_ID,
 	IA_CSS_S3A_ID,
 	IA_CSS_OB_ID,
@@ -70,6 +72,7 @@ struct ia_css_memory_offsets {
 		uint16_t anr;
 		uint16_t bh;
 		uint16_t cnr;
+		uint16_t crop;
 		uint16_t csc;
 		uint16_t dp;
 		uint16_t bnr;
@@ -80,6 +83,7 @@ struct ia_css_memory_offsets {
 		uint16_t ce;
 		uint16_t yuv2rgb;
 		uint16_t rgb2yuv;
+		uint16_t uds;
 		uint16_t raa;
 		uint16_t s3a;
 		uint16_t ob;

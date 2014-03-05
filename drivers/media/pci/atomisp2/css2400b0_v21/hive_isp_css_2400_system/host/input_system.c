@@ -19,13 +19,8 @@
  *
  */
 
-#ifdef __KERNEL__
-#include <linux/types.h>
-#else
-#include <stddef.h>		/* NULL */
-#endif
-
 #include "input_system.h"
+#include <type_support.h>
 #include "gp_device.h"
 
 #include "assert_support.h"
