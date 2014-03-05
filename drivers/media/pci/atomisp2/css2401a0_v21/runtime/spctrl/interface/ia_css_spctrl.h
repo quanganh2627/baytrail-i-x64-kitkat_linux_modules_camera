@@ -47,6 +47,10 @@ typedef struct {
 enum ia_css_err ia_css_spctrl_load_fw(sp_ID_t sp_id,
 			ia_css_spctrl_cfg *spctrl_cfg);
 
+#if defined(IS_ISP_2500_SYSTEM)
+enum ia_css_err ia_css_sp1ctrl_load_fw(sp_ID_t sp_id,
+			ia_css_spctrl_cfg *spctrl_cfg);
+#endif
 
 /*!  Unload/release any memory allocated to hold the firmware
 */
@@ -56,6 +60,9 @@ enum ia_css_err ia_css_spctrl_unload_fw(sp_ID_t sp_id);
 /*! Intilaize dmem_cfg in SP dmem  and  start SP program
 */
 enum ia_css_err ia_css_spctrl_start(sp_ID_t sp_id);
+#if defined(IS_ISP_2500_SYSTEM)
+enum ia_css_err ia_css_spctrl_start_sp1(sp_ID_t sp_id);
+#endif
 
 /*! stop spctrl
 */
@@ -64,5 +71,9 @@ enum ia_css_err ia_css_spctrl_stop(sp_ID_t sp_id);
 /*! Query the state of SP
 */
 ia_css_spctrl_sp_sw_state ia_css_spctrl_get_state(sp_ID_t sp_id);
+
+/*! Query the state of SP1
+*/
+ia_css_spctrl_sp_sw_state ia_css_sp1ctrl_get_state(sp_ID_t sp_id);
 
 #endif /* __IA_CSS_SPCTRL_H__ */

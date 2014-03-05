@@ -29,6 +29,14 @@
 #include "ia_css_crop.host.h"
 
 void
+ia_css_crop_encode(
+	struct sh_css_isp_crop_isp_params *to,
+	const struct ia_css_crop_config *from)
+{
+	to->crop_pos = from->crop_pos;
+}
+
+void
 ia_css_crop_config(
 	struct sh_css_isp_crop_isp_config *to,
 	const struct ia_css_crop_configuration  *from)

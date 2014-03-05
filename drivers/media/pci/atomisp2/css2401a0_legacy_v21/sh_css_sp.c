@@ -74,9 +74,13 @@ static struct sh_css_sp_per_frame_data per_frame_data;
 /* For the moment there is only code that sets this bool to true */
 /* TODO: add code that sets this bool to false */
 static bool sp_running;
+#if defined(IS_ISP_2500_SYSTEM)
+static bool sp1_running;
+#endif
 
 static enum ia_css_err
-set_output_frame_buffer(const struct ia_css_frame *frame);
+set_output_frame_buffer(const struct ia_css_frame *frame,
+			unsigned idx);
 
 /* This data is stored every frame */
 void
@@ -98,6 +102,10 @@ copy_isp_stage_to_sp_stage(void)
 //		sh_css_isp_stage.binary_info.num_output_pins > 1;
 	sh_css_sp_stage.enable.sdis = sh_css_isp_stage.binary_info.enable.dis;
 	sh_css_sp_stage.enable.s3a = sh_css_isp_stage.binary_info.enable.s3a;
+#if defined(IS_ISP_2500_SYSTEM)
+	sh_css_sp_stage.enable.dvs_stats = sh_css_isp_stage.binary_info.enable.dvs_stats;
+	sh_css_sp_stage.enable.lace_stats = sh_css_isp_stage.binary_info.enable.lace_stats;
+#endif
 }
 
 void
@@ -221,7 +229,7 @@ sh_css_sp_start_binary_copy(unsigned int pipe_num, struct ia_css_frame *out_fram
 	sh_css_sp_stage.func =
 		(unsigned int)IA_CSS_PIPELINE_BIN_COPY;
 
-	set_output_frame_buffer(out_frame);
+	set_output_frame_buffer(out_frame, 0);
 
 	/* sp_bin_copy_init on the SP does not deal with dynamica/static yet */
 	/* For now always update the dynamic data from out frames. */
@@ -301,7 +309,7 @@ sh_css_sp_start_raw_copy(struct ia_css_frame *out_frame,
 	sh_css_sp_stage.stage_type = SH_CSS_SP_STAGE_TYPE;
 	sh_css_sp_stage.func = (unsigned int)IA_CSS_PIPELINE_RAW_COPY;
 	sh_css_sp_stage.if_config_index = (uint8_t) if_config_index;
-	set_output_frame_buffer(out_frame);
+	set_output_frame_buffer(out_frame, 0);
 
 #if 0
 	/* sp_raw_copy_init on the SP does not deal with dynamica/static yet */
@@ -366,7 +374,7 @@ assert(out_frame != NULL);
 	sh_css_sp_stage.stage_type = SH_CSS_SP_STAGE_TYPE;
 	sh_css_sp_stage.func = (unsigned int)IA_CSS_PIPELINE_ISYS_COPY;
 
-	set_output_frame_buffer(out_frame);
+	set_output_frame_buffer(out_frame, 0);
 
 	ia_css_debug_pipe_graph_dump_sp_raw_copy(out_frame);
 }
@@ -423,7 +431,9 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 	if (frame_in->dynamic_data_index >= 0) {
 		assert((type == IA_CSS_BUFFER_TYPE_INPUT_FRAME) ||
 				(type == IA_CSS_BUFFER_TYPE_OUTPUT_FRAME) ||
-				(type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME));
+				(type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME) ||
+				(type == IA_CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME) ||
+				(type == IA_CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME));
 		/*
 		 * value >=0 indicates that function init_frame_pointers()
 		 * should use the dynamic data address
@@ -442,7 +452,9 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 		 */
 		if (((type == IA_CSS_BUFFER_TYPE_INPUT_FRAME) ||
 		     (type == IA_CSS_BUFFER_TYPE_OUTPUT_FRAME) ||
-		     (type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME))  &&
+		     (type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME) ||
+			 (type == IA_CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME) ||
+			 (type == IA_CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME))  &&
 		    (frame_in->dynamic_data_index < SH_CSS_MAX_NUM_QUEUES))
 		{
 			/*
@@ -562,7 +574,8 @@ set_input_frame_buffer(const struct ia_css_frame *frame)
 }
 
 static enum ia_css_err
-set_output_frame_buffer(const struct ia_css_frame *frame)
+set_output_frame_buffer(const struct ia_css_frame *frame,
+			unsigned idx)
 {
 	if (frame == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -595,8 +608,8 @@ set_output_frame_buffer(const struct ia_css_frame *frame)
 	default:
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.out, frame,
-					IA_CSS_BUFFER_TYPE_OUTPUT_FRAME);
+	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.out[idx], frame,
+					IA_CSS_BUFFER_TYPE_OUTPUT_FRAME + idx);
 	return IA_CSS_SUCCESS;
 }
 
@@ -662,7 +675,6 @@ set_view_finder_buffer(const struct ia_css_frame *frame)
 }
 
 #if !defined(HAS_NO_INPUT_FORMATTER)
-/* AM: this should fill the if_configs properly. */
 void sh_css_sp_set_if_configs(
 	const input_formatter_cfg_t	*config_a,
 	const input_formatter_cfg_t	*config_b,
@@ -748,8 +760,10 @@ sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args)
 		err = set_input_frame_buffer(args->in_frame);
 	if (err == IA_CSS_SUCCESS && args->out_vf_frame)
 		err = set_view_finder_buffer(args->out_vf_frame);
-	if (err == IA_CSS_SUCCESS && args->out_frame)
-		err = set_output_frame_buffer(args->out_frame);
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		if (err == IA_CSS_SUCCESS && args->out_frame[i])
+			err = set_output_frame_buffer(args->out_frame[i], i);
+	}
 	for (i = 0; i < NUM_VIDEO_DELAY_FRAMES; i++) {
 		if (err == IA_CSS_SUCCESS && args->delay_frames[i]) {
 			err = set_video_delay_frame_buffer(
@@ -837,13 +851,13 @@ configure_isp_from_args(
 	ia_css_fpn_configure   (binary,  &binary->in_frame_info);
 	ia_css_crop_configure  (binary, &args->delay_frames[0]->info);
 	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
-	ia_css_output0_configure(binary, &args->out_frame->info);
+	ia_css_output0_configure(binary, &args->out_frame[0]->info);
 	ia_css_output1_configure(binary, &args->out_vf_frame->info);
 #endif
 	ia_css_ref_configure   (binary, &args->delay_frames[0]->info);
 	ia_css_tnr_configure   (binary, &args->tnr_frames[0]->info);
-	ia_css_dvs_configure   (binary, &args->out_frame->info);
-	ia_css_output_configure(binary, &args->out_frame->info);
+	ia_css_dvs_configure   (binary, &args->out_frame[0]->info);
+	ia_css_output_configure(binary, &args->out_frame[0]->info);
 	ia_css_raw_configure   (pipe, binary, &args->in_frame->info, &binary->in_frame_info);
 }
 
@@ -920,8 +934,10 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 
 	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.in.info,
 				&binary->in_frame_info);
-	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.out.info,
-				&binary->out_frame_info);
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.out[i].info,
+					&binary->out_frame_info[i]);
+	}
 	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.internal_frame_info,
 				&binary->internal_frame_info);
 	sh_css_sp_stage.dvs_envelope.width    = binary->dvs_envelope.width;
@@ -938,6 +954,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	sh_css_sp_stage.xmem_map_addr = sh_css_params_ddr_address_map();
 	sh_css_isp_stage.blob_info = *blob_info;
 	sh_css_stage_write_binary_info((struct ia_css_binary_info *)info);
+
+	// Make sure binary name is smaller than allowed string size
+	assert(strlen(binary_name) < SH_CSS_MAX_BINARY_NAME-1);
 	strncpy(sh_css_isp_stage.binary_name, binary_name, SH_CSS_MAX_BINARY_NAME);
 	sh_css_isp_stage.binary_name[SH_CSS_MAX_BINARY_NAME - 1] = 0;
 	sh_css_isp_stage.mem_initializers = *isp_mem_if;
@@ -972,6 +991,12 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_DIS_STATISTICS, thread_id, &queue_id);
 		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_DIS_STATISTICS] = queue_id;
 	}
+#if defined(IS_ISP_2500_SYSTEM)
+	if (binary->info->sp.enable.lace_stats) {
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_LACE_STATISTICS, thread_id, &queue_id);
+		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_LACE_STATISTICS] = queue_id;
+	}
+#endif
 #if defined SH_CSS_ENABLE_METADATA
 	ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_METADATA, thread_id, &queue_id);
 	sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_METADATA] = queue_id;
@@ -989,11 +1014,11 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		(binary->vf_downscale_log2 > 0)) {
 		/* TODO: Remove this after preview output decimation is fixed
 		 * by configuring out&vf info fiels properly */
-		sh_css_sp_stage.frames.out.info.padded_width
+		sh_css_sp_stage.frames.out[0].info.padded_width
 			<<= binary->vf_downscale_log2;
-		sh_css_sp_stage.frames.out.info.width
+		sh_css_sp_stage.frames.out[0].info.width
 			<<= binary->vf_downscale_log2;
-		sh_css_sp_stage.frames.out.info.height
+		sh_css_sp_stage.frames.out[0].info.height
 			<<= binary->vf_downscale_log2;
 	}
 	err = copy_isp_mem_if_to_ddr(binary);
@@ -1048,12 +1073,15 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 		blob_info = &info->blob->header.blob;
 		ia_css_init_memory_interface(mem_if, &binary->mem_params, &binary->css_params);
 	} else if (firmware) {
+		const struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS] = {NULL};
+		if (args->out_frame[0])
+			out_infos[0] = &args->out_frame[0]->info;
 		info = &firmware->info.isp;
 		ia_css_binary_fill_info(info, false, false,
 			    IA_CSS_STREAM_FORMAT_RAW_10,
 			    args->in_frame  ? &args->in_frame->info  : NULL,
 			    NULL,
-			    args->out_frame ? &args->out_frame->info : NULL,
+				out_infos,
 			    args->out_vf_frame ? &args->out_vf_frame->info
 						: NULL,
 			    &tmp_binary,
@@ -1103,7 +1131,7 @@ sp_init_sp_stage(struct ia_css_pipeline_stage *stage,
 	assert(stage != NULL);
 	switch (stage->sp_func) {
 	case IA_CSS_PIPELINE_RAW_COPY:
-		sh_css_sp_start_raw_copy(args->out_frame,
+		sh_css_sp_start_raw_copy(args->out_frame[0],
 				pipe_num, two_ppc,
 				stage->max_input_width,
 				copy_ovrd, if_config_index);
@@ -1111,7 +1139,7 @@ sp_init_sp_stage(struct ia_css_pipeline_stage *stage,
 	case IA_CSS_PIPELINE_BIN_COPY:
 		assert(false); /* TBI */
 	case IA_CSS_PIPELINE_ISYS_COPY:
-		sh_css_sp_start_isys_copy(args->out_frame,
+		sh_css_sp_start_isys_copy(args->out_frame[0],
 				pipe_num, stage->max_input_width);
 		break;
 	case IA_CSS_PIPELINE_NO_FUNC:
@@ -1281,6 +1309,23 @@ init_host2sp_command(void)
 }
 #endif
 
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command)
+{
+	unsigned int HIVE_ADDR_host_sp1_com = sh_css_sp1_fw.info.sp1.host_sp_com;
+	unsigned int o = offsetof(struct host_sp_communication, host2sp_command)
+				/ sizeof(int);
+	(void)HIVE_ADDR_host_sp1_com; /* Suppres warnings in CRUN */
+
+	/* Previous command must be handled by SP1 (by design) */
+	if(host2sp_command == host2sp_cmd_terminate)
+		assert(load_sp1_array_uint(host_sp1_com, o) == host2sp_cmd_ready);
+
+	store_sp1_array_uint(host_sp1_com, o, host2sp_command);
+}
+#endif
+
 void
 sh_css_write_host2sp_command(enum host2sp_commands host2sp_command)
 {
@@ -1369,7 +1414,7 @@ sh_css_update_host2sp_offline_frame(
 	store_sp_array_uint(host_sp_com, o, metadata ? metadata->address : 0);
 }
 
-#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
+#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 /**
  * @brief Update the offline frame information in host_sp_communication.
  * Refer to "sh_css_sp.h" for more details.
@@ -1397,7 +1442,7 @@ sh_css_update_host2sp_mipi_frame(
 }
 
 void
-sh_css_update_host2sp_cont_num_mipi_frames(unsigned num_frames)
+sh_css_update_host2sp_num_mipi_frames(unsigned num_frames)
 {
 	unsigned int HIVE_ADDR_host_sp_com;
 	unsigned int o;
@@ -1406,7 +1451,7 @@ sh_css_update_host2sp_cont_num_mipi_frames(unsigned num_frames)
 
 	/* Write new frame data into SP DMEM */
 	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
-	o = offsetof(struct host_sp_communication, host2sp_cont_num_mipi_frames)
+	o = offsetof(struct host_sp_communication, host2sp_num_mipi_frames)
 		/ sizeof(int);
 
 	store_sp_array_uint(host_sp_com, o, num_frames);
@@ -1552,12 +1597,66 @@ sh_css_sp_set_sp_running(bool flag)
 {
 	sp_running = flag;
 }
-
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_sp1_set_sp1_running(bool flag)
+{
+	sp1_running = flag;
+}
+#endif
 bool
 sh_css_sp_is_running(void)
 {
 	return sp_running;
 }
+
+#if defined(IS_ISP_2500_SYSTEM)
+void
+sh_css_sp1_start(void)
+{
+	const struct ia_css_fw_info *fw;
+	unsigned int HIVE_ADDR_sp1_sw_state;
+	fw = &sh_css_sp1_fw;
+	HIVE_ADDR_sp1_sw_state = fw->info.sp1.sw_state;
+
+	if (sp1_running)
+		return;
+
+	(void)HIVE_ADDR_sp1_sw_state; /* Suppres warnings in CRUN */
+
+	/* no longer here, sp started immediately */
+	/*ia_css_debug_pipe_graph_dump_epilogue();*/
+
+	/*store_sp_group_data();
+	store_sp_per_frame_data(fw);*/
+	sp_dmem_store_uint32(SP1_ID,
+		(unsigned int)sp1_address_of(sp1_sw_state),
+		(uint32_t)(IA_CSS_SP_SW_TERMINATED));
+
+	//init_host2sp_command();
+	/* Note 1: The sp_start_isp function contains a wait till
+	 * the input network is configured by the SP.
+	 * Note 2: Not all SP binaries supports host2sp_commands.
+	 * In case a binary does support it, the host2sp_command
+	 * will have status cmd_ready after return of the function
+	 * sh_css_hrt_sp_start_isp. There is no race-condition here
+	 * because only after the process_frame command has been
+	 * received, the SP starts configuring the input network.
+	 */
+
+	/* we need to set sp_running before we call ia_css_mmu_invalidate_cache
+	 * as ia_css_mmu_invalidate_cache checks on sp_running to
+	 * avoid that it accesses dmem while the SP is not powered
+	 */
+	sp1_running = true;
+	/* ia_css_mmu_invalidate_cache(); */
+	/* Invalidate all MMU caches */
+	/* mmu_invalidate_cache_all(); */
+
+	ia_css_spctrl_start_sp1(SP1_ID);
+
+}
+#endif
 
 void
 sh_css_sp_start_isp(void)

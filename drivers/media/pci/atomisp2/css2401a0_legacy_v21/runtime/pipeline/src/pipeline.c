@@ -28,7 +28,6 @@
 #include "sh_css_sp.h"
 #include "ia_css_pipeline.h"
 #include "ia_css_isp_param.h"
-#include "ia_css_eventq.h"
 #include "ia_css_bufq.h"
 
 #define PIPELINE_NUM_UNMAPPED                   (~0)
@@ -125,7 +124,6 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 {
 	uint8_t pipe_num = 0;
 	unsigned int thread_id;
-	ia_css_queue_t *eventq;
 
 	assert(pipeline != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -140,19 +138,18 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 				, (mipi_port_ID_t) 0
 #endif
 				);
-
 	ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
-	eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
-					-1, -1);
-	if (NULL == eventq) {
-		/* Error as the queue is not initialized */
+	if (!sh_css_sp_is_running())
+	{
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_pipeline_start() leaving: host2sp_eventq"
-			"not available\n");
+		"ia_css_pipeline_start() error,leaving  \n");
+		/* queues are invalid*/
 		return;
 	}
-	ia_css_eventq_send(eventq,
-			SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0, 0);
+	ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4,
+				(uint8_t)thread_id,
+				0,
+				0);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 	      "ia_css_pipeline_start() leave: return_void\n");
@@ -184,7 +181,6 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	unsigned int thread_id;
-	ia_css_queue_t *eventq;
 
 	assert(pipeline != NULL);
 
@@ -200,17 +196,17 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 	/* This needs improvement, stop on all the pipes available
 	 * in the stream*/
 	ia_css_pipeline_get_sp_thread_id(pipeline->pipe_num, &thread_id);
-	eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
-					-1, -1);
-	if (NULL == eventq) {
-		/* Error as the queue is not initialized */
+	if (!sh_css_sp_is_running())
+	{
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_pipeline_request_stop() leaving:"
-			"host2sp_eventq not available\n");
+		"ia_css_pipeline_request_stop() leaving \n");	
+		/* queues are invalid */
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
-	ia_css_eventq_send(eventq,
-			SP_SW_EVENT_ID_5, (uint8_t)thread_id, 0,  0);
+	ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_5,
+				(uint8_t)thread_id,
+				0,
+				0);
 	sh_css_sp_uninit_pipeline(pipeline->pipe_num);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -284,8 +280,8 @@ enum ia_css_err ia_css_pipeline_create_and_add_stage(
 		&& (!stage_desc->binary->online)) {
 
 		/* Do this only for ISP stages*/
-		if (last)
-			stage_desc->in_frame = last->args.out_frame;
+		if (last && last->args.out_frame[0])
+			stage_desc->in_frame = last->args.out_frame[0];
 
 		if (!stage_desc->in_frame)
 			return IA_CSS_ERR_INTERNAL_ERROR;
@@ -416,9 +412,12 @@ struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void)
  */
 static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage)
 {
-	if (stage->out_frame_allocated) {
-		ia_css_frame_free(stage->args.out_frame);
-		stage->args.out_frame = NULL;
+	unsigned int i;
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		if (stage->out_frame_allocated[i]) {
+			ia_css_frame_free(stage->args.out_frame[i]);
+			stage->args.out_frame[i] = NULL;
+		}
 	}
 	if (stage->vf_frame_allocated) {
 		ia_css_frame_free(stage->args.out_vf_frame);
@@ -486,8 +485,9 @@ static enum ia_css_err pipeline_stage_create(
 	struct ia_css_pipeline_stage *stage = NULL;
 	struct ia_css_binary *binary;
 	struct ia_css_frame *vf_frame;
-	struct ia_css_frame *out_frame;
+	struct ia_css_frame *out_frame[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	const struct ia_css_fw_info *firmware;
+	unsigned int i;
 
 	/* Verify input parameters*/
 	if (!(stage_desc->in_frame) && !(stage_desc->firmware)
@@ -499,7 +499,9 @@ static enum ia_css_err pipeline_stage_create(
 	binary = stage_desc->binary;
 	firmware = stage_desc->firmware;
 	vf_frame = stage_desc->vf_frame;
-	out_frame = stage_desc->out_frame;
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		out_frame[i] = stage_desc->out_frame[i];
+	}
 
 	stage = sh_css_malloc(sizeof(*stage));
 	if (stage == NULL) {
@@ -525,18 +527,21 @@ static enum ia_css_err pipeline_stage_create(
 	stage->sp_func = stage_desc->sp_func;
 	stage->max_input_width = stage_desc->max_input_width;
 	stage->mode = stage_desc->mode;
-	stage->out_frame_allocated = false;
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++)
+		stage->out_frame_allocated[i] = false;
 	stage->vf_frame_allocated = false;
 	stage->next = NULL;
 	sh_css_binary_args_reset(&stage->args);
 
-	if (!(out_frame) && (binary)
-	    && (binary->out_frame_info.res.width)) {
-		err = ia_css_frame_allocate_from_info(&out_frame,
-							&binary->out_frame_info);
-		if (err != IA_CSS_SUCCESS)
-			goto ERR;
-		stage->out_frame_allocated = true;
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		if (!(out_frame[i]) && (binary)
+			&& (binary->out_frame_info[i].res.width)) {
+			err = ia_css_frame_allocate_from_info(&out_frame[i],
+							&binary->out_frame_info[i]);
+			if (err != IA_CSS_SUCCESS)
+				goto ERR;
+			stage->out_frame_allocated[i] = true;
+		}
 	}
 	/* VF frame is not needed in case of need_pp
 	   However, the capture binary needs a vf frame to write to.
@@ -559,7 +564,8 @@ static enum ia_css_err pipeline_stage_create(
 
 	stage->args.cc_frame = stage_desc->cc_frame;
 	stage->args.in_frame = stage_desc->in_frame;
-	stage->args.out_frame = out_frame;
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++)
+		stage->args.out_frame[i] = out_frame[i];
 	stage->args.out_vf_frame = vf_frame;
 	*new_stage = stage;
 	return err;
@@ -574,17 +580,18 @@ static void pipeline_init_defaults(
 	enum ia_css_pipe_id pipe_id,
 	unsigned int pipe_num)
 {
-	struct ia_css_frame init_frame;
-	init_frame.dynamic_data_index = (int)SH_CSS_INVALID_QUEUE_ID;
-	init_frame.buf_type = IA_CSS_BUFFER_TYPE_INVALID;
+	struct ia_css_frame init_frame = DEFAULT_FRAME;
+	unsigned int i;
 
 	pipeline->pipe_id = pipe_id;
 	pipeline->stages = NULL;
 	pipeline->stop_requested = false;
 	pipeline->current_stage = NULL;
 	pipeline->in_frame = init_frame;
-	pipeline->out_frame = init_frame;
-	pipeline->vf_frame = init_frame;
+	for (i = 0; i < IA_CSS_PIPE_MAX_OUTPUT_STAGE; i++) {
+		pipeline->out_frame[i] = init_frame;
+		pipeline->vf_frame[i] = init_frame;
+	}
 	pipeline->num_execs = -1;
 	pipeline->acquire_isp_each_stage = true;
 	pipeline->pipe_num = pipe_num;

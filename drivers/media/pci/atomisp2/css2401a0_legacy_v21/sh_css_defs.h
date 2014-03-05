@@ -22,10 +22,28 @@
 #ifndef _SH_CSS_DEFS_H_
 #define _SH_CSS_DEFS_H_
 
+#if !defined(__SP1)
 #include "isp.h"
+#else
+#include "system_local.h"  /* to get IS_ISP_2500_SYSTEM for SP1*/
+#endif
 /*#include "vamem.h"*/ /* Cannot include for VAMEM properties this file is visible on ISP -> pipeline generator */
 
 #include "math_support.h"	/* max(), min, etc etc */
+
+/* Macros for Controlling SP1 enabling and compilation */
+/* SH_CSS_DEFS_INCLUDED is to test whether all SP1 dependent files have included
+	sh_css_defs.h file or not */
+#define SH_CSS_DEFS_INCLUDED
+
+#if defined(IS_ISP_2500_SYSTEM)
+#define ENABLE_SP1  /* Disabling this Macro excludes SP1 from the system */
+#define SWITCH_GACS_TO_SP1 /* Enabling this macro switches the GACs to SP1 */
+#endif /*defined(IS_ISP_2500_SYSTEM)*/
+
+#if !defined(ENABLE_SP1)
+#undef SWITCH_GACS_TO_SP1
+#endif
 
 /* ID's for refcount */
 #define IA_CSS_REFCOUNT_PARAM_SET_POOL  0xCAFE0001
@@ -369,30 +387,20 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 
 #define __ISP_CHUNK_STRIDE_DDR(c_subsampling, num_chunks) \
 	((c_subsampling) * (num_chunks) * HIVE_ISP_DDR_WORD_BYTES)
-#if 0
-#define __ISP_RGBA_WIDTH(rgba, num_chunks) \
-	((rgba) ? (num_chunks)*4*2*ISP_VEC_NELEMS : 0)
-#else
-#define __ISP_RGBA_WIDTH(rgba, num_chunks) \
-	(0)
-#endif
 #define __ISP_INTERNAL_WIDTH(out_width, \
 			     dvs_env_width, \
 			     left_crop, \
 			     mode, \
 			     c_subsampling, \
 			     num_chunks, \
-			     pipelining, \
-			     rgba) \
-	CEIL_MUL2(CEIL_MUL2(MAX(MAX(__ISP_PADDED_OUTPUT_WIDTH(out_width, \
+			     pipelining) \
+	CEIL_MUL2(CEIL_MUL2(MAX(__ISP_PADDED_OUTPUT_WIDTH(out_width, \
 							    dvs_env_width, \
 							    left_crop), \
 				  __ISP_MIN_INTERNAL_WIDTH(num_chunks, \
 							   pipelining, \
 							   mode) \
 				 ), \
-			      __ISP_RGBA_WIDTH(rgba, num_chunks) \
-			     ), \
 			  __ISP_CHUNK_STRIDE_ISP(mode) \
 			 ), \
 		 __ISP_CHUNK_STRIDE_DDR(c_subsampling, num_chunks) \
@@ -419,6 +427,16 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 
 #define _ISP_INPUT_WIDTH(internal_width, ds_input_width, enable_ds) \
 	((enable_ds) ? (ds_input_width) : (internal_width))
+
+#define _ISP_MAX_INPUT_HEIGHT(max_internal_height, enable_ds, enable_fixed_bayer_ds, enable_raw_bin, \
+				enable_continuous) \
+	((enable_ds) ? \
+	   SH_CSS_MAX_SENSOR_HEIGHT :\
+	 (enable_fixed_bayer_ds) ? \
+	   SH_CSS_MAX_CONTINUOUS_SENSOR_HEIGHT_DEC : \
+	 (enable_raw_bin || enable_continuous) ? \
+	   SH_CSS_MAX_CONTINUOUS_SENSOR_HEIGHT \
+	   : max_internal_height)
 
 #define _ISP_INPUT_HEIGHT(internal_height, ds_input_height, enable_ds) \
 	((enable_ds) ? (ds_input_height) : (internal_height))

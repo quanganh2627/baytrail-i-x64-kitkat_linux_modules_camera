@@ -36,7 +36,7 @@
 #include "sw_event_global.h"		/* Event IDs */
 
 #include "assert_support.h"
-#include "math_support.h"	/* max(), min() */
+#include "math_support.h"	/* max(), min()  EVEN_FLOOR()*/
 
 #include "ia_css_stream.h"
 #include "sh_css_params_internal.h"
@@ -85,22 +85,18 @@
 #include "ynr/ynr_2/ia_css_ynr2.host.h"
 
 #include "platform_support.h"
-#include "ia_css_eventq.h"
 
 #if defined(IS_ISP_2500_SYSTEM)
 #include "product_specific.host.h"
 #include "components/stats_3a/src/stats_3a_private.h"
+#include "components/acc_cluster/acc_lace_stat/lace_stat_private.h"
+#include "components/acc_cluster/acc_lace_stat/host/lace_stat.host.h"
+#include <components/stats_3a/src/host/stats_3a.host.h>
 #include "components_types.host.h"                /* Skylake kernel settings structs */
 #endif
 
 #include "sh_css_frac.h"
-
-/* Convenience macro to force a value to a lower even value.
- *  We do not want to (re)use the kernel macro round_down here
- *  because the same code base is used internally by Silicon Hive
- *  simulation environment, where the kernel macro is not available
- */
-#define EVEN_FLOOR(x)	(x & ~1)
+#include "ia_css_bufq.h"
 
 #define FPNTBL_BYTES(binary) \
 	(sizeof(char) * (binary)->in_frame_info.res.height * \
@@ -706,12 +702,12 @@ ref_sh_css_ddr_address_map(
 		struct sh_css_ddr_address_map *out);
 
 static enum ia_css_err
-write_sh_css_address_map_to_ddr(
-		struct sh_css_ddr_address_map *map,
-		hrt_vaddress *out);
+write_ia_css_isp_parameter_set_info_to_ddr(
+	struct ia_css_isp_parameter_set_info *me,
+	hrt_vaddress *out);
 
 static enum ia_css_err
-free_sh_css_ddr_address_map(hrt_vaddress ptr);
+free_ia_css_isp_parameter_set_info(hrt_vaddress ptr);
 
 static enum ia_css_err
 sh_css_params_write_to_ddr_internal(
@@ -1267,8 +1263,9 @@ store_dvs_6axis_config(
 	/* bgz115: replaced binary->in_frame_info.res.width for
 	   'padded_width=stride' */
 	i_stride  = binary->internal_frame_info.padded_width;
-	o_width  = binary->out_frame_info.res.width;
-	o_height = binary->out_frame_info.res.height;
+	/* currently we only support two output with the same resolution, output 0 is th default one. */
+	o_width  = binary->out_frame_info[0].res.width;
+	o_height = binary->out_frame_info[0].res.height;
 	
 	/* Y plane */
 	convert_coords_to_ispparams(ddr_addr_y, params->dvs_6axis_config,
@@ -1606,12 +1603,15 @@ static void ia_css_process_zoom_and_motion(
 			info = binary->info;
 		} else {
 			const struct sh_css_binary_args *args = &stage->args;
+			const struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS] = {NULL};
+			if (args->out_frame[0])
+				out_infos[0] = &args->out_frame[0]->info;
 			info = &stage->firmware->info.isp;
 			ia_css_binary_fill_info(info, false, false,
 				IA_CSS_STREAM_FORMAT_RAW_10,
 				args->in_frame  ? &args->in_frame->info  : NULL,
 				NULL,
-				args->out_frame ? &args->out_frame->info : NULL,
+				out_infos,
 				args->out_vf_frame ? &args->out_vf_frame->info
 									: NULL,
 				&tmp_binary,
@@ -1625,7 +1625,7 @@ static void ia_css_process_zoom_and_motion(
 		sh_css_update_uds_and_crop_info(
 			&info->sp,
 			&binary->in_frame_info,
-			&binary->out_frame_info,
+			&binary->out_frame_info[0],
 			&binary->dvs_envelope,
 			pipe_id == IA_CSS_PIPE_ID_PREVIEW,
 			&params->dz_config,
@@ -1974,93 +1974,58 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 {
 	int i , num_sets,size_of_set,index=0;
 
-	af_private_config_t		af_acc_cfg;
-	awb_fr_private_config_t		awb_fr_acc_cfg;
-	ae_private_direct_config_t	ae_acc_grd_cfg;
-	awb_private_config_t		awb_acc_grd_cfg;
+	struct ia_css_4a_private_config stats_config;
+	struct stats_3a_bubble_info_per_stripe stats_bubble_info; 
 
 	hrt_vaddress af_ddr_addr = (hrt_vaddress)(long int)&(((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->af_raw_buffer);
 	hrt_vaddress awb_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->awb_raw_buffer;
 	hrt_vaddress ae_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->ae_raw_buffer;
 	hrt_vaddress awb_fr_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->awb_fr_raw_buffer;
 
-	hrt_vaddress af_cfg_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->af_config;
-	hrt_vaddress awb_fr_cfg_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->awb_fr_config;
-	hrt_vaddress ae_cfg_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->ae_grd_config;
-	hrt_vaddress awb_cfg_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->awb_config;
+	hrt_vaddress stats_bubble_info_addr = (hrt_vaddress)(long int)
+	  &((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->stats_3a_bubble_per_stripe;
+
+	hrt_vaddress stats_config_addr = (hrt_vaddress)(long int)
+	  &((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->stats_4a_config;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			"ia_css_get_4a_statistics() enter: "
 			"host_stats=%p, isp_stats=%p\n",
 			host_stats, isp_stats);
 	
-
-		mmgr_load(af_ddr_addr,
-					(void*)&(host_stats->data->af_raw_buffer),
-					sizeof(af_public_raw_buffer_t));
-		mmgr_load(awb_ddr_addr,
-					(void*)&(host_stats->data->awb_raw_buffer),
-					sizeof(awb_public_raw_buffer_t));
-		mmgr_load(ae_ddr_addr,
-					(void*)&(host_stats->data->ae_raw_buffer),
-					 sizeof(ae_public_raw_buffer_t));
-		mmgr_load(awb_fr_ddr_addr,
-					(void*)&(host_stats->data->awb_fr_raw_buffer),
-					 sizeof(awb_fr_public_raw_buffer_t));
-
-
-		//Load configuration
-		mmgr_load(af_cfg_ddr_addr,
-							(void*)&(af_acc_cfg),
-							 sizeof(af_private_config_t));
-		mmgr_load(awb_fr_cfg_ddr_addr,
-							(void*)&(awb_fr_acc_cfg),
-							 sizeof(awb_fr_private_config_t));
-		mmgr_load(ae_cfg_ddr_addr,
-							(void*)&(ae_acc_grd_cfg),
-							 sizeof(ae_private_direct_config_t));
-		mmgr_load(awb_cfg_ddr_addr,
-								(void*)&(awb_acc_grd_cfg),
-								 sizeof(awb_private_config_t));
-
-		/* Translate between private and public
-		 * TODO - make this more general, redefine the structs */
-
-		host_stats->stats_4a_config->af_grd_config.grid_width		= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.grid_width;
-		host_stats->stats_4a_config->af_grd_config.grid_height	 	= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.grid_height;
-		host_stats->stats_4a_config->af_grd_config.x_start 		= (unsigned short)af_acc_cfg.ff_af_config.y_grid_config.grd_start.x_start;
-		host_stats->stats_4a_config->af_grd_config.y_start		= (unsigned short)af_acc_cfg.ff_af_config.y_grid_config.grd_start.y_start;
-		host_stats->stats_4a_config->af_grd_config.block_width	 	= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.block_width;
-		host_stats->stats_4a_config->af_grd_config.block_height		= (unsigned char)af_acc_cfg.ff_af_config.y_grid_config.grd_cfg.block_height;
+	/* load meta data */
+	mmgr_load(af_ddr_addr,
+		  (void*)&(host_stats->data->af_raw_buffer),
+		  sizeof(af_public_raw_buffer_t));
+	mmgr_load(awb_ddr_addr,
+		  (void*)&(host_stats->data->awb_raw_buffer),
+		  sizeof(awb_public_raw_buffer_t));
+	mmgr_load(ae_ddr_addr,
+		  (void*)&(host_stats->data->ae_raw_buffer),
+		  sizeof(ae_public_raw_buffer_t));
+	mmgr_load(awb_fr_ddr_addr,
+			  (void*)&(host_stats->data->awb_fr_raw_buffer),
+		  sizeof(awb_fr_public_raw_buffer_t));
 
 
-		host_stats->stats_4a_config->awb_fr_grd_config.grid_width	= (unsigned char)awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.grid_width;
-		host_stats->stats_4a_config->awb_fr_grd_config.grid_height	= (unsigned char)awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.grid_height;
-		host_stats->stats_4a_config->awb_fr_grd_config.x_start		= (unsigned short)awb_fr_acc_cfg.bayer_config.BAYER_GRD_START_Info_t.x_start;
-		host_stats->stats_4a_config->awb_fr_grd_config.y_start		= (unsigned short)awb_fr_acc_cfg.bayer_config.BAYER_GRD_START_Info_t.y_start;
-		host_stats->stats_4a_config->awb_fr_grd_config.block_width	= (unsigned char)awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.block_width;
-		host_stats->stats_4a_config->awb_fr_grd_config.block_height = (unsigned char)awb_fr_acc_cfg.bayer_config.BAYER_GRD_CFG_Info_t.block_height;
+	/* load grid configuration */
 
-		host_stats->stats_4a_config->ae_grd_config.grid_height 		= ae_acc_grd_cfg.grid_height;
-		host_stats->stats_4a_config->ae_grd_config.grid_width  		= ae_acc_grd_cfg.grid_width;
-		host_stats->stats_4a_config->ae_grd_config.x_start  		= ae_acc_grd_cfg.x_start;
-		host_stats->stats_4a_config->ae_grd_config.y_start		= ae_acc_grd_cfg.y_start;
-		host_stats->stats_4a_config->ae_grd_config.x_end 		= ae_acc_grd_cfg.x_end;
-		host_stats->stats_4a_config->ae_grd_config.y_end		= ae_acc_grd_cfg.y_end;
-		host_stats->stats_4a_config->ae_grd_config.block_width		= ae_acc_grd_cfg.block_width;
-		host_stats->stats_4a_config->ae_grd_config.block_height		= ae_acc_grd_cfg.block_height;
+	mmgr_load(stats_config_addr,
+		  (void*)&(stats_config),
+		  sizeof(struct  ia_css_4a_private_config));
 
-		host_stats->stats_4a_config->awb_grd_config.grid_height 	= (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.grid_height;
-		host_stats->stats_4a_config->awb_grd_config.grid_width  	= (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.grid_width;
-		host_stats->stats_4a_config->awb_grd_config.grid_x_start	= awb_acc_grd_cfg.rgbs_grd_start.x_start;
-		host_stats->stats_4a_config->awb_grd_config.grid_y_start	= awb_acc_grd_cfg.rgbs_grd_start.y_start;
-		host_stats->stats_4a_config->awb_grd_config.grid_x_end		= awb_acc_grd_cfg.rgbs_grd_end.x_end;
-		host_stats->stats_4a_config->awb_grd_config.grid_y_end		= awb_acc_grd_cfg.rgbs_grd_end.y_end;
-		host_stats->stats_4a_config->awb_grd_config.grid_block_width  = (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.block_width;
-		host_stats->stats_4a_config->awb_grd_config.grid_block_height = (unsigned char)awb_acc_grd_cfg.rgbs_grd_cfg.block_height;
+	/* load bubble info */
+	mmgr_load(stats_bubble_info_addr,
+		  (void*)&(stats_bubble_info),
+		  sizeof(struct stats_3a_bubble_info_per_stripe ));
 
+	ia_css_3a_grid_config_ddr_decode(host_stats->stats_4a_config, &stats_config);
 
-		/* Debubble -  removes bubbles between sets of statistics for AWB, AWB_FR, AF caused by the ACC */
+	/* decode must be prior to debubbling! */
+	ia_css_3a_debubble(host_stats->data,
+			   &stats_bubble_info);
+
+	/* Debubble -  removes bubbles between sets of statistics for AWB, AWB_FR, AF caused by the ACC */
 		/**** AF ****/
 
 		if(host_stats->stats_4a_config->af_grd_config.grid_width) //Avoid division with 0
@@ -2095,28 +2060,61 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 			}
 		}
 
-
-		/**** AWB ****/
-		if(host_stats->stats_4a_config->awb_grd_config.grid_width) //Avoid division with 0
-		{
-			if(MAX_SIZE_OF_SET_AWB % host_stats->stats_4a_config->awb_grd_config.grid_width )
-			{
-				size_of_set = index = (MAX_SIZE_OF_SET_AWB / 	host_stats->stats_4a_config->awb_grd_config.grid_width)  * 	host_stats->stats_4a_config->awb_grd_config.grid_width; //This removes the remainder
-				num_sets = (	host_stats->stats_4a_config->awb_grd_config.grid_width * 	host_stats->stats_4a_config->awb_grd_config.grid_height) / size_of_set ;
-				for(i=0; i < num_sets;i++)
-				{
-					memcpy((void *)&host_stats->data->awb_raw_buffer.rgb_table[index],(void *)&host_stats->data->awb_raw_buffer.rgb_table[(i+1)*MAX_SIZE_OF_SET_AWB],sizeof(awb_public_set_item_t)*size_of_set);
-					index += size_of_set;
-
-				}
-			}
-		}
-
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_get_4a_statistics() leave: return_void\n");
 		
 
 }
+
+void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
+				const ia_css_ptr isp_stats)
+{
+	lace_stat_private_cfg_t lace_stat_cfg;
+	hrt_vaddress lace_stat_ddr_addr;
+	hrt_vaddress lace_stat_cfg_ddr_addr;
+	unsigned int hist_size;
+
+
+	lace_stat_ddr_addr =
+		(hrt_vaddress)&(((lace_stat_private_raw_buffer_t*)
+			isp_stats)->lace_hist_vec);
+	lace_stat_cfg_ddr_addr =
+		(hrt_vaddress)&((lace_stat_private_raw_buffer_t*)
+			isp_stats)->lace_stat_cfg;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_get_acc_lace_statistics() enter: "
+			"host_stats=%p, isp_stats=%p\n",
+			host_stats, isp_stats);
+
+	/* Load configuration */
+	mmgr_load(lace_stat_cfg_ddr_addr,
+			(void*)&(lace_stat_cfg),
+			sizeof(lace_stat_private_cfg_t));
+
+	/* Translate between private and public configuration */
+	acc_lace_stat_private_to_public(&lace_stat_cfg,
+					&host_stats->lace_stat_cfg.lace_stat);
+
+	hist_size = host_stats->lace_stat_cfg.lace_stat.grd_vrt_cfg.grid_h *
+			host_stats->lace_stat_cfg.lace_stat.y_grd_hor_cfg.grid_width *
+			ACC_LACE_STAT_NUM_OF_BINS_PER_BLOCK;
+	host_stats->lace_stat_hist_p = (unsigned char*)malloc(hist_size);
+	if(host_stats->lace_stat_hist_p == NULL)
+	{
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_get_acc_lace_statistics() malloc error\n");
+		return;
+	}
+
+	mmgr_load(lace_stat_ddr_addr,
+		  (void*)host_stats->lace_stat_hist_p,
+		  hist_size);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_get_acc_lace_statistics() leave: return_void\n");
+}
+
 #endif
 
 #if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
@@ -2466,8 +2464,8 @@ ia_css_stream_set_isp_config_on_pipe(
 
 	params = stream->isp_params_configs;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_isp_config() enter: "
-		"stream=%p, config=%p\n", stream, config);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_set_isp_config_on_pipe() enter: "
+		"stream=%p, config=%p, pipe=%p\n", stream, config, pipe);
 
 #if !defined(IS_ISP_2500_SYSTEM)
 	sh_css_set_nr_config(params, config->nr_config);
@@ -2486,6 +2484,9 @@ ia_css_stream_set_isp_config_on_pipe(
 
 	ia_css_set_configs(params, config);
 	
+	params->output_frame = config->output_frame;
+	params->isp_parameters_id = config->isp_config_id;
+
 	ia_css_set_param_exceptions(params);
 	/*
 	   if (config->_config)
@@ -2495,12 +2496,13 @@ ia_css_stream_set_isp_config_on_pipe(
 	(void)params;
 	sh_css_set_config_product_specific(config);
 #endif
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"sh_css_set_isp_config() leave: "
-		"return_void\n");
 
 	/* Now commit all changes to the SP */
 	sh_css_param_update_isp_params(stream, sh_css_sp_is_running(), pipe);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_stream_set_isp_config_on_pipe() leave: \n");
+
 	return IA_CSS_SUCCESS;
 }
 
@@ -2538,6 +2540,9 @@ ia_css_stream_get_isp_config(
 	sh_css_get_anr_thres(params, config->anr_thres);
 
 	ia_css_get_configs(params, config);
+
+	config->output_frame = params->output_frame;
+	config->isp_config_id = params->isp_parameters_id;
 #endif
 
 /*
@@ -2715,6 +2720,31 @@ ia_css_isp_3a_statistics_free(struct ia_css_isp_3a_statistics *me)
 #endif
 		sh_css_free(me);
 	}
+}
+
+
+void
+ia_css_lace_statistics_free(ia_css_ptr me)
+{
+	if (me != 0) {
+		mmgr_free(me);
+		me = mmgr_NULL;
+	}
+}
+
+ia_css_ptr ia_css_lace_statistics_allocate(void)
+{
+#if defined(IS_ISP_2500_SYSTEM)
+	ia_css_ptr me = 0;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_lace_statistics_allocate() enter\n");
+
+	me = mmgr_malloc(sizeof(lace_stat_private_raw_buffer_t));
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_lace_statistics_allocate() leave: return=%p\n",NULL);
+	return me;
+#endif
+	return 0;
 }
 
 struct ia_css_isp_dvs_statistics *
@@ -3134,14 +3164,14 @@ void sh_css_params_reconfigure_gdc_lut(void)
 }
 #endif
 
-static void free_map_callback(
+static void free_param_set_callback(
 	hrt_vaddress ptr)
 {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_map_callback() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_param_set_callback() enter:\n");
 
-	free_sh_css_ddr_address_map(ptr);
+	free_ia_css_isp_parameter_set_info(ptr);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_map_callback() leave:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_param_set_callback() leave:\n");
 }
 
 static void free_buffer_callback(
@@ -3159,7 +3189,7 @@ sh_css_param_clear_param_sets(void)
 {
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_param_clear_param_sets() enter:\n");
 
-	ia_css_refcount_clear(IA_CSS_REFCOUNT_PARAM_SET_POOL, &free_map_callback);
+	ia_css_refcount_clear(IA_CSS_REFCOUNT_PARAM_SET_POOL, &free_param_set_callback);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_param_clear_param_sets() leave:\n");
 }
@@ -3239,7 +3269,7 @@ sh_css_params_uninit(void)
 		}
 
 	/* go through the pools to clear references */
-	ia_css_refcount_clear(IA_CSS_REFCOUNT_PARAM_SET_POOL, &free_map_callback);
+	ia_css_refcount_clear(IA_CSS_REFCOUNT_PARAM_SET_POOL, &free_param_set_callback);
 	ia_css_refcount_clear(IA_CSS_REFCOUNT_PARAM_BUFFER, &free_buffer_callback);
 	ia_css_refcount_clear(-1, &free_buffer_callback);
 
@@ -3494,49 +3524,35 @@ sh_css_update_acc_cluster_params_to_ddr(hrt_vaddress ddr_ptr)
 void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 {
 	hrt_vaddress cpy;
-	ia_css_queue_t *q;
-	//unsigned int thread_id;
 	enum sh_css_queue_id queue_id;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_param_buffers() enter\n");
-#if 0
-	/* Get queue instance */
-	ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
-	ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
-#else
-	/* use hard-coded value for backward compatibility, will enable above code later */
-	queue_id = IA_CSS_PARAMETER_SET_QUEUE_ID;
-#endif
-	q = sh_css_get_queue(sh_css_sp2host_buffer_queue,
-			     queue_id, -1);
-	if ( NULL == q ) {
-		/* Error as the queue is not initialized */
+
+	if (!sh_css_sp_is_running()) {
+
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_dequeue_param_buffers() leave: err%d\n",
-			IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
-		return;
+			"ia_css_dequeue_param_buffers() invalid args leave \n");
+		/* SP is not running. The queues are not valid */
+		return ;
 	}
 
+#if 0
+	»	/* Get queue instance */
+	»	ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
+	» 	ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
+#else
+		/* use hard-coded value for backward compatibility, will enable above code later */
+		queue_id = IA_CSS_PARAMETER_SET_QUEUE_ID;
+#endif
 	/* clean-up old copy */
-	while (0 == ia_css_queue_dequeue(q, (uint32_t *)&cpy)) {
+	while (IA_CSS_SUCCESS == ia_css_bufq_dequeue_buffer(queue_id, (uint32_t *)&cpy)){
 		/* TMP: keep track of dequeued param set count
 		 */
-		ia_css_queue_t *eventq;
 		g_param_buffer_dequeue_count++;
-		eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
-					-1, -1);
-
-		/*no need to check validity of eventq as queue is
-		 * initialized by the time we reach here.*/
-		/*
-		 * Tell the SP which queues are not full,
-		 * by sending the software event.
-		 */
-		ia_css_eventq_send(eventq,
-				SP_SW_EVENT_ID_2,
-				0,
-				queue_id,
-				0);
+		ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_2,
+			0,
+			queue_id,
+			0);
 
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			"ia_css_dequeue_param_buffers: "
@@ -3546,7 +3562,7 @@ void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 				"ia_css_dequeue_param_buffers: "
 				"release ref on param set %x\n",
 				cpy);
-			free_sh_css_ddr_address_map(cpy);
+			free_ia_css_isp_parameter_set_info(cpy);
 	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_param_buffers() leave\n");
@@ -3571,6 +3587,11 @@ process_kernel_parameters(unsigned int pipe_id,
 	if (params->config_changed[IA_CSS_S3A_ID]) {
 		ia_css_s3a_configure(raw_bit_depth);
 	}
+	/* Copy stage uds parameters to config, since they can differ per stage.
+	 */
+	params->crop_config.crop_pos = params->uds[stage->stage_num].crop_pos;
+	params->uds_config.crop_pos  = params->uds[stage->stage_num].crop_pos;
+	params->uds_config.uds       = params->uds[stage->stage_num].uds;
 
 	/* Call parameter process functions for all kernels */
 	/* Skip SC, since that is called on a temp sc table */
@@ -3606,8 +3627,8 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		assert(isp_pipe_version == ia_css_pipe_get_isp_pipe_version(stream->pipes[i]));
 	}
 
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_param_update_isp_params() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_param_update_isp_params() enter: "
+		"pipe=%p, isp_parameters_id=%d\n", pipe_in, params->isp_parameters_id);
 
 #if !defined(IS_ISP_2500_SYSTEM)
 #else /* defined(IS_ISP_2500_SYSTEM) */
@@ -3627,34 +3648,28 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		struct ia_css_pipe *pipe;
 		struct sh_css_ddr_address_map *cur_map;
 		struct sh_css_ddr_address_map_size *cur_map_size;
-		struct sh_css_ddr_address_map tmp_map;
-		struct sh_css_ddr_address_map_size tmp_map_size;
+		struct ia_css_isp_parameter_set_info isp_params_info;
 		struct ia_css_pipeline *pipeline;
 		struct ia_css_pipeline_stage *stage;
 		unsigned int thread_id, pipe_num;
+
 		enum sh_css_queue_id queue_id;
-		ia_css_queue_t *q;
 
 		(void)stage;
 		pipe = stream->pipes[i];
 		pipeline = ia_css_pipe_get_pipeline(pipe);
 		pipe_num = ia_css_pipe_get_pipe_num(pipe);
 		ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
-		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
 
-		q = sh_css_get_queue(sh_css_host2sp_buffer_queue,
-			     queue_id, thread_id);
-		if ( NULL == q ) {
-			/* Error as the queue is not initialized */
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
+		if (!sh_css_sp_is_running()) {
+			/* SP is not running. The queues are not valid */
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"sh_css_param_update_isp_params: "
-				"error=%d\n",
-				IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+				"sh_css_param_update_isp_params() leaving:"
+				"queue unavailable\n");
 			err = IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 			break;
 		}
-
-
 		cur_map = &params->pipe_ddr_ptrs[pipeline->pipe_id];
 		cur_map_size = &params->pipe_ddr_ptrs_size[pipeline->pipe_id];
 
@@ -3703,7 +3718,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 						cur_map_size);
 			if (err != IA_CSS_SUCCESS)
 				break;
-			for (mem = 0; mem < IA_CSS_NUM_ISP_MEMORIES; mem++) {
+			for (mem = 0; mem < IA_CSS_NUM_MEMORIES; mem++) {
 				params->isp_mem_params_changed
 					[pipeline->pipe_id][stage->stage_num][mem] = false;
 			}
@@ -3742,12 +3757,19 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		/* last make referenced copy */
 		err = ref_sh_css_ddr_address_map(
 					cur_map,
-					&tmp_map);
+					&isp_params_info.mem_map);
 		if (err != IA_CSS_SUCCESS)
 			break;
-		tmp_map_size = *cur_map_size;
+
+		/* Update Parameters ID */
+		isp_params_info.isp_parameters_id = params->isp_parameters_id;
+
+		/* Update output frame pointer */
+		isp_params_info.output_frame_ptr =
+                        (params->output_frame) ? params->output_frame->data : mmgr_NULL;
+
 		/* now write the copy to ddr */
-		err = write_sh_css_address_map_to_ddr(&tmp_map, &cpy);
+		err = write_ia_css_isp_parameter_set_info_to_ddr(&isp_params_info, &cpy);
 		if (err != IA_CSS_SUCCESS)
 			break;
 
@@ -3757,31 +3779,27 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 			"queue param set %x to %d\n",
 			cpy, thread_id);
 
-		    if (0 != ia_css_queue_enqueue(q, (uint32_t)cpy)) {
-				free_sh_css_ddr_address_map(cpy);
-		    }
-		    else {
+			if (IA_CSS_SUCCESS != ia_css_bufq_enqueue_buffer(thread_id,queue_id,(uint32_t)cpy)) {
+				free_ia_css_isp_parameter_set_info(cpy);
+			}
+			else {
 			/* TMP: check discrepancy between nr of enqueued
 			 * parameter sets and dequeued sets
 			 */
-			ia_css_queue_t *eventq;
 			g_param_buffer_enqueue_count++;
 			assert(g_param_buffer_enqueue_count < g_param_buffer_dequeue_count+50);
+
 			/*
 			 * Tell the SP which queues are not empty,
 			 * by sending the software event.
 			 */
-			eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
-					-1, -1);
-			if (NULL == eventq) {
-				/* Error as the queue is not initialized */
+			if (!sh_css_sp_is_running()) {
 				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-					"sh_css_param_update_isp_params() leaving:"
-					"eventq unavailable\n");
+				"sh_css_param_update_isp_params() error leave:\n");
+			/* SP is not running. The queues are not valid */
 				return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 			}
-			ia_css_eventq_send(eventq,
-					SP_SW_EVENT_ID_1,
+			 ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_1,
 					(uint8_t)thread_id,
 					(uint8_t)queue_id,
 					0);
@@ -3851,7 +3869,7 @@ sh_css_params_write_to_ddr_internal(
 
 	stage_num = stage->stage_num;
 
-	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
+	for (mem = 0; mem < N_IA_CSS_MEMORIES; mem++) {
 		const struct ia_css_isp_data *isp_data =
 			ia_css_isp_param_get_isp_mem_init(&binary->info->sp.mem_initializers, IA_CSS_PARAM_CLASS_PARAM, mem);
 		size_t size = isp_data->size;
@@ -3994,7 +4012,7 @@ sh_css_params_write_to_ddr_internal(
 				dvs_offset.width  = (PIX_SHIFT_FILTER_RUN_IN_X + binary->dvs_envelope.width) / 2;
 				dvs_offset.height = (PIX_SHIFT_FILTER_RUN_IN_Y + binary->dvs_envelope.height) / 2;
 
-				params->dvs_6axis_config = generate_dvs_6axis_table(&binary->out_frame_info.res,
+				params->dvs_6axis_config = generate_dvs_6axis_table(&binary->out_frame_info[0].res,
 										    &dvs_offset);
 				if(params->dvs_6axis_config == NULL)
 					return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
@@ -4129,7 +4147,7 @@ sh_css_params_write_to_ddr_internal(
 	}
 
 	/* After special cases like SC, FPN since they may change parameters */
-	for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
+	for (mem = 0; mem < N_IA_CSS_MEMORIES; mem++) {
 		const struct ia_css_isp_data *isp_data =
 			ia_css_isp_param_get_isp_mem_init(&binary->info->sp.mem_initializers, IA_CSS_PARAM_CLASS_PARAM, mem);
 		size_t size = isp_data->size;
@@ -4434,8 +4452,8 @@ static enum ia_css_err ref_sh_css_ddr_address_map(
 	return err;
 }
 
-static enum ia_css_err write_sh_css_address_map_to_ddr(
-	struct sh_css_ddr_address_map *me,
+static enum ia_css_err write_ia_css_isp_parameter_set_info_to_ddr(
+	struct ia_css_isp_parameter_set_info *me,
 	hrt_vaddress *out)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
@@ -4444,34 +4462,34 @@ static enum ia_css_err write_sh_css_address_map_to_ddr(
 	assert(me != NULL);
 	assert(out != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "write_sh_css_address_map_to_ddr() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "write_ia_css_isp_parameter_set_info_to_ddr() enter:\n");
 
 	*out = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_SET_POOL, mmgr_malloc(
-				sizeof(struct sh_css_ddr_address_map)));
+				sizeof(struct ia_css_isp_parameter_set_info)));
 	succ = (*out != mmgr_NULL);
 	if (succ)
 		mmgr_store(*out,
-			me, sizeof(struct sh_css_ddr_address_map));
+			me, sizeof(struct ia_css_isp_parameter_set_info));
 	else
 		err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "write_sh_css_address_map_to_ddr() leave:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "write_ia_css_isp_parameter_set_info_to_ddr() leave:\n");
 
 	return err;
 }
 
 static enum ia_css_err
-free_sh_css_ddr_address_map(
+free_ia_css_isp_parameter_set_info(
 	hrt_vaddress ptr)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
-	struct sh_css_ddr_address_map map;
+	struct ia_css_isp_parameter_set_info isp_params_info;
 	unsigned int i;
-	hrt_vaddress *addrs = (hrt_vaddress *)&map;
+	hrt_vaddress *addrs = (hrt_vaddress *)&isp_params_info.mem_map;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_sh_css_ddr_address_map() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_ia_css_isp_parameter_set_info() enter:\n");
 
-	mmgr_load(ptr, &map, sizeof(struct sh_css_ddr_address_map));
+	mmgr_load(ptr, &isp_params_info.mem_map, sizeof(struct sh_css_ddr_address_map));
 	/* copy map using size info */
 	for (i = 0; i < (sizeof(struct sh_css_ddr_address_map_size)/
 						sizeof(size_t)); i++) {
@@ -4481,7 +4499,7 @@ free_sh_css_ddr_address_map(
 	}
 	ia_css_refcount_decrement(IA_CSS_REFCOUNT_PARAM_SET_POOL, ptr);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_sh_css_ddr_address_map() leave:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_ia_css_isp_parameter_set_info() leave:\n");
 
 	return err;
 }
@@ -4502,7 +4520,7 @@ sh_css_invalidate_params(struct ia_css_stream *stream)
 	params->isp_params_changed = true;
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
 		for (j = 0; j < SH_CSS_MAX_STAGES; j++) {
-			for (mem = 0; mem < N_IA_CSS_ISP_MEMORIES; mem++) {
+			for (mem = 0; mem < N_IA_CSS_MEMORIES; mem++) {
 				params->isp_mem_params_changed[i][j][mem] = true;
 			}
 		}

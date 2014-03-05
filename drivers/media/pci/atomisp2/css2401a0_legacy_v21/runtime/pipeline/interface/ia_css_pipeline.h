@@ -23,9 +23,11 @@
 #define __IA_CSS_PIPELINE_H__
 
 #include "sh_css_internal.h"
+#include "ia_css_pipe_public.h"
 #include "ia_css_pipeline_common.h"
 
 #define IA_CSS_PIPELINE_NUM_MAX		(20)
+
 
 /* Pipeline stage to be executed on SP/ISP */
 struct ia_css_pipeline_stage {
@@ -38,7 +40,7 @@ struct ia_css_pipeline_stage {
 	unsigned max_input_width;	/* For SP raw copy */
 	struct sh_css_binary_args args;
 	int mode;
-	bool out_frame_allocated;
+	bool out_frame_allocated[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	bool vf_frame_allocated;
 	struct ia_css_pipeline_stage *next;
 };
@@ -52,13 +54,30 @@ struct ia_css_pipeline {
 	struct ia_css_pipeline_stage *current_stage;
 	unsigned num_stages;
 	struct ia_css_frame in_frame;
-	struct ia_css_frame out_frame;
-	struct ia_css_frame vf_frame;
+	struct ia_css_frame out_frame[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
+	struct ia_css_frame vf_frame[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	enum ia_css_frame_delay dvs_frame_delay;
 	unsigned inout_port_config;
 	int num_execs;
 	bool acquire_isp_each_stage;
 };
+
+#define DEFAULT_PIPELINE \
+{ \
+	IA_CSS_PIPE_ID_PREVIEW, /* pipe_id */ \
+	0,			/* pipe_num */ \
+	false,			/* stop_requested */ \
+	NULL,                   /* stages */ \
+	NULL,                   /* current_stage */ \
+	0,                      /* num_stages */ \
+	DEFAULT_FRAME,          /* in_frame */ \
+	{DEFAULT_FRAME},          /* out_frame */ \
+	{DEFAULT_FRAME},          /* vf_frame */ \
+	IA_CSS_FRAME_DELAY_1,   /* frame_delay */ \
+	0,                      /* inout_port_config */ \
+	-1,                     /* num_execs */ \
+	true					/* acquire_isp_each_stage */\
+}
 
 /* Stage descriptor used to create a new stage in the pipeline */
 struct ia_css_pipeline_stage_desc {
@@ -69,7 +88,7 @@ struct ia_css_pipeline_stage_desc {
 	unsigned int mode;
 	struct ia_css_frame *cc_frame;
 	struct ia_css_frame *in_frame;
-	struct ia_css_frame *out_frame;
+	struct ia_css_frame *out_frame[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_frame *vf_frame;
 };
 

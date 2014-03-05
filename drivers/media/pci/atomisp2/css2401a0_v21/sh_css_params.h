@@ -42,6 +42,7 @@ struct ia_css_isp_parameters;
 #endif
 
 #include "ob/ob_1.0/ia_css_ob_param.h"
+#include "crop/crop_1.0/ia_css_crop_types.h"
 #include "uds/uds_1.0/ia_css_uds_param.h"
 
 /* Isp configurations per stream */
@@ -103,11 +104,12 @@ struct ia_css_isp_parameters {
 	struct ia_css_rgb_gamma_table     b_gamma_table;
 	struct ia_css_anr_thres     anr_thres;
 	struct ia_css_xnr_config    xnr_config;
+	struct ia_css_uds_config    uds_config;
+	struct ia_css_crop_config   crop_config;
 
 	bool isp_params_changed;
 	bool isp_mem_params_changed
-		[IA_CSS_PIPE_ID_NUM][SH_CSS_MAX_STAGES]
-		[IA_CSS_NUM_ISP_MEMORIES];
+		[IA_CSS_PIPE_ID_NUM][SH_CSS_MAX_STAGES][IA_CSS_NUM_MEMORIES];
 	bool dz_config_changed;
 	bool motion_config_changed;
 	bool dis_coef_table_changed;
@@ -129,6 +131,8 @@ struct ia_css_isp_parameters {
 	struct sh_css_ddr_address_map_size pipe_ddr_ptrs_size[IA_CSS_PIPE_ID_NUM];
 	struct sh_css_ddr_address_map ddr_ptrs;
 	struct sh_css_ddr_address_map_size ddr_ptrs_size;
+	struct ia_css_frame *output_frame; /**< Output frame the config is to be applied to (optional) */
+	uint32_t isp_parameters_id; /**< Unique ID to track which config was actually applied to a particular frame */
 };
 
 enum ia_css_err

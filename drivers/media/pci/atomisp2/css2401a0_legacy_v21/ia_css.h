@@ -1,5 +1,5 @@
-/* Release Version: irci_master_20140223_0200 */
-/* Release Version: irci_master_20140223_0200 */
+/* Release Version: irci_master_20140305_1808 */
+/* Release Version: irci_master_20140305_1808 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -49,6 +49,7 @@
 #include "ia_css_stream_format.h"
 #include "ia_css_stream_public.h"
 #include "ia_css_tpg.h"
+#include "ia_css_lace_stat.h"
 
 /* a common size for the version arrays */
 #define MAX_VERSION_SIZE 	500

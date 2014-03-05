@@ -38,24 +38,6 @@
 #include "ia_css_queue.h"
 #include "ia_css_irq.h"
 
-/*********************************************************/
-/* Global Queue objects used by CSS                      */
-/*********************************************************/
-struct sh_css_queues {
-	/* Host2SP buffer queue */
-	ia_css_queue_t host2sp_buffer_queue_handles
-		[SH_CSS_MAX_SP_THREADS][SH_CSS_MAX_NUM_QUEUES];
-	/* SP2Host buffer queue */
-	ia_css_queue_t sp2host_buffer_queue_handles
-		[SH_CSS_MAX_NUM_QUEUES];
-
-	/* Host2SP event queue */
-	ia_css_queue_t host2sp_event_queue_handle;
-	/* SP2Host event queue */
-	ia_css_queue_t sp2host_event_queue_handle;
-	ia_css_queue_t host2sp_tag_cmd_queue_handle;
-};
-
 struct sh_css {
 	struct ia_css_pipe            *active_pipes[IA_CSS_PIPELINE_NUM_MAX];
 	/* All of the pipes created at any point of time. At this moment there can
@@ -71,7 +53,7 @@ struct sh_css {
 	bool                           check_system_idle;
 	bool                           stop_copy_preview;
 	unsigned int                   num_cont_raw_frames;
-#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
+#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	unsigned int                   num_mipi_frames;
 	struct ia_css_frame           *mipi_frames[NUM_MIPI_FRAMES];
 #endif
@@ -84,7 +66,6 @@ struct sh_css {
 	bool                           contiguous;
 	enum ia_css_irq_type           irq_type;
 	unsigned int                   pipe_counter;
-	struct sh_css_queues	       queues;
 };
 
 extern struct sh_css my_css;

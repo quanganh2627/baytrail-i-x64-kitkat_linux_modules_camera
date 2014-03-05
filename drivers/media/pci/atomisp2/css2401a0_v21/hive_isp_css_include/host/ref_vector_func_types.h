@@ -39,11 +39,16 @@
  * Struct type specification
  */
 
+typedef unsigned short tscalar1w_3bit;
+typedef unsigned short tvector_5bit;
+typedef unsigned short tvector_4bit;
+typedef unsigned short tvector1w_unsigned;
+typedef unsigned int   tvector2w_unsigned;
 
 typedef struct {
   tvector1w     v0  ;
   tvector1w     v1 ;
-} tvector1w_1x2;
+} s_1w_2x1_matrix;
 
 typedef struct {
   tvector1w     v00  ;
@@ -63,6 +68,14 @@ typedef struct {
   tvector1w     v20  ; tvector1w     v21 ; tvector1w     v22  ;
   tvector1w     v30  ; tvector1w     v31 ; tvector1w     v32  ;
 } s_1w_4x3_matrix;
+
+typedef struct {
+  tvector1w     v00 ;
+  tvector1w     v01 ;
+  tvector1w     v02 ;
+  tvector1w     v03 ;
+  tvector1w     v04 ;
+} s_1w_1x5_matrix;
 
 typedef struct {
   tvector1w     v00  ; tvector1w     v01 ; tvector1w     v02  ; tvector1w     v03 ; tvector1w     v04  ;

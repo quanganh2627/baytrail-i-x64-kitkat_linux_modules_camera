@@ -69,31 +69,29 @@ enum ia_css_err ia_css_init(
 void
 ia_css_uninit(void);
 
-/** @brief Suspend CSS API for power down (NOT IMPLEMENTED YET).
+/** @brief Suspend CSS API for power down
+ * @return	success or faulure code
  *
- * IMPORTANT NOTE: This function is a place-holder for a future implementation
- * and it is not used at the moment. Below is the information what this
- * function should do when implemented.
+ * suspend shuts down the system by:
+ *  unloading all the streams
+ *  stopping SP
+ *  performing uninit
  *
- * This function prepares the CSS API for a power down of the CSS hardware.
- * This will make sure the hardware is idle. After this function is called,
- * always call ia_css_resume before calling any other CSS functions.
- * This assumes that all buffers allocated in DDR will remain alive during
- * power down. If this is not the case, use ia_css_unit() followed by
- * ia_css_init() at power up.
+ *  Currently stream memory is deallocated because of rmmgr issues.
+ *  Need to come up with a bypass that will leave the streams intact.
  */
-void
+enum ia_css_err
 ia_css_suspend(void);
 
 /** @brief Resume CSS API from power down
- *
- * @return	None
+ * @return	success or failure code
  *
  * After a power cycle, this function will bring the CSS API back into
- * a state where it can be started. This will re-initialize the hardware.
+ * a state where it can be started.
+ * This will re-initialize the hardware and all the streams.
  * Call this function only after ia_css_suspend() has been called.
  */
-void
+enum ia_css_err
 ia_css_resume(void);
 
 /** @brief Test whether the ISP has started.
@@ -123,6 +121,19 @@ ia_css_sp_has_initialized(void);
 bool
 ia_css_sp_has_terminated(void);
 
+#if defined(IS_ISP_2500_SYSTEM)
+/** @brief start SP1 hardware
+ *
+ * @return			IA_CSS_SUCCESS or error code upon error.
+ *
+ * It will boot the SP hardware and start multi-threading infrastructure.
+ * All threads will be started and blocked by semaphore. This function should
+ * be called before any ia_css_stream_start().
+ */
+void
+ia_css_start_sp1(void);
+#endif
+
 /** @brief start SP hardware
  *
  * @return			IA_CSS_SUCCESS or error code upon error.
@@ -134,6 +145,16 @@ ia_css_sp_has_terminated(void);
 enum ia_css_err
 ia_css_start_sp(void);
 
+#if defined(IS_ISP_2500_SYSTEM)
+/** @brief stop SP1 hardware
+ *
+ * @return			IA_CSS_SUCCESS or error code upon error.
+ *
+ * This function will shut down SP1.
+ */
+enum ia_css_err
+ia_css_stop_sp1(void);
+#endif
 
 /** @brief stop SP hardware
  *

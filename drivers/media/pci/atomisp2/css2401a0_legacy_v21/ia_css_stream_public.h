@@ -165,8 +165,12 @@ enum ia_css_err
 ia_css_stream_get_info(const struct ia_css_stream *stream,
 		       struct ia_css_stream_info *stream_info);
 
-/** @brief NOT IMPLEMENTED (remove?)
+/** @brief load (rebuild) a stream that was unloaded.
+ * @param[in]	stream The stream
+ * @return		IA_CSS_SUCCESS or the error code
  *
+ * Rebuild a stream, including allocating structs, setting configuration and
+ * building the required pipes.
  */
 enum ia_css_err
 ia_css_stream_load(struct ia_css_stream *stream);
@@ -203,8 +207,11 @@ ia_css_stream_stop(struct ia_css_stream *stream);
 bool
 ia_css_stream_has_stopped(struct ia_css_stream *stream);
 
-/** @brief NOT IMPLEMENTED (remove?)
+/** @brief	destroy a stream according to the stream seed previosly saved in the seed array.
+ * @param[in]	stream The stream.
+ * @return	IA_CSS_SUCCESS (no other errors are generated now)
  *
+ * Destroy the stream and all the pipes related to it.
  */
 enum ia_css_err
 ia_css_stream_unload(struct ia_css_stream *stream);

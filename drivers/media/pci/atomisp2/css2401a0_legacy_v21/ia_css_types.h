@@ -1,5 +1,5 @@
-/* Release Version: irci_master_20140223_0200 */
-/* Release Version: irci_master_20140223_0200 */
+/* Release Version: irci_master_20140305_1808 */
+/* Release Version: irci_master_20140305_1808 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -33,16 +33,8 @@
  * directly but still need to forward parameters for it.
  */
 
-/* This code is also used by Silicon Hive in a simulation environment
- * Therefore, the following macro is used to differentiate when this
- * code is being included from within the Linux kernel source
- */
+#include <type_support.h>
 
-#ifdef __KERNEL__
-#include <linux/kernel.h>
-#else
-#include <stdint.h>
-#endif
 #if defined(IS_ISP_2500_SYSTEM)
 #if defined(__HOST__)
 #include "components_types.host.h"                /* Skylake kernel settings structs */
@@ -164,6 +156,18 @@ struct ia_css_dvs_grid_info {
 	uint32_t num_ver_coefs;	/**< Number of vertical coefficients. */
 };
 
+#define DEFAULT_DVS_GRID_INFO \
+{ \
+	0,				/* enable */ \
+	0,				/* width */ \
+	0,				/* aligned_width */ \
+	0,				/* height */ \
+	0,				/* aligned_height */ \
+	0,				/* bqs_per_grid_cell */ \
+	0,				/* num_hor_coefs */ \
+	0,				/* num_ver_coefs */ \
+}
+
 /** structure that describes the 3A and DIS grids */
 struct ia_css_grid_info {
 	/** \name ISP input size
@@ -179,6 +183,15 @@ struct ia_css_grid_info {
 
 	enum ia_css_vamem_type vamem_type;
 };
+
+#define DEFAULT_GRID_INFO \
+{ \
+	0,				/* isp_in_width */ \
+	0,				/* isp_in_height */ \
+	DEFAULT_3A_GRID_INFO,		/* s3a_grid */ \
+	DEFAULT_DVS_GRID_INFO,		/* dvs_grid */ \
+	IA_CSS_VAMEM_TYPE_1		/* vamem_type */ \
+}
 
 /** Morphing table, used for geometric distortion and chromatic abberration
  *  correction (GDCAC, also called GDC).
@@ -237,6 +250,14 @@ struct ia_css_capture_config {
 	uint32_t enable_xnr;	       /**< Enable/disable XNR */
 	uint32_t enable_raw_output;
 };
+
+#define DEFAULT_CAPTURE_CONFIG \
+{ \
+	IA_CSS_CAPTURE_MODE_PRIMARY,	/* mode (capture) */ \
+	false,				/* enable_xnr */ \
+	false				/* enable_raw_output */ \
+}
+
 
 /** ISP filter configuration. This is a collection of configurations
  *  for each of the ISP filters (modules).
@@ -329,6 +350,7 @@ struct ia_css_isp_config {
 	struct ia_css_2500_shd_kernel_config     *shd_2500_config;       /**< Skylake: shading config */
 	struct ia_css_2500_dm_kernel_config      *dm_2500_config;        /**< Skylake: demosaic config */
 	struct ia_css_2500_rgbpp_kernel_config   *rgbpp_2500_config;     /**< Skylake: RGBPP config */
+	struct ia_css_2500_lace_stat_kernel_config *lace_stat_2500_config; /**< Skylake: LACE STAT config */
 	struct ia_css_2500_yuvp1_kernel_config   *yuvp1_2500_config;     /**< Skylake: yuvp1 config */
 	struct ia_css_2500_yuvp2_kernel_config   *yuvp2_2500_config;     /**< Skylake: yuvp2 config */
 	struct ia_css_2500_tnr_kernel_config     *tnr_2500_config;       /**< Skylake: TNR config */
@@ -341,6 +363,9 @@ struct ia_css_isp_config {
 	struct ia_css_2500_bds_kernel_config     *bds_2500_config;       /**< Skylake: bayer downscaler config */
 	struct ia_css_2500_dvs_kernel_config     *dvs_2500_config;       /**< Skylake: digital video stabilization config */
 	struct ia_css_2500_res_mgr_config        *res_mgr_2500_config;
+
+	struct ia_css_frame	*output_frame;	/**< Output frame the config is to be applied to (optional) */
+	uint32_t 			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
 };
 
 /** DVS 1.0 Coefficients.

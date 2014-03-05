@@ -23,6 +23,8 @@
 #include "math_support.h"
 #include "virtual_isys.h"
 #include "isp.h"
+#include "sh_css_defs.h"
+
 
 /*************************************************
  *
@@ -664,7 +666,20 @@ static bool calculate_ibuf_ctrl_cfg(
 	input_system_cfg_t		*isys_cfg,
 	ibuf_ctrl_cfg_t			*cfg)
 {
+	const int32_t bits_per_byte = 8;
+	int32_t bits_per_pixel;
+	int32_t bytes_per_pixel;
+	int32_t left_padding;
+
 	(void)input_port;
+
+	bits_per_pixel = isys_cfg->input_port_resolution.bits_per_pixel;
+	bytes_per_pixel = ceil_div(bits_per_pixel, bits_per_byte);
+
+	left_padding = CEIL_MUL(isys_cfg->output_port_attr.left_padding, ISP_VEC_NELEMS)
+			* bytes_per_pixel;
+
+	cfg->online	= isys_cfg->online;
 
 	cfg->dma_cfg.channel	= channel->dma_channel;
 	cfg->dma_cfg.cmd	= _DMA_V2_MOVE_A2B_NO_SYNC_CHK_COMMAND;
@@ -685,7 +700,18 @@ static bool calculate_ibuf_ctrl_cfg(
 	 * TODO: move "dest_buf_cfg" to the input system output
 	 * port configuration.
 	 */
-	cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
+
+	 /* input_buf addr only available in sched mode;
+	this buffer is allocated in isp, crun mode addr
+	can be passed by after ISP allocation */
+	if (cfg->online) {
+		cfg->dest_buf_cfg.start_addr	= ISP_INPUT_BUF_START_ADDR + left_padding;
+		cfg->dest_buf_cfg.stride	= bytes_per_pixel
+			* isys_cfg->output_port_attr.max_isp_input_width;
+		cfg->dest_buf_cfg.lines		= LINES_OF_ISP_INPUT_BUF;
+	} else {
+		cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
+	}
 
 	/*
 	 * zhengjie.lu@intel.com:
@@ -719,16 +745,15 @@ static bool calculate_isys2401_dma_cfg(
 	isys2401_dma_cfg_t		*cfg)
 {
 	(void)input_port;
-	(void)isys_cfg;
 
 	cfg->channel	= channel->dma_channel;
 
-	/**
-	 * zhengjie.lu@intel.com:
-	 * The connection is hard coded to "ibuf => ddr". It is not
-	 * applicable for the offline case.
-	 */
-	cfg->connection = isys2401_dma_ibuf_to_ddr_connection;
+	/* only online/sensor mode goto vmem
+	   offline/buffered_sensor, tpg and prbs will go to ddr */
+	if (isys_cfg->online)
+		cfg->connection = isys2401_dma_ibuf_to_vmem_connection;
+	else
+		cfg->connection = isys2401_dma_ibuf_to_ddr_connection;
 
 	cfg->extension	= isys2401_dma_zero_extension;
 	cfg->height	= 1;
@@ -788,7 +813,8 @@ static bool calculate_isys2401_dma_port_cfg(
 	cfg->stride	= CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
 	cfg->elements	= pixels_per_word;
 	cfg->cropping	= 0;
-	cfg->width	= words_per_line;
+	cfg->width	= CEIL_MUL(words_per_line,
+				(memory_alignment_in_bytes / bytes_per_word));
 	return true;
 }
 

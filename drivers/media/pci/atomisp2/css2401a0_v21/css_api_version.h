@@ -21,8 +21,8 @@
 
 // CSS API version file
 
-#ifndef CSS_API_VERSION_H
-#define CSS_API_VERSION_H
+#ifndef __CSS_API_VERSION_H
+#define __CSS_API_VERSION_H
 
 #define CSS_API_VERSION_STRING	"2.0.1.0"
 
@@ -33,4 +33,4 @@ V2.0.1.0, initial version:
 */
 
 
-#endif
+#endif __CSS_API_VERSION_H

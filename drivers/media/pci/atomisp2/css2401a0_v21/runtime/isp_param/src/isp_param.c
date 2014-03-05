@@ -95,7 +95,7 @@ ia_css_init_memory_interface(
 	unsigned pclass, mem;
 	for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
 		memset(isp_mem_if->params[pclass], 0, sizeof(isp_mem_if->params[pclass]));
-		for (mem = 0; mem < IA_CSS_NUM_ISP_MEMORIES; mem++) {
+		for (mem = 0; mem < IA_CSS_NUM_MEMORIES; mem++) {
 			if (!mem_params->params[pclass][mem].address) continue;
 			isp_mem_if->params[pclass][mem].size = mem_params->params[pclass][mem].size;
 			if (pclass != IA_CSS_PARAM_CLASS_PARAM)
@@ -114,7 +114,7 @@ ia_css_isp_param_allocate_isp_parameters(
 	unsigned mem, pclass;
 
 	pclass = IA_CSS_PARAM_CLASS_PARAM;
-	for (mem = 0; mem < IA_CSS_NUM_ISP_MEMORIES; mem++) {
+	for (mem = 0; mem < IA_CSS_NUM_MEMORIES; mem++) {
 		for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
 			size_t size = 0;
 			if (mem_initializers)
@@ -145,7 +145,7 @@ ia_css_isp_param_destroy_isp_parameters(
 {
 	unsigned mem, pclass;
 
-	for (mem = 0; mem < IA_CSS_NUM_ISP_MEMORIES; mem++) {
+	for (mem = 0; mem < IA_CSS_NUM_MEMORIES; mem++) {
 		for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
 			if (mem_params->params[pclass][mem].address)
 				sh_css_free(mem_params->params[pclass][mem].address);

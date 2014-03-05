@@ -27,6 +27,9 @@
 #define IS_ODD(a) ((a) & 0x1)
 #define IS_EVEN(a) (!IS_ODD(a))
 
+/* force a value to a lower even value */
+#define EVEN_FLOOR(x)	(x & ~1)
+
 /* A => B */
 #define IMPLIES(a, b) (!(a) || (b))
 

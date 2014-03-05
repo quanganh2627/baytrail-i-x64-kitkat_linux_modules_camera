@@ -52,10 +52,11 @@
 #define DVS_6AXIS_COORDS_ELEMS CEIL_MUL(sizeof(gdc_warp_param_mem_t) \
 					, HIVE_ISP_DDR_WORD_BYTES)
 
+/* currently we only support two output with the same resolution, output 0 is th default one. */
 #define DVS_6AXIS_BYTES(binary) \
 	(DVS_6AXIS_COORDS_ELEMS \
-     *  DVS_NUM_BLOCKS_X((binary)->out_frame_info.res.width) \
-     *  DVS_NUM_BLOCKS_Y((binary)->out_frame_info.res.height)   )
+     *  DVS_NUM_BLOCKS_X((binary)->out_frame_info[0].res.width) \
+     *  DVS_NUM_BLOCKS_Y((binary)->out_frame_info[0].res.height)   )
 
 struct ia_css_dvs_6axis_config *
 generate_dvs_6axis_table(const struct ia_css_resolution	*frame_res, const struct ia_css_resolution *dvs_offset);
