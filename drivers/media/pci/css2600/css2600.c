@@ -130,6 +130,25 @@ static irqreturn_t css2600_isr(int irq, void *priv)
 	return IRQ_HANDLED;
 }
 
+void css2600_msi_irq_init(struct pci_dev *dev)
+{
+	u32 val32;
+	u16 val16;
+
+	pci_read_config_dword(dev, CSS2401_REG_PCI_MSI_CAPID, &val32);
+	val32 |= 1 << CSS2401_PCI_MSI_CAPID_MSI_ENABLE_BIT;
+	pci_write_config_dword(dev, CSS2401_REG_PCI_MSI_CAPID, val32);
+
+	pci_write_config_dword(dev, CSS2401_REG_PCI_INTERRUPT_CTRL,
+			       (1 << CSS2401_PCI_INTERRUPT_CTRL_INTR_IIR) |
+			       (1 << CSS2401_PCI_INTERRUPT_CTRL_INTR_IER));
+
+	pci_read_config_word(dev, PCI_COMMAND, &val16);
+	val16 |= (PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER |
+		  PCI_COMMAND_INTX_DISABLE);
+	pci_write_config_word(dev, PCI_COMMAND, val16);
+}
+
 static int css2600_pci_probe(struct pci_dev *pdev,
 			     const struct pci_device_id *id)
 {
@@ -263,6 +282,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 				rval);
 			goto out_css2600_bus_del_devices;
 		}
+		css2600_msi_irq_init(pdev);
 	}
 
 	rval = devm_request_irq(&pdev->dev, pdev->irq, css2600_isr, IRQF_SHARED,
