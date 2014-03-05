@@ -549,7 +549,7 @@ static int atomisp_enum_input(struct file *file, void *fh,
 		const int cur_len = strlen(input->name);
 		const int max_size = sizeof(input->name) - cur_len - 1;
 
-		if (max_size > 0) {
+		if (max_size > 1) {
 			input->name[cur_len] = '+';
 			strncpy(&input->name[cur_len + 1],
 				isp->inputs[index].motor->name, max_size - 1);

@@ -310,13 +310,18 @@ static int isp_subdev_get_selection(struct v4l2_subdev *sd,
 				    struct v4l2_subdev_fh *fh,
 				    struct v4l2_subdev_selection *sel)
 {
+	struct v4l2_rect *rec;
 	int rval = isp_subdev_validate_rect(sd, sel->pad, sel->target);
+
 	if (rval)
 		return rval;
 
-	sel->r = *atomisp_subdev_get_rect(sd, fh, sel->which, sel->pad,
-					  sel->target);
+	rec = atomisp_subdev_get_rect(sd, fh, sel->which, sel->pad,
+					sel->target);
+	if (!rec)
+		return -EINVAL;
 
+	sel->r = *rec;
 	return 0;
 }
 
@@ -473,6 +478,8 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 		ffmt[pad]->height = comp[pad]->height;
 	}
 
+	if (!atomisp_subdev_get_rect(sd, fh, which, pad, target))
+		return -EINVAL;
 	*r = *atomisp_subdev_get_rect(sd, fh, which, pad, target);
 
 	dev_dbg(isp->dev, "sel actual: l %d t %d w %d h %d\n",

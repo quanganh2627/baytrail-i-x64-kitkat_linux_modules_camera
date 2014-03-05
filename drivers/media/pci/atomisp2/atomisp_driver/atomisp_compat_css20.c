@@ -798,6 +798,9 @@ static int __create_pipe(struct atomisp_sub_device *asd,
 	    !is_pipe_valid_to_current_run_mode(asd, pipe_id))
 		return 0;
 
+	if (pipe_id >= IA_CSS_PIPE_ID_NUM)
+		return -EINVAL;
+
 	ia_css_pipe_extra_config_defaults(&extra_config);
 
 	__apply_additional_pipe_config(asd, stream_env, pipe_id);
