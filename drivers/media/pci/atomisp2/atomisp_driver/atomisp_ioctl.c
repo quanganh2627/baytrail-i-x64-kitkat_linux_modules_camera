@@ -1252,6 +1252,22 @@ error:
 	return ret;
 }
 
+static int __get_frame_exp_id(struct atomisp_video_pipe *pipe,
+		struct v4l2_buffer *buf)
+{
+	struct videobuf_vmalloc_memory *vm_mem;
+	struct atomisp_css_frame *handle;
+	int i;
+
+	for (i = 0; pipe->capq.bufs[i]; i++) {
+		vm_mem = pipe->capq.bufs[i]->priv;
+		handle = vm_mem->vaddr;
+		if (buf->index == pipe->capq.bufs[i]->i && handle)
+			return handle->exp_id;
+	}
+	return -EINVAL;
+}
+
 /*
  * Applications call the VIDIOC_DQBUF ioctl to dequeue a filled (capturing) or
  * displayed (output buffer)from the driver's outgoing queue
@@ -1287,6 +1303,14 @@ static int atomisp_dqbuf(struct file *file, void *fh, struct v4l2_buffer *buf)
 	mutex_lock(&isp->mutex);
 	buf->bytesused = pipe->pix.sizeimage;
 	buf->reserved = asd->frame_status[buf->index];
+	/*
+	 * Hack:
+	 * Currently frame_status in the enum type which takes no more lower
+	 * 8 bit.
+	 * use bit[31:16] for exp_id as it is only in the range of 1~255
+	 */
+	buf->reserved &= 0x0000ffff;
+	buf->reserved |= __get_frame_exp_id(pipe, buf) << 16;
 	mutex_unlock(&isp->mutex);
 
 	dev_dbg(isp->dev, "dqbuf buffer %d (%s)\n", buf->index, vdev->name);
