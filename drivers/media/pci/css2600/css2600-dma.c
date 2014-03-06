@@ -176,6 +176,8 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 
 	*dma_handle = iova->pfn_lo << PAGE_SHIFT;
 
+	mmu->tlb_invalidate(mmu);
+
 	return addr;
 
 out_unmap:
@@ -208,6 +210,8 @@ static void css2600_dma_free(struct device *dev, size_t size, void *vaddr,
 	free_iova(&mmu->dmap->iovad, dma_handle >> PAGE_SHIFT);
 
 	__iommu_free_buffer(dev, pages, size, attrs);
+
+	mmu->tlb_invalidate(mmu);
 }
 
 static void css2600_dma_unmap_sg(struct device *dev, struct scatterlist *sglist,
