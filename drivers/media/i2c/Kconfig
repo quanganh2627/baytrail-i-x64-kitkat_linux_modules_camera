@@ -160,6 +160,17 @@ config VIDEO_PIXTER
          This is a Video4Linux2 sensor-level driver for Pixter2+.
          Pixter 2+ is a MIPI CSI simulator.
 
+config VIDEO_OV680
+       tristate "OV680 external ISP support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the external
+         ISP OV680.
+
+         OV680 is an external ISP.
+
+         It currently only works with the atomisp driver.
+
 #
 # Kconfig for flash drivers
 #

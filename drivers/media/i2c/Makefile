@@ -31,6 +31,7 @@ obj-$(CONFIG_VIDEO_M10MO)    += m10mo_spi.o
 obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o
 
 obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o
+obj-$(CONFIG_VIDEO_OV680)     += ov680.o
 
 obj-$(CONFIG_VIDEO_CSI_XACTOR) += xactor_x.o
 obj-$(CONFIG_VIDEO_PIXTER) += pixter.o
