@@ -42,7 +42,7 @@ struct css2600_isys_iomem_filter {
 	struct device *dev;
 };
 
-struct {
+static struct {
 	struct device *dev; /*ISYS*/
 	void __iomem *isp_base; /*IUNIT PCI base address*/
 	struct iommu_domain *domain;
