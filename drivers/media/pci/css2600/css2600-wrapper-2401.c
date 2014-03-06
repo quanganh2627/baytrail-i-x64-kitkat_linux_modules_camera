@@ -21,7 +21,7 @@
 
 #include "css2600-bus.h"
 #include "css2600-dma.h"
-#include "css2600-isys-wrapper-2401.h"
+#include "css2600-wrapper-2401.h"
 #include "css2600-mmu.h"
 #include "lib2401/ia_css_env.h"
 
@@ -350,7 +350,7 @@ static void glue_mem_load(hrt_address from, void *to, uint32_t n)
 }
 
 /*Call this from ISYS driver init*/
-void css2600_isys_wrapper_init(
+void css2600_wrapper_init(
 	struct device *dev, struct ia_css_env *mycssmapenv, void __iomem *base)
 {
 	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
@@ -393,7 +393,7 @@ void css2600_isys_wrapper_init(
 	mycssmapenv->print_env.error_print = glue_print_error;
 	mycssmapenv->print_env.debug_print = glue_print_debug;
 }
-EXPORT_SYMBOL_GPL(css2600_isys_wrapper_init);
+EXPORT_SYMBOL_GPL(css2600_wrapper_init);
 
 MODULE_AUTHOR("Jouni Ukkonen <jouni.ukkonen@intel.com>");
 MODULE_LICENSE("GPL");

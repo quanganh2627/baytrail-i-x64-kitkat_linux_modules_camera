@@ -474,8 +474,7 @@ static int isys_probe(struct css2600_bus_device *adev)
 		return -ENOENT;
 	}
 
-	css2600_isys_wrapper_init(&adev->dev, &isys->css_env,
-				  isys->pdata->base);
+	css2600_wrapper_init(&adev->dev, &isys->css_env, isys->pdata->base);
 
 	isys->css_fw.data = (void *)isys->fw->data;
 	isys->css_fw.bytes = isys->fw->size;

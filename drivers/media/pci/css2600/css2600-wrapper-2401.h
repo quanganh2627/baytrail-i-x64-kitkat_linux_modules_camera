@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef CSS2600_ISYS_WRAPPER_2401_H
-#define CSS2600_ISYS_WRAPPER_2401_H
+#ifndef CSS2600_WRAPPER_2401_H
+#define CSS2600_WRAPPER_2401_H
 
 struct device;
 struct ia_css_env;
@@ -30,7 +30,7 @@ int css2600_isys_iomem_filters_add(struct device *dev, void __iomem **addr,
 				   unsigned int naddr, size_t size);
 void css2600_isys_iomem_filter_remove(struct device *dev);
 
-void css2600_isys_wrapper_init(
+void css2600_wrapper_init(
 	struct device *dev, struct ia_css_env *mycssmapenv, void __iomem *base);
 
-#endif /* CSS2600_ISYS_WRAPPER_2401_H */
+#endif /* CSS2600_WRAPPER_2401_H */
