@@ -142,19 +142,23 @@ static int read_or_write(dma_addr_t iova, void *data, size_t bytes, int write)
 
 	spin_lock_irqsave(&mine.lock, flags);
 	list_for_each_entry(buf, &mine.buffers, list) {
+		void *addr;
+
 		pr_debug("buffer iova %8.8x, size %d\n", (uint32_t)buf->iova,
 			buf->bytes);
 		if (iova < buf->iova || iova + bytes > buf->iova + buf->bytes)
 			continue;
 
+		addr = buf->addr + iova - buf->iova;
+
 		pr_debug("glue: %sing %d bytes at %p\n",
 			 write ? "writ" : "read", bytes, buf->addr);
 		if (write) {
-			memcpy(buf->addr, data, bytes);
-			clflush_cache_range(buf->addr, bytes);
+			memcpy(addr, data, bytes);
+			clflush_cache_range(addr, bytes);
 		} else {
-			clflush_cache_range(buf->addr, bytes);
-			memcpy(data, buf->addr, bytes);
+			clflush_cache_range(addr, bytes);
+			memcpy(data, addr, bytes);
 		}
 
 		goto out;
