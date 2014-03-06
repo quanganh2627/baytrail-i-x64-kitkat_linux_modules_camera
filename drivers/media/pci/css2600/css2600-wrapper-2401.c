@@ -14,6 +14,8 @@
 
 #include <asm/cacheflush.h>
 
+#include <linux/dma-mapping.h>
+#include <linux/firmware.h>
 #include <linux/iommu.h>
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -49,6 +51,11 @@ static struct {
 	struct list_head buffers;
 	struct list_head filters;
 	spinlock_t lock;
+	struct dma_map_ops *ops;
+	struct ia_css_env css_env;
+	const struct firmware *fw;
+	unsigned int iommus, iommus_registered;
+	unsigned int css_init_done;
 } mine;
 
 /*Small buffers for CSS layer internal usage*/
@@ -349,51 +356,134 @@ static void glue_mem_load(hrt_address from, void *to, uint32_t n)
 		*_to = glue_hw_load8(_from);
 }
 
-/*Call this from ISYS driver init*/
-void css2600_wrapper_init(
-	struct device *dev, struct ia_css_env *mycssmapenv, void __iomem *base)
+int css2600_wrapper_init_done(void)
 {
-	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
-	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
+	if (!mine.iommus || mine.iommus_registered < mine.iommus ||
+	    !mine.domain || !mine.dev)
+		return 0;
 
+	return 1;
+}
+EXPORT_SYMBOL_GPL(css2600_wrapper_init_done);
+
+static int init_css(void)
+{
+	struct ia_css_fwctrl_devconfig devconfig;
+	struct ia_css_fw css_fw;
+	int rval;
+
+	if (!css2600_wrapper_init_done())
+		return 0;
+
+	if (mine.css_init_done)
+		return 0;
+
+	css_fw.data = (void *)mine.fw->data;
+	css_fw.bytes = mine.fw->size;
+	rval = ia_css_load_firmware(&mine.css_env, &css_fw);
+	if (rval) {
+		dev_err(mine.dev, "css load fw failed (%d)\n", rval);
+		return -EIO;
+	}
+
+	rval = ia_css_init(&mine.css_env, NULL, 0, IA_CSS_IRQ_TYPE_PULSE);
+	if (rval) {
+		dev_err(mine.dev, "ia_css_init failed (%d)\n", rval);
+		return -EIO;
+	}
+
+	devconfig.firmware_address = lib2401_get_sp_fw();
+	rval = ia_css_fwctrl_device_open(&devconfig);
+	if (rval) {
+		dev_err(mine.dev,
+			"ia_css_fwctrl_device_open() failed: %d\n", rval);
+		return -EIO;
+	}
+
+	mine.css_init_done = 1;
+
+	return 0;
+}
+
+/*Call this from ISYS driver init*/
+void css2600_wrapper_init(void __iomem *base, const struct firmware *fw)
+{
 	INIT_LIST_HEAD(&mine.buffers);
 	INIT_LIST_HEAD(&mine.filters);
 	spin_lock_init(&mine.lock);
 
-	/*Store Needed device pointers locally*/
-	mine.dev = dev;
 	/*Set PCI base address for HW access*/
 	mine.isp_base = base;
-	/*Mmu domain pointer needed to address translation*/
-	mine.domain = mmu->dmap->domain;
+	mine.fw = fw;
 
 	/*Map functions to function pointer table*/
 	/*IA memory alloc*/
-	mycssmapenv->cpu_mem_env.alloc = glue_ia_alloc;
-	mycssmapenv->cpu_mem_env.free = glue_ia_free;
-	mycssmapenv->cpu_mem_env.flush = glue_ia_flush;
+	mine.css_env.cpu_mem_env.alloc = glue_ia_alloc;
+	mine.css_env.cpu_mem_env.free = glue_ia_free;
+	mine.css_env.cpu_mem_env.flush = glue_ia_flush;
 
 	/*CSS memory alloc*/
-	mycssmapenv->css_mem_env.alloc = glue_css_alloc;
-	mycssmapenv->css_mem_env.free = glue_css_free;
-	mycssmapenv->css_mem_env.store = glue_css_store;
-	mycssmapenv->css_mem_env.load = glue_css_load;
-	mycssmapenv->css_mem_env.mmap = glue_css_mmap;
+	mine.css_env.css_mem_env.alloc = glue_css_alloc;
+	mine.css_env.css_mem_env.free = glue_css_free;
+	mine.css_env.css_mem_env.store = glue_css_store;
+	mine.css_env.css_mem_env.load = glue_css_load;
+	mine.css_env.css_mem_env.mmap = glue_css_mmap;
 	/*CSS HW access*/
-	mycssmapenv->hw_access_env.store_8 = glue_hw_store8;
-	mycssmapenv->hw_access_env.store_16 = glue_hw_store16;
-	mycssmapenv->hw_access_env.store_32 = glue_hw_store32;
-	mycssmapenv->hw_access_env.load_8 = glue_hw_load8;
-	mycssmapenv->hw_access_env.load_16 = glue_hw_load16;
-	mycssmapenv->hw_access_env.load_32 = glue_hw_load32;
-	mycssmapenv->hw_access_env.load = glue_mem_load;
-	mycssmapenv->hw_access_env.store = glue_mem_store;
+	mine.css_env.hw_access_env.store_8 = glue_hw_store8;
+	mine.css_env.hw_access_env.store_16 = glue_hw_store16;
+	mine.css_env.hw_access_env.store_32 = glue_hw_store32;
+	mine.css_env.hw_access_env.load_8 = glue_hw_load8;
+	mine.css_env.hw_access_env.load_16 = glue_hw_load16;
+	mine.css_env.hw_access_env.load_32 = glue_hw_load32;
+	mine.css_env.hw_access_env.load = glue_mem_load;
+	mine.css_env.hw_access_env.store = glue_mem_store;
 
 	/*Print functions*/
-	mycssmapenv->print_env.error_print = glue_print_error;
-	mycssmapenv->print_env.debug_print = glue_print_debug;
+	mine.css_env.print_env.error_print = glue_print_error;
+	mine.css_env.print_env.debug_print = glue_print_debug;
+
+	init_css();
 }
 EXPORT_SYMBOL_GPL(css2600_wrapper_init);
+
+int css2600_wrapper_set_domain(struct iommu_domain *domain)
+{
+	BUG_ON(mine.domain && mine.domain != domain);
+
+	mine.domain = domain;
+
+	dev_info(mine.dev, "set domain\n");
+
+	return init_css();
+}
+EXPORT_SYMBOL_GPL(css2600_wrapper_set_domain);
+
+int css2600_wrapper_set_device(struct device *dev)
+{
+	mine.dev = dev;
+
+	return init_css();
+}
+EXPORT_SYMBOL_GPL(css2600_wrapper_set_device);
+
+int css2600_wrapper_iommu_add(void)
+{
+	mine.iommus_registered++;
+
+	dev_info(mine.dev, "registering iommu %d/%d\n",
+		 mine.iommus_registered, mine.iommus);
+
+	return init_css();
+}
+EXPORT_SYMBOL_GPL(css2600_wrapper_iommu_add);
+
+int css2600_wrapper_set_iommus(unsigned int iommus)
+{
+	mine.iommus = iommus;
+
+	return init_css();
+}
+EXPORT_SYMBOL_GPL(css2600_wrapper_set_iommus);
 
 MODULE_AUTHOR("Jouni Ukkonen <jouni.ukkonen@intel.com>");
 MODULE_LICENSE("GPL");

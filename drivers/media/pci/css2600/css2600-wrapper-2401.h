@@ -23,6 +23,7 @@
 struct device;
 struct ia_css_env;
 struct css2600_isys_iomem_filter;
+struct firmware;
 
 int css2600_isys_iomem_filter_add(struct device *dev, void __iomem *addr,
 				  size_t size);
@@ -30,7 +31,11 @@ int css2600_isys_iomem_filters_add(struct device *dev, void __iomem **addr,
 				   unsigned int naddr, size_t size);
 void css2600_isys_iomem_filter_remove(struct device *dev);
 
-void css2600_wrapper_init(
-	struct device *dev, struct ia_css_env *mycssmapenv, void __iomem *base);
+void css2600_wrapper_init(void __iomem *base, const struct firmware *fw);
+int css2600_wrapper_set_domain(struct iommu_domain *domain);
+int css2600_wrapper_set_device(struct device *dev);
+int css2600_wrapper_iommu_add(void);
+int css2600_wrapper_init_done(void);
+int css2600_wrapper_set_iommus(unsigned int iommus);
 
 #endif /* CSS2600_WRAPPER_2401_H */

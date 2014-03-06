@@ -24,6 +24,7 @@
 #include "css2600-bus.h"
 #include "css2600-dma.h"
 #include "css2600-mmu.h"
+#include "css2600-wrapper-2401.h"
 
 #define ISP_PAGE_SHIFT		12
 #define ISP_PAGE_SIZE		(1U << ISP_PAGE_SHIFT)
@@ -173,7 +174,7 @@ static int css2600_mmu_attach_dev(struct iommu_domain *domain,
 
 	spin_unlock(&adom->lock);
 
-	return rval;
+	return css2600_wrapper_set_domain(domain);
 }
 
 static void css2600_mmu_detach_dev(struct iommu_domain *domain,
@@ -458,7 +459,7 @@ static int css2600_mmu_probe(struct css2600_bus_device *adev)
 	 */
 	__module_get(THIS_MODULE);
 
-	return 0;
+	return css2600_wrapper_iommu_add();
 }
 
 /*

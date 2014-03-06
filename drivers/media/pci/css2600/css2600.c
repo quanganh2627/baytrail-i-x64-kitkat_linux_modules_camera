@@ -161,6 +161,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	void __iomem *base;
 	void __iomem *mmu_base[CSS2600_MMU_MAX_DEVICES];
 	struct css2600_bus_iommu *isys_iommu, *psys_iommu;
+	unsigned int iommus = 0;
 	int rval;
 
 	isp = devm_kzalloc(&pdev->dev, sizeof(*isp), GFP_KERNEL);
@@ -217,7 +218,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		return rval;
 	}
 
-	css2600_wrapper_init(&pdev->dev, &isp->css_env, base);
+	css2600_wrapper_init(base, isp->fw);
 
 	writel(CSS2401_CSI_RECEIVER_SELECTION_INTEL,
 	       base + CSS2401_REG_CSI_RECEIVER_SELECTION);
@@ -243,6 +244,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		rval = css2600_isys_iomem_filters_add(&pdev->dev, mmu_base, 2, 0xc);
 		if (rval)
 			goto out_css2600_bus_del_devices;
+		iommus++;
 
 		isys_iommu->dev = &isp->isys_iommu->dev;
 
@@ -268,6 +270,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		rval = css2600_isys_iomem_filters_add(&pdev->dev, mmu_base, 2, 0xc);
 		if (rval)
 			goto out_css2600_bus_del_devices;
+		iommus++;
 
 		psys_iommu->dev = &isp->psys_iommu->dev;
 		isp->psys = css2600_psys_init(pdev, &isp->buttress->dev, psys_iommu, base, 0);
@@ -289,6 +292,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		rval = css2600_isys_iomem_filters_add(&pdev->dev, mmu_base, 2, 0xc);
 		if (rval)
 			goto out_css2600_bus_del_devices;
+		iommus++;
 
 		isys_iommu->dev = &isp->isys_iommu->dev;
 		isp->isys = css2600_isys_init(pdev, &pdev->dev, isys_iommu, base, 0,
@@ -312,6 +316,14 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		}
 		css2600_msi_irq_init(pdev);
 	}
+
+	rval = css2600_wrapper_set_iommus(iommus);
+	if (rval)
+		goto out_css2600_bus_del_devices;
+
+	rval = css2600_wrapper_set_device(&isp->isys->dev);
+	if (rval)
+		goto out_css2600_bus_del_devices;
 
 	rval = devm_request_irq(&pdev->dev, pdev->irq, css2600_isr, IRQF_SHARED,
 				CSS2600_NAME, isp);

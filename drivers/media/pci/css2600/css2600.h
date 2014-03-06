@@ -22,6 +22,7 @@
 #include "css2600-bus.h"
 
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+#include <lib2401.h>
 #include "lib2401/ia_css_env.h"
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 
@@ -44,7 +45,6 @@ struct css2600_device {
 	struct css2600_bus_device *psys_iommu, *psys;
 	struct css2600_bus_device *buttress;
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
-	struct ia_css_env css_env;
 	const struct firmware *fw;
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 };

@@ -15,7 +15,6 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/dma-attrs.h>
-#include <linux/firmware.h>
 #include <linux/intel_mid_pm.h>
 #include <linux/iommu.h>
 #include <linux/mm.h>
@@ -35,6 +34,7 @@
 #include "css2600-isys-lib.h"
 #include "css2600-isys-video.h"
 #include "css2600-regs.h"
+#include "css2600-wrapper-2401.h"
 
 /*
  * BEGIN adapted code from drivers/media/platform/omap3isp/isp.c.
@@ -452,11 +452,10 @@ static int isys_probe(struct css2600_bus_device *adev)
 	struct css2600_mmu_domain *adom = mmu->dmap->domain->priv;
 	struct ia_css_isys_device_cfg_data isys_cfg = { };
 	struct css2600_isys *isys;
-#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
-	struct ia_css_fwctrl_devconfig devconfig;
-#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
-	struct css2600_device *isp = dev_get_drvdata(adev->dev.parent);
 	int rval = 0;
+
+	if (!css2600_wrapper_init_done())
+		return -EPROBE_DEFER;
 
 	isys = devm_kzalloc(&adev->dev, sizeof(*isys), GFP_KERNEL);
 	if (!isys)
@@ -471,36 +470,10 @@ static int isys_probe(struct css2600_bus_device *adev)
 	css2600_bus_set_drvdata(adev, isys);
 
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
-	isys->css_fw.data = (void *)isp->fw->data;
-	isys->css_fw.bytes = isp->fw->size;
-
 	rval = isys_runtime_pm(1);
 	if (rval) {
 		dev_err(&adev->dev, "isys_runtime_pm failed: %d\n", rval);
 		return rval;
-	}
-
-	rval = ia_css_load_firmware(&isp->css_env, &isys->css_fw);
-	if (rval) {
-		dev_err(&adev->dev, "css load fw failed (%d)\n", rval);
-		rval = -EIO;
-		goto err_power_off;
-	}
-
-	rval = ia_css_init(&isp->css_env, NULL, 0, IA_CSS_IRQ_TYPE_PULSE);
-	if (rval) {
-		dev_err(&adev->dev, "ia_css_init failed (%d)\n", rval);
-		rval = -EIO;
-		goto err_power_off;
-	}
-
-	devconfig.firmware_address = lib2401_get_sp_fw();
-	rval = ia_css_fwctrl_device_open(&devconfig);
-	if (rval) {
-		dev_err(&adev->dev,
-			"ia_css_fwctrl_device_open() failed: %d\n", rval);
-		rval = -EIO;
-		goto err_power_off;
 	}
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 
