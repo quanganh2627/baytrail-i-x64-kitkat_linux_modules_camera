@@ -22,6 +22,13 @@
 
 struct device;
 struct ia_css_env;
+struct css2600_isys_iomem_filter;
+
+int css2600_isys_iomem_filter_add(struct device *dev, void __iomem *addr,
+				  size_t size);
+int css2600_isys_iomem_filters_add(struct device *dev, void __iomem **addr,
+				   unsigned int naddr, size_t size);
+void css2600_isys_iomem_filter_remove(struct device *dev);
 
 void css2600_isys_wrapper_init(
 	struct device *dev, struct ia_css_env *mycssmapenv, void __iomem *base);

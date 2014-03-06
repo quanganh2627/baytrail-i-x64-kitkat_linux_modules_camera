@@ -33,11 +33,21 @@ struct my_css_memory_buffer_item {
 	struct dma_attrs attrs;
 };
 
+struct device;
+
+struct css2600_isys_iomem_filter {
+	void *addr;
+	size_t size;
+	struct list_head head;
+	struct device *dev;
+};
+
 struct {
 	struct device *dev; /*ISYS*/
 	void __iomem *isp_base; /*IUNIT PCI base address*/
 	struct iommu_domain *domain;
 	struct list_head buffers;
+	struct list_head filters;
 	spinlock_t lock;
 } mine;
 
@@ -189,19 +199,116 @@ static int glue_print_debug(const char *fmt, va_list a)
 	return 0;
 }
 
+static int filter_match(void *addr)
+{
+	struct css2600_isys_iomem_filter *filter;
+	unsigned long flags;
+	int rval = 0;
+
+	spin_lock_irqsave(&mine.lock, flags);
+	list_for_each_entry(filter, &mine.filters, head) {
+		if (addr < filter->addr || addr > filter->addr + filter->size)
+			continue;
+
+		rval = 1;
+		break;
+	}
+	spin_unlock_irqrestore(&mine.lock, flags);
+
+	return rval;
+}
+
+int css2600_isys_iomem_filter_add(struct device *dev, void __iomem *addr,
+				  size_t size)
+{
+	struct css2600_isys_iomem_filter *filter =
+		kzalloc(sizeof(*filter), GFP_KERNEL);
+	unsigned long flags;
+
+	if (!filter)
+		return -ENOMEM;
+
+	filter->addr = addr;
+	filter->size = size;
+
+	spin_lock_irqsave(&mine.lock, flags);
+	list_add(&filter->head, &mine.filters);
+	spin_unlock_irqrestore(&mine.lock, flags);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(css2600_isys_iomem_filter_add);
+
+int css2600_isys_iomem_filters_add(struct device *dev, void __iomem **addr,
+				   unsigned int naddr, size_t size)
+{
+	unsigned int i;
+	int rval;
+
+	for (i = 0; i < naddr; i++) {
+		int rval = css2600_isys_iomem_filter_add(dev, addr[i], size);
+
+		if (rval)
+			goto out;
+	}
+
+	return 0;
+
+out:
+	css2600_isys_iomem_filter_remove(dev);
+
+	return rval;
+}
+EXPORT_SYMBOL_GPL(css2600_isys_iomem_filters_add);
+
+void css2600_isys_iomem_filter_remove(struct device *dev)
+{
+	struct css2600_isys_iomem_filter *filter, *safe;
+	unsigned long flags;
+
+	if (!dev)
+		return;
+
+	spin_lock_irqsave(&mine.lock, flags);
+	list_for_each_entry_safe(filter, safe, &mine.filters, head) {
+		if (filter->dev != dev)
+			continue;
+
+		list_del(&filter->head);
+		kfree(filter);
+	}
+	spin_unlock_irqrestore(&mine.lock, flags);
+}
+EXPORT_SYMBOL_GPL(css2600_isys_iomem_filter_remove);
+
 static void glue_hw_store8(hrt_address addr, uint8_t data)
 {
-	writeb(data, mine.isp_base + (addr & 0x003fffff));
+	addr = (unsigned long)mine.isp_base + (addr & 0x003fffff);
+
+	if (filter_match((void *)addr))
+		return;
+
+	writeb(data, (void *)addr);
 }
 
 static void glue_hw_store16(hrt_address addr, uint16_t data)
 {
-	writew(data, mine.isp_base + (addr & 0x003fffff));
+	addr = (unsigned long)mine.isp_base + (addr & 0x003fffff);
+
+	if (filter_match((void *)addr))
+		return;
+
+	writew(data, (void *)addr);
 }
 
 static void glue_hw_store32(hrt_address addr, uint32_t data)
 {
-	writel(data, mine.isp_base + (addr & 0x003fffff));
+	addr = (unsigned long)mine.isp_base + (addr & 0x003fffff);
+
+	if (filter_match((void *)addr))
+		return;
+
+	writel(data, (void *)addr);
 }
 
 static uint8_t glue_hw_load8(hrt_address addr)
@@ -246,6 +353,7 @@ void css2600_isys_wrapper_init(
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 
 	INIT_LIST_HEAD(&mine.buffers);
+	INIT_LIST_HEAD(&mine.filters);
 	spin_lock_init(&mine.lock);
 
 	/*Store Needed device pointers locally*/
