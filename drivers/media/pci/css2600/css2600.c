@@ -225,6 +225,10 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 			return -ENOMEM;
 		}
 
+		rval = css2600_isys_iomem_filters_add(&pdev->dev, mmu_base, 2, 0xc);
+		if (rval)
+			goto out_css2600_bus_del_devices;
+
 		isys_iommu->dev = &isp->isys_iommu->dev;
 
 		isp->isys = css2600_isys_init(pdev, &isp->buttress->dev, isys_iommu, base,
@@ -246,6 +250,10 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 			goto out_css2600_bus_del_devices;
 		}
 
+		rval = css2600_isys_iomem_filters_add(&pdev->dev, mmu_base, 2, 0xc);
+		if (rval)
+			goto out_css2600_bus_del_devices;
+
 		psys_iommu->dev = &isp->psys_iommu->dev;
 		isp->psys = css2600_psys_init(pdev, &isp->buttress->dev, psys_iommu, base, 0);
 		rval = PTR_ERR(isp->isys);
@@ -262,6 +270,11 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 			dev_err(&pdev->dev, "can't create iommu device\n");
 			goto out_css2600_bus_del_devices;
 		}
+
+		rval = css2600_isys_iomem_filters_add(&pdev->dev, mmu_base, 2, 0xc);
+		if (rval)
+			goto out_css2600_bus_del_devices;
+
 		isys_iommu->dev = &isp->isys_iommu->dev;
 		isp->isys = css2600_isys_init(pdev, &pdev->dev, isys_iommu, base, 0,
 					      CSS2600_ISYS_TYPE_CSS2401);
@@ -298,6 +311,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	return 0;
 
 out_css2600_bus_del_devices:
+	css2600_isys_iomem_filter_remove(&pdev->dev);
 	css2600_bus_del_devices(pdev);
 
 	return rval;
@@ -305,6 +319,7 @@ out_css2600_bus_del_devices:
 
 static void css2600_pci_remove(struct pci_dev *pdev)
 {
+	css2600_isys_iomem_filter_remove(&pdev->dev);
 	css2600_bus_del_devices(pdev);
 
 	pm_runtime_forbid(&pdev->dev);
