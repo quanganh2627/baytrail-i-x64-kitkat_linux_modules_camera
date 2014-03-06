@@ -189,42 +189,34 @@ static int glue_print_debug(const char *fmt, va_list a)
 	return 0;
 }
 
-/*Hw access functions*/
-static inline void __iomem *glue_get_io_virt_addr(hrt_address address)
-{
-	void __iomem *ret = mine.isp_base + (address & 0x003FFFFF);
-	return ret;
-}
-
-
 static void glue_hw_store8(hrt_address addr, uint8_t data)
 {
-	*((u8 __force *)glue_get_io_virt_addr(addr)) = (data);
+	writeb(data, mine.isp_base + (addr & 0x003fffff));
 }
 
 static void glue_hw_store16(hrt_address addr, uint16_t data)
 {
-	*((u16 __force *)glue_get_io_virt_addr(addr)) = (data);
+	writew(data, mine.isp_base + (addr & 0x003fffff));
 }
 
 static void glue_hw_store32(hrt_address addr, uint32_t data)
 {
-	*((u32 __force *)glue_get_io_virt_addr(addr)) = (data);
+	writel(data, mine.isp_base + (addr & 0x003fffff));
 }
 
 static uint8_t glue_hw_load8(hrt_address addr)
 {
-	return *(u8 __force *)glue_get_io_virt_addr(addr);
+	return readb(mine.isp_base + (addr & 0x003fffff));
 }
 
 static uint16_t glue_hw_load16(hrt_address addr)
 {
-	return *(u16 __force *)glue_get_io_virt_addr(addr);
+	return readw(mine.isp_base + (addr & 0x003fffff));
 }
 
 static uint32_t glue_hw_load32(hrt_address addr)
 {
-	return *(u32 __force *)glue_get_io_virt_addr(addr);
+	return readl(mine.isp_base + (addr & 0x003fffff));
 }
 
 /*Copied from HRT, unefficient???*/
