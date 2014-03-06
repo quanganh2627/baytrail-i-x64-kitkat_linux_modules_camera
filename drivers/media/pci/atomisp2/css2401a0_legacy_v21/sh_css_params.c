@@ -117,7 +117,7 @@
 #endif
 /* SDIS */
 #define SDIS_VER_COEF_TBL__IN_DMEM(b) \
-	_SDIS_VER_COEF_TBL_USE_DMEM((b)->info->sp.mode, (b)->info->sp.enable.dis, (b)->info->sp.isp_pipe_version)
+	_SDIS_VER_COEF_TBL_USE_DMEM((b)->info->sp.mode, (b)->info->sp.enable.dis, (b)->info->sp.enable.ds,(b)->info->sp.isp_pipe_version)
 
 #define SH_CSS_DIS_VER_NUM_COEF_TYPES(b) \
   (((b)->info->sp.isp_pipe_version == 2) ? IA_CSS_DVS2_NUM_COEF_TYPES : \

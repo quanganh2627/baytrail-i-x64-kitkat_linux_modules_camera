@@ -63,6 +63,8 @@
 
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
+#define IA_CSS_INCLUDE_STATES
+#include "ia_css_isp_states.h"
 
 struct sh_css_sp_group		sh_css_sp_group;
 struct sh_css_sp_stage		sh_css_sp_stage;
@@ -632,24 +634,6 @@ set_video_delay_frame_buffer(const struct ia_css_frame *frame, unsigned index)
 }
 
 static enum ia_css_err
-set_tnr_frame_buffer(const struct ia_css_frame *frame, unsigned index)
-{
-	enum ia_css_buffer_type id = IA_CSS_BUFFER_TYPE_TNR_0 + index;
-
-	if (frame == NULL)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV_LINE)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (index >= NUM_VIDEO_TNR_FRAMES) /* this cannot happen but Klocwork does not see this */
-		return IA_CSS_ERR_INTERNAL_ERROR;
-
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.tnr_frames[index], frame, id);
-	return IA_CSS_SUCCESS;
-}
-
-static enum ia_css_err
 set_view_finder_buffer(const struct ia_css_frame *frame)
 {
 	if (frame == NULL)
@@ -771,11 +755,6 @@ sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args)
 		}
 	}
 
-	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
-		if (err == IA_CSS_SUCCESS && args->tnr_frames[i]) {
-			err = set_tnr_frame_buffer( args->tnr_frames[i], i);
-		}
-	}
 
 	/* we don't pass this error back to the upper layer, so we add a assert here
 	   because we actually hit the error here but it still works by accident... */
@@ -855,10 +834,20 @@ configure_isp_from_args(
 	ia_css_output1_configure(binary, &args->out_vf_frame->info);
 #endif
 	ia_css_ref_configure   (binary, &args->delay_frames[0]->info);
-	ia_css_tnr_configure   (binary, &args->tnr_frames[0]->info);
 	ia_css_dvs_configure   (binary, &args->out_frame[0]->info);
 	ia_css_output_configure(binary, &args->out_frame[0]->info);
 	ia_css_raw_configure   (pipe, binary, &args->in_frame->info, &binary->in_frame_info);
+	ia_css_tnr_configure   (binary, (const struct ia_css_frame **)args->tnr_frames);
+}
+
+static void
+initialize_isp_states(const struct ia_css_binary *binary)
+{
+	unsigned int i;
+
+	for (i = 0; i < IA_CSS_NUM_STATE_IDS; i++) {
+		ia_css_kernel_init_state[i](binary);
+	}
 }
 
 static enum ia_css_err
@@ -1005,6 +994,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		return err;
 
 	configure_isp_from_args(&sh_css_sp_group.pipe[thread_id], binary, args);
+	initialize_isp_states(binary);
 
 	/* we do this only for preview pipe because in fill_binary_info function
 	 * we assign vf_out res to out res, but for ISP internal processing, we need

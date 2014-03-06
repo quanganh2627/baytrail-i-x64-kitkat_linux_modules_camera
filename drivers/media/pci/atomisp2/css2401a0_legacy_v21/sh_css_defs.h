@@ -213,6 +213,10 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 /* Each line of this table is aligned to the maximum line width. */
 #define SH_CSS_MAX_S3ATBL_WIDTH              SH_CSS_MAX_BQ_GRID_WIDTH
 
+
+#define NUM_VIDEO_DELAY_FRAMES	3
+#define NUM_VIDEO_TNR_FRAMES	2
+
 /* Rules: these implement logic shared between the host code and ISP firmware.
    The ISP firmware needs these rules to be applied at pre-processor time,
    that's why these are macros, not functions. */
@@ -249,9 +253,11 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
  * ********************************************************/
 /* Some binaries put the vertical coefficients in DMEM instead
    of VMEM to save VMEM. */
-#define _SDIS_VER_COEF_TBL_USE_DMEM(mode, enable_sdis, isp_pipe_version) \
+/* ISP dmem is not enough to hold all params, configs and states for video_yuv_ds
+   binary,  so put dis coef to vmem */
+#define _SDIS_VER_COEF_TBL_USE_DMEM(mode, enable_sdis, enable_ds, isp_pipe_version) \
 	(mode == IA_CSS_BINARY_MODE_VIDEO \
-	&& enable_sdis && isp_pipe_version == 1)
+	&& enable_sdis && enable_ds != 2 && isp_pipe_version == 1)
 
 /* For YUV upscaling, the internal size is used for DIS statistics */
 #define _ISP_SDIS_ELEMS_ISP(input, internal, enable_us) \

@@ -6706,10 +6706,10 @@ create_host_yuvpp_pipeline(struct ia_css_pipe *pipe)
 						   &yuv_scaler_binary[i],
 						   post_stage, &post_stage,
 						   pipe->pipe_settings.yuvpp.is_output_stage[i]);
-			/* we use output port 1 as internal output port */
-			tmp_in_frame = post_stage->args.out_frame[1];
 			if (err != IA_CSS_SUCCESS)
 				return err;
+			/* we use output port 1 as internal output port */
+			tmp_in_frame = post_stage->args.out_frame[1];
 			if (pipe->pipe_settings.yuvpp.is_output_stage[i] == true) {
 				err = add_vf_pp_stage(pipe, tmp_vf_frame, &vf_pp_binary[j],
 					      post_stage, &vf_pp_stage);

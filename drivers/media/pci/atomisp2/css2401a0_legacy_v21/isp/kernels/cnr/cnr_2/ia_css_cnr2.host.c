@@ -71,3 +71,9 @@ ia_css_cnr_debug_dtrace(
 		config->sense_gain_vu, config->sense_gain_hu,
 		config->sense_gain_vv, config->sense_gain_hv);
 }
+
+void
+ia_css_init_cnr2_state(void/*struct sh_css_isp_cnr_vmem_state *state*/)
+{
+	//memset(state, 0, sizeof(*state));
+}

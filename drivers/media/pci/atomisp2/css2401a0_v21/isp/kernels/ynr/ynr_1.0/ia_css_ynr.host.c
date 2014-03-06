@@ -213,3 +213,9 @@ ia_css_ee_debug_dtrace(
 		config->threshold,
 		config->gain, config->detail_gain);
 }
+
+void
+ia_css_init_ynr_state(void/*struct sh_css_isp_ynr_vmem_state *state*/)
+{
+	//memset(state, 0, sizeof(*state));
+}

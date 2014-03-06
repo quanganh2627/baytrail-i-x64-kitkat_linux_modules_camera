@@ -91,8 +91,6 @@ struct isys2401_dma_cfg_s {
 /** end of DMA Device */
 
 /* isys2401_dma_channel limits per DMA ID */
-static const isys2401_dma_channel N_ISYS2401_DMA_CHANNEL_PROCS[N_ISYS2401_DMA_ID] = {
-	N_ISYS2401_DMA_CHANNEL
-};
+extern const isys2401_dma_channel N_ISYS2401_DMA_CHANNEL_PROCS[N_ISYS2401_DMA_ID];
 
 #endif /* __ISYS_DMA_GLOBAL_H_INCLUDED__ */

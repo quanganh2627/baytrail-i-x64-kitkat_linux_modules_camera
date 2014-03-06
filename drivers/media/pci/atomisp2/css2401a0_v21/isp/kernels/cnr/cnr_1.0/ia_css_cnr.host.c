@@ -24,3 +24,10 @@
 #include "ia_css_debug.h"
 
 #include "ia_css_cnr.host.h"
+
+/* keep the interface here, it is not enabled yet because host doesn't know the size of individual state */
+void
+ia_css_init_cnr_state(void/*struct sh_css_isp_cnr_vmem_state *state*/)
+{
+	//memset(state, 0, sizeof(*state));
+}

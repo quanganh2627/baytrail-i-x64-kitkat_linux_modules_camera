@@ -22,8 +22,6 @@
 #ifndef __IA_CSS_CNR2_HOST_H
 #define __IA_CSS_CNR2_HOST_H
 
-#include "sh_css_params.h"
-
 #include "ia_css_cnr2_types.h"
 #include "ia_css_cnr2_param.h"
 
@@ -44,4 +42,7 @@ ia_css_cnr_debug_dtrace(
 	const struct ia_css_cnr_config *config,
 	unsigned level);
 
+void
+ia_css_init_cnr2_state(
+	void/*struct sh_css_isp_cnr_vmem_state *state*/);
 #endif /* __IA_CSS_CNR2_HOST_H */

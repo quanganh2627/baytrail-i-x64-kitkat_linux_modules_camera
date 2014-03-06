@@ -22,8 +22,6 @@
 #ifndef __IA_CSS_YNR2_HOST_H
 #define __IA_CSS_YNR2_HOST_H
 
-#include "sh_css_params.h"
-
 #include "ia_css_ynr2_types.h"
 #include "ia_css_ynr2_param.h"
 

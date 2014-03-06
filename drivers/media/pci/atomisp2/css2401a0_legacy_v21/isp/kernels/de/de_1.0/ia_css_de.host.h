@@ -42,4 +42,8 @@ ia_css_de_debug_dtrace(
 	const struct ia_css_de_config *config,
 	unsigned level);
 
+void
+ia_css_init_de_state(
+	void/*struct sh_css_isp_de_vmem_state *state*/);
+
 #endif /* __IA_CSS_DE_HOST_H */

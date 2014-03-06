@@ -36,6 +36,10 @@
  *  ISP1: TNR1 is used.
  *  ISP2: TNR1 is used.
  */
+
+/* copied from sh_css_defs.h, should find a proper place for this host ISP shared defs */
+#define NUM_VIDEO_TNR_FRAMES 2
+
 struct ia_css_tnr_config {
 	ia_css_u0_16 gain; /**< Interpolation ratio of current frame
 			        and previous frame.
@@ -57,7 +61,7 @@ struct ia_css_tnr_config {
 };
 
 struct ia_css_tnr_configuration {
-	const struct ia_css_frame_info *info;
+	const struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];
 };
 
 #endif /* __IA_CSS_TNR_TYPES_H */
