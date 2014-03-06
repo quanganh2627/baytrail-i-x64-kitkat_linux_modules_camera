@@ -121,6 +121,10 @@ atomisp-$(postfix)-objs += \
 	css/runtime/isys/src/csi_rx_rmgr.o \
 	css/runtime/isys/src/ibuf_ctrl_rmgr.o \
 	css/runtime/isys/src/isys_dma_rmgr.o \
+        css/css_2401_system/host/isys_dma.o \
+        css/css_2401_system/host/ibuf_ctrl.o \
+        css/css_2401_system/host/csi_rx.o \
+        css/css_2401_system/host/isys_stream2mmio.o \
 	css/runtime/isys/src/isys_stream2mmio_rmgr.o
 else
 atomisp-$(postfix)-objs += \
@@ -132,10 +136,12 @@ endif
 ifneq ($(ISP2401), )
 atomisp-$(postfix)-objs += \
 	css/$(css_platform_folder)_generated/ia_css_isp_params.o \
+	css/$(css_platform_folder)_generated/ia_css_isp_states.o \
 	css/$(css_platform_folder)_generated/ia_css_isp_configs.o
 else ifneq ($(ISP2400B0), )
 atomisp-$(postfix)-objs += \
 	css/$(css_platform_folder)_generated/ia_css_isp_params.o \
+	css/$(css_platform_folder)_generated/ia_css_isp_states.o \
 	css/$(css_platform_folder)_generated/ia_css_isp_configs.o
 endif
 
