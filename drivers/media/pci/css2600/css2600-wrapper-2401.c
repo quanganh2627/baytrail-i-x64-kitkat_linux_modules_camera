@@ -62,9 +62,9 @@ static struct {
 static void *glue_ia_alloc(size_t bytes, bool zero_mem)
 {
 	if (zero_mem)
-		return kmalloc(bytes, GFP_KERNEL);
-	else
 		return kzalloc(bytes, GFP_KERNEL);
+	else
+		return kmalloc(bytes, GFP_KERNEL);
 }
 static void glue_ia_free(void *ptr)
 {
