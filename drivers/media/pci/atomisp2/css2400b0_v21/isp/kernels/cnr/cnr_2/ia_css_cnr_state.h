@@ -19,30 +19,22 @@
  *
  */
 
-#ifndef __IA_CSS_CNR2_HOST_H
-#define __IA_CSS_CNR2_HOST_H
+#ifndef __IA_CSS_CNR2_STATE_H
+#define __IA_CSS_CNR2_STATE_H
 
-#include "ia_css_cnr2_types.h"
-#include "ia_css_cnr2_param.h"
+#include "type_support.h"
+#include "vmem.h"
 
-extern const struct ia_css_cnr_config default_cnr_config;
+typedef struct
+{
+  VMEM_ARRAY(y, (MAX_VECTORS_PER_BUF_LINE/2)*ISP_NWAY);
+  VMEM_ARRAY(u, (MAX_VECTORS_PER_BUF_LINE/2)*ISP_NWAY);
+  VMEM_ARRAY(v, (MAX_VECTORS_PER_BUF_LINE/2)*ISP_NWAY);
+} s_cnr_buf;
 
-void
-ia_css_cnr_encode(
-	struct sh_css_isp_cnr_params *to,
-	const struct ia_css_cnr_config *from);
+/* CNR (color noise reduction) */
+struct sh_css_isp_cnr_vmem_state {
+	s_cnr_buf cnr_buf;
+};
 
-void
-ia_css_cnr_dump(
-	const struct sh_css_isp_cnr_params *cnr,
-	unsigned level);
-
-void
-ia_css_cnr_debug_dtrace(
-	const struct ia_css_cnr_config *config,
-	unsigned level);
-
-void
-ia_css_init_cnr2_state(
-	void/*struct sh_css_isp_cnr_vmem_state *state*/);
-#endif /* __IA_CSS_CNR2_HOST_H */
+#endif /* __IA_CSS_CNR2_STATE_H */

@@ -22,8 +22,6 @@
 #ifndef __IA_CSS_DE2_HOST_H
 #define __IA_CSS_DE2_HOST_H
 
-#include "sh_css_params.h"
-
 #include "ia_css_de2_types.h"
 #include "ia_css_de2_param.h"
 
@@ -41,7 +39,6 @@ ia_css_ecd_dump(
 
 void
 ia_css_ecd_debug_dtrace(
-	const struct ia_css_ecd_config *config, unsigned level)
-;
+	const struct ia_css_ecd_config *config, unsigned level);
 
 #endif /* __IA_CSS_DE2_HOST_H */

@@ -112,3 +112,9 @@ ia_css_dp_debug_dtrace(
 		"config.threshold=%d, config.gain=%d\n",
 		config->threshold, config->gain);
 }
+
+void
+ia_css_init_dp_state(void/*struct sh_css_isp_dp_vmem_state *state*/)
+{
+	//memset(state, 0, sizeof(*state));
+}

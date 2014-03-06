@@ -82,8 +82,6 @@ typedef struct s_isp_globals {
   unsigned dma_crop_block_width_a;
   unsigned dma_crop_block_width_b;
 
-  unsigned dma_tnr_stride_b;
-
 /* DMA settings for output image */
   unsigned dma_output_skip_vecs;
   unsigned dma_output_block_width_a;
@@ -199,7 +197,6 @@ extern s_isp_addresses NO_SYNC NO_HOIST isp_addresses;
 #define g_dma_crop_cropping_a      isp_globals.dma_crop_cropping_a
 #define g_dma_crop_block_width_a   isp_globals.dma_crop_block_width_a
 #define g_dma_crop_block_width_b   isp_globals.dma_crop_block_width_b
-#define g_dma_tnr_stride_b         isp_globals.dma_tnr_stride_b
 
 #define g_dma_output_skip_vecs     isp_globals.dma_output_skip_vecs
 #define g_dma_output_block_width_a isp_globals.dma_output_block_width_a

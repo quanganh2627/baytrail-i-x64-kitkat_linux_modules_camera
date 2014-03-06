@@ -96,8 +96,6 @@
 
 #define NUM_ONLINE_INIT_CONTINUOUS_FRAMES      2
 
-#define NUM_VIDEO_DELAY_FRAMES	3
-#define NUM_VIDEO_TNR_FRAMES	2
 #define NR_OF_PIPELINES			IA_CSS_PIPE_ID_NUM /* Must match with IA_CSS_PIPE_ID_NUM */
 
 #define SH_CSS_MAX_IF_CONFIGS	3 /* Must match with IA_CSS_NR_OF_CONFIGS (not defined yet).*/
@@ -293,8 +291,8 @@ struct ia_css_isp_parameter_set_info {
 struct sh_css_binary_args {
 	struct ia_css_frame *cc_frame;       /* continuous capture frame */
 	struct ia_css_frame *in_frame;	     /* input frame */
+	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES];   /* reference input frame */
 	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];   /* tnr frames */
-	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES]; /* video pipe delay frames */
 	struct ia_css_frame *out_frame[IA_CSS_BINARY_MAX_OUTPUT_PORTS];      /* output frame */
 	struct ia_css_frame *out_vf_frame;   /* viewfinder output frame */
 	bool                 copy_vf;
@@ -542,7 +540,6 @@ struct sh_css_sp_pipeline {
 	} copy;
 };
 
-
 /*
  * The first frames (with comment Dynamic) can be dynamic or static
  * The other frames (ref_in and below) can only be static
@@ -560,7 +557,6 @@ struct ia_css_frames_sp {
 	struct ia_css_frame_sp	out[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_resolution effective_in_res;
 	struct ia_css_frame_sp	out_vf;
-	struct ia_css_frame_sp	tnr_frames[NUM_VIDEO_TNR_FRAMES];
 	struct ia_css_frame_sp  delay_frames[NUM_VIDEO_DELAY_FRAMES];
 	struct ia_css_frame_sp_info internal_frame_info;
 	/* PQ TODO: should be a separate host-sp communication array which

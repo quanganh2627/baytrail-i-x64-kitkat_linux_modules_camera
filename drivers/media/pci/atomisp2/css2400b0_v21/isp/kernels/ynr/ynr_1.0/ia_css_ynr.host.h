@@ -22,8 +22,6 @@
 #ifndef __IA_CSS_YNR_HOST_H
 #define __IA_CSS_YNR_HOST_H
 
-#include "sh_css_params.h"
-
 #include "ia_css_ynr_types.h"
 #include "ia_css_ynr_param.h"
 
@@ -60,4 +58,7 @@ ia_css_ee_debug_dtrace(
 	const struct ia_css_ee_config *config,
 	unsigned level);
 
+void
+ia_css_init_ynr_state(
+	void/*struct sh_css_isp_ynr_vmem_state *state*/);
 #endif /* __IA_CSS_YNR_HOST_H */
