@@ -14,8 +14,9 @@
 
 #include <linux/device.h>
 #include <linux/interrupt.h>
-#include <linux/pci.h>
+#include <linux/firmware.h>
 #include <linux/module.h>
+#include <linux/pci.h>
 #include <linux/pm_qos.h>
 #include <linux/pm_runtime.h>
 #include <linux/timer.h>
@@ -24,8 +25,11 @@
 #include "css2600-pdata.h"
 #include "css2600-bus.h"
 #include "css2600-regs.h"
+#include "css2600-wrapper-2401.h"
 
 #define CSS2600_PCI_BAR		0
+
+#define CSS2401_FIRMWARE "shisp_2401a0_v21_bxtpoc.bin"
 
 struct css2600_dma_mapping;
 
@@ -207,6 +211,17 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 	pci_set_master(pdev);
 
+	rval = request_firmware(&isp->fw, CSS2401_FIRMWARE, &pdev->dev);
+	if (rval) {
+		dev_err(&pdev->dev, "requesting firmware for 2401 failed\n");
+		return rval;
+	}
+
+	css2600_wrapper_init(&pdev->dev, &isp->css_env, base);
+
+	writel(CSS2401_CSI_RECEIVER_SELECTION_INTEL,
+	       base + CSS2401_REG_CSI_RECEIVER_SELECTION);
+
 	if (pdev->device == CSS2600_HW_BXT) {
 		isp->buttress = css2600_buttress_init(pdev, &pdev->dev, base, 0);
 		rval = PTR_ERR(isp->buttress);
@@ -313,17 +328,22 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 out_css2600_bus_del_devices:
 	css2600_isys_iomem_filter_remove(&pdev->dev);
 	css2600_bus_del_devices(pdev);
+	release_firmware(isp->fw);
 
 	return rval;
 }
 
 static void css2600_pci_remove(struct pci_dev *pdev)
 {
+	struct css2600_device *isp = pci_get_drvdata(pdev);
+
 	css2600_isys_iomem_filter_remove(&pdev->dev);
 	css2600_bus_del_devices(pdev);
 
 	pm_runtime_forbid(&pdev->dev);
 	pm_runtime_get_noresume(&pdev->dev);
+
+	release_firmware(isp->fw);
 }
 
 static DEFINE_PCI_DEVICE_TABLE(css2600_pci_tbl) = {

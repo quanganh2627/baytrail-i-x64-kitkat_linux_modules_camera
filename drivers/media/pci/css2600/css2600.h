@@ -21,6 +21,10 @@
 #include "css2600-pdata.h"
 #include "css2600-bus.h"
 
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+#include "lib2401/ia_css_env.h"
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
+
 #define CSS2600_NAME		"css2600"
 
 #define CSS2600_HW_MRFLD_2401	0x1478
@@ -29,6 +33,7 @@
 
 struct pci_dev;
 struct list_head;
+struct firmware;
 
 #define NR_OF_MMU_RESOURCES			2
 
@@ -38,6 +43,10 @@ struct css2600_device {
 	struct css2600_bus_device *isys_iommu, *isys;
 	struct css2600_bus_device *psys_iommu, *psys;
 	struct css2600_bus_device *buttress;
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+	struct ia_css_env css_env;
+	const struct firmware *fw;
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 };
 
 #include <linux/version.h>

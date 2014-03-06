@@ -15,6 +15,7 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/dma-attrs.h>
+#include <linux/firmware.h>
 #include <linux/intel_mid_pm.h>
 #include <linux/iommu.h>
 #include <linux/mm.h>
@@ -454,6 +455,7 @@ static int isys_probe(struct css2600_bus_device *adev)
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 	struct ia_css_fwctrl_devconfig devconfig;
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
+	struct css2600_device *isp = dev_get_drvdata(adev->dev.parent);
 	int rval = 0;
 
 	isys = devm_kzalloc(&adev->dev, sizeof(*isys), GFP_KERNEL);
@@ -469,30 +471,23 @@ static int isys_probe(struct css2600_bus_device *adev)
 	css2600_bus_set_drvdata(adev, isys);
 
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
-	if (request_firmware(&isys->fw, CSS2401_FIRMWARE, &adev->dev)) {
-		dev_err(&adev->dev, "requesting firmware for 2401 failed\n");
-		return -ENOENT;
-	}
-
-	css2600_wrapper_init(&adev->dev, &isys->css_env, isys->pdata->base);
-
-	isys->css_fw.data = (void *)isys->fw->data;
-	isys->css_fw.bytes = isys->fw->size;
+	isys->css_fw.data = (void *)isp->fw->data;
+	isys->css_fw.bytes = isp->fw->size;
 
 	rval = isys_runtime_pm(1);
 	if (rval) {
 		dev_err(&adev->dev, "isys_runtime_pm failed: %d\n", rval);
-		goto err_release_firmware;
+		return rval;
 	}
 
-	rval = ia_css_load_firmware(&isys->css_env, &isys->css_fw);
+	rval = ia_css_load_firmware(&isp->css_env, &isys->css_fw);
 	if (rval) {
 		dev_err(&adev->dev, "css load fw failed (%d)\n", rval);
 		rval = -EIO;
 		goto err_power_off;
 	}
 
-	rval = ia_css_init(&isys->css_env, NULL, 0, IA_CSS_IRQ_TYPE_PULSE);
+	rval = ia_css_init(&isp->css_env, NULL, 0, IA_CSS_IRQ_TYPE_PULSE);
 	if (rval) {
 		dev_err(&adev->dev, "ia_css_init failed (%d)\n", rval);
 		rval = -EIO;
@@ -507,9 +502,6 @@ static int isys_probe(struct css2600_bus_device *adev)
 		rval = -EIO;
 		goto err_power_off;
 	}
-
-	writel(CSS2401_CSI_RECEIVER_SELECTION_INTEL,
-	       isys->pdata->base + CSS2401_REG_CSI_RECEIVER_SELECTION);
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 
 	rval = isys_register_devices(isys);
@@ -530,9 +522,6 @@ err_remove:
 
 err_power_off:
 	isys_runtime_pm(0);
-
-err_release_firmware:
-	release_firmware(isys->fw);
 
 	return rval;
 }

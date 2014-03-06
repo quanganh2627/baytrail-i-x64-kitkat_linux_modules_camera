@@ -18,7 +18,6 @@
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 #include <lib2401.h>
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
-#include <linux/firmware.h>
 #include <linux/spinlock.h>
 
 #include <media/v4l2-device.h>
@@ -31,11 +30,7 @@
 #include "css2600-isys-tpg.h"
 #include "css2600-isys-tpg-2401.h"
 #include "css2600-isys-video.h"
-#include "css2600-isys-wrapper-2401.h"
 #include "css2600-pdata.h"
-#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
-#include "lib2401/ia_css_env.h"
-#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 
 #define CSS2600_ISYS_MAX_CSI2_PORTS		4
 #define CSS2600_ISYS_MAX_TPGS			2
@@ -65,16 +60,12 @@ struct css2600_isys {
 	struct css2600_isys_tpg_2401 tpg_2401[CSS2600_ISYS_2401_MAX_TPGS];
 
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
-	struct ia_css_env css_env;
 	struct ia_css_fw css_fw;
-	const struct firmware *fw;
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 };
 
 extern const struct v4l2_ioctl_ops css2600_isys_ioctl_ops;
 
 int css2600_pipeline_pm_use(struct media_entity *entity, int use);
-
-#define CSS2401_FIRMWARE "shisp_2401a0_v21_bxtpoc.bin"
 
 #endif /* CSS2600_ISYS_H */
