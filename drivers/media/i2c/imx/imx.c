@@ -466,6 +466,7 @@ static int __imx_init(struct v4l2_subdev *sd, u32 val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct imx_device *dev = to_imx_sensor(sd);
+	int ret;
 
 	if (dev->sensor_id == IMX_ID_DEFAULT)
 		return 0;
@@ -475,8 +476,29 @@ static int __imx_init(struct v4l2_subdev *sd, u32 val)
 	dev->curr_res_table = dev->mode_tables->res_preview;
 	dev->entries_curr_table = dev->mode_tables->n_res_preview;
 
-	return imx_write_reg_array(client,
-			dev->mode_tables->init_settings);
+	ret = imx_write_reg_array(client, dev->mode_tables->init_settings);
+	if (ret)
+		return ret;
+
+	if (dev->sensor_id == IMX132_ID) {
+		static const unsigned int IMX132_DEFAULT_LANES = 1;
+		struct camera_mipi_info *imx_info =
+						v4l2_get_subdev_hostdata(sd);
+		static const u8 imx132_rglanesel[] = {
+			IMX132_RGLANESEL_1LANE,		/* 1 lane */
+			IMX132_RGLANESEL_2LANES,	/* 2 lanes */
+			IMX132_RGLANESEL_1LANE,		/* undefined */
+			IMX132_RGLANESEL_4LANES,	/* 4 lanes */
+		};
+		unsigned int lanes = (imx_info ? imx_info->num_lanes
+						: IMX132_DEFAULT_LANES) - 1;
+		if (lanes >= ARRAY_SIZE(imx132_rglanesel))
+			lanes = IMX132_DEFAULT_LANES - 1;
+		ret = imx_write_reg(client, IMX_8BIT,
+				    IMX132_RGLANESEL, imx132_rglanesel[lanes]);
+	}
+
+	return ret;
 }
 
 static int imx_init(struct v4l2_subdev *sd, u32 val)
