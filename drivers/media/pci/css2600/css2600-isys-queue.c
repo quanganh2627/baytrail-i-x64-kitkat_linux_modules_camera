@@ -222,7 +222,7 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 
 	rval = css2600_isys_video_set_streaming(av, 1);
 	if (rval)
-		return rval;
+		goto out_dequeue_bufs;
 
 	stream_cfg.src = av->ip.source;
 	spin_lock_irqsave(&av->isys->lock, flags);
@@ -235,7 +235,7 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	if (rval < 0) {
 		dev_dbg(&av->isys->adev->dev, "can't open stream (%d)\n",
 			rval);
-		goto out_fail;
+		goto out_pipe_null;
 	}
 
 	wait_for_completion(&av->ip.stream_open_completion);
@@ -286,11 +286,26 @@ out_stream_close:
 		dev_dbg(&av->isys->adev->dev, "stream close complete\n");
 	}
 
-out_fail:
+out_pipe_null:
 	css2600_isys_video_set_streaming(av, 0);
 	spin_lock_irqsave(&av->isys->lock, flags);
 	av->isys->pipes[av->ip.source] = NULL;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
+
+out_dequeue_bufs:
+	spin_lock_irqsave(&aq->lock, flags);
+	while (!list_empty(&aq->pre_streamon_queued)) {
+		struct css2600_isys_buffer *ib =
+			list_last_entry(&aq->pre_streamon_queued,
+					struct css2600_isys_buffer, head);
+		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
+
+		dev_dbg(&av->isys->adev->dev,
+			"removing buffer %u/%p from pre_streamon_queued\n",
+			vb->v4l2_buf.index, ib);
+		list_del(&ib->head);
+	}
+	spin_unlock_irqrestore(&aq->lock, flags);
 
 	return rval;
 }
