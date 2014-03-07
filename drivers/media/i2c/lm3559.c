@@ -517,9 +517,8 @@ static int lm3559_g_flash_status(struct v4l2_subdev *sd, s32 *val)
 	return 0;
 }
 
-static int lm3559_g_flash_status_register(struct v4l2_subdev *sd, u32 *val)
+static int lm3559_g_flash_status_register(struct v4l2_subdev *sd, s32 *val)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct lm3559 *flash = to_lm3559(sd);
 	int ret;
 
