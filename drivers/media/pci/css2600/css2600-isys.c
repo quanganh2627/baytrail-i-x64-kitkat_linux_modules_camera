@@ -449,10 +449,16 @@ static int isys_probe(struct css2600_bus_device *adev)
 	struct css2600_bus_iommu *aiommu =
 		to_css2600_bus_device(&adev->dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
-	struct css2600_mmu_domain *adom = mmu->dmap->domain->priv;
+	struct css2600_mmu_domain *adom;
 	struct ia_css_isys_device_cfg_data isys_cfg = { };
 	struct css2600_isys *isys;
 	int rval = 0;
+
+	/* Has the domain been attached? */
+	if (!mmu)
+		return -EPROBE_DEFER;
+
+	adom = mmu->dmap->domain->priv;
 
 	if (!css2600_wrapper_init_done())
 		return -EPROBE_DEFER;
