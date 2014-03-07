@@ -103,7 +103,8 @@ static ia_css_ptr glue_css_alloc(size_t bytes, uint32_t attributes)
 		return 0;
 	}
 
-	pr_debug("glue: mapping %lu bytes to %p\n", buf->bytes, buf->addr);
+	pr_debug("glue: mapping %lu bytes to %p, iova 0x%8.8x\n", buf->bytes,
+		 buf->addr, buf->iova);
 
 	spin_lock_irqsave(&mine.lock, flags);
 	list_add(&buf->list, &mine.buffers);
