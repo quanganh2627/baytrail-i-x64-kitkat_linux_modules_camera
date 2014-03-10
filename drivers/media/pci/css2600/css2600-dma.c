@@ -194,6 +194,8 @@ static void css2600_dma_free(struct device *dev, size_t size, void *vaddr,
 	struct css2600_bus_iommu *aiommu = to_css2600_bus_device(dev)->iommu;
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 	struct page **pages = __iommu_get_pages(vaddr, attrs);
+	struct iova *iova = find_iova(&mmu->dmap->iovad,
+				      dma_handle >> PAGE_SHIFT);
 
 	if (WARN_ON(!pages))
 		return;
@@ -202,7 +204,10 @@ static void css2600_dma_free(struct device *dev, size_t size, void *vaddr,
 
 	vm_unmap_ram(vaddr, size >> PAGE_SHIFT);
 
-	free_iova(&mmu->dmap->iovad, dma_handle >> PAGE_SHIFT);
+	iommu_unmap(mmu->dmap->domain, iova->pfn_lo << PAGE_SHIFT,
+		    (iova->pfn_hi - iova->pfn_lo + 1) << PAGE_SHIFT);
+
+	__free_iova(&mmu->dmap->iovad, iova);
 
 	__iommu_free_buffer(dev, pages, size, attrs);
 
