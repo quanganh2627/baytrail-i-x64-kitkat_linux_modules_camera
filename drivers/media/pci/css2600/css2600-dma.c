@@ -143,7 +143,6 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 	struct css2600_mmu *mmu = dev_get_drvdata(aiommu->dev);
 	struct page **pages;
 	struct iova *iova;
-	uint32_t iova_addr;
 	void *addr;
 	int i;
 	int rval;
@@ -159,15 +158,12 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 	if (!pages)
 		goto out_free_iova;
 
-	iova_addr = iova->pfn_lo;
-
-	for (i = 0; i < (size >> PAGE_SHIFT) && iova_addr < iova->pfn_hi; i++) {
-		rval = iommu_map(mmu->dmap->domain, iova_addr << PAGE_SHIFT,
+	for (i = 0; iova->pfn_lo + i <= iova->pfn_hi; i++) {
+		rval = iommu_map(mmu->dmap->domain,
+				 (iova->pfn_lo + i) << PAGE_SHIFT,
 				 page_to_phys(pages[i]), PAGE_SIZE, 0);
 		if (rval)
 			goto out_unmap;
-
-		iova_addr++;
 	}
 
 	addr = vm_map_ram(pages, size >> PAGE_SHIFT, 0, PAGE_KERNEL);
@@ -183,8 +179,7 @@ static void *css2600_dma_alloc(struct device *dev, size_t size,
 out_unmap:
 	__iommu_free_buffer(dev, pages, size, attrs);
 	for (i--; i >= 0; i--) {
-		iova_addr--;
-		iommu_unmap(mmu->dmap->domain, iova_addr << PAGE_SHIFT,
+		iommu_unmap(mmu->dmap->domain, (iova->pfn_lo + i) << PAGE_SHIFT,
 			    PAGE_SIZE);
 	}
 out_free_iova:
