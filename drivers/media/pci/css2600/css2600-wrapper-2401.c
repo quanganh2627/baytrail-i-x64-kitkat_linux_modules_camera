@@ -94,7 +94,7 @@ static ia_css_ptr glue_css_alloc(size_t bytes, uint32_t attributes)
 		dma_set_attr(DMA_ATTR_FORCE_CONTIGUOUS, &buf->attrs);
 
 	/*alloc using css2600 dma driver*/
-	buf->bytes = PAGE_ALIGN(bytes);
+	buf->bytes = bytes;
 	buf->addr = dma_ops->alloc(mine.dev, buf->bytes, &buf->iova,
 				   GFP_KERNEL, &buf->attrs);
 
