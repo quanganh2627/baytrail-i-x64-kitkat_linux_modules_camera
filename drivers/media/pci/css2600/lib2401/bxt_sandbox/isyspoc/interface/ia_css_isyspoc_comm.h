@@ -43,7 +43,7 @@
 #define SIZE_OF_ISYSPOC_CMD_MSG_STRUCT	\
 	((5 * sizeof(uint32_t)) +			\
 	sizeof(virtual_input_system_t) +	\
-	(2 * sizeof(unsigned long)) +		\
+	(2 * sizeof(uint32_t)) +		\
 	SIZE_OF_ISYSPOC_PAYLOAD_UNION)
 
 /* In the above macro we need
@@ -57,7 +57,7 @@
 typedef struct {
 	uint32_t send_type;
 	uint32_t resp_type;
-	unsigned long timestamp[2];
+	uint32_t timestamp[2];
 	uint32_t stream_handle;
 	uint32_t pin_available;
 	uint32_t ret;

@@ -337,7 +337,7 @@ struct ia_css_isys_frame_buff_set {
 struct ia_css_isys_resp_info {
 	enum ia_css_isys_resp_type type;
 	int error;
-	unsigned long timestamp[2];
+	uint32_t timestamp[2];
 	unsigned int stream_handle;
 	struct ia_css_isys_output_pin pin;
 };
