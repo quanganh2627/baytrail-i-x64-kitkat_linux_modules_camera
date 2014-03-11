@@ -125,10 +125,38 @@ static irqreturn_t css2600_isr(int irq, void *priv)
 		if (IS_ENABLED(VIDEO_CSS2600_PSYS))
 			css2600_call_isr(isp->psys);
 		break;
-	case CSS2600_HW_MRFLD_2401:
-		css2600_call_isr(isp->isys);
-		css2600_call_isr(isp->psys);
+#if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
+	case CSS2600_HW_MRFLD_2401: {
+		enum ia_css_fwctrl_event_type event;
+		int rval;
+
+		rval = -ia_css_fwctrl_dequeue_event(&event);
+		if (rval) {
+			dev_info(&isp->pdev->dev, "failed event dequeue (%d)\n",
+				 rval);
+			break;
+		}
+
+		switch (event) {
+		default:
+			dev_dbg(&isp->pdev->dev, "unknown event type %u\n",
+				event);
+			break;
+		case IA_CSS_FWCTRL_NO_EVENT:
+			dev_dbg(&isp->pdev->dev, "no interrupt source\n");
+			break;
+		case IA_CSS_FWCTRL_ISYS_EVENT:
+			dev_dbg(&isp->pdev->dev, "interrupt source isys\n");
+			css2600_call_isr(isp->isys);
+			break;
+		case IA_CSS_FWCTRL_PSYS_EVENT:
+			dev_dbg(&isp->pdev->dev, "interrupt source psys\n");
+			css2600_call_isr(isp->psys);
+			break;
+		}
 		break;
+	}
+#endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
 	}
 
 	return IRQ_HANDLED;
