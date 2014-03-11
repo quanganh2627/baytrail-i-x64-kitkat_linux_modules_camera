@@ -199,7 +199,7 @@ static void hmm_bo_release(struct hmm_buffer_object *bo)
 			     "the vm is still not freed, free vm first...\n");
 		hmm_bo_free_vm(bo);
 	}
-	if (bo->status & HMM_BO_VMAPED) {
+	if (bo->status & HMM_BO_VMAPED || bo->status & HMM_BO_VMAPED_CACHED) {
 		dev_warn(atomisp_dev, "the vunmap is not done, do it...\n");
 		hmm_bo_vunmap(bo);
 	}
@@ -1067,7 +1067,7 @@ int hmm_bo_binded(struct hmm_buffer_object *bo)
 	return ret;
 }
 
-void *hmm_bo_vmap(struct hmm_buffer_object *bo)
+void *hmm_bo_vmap(struct hmm_buffer_object *bo, bool cached)
 {
 	struct page **pages;
 	int i;
@@ -1075,7 +1075,7 @@ void *hmm_bo_vmap(struct hmm_buffer_object *bo)
 	check_bo_null_return(bo, NULL);
 
 	mutex_lock(&bo->mutex);
-	if (bo->status & HMM_BO_VMAPED) {
+	if (bo->status & HMM_BO_VMAPED || bo->status & HMM_BO_VMAPED_CACHED) {
 		mutex_unlock(&bo->mutex);
 		return bo->vmap_addr;
 	}
@@ -1090,13 +1090,13 @@ void *hmm_bo_vmap(struct hmm_buffer_object *bo)
 	for (i = 0; i < bo->pgnr; i++)
 		pages[i] = bo->page_obj[i].page;
 
-	bo->vmap_addr = vmap(pages, bo->pgnr, VM_MAP, PAGE_KERNEL_NOCACHE);
+	bo->vmap_addr = vmap(pages, bo->pgnr, VM_MAP, cached ? PAGE_KERNEL : PAGE_KERNEL_NOCACHE);
 	if (unlikely(!bo->vmap_addr)) {
 		mutex_unlock(&bo->mutex);
 		dev_err(atomisp_dev, "vmap failed...\n");
 		return NULL;
 	}
-	bo->status |= HMM_BO_VMAPED;
+	bo->status |= (cached ? HMM_BO_VMAPED_CACHED : HMM_BO_VMAPED);
 
 	atomisp_kernel_free(pages);
 
@@ -1104,15 +1104,29 @@ void *hmm_bo_vmap(struct hmm_buffer_object *bo)
 	return bo->vmap_addr;
 }
 
+void hmm_bo_flush_vmap(struct hmm_buffer_object *bo)
+{
+	check_bo_null_return_void(bo);
+
+	mutex_lock(&bo->mutex);
+	if (!(bo->status & HMM_BO_VMAPED_CACHED) || !bo->vmap_addr) {
+		mutex_unlock(&bo->mutex);
+		return;
+	}
+
+	clflush_cache_range(bo->vmap_addr, bo->pgnr * PAGE_SIZE);
+	mutex_unlock(&bo->mutex);
+}
+
 void hmm_bo_vunmap(struct hmm_buffer_object *bo)
 {
 	check_bo_null_return_void(bo);
 
 	mutex_lock(&bo->mutex);
-	if (bo->status & HMM_BO_VMAPED) {
+	if (bo->status & HMM_BO_VMAPED || bo->status & HMM_BO_VMAPED_CACHED) {
 		vunmap(bo->vmap_addr);
 		bo->vmap_addr = NULL;
-		bo->status &= ~HMM_BO_VMAPED;
+		bo->status &= ~(HMM_BO_VMAPED | HMM_BO_VMAPED_CACHED);
 	}
 
 	mutex_unlock(&bo->mutex);

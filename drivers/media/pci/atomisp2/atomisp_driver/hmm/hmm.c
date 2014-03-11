@@ -418,7 +418,7 @@ int hmm_mmap(struct vm_area_struct *vma, ia_css_ptr virt)
 }
 
 /*Map ISP virtual address into IA virtual address*/
-void *hmm_vmap(ia_css_ptr virt)
+void *hmm_vmap(ia_css_ptr virt, bool cached)
 {
 	struct hmm_buffer_object *bo;
 
@@ -430,7 +430,23 @@ void *hmm_vmap(ia_css_ptr virt)
 		return NULL;
 	}
 
-	return hmm_bo_vmap(bo);
+	return hmm_bo_vmap(bo, cached);
+}
+
+/* Flush the memory which is mapped as cached memory through hmm_vmap */
+void hmm_flush_vmap(ia_css_ptr virt)
+{
+	struct hmm_buffer_object *bo;
+
+	bo = hmm_bo_device_search_start(&bo_device, virt);
+	if (!bo) {
+		dev_warn(atomisp_dev,
+			    "can not find buffer object start with address 0x%x\n",
+			    virt);
+		return;
+	}
+
+	hmm_bo_flush_vmap(bo);
 }
 
 void hmm_vunmap(ia_css_ptr virt)
@@ -485,9 +501,9 @@ void hmm_pool_unregister(enum hmm_pool_type pool_type)
 	return;
 }
 
-void *hmm_isp_vaddr_to_host_vaddr(ia_css_ptr ptr)
+void *hmm_isp_vaddr_to_host_vaddr(ia_css_ptr ptr, bool cached)
 {
-	return hmm_vmap(ptr);
+	return hmm_vmap(ptr, cached);
 	/* vmunmap will be done in hmm_bo_release() */
 }
 

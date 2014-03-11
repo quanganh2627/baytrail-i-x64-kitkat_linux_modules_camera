@@ -67,14 +67,20 @@ phys_addr_t hmm_virt_to_phys(ia_css_ptr virt);
  * virt must be the start address of ISP memory (return by hmm_alloc),
  * do not pass any other address.
  */
-void *hmm_vmap(ia_css_ptr virt);
+void *hmm_vmap(ia_css_ptr virt, bool cached);
 void hmm_vunmap(ia_css_ptr virt);
+
+/*
+ * flush the cache for the vmapped buffer.
+ * if the buffer has not been vmapped, return directly.
+ */
+void hmm_flush_vmap(ia_css_ptr virt);
 
 /*
  * Address translation from ISP shared memory address to kernel virtual address
  * if the memory is not vmmaped,  then do it.
  */
-void *hmm_isp_vaddr_to_host_vaddr(ia_css_ptr ptr);
+void *hmm_isp_vaddr_to_host_vaddr(ia_css_ptr ptr, bool cached);
 
 /*
  * Address translation from kernel virtual address to ISP shared memory address
