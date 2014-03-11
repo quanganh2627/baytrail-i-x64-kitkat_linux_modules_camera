@@ -743,15 +743,12 @@ static bool is_pipe_valid_to_current_run_mode(struct atomisp_sub_device *asd,
 	if (!asd->run_mode)
 		return false;
 
+	if (asd->copy_mode && pipe_id == IA_CSS_PIPE_ID_COPY)
+		return true;
+
 	switch (asd->run_mode->val) {
 		case ATOMISP_RUN_MODE_STILL_CAPTURE:
-			/* New input system supports copy pipe */
-			if (pipe_id == IA_CSS_PIPE_ID_COPY)
-				if (asd->copy_mode)
-					return true;
-				else
-					return false;
-			else if (pipe_id == IA_CSS_PIPE_ID_CAPTURE)
+			if (pipe_id == IA_CSS_PIPE_ID_CAPTURE)
 				return true;
 			else
 				return false;
