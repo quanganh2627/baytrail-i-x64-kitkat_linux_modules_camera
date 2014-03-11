@@ -2547,7 +2547,8 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 			*frame_info = info.vf_output_info;
 		break;
 	case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
-		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
+		    pipe_index == IA_CSS_PIPE_ID_VIDEO)
 			*frame_info = info.vf_output_info;
 		else
 			*frame_info = info.output_info;
