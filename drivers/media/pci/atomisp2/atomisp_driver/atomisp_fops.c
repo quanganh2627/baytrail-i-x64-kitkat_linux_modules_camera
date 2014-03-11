@@ -277,6 +277,7 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 	if (asd->isp->inputs[asd->input_curr].type == SOC_CAMERA || raw_mode) {
 		css_capture_pipe_id = CSS_PIPE_ID_COPY;
 		css_preview_pipe_id = CSS_PIPE_ID_COPY;
+		css_video_pipe_id = CSS_PIPE_ID_COPY;
 	}
 #endif
 
@@ -284,13 +285,7 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 		buf_type = atomisp_get_css_buf_type(
 			asd, css_capture_pipe_id,
 			atomisp_subdev_source_pad(&capture_pipe->vdev));
-#ifdef CSS20
-		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
-			asd->stream_env[ATOMISP_INPUT_STREAM_VIDEO].stream)
-			input_stream_id = ATOMISP_INPUT_STREAM_VIDEO;
-		else
-#endif
-			input_stream_id = ATOMISP_INPUT_STREAM_GENERAL;
+		input_stream_id = ATOMISP_INPUT_STREAM_GENERAL;
 		atomisp_q_video_buffers_to_css(asd, capture_pipe,
 					       input_stream_id,
 					       buf_type, css_capture_pipe_id);
