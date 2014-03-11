@@ -717,7 +717,11 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 		enum atomisp_css_pipe_id css_pipe_id,
 		enum atomisp_css_buffer_type buf_type)
 {
-	if (css_pipe_id == CSS_PIPE_ID_COPY) {
+	struct atomisp_device *isp = asd->isp;
+
+	if (css_pipe_id == CSS_PIPE_ID_COPY &&
+	    isp->inputs[asd->input_curr].camera_caps->
+		sensor[asd->sensor_curr].stream_num > 1) {
 		switch (stream_id) {
 		case ATOMISP_INPUT_STREAM_PREVIEW:
 			return &asd->video_out_preview;
@@ -746,27 +750,22 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 		 */
 		return &asd->video_out_video_capture;
 	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
+		/* For online video or SDV video pipe. */
 		if (css_pipe_id == CSS_PIPE_ID_VIDEO) {
 			if (buf_type == CSS_BUFFER_TYPE_OUTPUT_FRAME)
 				return &asd->video_out_video_capture;
 			return &asd->video_out_preview;
-		} else {
-			if (buf_type == CSS_BUFFER_TYPE_OUTPUT_FRAME)
-				return &asd->video_out_capture;
-			return &asd->video_out_vf;
 		}
-	} else if (buf_type == CSS_BUFFER_TYPE_OUTPUT_FRAME) {
-		if (css_pipe_id == CSS_PIPE_ID_PREVIEW)
+	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_PREVIEW) {
+		/* For online preview or ZSL preview pipe. */
+		if (css_pipe_id == CSS_PIPE_ID_PREVIEW ||
+		    css_pipe_id == CSS_PIPE_ID_COPY)
 			return &asd->video_out_preview;
-		return &asd->video_out_capture;
-	/* statistic buffers are needed only in css capture & preview pipes */
-	} else if (buf_type == CSS_BUFFER_TYPE_3A_STATISTICS ||
-		   buf_type == CSS_BUFFER_TYPE_DIS_STATISTICS) {
-		if (css_pipe_id == CSS_PIPE_ID_PREVIEW)
-			return &asd->video_out_preview;
-		return &asd->video_out_capture;
 	}
-	return &asd->video_out_vf;
+	/* For capture pipe. */
+	if (buf_type == CSS_BUFFER_TYPE_VF_OUTPUT_FRAME)
+		return &asd->video_out_vf;
+	return &asd->video_out_capture;
 }
 
 void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
