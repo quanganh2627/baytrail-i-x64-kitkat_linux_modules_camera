@@ -4524,23 +4524,21 @@ int atomisp_source_pad_to_stream_id(struct atomisp_sub_device *asd,
 			sensor[asd->sensor_curr].stream_num == 1)
 		return ATOMISP_INPUT_STREAM_GENERAL;
 
-	if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
-			source_pad == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE)
-		stream_id = ATOMISP_INPUT_STREAM_VIDEO;
-	else {
-		switch (source_pad) {
-			case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
-				stream_id = ATOMISP_INPUT_STREAM_CAPTURE;
-				break;
-			case ATOMISP_SUBDEV_PAD_SOURCE_VF:
-				stream_id = ATOMISP_INPUT_STREAM_POSTVIEW;
-				break;
-			case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
-				stream_id = ATOMISP_INPUT_STREAM_PREVIEW;
-				break;
-			default:
-				stream_id = ATOMISP_INPUT_STREAM_GENERAL;
-		}
+	switch (source_pad) {
+		case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
+			stream_id = ATOMISP_INPUT_STREAM_CAPTURE;
+			break;
+		case ATOMISP_SUBDEV_PAD_SOURCE_VF:
+			stream_id = ATOMISP_INPUT_STREAM_POSTVIEW;
+			break;
+		case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
+			stream_id = ATOMISP_INPUT_STREAM_PREVIEW;
+			break;
+		case ATOMISP_SUBDEV_PAD_SOURCE_VIDEO:
+			stream_id = ATOMISP_INPUT_STREAM_VIDEO;
+			break;
+		default:
+			stream_id = ATOMISP_INPUT_STREAM_GENERAL;
 	}
 
 	return stream_id;
