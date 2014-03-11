@@ -116,7 +116,7 @@ int ia_css_isys_stream_open(
 	bool rc;
 	ia_css_isys_descr_t			isys_stream_descr;
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg;
+	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -177,7 +177,7 @@ int ia_css_isys_stream_close(
 )
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg;
+	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -206,7 +206,7 @@ int ia_css_isys_stream_start(
 		)
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg;
+	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
 	unsigned int i;
 	int retval = 0;
 
@@ -265,7 +265,7 @@ int ia_css_isys_stream_start(
 )
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg;
+	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -292,7 +292,7 @@ int ia_css_isys_stream_start(
 )
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg;
+	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -320,7 +320,7 @@ int ia_css_isys_stream_capture_indication(
 )
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg;
+	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
 	unsigned int i;
 	int retval = 0;
 
