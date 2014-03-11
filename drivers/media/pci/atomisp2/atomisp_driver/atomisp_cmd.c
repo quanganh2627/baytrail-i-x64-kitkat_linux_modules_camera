@@ -3255,11 +3255,16 @@ int atomisp_try_fmt(struct video_device *vdev, struct v4l2_format *f,
 	struct atomisp_sub_device *asd = atomisp_to_video_pipe(vdev)->asd;
 	struct v4l2_mbus_framefmt snr_mbus_fmt;
 	const struct atomisp_format_bridge *fmt;
+	struct atomisp_input_stream_info *stream_info =
+		(struct atomisp_input_stream_info *)snr_mbus_fmt.reserved;
+	uint16_t stream_index;
+	int source_pad = atomisp_subdev_source_pad(vdev);
 	int ret;
 
 	if (isp->inputs[asd->input_curr].camera == NULL)
 		return -EINVAL;
 
+	stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
 	fmt = atomisp_get_format_bridge(f->fmt.pix.pixelformat);
 	if (fmt == NULL) {
 		dev_err(isp->dev, "unsupported pixelformat!\n");
@@ -3269,6 +3274,9 @@ int atomisp_try_fmt(struct video_device *vdev, struct v4l2_format *f,
 	snr_mbus_fmt.code = fmt->mbus_code;
 	snr_mbus_fmt.width = f->fmt.pix.width;
 	snr_mbus_fmt.height = f->fmt.pix.height;
+	stream_info->enable = 1;
+	stream_info->stream = stream_index;
+	stream_info->ch_id = 0;
 
 	dev_dbg(isp->dev, "try_mbus_fmt: asking for %ux%u\n",
 		snr_mbus_fmt.width, snr_mbus_fmt.height);
