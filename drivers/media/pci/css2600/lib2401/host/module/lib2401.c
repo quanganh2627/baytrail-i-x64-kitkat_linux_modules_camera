@@ -17,6 +17,8 @@
 EXPORT_SYMBOL_GPL(ia_css_init);
 EXPORT_SYMBOL_GPL(ia_css_load_firmware);
 EXPORT_SYMBOL_GPL(ia_css_fwctrl_device_open);
+EXPORT_SYMBOL_GPL(ia_css_fwctrl_dequeue_event);
+EXPORT_SYMBOL_GPL(ia_css_fwctrl_device_close);
 EXPORT_SYMBOL_GPL(ia_css_isys_device_configure);
 EXPORT_SYMBOL_GPL(ia_css_isys_stream_open);
 EXPORT_SYMBOL_GPL(ia_css_isys_stream_close);
