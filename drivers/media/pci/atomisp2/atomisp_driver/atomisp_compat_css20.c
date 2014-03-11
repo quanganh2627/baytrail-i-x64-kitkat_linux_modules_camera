@@ -1397,12 +1397,18 @@ int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
 {
 	struct atomisp_device *isp = asd->isp;
 	if (asd->params.curr_grid_info.s3a_grid.enable) {
+		void *s3a_ptr;
+
 		s3a_buf->s3a_data = ia_css_isp_3a_statistics_allocate(
 				&asd->params.curr_grid_info.s3a_grid);
 		if (!s3a_buf->s3a_data) {
 			dev_err(isp->dev, "3a buf allocation failed.\n");
 			return -EINVAL;
 		}
+
+		s3a_ptr = hmm_vmap(s3a_buf->s3a_data->data_ptr, true);
+		s3a_buf->s3a_map = ia_css_isp_3a_statistics_map_allocate(
+						s3a_buf->s3a_data, s3a_ptr);
 	}
 
 	if (asd->params.curr_grid_info.dvs_grid.enable) {
@@ -1432,6 +1438,11 @@ int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
 
 void atomisp_css_free_3a_buffer(struct atomisp_s3a_buf *s3a_buf)
 {
+	if (s3a_buf->s3a_data)
+		hmm_vunmap(s3a_buf->s3a_data->data_ptr);
+
+	ia_css_isp_3a_statistics_map_free(s3a_buf->s3a_map);
+	s3a_buf->s3a_map = NULL;
 	ia_css_isp_3a_statistics_free(s3a_buf->s3a_data);
 }
 
@@ -1476,7 +1487,7 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 		asd->params.s3a_output_bytes = 0;
 		list_for_each_entry_safe(s3a_buf, _s3a_buf,
 						&asd->s3a_stats, list) {
-			ia_css_isp_3a_statistics_free(s3a_buf->s3a_data);
+			atomisp_css_free_3a_buffer(s3a_buf);
 			list_del(&s3a_buf->list);
 			kfree(s3a_buf);
 		}
@@ -1631,14 +1642,20 @@ int atomisp_alloc_metadata_output_buf(struct atomisp_sub_device *asd)
 }
 
 int atomisp_css_get_3a_statistics(struct atomisp_sub_device *asd,
-				  struct atomisp_css_buffer *isp_css_buffer)
+				  struct atomisp_css_buffer *isp_css_buffer,
+				  struct ia_css_isp_3a_statistics_map *s3a_map)
 {
 	if (asd->params.s3a_user_stat && asd->params.s3a_output_bytes) {
-		/* To avoid racing with atomisp_3a_stat() */
-		ia_css_get_3a_statistics(asd->params.s3a_user_stat,
-				 isp_css_buffer->css_buffer.data.stats_3a);
+		if (s3a_map) {
+			ia_css_translate_3a_statistics(
+				asd->params.s3a_user_stat, s3a_map);
+		} else {
+			ia_css_get_3a_statistics(asd->params.s3a_user_stat,
+				isp_css_buffer->css_buffer.data.stats_3a);
+		}
 		asd->params.s3a_exp_id = isp_css_buffer->css_buffer.data.
 			stats_3a->exp_id;
+		/* To avoid racing with atomisp_3a_stat() */
 		asd->params.s3a_buf_data_valid = true;
 	}
 

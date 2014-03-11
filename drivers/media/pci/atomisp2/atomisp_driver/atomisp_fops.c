@@ -175,6 +175,7 @@ int atomisp_q_s3a_buffers_to_css(struct atomisp_sub_device *asd,
 				struct atomisp_s3a_buf, list);
 		list_move_tail(&s3a_buf->list, &asd->s3a_stats);
 
+		hmm_flush_vmap(s3a_buf->s3a_data->data_ptr);
 		if (atomisp_q_s3a_buffer_to_css(asd, s3a_buf,
 						stream_id, css_pipe_id))
 			return -EINVAL;

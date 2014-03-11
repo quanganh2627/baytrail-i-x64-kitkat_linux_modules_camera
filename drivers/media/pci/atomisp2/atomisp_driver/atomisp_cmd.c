@@ -768,6 +768,22 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 	return &asd->video_out_capture;
 }
 
+static struct ia_css_isp_3a_statistics_map *
+find_s3a_map(struct atomisp_sub_device *asd,
+		const struct ia_css_isp_3a_statistics *stats)
+{
+	struct atomisp_s3a_buf *s3a_buf = NULL, *_s3a_buf_tmp;
+
+	list_for_each_entry_safe(s3a_buf, _s3a_buf_tmp,
+					&asd->s3a_stats, list) {
+		if (s3a_buf->s3a_data == stats)
+			return s3a_buf->s3a_map;
+	}
+
+	dev_err(asd->isp->dev, "could not find s3a_map for stats %p\n", stats);
+	return NULL;
+}
+
 void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 		      enum atomisp_css_buffer_type buf_type,
 		      enum atomisp_css_pipe_id css_pipe_id,
@@ -814,8 +830,13 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 	switch (buf_type) {
 		case CSS_BUFFER_TYPE_3A_STATISTICS:
 			/* update the 3A data to ISP context */
-			if (!error)
-				atomisp_css_get_3a_statistics(asd, &buffer);
+			if (!error) {
+				struct ia_css_isp_3a_statistics_map *map;
+
+				map = find_s3a_map(asd,
+					buffer.css_buffer.data.stats_3a);
+				atomisp_css_get_3a_statistics(asd, &buffer, map);
+			}
 
 			asd->s3a_bufs_in_css[css_pipe_id]--;
 

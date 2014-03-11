@@ -162,6 +162,7 @@ struct atomisp_css_env {
 
 struct atomisp_s3a_buf {
 	atomisp_css_3a_data *s3a_data;
+	struct ia_css_isp_3a_statistics_map *s3a_map;
 	struct list_head list;
 };
 
