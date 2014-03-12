@@ -47,6 +47,8 @@ ia_css_raw_configure(
 	const struct sh_css_sp_pipeline *pipe,
 	const struct ia_css_binary     *binary,
 	const struct ia_css_frame_info *in_info,
-	const struct ia_css_frame_info *internal_info);
+	const struct ia_css_frame_info *internal_info,
+	bool two_ppc,
+	bool deinterleaved);
 
 #endif /* __IA_CSS_RAW_HOST_H */

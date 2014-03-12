@@ -22,6 +22,8 @@
 #ifndef _IA_CSS_BUFQ_COMM_H
 #define _IA_CSS_BUFQ_COMM_H
 
+#include "system_global.h"
+
 /** Enumeration of buffer types. Buffers can be queued and de-queued
  *  to hand them over between IA and ISP.
  */
@@ -87,6 +89,7 @@ enum sh_css_queue_id {
 #if defined(HAS_NO_INPUT_SYSTEM) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* input frame queue for skycam */
 	SH_CSS_QUEUE_G_ID,
+	SH_CSS_QUEUE_H_ID, /* for metadata */
 #endif
 	SH_CSS_MAX_NUM_QUEUES
 };

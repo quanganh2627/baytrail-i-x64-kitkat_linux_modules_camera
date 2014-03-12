@@ -19,20 +19,28 @@
  *
  */
 
-#ifndef __IA_CSS_OUTPUT_PARAM_H
-#define __IA_CSS_OUTPUT_PARAM_H
+#include "ia_css_frame.h"
+#include "ia_css.h"
+#define IA_CSS_INCLUDE_CONFIGURATIONS
+#include "ia_css_isp_configs.h"
+#include "ia_css_copy_output.host.h"
+#include "isp.h"
 
-#include <type_support.h>
-#include "dma.h"
-#include "ia_css_frame_comm.h" /* ia_css_frame_sp_info */
+void
+ia_css_copy_output_config(
+	struct sh_css_isp_copy_output_isp_config      *to,
+	const struct ia_css_copy_output_configuration *from)
+{
+	to->enable = from->output != NULL;
+}
 
-/** output frame */
-struct sh_css_isp_output_isp_config {
-	uint32_t width_a_over_b;
-	uint32_t height;
-	uint32_t enable;
-	struct ia_css_frame_sp_info info;
-	struct dma_port_config port_b;
-};
+void
+ia_css_copy_output_configure(
+	const struct ia_css_binary     *binary,
+	const struct ia_css_frame_info *output)
+{
+	const struct ia_css_copy_output_configuration config =
+		{ output };
+	ia_css_configure_copy_output(binary, &config);
+}
 
-#endif /* __IA_CSS_OUTPUT_PARAM_H */

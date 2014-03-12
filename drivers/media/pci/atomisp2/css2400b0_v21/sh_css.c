@@ -969,6 +969,24 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_attr(
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 		isys_stream_descr->online = stream_cfg->online;
 #endif
+
+		/* metadata */
+		isys_stream_descr->metadata.enable = false;
+		if (stream_cfg->metadata_config.resolution.height > 0) {
+			err = ia_css_isys_convert_stream_format_to_mipi_format(
+				stream_cfg->metadata_config.data_type,
+				sh_css_csi2_compression_type_2_mipi_predictor(stream_cfg->source.port.compression.type),
+					&fmt_type);
+			if (err != IA_CSS_SUCCESS)
+				rc = false;
+			isys_stream_descr->metadata.fmt_type = fmt_type;
+			isys_stream_descr->metadata.bits_per_pixel =
+				ia_css_util_input_format_bpp(stream_cfg->metadata_config.data_type, true);
+			isys_stream_descr->metadata.pixels_per_line = stream_cfg->metadata_config.resolution.width;
+			isys_stream_descr->metadata.lines_per_frame = stream_cfg->metadata_config.resolution.height;
+			isys_stream_descr->metadata.enable = true;
+		}
+
 		break;
 	}
 	default:
@@ -6188,6 +6206,8 @@ static enum ia_css_err ia_css_pipe_get_cas_scaler_desc(struct ia_css_pipe *pipe,
 		num_stages++;
 		i *= 2;
 	}
+	if (pipe->config.enable_dz && (num_stages == 0))
+		num_stages = 1;
 	descr->num_stage = num_stages;
 #endif
 
@@ -7128,10 +7148,6 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 				return err;
 		}
 	}
-	if (mode != IA_CSS_CAPTURE_MODE_RAW &&
-	    mode != IA_CSS_CAPTURE_MODE_BAYER &&
-		vf_pp_stage)
-		vf_pp_stage->args.out_frame[0] = vf_frame;
 
 	/* rvanimme: why is this? */
 	/* TODO: investigate if this can be removed */
@@ -9053,10 +9069,10 @@ void ia_css_pipe_map_queue(struct ia_css_pipe *pipe, bool map)
 #if defined SH_CSS_ENABLE_METADATA
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_METADATA, map);
 #endif
-		//if ((pipe->pipe_settings.capture.primary_binary.info &&
-		//	pipe->pipe_settings.capture.primary_binary.info->sp.enable.s3a) ||
-		//	(pipe->pipe_settings.capture.pre_isp_binary.info &&
-		//	pipe->pipe_settings.capture.pre_isp_binary.info->sp.enable.s3a))
+		if ((pipe->pipe_settings.capture.primary_binary.info &&
+			pipe->pipe_settings.capture.primary_binary.info->sp.enable.s3a) ||
+			(pipe->pipe_settings.capture.pre_isp_binary.info &&
+			pipe->pipe_settings.capture.pre_isp_binary.info->sp.enable.s3a))
 			ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_3A_STATISTICS, map);
 	} else if (pipe->mode == IA_CSS_PIPE_ID_VIDEO) {
 #if defined(HAS_NO_INPUT_SYSTEM) || defined(USE_INPUT_SYSTEM_VERSION_2401)

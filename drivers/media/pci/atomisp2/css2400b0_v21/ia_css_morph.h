@@ -19,20 +19,24 @@
  *
  */
 
-#ifndef __IA_CSS_OUTPUT_PARAM_H
-#define __IA_CSS_OUTPUT_PARAM_H
+#ifndef __IA_CSS_MORPH_H
+#define __IA_CSS_MORPH_H
 
-#include <type_support.h>
-#include "dma.h"
-#include "ia_css_frame_comm.h" /* ia_css_frame_sp_info */
+#include <ia_css_types.h>
 
-/** output frame */
-struct sh_css_isp_output_isp_config {
-	uint32_t width_a_over_b;
-	uint32_t height;
-	uint32_t enable;
-	struct ia_css_frame_sp_info info;
-	struct dma_port_config port_b;
-};
+/** @brief Morphing table
+ * @param[in]	width Width of the morphing table.
+ * @param[in]	height Height of the morphing table.
+ * @return		Pointer to the morphing table
+*/
+struct ia_css_morph_table *
+ia_css_morph_table_allocate(unsigned int width, unsigned int height);
 
-#endif /* __IA_CSS_OUTPUT_PARAM_H */
+/** @brief Free the morph table
+ * @param[in]	me Pointer to the morph table.
+ * @return		None
+*/
+void
+ia_css_morph_table_free(struct ia_css_morph_table *me);
+
+#endif /* __IA_CSS_MORPH_H */

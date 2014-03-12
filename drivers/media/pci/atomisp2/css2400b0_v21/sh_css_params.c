@@ -52,6 +52,7 @@
 #include "ia_css_isp_param.h"
 #include "ia_css_isp_params.h"
 #include "ia_css_mipi.h"
+#include "ia_css_morph.h"
 
 /* Include all kernel host interfaces for ISP1 */
 #include "anr/anr_1.0/ia_css_anr.host.h"

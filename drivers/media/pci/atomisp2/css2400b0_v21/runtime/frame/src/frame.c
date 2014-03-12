@@ -840,3 +840,22 @@ ia_css_elems_bytes_from_info (const struct ia_css_frame_info *info)
 		return 2; /* bytes per pixel */
 	return 1; /* Default is 1 byte per pixel */
 }
+
+void ia_css_frame_info_to_frame_sp_info(
+	struct ia_css_frame_sp_info *to,
+	const struct ia_css_frame_info *from)
+{
+	ia_css_resolution_to_sp_resolution(&to->res, &from->res);
+	to->padded_width = from->padded_width;
+	to->format = from->format;
+	to->raw_bit_depth = from->raw_bit_depth;
+	to->raw_bayer_order = from->raw_bayer_order;
+}
+
+void ia_css_resolution_to_sp_resolution(
+	struct ia_css_sp_resolution *to,
+	const struct ia_css_resolution *from)
+{
+	to->width  = from->width;
+	to->height = from->height;
+}
