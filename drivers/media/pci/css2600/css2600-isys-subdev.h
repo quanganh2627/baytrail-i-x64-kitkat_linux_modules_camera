@@ -25,7 +25,7 @@
 
 struct css2600_isys_ffmt_entry {
 	uint32_t code;
-	uint32_t bpp;
+	uint32_t mipi_data_type;
 };
 
 #define FMT_ENTRY (struct css2600_isys_fmt_entry [])
@@ -48,6 +48,7 @@ struct css2600_isys_subdev {
 	uint32_t const * const *supported_codes;
 	struct media_pad pad[CSS2600_ISYS_MAX_PAD];
 	struct v4l2_mbus_framefmt ffmt[CSS2600_ISYS_MAX_PAD];
+	struct css2600_isys_ffmt_entry *ffmt_entry;
 	struct v4l2_rect crop[CSS2600_ISYS_MAX_PAD];
 	struct v4l2_rect compose;
 	struct v4l2_ctrl_handler ctrl_handler;

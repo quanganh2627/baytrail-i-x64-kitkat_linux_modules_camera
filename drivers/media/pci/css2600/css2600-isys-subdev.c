@@ -19,6 +19,18 @@
 #include <media/media-entity.h>
 
 #include "css2600-isys-subdev.h"
+#include <lib2401.h>
+
+static struct css2600_isys_ffmt_entry ffmts[] = {
+	{ V4L2_MBUS_FMT_SBGGR10_1X10, IA_CSS_ISYS_MIPI_DATA_TYPE_RAW_10, },
+	{ V4L2_MBUS_FMT_SGBRG10_1X10, IA_CSS_ISYS_MIPI_DATA_TYPE_RAW_10, },
+	{ V4L2_MBUS_FMT_SGRBG10_1X10, IA_CSS_ISYS_MIPI_DATA_TYPE_RAW_10, },
+	{ V4L2_MBUS_FMT_SRGGB10_1X10, IA_CSS_ISYS_MIPI_DATA_TYPE_RAW_10, },
+	{ V4L2_MBUS_FMT_SBGGR8_1X8, IA_CSS_ISYS_MIPI_DATA_TYPE_RAW_8, },
+	{ V4L2_MBUS_FMT_SGBRG8_1X8, IA_CSS_ISYS_MIPI_DATA_TYPE_RAW_8, },
+	{ V4L2_MBUS_FMT_SGRBG8_1X8, IA_CSS_ISYS_MIPI_DATA_TYPE_RAW_8, },
+	{ V4L2_MBUS_FMT_SRGGB8_1X8, IA_CSS_ISYS_MIPI_DATA_TYPE_RAW_8, },
+};
 
 struct v4l2_mbus_framefmt *__css2600_isys_get_ffmt(
 	struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
@@ -147,6 +159,15 @@ int css2600_isys_subdev_set_ffmt(struct v4l2_subdev *sd,
 			break;
 		}
 	}
+
+	for (i = 0; i < ARRAY_SIZE(ffmts); i++) {
+		if (ffmts[i].code == code) {
+			asd->ffmt_entry = ffmts + i;
+			break;
+		}
+	}
+
+	BUG_ON(!asd->ffmt_entry);
 
 	fmt->format.code = code;
 
