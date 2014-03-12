@@ -128,7 +128,14 @@ static irqreturn_t css2600_isr(int irq, void *priv)
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 	case CSS2600_HW_MRFLD_2401: {
 		enum ia_css_fwctrl_event_type event;
+		u32 val;
 		int rval;
+
+		pci_read_config_dword(isp->pdev,
+				      CSS2401_REG_PCI_INTERRUPT_CTRL, &val);
+		val |= 1 << CSS2401_PCI_INTERRUPT_CTRL_INTR_IIR;
+		pci_write_config_dword(isp->pdev,
+				       CSS2401_REG_PCI_INTERRUPT_CTRL, val);
 
 		rval = -ia_css_fwctrl_dequeue_event(&event);
 		if (rval) {
