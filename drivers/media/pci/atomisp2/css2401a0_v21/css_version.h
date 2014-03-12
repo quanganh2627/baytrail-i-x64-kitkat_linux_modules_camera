@@ -27,7 +27,7 @@
 #define __CSS_VERSION_H
 
 #define VER	0
-#define SUBVER	7
+#define SUBVER	8
 
 /*
 Changelog
@@ -47,10 +47,6 @@ VER 0.6, released 11/02/14:
 		Removed A0 support from code
 		Fixed corrupted fields of gird x/y_end for AWB & AE
 
-	Known issues:
-		RGB Gamma isn’t available yet for AIC  WIP by Yair.
-		Still WIP on AIC bugs which seen  in that version.
-		Warning storm printouts in test application run (storing to data memory (dmem_mem) at address…)
 
 VER 0.7, released 17/02/14:
         - Version release mainly for driver and AIC bug fixes
@@ -59,9 +55,14 @@ VER 0.7, released 17/02/14:
                 AIC bugs  : 1703 RGB gamma enable
 		1st striping pipe in smoketest - if_striped
 
-        Known issues:
-                Still WIP on AIC bugs which seen  in that version.
-                Warning storm printouts in test application run (storing to data memory (dmem_mem) at address…)
+
+VER 0.8, released 24/02/14:
+        - Version release mainly for validation IGK and SVOS run  (patch 1667)
+
+        Changes/Fixes:
+		added missing file to css_skycam_a0t_system.proj.mk
+		Updated reset function in mini_vid.c
+		added prepare function to mini_vid.c
 
 
 */

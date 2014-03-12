@@ -1,5 +1,5 @@
-/* Release Version: irci_master_20140306_1500 */
-/* Release Version: irci_master_20140306_1500 */
+/* Release Version: irci_master_20140311_1500 */
+/* Release Version: irci_master_20140311_1500 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -50,63 +50,15 @@
 #include "ia_css_stream_public.h"
 #include "ia_css_tpg.h"
 #include "ia_css_lace_stat.h"
+#include "ia_css_version.h"
+#include "ia_css_mmu.h"
+#include "ia_css_morph.h"
+#include "ia_css_shading.h"
 
-/* a common size for the version arrays */
-#define MAX_VERSION_SIZE 	500
-
-/* ===== GENERIC ===== */
-
-/** @brief Retrieves the current CSS version
- * @param[out]	version		A pointer to a buffer where to put the generated
- *				version string. NULL is ignored.
- *
- * This function generates and returns the version string. If FW is loaded, it
- * attaches the FW version.
+/*
+   Please do not add code to this file. Public functionality is to be
+   exposed in a function/data type specific header file.
+   Please add to the appropriate header file or create a new one.
  */
-enum ia_css_err
-ia_css_get_version(char *version, int max_size);
-
-/** @brief Invalidate the MMU internal cache.
- * @return	None
- *
- * This function triggers an invalidation of the translate-look-aside
- * buffer (TLB) that's inside the CSS MMU. This function should be called
- * every time the page tables used by the MMU change.
- */
-void
-ia_css_mmu_invalidate_cache(void);
-
-/* Convenience functions for alloc/free of certain datatypes */
-
-/** @brief Morphing table
- * @param[in]	width Width of the morphing table.
- * @param[in]	height Height of the morphing table.
- * @return		Pointer to the morphing table
-*/
-struct ia_css_morph_table *
-ia_css_morph_table_allocate(unsigned int width, unsigned int height);
-
-/** @brief Free the morph table
- * @param[in]	me Pointer to the morph table.
- * @return		None
-*/
-void
-ia_css_morph_table_free(struct ia_css_morph_table *me);
-
-/** @brief Shading table
- * @param[in]	width Width of the shading table.
- * @param[in]	height Height of the shading table.
- * @return		Pointer to the shading table
-*/
-struct ia_css_shading_table *
-ia_css_shading_table_alloc(unsigned int width,
-			   unsigned int height);
-
-/** @brief Free shading table
- * @param[in]	table Pointer to the shading table.
- * @return		None
-*/
-void
-ia_css_shading_table_free(struct ia_css_shading_table *table);
 
 #endif /* _IA_CSS_H_ */

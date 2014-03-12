@@ -101,9 +101,7 @@
 #define SH_CSS_MAX_IF_CONFIGS	3 /* Must match with IA_CSS_NR_OF_CONFIGS (not defined yet).*/
 #define SH_CSS_IF_CONFIG_NOT_NEEDED	0xFF
 
-/* Currently sensor metadata support is only implemented for
- * the input system v2, not for v3 yet. */
-#if defined(USE_INPUT_SYSTEM_VERSION_2)
+#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 #define SH_CSS_ENABLE_METADATA
 #endif
 
@@ -518,12 +516,12 @@ struct sh_css_sp_pipeline {
 					  an acceleration pipe. */
 #if defined (SH_CSS_ENABLE_METADATA)
 	struct {
-		uint32_t	format;   /* Metadata format in hrt format */
-		uint32_t	width;    /* Width of a line */
-		uint32_t	height;   /* Number of lines */
-		uint32_t	stride;   /* Stride (in bytes) per line */
-		uint32_t	size;     /* Total size (in bytes) */
-		hrt_vaddress	cont_buf; /* Address of continuous buffer */
+		uint32_t        format;   /* Metadata format in hrt format */
+		uint32_t        width;    /* Width of a line */
+		uint32_t        height;   /* Number of lines */
+		uint32_t        stride;   /* Stride (in bytes) per line */
+		uint32_t        size;     /* Total size (in bytes) */
+		hrt_vaddress    cont_buf; /* Address of continuous buffer */
 	} metadata;
 #endif
 	union {

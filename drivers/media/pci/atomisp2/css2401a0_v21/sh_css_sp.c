@@ -330,6 +330,9 @@ sh_css_sp_start_isys_copy(struct ia_css_frame *out_frame,
 	uint8_t stage_num = 0;
 	struct sh_css_sp_pipeline *pipe;
 	int i;
+#if defined SH_CSS_ENABLE_METADATA
+	int queue_id;
+#endif
 
 assert(out_frame != NULL);
 
@@ -378,6 +381,13 @@ assert(out_frame != NULL);
 
 	set_output_frame_buffer(out_frame, 0);
 
+#if defined SH_CSS_ENABLE_METADATA
+	if (pipe->metadata.height > 0) {
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_METADATA, thread_id, &queue_id);
+		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_METADATA] = queue_id;
+	}
+#endif
+
 	ia_css_debug_pipe_graph_dump_sp_raw_copy(out_frame);
 }
 
@@ -401,20 +411,6 @@ sh_css_sp_get_sw_interrupt_value(unsigned int irq)
 				/ sizeof(int);
 	(void)HIVE_ADDR_sp_output; /* To get rid of warning in CRUN */
 	return load_sp_array_uint(sp_output, o+irq);
-}
-
-static void
-sh_css_frame_info_to_sp(struct ia_css_frame_sp_info *sp,
-			const struct ia_css_frame_info *host)
-{
-	assert(sp != NULL);
-
-	sp->width	      = (uint16_t)host->res.width;
-	sp->height	      = (uint16_t)host->res.height;
-	sp->padded_width    = (uint16_t)host->padded_width;
-	sp->format	      = (unsigned char )host->format;
-	sp->raw_bit_depth   = (unsigned char )host->raw_bit_depth;
-	sp->raw_bayer_order = host->raw_bayer_order;
 }
 
 static void
@@ -474,7 +470,7 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 	if (!sp_frame_out)
 		return;
 
-	sh_css_frame_info_to_sp(&sp_frame_out->info, &frame_in->info);
+	ia_css_frame_info_to_frame_sp_info(&sp_frame_out->info, &frame_in->info);
 
 	switch (frame_in->info.format) {
 	case IA_CSS_FRAME_FORMAT_RAW_PACKED:
@@ -824,7 +820,9 @@ static void
 configure_isp_from_args(
 	const struct sh_css_sp_pipeline *pipe,
 	const struct ia_css_binary      *binary,
-	const struct sh_css_binary_args *args)
+	const struct sh_css_binary_args *args,
+	bool two_ppc,
+	bool deinterleaved)
 {
 #if !defined(IS_ISP_2500_SYSTEM)
 	ia_css_fpn_configure   (binary,  &binary->in_frame_info);
@@ -832,11 +830,14 @@ configure_isp_from_args(
 	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
 	ia_css_output0_configure(binary, &args->out_frame[0]->info);
 	ia_css_output1_configure(binary, &args->out_vf_frame->info);
+	ia_css_copy_output_configure(binary, &args->out_frame[0]->info);
+	ia_css_output0_configure(binary, &args->out_frame[0]->info);
 #endif
+	ia_css_iterator_configure (binary, &args->in_frame->info);
 	ia_css_ref_configure   (binary, &args->delay_frames[0]->info);
 	ia_css_dvs_configure   (binary, &args->out_frame[0]->info);
 	ia_css_output_configure(binary, &args->out_frame[0]->info);
-	ia_css_raw_configure   (pipe, binary, &args->in_frame->info, &binary->in_frame_info);
+	ia_css_raw_configure   (pipe, binary, &args->in_frame->info, &binary->in_frame_info, two_ppc, deinterleaved);
 	ia_css_tnr_configure   (binary, (const struct ia_css_frame **)args->tnr_frames);
 }
 
@@ -860,7 +861,8 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		    bool xnr,
 		    const struct ia_css_isp_param_css_segments *isp_mem_if,
 		    unsigned int if_config_index,
-		    enum ia_css_frame_delay frame_delay)
+		    enum ia_css_frame_delay frame_delay,
+		    bool two_ppc)
 {
 	const struct ia_css_binary_xinfo *xinfo;
 	const struct ia_css_binary_info  *info;
@@ -921,13 +923,13 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	sh_css_sp_stage.frames.effective_in_res.width = binary->effective_in_frame_res.width;
 	sh_css_sp_stage.frames.effective_in_res.height = binary->effective_in_frame_res.height;
 
-	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.in.info,
+	ia_css_frame_info_to_frame_sp_info(&sh_css_sp_stage.frames.in.info,
 				&binary->in_frame_info);
 	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
-		sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.out[i].info,
+		ia_css_frame_info_to_frame_sp_info(&sh_css_sp_stage.frames.out[i].info,
 					&binary->out_frame_info[i]);
 	}
-	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.internal_frame_info,
+	ia_css_frame_info_to_frame_sp_info(&sh_css_sp_stage.frames.internal_frame_info,
 				&binary->internal_frame_info);
 	sh_css_sp_stage.dvs_envelope.width    = binary->dvs_envelope.width;
 	sh_css_sp_stage.dvs_envelope.height   = binary->dvs_envelope.height;
@@ -993,7 +995,8 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
-	configure_isp_from_args(&sh_css_sp_group.pipe[thread_id], binary, args);
+	configure_isp_from_args(&sh_css_sp_group.pipe[thread_id],
+			binary, args, two_ppc, sh_css_sp_stage.deinterleaved);
 	initialize_isp_states(binary);
 
 	/* we do this only for preview pipe because in fill_binary_info function
@@ -1006,9 +1009,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		 * by configuring out&vf info fiels properly */
 		sh_css_sp_stage.frames.out[0].info.padded_width
 			<<= binary->vf_downscale_log2;
-		sh_css_sp_stage.frames.out[0].info.width
+		sh_css_sp_stage.frames.out[0].info.res.width
 			<<= binary->vf_downscale_log2;
-		sh_css_sp_stage.frames.out[0].info.height
+		sh_css_sp_stage.frames.out[0].info.res.height
 			<<= binary->vf_downscale_log2;
 	}
 	err = copy_isp_mem_if_to_ddr(binary);
@@ -1023,7 +1026,8 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 	      unsigned int pipe_num,
 	      bool xnr,
 	      unsigned int if_config_index,
-	      enum ia_css_frame_delay frame_delay)
+	      enum ia_css_frame_delay frame_delay,
+	      bool two_ppc)
 {
 	struct ia_css_binary *binary;
 	const struct ia_css_fw_info *firmware;
@@ -1105,7 +1109,8 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 			     xnr,
 			     mem_if,
 			     if_config_index,
-			     frame_delay);
+			     frame_delay,
+			     two_ppc);
 	return err;
 }
 
@@ -1268,7 +1273,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			else
 				tmp_if_config_index = if_config_index;
 			sp_init_stage(stage, pipe_num,
-				      xnr, tmp_if_config_index, frame_delay);
+				      xnr, tmp_if_config_index, frame_delay, two_ppc);
 		}
 
 		store_sp_stage_data(pipe_id, pipe_num, num);
