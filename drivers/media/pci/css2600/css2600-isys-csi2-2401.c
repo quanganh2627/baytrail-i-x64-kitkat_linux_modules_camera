@@ -19,6 +19,7 @@
 #include <linux/module.h>
 #include <linux/sizes.h>
 
+#include <media/css2600-isys.h>
 #include <media/media-device.h>
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
@@ -85,8 +86,30 @@ static const struct v4l2_subdev_core_ops csi2_sd_core_ops = {
 static int set_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct css2600_isys_csi2 *csi2 = to_css2600_isys_csi2(sd);
+	struct css2600_isys_pipeline *pipe =
+		container_of(sd->entity.pipe,
+			     struct css2600_isys_pipeline, pipe);
+	struct v4l2_subdev *ext_sd =
+		media_entity_to_v4l2_subdev(pipe->external);
+	struct css2600_isys_csi2_config *cfg;
 
 	dev_dbg(&csi2->isys->adev->dev, "csi2_2401 s_stream %d\n", enable);
+
+	if (!enable)
+		return 0;
+
+	if (ext_sd->owner == THIS_MODULE) {
+		ia_css_isysapi_rx_set_csi_port_cfg(
+			csi2->isys->ssi, csi2->asd.ffmt_entry->mipi_data_type,
+			0, pipe->source, 1);
+		return 0;
+	}
+
+	cfg = v4l2_get_subdev_hostdata(ext_sd);
+
+	ia_css_isysapi_rx_set_csi_port_cfg(
+		csi2->isys->ssi, csi2->asd.ffmt_entry->mipi_data_type,
+		0, pipe->source, cfg->nlanes);
 
 	return 0;
 }
