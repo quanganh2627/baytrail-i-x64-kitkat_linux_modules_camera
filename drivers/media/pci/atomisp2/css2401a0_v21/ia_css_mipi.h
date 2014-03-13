@@ -70,7 +70,7 @@ ia_css_mipi_frame_enable_check_on_size(const enum ia_css_csi2_port port,
  * @param		size_mem_words					The mipi frame size in memory words (32B).
  * @return		The error code.
  *
- * Calculate the size of a mipi frame, based on the resolution and format. 
+ * Calculate the size of a mipi frame, based on the resolution and format.
  */
 enum ia_css_err
 ia_css_mipi_frame_calculate_size(const unsigned int width,

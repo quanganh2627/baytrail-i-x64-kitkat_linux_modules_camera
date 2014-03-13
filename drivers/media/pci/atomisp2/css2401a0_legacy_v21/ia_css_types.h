@@ -1,5 +1,5 @@
-/* Release Version: irci_master_20140311_1500 */
-/* Release Version: irci_master_20140311_1500 */
+/* Release Version: irci_master_20140312_2258 */
+/* Release Version: irci_master_20140312_2258 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -200,7 +200,7 @@ struct ia_css_grid_info {
  */
 struct ia_css_morph_table {
 	uint32_t enable; /**< To disable GDC, set this field to false. The
-		          coordinates fields can be set to NULL in this case. */
+			  coordinates fields can be set to NULL in this case. */
 	uint32_t height; /**< Table height */
 	uint32_t width;  /**< Table width */
 	uint16_t *coordinates_x[IA_CSS_MORPH_TABLE_NUM_PLANES];
@@ -294,7 +294,7 @@ struct ia_css_isp_config {
 							[CTC2, 2only] */
 	struct ia_css_aa_config   *aa_config;	/**< YUV Anti-Aliasing
 							[AA2, 2only]
-						        (not used currently) */
+							(not used currently) */
 	struct ia_css_aa_config   *baa_config;	/**< Bayer Anti-Aliasing
 							[BAA2, 1&2] */
 	struct ia_css_ce_config   *ce_config;	/**< Chroma Enhancement
@@ -365,7 +365,7 @@ struct ia_css_isp_config {
 	struct ia_css_2500_res_mgr_config        *res_mgr_2500_config;
 
 	struct ia_css_frame	*output_frame;	/**< Output frame the config is to be applied to (optional) */
-	uint32_t 			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
+	uint32_t			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
 };
 
 /** DVS 1.0 Coefficients.
@@ -403,7 +403,7 @@ struct ia_css_dvs2_coef_types {
 };
 
 /** DVS 2.0 Coefficients. This structure describes the coefficients that are needed for the dvs statistics.
- *  e.g. hor_coefs.odd_real is the pointer to int16_t[grid.num_hor_coefs] containing the horizontal odd real 
+ *  e.g. hor_coefs.odd_real is the pointer to int16_t[grid.num_hor_coefs] containing the horizontal odd real
  *  coefficients.
  */
 struct ia_css_dvs2_coefficients {
@@ -423,7 +423,7 @@ struct ia_css_dvs2_stat_types {
 };
 
 /** DVS 2.0 Statistics. This structure describes the statistics that are generated using the provided coefficients.
- *  e.g. hor_prod.odd_real is the pointer to int16_t[grid.aligned_height][grid.aligned_width] containing 
+ *  e.g. hor_prod.odd_real is the pointer to int16_t[grid.aligned_height][grid.aligned_width] containing
  *  the horizontal odd real statistics. Valid statistics data area is int16_t[0..grid.height-1][0..grid.width-1]
  */
 struct ia_css_dvs2_statistics {

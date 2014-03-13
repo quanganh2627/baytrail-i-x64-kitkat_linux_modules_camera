@@ -19,18 +19,25 @@
  *
  */
 
-/* CSS API version file */
+#ifndef __IA_CSS_XNR3_HOST_H
+#define __IA_CSS_XNR3_HOST_H
 
-#ifndef __CSS_API_VERSION_H
-#define __CSS_API_VERSION_H
+//#include "sh_css_params.h"
 
-#define CSS_API_VERSION_STRING	"2.0.1.0"
+#include "ia_css_xnr3_param.h"
+#include "ia_css_xnr3_types.h"
 
-/*
-Change log
-V2.0.1.0, initial version:
- - added API verioning
-*/
+extern const struct ia_css_xnr3_config default_xnr3_config;
 
 
-#endif __CSS_API_VERSION_H
+void
+ia_css_xnr3_encode(
+	struct sh_css_isp_xnr3_params *to,
+	const struct ia_css_xnr3_config *from);
+
+void
+ia_css_xnr3_debug_dtrace(
+	const struct ia_css_xnr3_config *config,
+	unsigned level);
+
+#endif /* __IA_CSS_XNR3_HOST_H */

@@ -46,6 +46,7 @@
 #include "isp/kernels/uds/uds_1.0/ia_css_uds.host.h"
 #include "isp/kernels/wb/wb_1.0/ia_css_wb.host.h"
 #include "isp/kernels/xnr/xnr_1.0/ia_css_xnr.host.h"
+#include "isp/kernels/xnr/xnr_3.0/ia_css_xnr3.host.h"
 #include "isp/kernels/ynr/ynr_1.0/ia_css_ynr.host.h"
 #include "isp/kernels/ynr/ynr_2/ia_css_ynr2.host.h"
 /* Generated code: do not edit or commmit. */

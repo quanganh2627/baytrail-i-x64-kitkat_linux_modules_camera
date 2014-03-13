@@ -902,7 +902,7 @@ static void get_3a_stats_from_hmem(struct ia_css_3a_statistics *host_stats,
 	    * host_stats->grid.bqs_per_grid_cell;
 
 	out_ptr = host_stats->rgby_data;
-	
+
 	ia_css_bh_hmem_decode(out_ptr, ddr_ptr);
 
 /* Calculate sum of histogram of R,
@@ -1203,7 +1203,7 @@ convert_coords_to_ispparams(
 			assert(s.p2_x < s.p3_x);
 			assert(s.p0_y < s.p2_y);
 			assert(s.p1_y < s.p3_y);
-      
+
 #if 0
 			printf("j: %d\ti:%d\n", j, i);
 			printf("offset: %d\n", s.in_addr_offset);
@@ -1255,7 +1255,7 @@ store_dvs_6axis_config(
 	unsigned int i_stride;
 	unsigned int o_width;
 	unsigned int o_height;
-	
+
 	assert(params != NULL);
 	assert(binary != NULL);
 	assert(ddr_addr_y != mmgr_NULL);
@@ -1267,7 +1267,7 @@ store_dvs_6axis_config(
 	/* currently we only support two output with the same resolution, output 0 is th default one. */
 	o_width  = binary->out_frame_info[0].res.width;
 	o_height = binary->out_frame_info[0].res.height;
-	
+
 	/* Y plane */
 	convert_coords_to_ispparams(ddr_addr_y, params->dvs_6axis_config,
 				    i_stride, o_width, o_height, 0);
@@ -1976,7 +1976,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 	int i , num_sets,size_of_set,index=0;
 
 	struct ia_css_4a_private_config stats_config;
-	struct stats_3a_bubble_info_per_stripe stats_bubble_info; 
+	struct stats_3a_bubble_info_per_stripe stats_bubble_info;
 
 	hrt_vaddress af_ddr_addr = (hrt_vaddress)(long int)&(((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->af_raw_buffer);
 	hrt_vaddress awb_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->awb_raw_buffer;
@@ -1993,7 +1993,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 			"ia_css_get_4a_statistics() enter: "
 			"host_stats=%p, isp_stats=%p\n",
 			host_stats, isp_stats);
-	
+
 	/* load meta data */
 	mmgr_load(af_ddr_addr,
 		  (void*)&(host_stats->data->af_raw_buffer),
@@ -2063,7 +2063,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_get_4a_statistics() leave: return_void\n");
-		
+
 
 }
 
@@ -2252,7 +2252,7 @@ sh_css_get_ee_config(const struct ia_css_isp_parameters *params,
 		"config=%p\n",config);
 
 	*config = params->ee_config;
-	
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_ee_config() enter: ");
 	ia_css_ee_debug_dtrace(config, IA_CSS_DEBUG_TRACE_PRIVATE);
 }
@@ -2273,9 +2273,9 @@ sh_css_set_dvs_6axis_config(struct ia_css_isp_parameters *params,
 	"dvs_config=%p\n",dvs_config);
 
 	copy_dvs_6axis_table(params->dvs_6axis_config,dvs_config);
-	
-	params->dvs_6axis_config_changed = true;	
-	
+
+	params->dvs_6axis_config_changed = true;
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_set_dvs_6axis_config() leave: "
 		"return_void\n");
@@ -2308,7 +2308,7 @@ sh_css_get_dvs_6axis_config(const struct ia_css_isp_parameters *params,
 	{
 		copy_dvs_6axis_table(dvs_config,params->dvs_6axis_config);
 	}
-	
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_get_dvs_6axis_config() leave: "
 		"return_void\n");
@@ -2484,7 +2484,7 @@ ia_css_stream_set_isp_config_on_pipe(
 	ia_css_set_dvs2_coefficients(params, config->dvs2_coefs);
 
 	ia_css_set_configs(params, config);
-	
+
 	params->output_frame = config->output_frame;
 	params->isp_parameters_id = config->isp_config_id;
 
@@ -2634,7 +2634,7 @@ static bool reallocate_cached_buffer(
 
 	ret = realloc_isp_css_mm_buf(curr_buf,
 		curr_size, needed_size, false, err, mmgr_attribute);
-		
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "reallocate_cached_buffer() leave:\n");
 
 	return ret;
@@ -2995,7 +2995,7 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
-	
+
 	sh_css_set_nr_config(params, &default_nr_config);
 	sh_css_set_ee_config(params, &default_ee_config);
 	if (isp_pipe_version == 1)
@@ -3076,7 +3076,7 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	err = sh_css_param_update_isp_params(stream, false, NULL);
 	if (err != IA_CSS_SUCCESS)
 		return err;
- 
+
 	/* create per pipe reference to general ddr_ptrs */
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
 		ref_sh_css_ddr_address_map(ddr_ptrs, &params->pipe_ddr_ptrs[i]);
@@ -3096,7 +3096,7 @@ sh_css_params_init(void)
 	int i, p;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_init() enter: void\n");
-	
+
 	/* TMP: tracking of paramsets */
 	g_param_buffer_dequeue_count = 0;
 	g_param_buffer_enqueue_count = 0;
@@ -3703,7 +3703,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		/* update the other buffers to the pipe specific copies */
 		for (stage = pipeline->stages; stage; stage = stage->next) {
 			unsigned mem;
-			
+
 			if (!stage || !stage->binary) continue;
 #if !defined(IS_ISP_2500_SYSTEM)
 			process_kernel_parameters(pipeline->pipe_id,
@@ -3924,7 +3924,7 @@ sh_css_params_write_to_ddr_internal(
 		if (err != IA_CSS_SUCCESS)
 			return err;
 		if (params->sc_table_changed || buff_realloced) {
-			/* shading table is full resolution, reduce */			
+			/* shading table is full resolution, reduce */
 			prepare_shading_table(
 				(const struct ia_css_shading_table *)params->sc_table,
 				params->sensor_binning,

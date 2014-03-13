@@ -208,6 +208,11 @@ STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_qmul (
     const mpsdata_t             in1,
     const bitdepth_t            bitdepth);
 
+STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_qrmul (
+    const mpsdata_t             in0,
+    const mpsdata_t             in1,
+    const bitdepth_t            bitdepth);
+
 STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_and (
     const mpsdata_t             in0,
     const mpsdata_t             in1,

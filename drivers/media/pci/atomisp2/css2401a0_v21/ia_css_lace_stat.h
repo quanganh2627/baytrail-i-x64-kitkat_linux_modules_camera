@@ -32,7 +32,7 @@
 /** @brief Copy LACE statistics from an ACC buffer to a host
  *         buffer.
  * @param[in]	host_stats Host buffer.
- * @param[in] 	isp_stats ISP buffer.
+ * @param[in]	isp_stats ISP buffer.
  * @return		None
  */
 void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,

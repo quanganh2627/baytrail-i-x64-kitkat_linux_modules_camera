@@ -47,9 +47,9 @@ struct sh_css {
 	 * possibility. Also, active_pipes[] should be able to hold only
 	 * SH_CSS_MAX_SP_THREADS objects. Anything else is misleading. */
 	struct ia_css_pipe            *all_pipes[IA_CSS_PIPELINE_NUM_MAX];
-	void *(*malloc) (size_t bytes, bool zero_mem);
-	void (*free) (void *ptr);
-	void (*flush) (struct ia_css_acc_fw *fw);
+	void * (*malloc)(size_t bytes, bool zero_mem);
+	void (*free)(void *ptr);
+	void (*flush)(struct ia_css_acc_fw *fw);
 	bool                           check_system_idle;
 	bool                           stop_copy_preview;
 	unsigned int                   num_cont_raw_frames;

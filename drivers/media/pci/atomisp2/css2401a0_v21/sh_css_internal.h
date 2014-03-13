@@ -47,7 +47,7 @@
 #include "runtime/bufq/interface/ia_css_bufq.h"
 
 /* TODO: Move to a more suitable place when sp pipeline design is done. */
-#define IA_CSS_NUM_CB_SEM_READ_RESOURCE 	2
+#define IA_CSS_NUM_CB_SEM_READ_RESOURCE	2
 #define IA_CSS_NUM_CB_SEM_WRITE_RESOURCE	1
 #define IA_CSS_NUM_CBS						2
 #define IA_CSS_CB_MAX_ELEMS					2
@@ -56,8 +56,8 @@
  * IA_CSS_NUM_CB_SEM_WRITE_RESOURCE for read and write respectively.
  * TODO: Enforce the limitation above.
 */
-#define IA_CSS_COPYSINK_SEM_INDEX 	0
-#define IA_CSS_TAGGER_SEM_INDEX 	1
+#define IA_CSS_COPYSINK_SEM_INDEX	0
+#define IA_CSS_TAGGER_SEM_INDEX	1
 
 /* Force generation of output event. Used by acceleration pipe. */
 #define IA_CSS_POST_OUT_EVENT_FORCE		2
@@ -77,7 +77,7 @@
 #ifdef __DISABLE_UNUSED_THREAD__
 #define SH_CSS_MAX_SP_THREADS	1 /* preview */
 #else
-#if defined(HAS_SP_2500)
+#if defined(IS_ISP_2500_SYSTEM)
 #define SH_CSS_MAX_SP_THREADS	2 /* (preview, capture), acceleration */
 #else
 #define SH_CSS_MAX_SP_THREADS	4 /* raw_copy, preview, capture, acceleration */
@@ -150,7 +150,7 @@
  * Not all compilers will trigger an error with this macro; use a search engine to search for
  * BUILD_BUG_ON to find other methods.
  */
-#define COMPILATION_ERROR_IF( condition ) ((void)sizeof(char[1 - 2*!!(condition)]))
+#define COMPILATION_ERROR_IF(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 /* Number of SP's */
 #if defined(IS_ISP_2500_SYSTEM)
@@ -423,7 +423,7 @@ enum sh_css_stage_type {
 };
 #define SH_CSS_NUM_STAGE_TYPES 2
 
-#define SH_CSS_PIPE_CONFIG_SAMPLE_PARAMS 	(1 << 0)
+#define SH_CSS_PIPE_CONFIG_SAMPLE_PARAMS	(1 << 0)
 #define SH_CSS_PIPE_CONFIG_SAMPLE_PARAMS_MASK \
 	((SH_CSS_PIPE_CONFIG_SAMPLE_PARAMS << SH_CSS_MAX_SP_THREADS)-1)
 
@@ -471,12 +471,12 @@ enum sh_css_port_type {
 #define SH_CSS_PORT_FLD_WIDTH_IN_BITS (4)
 #define SH_CSS_PORT_TYPE_BIT_FLD(pt) (0x1 << (pt))
 #define SH_CSS_PORT_FLD(pd) ((pd) ? SH_CSS_PORT_FLD_WIDTH_IN_BITS : 0)
-#define SH_CSS_PIPE_PORT_CONFIG_ON(p,pd,pt) ( (p) |= (SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)) )
-#define SH_CSS_PIPE_PORT_CONFIG_OFF(p,pd,pt) ( (p) &= ~(SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)) )
-#define SH_CSS_PIPE_PORT_CONFIG_SET(p,pd,pt,val) ( (val)? SH_CSS_PIPE_PORT_CONFIG_ON(p,pd,pt):SH_CSS_PIPE_PORT_CONFIG_OFF(p,pd,pt) )
-#define SH_CSS_PIPE_PORT_CONFIG_GET(p,pd,pt) ( (p) & (SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)) )
-#define SH_CSS_PIPE_PORT_CONFIG_IS_CONTINUOUS(p)  (!(SH_CSS_PIPE_PORT_CONFIG_GET(p,SH_CSS_PORT_INPUT,SH_CSS_HOST_TYPE) && \
-					       SH_CSS_PIPE_PORT_CONFIG_GET(p,SH_CSS_PORT_OUTPUT,SH_CSS_HOST_TYPE)))
+#define SH_CSS_PIPE_PORT_CONFIG_ON(p, pd, pt) ((p) |= (SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)))
+#define SH_CSS_PIPE_PORT_CONFIG_OFF(p, pd, pt) ((p) &= ~(SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)))
+#define SH_CSS_PIPE_PORT_CONFIG_SET(p, pd, pt, val) ((val) ? SH_CSS_PIPE_PORT_CONFIG_ON(p, pd, pt):SH_CSS_PIPE_PORT_CONFIG_OFF(p, pd, pt))
+#define SH_CSS_PIPE_PORT_CONFIG_GET(p, pd, pt) ((p) & (SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)))
+#define SH_CSS_PIPE_PORT_CONFIG_IS_CONTINUOUS(p)  (!(SH_CSS_PIPE_PORT_CONFIG_GET(p, SH_CSS_PORT_INPUT, SH_CSS_HOST_TYPE) && \
+					       SH_CSS_PIPE_PORT_CONFIG_GET(p, SH_CSS_PORT_OUTPUT, SH_CSS_HOST_TYPE)))
 
 #define IA_CSS_ACQUIRE_ISP_POS	31
 
@@ -514,7 +514,7 @@ struct sh_css_sp_pipeline {
 	CSS_ALIGN(struct sh_css_sp_stage *stage, 8); /* Current stage for this pipeline */
 	CSS_ALIGN(int32_t num_execs, 8); /* number of times to run if this is
 					  an acceleration pipe. */
-#if defined (SH_CSS_ENABLE_METADATA)
+#if defined(SH_CSS_ENABLE_METADATA)
 	struct {
 		uint32_t        format;   /* Metadata format in hrt format */
 		uint32_t        width;    /* Width of a line */
@@ -717,7 +717,7 @@ struct sh_css_hmm_buffer {
 		ia_css_ptr skc_dvs_statistics;
 		ia_css_ptr lace_stat;
 		struct ia_css_metadata	metadata;
-		struct frame_data_wrapper{
+		struct frame_data_wrapper {
 			hrt_vaddress	frame_data;
 			uint32_t	flashed;
 			uint32_t	exp_id;
@@ -748,7 +748,7 @@ struct sh_css_hmm_buffer {
 	SIZE_OF_HRT_VADDRESS))
 
 #define SIZE_OF_SH_CSS_HMM_BUFFER_STRUCT				\
-	(SIZE_OF_PAYLOAD_UNION + 					\
+	(SIZE_OF_PAYLOAD_UNION +					\
 	CALC_ALIGNMENT_MEMBER(SIZE_OF_PAYLOAD_UNION, 8) +		\
 	sizeof(uint64_t) +						\
 	sizeof(uint64_t))
@@ -805,13 +805,13 @@ struct host_sp_communication {
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
 	(NUM_MIPI_FRAMES * SIZE_OF_HRT_VADDRESS) +			\
-	(4 * sizeof(uint32_t) ) +						\
+	(4 * sizeof(uint32_t)) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
 #else
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
-	(3 * sizeof(uint32_t) ) +						\
+	(3 * sizeof(uint32_t)) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
 #endif
 
@@ -849,7 +849,7 @@ struct host_sp_queues {
 };
 
 #define SIZE_OF_QUEUES_ELEMS							\
-	(SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT * 				\
+	(SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT *				\
 	((SH_CSS_MAX_SP_THREADS * SH_CSS_MAX_NUM_QUEUES * IA_CSS_NUM_ELEMS_HOST2SP_BUFFER_QUEUE)	+		\
 	(SH_CSS_MAX_NUM_QUEUES * IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE) +	\
 	(IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE) +				\
@@ -859,14 +859,14 @@ struct host_sp_queues {
 #define SIZE_OF_QUEUES_DESC										\
 	((SH_CSS_MAX_SP_THREADS * SH_CSS_MAX_NUM_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +	\
 	(SH_CSS_MAX_NUM_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +				\
-	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) 	+							\
-	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) + 							\
+	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT)	+							\
+	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +							\
 	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT))
 
 #define SIZE_OF_HOST_SP_QUEUES_STRUCT		\
 	(SIZE_OF_QUEUES_ELEMS) + (SIZE_OF_QUEUES_DESC)
 
-extern int (*sh_css_printf) (const char *fmt, va_list args);
+extern int (*sh_css_printf)(const char *fmt, va_list args);
 
 #ifndef __HIVECC
 STORAGE_CLASS_INLINE void
@@ -935,7 +935,7 @@ sh_css_binary_print(const struct ia_css_binary *binary);
 void
 sh_css_frame_info_set_width(struct ia_css_frame_info *info,
 			    unsigned int width,
-			    unsigned int aligned); // this can be used for an extra alignemt requirement. when 0, no extra alignment is done.
+			    unsigned int aligned); /* this can be used for an extra alignemt requirement. when 0, no extra alignment is done. */
 
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
 

@@ -19,7 +19,7 @@
  *
  */
 
-// CSS API version file
+/* CSS API version file */
 
 #ifndef __CSS_API_VERSION_H
 #define __CSS_API_VERSION_H
