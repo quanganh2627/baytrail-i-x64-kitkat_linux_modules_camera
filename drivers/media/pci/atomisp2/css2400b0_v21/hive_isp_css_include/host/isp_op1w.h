@@ -252,12 +252,32 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mul(
  *
  * @return		product of _a and _b
  *
- * This function will calculate the product
- * of the input arguments and returns the MSB
- * aligned single precison result.
- * result = _a * _b >> NUM_BITS;
+ * This function will calculate the fixed point
+ * product of the input arguments.
+ * and returns a single precison result.
+ * FP_UNITY * FP_UNITY => FP_UNITY.
+ * result = _a * _b >> (NUM_BITS-1);
  */
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qmul(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
+/** @brief fractional multiply with rounding
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		product of _a and _b
+ *
+ * This function will calculate the fixed point
+ * product of the input arguments
+ * and returns a single precison result.
+ * FP_UNITY * FP_UNITY => FP_UNITY.
+ * Depending on the rounding mode of the core
+ * it will round to nearest or to nearest even.
+ * result = _a * _b >> (NUM_BITS-1);
+ */
+STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qrmul(
     const tvector1w     _a,
     const tvector1w     _b);
 
