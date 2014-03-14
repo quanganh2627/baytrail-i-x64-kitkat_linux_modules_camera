@@ -235,6 +235,7 @@ struct csi2_config csi2_config_2600 = {
 struct csi2_config csi2_config_2401 = {
 	.nports = 3,
 	.nlanes = { 4, 1, 2 },
+	.offsets = { 0x000c0400, 0x000c2400, 0x000c4400 },
 };
 
 static struct csi2_config *isys_get_csi2_config(struct css2600_isys *isys)
