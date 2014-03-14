@@ -238,23 +238,9 @@ struct csi2_config csi2_config_2401 = {
 	.offsets = { 0x000c0400, 0x000c2400, 0x000c4400 },
 };
 
-static struct csi2_config *isys_get_csi2_config(struct css2600_isys *isys)
-{
-	switch (isys->pdata->type) {
-	case CSS2600_ISYS_TYPE_CSS2401:
-		return &csi2_config_2401;
-		break;
-	case CSS2600_ISYS_TYPE_CSS2600:
-		return &csi2_config_2600;
-		break;
-	default:
-		BUG();
-	}
-}
-
 static void isys_unregister_csi2(struct css2600_isys *isys)
 {
-	struct csi2_config *cfg = isys_get_csi2_config(isys);
+	struct csi2_config *cfg = &csi2_config_2600;
 	unsigned int i;
 
 	for (i = 0; i < cfg->nports; i++)
@@ -263,7 +249,7 @@ static void isys_unregister_csi2(struct css2600_isys *isys)
 
 static void isys_unregister_csi2_2401(struct css2600_isys *isys)
 {
-	struct csi2_config *cfg = isys_get_csi2_config(isys);
+	struct csi2_config *cfg = &csi2_config_2401;
 	unsigned int i;
 
 	for (i = 0; i < cfg->nports; i++) {
@@ -274,7 +260,7 @@ static void isys_unregister_csi2_2401(struct css2600_isys *isys)
 
 static int isys_register_csi2(struct css2600_isys *isys)
 {
-	struct csi2_config *cfg = isys_get_csi2_config(isys);
+	struct csi2_config *cfg = &csi2_config_2600;
 	unsigned int i;
 	int rval;
 
@@ -298,7 +284,7 @@ fail:
 
 static int isys_register_csi2_2401(struct css2600_isys *isys)
 {
-	struct csi2_config *cfg = isys_get_csi2_config(isys);
+	struct csi2_config *cfg = &csi2_config_2401;
 	unsigned int i;
 	int rval;
 
