@@ -29,6 +29,15 @@ config VIDEO_OV2722
 
          It currently only works with the atomisp driver.
 
+config VIDEO_M10MO
+	tristate "Fujitsu M10MO driver"
+	depends on I2C && VIDEO_V4L2
+	---help---
+	  This is a Video4Linux2 isp driver for the Fujitsu.
+
+	  It currently depends on internal V4L2 extensions defined in
+	  atomisp driver.
+
 config VIDEO_OV8830
        tristate "Omnivision ov8830 sensor support"
        depends on I2C && VIDEO_V4L2 && VIDEO_ATOMISP

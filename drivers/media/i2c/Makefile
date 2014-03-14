@@ -21,6 +21,9 @@ obj-$(CONFIG_VIDEO_OV8830)     += ov8830.o
 
 obj-$(CONFIG_VIDEO_S5K8AAY)    += s5k8aay.o
 
+obj-$(CONFIG_VIDEO_M10MO)    += m10mo.o
+CFLAGS_m10mo.o += -Werror
+
 obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o
 
 obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o
