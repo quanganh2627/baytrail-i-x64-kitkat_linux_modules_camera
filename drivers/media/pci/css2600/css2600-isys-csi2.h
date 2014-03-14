@@ -47,13 +47,6 @@ struct css2600_isys_csi2 {
 	void __iomem *base;
 	unsigned int nlanes;
 	unsigned int index;
-
-	struct {
-		unsigned int nlanes;
-		/* Unit is 0,0625 ns */
-		unsigned int termen[MAX_CSI2_LANES];
-		unsigned int settle[MAX_CSI2_LANES];
-	} sensor_cfg;
 };
 
 struct css2600_isys_csi2_timing {

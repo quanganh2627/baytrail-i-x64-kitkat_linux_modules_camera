@@ -168,10 +168,20 @@ int css2600_isys_csi2_calc_timing(struct css2600_isys_csi2 *csi2,
 	return 0;
 }
 
+#define CSI2_ACCINV	8
+
 static int set_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct css2600_isys_csi2 *csi2 = to_css2600_isys_csi2(sd);
+	struct css2600_isys_pipeline *ip =
+		container_of(sd->entity.pipe,
+			     struct css2600_isys_pipeline, pipe);
+	struct css2600_isys_csi2_config *cfg =
+		v4l2_get_subdev_hostdata(
+			media_entity_to_v4l2_subdev(ip->external));
+	struct css2600_isys_csi2_timing timing;
 	unsigned int i;
+	int rval;
 
 	dev_dbg(&csi2->isys->adev->dev, "csi2 s_stream %d\n", enable);
 
@@ -180,15 +190,19 @@ static int set_stream(struct v4l2_subdev *sd, int enable)
 		return 0;
 	}
 
-	writel(csi2->sensor_cfg.termen[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_CLOCK],
+	rval = css2600_isys_csi2_calc_timing(csi2, &timing, CSI2_ACCINV);
+	if (rval)
+		return rval;
+
+	writel(timing.ctermen,
 	       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_TERMEN_CLANE);
-	writel(csi2->sensor_cfg.settle[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_CLOCK],
+	writel(timing.csettle,
 	       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_SETTLE_CLANE);
 
-	for (i = 0; i < CSS2600_ISYS_MAX_CSI2_LANES; i++) {
-		writel(csi2->sensor_cfg.termen[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_DATA(i)],
+	for (i = 0; i < cfg->nlanes; i++) {
+		writel(timing.dtermen,
 		       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_TERMEN_DLANE(i));
-		writel(csi2->sensor_cfg.settle[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_DATA(i)],
+		writel(timing.dsettle,
 		       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_SETTLE_DLANE(i));
 	}
 
