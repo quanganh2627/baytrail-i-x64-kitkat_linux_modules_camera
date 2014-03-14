@@ -1596,6 +1596,10 @@ int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
 
 int atomisp_alloc_3a_output_buf(struct atomisp_sub_device *asd)
 {
+	if (!asd->params.curr_grid_info.s3a_grid.width ||
+			!asd->params.curr_grid_info.s3a_grid.height)
+		return 0;
+
 	asd->params.s3a_user_stat = ia_css_3a_statistics_allocate(
 				&asd->params.curr_grid_info.s3a_grid);
 	if (!asd->params.s3a_user_stat)
