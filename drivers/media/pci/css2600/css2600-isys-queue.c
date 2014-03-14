@@ -134,6 +134,13 @@ static void __buf_queue(struct vb2_buffer *vb, bool force)
 			{
 				.payload.addr =
 					*(dma_addr_t *)vb2_plane_cookie(vb, 0),
+				.info.type_specifics.dt =
+					av->pfmt->mipi_data_type,
+				.info.pt = IA_CSS_ISYS_PIN_TYPE_RAW_NS,
+				.info.output_res = {
+					.width = av->pix.width,
+					.height = av->pix.height,
+				},
 			}
 		},
 		.send_irq_sof = 1,
