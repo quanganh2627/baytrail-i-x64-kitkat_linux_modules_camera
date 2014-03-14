@@ -19,6 +19,7 @@
 #include <linux/module.h>
 #include <linux/sizes.h>
 
+#include <media/css2600-isys.h>
 #include <media/media-device.h>
 #include <media/media-entity.h>
 #include <media/v4l2-device.h>
@@ -87,7 +88,7 @@ static int set_stream(struct v4l2_subdev *sd, int enable)
 	writel(csi2->sensor_cfg.settle[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_CLOCK],
 	       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_SETTLE_CLANE);
 
-	for (i = 0; i < MAX_CSI2_LANES; i++) {
+	for (i = 0; i < CSS2600_ISYS_MAX_CSI2_LANES; i++) {
 		writel(csi2->sensor_cfg.termen[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_DATA(i)],
 		       csi2->base + CSI2_REG_CSI_RX_DLY_CNT_TERMEN_DLANE(i));
 		writel(csi2->sensor_cfg.settle[CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_DATA(i)],

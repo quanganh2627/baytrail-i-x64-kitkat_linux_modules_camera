@@ -30,8 +30,6 @@ struct css2600_isys;
 #define CSI2_PAD_SOURCE			1
 #define NR_OF_CSI2_PADS			2
 
-#define MAX_CSI2_LANES			4
-
 #define CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_CLOCK	0
 #define CSS2600_ISYS_CSI2_SENSOR_CFG_LANE_DATA(n)	((n) + 1)
 
