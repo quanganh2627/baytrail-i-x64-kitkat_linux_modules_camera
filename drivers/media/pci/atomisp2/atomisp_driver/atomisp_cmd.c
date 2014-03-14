@@ -784,6 +784,22 @@ find_s3a_map(struct atomisp_sub_device *asd,
 	return NULL;
 }
 
+static struct ia_css_isp_dvs_statistics_map *
+find_dvs_map(struct atomisp_sub_device *asd,
+		const struct ia_css_isp_dvs_statistics *stats)
+{
+	struct atomisp_dis_buf *dvs_buf = NULL, *_dvs_buf_tmp;
+
+	list_for_each_entry_safe(dvs_buf, _dvs_buf_tmp,
+					&asd->dis_stats, list) {
+		if (dvs_buf->dis_data == stats)
+			return dvs_buf->dvs_map;
+	}
+
+	dev_err(asd->isp->dev, "could not find dvs_map for stats %p\n", stats);
+	return NULL;
+}
+
 void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 		      enum atomisp_css_buffer_type buf_type,
 		      enum atomisp_css_pipe_id css_pipe_id,
@@ -852,8 +868,13 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			atomisp_metadata_ready_event(asd);
 			break;
 		case CSS_BUFFER_TYPE_DIS_STATISTICS:
-			if (!error)
-				atomisp_css_get_dis_statistics(asd, &buffer);
+			if (!error) {
+				struct ia_css_isp_dvs_statistics_map *map;
+
+				map = find_dvs_map(asd,
+					buffer.css_buffer.data.stats_dvs);
+				atomisp_css_get_dis_statistics(asd, &buffer, map);
+			}
 
 			asd->dis_bufs_in_css--;
 			break;

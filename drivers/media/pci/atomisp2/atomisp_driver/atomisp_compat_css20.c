@@ -1412,6 +1412,8 @@ int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
 	}
 
 	if (asd->params.curr_grid_info.dvs_grid.enable) {
+		void *dvs_ptr;
+
 		dis_buf->dis_data = ia_css_isp_dvs2_statistics_allocate(
 				&asd->params.curr_grid_info.dvs_grid);
 		if (!dis_buf->dis_data) {
@@ -1419,6 +1421,10 @@ int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
 			ia_css_isp_3a_statistics_free(s3a_buf->s3a_data);
 			return -EINVAL;
 		}
+
+		dvs_ptr = hmm_vmap(dis_buf->dis_data->data_ptr, true);
+		dis_buf->dvs_map = ia_css_isp_dvs_statistics_map_allocate(
+						dis_buf->dis_data, dvs_ptr);
 	}
 
 	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.
@@ -1448,6 +1454,11 @@ void atomisp_css_free_3a_buffer(struct atomisp_s3a_buf *s3a_buf)
 
 void atomisp_css_free_dis_buffer(struct atomisp_dis_buf *dis_buf)
 {
+	if (dis_buf->dis_data)
+		hmm_vunmap(dis_buf->dis_data->data_ptr);
+
+	ia_css_isp_dvs_statistics_map_free(dis_buf->dvs_map);
+	dis_buf->dvs_map = NULL;
 	ia_css_isp_dvs2_statistics_free(dis_buf->dis_data);
 }
 
@@ -1475,7 +1486,7 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 		asd->params.dis_proj_data_valid = false;
 		list_for_each_entry_safe(dis_buf, _dis_buf,
 						&asd->dis_stats, list) {
-			ia_css_isp_dvs2_statistics_free(dis_buf->dis_data);
+			atomisp_css_free_dis_buffer(dis_buf);
 			list_del(&dis_buf->list);
 			kfree(dis_buf);
 		}
@@ -1678,11 +1689,17 @@ void atomisp_css_get_metadata(struct atomisp_sub_device *asd,
 }
 
 void atomisp_css_get_dis_statistics(struct atomisp_sub_device *asd,
-				    struct atomisp_css_buffer *isp_css_buffer)
+				    struct atomisp_css_buffer *isp_css_buffer,
+				    struct ia_css_isp_dvs_statistics_map *dvs_map)
 {
 	if (asd->params.dvs_stat) {
-		ia_css_get_dvs2_statistics(asd->params.dvs_stat,
-				  isp_css_buffer->css_buffer.data.stats_dvs);
+		if (dvs_map)
+			ia_css_translate_dvs2_statistics(
+				asd->params.dvs_stat, dvs_map);
+		else
+			ia_css_get_dvs2_statistics(asd->params.dvs_stat,
+				isp_css_buffer->css_buffer.data.stats_dvs);
+
 		asd->params.exp_id = isp_css_buffer->css_buffer.exp_id;
 		asd->params.dis_proj_data_valid = true;
 	}

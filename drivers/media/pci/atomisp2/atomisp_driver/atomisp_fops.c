@@ -201,6 +201,7 @@ int atomisp_q_dis_buffers_to_css(struct atomisp_sub_device *asd,
 				   struct atomisp_dis_buf, list);
 		list_move_tail(&dis_buf->list, &asd->dis_stats);
 
+		hmm_flush_vmap(dis_buf->dis_data->data_ptr);
 		if (atomisp_q_dis_buffer_to_css(asd, dis_buf,
 						stream_id, css_pipe_id))
 			return -EINVAL;
