@@ -114,6 +114,54 @@ static inline void css2600_call_isr(struct css2600_bus_device *adev)
 	adev->adrv->isr(adev);
 }
 
+static struct css2600_irq_block_2401 {
+	uint32_t irq_enable_shift;
+	uint32_t num_irqs;
+	uint32_t irq_base;
+} css2401_irqs[] = {
+	{
+		CSS2401_REG_IRQ_IFMT_SHIFT,
+		CSS2401_REG_NUM_IRQ_IFMT,
+		CSS2401_REG_IRQ_CTRL_IFMT,
+	},
+	{
+		CSS2401_REG_IRQ_ISYS_SHIFT,
+		CSS2401_REG_NUM_IRQ_ISYS,
+		CSS2401_REG_IRQ_CTRL_ISYS,
+	},
+	{
+		CSS2401_REG_IRQ_ISEL_SHIFT,
+		CSS2401_REG_NUM_IRQ_ISEL,
+		CSS2401_REG_IRQ_CTRL_ISEL,
+	},
+};
+
+static void css2600_clear_irq_2401(struct css2600_device *isp)
+{
+	uint32_t status = readl(isp->base + CSS2401_REG_IRQ_CTRL_GB +
+				CSS2401_REG_IRQ_STATUS_OFFSET);
+	int i;
+
+	if (ffs(status) >= CSS2401_REG_NUM_IRQ_GB)
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(css2401_irqs); i++) {
+		uint32_t status_sub;
+
+		if (!(status & (1 << css2401_irqs[i].irq_enable_shift)))
+			continue;
+
+		status_sub = readl(isp->base + css2401_irqs[i].irq_base +
+				   CSS2401_REG_IRQ_STATUS_OFFSET);
+		writel(status_sub, isp->base + css2401_irqs[i].irq_base +
+		       CSS2401_REG_IRQ_CLEAR_OFFSET);
+		status &= ~(1 << css2401_irqs[i].irq_enable_shift);
+	}
+
+	writel(status, isp->base + CSS2401_REG_IRQ_CTRL_GB +
+	       CSS2401_REG_IRQ_CLEAR_OFFSET);
+}
+
 static irqreturn_t css2600_isr(int irq, void *priv)
 {
 	struct css2600_device *isp = priv;
@@ -130,6 +178,8 @@ static irqreturn_t css2600_isr(int irq, void *priv)
 		enum ia_css_fwctrl_event_type event;
 		u32 val;
 		int rval;
+
+		css2600_clear_irq_2401(isp);
 
 		pci_read_config_dword(isp->pdev,
 				      CSS2401_REG_PCI_INTERRUPT_CTRL, &val);
