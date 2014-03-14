@@ -272,5 +272,12 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x5m_12dB_nrm (
 */
 STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir5x5m_12dB_nrm (
 	const s_1w_5x5_matrix m);
+
+STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x5m_box (
+	s_1w_1x5_matrix m);
+
+STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x9m_box (
+	s_1w_1x9_matrix m);
+
 #endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/
 

@@ -2446,6 +2446,9 @@ ia_css_uninit(void)
 #endif
 
 	sh_css_sp_set_sp_running(false);
+#if defined(IS_ISP_2500_SYSTEM)
+	sh_css_sp1_set_sp1_running(false);
+#endif
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* check and free any remaining mipi frames */
