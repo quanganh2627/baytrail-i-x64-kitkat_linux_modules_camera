@@ -430,7 +430,16 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		binary->out_frame_info.res.width     = out_info->res.width;
 		binary->out_frame_info.res.height    = out_info->res.height;
 		binary->out_frame_info.padded_width  = out_info->padded_width;
-		binary->out_frame_info.raw_bit_depth = bits_per_pixel;
+		if (info->mode == IA_CSS_BINARY_MODE_COPY) {
+			binary->out_frame_info.raw_bit_depth = bits_per_pixel;
+		} else {
+			/* Only relevant for RAW format.
+			 * At the moment, all outputs are raw, 16 bit per pixel, except for copy.
+			 * To do this cleanly, the binary should specify in its info
+			 * the bit depth per output channel.
+			 */
+			binary->out_frame_info.raw_bit_depth = 16;
+		}
 		is_out_format_rgba888 =
 			out_info->format == IA_CSS_FRAME_FORMAT_RGBA888;
 		binary->out_frame_info.format        = out_info->format;

@@ -53,25 +53,6 @@ sh_css_elems_bytes_from_info (unsigned raw_bit_depth)
 	return CEIL_DIV(raw_bit_depth,8);
 }
 
-static inline unsigned
-sh_css_stride_from_info (
-	enum ia_css_frame_format format,
-	unsigned stride_b,
-	unsigned raw_bit_depth)
-{
-	/* padded_width is in terms of elements */
-	unsigned stride;
-	if (format == IA_CSS_FRAME_FORMAT_RAW_PACKED) {
-		stride = ((unsigned)HIVE_ISP_DDR_WORD_BYTES) *
-				CEIL_DIV(stride_b,
-				(unsigned char)(HIVE_ISP_DDR_WORD_BITS /
-					raw_bit_depth));
-	} else {
-		stride = stride_b * sh_css_elems_bytes_from_info(raw_bit_depth);
-	}
-	return stride;
-}
-
 void
 ia_css_raw_config(
 	struct sh_css_isp_raw_isp_config *to,
@@ -88,12 +69,10 @@ ia_css_raw_config(
 #endif
 	ia_css_dma_configure_from_info(&to->port_b, in_info);
 	to->width_a_over_b = elems_a / to->port_b.elems;
-	to->port_b.stride /= 2; /* Half BQ lines */
-
-	to->port_b.stride = sh_css_stride_from_info(in_info->format, to->port_b.stride, in_info->raw_bit_depth);
 
 	/* Assume divisiblity here, may need to generalize to fixed point. */
-	assert (elems_a % to->port_b.elems == 0);
+	assert (in_info->format == IA_CSS_FRAME_FORMAT_RAW_PACKED ||
+		elems_a % to->port_b.elems == 0);
 
 	to->inout_port_config       = from->pipe->inout_port_config;
 	to->format = in_info->format;

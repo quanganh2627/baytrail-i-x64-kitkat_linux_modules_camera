@@ -78,7 +78,7 @@ ia_css_fpn_configure(
 		  },
 		  CEIL_DIV(info->padded_width, 2), /* Packed by 2x */
 		  info->format,
-		  info->raw_bit_depth,
+		  FPN_BITS_PER_PIXEL,
 		  info->raw_bayer_order
 		};
 	const struct ia_css_fpn_configuration config =

@@ -570,13 +570,14 @@ ia_css_dma_configure_from_info(
 	struct dma_port_config *config,
 	const struct ia_css_frame_info *info)
 {
-	unsigned elems_wb = ia_css_elems_bytes_from_info(info);
-	unsigned elems_b;
-	if (elems_wb == 0)
-		return;
-	elems_b = HIVE_ISP_DDR_WORD_BYTES / elems_wb;
+	unsigned is_raw_packed = info->format == IA_CSS_FRAME_FORMAT_RAW_PACKED;
+	unsigned bits_per_pixel = is_raw_packed ? info->raw_bit_depth : ia_css_elems_bytes_from_info(info)*8;
+	unsigned pix_per_ddrword = HIVE_ISP_DDR_WORD_BITS / bits_per_pixel;
+	unsigned words_per_line = CEIL_DIV(info->padded_width, pix_per_ddrword);
+	unsigned elems_b = pix_per_ddrword;
+
+	config->stride = HIVE_ISP_DDR_WORD_BYTES * words_per_line;
 	config->elems  = elems_b;
-	config->stride = info->padded_width * elems_wb;
 	config->width  = info->res.width;
 	config->crop   = 0;
 	assert (config->width <= info->padded_width);

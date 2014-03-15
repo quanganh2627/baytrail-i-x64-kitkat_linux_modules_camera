@@ -1476,7 +1476,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 	else
 		isp_timeout_duration = ATOMISP_ISP_TIMEOUT_DURATION;
 
-	dev_info(isp->dev, ">>SENSOR_NAME<<: %s, name size:%d, duration:%d\n",sensor_name, sizeof(sensor_name), isp_timeout_duration);
+	//dev_info(isp->dev, ">>SENSOR_NAME<<: %s, name size:%d, duration:%d\n",sensor_name, sizeof(sensor_name), isp_timeout_duration);
 
 
 	if (isp->sw_contex.file_input)

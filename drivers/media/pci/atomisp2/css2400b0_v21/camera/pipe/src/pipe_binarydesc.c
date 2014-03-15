@@ -28,6 +28,7 @@
 #include <assert_support.h>
 /* HRT_GDC_N */
 #include "gdc_device.h"
+#include "anr/anr_1.0/anr_defs.h"
 
 static void pipe_binarydesc_get_offline(
 	struct ia_css_pipe const * const pipe,
@@ -621,7 +622,7 @@ void ia_css_pipe_get_anr_binarydesc(
 
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
-	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	in_info->raw_bit_depth = ANR_ELEMENT_BITS;
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_ANR,
 			       anr_descr, in_info, out_info, NULL);
 	anr_descr->isp_pipe_version = pipe->config.isp_pipe_version;
@@ -644,7 +645,7 @@ void ia_css_pipe_get_post_anr_binarydesc(
 
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
-	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	in_info->raw_bit_depth = ANR_ELEMENT_BITS;
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_POST_ISP,
 			       post_anr_descr, in_info, out_info, vf_info);
 	post_anr_descr->isp_pipe_version = pipe->config.isp_pipe_version;
