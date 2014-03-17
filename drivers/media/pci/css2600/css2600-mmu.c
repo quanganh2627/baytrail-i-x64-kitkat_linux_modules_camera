@@ -65,6 +65,7 @@ static void tlb_invalidate(struct css2600_mmu *mmu)
 	mmu_writel(mmu, TLB_INVALIDATE, REG_TLB_INVALIDATE);
 }
 
+#ifdef DEBUG
 static void page_table_dump(struct css2600_mmu_domain *adom)
 {
 	uint32_t l1_idx;
@@ -96,6 +97,7 @@ static void page_table_dump(struct css2600_mmu_domain *adom)
 
 	pr_debug("end IOMMU page table dump\n");
 }
+#endif /* DEBUG */
 
 static uint32_t *alloc_page_table(struct css2600_mmu_domain *adom)
 {
@@ -164,7 +166,6 @@ static int css2600_mmu_attach_dev(struct iommu_domain *domain,
 				  struct device *dev)
 {
 	struct css2600_mmu_domain *adom = domain->priv;
-	int rval = 0;
 
 	spin_lock(&adom->lock);
 
