@@ -369,18 +369,6 @@ static int stop_streaming(struct vb2_queue *q)
 	}
 	spin_unlock_irqrestore(&aq->lock, flags);
 
-	reinit_completion(&av->ip.stream_stop_completion);
-	rval = -ia_css_isys_stream_stop(av->isys->ssi, av->ip.source);
-
-	if (rval < 0) {
-		dev_err(&av->isys->adev->dev,
-			"ia_css_isys_stream_stop failed (%d)\n", rval);
-		goto out;
-	}
-
-	wait_for_completion(&av->ip.stream_stop_completion);
-	dev_dbg(&av->isys->adev->dev, "stream stop complete\n");
-
 out:
 	spin_lock_irqsave(&av->isys->lock, flags);
 	av->isys->pipes[av->ip.source] = NULL;
