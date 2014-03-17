@@ -556,6 +556,9 @@ static void isys_isr(struct css2600_bus_device *adev)
 	case IA_CSS_ISYS_RESP_TYPE_STREAM_STOP_ACK:
 		complete(&pipe->stream_stop_completion);
 		break;
+	case IA_CSS_ISYS_RESP_TYPE_STREAM_CAPTURE_DONE:
+		css2600_isys_queue_buf_done(pipe, &resp);
+		break;
 	default:
 		break;
 	}
