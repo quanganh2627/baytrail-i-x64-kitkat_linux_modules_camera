@@ -163,18 +163,21 @@ static void __buf_queue(struct vb2_buffer *vb, bool force)
 		return;
 	}
 
+	spin_lock_irqsave(&aq->lock, flags);
+	list_add(&ib->head, &aq->queued);
+	spin_unlock_irqrestore(&aq->lock, flags);
+
 	rval = -ia_css_isys_stream_capture_indication(av->isys->ssi,
 						      av->ip.source, &buf);
 	if (rval < 0) {
 		dev_dbg(&av->isys->adev->dev,
 			"capture indication failed (%d)\n", rval);
+		spin_lock_irqsave(&aq->lock, flags);
+		list_del(&ib->head);
+		spin_unlock_irqrestore(&aq->lock, flags);
 		return;
 	}
-
 	dev_dbg(&av->isys->adev->dev, "queued buffer\n");
-	spin_lock_irqsave(&aq->lock, flags);
-	list_add(&ib->head, &aq->queued);
-	spin_unlock_irqrestore(&aq->lock, flags);
 }
 
 static void buf_queue(struct vb2_buffer *vb)
