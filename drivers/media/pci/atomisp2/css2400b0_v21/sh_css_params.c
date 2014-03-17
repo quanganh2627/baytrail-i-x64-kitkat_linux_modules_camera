@@ -2026,40 +2026,20 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 	ia_css_3a_debubble(host_stats->data,
 			   &stats_bubble_info);
 
-	/* Debubble -  removes bubbles between sets of statistics for AWB, AWB_FR, AF caused by the ACC */
-		/**** AF ****/
-
-		if(host_stats->stats_4a_config->af_grd_config.grid_width) //Avoid division with 0
-		{
-			if(MAX_SIZE_OF_SET_AF % host_stats->stats_4a_config->af_grd_config.grid_width)
-			{
-				size_of_set = index =  (MAX_SIZE_OF_SET_AF / host_stats->stats_4a_config->af_grd_config.grid_width)* host_stats->stats_4a_config->af_grd_config.grid_width; //This removes the remainder
-				num_sets = (host_stats->stats_4a_config->af_grd_config.grid_width * host_stats->stats_4a_config->af_grd_config.grid_height) / size_of_set;
-				for(i=0; i < num_sets;i++)
-				{
-					memcpy((void *)&host_stats->data->af_raw_buffer.y_table[index],(void *)&host_stats->data->af_raw_buffer.y_table[(i+1)*MAX_SIZE_OF_SET_AF],sizeof(af_public_y_item_t)*size_of_set);
-					index += size_of_set;
-				}
-			}
-		}
-
-		/**** AWB_FR ****/
-
-		if(host_stats->stats_4a_config->awb_fr_grd_config.grid_width) //Avoid division with 0
-		{
-			if(MAX_SIZE_OF_SET_AWB_FR % host_stats->stats_4a_config->awb_fr_grd_config.grid_width)
-			{
-
-				size_of_set = index =  (MAX_SIZE_OF_SET_AWB_FR / host_stats->stats_4a_config->awb_fr_grd_config.grid_width) * host_stats->stats_4a_config->awb_fr_grd_config.grid_width; //This removes the remainder
-				num_sets = (host_stats->stats_4a_config->awb_fr_grd_config.grid_width * host_stats->stats_4a_config->awb_fr_grd_config.grid_height) / size_of_set;
-				for(i=0; i < num_sets;i++)
-				{
-					memcpy((void*)&host_stats->data->awb_fr_raw_buffer.bayer_table[index],(void *)&host_stats->data->awb_fr_raw_buffer.bayer_table[(i+1)*MAX_SIZE_OF_SET_AWB_FR],sizeof(awb_fr_public_bayer_item_t)*size_of_set);
-					index += size_of_set;
-				}
-
-			}
-		}
+	/**** AWB_FR ****/
+	if(host_stats->stats_4a_config->awb_fr_grd_config.grid_width) //Avoid division with 0
+	{
+	  if(MAX_SIZE_OF_SET_AWB_FR % host_stats->stats_4a_config->awb_fr_grd_config.grid_width)
+	  {
+	    size_of_set = index =  (MAX_SIZE_OF_SET_AWB_FR / host_stats->stats_4a_config->awb_fr_grd_config.grid_width) * host_stats->stats_4a_config->awb_fr_grd_config.grid_width; //This removes the remainder
+	    num_sets = (host_stats->stats_4a_config->awb_fr_grd_config.grid_width * host_stats->stats_4a_config->awb_fr_grd_config.grid_height) / size_of_set;
+	    for(i=0; i < num_sets;i++)
+	    {
+		memcpy((void*)&host_stats->data->awb_fr_raw_buffer.bayer_table[index],(void *)&host_stats->data->awb_fr_raw_buffer.bayer_table[(i+1)*MAX_SIZE_OF_SET_AWB_FR],sizeof(awb_fr_public_bayer_item_t)*size_of_set);
+		index += size_of_set;
+	    }
+	  }
+	}
 
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_get_4a_statistics() leave: return_void\n");
@@ -2459,16 +2439,20 @@ ia_css_stream_set_isp_config_on_pipe(
 	struct ia_css_pipe *pipe)
 {
 	struct ia_css_isp_parameters *params;
-
-	if ((stream == NULL) || (config == NULL))
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	params = stream->isp_params_configs;
+	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_set_isp_config_on_pipe() enter: "
 		"stream=%p, config=%p, pipe=%p\n", stream, config, pipe);
 
+	if ((stream == NULL) || (config == NULL)) {
+		err = IA_CSS_ERR_INVALID_ARGUMENTS;
+		goto ret;
+	}
+
+	params = stream->isp_params_configs;
+
 #if !defined(IS_ISP_2500_SYSTEM)
+	err = IA_CSS_SUCCESS;
 	sh_css_set_nr_config(params, config->nr_config);
 	sh_css_set_ee_config(params, config->ee_config);
 	sh_css_set_baa_config(params, config->baa_config);
@@ -2494,17 +2478,18 @@ ia_css_stream_set_isp_config_on_pipe(
 	   ia_css_set_xnr_config(config->xnr_config);
 	*/
 #else /* defined(IS_ISP_2500_SYSTEM) */
-	(void)params;
-	sh_css_set_config_product_specific(config);
+	err = sh_css_set_config_product_specific(config);
+	if (err != IA_CSS_SUCCESS)
+		goto ret;
 #endif
 
 	/* Now commit all changes to the SP */
 	sh_css_param_update_isp_params(stream, sh_css_sp_is_running(), pipe);
 
+ret:
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_stream_set_isp_config_on_pipe() leave: \n");
-
-	return IA_CSS_SUCCESS;
+	return err;
 }
 
 /* TODO: make a direct implementation and remove the partial ones */
@@ -2685,8 +2670,11 @@ ia_css_isp_3a_statistics_allocate(const struct ia_css_3a_grid_info *grid)
 		me->data_hmem.rgby_tbl = mmgr_NULL;
 	#endif
 
-#else //For SKC we don't use any of  above modes but we can use same pointer + buf size is different
+#else /* SKC doesn't use any of above modes but does use same pointer + buf size is different */
 	me->data.dmem.s3a_tbl = mmgr_malloc(sizeof(struct stats_4a_private_raw_buffer));
+	if(me->data.dmem.s3a_tbl == mmgr_NULL)
+		goto err;
+	mmgr_clear(me->data.dmem.s3a_tbl,sizeof(struct stats_4a_private_raw_buffer));
 	me->data_hmem.rgby_tbl = mmgr_NULL;
 #endif
 

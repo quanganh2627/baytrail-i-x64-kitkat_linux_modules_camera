@@ -2346,7 +2346,7 @@ STORAGE_CLASS_INLINE void dtrace_dot(const char *fmt, ...)
 	assert(fmt != NULL);
 	va_start(ap, fmt);
 #ifdef HRT_CSIM
-	va_copy(ap2, ap);
+	va_start(ap2, fmt);
 #endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_INFO, "%s", DPG_START);
@@ -2766,7 +2766,6 @@ void
 ia_css_debug_pipe_graph_dump_sp_raw_copy(
 	struct ia_css_frame *out_frame)
 {
-
 	assert(out_frame != NULL);
 	if (pg_inst.do_init) {
 		ia_css_debug_pipe_graph_dump_prologue();
@@ -2795,7 +2794,6 @@ ia_css_debug_pipe_graph_dump_sp_raw_copy(
 		"sp_raw_copy", 1, HOST_ADDRESS(out_frame));
 
 	snprintf(dot_id_input_bin, sizeof(dot_id_input_bin), "%s(pipe%d)", "sp_raw_copy", 1);
-
 }
 
 void

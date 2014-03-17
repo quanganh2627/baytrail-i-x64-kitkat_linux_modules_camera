@@ -92,7 +92,7 @@
 #else
 #define NUM_CONTINUOUS_FRAMES	10
 #endif
-#define NUM_MIPI_FRAMES		4
+#define NUM_MIPI_FRAMES_PER_STREAM		2
 
 #define NUM_ONLINE_INIT_CONTINUOUS_FRAMES      2
 
@@ -504,6 +504,7 @@ struct sh_css_sp_pipeline {
 	uint32_t	pipe_config;	/* the pipe config */
 	uint32_t    inout_port_config;
 	uint32_t	required_bds_factor;
+	uint32_t	dvs_frame_delay;
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	uint32_t	input_system_mode;	/* enum ia_css_input_mode */
 	mipi_port_ID_t	port_id;	/* port_id for input system */
@@ -555,7 +556,6 @@ struct ia_css_frames_sp {
 	struct ia_css_frame_sp	out[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_resolution effective_in_res;
 	struct ia_css_frame_sp	out_vf;
-	struct ia_css_frame_sp  delay_frames[NUM_VIDEO_DELAY_FRAMES];
 	struct ia_css_frame_sp_info internal_frame_info;
 	/* PQ TODO: should be a separate host-sp communication array which
 	is used for all dynamic objects through queue. */
@@ -623,7 +623,6 @@ struct sh_css_sp_stage {
 	struct sh_css_crop_pos		sp_out_crop_pos;
 	struct ia_css_frames_sp		frames;
 	struct ia_css_resolution	dvs_envelope;
-	uint32_t			dvs_frame_delay;
 	struct sh_css_uds_info		uds;
 	hrt_vaddress			isp_stage_addr;
 	hrt_vaddress			xmem_bin_addr;
@@ -790,7 +789,7 @@ struct host_sp_communication {
 	hrt_vaddress host2sp_offline_metadata[NUM_CONTINUOUS_FRAMES];
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	hrt_vaddress host2sp_mipi_frames[NUM_MIPI_FRAMES];
+	hrt_vaddress host2sp_mipi_frames[N_CSI_PORTS][NUM_MIPI_FRAMES_PER_STREAM];
 	uint32_t host2sp_num_mipi_frames;
 #endif
 	uint32_t host2sp_cont_avail_num_raw_frames;
@@ -804,14 +803,14 @@ struct host_sp_communication {
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
-	(NUM_MIPI_FRAMES * SIZE_OF_HRT_VADDRESS) +			\
-	(4 * sizeof(uint32_t)) +						\
+	(N_CSI_PORTS * NUM_MIPI_FRAMES_PER_STREAM * SIZE_OF_HRT_VADDRESS) +			\
+	(4 * sizeof(uint32_t) ) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
 #else
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
-	(3 * sizeof(uint32_t)) +						\
+	(3 * sizeof(uint32_t) ) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
 #endif
 

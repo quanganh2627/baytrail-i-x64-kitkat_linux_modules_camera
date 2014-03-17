@@ -50,7 +50,8 @@ static void pipeline_unmap_num_to_sp_thread(unsigned int pipe_num);
 static void pipeline_init_defaults(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
-	unsigned int pipe_num);
+	unsigned int pipe_num,
+	enum ia_css_frame_delay dvs_frame_delay);
 
 static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage);
 static enum ia_css_err pipeline_stage_create(
@@ -68,13 +69,14 @@ void ia_css_pipeline_init(void)
 enum ia_css_err ia_css_pipeline_create(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
-	unsigned int pipe_num)
+	unsigned int pipe_num,
+	enum ia_css_frame_delay dvs_frame_delay)
 {
 	assert(pipeline != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_create() enter:\n");
 
-	pipeline_init_defaults(pipeline, pipe_id, pipe_num);
+	pipeline_init_defaults(pipeline, pipe_id, pipe_num, dvs_frame_delay);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_create() exit: pipe_num=%d\n",
@@ -229,7 +231,7 @@ void ia_css_pipeline_clean(struct ia_css_pipeline *pipeline)
 		pipeline_stage_destroy(s);
 		s = next;
 	}
-	pipeline_init_defaults(pipeline, pipeline->pipe_id, pipeline->pipe_num);
+	pipeline_init_defaults(pipeline, pipeline->pipe_id, pipeline->pipe_num, pipeline->dvs_frame_delay);
 }
 
 /** @brief Add a stage to pipeline.
@@ -578,7 +580,8 @@ ERR:
 static void pipeline_init_defaults(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
-	unsigned int pipe_num)
+	unsigned int pipe_num,
+	enum ia_css_frame_delay dvs_frame_delay)
 {
 	struct ia_css_frame init_frame = DEFAULT_FRAME;
 	unsigned int i;
@@ -595,4 +598,5 @@ static void pipeline_init_defaults(
 	pipeline->num_execs = -1;
 	pipeline->acquire_isp_each_stage = true;
 	pipeline->pipe_num = pipe_num;
+	pipeline->dvs_frame_delay = dvs_frame_delay;
 }
