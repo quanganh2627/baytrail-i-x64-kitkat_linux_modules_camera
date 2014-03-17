@@ -39,6 +39,7 @@
 #define M10MO_BYTE_READ			0x01
 #define M10MO_BYTE_WRITE		0x02
 #define M10MO_I2C_RETRY			5
+#define M10MO_MIPI_FREQ			(963000000/2)
 #define INTERRUPT_POLL			5
 
 #define M10MO_MIN_EV -3
@@ -75,6 +76,7 @@ struct m10mo_device {
 	struct m10mo_version ver;
 	struct v4l2_ctrl_handler ctrl_handler;
 	struct v4l2_ctrl *run_mode;
+	struct v4l2_ctrl *link_freq;
 	unsigned int num_lanes;
 };
 

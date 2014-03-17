@@ -626,6 +626,58 @@ static int m10mo_remove(struct i2c_client *client)
 	return 0;
 }
 
+static int m10mo_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
+{
+	switch (ctrl->id) {
+	case V4L2_CID_LINK_FREQ:
+		ctrl->val = M10MO_MIPI_FREQ;
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+static struct v4l2_ctrl_ops m10mo_ctrl_ops = {
+	.g_volatile_ctrl = m10mo_g_volatile_ctrl,
+};
+
+static const struct v4l2_ctrl_config v4l2_ctrl_link_freq = {
+	.ops = &m10mo_ctrl_ops,
+	.id = V4L2_CID_LINK_FREQ,
+	.name = "Link Frequency",
+	.type = V4L2_CTRL_TYPE_INTEGER,
+	.min = 1,
+	.max = 1500000 * 1000,
+	.step = 1,
+	.def = 1,
+	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
+};
+
+static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
+{
+	struct v4l2_ctrl_handler *hdl;
+	int ret;
+
+	hdl = &dev->ctrl_handler;
+
+	ret = v4l2_ctrl_handler_init(&dev->ctrl_handler, 1);
+	if (ret)
+		return ret;
+
+	dev->link_freq = v4l2_ctrl_new_custom(&dev->ctrl_handler,
+					      &v4l2_ctrl_link_freq,
+					      NULL);
+
+	if (dev->link_freq == NULL) {
+		v4l2_ctrl_handler_free(&dev->ctrl_handler);
+		return dev->ctrl_handler.error;
+	}
+
+	dev->sd.ctrl_handler = hdl;
+
+	return 0;
+}
+
 static const struct v4l2_subdev_video_ops m10mo_video_ops = {
 	.try_mbus_fmt = m10mo_try_mbus_fmt,
 	.s_mbus_fmt = m10mo_set_mbus_fmt,
@@ -680,6 +732,11 @@ static int m10mo_probe(struct i2c_client *client,
 	}
 
 	mipi_info = v4l2_get_subdev_hostdata(&dev->sd);
+
+	ret = __m10mo_init_ctrl_handler(dev);
+	if (ret)
+		goto out_free;
+
 	dev->num_lanes = mipi_info->num_lanes;
 
 	dev->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
