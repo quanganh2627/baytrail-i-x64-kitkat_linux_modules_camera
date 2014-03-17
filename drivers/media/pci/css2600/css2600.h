@@ -47,6 +47,7 @@ struct css2600_device {
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 	const struct firmware *fw;
 #endif /* IS_ENABLED(CONFIG_VIDEO_CSS2600_2401) */
+	void __iomem *base;
 };
 
 #include <linux/version.h>

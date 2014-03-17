@@ -193,7 +193,6 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 {
 	struct css2600_device *isp;
 	phys_addr_t phys;
-	void __iomem *base;
 	void __iomem *mmu_base[CSS2600_MMU_MAX_DEVICES];
 	struct css2600_bus_iommu *isys_iommu, *psys_iommu;
 	unsigned int iommus = 0;
@@ -240,8 +239,8 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	}
 	dev_info(&pdev->dev, "physical base address 0x%llx\n", phys);
 
-	base = pcim_iomap_table(pdev)[CSS2600_PCI_BAR];
-	dev_info(&pdev->dev, "mapped as: 0x%p\n", base);
+	isp->base = pcim_iomap_table(pdev)[CSS2600_PCI_BAR];
+	dev_info(&pdev->dev, "mapped as: 0x%p\n", isp->base);
 
 	pci_set_drvdata(pdev, isp);
 
@@ -253,13 +252,13 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		return rval;
 	}
 
-	css2600_wrapper_init(base, isp->fw);
+	css2600_wrapper_init(isp->base, isp->fw);
 
 	writel(CSS2401_CSI_RECEIVER_SELECTION_INTEL,
-	       base + CSS2401_REG_CSI_RECEIVER_SELECTION);
+	       isp->base + CSS2401_REG_CSI_RECEIVER_SELECTION);
 
 	if (pdev->device == CSS2600_HW_BXT) {
-		isp->buttress = css2600_buttress_init(pdev, &pdev->dev, base, 0);
+		isp->buttress = css2600_buttress_init(pdev, &pdev->dev, isp->base, 0);
 		rval = PTR_ERR(isp->buttress);
 		if (IS_ERR(isp->buttress))
 			goto out_css2600_bus_del_devices;
@@ -267,8 +266,8 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	if (pdev->device == CSS2600_HW_BXT
 	    || (pdev->device == CSS2600_HW_BXT_FPGA
 		&& IS_ENABLED(CONFIG_VIDEO_CSS2600_ISYS))) {
-		mmu_base[0] = base + CSS2600_BXT_A0_ISYS_IOMMU0_OFFSET;
-		mmu_base[1] = base + CSS2600_BXT_A0_ISYS_IOMMU1_OFFSET;
+		mmu_base[0] = isp->base + CSS2600_BXT_A0_ISYS_IOMMU0_OFFSET;
+		mmu_base[1] = isp->base + CSS2600_BXT_A0_ISYS_IOMMU1_OFFSET;
 		isp->isys_iommu = css2600_mmu_init(pdev, &isp->buttress->dev, mmu_base, 2, 0);
 		rval = PTR_ERR(isp->isys_iommu);
 		if (IS_ERR(isp->isys_iommu)) {
@@ -283,7 +282,7 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 		isys_iommu->dev = &isp->isys_iommu->dev;
 
-		isp->isys = css2600_isys_init(pdev, &isp->buttress->dev, isys_iommu, base,
+		isp->isys = css2600_isys_init(pdev, &isp->buttress->dev, isys_iommu, isp->base,
 					      0, CSS2600_ISYS_TYPE_CSS2600);
 		rval = PTR_ERR(isp->isys);
 		if (IS_ERR(isp->isys))
@@ -293,8 +292,8 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	if (pdev->device == CSS2600_HW_BXT
 	    || (pdev->device == CSS2600_HW_BXT_FPGA
 		&& IS_ENABLED(CONFIG_VIDEO_CSS2600_PSYS))) {
-		mmu_base[0] = base + CSS2600_BXT_A0_PSYS_IOMMU0_OFFSET;
-		mmu_base[1] = base + CSS2600_BXT_A0_PSYS_IOMMU1_OFFSET;
+		mmu_base[0] = isp->base + CSS2600_BXT_A0_PSYS_IOMMU0_OFFSET;
+		mmu_base[1] = isp->base + CSS2600_BXT_A0_PSYS_IOMMU1_OFFSET;
 		isp->psys_iommu = css2600_mmu_init(pdev, &isp->isys->dev, mmu_base, 2, 1);
 		rval = PTR_ERR(isp->psys_iommu);
 		if (IS_ERR(isp->psys_iommu)) {
@@ -308,15 +307,15 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		iommus++;
 
 		psys_iommu->dev = &isp->psys_iommu->dev;
-		isp->psys = css2600_psys_init(pdev, &isp->buttress->dev, psys_iommu, base, 0);
+		isp->psys = css2600_psys_init(pdev, &isp->buttress->dev, psys_iommu, isp->base, 0);
 		rval = PTR_ERR(isp->isys);
 		if (IS_ERR(isp->isys))
 			goto out_css2600_bus_del_devices;
 	}
 
 	if (pdev->device == CSS2600_HW_MRFLD_2401) {
-		mmu_base[0] = base + CSS2600_MRFLD_DATA_IOMMU_OFFSET;
-		mmu_base[1] = base + CSS2600_MRFLD_ICACHE_IOMMU_OFFSET;
+		mmu_base[0] = isp->base + CSS2600_MRFLD_DATA_IOMMU_OFFSET;
+		mmu_base[1] = isp->base + CSS2600_MRFLD_ICACHE_IOMMU_OFFSET;
 		isp->isys_iommu = css2600_mmu_init(pdev, &pdev->dev, mmu_base, 2, 0);
 		rval = PTR_ERR(isp->isys_iommu);
 		if (IS_ERR(isp->isys_iommu)) {
@@ -330,13 +329,13 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		iommus++;
 
 		isys_iommu->dev = &isp->isys_iommu->dev;
-		isp->isys = css2600_isys_init(pdev, &pdev->dev, isys_iommu, base, 0,
+		isp->isys = css2600_isys_init(pdev, &pdev->dev, isys_iommu, isp->base, 0,
 					      CSS2600_ISYS_TYPE_CSS2401);
 		rval = PTR_ERR(isp->isys);
 		if (rval < 0)
 			goto out_css2600_bus_del_devices;
 		isp->psys = css2600_psys_init(pdev, &isp->isys->dev, isys_iommu,
-					      base, 0);
+					      isp->base, 0);
 		rval = PTR_ERR(isp->psys);
 		if (rval < 0)
 			goto out_css2600_bus_del_devices;
