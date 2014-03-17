@@ -211,21 +211,22 @@ static int m10mo_memory_write(struct v4l2_subdev *sd, u8 cmd, u16 len, u32 addr,
 static int m10mo_wait_interrupt(struct v4l2_subdev *sd, u32 timeout)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	int ret,i;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
 
-	dev->issued = 0;
+	dev->irq = 0;
 
-	/* Wait for 500 ms so that interrupt status changes to high */
-	msleep(500);
-
-	for (i = INTERRUPT_POLL; i; i--) {
-		ret = m10mo_read(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_FACTOR,
-					&dev->int_factor);
-		if (dev->int_factor == 0) {
-			return 0;
-		}
-		msleep(20);
+	ret = wait_event_interruptible_timeout(dev->irq_waitq,
+					       dev->irq != 0,
+					       msecs_to_jiffies(timeout));
+	if (ret <= 0) {
+		dev_err(&client->dev, "m10mo_wait_interrupt timed out");
+		return -ETIMEDOUT;
 	}
+
+	ret = m10mo_read(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_FACTOR,
+			 &dev->int_factor);
+
 	return ret;
 }
 
@@ -250,7 +251,6 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
-	u32 int_factor;
 
 	/* Temporary Fix, Bug in M10MO Firmware */
 	ret = m10mo_memory_write(sd, 0x04, 1, 0x13000005, 0x7F);
@@ -262,7 +262,12 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 		dev_err(&client->dev, "m10mo i2c failed");
 		return ret;
 	}
-	int_factor = m10mo_wait_interrupt(sd, 2000);
+
+	ret = m10mo_wait_interrupt(sd, M10MO_INIT_TIMEOUT);
+	if (ret < 0) {
+		dev_err(&client->dev, "m10mo initialization timeout");
+		return ret;
+	}
 
 	ret = m10mo_detect(sd);
 	if (ret)
@@ -380,8 +385,8 @@ static irqreturn_t m10mo_irq_handler(int irq, void *dev_id)
 	struct v4l2_subdev *sd = (struct v4l2_subdev *)dev_id;
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 
-	dev->issued = 1;
-	wake_up(&dev->irq_waitq);
+	dev->irq = 1;
+	wake_up_interruptible(&dev->irq_waitq);
 
 	return IRQ_HANDLED;
 }
@@ -390,21 +395,20 @@ static int m10mo_setup_irq(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	int intrgpio, pin;
-	int ret;
+	int pin, ret;
 
 	pin = dev->platform_data->gpio_intr_ctrl(sd);
 
-	intrgpio = gpio_to_irq(pin);
+	ret = gpio_to_irq(pin);
 
-	if (intrgpio < 0) {
+	if (ret < 0) {
 		dev_err(&client->dev, "Configure gpio to irq failed!\n");
 		goto out_free;
 	}
-	client->irq = intrgpio;
+	client->irq = ret;
 
-	ret = request_threaded_irq(client->irq, NULL, m10mo_irq_handler,
-			  IRQF_TRIGGER_RISING | IRQF_ONESHOT, M10MO_NAME, sd);
+	ret = request_irq(client->irq, m10mo_irq_handler,
+			  IRQF_TRIGGER_RISING, M10MO_NAME, sd);
 	if (ret < 0) {
 		dev_err(&client->dev, "Cannot register IRQ: %d\n", ret);
 		goto out_free;
@@ -481,8 +485,11 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 
 	/* set up irq */
 	ret = m10mo_setup_irq(sd);
-
-	dev->issued = 0;
+	if (ret) {
+		dev_err(&client->dev, "IRQ err.\n");
+		mutex_unlock(&dev->input_lock);
+		return ret;
+	}
 
 	ret = __m10mo_s_power(sd, 1);
 	if (ret) {

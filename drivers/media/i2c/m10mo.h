@@ -40,7 +40,7 @@
 #define M10MO_BYTE_WRITE		0x02
 #define M10MO_I2C_RETRY			5
 #define M10MO_MIPI_FREQ			(963000000/2)
-#define INTERRUPT_POLL			5
+#define M10MO_INIT_TIMEOUT		500
 
 #define M10MO_MIN_EV -3
 #define M10MO_MAX_EV  3
@@ -66,9 +66,8 @@ struct m10mo_device {
 	u8 mode;
 	bool streaming;
 	int fmt_idx;
-	atomic_t irq;	/* irq issued by ISP */
+	unsigned int irq;	/* irq issued by ISP */
 	wait_queue_head_t irq_waitq;
-	unsigned int issued;
 	unsigned int int_factor;
 	unsigned int bad_fw:1;
 	unsigned int isp_ready:1;
