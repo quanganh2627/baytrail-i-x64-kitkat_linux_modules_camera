@@ -1454,6 +1454,13 @@ static int atomisp_streamon(struct file *file, void *fh,
 					return -ERESTARTSYS;
 				mutex_lock(&isp->mutex);
 			}
+
+			/*
+			 * only ZSL/SDV capture request will be here, raise
+			 * the ISP freq to the highest possible to minimize
+			 * the S2S latency.
+			 */
+			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX);
 			ret = atomisp_css_offline_capture_configure(asd,
 				asd->params.offline_parm.num_captures,
 				asd->params.offline_parm.skip_frames,
@@ -1614,8 +1621,10 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 		/* stop continuous still capture if needed */
 		if (atomisp_subdev_source_pad(vdev)
 		    == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE &&
-		    asd->params.offline_parm.num_captures == -1)
+		    asd->params.offline_parm.num_captures == -1) {
 			atomisp_css_offline_capture_configure(asd, 0, 0, 0);
+			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO);
+		}
 		/*
 		 * Currently there is no way to flush buffers queued to css.
 		 * When doing videobuf_streamoff, active buffers will be
