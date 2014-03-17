@@ -67,7 +67,18 @@ static int set_stream(struct v4l2_subdev *sd, int enable)
 			 .nr_of_frames = 1,
 			 .pixels_per_line = ffmt->width,
 			 .lines_per_frame = ffmt->height,
+			 .pixels_per_clock = 1,
 		 },
+		.mode = PIXELGEN_TPG_MODE_CHBO,
+		.mask_cfg = {
+			.h_mask = (1<<4) - 1,
+			.v_mask = (1<<4) - 1,
+			.hv_mask = (1<<8) - 1,
+		},
+		.delta_cfg = {
+			.h_delta = -2,
+			.v_delta = 3,
+		},
 	};
 	int rval;
 
