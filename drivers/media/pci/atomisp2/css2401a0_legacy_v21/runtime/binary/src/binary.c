@@ -152,7 +152,7 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 	s3a_info->awb_fr_enable     = binary->info->sp.enable.awb_fr_acc;
 	s3a_info->awb_enable        = binary->info->sp.enable.awb_acc;
 	s3a_info->elem_bit_depth    = SH_CSS_BAYER_BITS;
-	//todo grid config	
+	//todo grid config
 #endif
 #if defined(HAS_VAMEM_VERSION_2)
 	info->vamem_type = IA_CSS_VAMEM_TYPE_2;
@@ -376,7 +376,8 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		     sc_3a_dis_height = 0,
 		     isp_internal_width = 0,
 		     isp_internal_height = 0,
-		     s3a_isp_width = 0;
+		     s3a_isp_width = 0,
+		     raw_bayer_order = IA_CSS_BAYER_ORDER_GRBG;
 
 	bool need_scaling = false;
 	struct ia_css_resolution binary_dvs_env, internal_res;
@@ -431,6 +432,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	binary->internal_frame_info.padded_width    = isp_internal_width;
 	binary->internal_frame_info.res.height      = isp_internal_height;
 	binary->internal_frame_info.raw_bit_depth   = bits_per_pixel;
+	binary->internal_frame_info.raw_bayer_order = raw_bayer_order;
 
 
 	if (in_info != NULL) {
@@ -454,6 +456,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 										need_scaling);
 
 		binary->in_frame_info.format = in_info->format;
+		binary->in_frame_info.raw_bayer_order = in_info->raw_bayer_order;
 	}
 
 	if (online) {

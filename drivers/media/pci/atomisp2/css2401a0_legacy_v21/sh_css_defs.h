@@ -214,7 +214,8 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 #define SH_CSS_MAX_S3ATBL_WIDTH              SH_CSS_MAX_BQ_GRID_WIDTH
 
 
-#define NUM_VIDEO_DELAY_FRAMES	3
+#define MAX_DVS_FRAME_DELAY         2
+#define NUM_VIDEO_DELAY_FRAMES	(MAX_DVS_FRAME_DELAY + 1)  /* SN: Should this not always match NUM_REF_FRAMES ?*/
 #define NUM_VIDEO_TNR_FRAMES	2
 
 /* Rules: these implement logic shared between the host code and ISP firmware.

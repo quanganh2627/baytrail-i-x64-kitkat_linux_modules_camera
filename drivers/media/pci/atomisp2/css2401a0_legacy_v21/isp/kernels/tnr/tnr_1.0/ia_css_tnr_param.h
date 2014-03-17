@@ -23,6 +23,7 @@
 #define __IA_CSS_TNR_PARAM_H
 
 #include "type_support.h"
+#include "sh_css_defs.h"
 #include "dma.h"
 
 /* TNR (Temporal Noise Reduction) */
@@ -30,6 +31,10 @@ struct sh_css_isp_tnr_params {
 	int32_t coef;
 	int32_t threshold_Y;
 	int32_t threshold_C;
+};
+
+struct ia_css_tnr_configuration {
+	const struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];
 };
 
 struct sh_css_isp_tnr_isp_config {

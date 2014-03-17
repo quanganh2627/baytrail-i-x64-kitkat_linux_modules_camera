@@ -24,6 +24,9 @@
 
 #define IS_INPUT_SYSTEM_VERSION_VERSION_2401
 
+/* CSI reveiver has 3 ports. */
+#define		N_CSI_PORTS (3)
+
 #include "isys_dma.h"		/*	isys2401_dma_channel,
 				 *	isys2401_dma_cfg_t
 				 */

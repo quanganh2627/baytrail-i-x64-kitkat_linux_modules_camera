@@ -115,7 +115,8 @@ void ia_css_pipeline_init(void);
 enum ia_css_err ia_css_pipeline_create(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
-	unsigned int pipe_num);
+	unsigned int pipe_num,
+	enum ia_css_frame_delay dvs_frame_delay);
 
 /** @brief destroy a pipeline
  *

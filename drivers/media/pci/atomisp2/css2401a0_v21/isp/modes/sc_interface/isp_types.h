@@ -202,16 +202,6 @@ struct s_isp_frames {
 	char *xmem_base_addr_raw;
 	/* output raw frame */
 	char *xmem_base_addr_raw_out;
-	/* reference input frame */
-	char *xmem_base_addr_ref_in_y;
-	char *xmem_base_addr_ref_in_uv;
-	/* reference output frame */
-	char *xmem_base_addr_ref_out_y;
-	char *xmem_base_addr_ref_out_uv;
-	/* tnr input frame */
-	char *xmem_base_addr_tnr_in;
-	/* tnr output frame */
-	char *xmem_base_addr_tnr_out;
 	/* capture_pp intermediate frame */
 	char *xmem_base_addr_y_cpp;
 	char *xmem_base_addr_u_cpp;

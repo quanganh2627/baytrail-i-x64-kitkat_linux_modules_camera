@@ -25,6 +25,7 @@
 #include "isp/kernels/cnr/cnr_2/ia_css_cnr2.host.h"
 #include "isp/kernels/de/de_1.0/ia_css_de.host.h"
 #include "isp/kernels/dp/dp_1.0/ia_css_dp.host.h"
+#include "isp/kernels/ref/ref_1.0/ia_css_ref.host.h"
 #include "isp/kernels/tnr/tnr_1.0/ia_css_tnr.host.h"
 #include "isp/kernels/ynr/ynr_1.0/ia_css_ynr.host.h"
 /* Generated code: do not edit or commmit. */
@@ -40,6 +41,7 @@ enum ia_css_state_ids {
 	IA_CSS_DP_STATE_ID,
 	IA_CSS_DE_STATE_ID,
 	IA_CSS_TNR_STATE_ID,
+	IA_CSS_REF_STATE_ID,
 	IA_CSS_YNR_STATE_ID,
 	IA_CSS_NUM_STATE_IDS
 };
@@ -56,6 +58,7 @@ struct ia_css_state_memory_offsets {
 	} vmem;
 	struct {
 		uint16_t tnr;
+		uint16_t ref;
 	} dmem;
 };
 

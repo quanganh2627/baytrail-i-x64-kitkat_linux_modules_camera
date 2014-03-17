@@ -1077,6 +1077,15 @@ sh_css_config_input_network(struct ia_css_pipe *pipe,
 	/* initialization */
 	memset((void*)(&isys_stream_descr), 0, sizeof(ia_css_isys_descr_t));
 
+	if (binary && (binary->online || pipe->stream->config.continuous)) {
+		/* this was being done in ifmtr in 2400.
+		 * online and cont bypass the init_in_frameinfo_memory_defaults
+		 * so need to do it here
+		 */
+		binary->in_frame_info.raw_bayer_order = pipe->stream->config.bayer_order;
+		binary->internal_frame_info.raw_bayer_order = pipe->stream->config.bayer_order;
+	}
+
 	/* translate the stream configuration to the Input System (2401) configuration */
 	rc = sh_css_translate_stream_cfg_to_isys_stream_descr(
 			&(pipe->stream->config),
@@ -1582,7 +1591,11 @@ ia_css_reset_defaults(struct sh_css* css)
 	default_css.check_system_idle = true;
 	default_css.num_cont_raw_frames = NUM_CONTINUOUS_FRAMES;
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	default_css.num_mipi_frames = NUM_MIPI_FRAMES;
+	/* AM: maybe this is not the right place and moment fior init here.Maybe it should be 0, */
+	/* and then later initialize it to number needed.*/
+	default_css.num_mipi_frames[0] = NUM_MIPI_FRAMES_PER_STREAM;
+	default_css.num_mipi_frames[1] = NUM_MIPI_FRAMES_PER_STREAM;
+	default_css.num_mipi_frames[2] = 0;
 #endif
 	default_css.contiguous = true;
 	default_css.irq_type = IA_CSS_IRQ_TYPE_EDGE;
@@ -2025,13 +2038,13 @@ create_host_pipeline_structure(struct ia_css_stream *stream)
 	case IA_CSS_PIPE_ID_PREVIEW:
 		copy_pipe    = main_pipe->pipe_settings.preview.copy_pipe;
 		capture_pipe = main_pipe->pipe_settings.preview.capture_pipe;
-		err = ia_css_pipeline_create(&main_pipe->pipeline, main_pipe->mode, main_pipe->pipe_num);
+		err = ia_css_pipeline_create(&main_pipe->pipeline, main_pipe->mode, main_pipe->pipe_num, main_pipe->dvs_frame_delay);
 		break;
 
 	case IA_CSS_PIPE_ID_VIDEO:
 		copy_pipe    = main_pipe->pipe_settings.video.copy_pipe;
 		capture_pipe = main_pipe->pipe_settings.video.capture_pipe;
-		err = ia_css_pipeline_create(&main_pipe->pipeline, main_pipe->mode, main_pipe->pipe_num);
+		err = ia_css_pipeline_create(&main_pipe->pipeline, main_pipe->mode, main_pipe->pipe_num, main_pipe->dvs_frame_delay);
 		break;
 
 	case IA_CSS_PIPE_ID_CAPTURE:
@@ -2040,11 +2053,11 @@ create_host_pipeline_structure(struct ia_css_stream *stream)
 
 	case IA_CSS_PIPE_ID_YUVPP:
 		err = ia_css_pipeline_create(&main_pipe->pipeline, main_pipe->mode,
-						main_pipe->pipe_num);
+						main_pipe->pipe_num, main_pipe->dvs_frame_delay);
 		break;
 
 	case IA_CSS_PIPE_ID_ACC:
-		err = ia_css_pipeline_create(&main_pipe->pipeline, main_pipe->mode, main_pipe->pipe_num);
+		err = ia_css_pipeline_create(&main_pipe->pipeline, main_pipe->mode, main_pipe->pipe_num, main_pipe->dvs_frame_delay);
 		break;
 
 	default:
@@ -2052,11 +2065,11 @@ create_host_pipeline_structure(struct ia_css_stream *stream)
 	}
 
 	if ((IA_CSS_SUCCESS == err) && copy_pipe) {
-		err = ia_css_pipeline_create(&copy_pipe->pipeline, copy_pipe->mode, copy_pipe->pipe_num);
+		err = ia_css_pipeline_create(&copy_pipe->pipeline, copy_pipe->mode, copy_pipe->pipe_num, main_pipe->dvs_frame_delay);
 	}
 
 	if ((IA_CSS_SUCCESS == err) && capture_pipe) {
-		err = ia_css_pipeline_create(&capture_pipe->pipeline, capture_pipe->mode, capture_pipe->pipe_num);
+		err = ia_css_pipeline_create(&capture_pipe->pipeline, capture_pipe->mode, capture_pipe->pipe_num, main_pipe->dvs_frame_delay);
 	}
 
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)
@@ -2383,7 +2396,7 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe)
 			}
 		}
 		ia_css_frame_free_multiple(NUM_VIDEO_TNR_FRAMES, pipe->pipe_settings.video.tnr_frames);
-		ia_css_frame_free_multiple((pipe->dvs_frame_delay + 1), pipe->pipe_settings.video.delay_frames);
+		ia_css_frame_free_multiple(NUM_VIDEO_DELAY_FRAMES, pipe->pipe_settings.video.delay_frames);
 		break;
 	case IA_CSS_PIPE_MODE_CAPTURE:
 #if 0
@@ -3049,7 +3062,7 @@ static enum ia_css_err
 allocate_mipi_frames(struct ia_css_pipe *pipe)
 {
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
-	unsigned int i, j;
+	unsigned int i, j, port;
 	struct ia_css_frame_info mipi_intermediate_info;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
@@ -3105,31 +3118,34 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 	// To indicate it is not valid frame.
 	//mipi_intermediate_info.dynamic_data_index = SH_CSS_INVALID_FRAME_ID;
 
-	for (i = 0; i < my_css.num_mipi_frames; i++) {
-		/* free previous frame */
-		if (my_css.mipi_frames[i]) {
-			ia_css_frame_free(my_css.mipi_frames[i]);
-			my_css.mipi_frames[i] = NULL;
-		}
-		/* check if new frame needed */
-		if (i < my_css.num_mipi_frames) {
-			/* allocate new frame */
-			err = ia_css_frame_allocate_with_buffer_size(
-				&my_css.mipi_frames[i],
-				my_css.size_mem_words * HIVE_ISP_DDR_WORD_BYTES,
-				my_css.contiguous);
-			if (err != IA_CSS_SUCCESS) {
-				for (j = 0; j < i; j++) {
-					if (my_css.mipi_frames[j]) {
-						ia_css_frame_free(my_css.mipi_frames[j]);
-						my_css.mipi_frames[j] = NULL;
-					}
-				}
-				return err;
+	/* Incremental allocation (per stream), not for all streams at once.*/
+	for (port = 0; port < N_CSI_PORTS; port++){
+		for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
+			/* free previous frame */
+			if (my_css.mipi_frames[port][i] != NULL) {
+				ia_css_frame_free(my_css.mipi_frames[port][i]);
+				my_css.mipi_frames[port][i] = NULL;
 			}
+			/* check if new frame is needed */
+			if (i < my_css.num_mipi_frames[port]) {
+				/* allocate new frame */
+				err = ia_css_frame_allocate_with_buffer_size(
+					&my_css.mipi_frames[port][i],
+					my_css.size_mem_words * HIVE_ISP_DDR_WORD_BYTES,
+					my_css.contiguous);
+				if (err != IA_CSS_SUCCESS) {
+					for (j = 0; j < i; j++) {
+						if (my_css.mipi_frames[port][j]) {
+							ia_css_frame_free(my_css.mipi_frames[port][j]);
+							my_css.mipi_frames[port][j] = NULL;
+						}
+					}
+					return err;
+				}
 #ifdef HRT_CSIM
-			ia_css_frame_zero(my_css.mipi_frames[i]);
+				ia_css_frame_zero(my_css.mipi_frames[port][i]);
 #endif
+			}
 		}
 	}
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
@@ -3141,7 +3157,7 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 static void
 free_mipi_frames(struct ia_css_pipe *pipe, bool uninit)
 {
-	unsigned int i;
+	unsigned int i, port;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"free_mipi_frames(%p, %d) enter:\n", pipe, uninit);
 	if (!uninit) {
@@ -3165,12 +3181,14 @@ free_mipi_frames(struct ia_css_pipe *pipe, bool uninit)
 			return;
 		}
 	}
-
-	for (i = 0; i < my_css.num_mipi_frames; i++) {
-		if (my_css.mipi_frames[i] != NULL)
-		{
-			ia_css_frame_free(my_css.mipi_frames[i]);
-			my_css.mipi_frames[i] = NULL;
+	for (port = 0; port < N_CSI_PORTS; port++) {
+		for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
+			if (my_css.mipi_frames[port][i] != NULL) {
+				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+					"free_mipi_frames(port=%d, num=%d).\n",	port, i);
+				ia_css_frame_free(my_css.mipi_frames[port][i]);
+				my_css.mipi_frames[port][i] = NULL;
+			}
 		}
 	}
 	/* TODO: change into return error value instead of assert
@@ -3187,6 +3205,7 @@ static void
 send_mipi_frames(struct ia_css_pipe *pipe)
 {
 	unsigned int i;
+	unsigned int port;
 
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
@@ -3195,13 +3214,21 @@ send_mipi_frames(struct ia_css_pipe *pipe)
 	if (pipe->stream->config.mode != IA_CSS_INPUT_MODE_BUFFERED_SENSOR)
 		return;
 
-	/* Hand-over the SP-internal mipi buffers */
-	for (i = 0; i < my_css.num_mipi_frames; i++) {
-		sh_css_update_host2sp_mipi_frame(i,
-			my_css.mipi_frames[i]);
+	/* port_num = (unsigned int) pipe->stream->config.source.port.port;
+	 * magic number is N_MIPI_FRAMES / N_MIPI_FRAMES_PER_STREAM,
+	 * so we do it only for first two ports.
+	 */
+	for (port = 0; port < 2; port++) {
+
+		/* Hand-over the SP-internal mipi buffers */
+		for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
+			/* Need to include the ofset for port. */
+			sh_css_update_host2sp_mipi_frame(port * NUM_MIPI_FRAMES_PER_STREAM + i,
+				my_css.mipi_frames[port][i]);
+		}
+		sh_css_update_host2sp_num_mipi_frames
+			(my_css.num_mipi_frames[port]);
 	}
-	sh_css_update_host2sp_num_mipi_frames
-		(my_css.num_mipi_frames);
 
 	/**********************************
 	 *
@@ -3219,7 +3246,7 @@ send_mipi_frames(struct ia_css_pipe *pipe)
 		if (!sh_css_sp_is_running()) {
 			/* SP is not running. The queues are not valid */
 			return;
-		}		
+		}
 		ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_6,	/* the event ID  */
 			0,				/* not used */
 			0,				/* not used */
@@ -3670,7 +3697,7 @@ ia_css_connect_buf_queues(unsigned int host2sp_addr,
 	unsigned int desc_addr,
 	unsigned int elems_addr,
 	ia_css_queue_t *qhandle)
-{		
+{
 	ia_css_queue_remote_t remoteq;
 	/* Setup queue location as SP and proc id as SP0_ID*/
 	remoteq.location = IA_CSS_QUEUE_LOC_SP;
@@ -3755,6 +3782,7 @@ init_in_frameinfo_memory_defaults(struct ia_css_pipe *pipe,
 	in_frame->info.raw_bit_depth =
 		ia_css_pipe_util_pipe_input_format_bpp(pipe);
 	ia_css_frame_info_set_width(&in_frame->info, pipe->stream->config.input_res.width, 0);
+	in_frame->info.raw_bayer_order = pipe->stream->config.bayer_order;
 
 	in_frame->contiguous = false;
 	in_frame->flash_state = IA_CSS_FRAME_FLASH_STATE_NONE;
@@ -3764,6 +3792,9 @@ init_in_frameinfo_memory_defaults(struct ia_css_pipe *pipe,
 	in_frame->buf_type = IA_CSS_BUFFER_TYPE_INPUT_FRAME;
 
 	err = ia_css_frame_init_planes(in_frame);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"init_in_frameinfo_memory_defaults() bayer_order = %d:\n", in_frame->info.raw_bayer_order);
 
 	return err;
 }
@@ -3879,6 +3910,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
 		in_frame = me->stages->args.out_frame[0];
+		in_frame->info.raw_bayer_order = pipe->stream->config.bayer_order;
 		in_stage = copy_stage;
 	} else if (pipe->stream->config.continuous) {
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
@@ -3886,6 +3918,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 		 * last pipe, which is the copy pipe.
 		 */
 		in_frame = pipe->stream->last_pipe->continuous_frames[0];
+		in_frame->info.raw_bayer_order = pipe->stream->config.bayer_order;
 #else
 		in_frame = pipe->continuous_frames[0];
 #endif
@@ -3953,8 +3986,10 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 		vf_pp_stage->args.out_frame[0] = vf_frame;
 
 	if (pipe->stream->config.continuous) {
-		if (video_stage)
+		if (video_stage){
 			video_stage->args.in_frame =  pipe->continuous_frames[0];
+			video_stage->args.in_frame->info.raw_bayer_order = pipe->stream->config.bayer_order;
+		}
 	}
 
 	configure_pipe_inout_port(&pipe->pipeline,
@@ -4081,8 +4116,9 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 		/* When continuous is enabled, configure in_frame with the
 		 * last pipe, which is the copy pipe.
 		 */
-		if (continuous)
+		if (continuous){
 			in_frame = pipe->stream->last_pipe->continuous_frames[0];
+		}
 #else
 		in_frame = pipe->continuous_frames[0];
 #endif
@@ -5375,7 +5411,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	ref_info.raw_bit_depth = SH_CSS_REF_BIT_DEPTH;
 
 	/*Allocate the exact number of required reference buffers */
-	for (i = 0; i <= (int)pipe->dvs_frame_delay ; i++){
+	for (i = 0; i < NUM_VIDEO_DELAY_FRAMES ; i++){
 		if (pipe->pipe_settings.video.delay_frames[i]) {
 			ia_css_frame_free(pipe->pipe_settings.video.delay_frames[i]);
 			pipe->pipe_settings.video.delay_frames[i] = NULL;
@@ -7269,6 +7305,13 @@ sh_css_pipe_get_output_frame_info(struct ia_css_pipe *pipe,
 		   info->format == IA_CSS_FRAME_FORMAT_RAW_PACKED) {
 		info->raw_bit_depth =
 			ia_css_pipe_util_pipe_input_format_bpp(pipe);
+#ifdef IS_ISP_2500_SYSTEM
+		/* Skycam specific: output bpp should be at least 12 (acc output) */
+		if(info->raw_bit_depth == 8)
+		{
+			info->raw_bit_depth = 12;
+		}
+#endif
 	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
@@ -7630,6 +7673,10 @@ sh_css_init_host_sp_control_vars(void)
 	unsigned int o = offsetof(struct host_sp_communication, host2sp_command)
 				/ sizeof(int);
 
+#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
+	unsigned int i;
+#endif
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_init_host_sp_control_vars() enter: void\n");
 
@@ -7669,8 +7716,10 @@ sh_css_init_host_sp_control_vars(void)
 	store_sp_array_uint(host_sp_com, o, host2sp_cmd_ready);
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	sh_css_update_host2sp_num_mipi_frames
-			(my_css.num_mipi_frames);
+	for (i = 0; i < N_CSI_PORTS; i++) {
+		sh_css_update_host2sp_num_mipi_frames
+			(my_css.num_mipi_frames[i]);
+	}
 #endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
@@ -7804,6 +7853,9 @@ ia_css_pipe_create_extra(const struct ia_css_pipe_config *config,
 	internal_pipe->dvs_frame_delay =
 		(internal_pipe->config.dvs_frame_delay == IA_CSS_FRAME_DELAY_2) ?
 		IA_CSS_FRAME_DELAY_2 : IA_CSS_FRAME_DELAY_1;
+	if (internal_pipe->config.mode != IA_CSS_PIPE_MODE_VIDEO)
+		internal_pipe->dvs_frame_delay = IA_CSS_FRAME_DELAY_0;
+	assert(internal_pipe->dvs_frame_delay <= MAX_DVS_FRAME_DELAY);
 
 	/* we still keep enable_raw_binning for backward compatibility, for any new
 	   fractional bayer downscaling, we should use bayer_ds_out_res. if both are

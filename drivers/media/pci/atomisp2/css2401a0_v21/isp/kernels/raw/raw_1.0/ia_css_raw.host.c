@@ -54,6 +54,48 @@ sh_css_elems_bytes_from_info (unsigned raw_bit_depth)
 	return CEIL_DIV(raw_bit_depth,8);
 }
 
+static inline unsigned
+sh_css_stride_from_info (
+	enum ia_css_frame_format format,
+	unsigned stride_b,
+	unsigned raw_bit_depth)
+{
+	/* padded_width is in terms of elements */
+	unsigned stride;
+	if (format == IA_CSS_FRAME_FORMAT_RAW_PACKED) {
+		stride = ((unsigned)HIVE_ISP_DDR_WORD_BYTES) *
+				CEIL_DIV(stride_b,
+				(unsigned char)(HIVE_ISP_DDR_WORD_BITS /
+					raw_bit_depth));
+	} else {
+		stride = stride_b * sh_css_elems_bytes_from_info(raw_bit_depth);
+	}
+	return stride;
+}
+#if (defined(USE_INPUT_SYSTEM_VERSION_2401) || defined(CONFIG_CSI2_PLUS))
+static inline void
+ia_css_get_crop_info_for_bayer_order (
+	const unsigned int bayer_order,
+	unsigned int *start_column, unsigned int *start_line)
+{
+	if ((IA_CSS_BAYER_ORDER_RGGB == bayer_order)
+	    || (IA_CSS_BAYER_ORDER_GBRG == bayer_order))
+		*start_column = 1;
+	else
+		*start_column = 0;
+
+
+	if ((IA_CSS_BAYER_ORDER_BGGR == bayer_order)
+	    || (IA_CSS_BAYER_ORDER_GBRG == bayer_order))
+		*start_line = 1;
+	else
+		*start_line = 0;
+
+	return;
+}
+#endif
+
+
 /* MW: These areMIPI / ISYS properties, not camera function properties */
 static enum sh_stream_format
 css2isp_stream_format(enum ia_css_stream_format from)
@@ -95,6 +137,7 @@ ia_css_raw_config(
 	unsigned elems_a = ISP_VEC_NELEMS;
 	const struct ia_css_frame_info *in_info = from->in_info;
 	const struct ia_css_frame_info *internal_info = from->internal_info;
+
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* 2401 input system uses input width width */
 	in_info = internal_info;
@@ -119,6 +162,9 @@ ia_css_raw_config(
 	to->two_ppc = from->two_ppc;
 	to->stream_format = css2isp_stream_format(from->stream_format);
 	to->deinterleaved = from->deinterleaved;
+#if (defined(USE_INPUT_SYSTEM_VERSION_2401) || defined(CONFIG_CSI2_PLUS))
+	ia_css_get_crop_info_for_bayer_order (in_info->raw_bayer_order, &to->start_column, &to->start_line);
+#endif
 }
 
 void
@@ -131,6 +177,6 @@ ia_css_raw_configure(
 	bool deinterleaved)
 {
 	const struct ia_css_raw_configuration config =
-		{ pipe, in_info, internal_info, two_ppc, binary->input_format, deinterleaved };
+		{ pipe, in_info, internal_info, two_ppc, binary->input_format, deinterleaved};
 	ia_css_configure_raw(binary, &config);
 }

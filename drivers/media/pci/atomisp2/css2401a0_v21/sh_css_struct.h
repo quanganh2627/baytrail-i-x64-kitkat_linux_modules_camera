@@ -54,8 +54,8 @@ struct sh_css {
 	bool                           stop_copy_preview;
 	unsigned int                   num_cont_raw_frames;
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	unsigned int                   num_mipi_frames;
-	struct ia_css_frame           *mipi_frames[NUM_MIPI_FRAMES];
+	unsigned int                   num_mipi_frames[N_CSI_PORTS];
+	struct ia_css_frame           *mipi_frames[N_CSI_PORTS][NUM_MIPI_FRAMES_PER_STREAM];
 #endif
 	hrt_vaddress                   sp_bin_addr;
 	hrt_data                       page_table_base_index;
