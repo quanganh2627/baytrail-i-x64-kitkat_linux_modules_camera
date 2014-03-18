@@ -1090,8 +1090,6 @@ static bool is_valid_device(struct pci_dev *dev,
 
 	switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
-	case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
-	case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
 		a0_max_id = ATOMISP_PCI_REV_MRFLD_A0_MAX;
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_BYT:
@@ -1190,32 +1188,31 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 #endif
 	switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
-	case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
-	case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
-	case ATOMISP_PCI_DEVICE_SOC_BYT:
 		isp->media_dev.hw_revision =
 			(ATOMISP_HW_REVISION_ISP2400
 			 << ATOMISP_HW_REVISION_SHIFT) |
-#ifdef ISP2400
-			ATOMISP_HW_STEPPING_A0;
-#else
 			ATOMISP_HW_STEPPING_B0;
-#endif
 		atomisp_hmm_is_2400 = true;
-		switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
-			case ATOMISP_PCI_DEVICE_SOC_MRFLD:
-				isp->dfs = &dfs_config_merr;
-				break;
+
+		switch (id->device) {
 			case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
 				isp->dfs = &dfs_config_merr_1179;
 				break;
 			case ATOMISP_PCI_DEVICE_SOC_MRFLD_117A:
 				isp->dfs = &dfs_config_merr_117a;
 				break;
-			case ATOMISP_PCI_DEVICE_SOC_BYT:
-				isp->dfs = &dfs_config_byt;
+			default:
+				isp->dfs = &dfs_config_merr;
 				break;
 		}
+		break;
+	case ATOMISP_PCI_DEVICE_SOC_BYT:
+		isp->media_dev.hw_revision =
+			(ATOMISP_HW_REVISION_ISP2400
+			 << ATOMISP_HW_REVISION_SHIFT) |
+			ATOMISP_HW_STEPPING_B0;
+		atomisp_hmm_is_2400 = true;
+		isp->dfs = &dfs_config_byt;
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_ANN:
 		isp->media_dev.hw_revision = (
