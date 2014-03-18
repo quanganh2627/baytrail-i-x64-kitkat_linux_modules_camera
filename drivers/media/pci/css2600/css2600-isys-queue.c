@@ -397,6 +397,16 @@ void css2600_isys_queue_buf_done(struct css2600_isys_pipeline *ip,
 	vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
 	vb2_buffer_done(vb, VB2_BUF_STATE_DONE);
+
+	if (!ip->continuous) {
+		struct v4l2_subdev *sd =
+			media_entity_to_v4l2_subdev(ip->external);
+		int rval;
+
+		rval = v4l2_subdev_call(sd, video, s_stream, 1);
+		if (rval)
+			dev_err(&av->isys->adev->dev, "s_stream failed!\n");
+	}
 }
 
 struct vb2_ops css2600_isys_queue_ops = {
