@@ -1370,7 +1370,7 @@ int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
 	}
 
 	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.
-			metadata_info.size) {
+			metadata_info.size && md_buf) {
 		md_buf->metadata = ia_css_metadata_allocate(
 			&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.metadata_info);
 		if (!md_buf->metadata) {
