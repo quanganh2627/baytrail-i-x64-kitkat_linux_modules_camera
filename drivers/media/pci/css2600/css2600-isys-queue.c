@@ -314,6 +314,7 @@ out_dequeue_bufs:
 			"removing buffer %u/%p from incoming\n",
 			vb->v4l2_buf.index, ib);
 		list_del(&ib->head);
+		vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
 	}
 	spin_unlock_irqrestore(&aq->lock, flags);
 
@@ -350,7 +351,22 @@ static int stop_streaming(struct vb2_queue *q)
 	}
 
 	spin_lock_irqsave(&aq->lock, flags);
-	BUG_ON(!list_empty(&aq->incoming));
+	while (!list_empty(&aq->incoming)) {
+		struct css2600_isys_buffer *ib =
+			list_first_entry(&aq->incoming,
+					 struct css2600_isys_buffer, head);
+		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
+
+		list_del(&ib->head);
+		spin_unlock_irqrestore(&aq->lock, flags);
+
+		vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
+
+		dev_dbg(&av->isys->adev->dev, "stop_streaming incoming %u/%p\n",
+			vb->v4l2_buf.index, ib);
+
+		spin_lock_irqsave(&aq->lock, flags);
+	}
 	while (!list_empty(&aq->active)) {
 		struct css2600_isys_buffer *ib =
 			list_first_entry(&aq->active,
@@ -362,7 +378,7 @@ static int stop_streaming(struct vb2_queue *q)
 
 		vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
 
-		dev_dbg(&av->isys->adev->dev, "stop_streaming %u/%p\n",
+		dev_dbg(&av->isys->adev->dev, "stop_streaming active %u/%p\n",
 			vb->v4l2_buf.index, ib);
 
 		spin_lock_irqsave(&aq->lock, flags);
