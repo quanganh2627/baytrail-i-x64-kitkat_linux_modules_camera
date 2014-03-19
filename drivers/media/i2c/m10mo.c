@@ -152,7 +152,24 @@ static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 
 	data[1] = M10MO_BYTE_WRITE;
 	data[2] = category;
 	data[3] = reg;
-	data[4] = val;
+	switch (len) {
+	case 1:
+		data[4] = val;
+		break;
+	case 2:
+		data[4] = ((val >> 8) & 0xFF);
+		data[5] = (val & 0xFF);
+		break;
+	case 4:
+		data[4] = ((val >> 24) & 0xFF);
+		data[5] = ((val >> 16) & 0xFF);
+		data[6] = ((val >> 8) & 0xFF);
+		data[7] = (val & 0xFF);
+		break;
+	default:
+		/* No possible to happen - len is already validated */
+		break;
+	}
 
 	/* isp firmware becomes stable during this time*/
 	usleep_range(200, 200);
@@ -162,19 +179,22 @@ static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 
 	return ret == num_msg ? 0 : -EIO;
 }
 
-static int m10mo_memory_write(struct v4l2_subdev *sd, u8 cmd, u16 len, u32 addr, u8 val)
+int m10mo_memory_write(struct v4l2_subdev *sd, u8 cmd, u16 len, u32 addr, u8 *val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct m10mo_device *m10mo_dev =  to_m10mo_sensor(sd);
 	struct i2c_msg msg;
-	unsigned char data[9];
+	u8 *data = m10mo_dev->message_buffer;
 	int i, ret;
 
 	if (!client->adapter)
 		return -ENODEV;
 
+	if ((len + 8) > sizeof(m10mo_dev->message_buffer))
+		return -ENOMEM;
 	msg.addr = client->addr;
 	msg.flags = 0;
-	msg.len = sizeof(data);
+	msg.len = len + 8;
 	msg.buf = data;
 
 	/* high byte goes out first */
@@ -184,9 +204,10 @@ static int m10mo_memory_write(struct v4l2_subdev *sd, u8 cmd, u16 len, u32 addr,
 	data[3] = (u8)((addr >> 16) & 0xFF);
 	data[4] = (u8)((addr >> 8) & 0xFF);
 	data[5] = (u8)(addr & 0xFF);
-	data[6] = 0x0;
-	data[7] = 0x1;
-	data[8] = val;
+	data[6] = len >> 8;
+	data[7] = len;
+	/* Payload starts at offset 8 */
+	memcpy(data + 8, val, len);
 
 	usleep_range(200, 200);
 
@@ -253,9 +274,13 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 	int ret;
 
 	/* Temporary Fix, Bug in M10MO Firmware */
-	ret = m10mo_memory_write(sd, 0x04, 1, 0x13000005, 0x7F);
-	if (ret)
+	u8 data = 0x7F;
+	ret = m10mo_memory_write(sd, M10MO_MEMORY_WRITE_8BIT,
+				 1, 0x13000005, &data);
+	if (ret < 0) {
+		dev_err(&client->dev, "Memory Write failed\n");
 		return ret;
+	}
 
 	/* Start the Camera firmware */
 	ret = m10mo_write(sd, 1, CATEGORY_FLASHROM, FLASH_CAM_START, 0x01);

@@ -36,14 +36,22 @@
 
 #define M10MO_NAME 			"m10mo"
 #define M10MO_ADDR   			0x1f
-#define M10MO_BYTE_READ			0x01
-#define M10MO_BYTE_WRITE		0x02
 #define M10MO_I2C_RETRY			5
 #define M10MO_MIPI_FREQ			(963000000/2)
 #define M10MO_INIT_TIMEOUT		500
 
 #define M10MO_MIN_EV -3
 #define M10MO_MAX_EV  3
+
+/* M10MO I2C commands */
+#define M10MO_BYTE_READ			0x01
+#define M10MO_BYTE_WRITE		0x02
+#define M10MO_MEMORY_READ_8BIT		0x03
+#define M10MO_MEMORY_WRITE_8BIT		0x04
+#define M10MO_MEMORY_READ_16BIT		0x05
+#define M10MO_MEMORY_WRITE_16BIT	0x06
+#define M10MO_MEMORY_READ_32BIT		0x07
+#define M10MO_MEMORY_WRITE_32BIT	0x08
 
 struct m10mo_version {
 	int customer;
@@ -60,6 +68,7 @@ struct m10mo_device {
 	struct v4l2_mbus_framefmt format;
 	struct camera_sensor_platform_data *platform_data;
 	struct mutex input_lock; /* serialize sensor's ioctl */
+	u8 message_buffer[256]; /* Real buffer size TBD */
 	int res_type;
 	int power;
 	u8 fps;
