@@ -238,6 +238,15 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 			av->ip.continuous = false;
 			break;
 		}
+		for (i = 0; i < CSS2600_ISYS_2401_MAX_TPGS &&
+			     av->isys->tpg_2401[i].isys; i++) {
+			if (av->isys->tpg_2401[i].asd.sd.entity.pipe !=
+			    &av->ip.pipe)
+				continue;
+
+			av->ip.continuous = false;
+			break;
+		}
 
 		dev_dbg(&av->isys->adev->dev, "continuous %d\n",
 			av->ip.continuous);
