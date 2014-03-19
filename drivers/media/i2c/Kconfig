@@ -153,6 +153,13 @@ config VIDEO_AP1302
 
          It currently only works with the atomisp driver.
 
+config VIDEO_PIXTER
+       tristate "Pixter 2+ MIPI CSI simulator"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for Pixter2+.
+         Pixter 2+ is a MIPI CSI simulator.
+
 #
 # Kconfig for flash drivers
 #

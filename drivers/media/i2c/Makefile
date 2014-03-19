@@ -33,6 +33,7 @@ obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o
 obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o
 
 obj-$(CONFIG_VIDEO_CSI_XACTOR) += xactor_x.o
+obj-$(CONFIG_VIDEO_PIXTER) += pixter.o
 
 #
 # Makefile for flash drivers
