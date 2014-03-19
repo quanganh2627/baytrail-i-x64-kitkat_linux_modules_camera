@@ -38,6 +38,14 @@ config VIDEO_M10MO
 	  It currently depends on internal V4L2 extensions defined in
 	  atomisp driver.
 
+config VIDEO_M10MO_FAKE_SFI_TABLE
+	bool "Add fake SFI entry for Fujitsu M10MO on VV board + AOB"
+	depends on VIDEO_M10MO
+	---help---
+	  Enable this when working with VV board with Fujitsu AOB.
+
+	  Not needed if device IFWI already has M10MO in the SFI table.
+
 config VIDEO_GC2235
        tristate "Galaxy gc2235 sensor support"
        depends on I2C && VIDEO_V4L2
