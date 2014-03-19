@@ -91,4 +91,30 @@ struct css2600_command {
 #define CSS2600_IOC_DQEVENT _IOWR('A', 7, struct css2600_event)
 #define CSS2600_IOC_CMD_CANCEL _IOWR('A', 8, struct css2600_command)
 
+#ifdef CONFIG_COMPAT
+struct css2600_buffer32 {
+	uint64_t len;
+	compat_uptr_t userptr;
+	int fd;
+	uint32_t flags;
+	uint32_t reserved2[4];
+} __attribute__ ((packed));
+
+struct css2600_command32 {
+	uint32_t id;
+	uint32_t priority;
+	uint32_t bufcount;
+	compat_uptr_t buffers;
+	uint32_t issue_id;
+	uint32_t reserved[3];
+} __attribute__ ((packed));
+
+#define CSS2600_IOC_MAPBUF32 _IOWR('A', 2, struct css2600_buffer32)
+#define CSS2600_IOC_UNMAPBUF32 _IOWR('A', 3, struct css2600_buffer32)
+#define CSS2600_IOC_GETBUF32 _IOWR('A', 4, struct css2600_buffer32)
+#define CSS2600_IOC_PUTBUF32 _IOWR('A', 5, struct css2600_buffer32)
+#define CSS2600_IOC_QCMD32 _IOWR('A', 6, struct css2600_command32)
+#define CSS2600_IOC_CMD_CANCEL32 _IOWR('A', 8, struct css2600_command32)
+#endif
+
 #endif

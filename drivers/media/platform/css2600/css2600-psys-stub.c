@@ -28,6 +28,9 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/wait.h>
+#ifdef CONFIG_COMPAT
+#include <linux/compat.h>
+#endif
 
 #include "css2600-psys-stub.h"
 #include "css2600-psys.h"
@@ -92,24 +95,14 @@ out:
  * This should be moved to a separate file as this part will be
  * replaced by the actual PSYS hardware API.
  */
-static int psysstub_validate_buffers(struct css2600_command *command)
+static int psysstub_validate_buffers(struct css2600_buffer *buffer,
+				     int bufcount)
 {
-	struct css2600_buffer *buffer;
 	struct psysparam *params;
 	int err = 0;
 
-	if (command->bufcount < CSS2600_PSYS_STUB_BUFS_MIN)
+	if (bufcount < CSS2600_PSYS_STUB_BUFS_MIN)
 		return -EINVAL;
-
-	buffer = kzalloc(sizeof(*buffer) * command->bufcount, GFP_KERNEL);
-	if (!buffer)
-		return -ENOMEM;
-
-	if (copy_from_user(buffer, command->buffers,
-				sizeof(*buffer) * command->bufcount)) {
-		kfree(buffer);
-		return -EFAULT;
-	}
 
 	/* get params */
 	params = kzalloc(sizeof(*params), GFP_KERNEL);
@@ -138,7 +131,6 @@ static int psysstub_validate_buffers(struct css2600_command *command)
 
 out:
 	kfree(params);
-	kfree(buffer);
 	return err;
 }
 
@@ -280,21 +272,141 @@ static struct css2600_kbuffer *css2600_lookup_kbuffer(struct css2600_fh *fh, int
 	return 0;
 }
 
-static long css2600_ioctl_mapbuf(struct file *file, struct css2600_buffer __user *arg)
+static long css2600_buffer_from_user(struct css2600_buffer *buf,
+				     void __user *arg, int compat)
+{
+#ifdef CONFIG_COMPAT
+	struct css2600_buffer32 __user *user_buffer = arg;
+	compat_uptr_t ptr;
+
+	if (compat) {
+		if (!access_ok(VERIFY_READ, user_buffer,
+			       sizeof(struct css2600_buffer32)) ||
+		    get_user(buf->len, &user_buffer->len) ||
+		    get_user(buf->fd, &user_buffer->fd) ||
+		    get_user(buf->flags, &user_buffer->flags) ||
+		    get_user(ptr, &user_buffer->userptr))
+			return -EFAULT;
+
+		buf->userptr = compat_ptr(ptr);
+
+		return 0;
+	}
+#endif
+	return copy_from_user(buf, arg, sizeof(*buf));
+}
+
+static long css2600_buffer_to_user(struct css2600_buffer *buf,
+				   void __user *arg, int compat)
+{
+#ifdef CONFIG_COMPAT
+	struct css2600_buffer32 __user *user_buffer = arg;
+	compat_uptr_t ptr = ptr_to_compat(buf->userptr);
+
+	if (compat) {
+		if (!access_ok(VERIFY_WRITE, user_buffer,
+			       sizeof(struct css2600_buffer32)) ||
+		    put_user(buf->len, &user_buffer->len) ||
+		    put_user(buf->fd, &user_buffer->fd) ||
+		    put_user(buf->flags, &user_buffer->flags) ||
+		    put_user(ptr, &user_buffer->userptr))
+			return -EFAULT;
+
+		return 0;
+	}
+#endif
+	return copy_to_user(arg, buf, sizeof(*buf));
+}
+
+static long css2600_command_from_user(struct css2600_command *cmd,
+					void __user *arg, int compat)
+{
+#ifdef CONFIG_COMPAT
+	struct css2600_command32 __user *user_cmd = arg;
+	compat_uptr_t ptr;
+
+	if (compat) {
+		if (!access_ok(VERIFY_READ, user_cmd,
+				sizeof(struct css2600_command32)) ||
+		    get_user(cmd->id, &user_cmd->id) ||
+		    get_user(cmd->priority, &user_cmd->priority) ||
+		    get_user(cmd->bufcount, &user_cmd->bufcount) ||
+		    get_user(ptr, &user_cmd->buffers) ||
+		    get_user(cmd->issue_id, &user_cmd->issue_id))
+			return -EFAULT;
+
+		/* Note: cmd->buffers remains as array of compat buffers */
+		cmd->buffers = compat_ptr(ptr);
+
+		return 0;
+	}
+#endif
+	return copy_from_user(cmd, arg, sizeof(*cmd));
+}
+
+static struct css2600_buffer *css2600_command_buffers_from_user(
+		struct css2600_command *cmd, int compat)
+{
+	struct css2600_buffer *buffers;
+#ifdef CONFIG_COMPAT
+	struct css2600_buffer32 *compat_buffers;
+	int i;
+#endif
+
+	if (cmd->bufcount < CSS2600_PSYS_STUB_BUFS_MIN)
+		return NULL;
+
+	buffers = kzalloc(sizeof(*buffers) * cmd->bufcount, GFP_KERNEL);
+	if (!buffers)
+		return NULL;
+
+#ifdef CONFIG_COMPAT
+	if (compat) {
+		compat_buffers =
+			(struct css2600_buffer32 __user *) cmd->buffers;
+		for (i = 0; i < cmd->bufcount; i++) {
+			if (!access_ok(VERIFY_READ, &compat_buffers[i],
+					sizeof(struct css2600_buffer32))) {
+				kfree(buffers);
+				return NULL;
+			}
+			if (css2600_buffer_from_user(&buffers[i],
+						     &compat_buffers[i],
+						     compat)) {
+				kfree(buffers);
+				return NULL;
+			}
+		}
+		return buffers;
+	}
+#endif
+
+	if (copy_from_user(buffers, cmd->buffers,
+			   sizeof(*buffers) * cmd->bufcount)) {
+		kfree(buffers);
+		return NULL;
+	}
+
+	return buffers;
+}
+
+static long css2600_ioctl_mapbuf(struct file *file,
+				 void __user *arg, int compat)
 {
 	struct css2600_fh *fh = file->private_data;
 	struct css2600_kbuffer *kbuffer;
 	struct css2600_buffer buf;
 
-	if (copy_from_user(&buf, arg, sizeof buf))
+	if (css2600_buffer_from_user(&buf, arg, compat))
 		return -EFAULT;
+
 	kbuffer = css2600_lookup_kbuffer(fh, buf.fd);
 	if (!kbuffer)
 		return -EINVAL;
 	if (kbuffer->mapped)
 		return -EINVAL;
 	buf.flags |= CSS2600_BUFFER_FLAG_MAPPED;
-	if (copy_to_user(arg, &buf, sizeof buf)) {
+	if (css2600_buffer_to_user(&buf, arg, compat)) {
 		kfree(kbuffer);
 		return -EFAULT;
 	}
@@ -304,13 +416,14 @@ static long css2600_ioctl_mapbuf(struct file *file, struct css2600_buffer __user
 	return 0;
 }
 
-static long css2600_ioctl_unmapbuf(struct file *file, struct css2600_buffer __user *arg)
+static long css2600_ioctl_unmapbuf(struct file *file,
+				   void __user *arg, int compat)
 {
 	struct css2600_fh *fh = file->private_data;
 	struct css2600_kbuffer *kbuffer;
 	struct css2600_buffer buf;
 
-	if (copy_from_user(&buf, arg, sizeof buf))
+	if (css2600_buffer_from_user(&buf, arg, compat))
 		return -EFAULT;
 	kbuffer = css2600_lookup_kbuffer(fh, buf.fd);
 	if (!kbuffer)
@@ -318,7 +431,7 @@ static long css2600_ioctl_unmapbuf(struct file *file, struct css2600_buffer __us
 	if (!kbuffer->mapped)
 		return -EINVAL;
 	buf.flags &= ~CSS2600_BUFFER_FLAG_MAPPED;
-	if (copy_to_user(arg, &buf, sizeof buf)) {
+	if (css2600_buffer_to_user(&buf, arg, compat)) {
 		kfree(kbuffer);
 		return -EFAULT;
 	}
@@ -328,13 +441,14 @@ static long css2600_ioctl_unmapbuf(struct file *file, struct css2600_buffer __us
 	return 0;
 }
 
-static long css2600_ioctl_getbuf(struct file *file, struct css2600_buffer __user *arg)
+static long css2600_ioctl_getbuf(struct file *file,
+				 void __user *arg, int compat)
 {
 	struct css2600_fh *fh = file->private_data;
 	struct css2600_kbuffer *kbuffer;
 	struct css2600_buffer buffer;
 
-	if (copy_from_user(&buffer, arg, sizeof buffer))
+	if (css2600_buffer_from_user(&buffer, arg, compat))
 		return -EFAULT;
 	kbuffer = kzalloc(sizeof(*kbuffer), GFP_KERNEL);
 	if (!kbuffer)
@@ -343,22 +457,24 @@ static long css2600_ioctl_getbuf(struct file *file, struct css2600_buffer __user
 	kbuffer->fd = (int)kbuffer;
 	kbuffer->userptr = buffer.userptr;
 	buffer.fd = kbuffer->fd;
-	if (copy_to_user(arg, &buffer, sizeof buffer)) {
+	if (css2600_buffer_to_user(&buffer, arg, compat)) {
 		kfree(kbuffer);
 		return -EFAULT;
 	}
 	list_add_tail(&kbuffer->list, &fh->bufmap);
-	dev_dbg(fh->dev, "IOC_GETBUF: userptr %p to %d\n", buffer.userptr, buffer.fd);
+	dev_dbg(fh->dev, "IOC_GETBUF: userptr %p to %d\n",
+		buffer.userptr, buffer.fd);
 	return 0;
 }
 
-static long css2600_ioctl_putbuf(struct file *file, struct css2600_buffer __user *arg)
+static long css2600_ioctl_putbuf(struct file *file,
+				 void __user *arg, int compat)
 {
 	struct css2600_fh *fh = file->private_data;
 	struct css2600_kbuffer *kbuffer = NULL;
 	struct css2600_buffer buffer;
 
-	if (copy_from_user(&buffer, arg, sizeof buffer))
+	if (css2600_buffer_from_user(&buffer, arg, compat))
 		return -EFAULT;
 	kbuffer = css2600_lookup_kbuffer(fh, buffer.fd);
 	if (!kbuffer)
@@ -370,28 +486,38 @@ static long css2600_ioctl_putbuf(struct file *file, struct css2600_buffer __user
 	return 0;
 }
 
-static long css2600_ioctl_qcmd(struct file *file, struct css2600_command __user *arg)
+static long css2600_ioctl_qcmd(struct file *file,
+			       struct css2600_command __user *arg,
+			       int compat)
 {
 	struct css2600_fh *fh = file->private_data;
 	struct css2600_device *isp = device_to_css2600_device(fh->dev);
 	struct css2600_run_cmd *cmd;
 	struct css2600_run_cmd *cur_cmd = isp->cur_cmd;
+	struct css2600_buffer *buffers = NULL;
 	int err;
 
 	cmd = kzalloc(sizeof(*cmd), GFP_KERNEL);
 	if (!cmd)
 		return -ENOMEM;
 
-	if (copy_from_user(&cmd->command, arg, sizeof (cmd->command))) {
+	if (css2600_command_from_user(&cmd->command, arg, compat)) {
 		err = -EFAULT;
 		goto error;
 	}
 
 	dev_dbg(fh->dev, "IOC_QCMD: length %u\n", cmd->command.bufcount);
 
+	buffers = css2600_command_buffers_from_user(&cmd->command, compat);
+	if (!buffers) {
+		err = -EFAULT;
+		goto error;
+	}
+
 	if (!is_priority_valid(cmd->command.priority) ||
 	    !is_id_valid(cmd->command.id) ||
-	    psysstub_validate_buffers(&cmd->command)) {
+	    psysstub_validate_buffers(buffers, cmd->command.bufcount)
+	    ) {
 		err = -EINVAL;
 		goto error;
 	}
@@ -412,9 +538,10 @@ static long css2600_ioctl_qcmd(struct file *file, struct css2600_command __user 
 		isp->queue_empty = false;
 	}
 
+	kfree(buffers);
 	return 0;
-
 error:
+	kfree(buffers);
 	kfree(cmd);
 	return err;
 }
@@ -447,14 +574,14 @@ static long css2600_ioctl_dqevent(struct file *file, struct css2600_event __user
 }
 
 static long css2600_ioctl_cmd_cancel(struct file *file,
-				     struct css2600_command __user *arg)
+				     void __user *arg, int compat)
 {
 	struct css2600_fh *fh = file->private_data;
 	struct css2600_device *isp = device_to_css2600_device(fh->dev);
 	struct css2600_run_cmd *cmd;
 	struct css2600_command command;
 
-	if (copy_from_user(&command, arg, sizeof (command)))
+	if (css2600_command_from_user(&command, arg, compat))
 		return -EFAULT;
 
 	if (isp->cur_cmd &&
@@ -473,6 +600,50 @@ static long css2600_ioctl_cmd_cancel(struct file *file,
 	return 0;
 }
 
+#ifdef CONFIG_COMPAT
+static long css2600_compat_ioctl32(struct file *file,
+				   unsigned int cmd,
+				   unsigned long arg)
+{
+	int err = 0;
+	struct css2600_fh *fh = file->private_data;
+	void __user *argp = compat_ptr(arg);
+
+	dev_dbg(fh->dev, "compat ioctl nr %d\n", _IOC_NR(cmd));
+
+	switch (cmd) {
+	case CSS2600_IOC_QUERYCAP:
+		err = copy_to_user(argp, &caps, sizeof(caps));
+		break;
+	case CSS2600_IOC_MAPBUF32:
+		err = css2600_ioctl_mapbuf(file, argp, 1);
+		break;
+	case CSS2600_IOC_UNMAPBUF32:
+		err = css2600_ioctl_unmapbuf(file, argp, 1);
+		break;
+	case CSS2600_IOC_GETBUF32:
+		err = css2600_ioctl_getbuf(file, argp, 1);
+		break;
+	case CSS2600_IOC_PUTBUF32:
+		err = css2600_ioctl_putbuf(file, argp, 1);
+		break;
+	case CSS2600_IOC_QCMD32:
+		err = css2600_ioctl_qcmd(file, argp, 1);
+		break;
+	case CSS2600_IOC_DQEVENT:
+		err = css2600_ioctl_dqevent(file, argp);
+		break;
+	case CSS2600_IOC_CMD_CANCEL32:
+		err = css2600_ioctl_cmd_cancel(file, argp, 1);
+		break;
+	default:
+		err = -ENOTTY;
+	}
+
+	return err;
+}
+#endif
+
 static long css2600_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int err = 0;
@@ -486,25 +657,25 @@ static long css2600_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 		err = copy_to_user(argp, &caps, sizeof caps);
 		break;
 	case CSS2600_IOC_MAPBUF:
-		err = css2600_ioctl_mapbuf(file, argp);
+		err = css2600_ioctl_mapbuf(file, argp, 0);
 		break;
 	case CSS2600_IOC_UNMAPBUF:
-		err = css2600_ioctl_unmapbuf(file, argp);
+		err = css2600_ioctl_unmapbuf(file, argp, 0);
 		break;
 	case CSS2600_IOC_GETBUF:
-		err = css2600_ioctl_getbuf(file, argp);
+		err = css2600_ioctl_getbuf(file, argp, 0);
 		break;
 	case CSS2600_IOC_PUTBUF:
-		err = css2600_ioctl_putbuf(file, argp);
+		err = css2600_ioctl_putbuf(file, argp, 0);
 		break;
 	case CSS2600_IOC_QCMD:
-		err = css2600_ioctl_qcmd(file, argp);
+		err = css2600_ioctl_qcmd(file, argp, 0);
 		break;
 	case CSS2600_IOC_DQEVENT:
 		err = css2600_ioctl_dqevent(file, argp);
 		break;
 	case CSS2600_IOC_CMD_CANCEL:
-		err = css2600_ioctl_cmd_cancel(file, argp);
+		err = css2600_ioctl_cmd_cancel(file, argp, 0);
 		break;
 	default:
 		err = -ENOTTY;
@@ -567,6 +738,9 @@ static const struct file_operations css2600_fops = {
 	.open = css2600_open,
 	.release = css2600_release,
 	.unlocked_ioctl = css2600_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl = css2600_compat_ioctl32,
+#endif
 	.poll = css2600_poll,
 	.owner = THIS_MODULE,
 };
