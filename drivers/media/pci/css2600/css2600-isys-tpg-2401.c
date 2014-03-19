@@ -119,6 +119,10 @@ void css2600_isys_tpg_2401_cleanup(struct css2600_isys_tpg_2401 *tpg)
 {
 	v4l2_device_unregister_subdev(&tpg->asd.sd);
 	css2600_isys_subdev_cleanup(&tpg->asd);
+
+	if (tpg->isys->pdata->type == CSS2600_ISYS_TYPE_CSS2401)
+		return;
+
 	css2600_isys_video_cleanup(&tpg->av);
 }
 
