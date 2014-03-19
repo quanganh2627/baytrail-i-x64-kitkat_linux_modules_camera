@@ -156,15 +156,15 @@ static void __buf_queue(struct vb2_buffer *vb, bool force)
 
 	if (!vb->vb2_queue->streaming && !force) {
 		dev_dbg(&av->isys->adev->dev,
-			"not streaming yet, adding to pre_streamon_queued\n");
+			"not streaming yet, adding to incoming\n");
 		spin_lock_irqsave(&aq->lock, flags);
-		list_add(&ib->head, &aq->pre_streamon_queued);
+		list_add(&ib->head, &aq->incoming);
 		spin_unlock_irqrestore(&aq->lock, flags);
 		return;
 	}
 
 	spin_lock_irqsave(&aq->lock, flags);
-	list_add(&ib->head, &aq->queued);
+	list_add(&ib->head, &aq->active);
 	spin_unlock_irqrestore(&aq->lock, flags);
 
 	rval = -ia_css_isys_stream_capture_indication(av->isys->ssi,
@@ -264,9 +264,9 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	dev_dbg(&av->isys->adev->dev, "stream start complete\n");
 
 	spin_lock_irqsave(&aq->lock, flags);
-	while (!list_empty(&aq->pre_streamon_queued)) {
+	while (!list_empty(&aq->incoming)) {
 		struct css2600_isys_buffer *ib =
-			list_last_entry(&aq->pre_streamon_queued,
+			list_last_entry(&aq->incoming,
 					struct css2600_isys_buffer, head);
 		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
@@ -275,7 +275,7 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 		spin_unlock_irqrestore(&aq->lock, flags);
 
 		dev_dbg(&av->isys->adev->dev,
-			"queueing buffer %u/%p from pre_streamon_queued\n",
+			"queueing buffer %u/%p from active\n",
 			vb->v4l2_buf.index, ib);
 		__buf_queue(vb, true);
 
@@ -304,14 +304,14 @@ out_pipe_null:
 
 out_dequeue_bufs:
 	spin_lock_irqsave(&aq->lock, flags);
-	while (!list_empty(&aq->pre_streamon_queued)) {
+	while (!list_empty(&aq->incoming)) {
 		struct css2600_isys_buffer *ib =
-			list_last_entry(&aq->pre_streamon_queued,
+			list_last_entry(&aq->incoming,
 					struct css2600_isys_buffer, head);
 		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
 		dev_dbg(&av->isys->adev->dev,
-			"removing buffer %u/%p from pre_streamon_queued\n",
+			"removing buffer %u/%p from incoming\n",
 			vb->v4l2_buf.index, ib);
 		list_del(&ib->head);
 	}
@@ -350,10 +350,10 @@ static int stop_streaming(struct vb2_queue *q)
 	}
 
 	spin_lock_irqsave(&aq->lock, flags);
-	BUG_ON(!list_empty(&aq->pre_streamon_queued));
-	while (!list_empty(&aq->queued)) {
+	BUG_ON(!list_empty(&aq->incoming));
+	while (!list_empty(&aq->active)) {
 		struct css2600_isys_buffer *ib =
-			list_first_entry(&aq->queued,
+			list_first_entry(&aq->active,
 					 struct css2600_isys_buffer, head);
 		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
@@ -388,8 +388,8 @@ void css2600_isys_queue_buf_done(struct css2600_isys_pipeline *ip,
 	unsigned long flags;
 
 	spin_lock_irqsave(&aq->lock, flags);
-	BUG_ON(list_empty(&aq->queued));
-	ib = list_last_entry(&aq->queued, struct css2600_isys_buffer, head);
+	BUG_ON(list_empty(&aq->active));
+	ib = list_last_entry(&aq->active, struct css2600_isys_buffer, head);
 	dev_dbg(&av->isys->adev->dev, "dequeued buffer %p\n", ib);
 	list_del(&ib->head);
 	spin_unlock_irqrestore(&aq->lock, flags);
@@ -449,8 +449,8 @@ int css2600_isys_queue_init(struct css2600_isys_queue *aq)
 
 	mutex_init(&aq->mutex);
 	spin_lock_init(&aq->lock);
-	INIT_LIST_HEAD(&aq->queued);
-	INIT_LIST_HEAD(&aq->pre_streamon_queued);
+	INIT_LIST_HEAD(&aq->active);
+	INIT_LIST_HEAD(&aq->incoming);
 
 	return 0;
 }
