@@ -152,8 +152,6 @@ static int read_or_write(dma_addr_t iova, void *data, size_t bytes, int write)
 	list_for_each_entry(buf, &mine.buffers, list) {
 		void *addr;
 
-		pr_debug("buffer iova %8.8x, size %d\n", (uint32_t)buf->iova,
-			buf->bytes);
 		if (iova < buf->iova || iova + bytes > buf->iova + buf->bytes)
 			continue;
 
