@@ -54,6 +54,42 @@ static struct v4l2_subdev_internal_ops tpg_sd_internal_ops = {
 static const struct v4l2_subdev_core_ops tpg_sd_core_ops = {
 };
 
+static int set_stream_one(struct css2600_isys_tpg_2401 *tpg)
+{
+	struct css2600_isys_pipeline *ip = tpg->isys->pipes[tpg->asd.source];
+	int rval;
+
+	dev_dbg(&tpg->isys->adev->dev,
+		"set_stream_one: stopping stream again\n");
+
+	reinit_completion(&ip->stream_stop_completion);
+	rval = -ia_css_isys_stream_stop(tpg->isys->ssi, ip->source);
+	if (rval < 0) {
+		dev_dbg(&tpg->isys->adev->dev, "can't stop stream (%d)\n",
+			rval);
+	} else {
+		wait_for_completion(&ip->stream_stop_completion);
+		dev_dbg(&tpg->isys->adev->dev, "stream stop complete\n");
+	}
+
+	dev_dbg(&tpg->isys->adev->dev,
+		"set_stream_one: starting stream again\n");
+
+	reinit_completion(&ip->stream_start_completion);
+	rval = -ia_css_isys_stream_start(tpg->isys->ssi, ip->source,
+					 NULL);
+	if (rval < 0) {
+		dev_dbg(&tpg->isys->adev->dev, "can't start streaning (%d)\n",
+			rval);
+		return rval;
+	}
+
+	wait_for_completion(&ip->stream_start_completion);
+	dev_dbg(&tpg->isys->adev->dev, "stream start complete\n");
+
+	return 0;
+}
+
 static int set_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct css2600_isys_tpg_2401 *tpg = to_css2600_isys_tpg_2401(sd);
@@ -84,6 +120,14 @@ static int set_stream(struct v4l2_subdev *sd, int enable)
 
 	dev_dbg(&tpg->isys->adev->dev, "tpg s_stream %d\n", enable);
 
+	if (!enable) {
+		tpg->streaming = 0;
+		return 0;
+	}
+
+	if (tpg->streaming)
+		return set_stream_one(tpg);
+
 	rval = ia_css_isysapi_rx_set_tpg_cfg(tpg->isys->ssi, tpg->asd.source,
 					     &cfg);
 
@@ -92,6 +136,8 @@ static int set_stream(struct v4l2_subdev *sd, int enable)
 			 "tpg configuration failed (%d)\n", rval);
 		return -EINVAL;
 	}
+
+	tpg->streaming = 1;
 
 	return 0;
 }
@@ -152,7 +198,7 @@ int css2600_isys_tpg_2401_init(struct css2600_isys_tpg_2401 *tpg,
 	rval = css2600_isys_subdev_init(&tpg->asd, &tpg_sd_ops, 0,
 					NR_OF_TPG_PADS);
 	if (rval)
-		return rval;
+		goto fail;
 
 	tpg->asd.source = IA_CSS_ISYS_STREAM_SRC_MIPIGEN_PORT0 + index;
 	tpg->asd.supported_codes = tpg_supported_codes;
