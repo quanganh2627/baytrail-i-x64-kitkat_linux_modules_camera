@@ -180,9 +180,72 @@ static void __buf_queue(struct vb2_buffer *vb, bool force)
 	dev_dbg(&av->isys->adev->dev, "queued buffer\n");
 }
 
+static void queue_stream_one(struct css2600_isys_queue *aq)
+{
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	struct v4l2_subdev *sd = media_entity_to_v4l2_subdev(av->ip.external);
+	struct css2600_isys_buffer *ib = NULL;
+	unsigned long flags;
+	int rval;
+
+	spin_lock_irqsave(&aq->lock, flags);
+	dev_dbg(&av->isys->adev->dev, "active empty %d, incoming empty %d\n",
+		list_empty(&aq->active), list_empty(&aq->incoming));
+	if (list_empty(&aq->active) && !list_empty(&aq->incoming)) {
+		ib = list_last_entry(&aq->incoming,
+				     struct css2600_isys_buffer, head);
+		list_del(&ib->head);
+	}
+	spin_unlock_irqrestore(&aq->lock, flags);
+	dev_dbg(&av->isys->adev->dev, "queue_stream_one buffer %p\n", ib);
+
+	if (!ib)
+		return;
+
+	rval = v4l2_subdev_call(sd, video, s_stream, 1);
+	if (rval) {
+		dev_err(&av->isys->adev->dev, "s_stream failed!\n");
+		goto fail_requeue;
+	}
+
+	__buf_queue(css2600_isys_buffer_to_vb2_buffer(ib), false);
+
+	return;
+
+fail_requeue:
+	spin_lock_irqsave(&aq->lock, flags);
+	list_add_tail(&ib->head, &aq->incoming);
+	spin_unlock_irqrestore(&aq->lock, flags);
+}
+
+static void queue_stream_one_work(struct work_struct *work)
+{
+	struct css2600_isys_queue *aq =
+		container_of(work, struct css2600_isys_queue, work);
+
+	queue_stream_one(aq);
+}
+
 static void buf_queue(struct vb2_buffer *vb)
 {
-	__buf_queue(vb, false);
+	struct css2600_isys_queue *aq =
+		vb2_queue_to_css2600_isys_queue(vb->vb2_queue);
+	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	struct css2600_isys_buffer *ib = to_css2600_isys_buffer(vb);
+	unsigned long flags;
+
+	dev_dbg(&av->isys->adev->dev, "buf_queue %p\n", ib);
+	if (av->ip.continuous) {
+		__buf_queue(vb, false);
+	} else {
+		/* Put to the incoming queue and try to stream. */
+		spin_lock_irqsave(&aq->lock, flags);
+		list_add(&ib->head, &aq->incoming);
+		spin_unlock_irqrestore(&aq->lock, flags);
+
+		if (vb->vb2_queue->streaming)
+			queue_stream_one(aq);
+	}
 }
 
 static int start_streaming(struct vb2_queue *q, unsigned int count)
@@ -280,6 +343,8 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 		__buf_queue(vb, true);
 
 		spin_lock_irqsave(&aq->lock, flags);
+		if (!av->ip.continuous)
+			break;
 	}
 	spin_unlock_irqrestore(&aq->lock, flags);
 
@@ -327,6 +392,8 @@ static int stop_streaming(struct vb2_queue *q)
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 	unsigned long flags;
 	int rval;
+
+	flush_workqueue(aq->wq);
 
 	css2600_isys_video_set_streaming(av, 0);
 
@@ -414,15 +481,8 @@ void css2600_isys_queue_buf_done(struct css2600_isys_pipeline *ip,
 
 	vb2_buffer_done(vb, VB2_BUF_STATE_DONE);
 
-	if (!ip->continuous) {
-		struct v4l2_subdev *sd =
-			media_entity_to_v4l2_subdev(ip->external);
-		int rval;
-
-		rval = v4l2_subdev_call(sd, video, s_stream, 1);
-		if (rval)
-			dev_err(&av->isys->adev->dev, "s_stream failed!\n");
-	}
+	if (!ip->continuous)
+		queue_work(aq->wq, &aq->work);
 }
 
 struct vb2_ops css2600_isys_queue_ops = {
@@ -453,14 +513,21 @@ int css2600_isys_queue_init(struct css2600_isys_queue *aq)
 	aq->vbq.mem_ops = &vb2_dma_contig_memops;
 	aq->vbq.timestamp_type = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
 
+	aq->wq = alloc_ordered_workqueue(CSS2600_NAME, 0);
+	if (!aq->wq)
+		return -ENOMEM;
+
+	INIT_WORK(&aq->work, queue_stream_one_work);
+
 	rval = vb2_queue_init(&aq->vbq);
 	if (rval)
-		return rval;
+		goto fail;
 
 	aq->ctx = vb2_dma_contig_init_ctx(&isys->adev->dev);
 	if (IS_ERR(aq->ctx)) {
 		vb2_queue_release(&aq->vbq);
-		return PTR_ERR(aq->ctx);
+		rval = PTR_ERR(aq->ctx);
+		goto fail;
 	}
 
 	mutex_init(&aq->mutex);
@@ -469,6 +536,11 @@ int css2600_isys_queue_init(struct css2600_isys_queue *aq)
 	INIT_LIST_HEAD(&aq->incoming);
 
 	return 0;
+
+fail:
+	destroy_workqueue(aq->wq);
+
+	return rval;
 }
 
 void css2600_isys_queue_cleanup(struct css2600_isys_queue *aq)
@@ -479,6 +551,7 @@ void css2600_isys_queue_cleanup(struct css2600_isys_queue *aq)
 	vb2_dma_contig_cleanup_ctx(aq->ctx);
 	vb2_queue_release(&aq->vbq);
 	mutex_destroy(&aq->mutex);
+	destroy_workqueue(aq->wq);
 
 	aq->ctx = NULL;
 }

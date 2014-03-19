@@ -35,6 +35,8 @@ struct css2600_isys_queue {
 	spinlock_t lock;
 	struct list_head active;
 	struct list_head incoming;
+	struct workqueue_struct *wq;
+	struct work_struct work;
 };
 
 struct css2600_isys_buffer {
