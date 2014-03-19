@@ -41,6 +41,8 @@
 #include <media/v4l2-device.h>
 #include "m10mo.h"
 
+#define M10MO_FORMAT	V4L2_MBUS_FMT_UYVY8_1X16
+
 struct m10mo_resolution {
 	unsigned int width;
 	unsigned int height;
@@ -60,8 +62,6 @@ static const struct m10mo_resolution const m10mo_res_modes[] = {
 	}
 };
 
-#define M10MO_FORMAT	V4L2_MBUS_FMT_UYVY8_1X16
-
 /*
  * m10mo_read -  I2C read function
  * @reg: combination of size, category and command for the I2C packet
@@ -71,7 +71,7 @@ static const struct m10mo_resolution const m10mo_res_modes[] = {
  * Returns 0 on success, or else negative errno.
 */
 
-static int m10mo_read(struct v4l2_subdev *sd, u8 len, u8 category, u8 byte, int *val)
+static int m10mo_read(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 *val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	unsigned char data[5];
@@ -82,8 +82,8 @@ static int m10mo_read(struct v4l2_subdev *sd, u8 len, u8 category, u8 byte, int 
 	if (!client->adapter)
 		return -ENODEV;
 
-	if (len != 0x01 && len != 0x02 && len != 0x04)	{
-		dev_err(&client->dev, "m10mo Wrong data size\n");
+	if (len != 1 && len != 2 && len != 4)	{
+		dev_err(&client->dev, "Wrong data size\n");
 		return -EINVAL;
 	}
 
@@ -95,7 +95,7 @@ static int m10mo_read(struct v4l2_subdev *sd, u8 len, u8 category, u8 byte, int 
 	data[0] = 5;
 	data[1] = M10MO_BYTE_READ;
 	data[2] = category;
-        data[3] = byte;
+	data[3] = reg;
         data[4] = len;
 
 	msg[1].addr = client->addr;
@@ -118,7 +118,7 @@ static int m10mo_read(struct v4l2_subdev *sd, u8 len, u8 category, u8 byte, int 
 				| recv_data[3] << 8 | recv_data[4];
 	}
 	return 0;
-	}
+}
 
 /**
  * m10mo_write - I2C command write function
@@ -127,7 +127,7 @@ static int m10mo_read(struct v4l2_subdev *sd, u8 len, u8 category, u8 byte, int 
  *
  * Returns 0 on success, or else negative errno.
  */
-static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 byte, int val)
+static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	u8 data[len + 4];
@@ -138,8 +138,8 @@ static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 byte, int
 	if (!client->adapter)
 		return -ENODEV;
 
-	if (len != 0x01 && len != 0x02 && len != 0x04) {
-		dev_err(&client->dev, "m10mo Wrong data size\n");
+	if (len != 1 && len != 2 && len != 4) {
+		dev_err(&client->dev, "Wrong data size\n");
 		return -EINVAL;
 	}
 
@@ -151,7 +151,7 @@ static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 byte, int
 	data[0] = msg.len;
 	data[1] = M10MO_BYTE_WRITE;
 	data[2] = category;
-	data[3] = byte;
+	data[3] = reg;
 	data[4] = val;
 
 	/* isp firmware becomes stable during this time*/
@@ -256,16 +256,17 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 	ret = m10mo_memory_write(sd, 0x04, 1, 0x13000005, 0x7F);
 	if (ret)
 		return ret;
+
 	/* Start the Camera firmware */
 	ret = m10mo_write(sd, 1, CATEGORY_FLASHROM, FLASH_CAM_START, 0x01);
 	if (ret < 0) {
-		dev_err(&client->dev, "m10mo i2c failed");
+		dev_err(&client->dev, "FW start: i2c failed");
 		return ret;
 	}
 
 	ret = m10mo_wait_interrupt(sd, M10MO_INIT_TIMEOUT);
 	if (ret < 0) {
-		dev_err(&client->dev, "m10mo initialization timeout");
+		dev_err(&client->dev, "Initialization timeout");
 		return ret;
 	}
 
@@ -280,7 +281,7 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	int ret = 0;
+	int ret;
 
 	mutex_lock(&dev->input_lock);
 	ret = __m10mo_fw_start(sd);
@@ -292,17 +293,16 @@ static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 static int m10mo_set_streaming(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	int ret;
 
 	/*Change to Monitor Size (e,g. VGA) */
-	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE, 0x17);
+	(void) m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE, 0x17);
+	(void) m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
 
-	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
 	/* Enable interrupt signal */
-	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+	(void) m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
 
 	/* Go to Monitor mode and output YUV Data */
-	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
+	(void) m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
 
 	dev->streaming = true;
 
@@ -349,20 +349,17 @@ static int power_down(struct v4l2_subdev *sd)
 static int __m10mo_s_power(struct v4l2_subdev *sd, int on)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	int ret = 0;
-	int r = 0;
+	int ret;
 
-	if (on == 0) {
-		ret = power_down(sd);
-		if (ret == 0)
-			ret = r;
-		dev->power = 0;
-	} else {
+	if (on) {
 		ret = power_up(sd);
 		if (!ret) {
 			dev->power = 1;
-			return __m10mo_fw_start(sd);
+			ret =  __m10mo_fw_start(sd);
 		}
+	} else {
+		ret = power_down(sd);
+		dev->power = 0;
 	}
 
 	return ret;
