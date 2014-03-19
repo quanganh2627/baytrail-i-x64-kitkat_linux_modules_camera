@@ -179,6 +179,36 @@ static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 
 	return ret == num_msg ? 0 : -EIO;
 }
 
+int m10mo_writeb(struct v4l2_subdev *sd, u8 category, u8 reg, u32 val)
+{
+	return m10mo_write(sd, 1, category, reg, val);
+}
+
+int m10mo_writew(struct v4l2_subdev *sd, u8 category, u8 reg, u32 val)
+{
+	return m10mo_write(sd, 2, category, reg, val);
+}
+
+int m10mo_writel(struct v4l2_subdev *sd, u8 category, u8 reg, u32 val)
+{
+	return m10mo_write(sd, 4, category, reg, val);
+}
+
+int m10mo_readb(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val)
+{
+	return m10mo_read(sd, 1, category, reg, val);
+}
+
+int m10mo_readw(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val)
+{
+	return m10mo_read(sd, 2, category, reg, val);
+}
+
+int m10mo_readl(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val)
+{
+	return m10mo_read(sd, 4, category, reg, val);
+}
+
 int m10mo_memory_write(struct v4l2_subdev *sd, u8 cmd, u16 len, u32 addr, u8 *val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -220,6 +250,74 @@ int m10mo_memory_write(struct v4l2_subdev *sd, u8 cmd, u16 len, u32 addr, u8 *va
 	}
 
 	return ret;
+}
+
+int m10mo_memory_read(struct v4l2_subdev *sd, u16 len, u32 addr, u8 *val)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct m10mo_device *m10mo_dev =  to_m10mo_sensor(sd);
+	struct i2c_msg msg;
+	unsigned char data[8];
+	u8 *recv_data = m10mo_dev->message_buffer;
+	int i, err = 0;
+
+	if (!client->adapter)
+		return -ENODEV;
+
+	if (len <= 0)
+		return -EINVAL;
+
+	if ((len + 3) > sizeof(m10mo_dev->message_buffer))
+		return -ENOMEM;
+
+	msg.addr = client->addr;
+	msg.flags = 0;
+	msg.len = sizeof(data);
+	msg.buf = data;
+
+	/* high byte goes out first */
+	data[0] = 0x00;
+	data[1] = 0x03;
+	data[2] = (addr >> 24) & 0xFF;
+	data[3] = (addr >> 16) & 0xFF;
+	data[4] = (addr >> 8) & 0xFF;
+	data[5] = addr & 0xFF;
+	data[6] = (len >> 8) & 0xFF;
+	data[7] = len & 0xFF;
+
+	for (i = M10MO_I2C_RETRY; i; i--) {
+		err = i2c_transfer(client->adapter, &msg, 1);
+		if (err == 1)
+			break;
+		msleep(20);
+	}
+
+	if (err != 1)
+		return err;
+
+	msg.flags = I2C_M_RD;
+	msg.len = len + 3;
+	msg.buf = recv_data;
+	for (i = M10MO_I2C_RETRY; i; i--) {
+		err = i2c_transfer(client->adapter, &msg, 1);
+		if (err == 1)
+			break;
+		msleep(20);
+	}
+
+	if (err != 1)
+		return err;
+
+	if (len != (recv_data[1] << 8 | recv_data[2])) {
+		dev_err(&client->dev,
+			"expected length %d, but return length %d\n",
+			len, recv_data[1] << 8 | recv_data[2]);
+		return -EIO;
+	}
+
+	memcpy(val, recv_data + 3, len);
+
+	return err;
 }
 
 /**

@@ -90,6 +90,15 @@ struct m10mo_device {
 
 #define to_m10mo_sensor(x) container_of(x, struct m10mo_device, sd)
 
+int m10mo_memory_read(struct v4l2_subdev *sd, u16 len, u32 addr, u8 *val);
+int m10mo_memory_write(struct v4l2_subdev *sd, u8 cmd, u16 len, u32 addr, u8 *val);
+int m10mo_writeb(struct v4l2_subdev *sd, u8 category, u8 reg, u32 val);
+int m10mo_writew(struct v4l2_subdev *sd, u8 category, u8 reg, u32 val);
+int m10mo_writel(struct v4l2_subdev *sd, u8 category, u8 reg, u32 val);
+int m10mo_readb(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
+int m10mo_readw(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
+int m10mo_readl(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
+
 /* Below contents are based on the M10MO_categoryParameter-a1.xls */
 
 /* Category register */
