@@ -1718,6 +1718,17 @@ static int imx_s_config(struct v4l2_subdev *sd,
 			return ret;
 		}
 	}
+	/*
+	 * power off the module first.
+	 *
+	 * As first power on by board have undecided state of power/gpio pins.
+	 */
+	ret = __imx_s_power(sd, 0);
+	if (ret) {
+		v4l2_err(client, "imx power-down err.\n");
+		mutex_unlock(&dev->input_lock);
+		return ret;
+	}
 
 	ret = __imx_s_power(sd, 1);
 	if (ret) {
