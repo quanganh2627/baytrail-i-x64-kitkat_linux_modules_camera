@@ -85,6 +85,7 @@ struct ia_css_stream_config {
 					    1, 2 or 4. 0 is used as legacy support. */
 	bool online; /**< offline will activate RAW copy on SP, use this for
 			  continuous capture. */
+		/* ISYS2401 usage: ISP receives data directly from sensor, no copy. */
 	unsigned init_num_cont_raw_buf; /**< initial number of raw buffers to
 					     allocate */
 	unsigned target_num_cont_raw_buf; /**< total number of raw buffers to

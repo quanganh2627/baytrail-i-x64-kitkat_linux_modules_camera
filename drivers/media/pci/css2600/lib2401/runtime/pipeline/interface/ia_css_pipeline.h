@@ -23,10 +23,11 @@
 #define __IA_CSS_PIPELINE_H__
 
 #include "sh_css_internal.h"
+#include "ia_css_pipe_public.h"
 #include "ia_css_pipeline_common.h"
 
 #define IA_CSS_PIPELINE_NUM_MAX		(20)
-#define IA_CSS_PIPE_MAX_OUTPUT_STAGE 2
+
 
 /* Pipeline stage to be executed on SP/ISP */
 struct ia_css_pipeline_stage {
@@ -60,6 +61,23 @@ struct ia_css_pipeline {
 	int num_execs;
 	bool acquire_isp_each_stage;
 };
+
+#define DEFAULT_PIPELINE \
+{ \
+	IA_CSS_PIPE_ID_PREVIEW, /* pipe_id */ \
+	0,			/* pipe_num */ \
+	false,			/* stop_requested */ \
+	NULL,                   /* stages */ \
+	NULL,                   /* current_stage */ \
+	0,                      /* num_stages */ \
+	DEFAULT_FRAME,          /* in_frame */ \
+	{DEFAULT_FRAME},          /* out_frame */ \
+	{DEFAULT_FRAME},          /* vf_frame */ \
+	IA_CSS_FRAME_DELAY_1,   /* frame_delay */ \
+	0,                      /* inout_port_config */ \
+	-1,                     /* num_execs */ \
+	true					/* acquire_isp_each_stage */\
+}
 
 /* Stage descriptor used to create a new stage in the pipeline */
 struct ia_css_pipeline_stage_desc {
@@ -97,7 +115,8 @@ void ia_css_pipeline_init(void);
 enum ia_css_err ia_css_pipeline_create(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
-	unsigned int pipe_num);
+	unsigned int pipe_num,
+	enum ia_css_frame_delay dvs_frame_delay);
 
 /** @brief destroy a pipeline
  *

@@ -19,7 +19,6 @@
  *
  */
 
-//#include <hive_isp_css_hrt.h>
 #include "ia_css_psysapi.h"
 #include "ia_css_pg_info.h"
 #include "ia_css_frame_format.h"
@@ -30,7 +29,11 @@
 #include "ia_css_psys_task_internal.h"
 #include "memory_access.h"
 #include "ia_css_psys_sppipeline.h"
+#ifndef STANDALONE_TEST
 #include "ia_css_fwctrl.h"
+#else
+#include <hive_isp_css_hrt.h>
+#endif
 
 //int (*psysapi_dbg_print)(const char *fmt, va_list args);
 int (*psysapi_dbg_print)(const char *fmt, ... );
@@ -40,9 +43,7 @@ int ia_css_psysapi_init(unsigned int *task_buffer_size, unsigned int ttl)
 	(void) ttl;
 
 	*task_buffer_size = sizeof(struct ia_css_psys_task);
-#ifndef __KERNEL__
 	psysapi_dbg_print = printf;
-#endif
 	return 0;
 }
 
@@ -61,7 +62,7 @@ int ia_css_psysapi_task_create(
 	assert(pg_info->terminal_list.no_of_terminals <=
 		IA_CSS_PSYSAPI_MAX_TERMINALS);
 
-	tmp_task = (struct ia_css_psys_task *)(task_buffer->driver_address);
+	tmp_task = (struct ia_css_psys_task *)(intptr_t)(task_buffer->driver_address);
 	memset(tmp_task, 0, sizeof(struct ia_css_psys_task));
 
 	tmp_task->task_buffer = *task_buffer;
@@ -91,12 +92,10 @@ int ia_css_psysapi_task_start(
 {
 	int ret=0;
 	struct ia_css_pg_info *pg_info;
-	struct ia_css_psysapi_cmd cmd;
 	hrt_vaddress cmd_ptr, task_ptr;
 
-	NOT_USED(assigned_resources);
-	NOT_USED(resource_mapping);
-	NOT_USED(cmd);
+	(void)assigned_resources;
+	(void)resource_mapping;
 	psysapi_dbg_print("ia_css_psysapi_task_start: enter\n");
 
 	pg_info = task->pg_info;
@@ -113,19 +112,21 @@ int ia_css_psysapi_task_start(
 	mmgr_store(cmd_ptr,
 		&task->cmd,
 		sizeof(struct ia_css_psysapi_cmd));
-#if 0
-	/* TODO: Enqueue "cmd_ptr" to SP via POC helper modules
-	 * under development */
-	*((hrt_vaddress *)_hrt_cell_get_crun_symbol(SP, psyspoc_cmd_addr)) =
-		cmd_ptr;
-#endif
+
 	/*Enqueue the psys_cmd_addr*/
 	psysapi_dbg_print("PSYS SEND msg address = ox%x\n", cmd_ptr);
+#ifdef STANDALONE_TEST
+	/* Include (#include <hive_isp_css_hrt.h>) for standalone test
+	*/
+	*((hrt_vaddress *)_hrt_cell_get_crun_symbol(SP, psyspoc_cmd_addr)) =
+		cmd_ptr;
+#else
 	ret = ia_css_fwctrl_psys_send_msg(cmd_ptr);
 	if(ret != 0){
 		psysapi_dbg_print("ia_css_psysapi_task_start: fwctrl send msg FAILED\n");
 		return ret;
 	}
+#endif
 	psysapi_dbg_print("ia_css_psysapi_task_start: leave\n");
 	return ret;
 }
@@ -141,9 +142,9 @@ int ia_css_psysapi_task_attach_buffer(
 	int ret = 0;
 
 	assert((uint32_t)terminal_id < IA_CSS_PSYSAPI_MAX_TERMINALS);
-	NOT_USED(terminal_id);
-	NOT_USED(buffer);
-	NOT_USED(task);
+	(void)terminal_id;
+	(void)buffer;
+	(void)task;
 
 	/* TODO: validate against terminal list */
 
@@ -159,9 +160,9 @@ int ia_css_psysapi_task_detach_buffer(
 	struct ia_css_psys_buffer** buffer)
 {
 	int ret = 0;
-	NOT_USED(task);
-	NOT_USED(terminal_id);
-	NOT_USED(buffer);
+	(void)task;
+	(void)terminal_id;
+	(void)buffer;
 #if 0
 	assert(terminal_id < IA_CSS_PSYSAPI_MAX_TERMINALS);
 
@@ -190,11 +191,12 @@ int ia_css_psysapi_task_get_event(
 
 	assert(raw_event);
 	/*Silent the compiler*/
-	NOT_USED(delegator_cookie);
+	(void)delegator_cookie;
 
 	/*Reset the event to all 0s */
 	memset(event, 0, sizeof(*event));
 
+#ifndef STANDALONE_TEST
 	ret = ia_css_fwctrl_psys_receive_msg(&xmem_psys_response);
 	if(ret == 0)
 	{
@@ -211,14 +213,18 @@ int ia_css_psysapi_task_get_event(
 		mmgr_load(task_ptr, &task, sizeof(struct ia_css_psys_task));
 		/* Fill in the task driver address */
 		/*Note : This is used to find who is the originator of the task
-		 * task.task_buffer.driver_address is tested for crun and sched*/
-		event->task = (struct ia_css_psys_task*)(task.task_buffer.driver_address);
+		 * task.task_buffer.driver_address is tested for crun and sched
+		 event->task is ia_css_psys_task* which holds task address in driver address space*/
+		event->task = (struct ia_css_psys_task*)(intptr_t)(task.task_buffer.driver_address);
 
+		psysapi_dbg_print("ia_css_psysapi_task_get_event: PSYS EVENT->TASK = ox%x\n", event->task);
 		/*TODO: Fill in the following in the event
 			1. delegator_cookie
 			2. buffer
 		*/
 	}
+#endif
+
 	return ret;
 }
 

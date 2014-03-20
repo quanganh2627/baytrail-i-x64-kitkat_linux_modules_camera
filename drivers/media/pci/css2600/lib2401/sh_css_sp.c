@@ -63,6 +63,8 @@
 
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
+#define IA_CSS_INCLUDE_STATES
+#include "ia_css_isp_states.h"
 
 struct sh_css_sp_group		sh_css_sp_group;
 struct sh_css_sp_stage		sh_css_sp_stage;
@@ -328,6 +330,9 @@ sh_css_sp_start_isys_copy(struct ia_css_frame *out_frame,
 	uint8_t stage_num = 0;
 	struct sh_css_sp_pipeline *pipe;
 	int i;
+#if defined SH_CSS_ENABLE_METADATA
+	int queue_id;
+#endif
 
 assert(out_frame != NULL);
 
@@ -376,6 +381,13 @@ assert(out_frame != NULL);
 
 	set_output_frame_buffer(out_frame, 0);
 
+#if defined SH_CSS_ENABLE_METADATA
+	if (pipe->metadata.height > 0) {
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_METADATA, thread_id, &queue_id);
+		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_METADATA] = queue_id;
+	}
+#endif
+
 	ia_css_debug_pipe_graph_dump_sp_raw_copy(out_frame);
 }
 
@@ -402,20 +414,6 @@ sh_css_sp_get_sw_interrupt_value(unsigned int irq)
 }
 
 static void
-sh_css_frame_info_to_sp(struct ia_css_frame_sp_info *sp,
-			const struct ia_css_frame_info *host)
-{
-	assert(sp != NULL);
-
-	sp->width	      = (uint16_t)host->res.width;
-	sp->height	      = (uint16_t)host->res.height;
-	sp->padded_width    = (uint16_t)host->padded_width;
-	sp->format	      = (unsigned char )host->format;
-	sp->raw_bit_depth   = (unsigned char )host->raw_bit_depth;
-	sp->raw_bayer_order = host->raw_bayer_order;
-}
-
-static void
 sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 				const struct ia_css_frame *frame_in,
 				enum ia_css_buffer_type type)
@@ -431,7 +429,9 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 	if (frame_in->dynamic_data_index >= 0) {
 		assert((type == IA_CSS_BUFFER_TYPE_INPUT_FRAME) ||
 				(type == IA_CSS_BUFFER_TYPE_OUTPUT_FRAME) ||
-				(type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME));
+				(type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME) ||
+				(type == IA_CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME) ||
+				(type == IA_CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME));
 		/*
 		 * value >=0 indicates that function init_frame_pointers()
 		 * should use the dynamic data address
@@ -450,7 +450,9 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 		 */
 		if (((type == IA_CSS_BUFFER_TYPE_INPUT_FRAME) ||
 		     (type == IA_CSS_BUFFER_TYPE_OUTPUT_FRAME) ||
-		     (type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME))  &&
+		     (type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME) ||
+			 (type == IA_CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME) ||
+			 (type == IA_CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME))  &&
 		    (frame_in->dynamic_data_index < SH_CSS_MAX_NUM_QUEUES))
 		{
 			/*
@@ -468,7 +470,7 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 	if (!sp_frame_out)
 		return;
 
-	sh_css_frame_info_to_sp(&sp_frame_out->info, &frame_in->info);
+	ia_css_frame_info_to_frame_sp_info(&sp_frame_out->info, &frame_in->info);
 
 	switch (frame_in->info.format) {
 	case IA_CSS_FRAME_FORMAT_RAW_PACKED:
@@ -605,43 +607,7 @@ set_output_frame_buffer(const struct ia_css_frame *frame,
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
 	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.out[idx], frame,
-					(enum ia_css_buffer_type)((unsigned)IA_CSS_BUFFER_TYPE_OUTPUT_FRAME + idx));
-	return IA_CSS_SUCCESS;
-}
-
-static enum ia_css_err
-set_video_delay_frame_buffer(const struct ia_css_frame *frame, unsigned index)
-{
-	enum ia_css_buffer_type id = IA_CSS_BUFFER_TYPE_VIDEO_DELAY_0 + index;
-
-	if (frame == NULL)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV420 && frame->info.format != IA_CSS_FRAME_FORMAT_YUV420_16)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (index >= NUM_VIDEO_DELAY_FRAMES) /* this cannot happen but Klocwork does not see this */
-		return IA_CSS_ERR_INTERNAL_ERROR;
-
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.delay_frames[index], frame, id);
-	return IA_CSS_SUCCESS;
-}
-
-static enum ia_css_err
-set_tnr_frame_buffer(const struct ia_css_frame *frame, unsigned index)
-{
-	enum ia_css_buffer_type id = IA_CSS_BUFFER_TYPE_TNR_0 + index;
-
-	if (frame == NULL)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (frame->info.format != IA_CSS_FRAME_FORMAT_YUV_LINE)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	if (index >= NUM_VIDEO_TNR_FRAMES) /* this cannot happen but Klocwork does not see this */
-		return IA_CSS_ERR_INTERNAL_ERROR;
-
-	sh_css_copy_frame_to_spframe(&sh_css_sp_stage.frames.tnr_frames[index], frame, id);
+					IA_CSS_BUFFER_TYPE_OUTPUT_FRAME + idx);
 	return IA_CSS_SUCCESS;
 }
 
@@ -671,7 +637,6 @@ set_view_finder_buffer(const struct ia_css_frame *frame)
 }
 
 #if !defined(HAS_NO_INPUT_FORMATTER)
-/* AM: this should fill the if_configs properly. */
 void sh_css_sp_set_if_configs(
 	const input_formatter_cfg_t	*config_a,
 	const input_formatter_cfg_t	*config_b,
@@ -761,18 +726,6 @@ sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args)
 		if (err == IA_CSS_SUCCESS && args->out_frame[i])
 			err = set_output_frame_buffer(args->out_frame[i], i);
 	}
-	for (i = 0; i < NUM_VIDEO_DELAY_FRAMES; i++) {
-		if (err == IA_CSS_SUCCESS && args->delay_frames[i]) {
-			err = set_video_delay_frame_buffer(
-					args->delay_frames[i], i);
-		}
-	}
-
-	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
-		if (err == IA_CSS_SUCCESS && args->tnr_frames[i]) {
-			err = set_tnr_frame_buffer( args->tnr_frames[i], i);
-		}
-	}
 
 	/* we don't pass this error back to the upper layer, so we add a assert here
 	   because we actually hit the error here but it still works by accident... */
@@ -842,7 +795,9 @@ static void
 configure_isp_from_args(
 	const struct sh_css_sp_pipeline *pipe,
 	const struct ia_css_binary      *binary,
-	const struct sh_css_binary_args *args)
+	const struct sh_css_binary_args *args,
+	bool two_ppc,
+	bool deinterleaved)
 {
 #if !defined(IS_ISP_2500_SYSTEM)
 	ia_css_fpn_configure   (binary,  &binary->in_frame_info);
@@ -850,12 +805,25 @@ configure_isp_from_args(
 	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
 	ia_css_output0_configure(binary, &args->out_frame[0]->info);
 	ia_css_output1_configure(binary, &args->out_vf_frame->info);
+	ia_css_copy_output_configure(binary, &args->out_frame[0]->info);
+	ia_css_output0_configure(binary, &args->out_frame[0]->info);
 #endif
-	ia_css_ref_configure   (binary, &args->delay_frames[0]->info);
-	ia_css_tnr_configure   (binary, &args->tnr_frames[0]->info);
+	ia_css_iterator_configure (binary, &args->in_frame->info);
 	ia_css_dvs_configure   (binary, &args->out_frame[0]->info);
 	ia_css_output_configure(binary, &args->out_frame[0]->info);
-	ia_css_raw_configure   (pipe, binary, &args->in_frame->info, &binary->in_frame_info);
+	ia_css_raw_configure   (pipe, binary, &args->in_frame->info, &binary->in_frame_info, two_ppc, deinterleaved);
+	ia_css_ref_configure   (binary, (const struct ia_css_frame **)args->delay_frames, pipe->dvs_frame_delay);
+	ia_css_tnr_configure   (binary, (const struct ia_css_frame **)args->tnr_frames);
+}
+
+static void
+initialize_isp_states(const struct ia_css_binary *binary)
+{
+	unsigned int i;
+
+	for (i = 0; i < IA_CSS_NUM_STATE_IDS; i++) {
+		ia_css_kernel_init_state[i](binary);
+	}
 }
 
 static enum ia_css_err
@@ -868,7 +836,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		    bool xnr,
 		    const struct ia_css_isp_param_css_segments *isp_mem_if,
 		    unsigned int if_config_index,
-		    enum ia_css_frame_delay frame_delay)
+		    bool two_ppc)
 {
 	const struct ia_css_binary_xinfo *xinfo;
 	const struct ia_css_binary_info  *info;
@@ -929,17 +897,16 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	sh_css_sp_stage.frames.effective_in_res.width = binary->effective_in_frame_res.width;
 	sh_css_sp_stage.frames.effective_in_res.height = binary->effective_in_frame_res.height;
 
-	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.in.info,
+	ia_css_frame_info_to_frame_sp_info(&sh_css_sp_stage.frames.in.info,
 				&binary->in_frame_info);
 	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
-		sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.out[i].info,
+		ia_css_frame_info_to_frame_sp_info(&sh_css_sp_stage.frames.out[i].info,
 					&binary->out_frame_info[i]);
 	}
-	sh_css_frame_info_to_sp(&sh_css_sp_stage.frames.internal_frame_info,
+	ia_css_frame_info_to_frame_sp_info(&sh_css_sp_stage.frames.internal_frame_info,
 				&binary->internal_frame_info);
 	sh_css_sp_stage.dvs_envelope.width    = binary->dvs_envelope.width;
 	sh_css_sp_stage.dvs_envelope.height   = binary->dvs_envelope.height;
-	sh_css_sp_stage.dvs_frame_delay       = (uint32_t)frame_delay;
 	sh_css_sp_stage.isp_pipe_version      = (uint8_t)info->isp_pipe_version;
 	sh_css_sp_stage.isp_deci_log_factor   = (uint8_t)binary->deci_factor_log2;
 	sh_css_sp_stage.isp_vf_downscale_bits = (uint8_t)binary->vf_downscale_log2;
@@ -951,6 +918,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	sh_css_sp_stage.xmem_map_addr = sh_css_params_ddr_address_map();
 	sh_css_isp_stage.blob_info = *blob_info;
 	sh_css_stage_write_binary_info((struct ia_css_binary_info *)info);
+
+	// Make sure binary name is smaller than allowed string size
+	assert(strlen(binary_name) < SH_CSS_MAX_BINARY_NAME-1);
 	strncpy(sh_css_isp_stage.binary_name, binary_name, SH_CSS_MAX_BINARY_NAME);
 	sh_css_isp_stage.binary_name[SH_CSS_MAX_BINARY_NAME - 1] = 0;
 	sh_css_isp_stage.mem_initializers = *isp_mem_if;
@@ -981,7 +951,11 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_3A_STATISTICS, thread_id, &queue_id);
 		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_3A_STATISTICS] = queue_id;
 	}
+#if defined(IS_ISP_2500_SYSTEM)
+	if (binary->info->sp.enable.dvs_stats) {
+#else
 	if (binary->info->sp.enable.dis) {
+#endif
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_DIS_STATISTICS, thread_id, &queue_id);
 		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_DIS_STATISTICS] = queue_id;
 	}
@@ -998,7 +972,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
-	configure_isp_from_args(&sh_css_sp_group.pipe[thread_id], binary, args);
+	configure_isp_from_args(&sh_css_sp_group.pipe[thread_id],
+			binary, args, two_ppc, sh_css_sp_stage.deinterleaved);
+	initialize_isp_states(binary);
 
 	/* we do this only for preview pipe because in fill_binary_info function
 	 * we assign vf_out res to out res, but for ISP internal processing, we need
@@ -1010,9 +986,9 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		 * by configuring out&vf info fiels properly */
 		sh_css_sp_stage.frames.out[0].info.padded_width
 			<<= binary->vf_downscale_log2;
-		sh_css_sp_stage.frames.out[0].info.width
+		sh_css_sp_stage.frames.out[0].info.res.width
 			<<= binary->vf_downscale_log2;
-		sh_css_sp_stage.frames.out[0].info.height
+		sh_css_sp_stage.frames.out[0].info.res.height
 			<<= binary->vf_downscale_log2;
 	}
 	err = copy_isp_mem_if_to_ddr(binary);
@@ -1027,7 +1003,7 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 	      unsigned int pipe_num,
 	      bool xnr,
 	      unsigned int if_config_index,
-	      enum ia_css_frame_delay frame_delay)
+	      bool two_ppc)
 {
 	struct ia_css_binary *binary;
 	const struct ia_css_fw_info *firmware;
@@ -1109,7 +1085,7 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 			     xnr,
 			     mem_if,
 			     if_config_index,
-			     frame_delay);
+			     two_ppc);
 	return err;
 }
 
@@ -1225,6 +1201,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 						= (uint32_t)input_mode;
 	sh_css_sp_group.pipe[thread_id].port_id = port_id;
 #endif
+	sh_css_sp_group.pipe[thread_id].dvs_frame_delay = (uint32_t)me->dvs_frame_delay;
 
 	/* TODO: next indicates from which queues parameters need to be
 		 sampled, needs checking/improvement */
@@ -1263,16 +1240,12 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			sp_init_sp_stage(stage, pipe_num, two_ppc,
 				copy_ovrd, if_config_index);
 		} else {
-			enum ia_css_frame_delay frame_delay = me->dvs_frame_delay;
-			/* only the video binary has multiple stages */
-			if (stage->binary && stage->binary->info->sp.mode != IA_CSS_BINARY_MODE_VIDEO)
-				frame_delay = IA_CSS_FRAME_DELAY_0;
 			if ((stage->stage_num != 0) || SH_CSS_PIPE_PORT_CONFIG_IS_CONTINUOUS(me->inout_port_config))
 				tmp_if_config_index = SH_CSS_IF_CONFIG_NOT_NEEDED;
 			else
 				tmp_if_config_index = if_config_index;
 			sp_init_stage(stage, pipe_num,
-				      xnr, tmp_if_config_index, frame_delay);
+				      xnr, tmp_if_config_index, two_ppc);
 		}
 
 		store_sp_stage_data(pipe_id, pipe_num, num);
@@ -1408,7 +1381,7 @@ sh_css_update_host2sp_offline_frame(
 	store_sp_array_uint(host_sp_com, o, metadata ? metadata->address : 0);
 }
 
-#if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
+#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 /**
  * @brief Update the offline frame information in host_sp_communication.
  * Refer to "sh_css_sp.h" for more details.
@@ -1423,7 +1396,8 @@ sh_css_update_host2sp_mipi_frame(
 
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
-	assert(frame_num < NUM_MIPI_FRAMES);
+	/* MIPI buffers are dedicated to port, so now there are more of them. */
+	assert(frame_num < 2 * NUM_MIPI_FRAMES_PER_STREAM);
 
 	/* Write new frame data into SP DMEM */
 	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
@@ -1436,7 +1410,7 @@ sh_css_update_host2sp_mipi_frame(
 }
 
 void
-sh_css_update_host2sp_cont_num_mipi_frames(unsigned num_frames)
+sh_css_update_host2sp_num_mipi_frames(unsigned num_frames)
 {
 	unsigned int HIVE_ADDR_host_sp_com;
 	unsigned int o;
@@ -1445,7 +1419,7 @@ sh_css_update_host2sp_cont_num_mipi_frames(unsigned num_frames)
 
 	/* Write new frame data into SP DMEM */
 	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
-	o = offsetof(struct host_sp_communication, host2sp_cont_num_mipi_frames)
+	o = offsetof(struct host_sp_communication, host2sp_num_mipi_frames)
 		/ sizeof(int);
 
 	store_sp_array_uint(host_sp_com, o, num_frames);

@@ -27,6 +27,7 @@
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
 #include "isp.h"
+#include "isp/modes/interface/isp_types.h"
 
 #include "ia_css_raw.host.h"
 
@@ -71,6 +72,62 @@ sh_css_stride_from_info (
 	}
 	return stride;
 }
+#if (defined(USE_INPUT_SYSTEM_VERSION_2401) || defined(CONFIG_CSI2_PLUS))
+static inline void
+ia_css_get_crop_info_for_bayer_order (
+	const unsigned int bayer_order,
+	unsigned int *start_column, unsigned int *start_line)
+{
+	if ((IA_CSS_BAYER_ORDER_RGGB == bayer_order)
+	    || (IA_CSS_BAYER_ORDER_GBRG == bayer_order))
+		*start_column = 1;
+	else
+		*start_column = 0;
+
+
+	if ((IA_CSS_BAYER_ORDER_BGGR == bayer_order)
+	    || (IA_CSS_BAYER_ORDER_GBRG == bayer_order))
+		*start_line = 1;
+	else
+		*start_line = 0;
+
+	return;
+}
+#endif
+
+
+/* MW: These areMIPI / ISYS properties, not camera function properties */
+static enum sh_stream_format
+css2isp_stream_format(enum ia_css_stream_format from)
+{
+	switch (from) {
+	case IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY:
+		return sh_stream_format_yuv420_legacy;
+	case IA_CSS_STREAM_FORMAT_YUV420_8:
+	case IA_CSS_STREAM_FORMAT_YUV420_10:
+		return sh_stream_format_yuv420;
+	case IA_CSS_STREAM_FORMAT_YUV422_8:
+	case IA_CSS_STREAM_FORMAT_YUV422_10:
+		return sh_stream_format_yuv422;
+	case IA_CSS_STREAM_FORMAT_RGB_444:
+	case IA_CSS_STREAM_FORMAT_RGB_555:
+	case IA_CSS_STREAM_FORMAT_RGB_565:
+	case IA_CSS_STREAM_FORMAT_RGB_666:
+	case IA_CSS_STREAM_FORMAT_RGB_888:
+		return sh_stream_format_rgb;
+	case IA_CSS_STREAM_FORMAT_RAW_6:
+	case IA_CSS_STREAM_FORMAT_RAW_7:
+	case IA_CSS_STREAM_FORMAT_RAW_8:
+	case IA_CSS_STREAM_FORMAT_RAW_10:
+	case IA_CSS_STREAM_FORMAT_RAW_12:
+	case IA_CSS_STREAM_FORMAT_RAW_14:
+	case IA_CSS_STREAM_FORMAT_RAW_16:
+		return sh_stream_format_raw;
+	case IA_CSS_STREAM_FORMAT_BINARY_8:
+	default:
+		return sh_stream_format_raw;
+	}
+}
 
 void
 ia_css_raw_config(
@@ -80,6 +137,7 @@ ia_css_raw_config(
 	unsigned elems_a = ISP_VEC_NELEMS;
 	const struct ia_css_frame_info *in_info = from->in_info;
 	const struct ia_css_frame_info *internal_info = from->internal_info;
+
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* 2401 input system uses input width width */
 	in_info = internal_info;
@@ -93,16 +151,20 @@ ia_css_raw_config(
 #endif
 	ia_css_dma_configure_from_info(&to->port_b, in_info);
 	to->width_a_over_b = elems_a / to->port_b.elems;
-	to->port_b.stride /= 2; /* Half BQ lines */
-
-	to->port_b.stride = sh_css_stride_from_info(in_info->format, to->port_b.stride, in_info->raw_bit_depth);
 
 	/* Assume divisiblity here, may need to generalize to fixed point. */
-	assert (elems_a % to->port_b.elems == 0);
+	assert (in_info->format == IA_CSS_FRAME_FORMAT_RAW_PACKED ||
+		elems_a % to->port_b.elems == 0);
 
 	to->inout_port_config       = from->pipe->inout_port_config;
 	to->format = in_info->format;
 	to->required_bds_factor = from->pipe->required_bds_factor;
+	to->two_ppc = from->two_ppc;
+	to->stream_format = css2isp_stream_format(from->stream_format);
+	to->deinterleaved = from->deinterleaved;
+#if (defined(USE_INPUT_SYSTEM_VERSION_2401) || defined(CONFIG_CSI2_PLUS))
+	ia_css_get_crop_info_for_bayer_order (in_info->raw_bayer_order, &to->start_column, &to->start_line);
+#endif
 }
 
 void
@@ -110,9 +172,11 @@ ia_css_raw_configure(
 	const struct sh_css_sp_pipeline *pipe,
 	const struct ia_css_binary      *binary,
 	const struct ia_css_frame_info  *in_info,
-	const struct ia_css_frame_info  *internal_info)
+	const struct ia_css_frame_info  *internal_info,
+	bool two_ppc,
+	bool deinterleaved)
 {
 	const struct ia_css_raw_configuration config =
-		{ pipe, in_info, internal_info };
+		{ pipe, in_info, internal_info, two_ppc, binary->input_format, deinterleaved};
 	ia_css_configure_raw(binary, &config);
 }

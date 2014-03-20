@@ -23,6 +23,7 @@
 #define __IA_CSS_TNR_HOST_H
 
 #include "ia_css_binary.h"
+#include "ia_css_tnr_state.h"
 #include "ia_css_tnr_types.h"
 #include "ia_css_tnr_param.h"
 
@@ -51,6 +52,9 @@ ia_css_tnr_config(
 void
 ia_css_tnr_configure(
 	const struct ia_css_binary     *binary,
-	const struct ia_css_frame_info *from);
+	const struct ia_css_frame **frames);
 
+void
+ia_css_init_tnr_state(
+	struct sh_css_isp_tnr_dmem_state *state);
 #endif /* __IA_CSS_TNR_HOST_H */

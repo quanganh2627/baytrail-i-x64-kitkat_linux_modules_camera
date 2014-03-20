@@ -123,8 +123,6 @@ typedef uint64_t ia_css_psys_drv_addr_t;
 */
 #define IA_CSS_PSYS_SUCCESS  (0)
 
-/*Silent the compiler*/
-#define NOT_USED(a)            ((a) = (a))
 /*--------------------------------------------------------------------------------------
 *   terminal IDs
 *

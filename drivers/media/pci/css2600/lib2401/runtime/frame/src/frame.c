@@ -570,13 +570,14 @@ ia_css_dma_configure_from_info(
 	struct dma_port_config *config,
 	const struct ia_css_frame_info *info)
 {
-	unsigned elems_wb = ia_css_elems_bytes_from_info(info);
-	unsigned elems_b;
-	if (elems_wb == 0)
-		return;
-	elems_b = HIVE_ISP_DDR_WORD_BYTES / elems_wb;
+	unsigned is_raw_packed = info->format == IA_CSS_FRAME_FORMAT_RAW_PACKED;
+	unsigned bits_per_pixel = is_raw_packed ? info->raw_bit_depth : ia_css_elems_bytes_from_info(info)*8;
+	unsigned pix_per_ddrword = HIVE_ISP_DDR_WORD_BITS / bits_per_pixel;
+	unsigned words_per_line = CEIL_DIV(info->padded_width, pix_per_ddrword);
+	unsigned elems_b = pix_per_ddrword;
+
+	config->stride = HIVE_ISP_DDR_WORD_BYTES * words_per_line;
 	config->elems  = elems_b;
-	config->stride = info->padded_width * elems_wb;
 	config->width  = info->res.width;
 	config->crop   = 0;
 	assert (config->width <= info->padded_width);
@@ -839,4 +840,23 @@ ia_css_elems_bytes_from_info (const struct ia_css_frame_info *info)
 	if (info->format == IA_CSS_FRAME_FORMAT_QPLANE6)
 		return 2; /* bytes per pixel */
 	return 1; /* Default is 1 byte per pixel */
+}
+
+void ia_css_frame_info_to_frame_sp_info(
+	struct ia_css_frame_sp_info *to,
+	const struct ia_css_frame_info *from)
+{
+	ia_css_resolution_to_sp_resolution(&to->res, &from->res);
+	to->padded_width = from->padded_width;
+	to->format = from->format;
+	to->raw_bit_depth = from->raw_bit_depth;
+	to->raw_bayer_order = from->raw_bayer_order;
+}
+
+void ia_css_resolution_to_sp_resolution(
+	struct ia_css_sp_resolution *to,
+	const struct ia_css_resolution *from)
+{
+	to->width  = from->width;
+	to->height = from->height;
 }

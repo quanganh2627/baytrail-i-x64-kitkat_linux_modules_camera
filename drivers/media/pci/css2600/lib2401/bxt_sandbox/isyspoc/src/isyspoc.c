@@ -61,6 +61,7 @@ static int isyspoc_create_reponse(
 	ia_css_isyspoc_cmd_msg_t *isys_msg
 );
 
+static void isyspoc_dump_virtual_isys_handle(const virtual_input_system_t *virt_isys);
 /**
  * ia_css_isys_device_cfg() - configure ISYS device
  */
@@ -93,6 +94,7 @@ int ia_css_isys_device_configure(
 			"ia_css_isys_device_configure(): Failed to allocate ctx memory\n");
 		return ENOMEM;
 	}
+	memset(ctx, 0, sizeof(struct ia_css_isys_context));
 	*context = (HANDLE)ctx;
 
 	for (stream_handle = 0; stream_handle < STREAM_ID_MAX; stream_handle++) {
@@ -116,7 +118,7 @@ int ia_css_isys_stream_open(
 	bool rc;
 	ia_css_isys_descr_t			isys_stream_descr;
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
+	ia_css_isyspoc_cmd_msg_t isys_msg;
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
@@ -124,6 +126,9 @@ int ia_css_isys_stream_open(
 	assert(ctx->stream_state_array[stream_handle] == IA_CSS_ISYS_STREAM_STATE_IDLE);
 
 	assert(stream_cfg != NULL);
+
+	/* Initialize the message to 0*/
+	memset(&isys_msg, 0, sizeof(isys_msg));
 
 	/* Note: This should be done first.
 	 * as it will overwrite entire contents of isys_stream_descr*/
@@ -146,6 +151,7 @@ int ia_css_isys_stream_open(
 		return 1;      /*This will be changed to an appropriate error code*/
 
 	/* calculate the configuration of the virtual Input System (2401) */
+	memset(&isys_msg.payload.virtual_input_system_cfg, 0, sizeof(ia_css_isys_stream_cfg_t));
 	rc = ia_css_isys_stream_calculate_cfg(
 			&(ctx->virtual_input_system[stream_handle]),
 			&(isys_stream_descr),
@@ -159,6 +165,7 @@ int ia_css_isys_stream_open(
 	isys_msg.stream_handle = stream_handle;
 	isys_msg.ret = 0;
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
+	isyspoc_dump_virtual_isys_handle(&isys_msg.virtual_input_system);
 
 	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
         ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_OPENED;
@@ -177,16 +184,20 @@ int ia_css_isys_stream_close(
 )
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
+	ia_css_isyspoc_cmd_msg_t isys_msg;
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
 	assert(ctx->stream_state_array[stream_handle] == IA_CSS_ISYS_STREAM_STATE_OPENED);
 
+	/* Initialize the message to 0*/
+	memset(&isys_msg, 0, sizeof(isys_msg));
+
 	isys_msg.send_type = IA_CSS_ISYS_SEND_TYPE_STREAM_CLOSE;
 	isys_msg.stream_handle = stream_handle;
 	isys_msg.ret = 0;
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
+	isyspoc_dump_virtual_isys_handle(&isys_msg.virtual_input_system);
 
 	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
 		ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_IDLE;
@@ -206,7 +217,7 @@ int ia_css_isys_stream_start(
 		)
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
+	ia_css_isyspoc_cmd_msg_t isys_msg;
 	unsigned int i;
 	int retval = 0;
 
@@ -236,9 +247,13 @@ int ia_css_isys_stream_start(
 
 	}
 
+	/* Initialize the message to 0*/
+	memset(&isys_msg, 0, sizeof(isys_msg));
+
 	isys_msg.stream_handle = stream_handle;
 	isys_msg.ret = 0;
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
+	isyspoc_dump_virtual_isys_handle(&isys_msg.virtual_input_system);
 
 	if (next_frame != NULL) {
 		isys_msg.send_type = IA_CSS_ISYS_SEND_TYPE_STREAM_START_AND_CAPTURE;
@@ -265,16 +280,20 @@ int ia_css_isys_stream_start(
 )
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
+	ia_css_isyspoc_cmd_msg_t isys_msg;
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
 	assert(ctx->stream_state_array[stream_handle] == IA_CSS_ISYS_STREAM_STATE_STARTED);
 
+	/* Initialize the message to 0*/
+	memset(&isys_msg, 0, sizeof(isys_msg));
+
 	isys_msg.stream_handle = stream_handle;
 	isys_msg.ret = 0;
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
 	isys_msg.send_type = IA_CSS_ISYS_SEND_TYPE_STREAM_STOP;
+	isyspoc_dump_virtual_isys_handle(&isys_msg.virtual_input_system);
 
 	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
         ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_OPENED;
@@ -292,16 +311,20 @@ int ia_css_isys_stream_start(
 )
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
+	ia_css_isyspoc_cmd_msg_t isys_msg;
 	int retval = 0;
 
 	assert(stream_handle < STREAM_ID_MAX);
 	assert(ctx->stream_state_array[stream_handle] == IA_CSS_ISYS_STREAM_STATE_STARTED);
 
+	/* Initialize the message to 0*/
+	memset(&isys_msg, 0, sizeof(isys_msg));
+
 	isys_msg.stream_handle = stream_handle;
 	isys_msg.ret = 0;
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
 	isys_msg.send_type = IA_CSS_ISYS_SEND_TYPE_STREAM_FLUSH;
+	isyspoc_dump_virtual_isys_handle(&isys_msg.virtual_input_system);
 
 	if ((retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg)) == 0) {
         ctx->stream_state_array[stream_handle] = IA_CSS_ISYS_STREAM_STATE_OPENED;
@@ -320,7 +343,7 @@ int ia_css_isys_stream_capture_indication(
 )
 {
 	struct ia_css_isys_context *ctx = (struct ia_css_isys_context *)context;
-	ia_css_isyspoc_cmd_msg_t isys_msg = { 0 };
+	ia_css_isyspoc_cmd_msg_t isys_msg;
 	unsigned int i;
 	int retval = 0;
 
@@ -348,12 +371,16 @@ int ia_css_isys_stream_capture_indication(
 		assert(next_frame->output_pins[i].payload.addr != (hrt_vaddress)NULL);
 	}
 
+	/* Initialize the message to 0*/
+	memset(&isys_msg, 0, sizeof(isys_msg));
+
 	isys_msg.stream_handle = stream_handle;
 	isys_msg.ret = 0;
 	isys_msg.virtual_input_system = ctx->virtual_input_system[stream_handle];
 	isys_msg.send_type = IA_CSS_ISYS_SEND_TYPE_STREAM_CAPTURE;
 	memcpy(&(isys_msg.payload.next_frame), next_frame,
 			sizeof(struct ia_css_isys_frame_buff_set));
+	isyspoc_dump_virtual_isys_handle(&isys_msg.virtual_input_system);
 
 	retval =  ia_css_fwctrl_isys_stream_send_msg(stream_handle, &isys_msg);
 
@@ -378,7 +405,7 @@ int ia_css_isys_stream_capture_indication(
 	ret =  ia_css_fwctrl_isys_receive_msg(&isys_msg);
 	if (0 == ret) {
 		ret = isyspoc_create_reponse(received_response, &isys_msg);
-    }
+	}
 
 	return ret;
 }
@@ -395,6 +422,7 @@ static int isyspoc_create_reponse(
 	received_response->timestamp[1] = isys_msg->timestamp[1];
 	received_response->stream_handle = isys_msg->stream_handle;
 	received_response->type = isys_msg->resp_type;
+	isyspoc_dump_virtual_isys_handle(&isys_msg->virtual_input_system);
 
 	switch(isys_msg->resp_type) {
 		case IA_CSS_ISYS_RESP_TYPE_STREAM_OPEN_DONE:
@@ -431,6 +459,43 @@ static int isyspoc_create_reponse(
 
 	return ret;
 }
+
+static void isyspoc_dump_virtual_isys_handle(const virtual_input_system_t *visys)
+{
+	const input_system_input_port_t *input_port;
+	const input_system_channel_t *channel;
+	if (NULL == visys) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "isyspoc_dump_virtual_isys_handle(): Invalid argument");
+		return;
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"visys: addr=0x%x online=%d\n",
+		visys, visys->online);
+
+	/* dump the input_port */
+	input_port=&visys->input_port;
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"input_port: src_type=%d pixelgen.id=%d "
+		"csi_rx.fe_id=%d csi_rx.be_id=%d csi_rx.packet_type=%d "
+		"csi_rx.be_lut.lpe=0x%x csi_rx.be_lut.spe=0x%x\n",
+		input_port->source_type, input_port->pixelgen.pixelgen_id,
+		input_port->csi_rx.frontend_id, input_port->csi_rx.backend_id,
+		input_port->csi_rx.packet_type,
+		input_port->csi_rx.backend_lut_entry.long_packet_entry,
+		input_port->csi_rx.backend_lut_entry.short_packet_entry);
+
+	/* dump the channel*/
+	channel = &visys->channel;
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"channel: mmio_id=%d mmio_sid_id=%d ibuf_ctrl_id=%d "
+		"ibuf.addr=0x%x ibuf.stride=%d ibuf.lines=%d "
+		"dma_id=%d dma_chan=%d\n",
+		channel->stream2mmio_id, channel->stream2mmio_sid_id,
+		channel->ibuf_ctrl_id, channel->ib_buffer.start_addr,
+		channel->ib_buffer.stride, channel->ib_buffer.lines,
+		channel->dma_id, channel->dma_channel);
+}
+
 
 #undef HOST_MALLOC
 #undef HOST_FREE

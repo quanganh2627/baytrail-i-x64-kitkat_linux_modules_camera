@@ -26,7 +26,6 @@
 #include "vf/vf_1.0/ia_css_vf.host.h"
 #include "sh_css_defs.h"
 #include "ia_css_psys_frameadapter.h"
-#include "ia_css_psysapi.h" /*NOT_USED to silent the compiler*/
 
 #define PSYS_VFPPOPT_N_TERMINALS 		3
 #define PSYS_VFPPOPT_N_PROGRAMS			1
@@ -55,7 +54,7 @@ binary_grid_deci_factor_log2(int width, int height)
 	return max(fact, fact1);
 }
 
-uint32_t calc_deci_log_factor(
+static uint32_t calc_deci_log_factor(
 	struct ia_css_pg_frame_info *in_frame_info)
 {
 	/* TODO: Handle bds out info and fixed_s3a_deci_log when available. */
@@ -64,7 +63,7 @@ uint32_t calc_deci_log_factor(
 	unsigned int sc_3a_dis_height = in_frame_info->res.height;
 	unsigned int s3a_isp_width;
 	/*Silent the compiler*/
-	NOT_USED(sc_3a_dis_width);
+	(void)sc_3a_dis_width;
 	s3a_isp_width = _ISP_S3A_ELEMS_ISP_WIDTH(sc_3a_dis_padded_width, 0);
 	return binary_grid_deci_factor_log2(s3a_isp_width, sc_3a_dis_height);
 }

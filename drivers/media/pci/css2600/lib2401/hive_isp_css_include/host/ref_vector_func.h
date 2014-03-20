@@ -253,7 +253,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir5x5m_15dB_nrm (
  *   9 total operations
 */
 STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x5m_12dB_nrm (
-	s_1w_1x5_matrix m);
+	const s_1w_1x5_matrix m);
 
 /** @brief Normalised 2D FIR 5x5
  *
@@ -271,7 +271,13 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x5m_12dB_nrm (
  *   50 total operations
 */
 STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir5x5m_12dB_nrm (
-	s_1w_5x5_matrix m);
+	const s_1w_5x5_matrix m);
+
+STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x5m_box (
+	s_1w_1x5_matrix m);
+
+STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x9m_box (
+	s_1w_1x9_matrix m);
 
 #endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/
 

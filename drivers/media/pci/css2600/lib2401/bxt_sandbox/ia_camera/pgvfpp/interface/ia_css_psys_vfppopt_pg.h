@@ -34,9 +34,9 @@
 
 /* Get the size of vfpp param object. This can be used to allocate memory for a
  * parameter buffer */
+uint32_t ia_css_vfppopt_pg_get_size(void);
 /* Get the size of vfpp pg info object. This can be used to allocate memory for a
  * vfpp pg info (including terminals, its attributes, program info, etc)*/
-uint32_t ia_css_vfppopt_pg_get_size(void);
 extern uint32_t ia_css_vfppopt_pg_get_param_size(void);
 
 
@@ -55,9 +55,6 @@ extern uint32_t ia_css_vfppopt_pg_get_num_programs(void);
 uint32_t ia_css_vfppopt_pg_get_num_io_formats(uint8_t input);
 
 extern void ia_css_vfppopt_pg_get_pginfo(struct ia_css_pg_info *pg_info);
-
-uint32_t calc_deci_log_factor(
-	struct ia_css_pg_frame_info *in_frame_info);
 
 extern void ia_css_vfppopt_pg_get_param(
 	void *param_buffer,

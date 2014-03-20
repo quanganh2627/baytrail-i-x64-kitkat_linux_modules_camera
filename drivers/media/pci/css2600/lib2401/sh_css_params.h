@@ -42,6 +42,7 @@ struct ia_css_isp_parameters;
 #endif
 
 #include "ob/ob_1.0/ia_css_ob_param.h"
+#include "crop/crop_1.0/ia_css_crop_types.h"
 #include "uds/uds_1.0/ia_css_uds_param.h"
 
 /* Isp configurations per stream */
@@ -103,6 +104,8 @@ struct ia_css_isp_parameters {
 	struct ia_css_rgb_gamma_table     b_gamma_table;
 	struct ia_css_anr_thres     anr_thres;
 	struct ia_css_xnr_config    xnr_config;
+	struct ia_css_uds_config    uds_config;
+	struct ia_css_crop_config   crop_config;
 
 	bool isp_params_changed;
 	bool isp_mem_params_changed

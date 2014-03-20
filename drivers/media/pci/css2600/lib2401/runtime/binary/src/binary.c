@@ -96,8 +96,7 @@ ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
 		(int)binary_dvs_env.width,
 		info->left_cropping, info->mode,
 		info->c_subsampling,
-		info->output_num_chunks, info->pipelining,
-		false);
+		info->output_num_chunks, info->pipelining);
 	internal_res->height = __ISP_INTERNAL_HEIGHT(isp_tmp_internal_height,
 		info->top_cropping,
 		binary_dvs_env.height);
@@ -153,7 +152,7 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 	s3a_info->awb_fr_enable     = binary->info->sp.enable.awb_fr_acc;
 	s3a_info->awb_enable        = binary->info->sp.enable.awb_acc;
 	s3a_info->elem_bit_depth    = SH_CSS_BAYER_BITS;
-	//todo grid config	
+	//todo grid config
 #endif
 #if defined(HAS_VAMEM_VERSION_2)
 	info->vamem_type = IA_CSS_VAMEM_TYPE_2;
@@ -307,6 +306,48 @@ binary_grid_deci_factor_log2(int width, int height)
 	return max(fact, fact1);
 }
 
+static int
+binary_in_frame_padded_width(int in_frame_width,
+							int isp_internal_width,
+							int dvs_env_width,
+							int stream_config_left_padding,
+							int left_cropping,
+							bool need_scaling)
+{
+	int rval;
+	int nr_of_left_paddings;	/* number of paddings pixels on the left of an image line */
+
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+	/* the output image line of Input System 2401 does not have the left paddings  */
+	nr_of_left_paddings = 0;
+#else
+	/* in other cases, the left padding pixels are always 128 */
+	nr_of_left_paddings = 2*ISP_VEC_NELEMS;
+#endif
+
+	if (need_scaling) {
+		/* In SDV use-case, we need to match left-padding of
+		 * primary and the video binary. */
+		if (stream_config_left_padding != -1) {
+			/* Different than before, we do left&right padding. */
+			rval =
+				CEIL_MUL(in_frame_width + nr_of_left_paddings,
+					2*ISP_VEC_NELEMS);
+		} else {
+			/* Different than before, we do left&right padding. */
+			rval =
+				CEIL_MUL(in_frame_width + dvs_env_width +
+					(left_cropping ? nr_of_left_paddings : 0),
+					2*ISP_VEC_NELEMS);
+		}
+	} else {
+		rval = isp_internal_width;
+	}
+
+	return rval;
+}
+
+
 enum ia_css_err
 ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		 bool online,
@@ -335,13 +376,14 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		     sc_3a_dis_height = 0,
 		     isp_internal_width = 0,
 		     isp_internal_height = 0,
-		     s3a_isp_width = 0;
+		     s3a_isp_width = 0,
+		     raw_bayer_order = IA_CSS_BAYER_ORDER_GRBG;
 
 	bool need_scaling = false;
 	struct ia_css_resolution binary_dvs_env, internal_res;
 	enum ia_css_err err;
 	unsigned int i;
-	const struct ia_css_frame_info *bin_out_info = out_info[0];
+	const struct ia_css_frame_info *bin_out_info = NULL;
 
 	assert(info != NULL);
 	assert(binary != NULL);
@@ -353,7 +395,12 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 			&binary->mem_params, &binary->css_params,
 			&info->mem_initializers);
 	}
-
+	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
+		if (out_info[i] && (out_info[i]->res.width != 0)) {
+			bin_out_info = out_info[i];
+			break;
+		}
+	}
 	if (in_info != NULL && bin_out_info != NULL) {
 		need_scaling = (in_info->res.width != bin_out_info->res.width) ||
 			(in_info->res.height != bin_out_info->res.height);
@@ -385,6 +432,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	binary->internal_frame_info.padded_width    = isp_internal_width;
 	binary->internal_frame_info.res.height      = isp_internal_height;
 	binary->internal_frame_info.raw_bit_depth   = bits_per_pixel;
+	binary->internal_frame_info.raw_bayer_order = raw_bayer_order;
 
 
 	if (in_info != NULL) {
@@ -399,25 +447,16 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		binary->in_frame_info.res.height = in_info->res.height
 			+ info->top_cropping + dvs_env_height;
 
-		if (need_scaling) {
-			/* In SDV use-case, we need to match left-padding of
-			 * primary and the video binary. */
-			if (stream_config_left_padding != -1) {
-				/* Different than before, we do left&right padding. */
-				binary->in_frame_info.padded_width =
-					CEIL_MUL(in_info->res.width + 2*ISP_VEC_NELEMS,
-						2*ISP_VEC_NELEMS);
-			} else {
-				/* Different than before, we do left&right padding. */
-				binary->in_frame_info.padded_width =
-					CEIL_MUL(in_info->res.width + dvs_env_width +
-						(info->left_cropping ? 2*ISP_VEC_NELEMS : 0),
-						2*ISP_VEC_NELEMS);
-			}
-		} else {
-			binary->in_frame_info.padded_width = isp_internal_width;
-		}
+		binary->in_frame_info.padded_width =
+			binary_in_frame_padded_width(in_info->res.width,
+										isp_internal_width,
+										dvs_env_width,
+										stream_config_left_padding,
+										info->left_cropping,
+										need_scaling);
+
 		binary->in_frame_info.format = in_info->format;
+		binary->in_frame_info.raw_bayer_order = in_info->raw_bayer_order;
 	}
 
 	if (online) {
@@ -438,9 +477,11 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	}
 
 #ifndef IS_ISP_2500_SYSTEM
-	err = ia_css_vf_configure(binary, bin_out_info, (struct ia_css_frame_info *)vf_info, &vf_log_ds);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	if (vf_info && (vf_info->res.width != 0)) {
+		err = ia_css_vf_configure(binary, bin_out_info, (struct ia_css_frame_info *)vf_info, &vf_log_ds);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 #else
 	(void)err;
 #endif
@@ -450,9 +491,10 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	binary->input_format      = stream_format;
 
 	/* viewfinder output info */
-	binary->vf_frame_info.format = IA_CSS_FRAME_FORMAT_YUV_LINE;
-	if (vf_info != NULL) {
+	if ((vf_info != NULL) && (vf_info->res.width != 0)) {
 		unsigned int vf_out_vecs, vf_out_width, vf_out_height;
+
+		binary->vf_frame_info.format = IA_CSS_FRAME_FORMAT_YUV_LINE;
 		if (bin_out_info == NULL)
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		vf_out_vecs = __ISP_VF_OUTPUT_WIDTH_VECS(bin_out_info->padded_width,
@@ -634,7 +676,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 	const struct ia_css_frame_info *req_in_info,
 				       *req_bds_out_info,
 				       *req_out_info[IA_CSS_BINARY_MAX_OUTPUT_PORTS],
-					   *req_bin_out_info,
+					   *req_bin_out_info = NULL,
 				       *req_vf_info;
 
 	struct ia_css_binary_xinfo *xcandidate;
@@ -653,6 +695,13 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 /* MW: used after an error check, may accept NULL, but doubtfull */
 	assert(binary != NULL);
 
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_binary_find() enter: "
+		"descr=%p, (mode=%d), "
+		"binary=%p\n",
+		descr, descr->mode,
+		binary);
+
 	mode = descr->mode;
 	online = descr->online;
 	two_ppc = descr->two_ppc;
@@ -661,8 +710,11 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 	req_bds_out_info = descr->bds_out_info;
 	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		req_out_info[i] = descr->out_info[i];
+		if (req_out_info[i] && (req_out_info[i]->res.width != 0))
+			req_bin_out_info = req_out_info[i];
 	}
-	req_bin_out_info = req_out_info[0];
+	if (req_bin_out_info == NULL)
+		return IA_CSS_ERR_INTERNAL_ERROR;
 	req_vf_info = descr->vf_info;
 
 	need_xnr = descr->enable_xnr;
@@ -681,12 +733,6 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 	internal_res.width = 0;
 	internal_res.height = 0;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_binary_find() enter: "
-		"descr=%p, (mode=%d), "
-		"binary=%p\n",
-		descr, descr->mode,
-		binary);
 
 	if (mode == IA_CSS_BINARY_MODE_VIDEO) {
 		dvs_env = descr->dvs_env;

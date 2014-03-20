@@ -66,14 +66,6 @@ typedef struct s_isp_globals {
   unsigned isp2ppc;
   unsigned copy_vf;
   unsigned copy_output;
-  unsigned vectors_per_line;
-  unsigned vectors_per_input_line;
-  unsigned uv_internal_width_vecs;
-  unsigned vf_output_width_vecs;
-  unsigned sdis_horiproj_num;
-  unsigned sdis_vertproj_num;
-  unsigned sdis_horicoef_vectors;
-  unsigned sdis_vertcoef_vectors;
   enum sh_stream_format    input_stream_format;
   enum ia_css_frame_format input_image_format;
   enum ia_css_frame_format output_image_format;
@@ -82,20 +74,13 @@ typedef struct s_isp_globals {
   int dp_threshold_single;
   int dp_threshold_2adjacent;
 
-  unsigned out_crop_pos_y; /* Cropping for output image */
+  unsigned vf_crop_pos_x;  /* Cropping for ViewFinder image */
   unsigned vf_crop_pos_y;  /* Cropping for ViewFinder image */
-
-  unsigned dma_vfout_skip_vecs;
-  unsigned dma_vfout_cropping_a;
-  unsigned dma_vfout_block_width_a;
-  unsigned dma_vfout_block_width_b;
 
   unsigned dma_crop_skip_words;
   unsigned dma_crop_cropping_a;
   unsigned dma_crop_block_width_a;
   unsigned dma_crop_block_width_b;
-
-  unsigned dma_tnr_stride_b;
 
 /* DMA settings for output image */
   unsigned dma_output_skip_vecs;
@@ -188,14 +173,9 @@ extern s_isp_addresses NO_SYNC NO_HOIST isp_addresses;
 #define isp_2ppc                   isp_globals.isp2ppc
 #define isp_copy_vf                isp_globals.copy_vf
 #define isp_copy_output            isp_globals.copy_output
-#define isp_vectors_per_line       isp_globals.vectors_per_line
-#define isp_vectors_per_input_line isp_globals.vectors_per_input_line
-#define isp_uv_internal_width_vecs isp_globals.uv_internal_width_vecs
-#define isp_vf_output_width_vecs   isp_globals.vf_output_width_vecs
-#define isp_sdis_horiproj_num      isp_globals.sdis_horiproj_num
-#define isp_sdis_vertproj_num      isp_globals.sdis_vertproj_num
-#define isp_sdis_horicoef_vectors  isp_globals.sdis_horicoef_vectors
-#define isp_sdis_vertcoef_vectors  isp_globals.sdis_vertcoef_vectors
+#define isp_vectors_per_line       iterator_config.vectors_per_line
+#define isp_vectors_per_input_line iterator_config.vectors_per_input_line
+#define isp_uv_internal_width_vecs iterator_config.uv_internal_width_vecs
 #define isp_input_stream_format    isp_globals.input_stream_format
 #define isp_output_image_format    isp_globals.output_image_format
 #define isp_vf_image_format        isp_globals.vf_image_format
@@ -203,19 +183,20 @@ extern s_isp_addresses NO_SYNC NO_HOIST isp_addresses;
 #define g_dp_threshold_single      isp_globals.dp_threshold_single
 #define g_dp_threshold_2adjacent   isp_globals.dp_threshold_2adjacent
 
-#define g_out_crop_pos_y           isp_globals.out_crop_pos_y
+#define g_out_crop_pos_x           output_config.crop_pos_x
+#define g_out_crop_pos_y           output_config.crop_pos_y
+#define g_vf_crop_pos_x            isp_globals.vf_crop_pos_x
 #define g_vf_crop_pos_y            isp_globals.vf_crop_pos_y
 
-#define g_dma_vfout_skip_vecs      isp_globals.dma_vfout_skip_vecs
-#define g_dma_vfout_cropping_a     isp_globals.dma_vfout_cropping_a
-#define g_dma_vfout_block_width_a  isp_globals.dma_vfout_block_width_a
-#define g_dma_vfout_block_width_b  isp_globals.dma_vfout_block_width_b
+#define isp_vf_output_width_vecs   vf_config.output_width_vecs
+#define g_dma_vfout_skip_vecs      vf_config.dma_skip_vecs
+#define g_dma_vfout_cropping_a     vf_config.dma_cropping_a
+#define g_dma_vfout_block_width_a  vf_config.dma_block_width_a
 
 #define g_dma_crop_skip_words      isp_globals.dma_crop_skip_words
 #define g_dma_crop_cropping_a      isp_globals.dma_crop_cropping_a
 #define g_dma_crop_block_width_a   isp_globals.dma_crop_block_width_a
 #define g_dma_crop_block_width_b   isp_globals.dma_crop_block_width_b
-#define g_dma_tnr_stride_b         isp_globals.dma_tnr_stride_b
 
 #define g_dma_output_skip_vecs     isp_globals.dma_output_skip_vecs
 #define g_dma_output_block_width_a isp_globals.dma_output_block_width_a

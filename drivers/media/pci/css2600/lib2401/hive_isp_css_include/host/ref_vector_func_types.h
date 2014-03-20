@@ -40,6 +40,10 @@
  */
 
 typedef unsigned short tscalar1w_3bit;
+typedef unsigned short tvector_5bit;
+typedef unsigned short tvector_4bit;
+typedef unsigned short tvector1w_unsigned;
+typedef unsigned int   tvector2w_unsigned;
 
 typedef struct {
   tvector1w     v0  ;
@@ -81,5 +85,16 @@ typedef struct {
   tvector1w     v40  ; tvector1w     v41 ; tvector1w     v42  ; tvector1w     v43 ; tvector1w     v44  ;
 } s_1w_5x5_matrix;
 
+typedef struct {
+  tvector1w     v00 ;
+  tvector1w     v01 ;
+  tvector1w     v02 ;
+  tvector1w     v03 ;
+  tvector1w     v04 ;
+  tvector1w     v05 ;
+  tvector1w     v06 ;
+  tvector1w     v07 ;
+  tvector1w     v08 ;
+} s_1w_1x9_matrix;
 
 #endif /* __REF_VECTOR_FUNC_TYPES_H_INCLUDED__ */

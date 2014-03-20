@@ -27,6 +27,7 @@
 
 #include "ia_css_ref_types.h"
 #include "ia_css_ref_param.h"
+#include "ia_css_ref_state.h"
 
 void
 ia_css_ref_config(
@@ -36,6 +37,10 @@ ia_css_ref_config(
 void
 ia_css_ref_configure(
 	const struct ia_css_binary     *binary,
-	const struct ia_css_frame_info *from);
+	const struct ia_css_frame **ref_frames,
+	const uint32_t dvs_frame_delay);
 
+void
+ia_css_init_ref_state(
+	struct sh_css_isp_ref_dmem_state *state);
 #endif /* __IA_CSS_REF_HOST_H */

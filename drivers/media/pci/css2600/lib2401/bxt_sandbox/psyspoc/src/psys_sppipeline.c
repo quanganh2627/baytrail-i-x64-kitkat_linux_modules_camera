@@ -33,7 +33,6 @@
 #include "ia_css_bufq_comm.h"
 
 #include "memory_access.h"
-#include "ia_css_psysapi.h" /*NOT_USED -silent the compiler*/
 
 static struct ia_css_binary_xinfo *get_binary_xinfo(
 	struct ia_css_psys_task *task)
@@ -122,10 +121,10 @@ psys_pgframeinfo_to_spframeinfo(
 	const struct ia_css_pg_frame_info *host)
 {
 
-	sp->width	      = (uint16_t)host->res.width;
-	sp->height	      = (uint16_t)host->res.height;
+	sp->res.width	    = (uint16_t)host->res.width;
+	sp->res.height	    = (uint16_t)host->res.height;
 	sp->padded_width    = (uint16_t)host->padded_width;
-	sp->format	      = (unsigned char )host->format;
+	sp->format	    = (unsigned char )host->format;
 	sp->raw_bit_depth   = (unsigned char )host->raw_bit_depth;
 	sp->raw_bayer_order = host->raw_bayer_order;
 }
@@ -151,7 +150,7 @@ static void construct_sppipeline(
 	uint32_t dvs_frame_delay)
 {
 	struct sh_css_sp_pipeline *this_pipeline = sp_pipeline;
-	NOT_USED(dvs_frame_delay);
+	(void)dvs_frame_delay;
 	assert(this_pipeline != NULL);
 
 	memset(this_pipeline, 0 , sizeof(struct sh_css_sp_pipeline));
@@ -283,13 +282,6 @@ static void construct_ispstage(
 		&binary->css_params,
 		&binary->mem_params,
 		IA_CSS_PARAM_CLASS_STATE);
-	assert(err == IA_CSS_SUCCESS);
-
-	/* No late binding of parameters. ASK: Is this ok? CSS does not do it. */
-	err = ia_css_isp_param_copy_isp_mem_if_to_ddr(
-		&binary->css_params,
-		&binary->mem_params,
-		IA_CSS_PARAM_CLASS_PARAM);
 	assert(err == IA_CSS_SUCCESS);
 
 	this_isp_stage->mem_initializers = mem_if;

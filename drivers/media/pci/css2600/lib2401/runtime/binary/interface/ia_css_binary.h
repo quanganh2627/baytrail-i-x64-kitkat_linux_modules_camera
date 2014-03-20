@@ -67,6 +67,17 @@ struct ia_css_cas_binary_descr {
 	bool *is_output_stage;
 };
 
+#define IA_CSS_DEFAULT_CAS_BINARY_DESCR \
+{ \
+	0,		\
+	0,		\
+	NULL,		\
+	NULL,		\
+	NULL,		\
+	NULL,		\
+	NULL,		\
+}
+
 struct ia_css_binary_descr {
 	int mode;
 	bool online;
@@ -133,16 +144,6 @@ struct ia_css_binary {
 	struct ia_css_isp_param_host_segments mem_params;
 	struct ia_css_isp_param_css_segments  css_params;
 };
-
-#define IA_CSS_BINARY_DEFAULT_FRAME_INFO \
-{ \
-	{0,                      /* width */ \
-	 0},                     /* height */ \
-	0,                       /* padded_width */ \
-	IA_CSS_FRAME_FORMAT_NUM, /* format */ \
-	0,                       /* raw_bit_depth */ \
-	IA_CSS_BAYER_ORDER_NUM   /* raw_bayer_order */ \
-}
 
 #define IA_CSS_BINARY_DEFAULT_SETTINGS \
 { \

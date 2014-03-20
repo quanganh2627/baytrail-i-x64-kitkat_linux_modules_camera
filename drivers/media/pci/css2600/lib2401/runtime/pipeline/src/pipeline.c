@@ -28,7 +28,6 @@
 #include "sh_css_sp.h"
 #include "ia_css_pipeline.h"
 #include "ia_css_isp_param.h"
-#include "ia_css_eventq.h"
 #include "ia_css_bufq.h"
 
 #define PIPELINE_NUM_UNMAPPED                   (~0)
@@ -51,7 +50,8 @@ static void pipeline_unmap_num_to_sp_thread(unsigned int pipe_num);
 static void pipeline_init_defaults(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
-	unsigned int pipe_num);
+	unsigned int pipe_num,
+	enum ia_css_frame_delay dvs_frame_delay);
 
 static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage);
 static enum ia_css_err pipeline_stage_create(
@@ -69,13 +69,14 @@ void ia_css_pipeline_init(void)
 enum ia_css_err ia_css_pipeline_create(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
-	unsigned int pipe_num)
+	unsigned int pipe_num,
+	enum ia_css_frame_delay dvs_frame_delay)
 {
 	assert(pipeline != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_create() enter:\n");
 
-	pipeline_init_defaults(pipeline, pipe_id, pipe_num);
+	pipeline_init_defaults(pipeline, pipe_id, pipe_num, dvs_frame_delay);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_create() exit: pipe_num=%d\n",
@@ -125,7 +126,6 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 {
 	uint8_t pipe_num = 0;
 	unsigned int thread_id;
-	ia_css_queue_t *eventq;
 
 	assert(pipeline != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -140,19 +140,18 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 				, (mipi_port_ID_t) 0
 #endif
 				);
-
 	ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
-	eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
-					-1, -1);
-	if (NULL == eventq) {
-		/* Error as the queue is not initialized */
+	if (!sh_css_sp_is_running())
+	{
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_pipeline_start() leaving: host2sp_eventq"
-			"not available\n");
+		"ia_css_pipeline_start() error,leaving  \n");
+		/* queues are invalid*/
 		return;
 	}
-	ia_css_eventq_send(eventq,
-			SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0, 0);
+	ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4,
+				(uint8_t)thread_id,
+				0,
+				0);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 	      "ia_css_pipeline_start() leave: return_void\n");
@@ -184,7 +183,6 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	unsigned int thread_id;
-	ia_css_queue_t *eventq;
 
 	assert(pipeline != NULL);
 
@@ -200,17 +198,17 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 	/* This needs improvement, stop on all the pipes available
 	 * in the stream*/
 	ia_css_pipeline_get_sp_thread_id(pipeline->pipe_num, &thread_id);
-	eventq = sh_css_get_queue(sh_css_host2sp_event_queue,
-					-1, -1);
-	if (NULL == eventq) {
-		/* Error as the queue is not initialized */
+	if (!sh_css_sp_is_running())
+	{
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_pipeline_request_stop() leaving:"
-			"host2sp_eventq not available\n");
+		"ia_css_pipeline_request_stop() leaving \n");	
+		/* queues are invalid */
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
-	ia_css_eventq_send(eventq,
-			SP_SW_EVENT_ID_5, (uint8_t)thread_id, 0,  0);
+	ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_5,
+				(uint8_t)thread_id,
+				0,
+				0);
 	sh_css_sp_uninit_pipeline(pipeline->pipe_num);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -233,7 +231,7 @@ void ia_css_pipeline_clean(struct ia_css_pipeline *pipeline)
 		pipeline_stage_destroy(s);
 		s = next;
 	}
-	pipeline_init_defaults(pipeline, pipeline->pipe_id, pipeline->pipe_num);
+	pipeline_init_defaults(pipeline, pipeline->pipe_id, pipeline->pipe_num, pipeline->dvs_frame_delay);
 }
 
 /** @brief Add a stage to pipeline.
@@ -582,13 +580,12 @@ ERR:
 static void pipeline_init_defaults(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
-	unsigned int pipe_num)
+	unsigned int pipe_num,
+	enum ia_css_frame_delay dvs_frame_delay)
 {
-	struct ia_css_frame init_frame;
+	struct ia_css_frame init_frame = DEFAULT_FRAME;
 	unsigned int i;
 
-	init_frame.dynamic_data_index = (int)SH_CSS_INVALID_QUEUE_ID;
-	init_frame.buf_type = IA_CSS_BUFFER_TYPE_INVALID;
 	pipeline->pipe_id = pipe_id;
 	pipeline->stages = NULL;
 	pipeline->stop_requested = false;
@@ -601,4 +598,5 @@ static void pipeline_init_defaults(
 	pipeline->num_execs = -1;
 	pipeline->acquire_isp_each_stage = true;
 	pipeline->pipe_num = pipe_num;
+	pipeline->dvs_frame_delay = dvs_frame_delay;
 }

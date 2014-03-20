@@ -63,94 +63,51 @@ static struct ia_css_buffer_pool isys_buf_pool;
 if PSYS/ISYS driver separately call this API*/
 static int ref_count = 0;
 
-static bool fwctrl_configure_spctrl(
-	const struct ia_css_fw_info *fw,
-	const char * program,
-	ia_css_spctrl_cfg  *spctrl_cfg
-);
-
 static int fwctrl_init_bufpool(void);
 static void fwctrl_uinit_bufpool(void);
 
-static bool fwctrl_configure_spctrl(
-	const struct ia_css_fw_info *fw,
-	const char * program,
-	ia_css_spctrl_cfg  *spctrl_cfg
-)
-{
-	if((fw == NULL)||(spctrl_cfg == NULL))
-		return false;
-	spctrl_cfg->sp_entry = 0;
-	spctrl_cfg->program_name = (char *)(program);
-
-#if !defined(C_RUN) && !defined(HRT_UNSCHED)
-	spctrl_cfg->ddr_data_offset =  fw->blob.data_source;
-	spctrl_cfg->dmem_data_addr = fw->blob.data_target;
-	spctrl_cfg->dmem_bss_addr = fw->blob.bss_target;
-	spctrl_cfg->data_size = fw->blob.data_size ;
-	spctrl_cfg->bss_size = fw->blob.bss_size;
-
-	spctrl_cfg->spctrl_config_dmem_addr = fw->info.sp.init_dmem_data;
-	spctrl_cfg->spctrl_state_dmem_addr = fw->info.sp.sw_state;
-
-	spctrl_cfg->code_size = fw->blob.size;
-	spctrl_cfg->code      = fw->blob.code;
-	spctrl_cfg->sp_entry  = fw->info.sp.sp_entry; /* entry function ptr on SP */
-#endif
-	return true;
-}
-
 static int fwctrl_sp_start(struct ia_css_fwctrl_devconfig *device_config)
 {
+	const struct ia_css_fw_info *fw;
+	unsigned int HIVE_ADDR_sp_sw_state;
+	unsigned int HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb;
+	unsigned long timeout;
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "fwctrl_sp_start() enter: void\n");
-	{
-		enum ia_css_err err;
-		ia_css_spctrl_cfg spctrl_cfg;
-		const struct ia_css_fw_info *fw;
-		unsigned int HIVE_ADDR_sp_sw_state;
-		unsigned int HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb;
-		unsigned long timeout;
+	fw = (const struct ia_css_fw_info *) device_config->firmware_address;
+	HIVE_ADDR_sp_sw_state = fw->info.sp.sw_state;
+	HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb = fw->info.sp.invalidate_tlb;
 
-		fw = (const struct ia_css_fw_info *) device_config->firmware_address;
-		HIVE_ADDR_sp_sw_state = fw->info.sp.sw_state;
-		HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb = fw->info.sp.invalidate_tlb;
+	(void)HIVE_ADDR_sp_sw_state; /* Suppres warnings in CRUN */
+	(void)HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb; /* Suppres warnings in CRUN */
 
-		(void)HIVE_ADDR_sp_sw_state; /* Suppres warnings in CRUN */
-		(void)HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb; /* Suppres warnings in CRUN */
+	sp_dmem_store_uint32(SP0_ID,
+		(unsigned int)sp_address_of(ia_css_dmaproxy_sp_invalidate_tlb),
+		true);
 
-		if(!fwctrl_configure_spctrl(fw,SP_PROG_NAME,&spctrl_cfg))
-			return IA_CSS_ERR_INTERNAL_ERROR;
+	/* Invalidate all MMU caches */
+	mmu_invalidate_cache_all();
 
-		err = ia_css_spctrl_load_fw(SP0_ID, &spctrl_cfg);
-		if (err != IA_CSS_SUCCESS) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "fwctrl_sp_start() leave: return_err=%d\n",err);
-			return err;
-		}
+	/* ia_css_init() should be called prior to this. Loading of the
+	 * firmware is done in it*/
+	ia_css_spctrl_start(SP0_ID);
 
-		sp_dmem_store_uint32(SP0_ID,
-			(unsigned int)sp_address_of(ia_css_dmaproxy_sp_invalidate_tlb),
-			true);
-
-		/* Invalidate all MMU caches */
-		mmu_invalidate_cache_all();
-
-		ia_css_spctrl_start(SP0_ID);
-
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "fwctrl_sp_start() waiting for sp\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "fwctrl_sp_start() waiting for sp\n");
 
         /* waiting for the SP is completely started */
-		timeout = SP_START_TIMEOUT_US;
-		while((ia_css_spctrl_get_state(SP0_ID) != IA_CSS_SP_SW_INITIALIZED) && timeout) {
-			timeout--;
-			hrt_sleep();
-		}
-		if (timeout == 0) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "fwctrl_sp_start() timeout\n");
-			return IA_CSS_ERR_INTERNAL_ERROR;
-		}
+	timeout = SP_START_TIMEOUT_US;
+	while((ia_css_spctrl_get_state(SP0_ID) != IA_CSS_SP_SW_INITIALIZED) && timeout) {
+		timeout--;
+		hrt_sleep();
 	}
-	return 0;
 
+	if (timeout == 0) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "fwctrl_sp_start() timeout\n");
+		return IA_CSS_ERR_INTERNAL_ERROR;
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "fwctrl_sp_start(): started sp\n");
+
+	return 0;
 }
 
 static void fwctrl_init_queues(
@@ -337,7 +294,7 @@ int ia_css_fwctrl_isys_stream_send_msg(
 	}
 	mmgr_store(payload, isys_msg, sizeof(ia_css_isyspoc_cmd_msg_t));
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isyspoc_send_msg() : entered  payload = 0x%x \n", payload);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isys_stream_send_msg() : entered  payload = 0x%x send_type=%d\n", payload, isys_msg->send_type);
 
 	/* enqueue it in ISYS command queue*/
 	if (IA_CSS_SUCCESS != ia_css_queue_enqueue(
@@ -346,7 +303,7 @@ int ia_css_fwctrl_isys_stream_send_msg(
 		return ENOTCONN;
 	}
 	else{
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isyspoc_send_msg()\
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isys_stream_send_msg()\
 				host2sp_isys_q_handle isys enqueue (0x%x) success\n", payload);
 
 		/* send ISYS signal to SP, by posting a flag in generic queue.*/
@@ -356,7 +313,7 @@ int ia_css_fwctrl_isys_stream_send_msg(
 				SP_SW_EVENT_ISYS);
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isyspoc_send_msg() : leaving \n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isys_stream_send_msg() : leaving \n");
 
 	return 0;
 }
@@ -375,13 +332,17 @@ int ia_css_fwctrl_isys_receive_msg(
 	if (IA_CSS_SUCCESS != ia_css_queue_dequeue(
 				&fwctrl_comm_queues.sp2host_isys_q_handle,
 				&payload)){
+		/* No message in the queue*/
 		ret = ENOTCONN;
-	}
-
-	mmgr_load(payload, (void*)(isys_msg),
+	} else {
+		/* Got a message */
+		mmgr_load(payload, (void*)(isys_msg),
 			sizeof(ia_css_isyspoc_cmd_msg_t));
 
-	isys_buf_pool.release_buf(&isys_buf_pool, payload);
+		isys_buf_pool.release_buf(&isys_buf_pool, payload);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isyspoc_receive_msg() : msg send_type=%d resp_type=%d\n",
+			isys_msg->send_type, isys_msg->resp_type);
+	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isyspoc_receive_msg() : leaving \n");
 

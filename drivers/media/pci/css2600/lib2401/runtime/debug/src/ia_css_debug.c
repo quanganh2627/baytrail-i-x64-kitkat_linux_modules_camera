@@ -258,7 +258,7 @@ void ia_css_debug_dump_isp_state(void)
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "[2] dma_FIFO stalled",
 				    stall.fifo2);
 #if defined(HAS_ISP_2400_MAMOIADA) || defined(HAS_ISP_2401_MAMOIADA) || \
-    defined(HAS_ISP_2500_SKYCAM)
+    defined(IS_ISP_2500_SYSTEM)
 
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "[3] gdc0_FIFO stalled",
 				    stall.fifo3);
@@ -304,7 +304,7 @@ void ia_css_debug_dump_sp_state(void)
 	sp_get_state(SP0_ID, &state, &stall);
 	debug_print_sp_state(&state, "SP");
 	if (state.is_stalling) {
-#if defined(HAS_SP_2400) || defined(HAS_SP_2500)
+#if defined(HAS_SP_2400) || defined(IS_ISP_2500_SYSTEM)
 #if !defined(HAS_NO_INPUT_SYSTEM)
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "isys_FIFO stalled",
 				    stall.fifo0);
@@ -329,7 +329,7 @@ void ia_css_debug_dump_sp_state(void)
 #endif
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "gdc0_FIFO stalled",
 				    stall.fifo8);
-#if !defined(IS_ISP2500_SYSTEM)
+#if !defined(IS_ISP_2500_SYSTEM)
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "gdc1_FIFO stalled",
 				    stall.fifo9);
 #endif
@@ -2092,95 +2092,68 @@ findf_dmem_params(struct ia_css_stream *stream, short idx)
 void ia_css_debug_dump_isp_params(struct ia_css_stream *stream,
 				  unsigned int enable)
 {
+	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "ISP PARAMETERS:\n");
 #if defined(IS_ISP_2500_SYSTEM)
 	(void)enable;
 	(void)stream;
-#endif
+#else
 
 	assert(stream != NULL);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "ISP PARAMETERS:\n");
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_FPN)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_fpn_dump(FIND_DMEM_PARAMS(stream, fpn), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_OB)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_ob_dump(FIND_DMEM_PARAMS(stream, ob), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_SC)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_sc_dump(FIND_DMEM_PARAMS(stream, sc), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_WB)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_wb_dump(FIND_DMEM_PARAMS(stream, wb), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_DP)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_dp_dump(FIND_DMEM_PARAMS(stream, dp), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_BNR)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_bnr_dump(FIND_DMEM_PARAMS(stream, bnr), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_S3A)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_s3a_dump(FIND_DMEM_PARAMS(stream, s3a), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_DE)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_de_dump(FIND_DMEM_PARAMS(stream, de), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_YNR)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_nr_dump(FIND_DMEM_PARAMS_TYPE(stream, nr, ynr),  IA_CSS_DEBUG_VERBOSE);
 		ia_css_yee_dump(FIND_DMEM_PARAMS(stream, yee), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_CSC)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_csc_dump(FIND_DMEM_PARAMS(stream, csc), IA_CSS_DEBUG_VERBOSE);
 		ia_css_yuv2rgb_dump(FIND_DMEM_PARAMS_TYPE(stream, yuv2rgb, csc), IA_CSS_DEBUG_VERBOSE);
 		ia_css_rgb2yuv_dump(FIND_DMEM_PARAMS_TYPE(stream, rgb2yuv, csc), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_GC)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_gc_dump(FIND_DMEM_PARAMS(stream, gc), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_TNR)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_tnr_dump(FIND_DMEM_PARAMS(stream, tnr), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_ANR)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_anr_dump(FIND_DMEM_PARAMS(stream, anr), IA_CSS_DEBUG_VERBOSE);
 	}
-#endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	if ((enable & IA_CSS_DEBUG_DUMP_CE)
 	    || (enable & IA_CSS_DEBUG_DUMP_ALL)) {
 		ia_css_ce_dump(FIND_DMEM_PARAMS(stream, ce), IA_CSS_DEBUG_VERBOSE);
@@ -2366,9 +2339,15 @@ ia_css_debug_mode_enable_dma_channel(int dma_id,
 STORAGE_CLASS_INLINE void dtrace_dot(const char *fmt, ...)
 {
 	va_list ap;
+#ifdef HRT_CSIM
+	va_list ap2;
+#endif
 
 	assert(fmt != NULL);
 	va_start(ap, fmt);
+#ifdef HRT_CSIM
+	va_start(ap2, fmt);
+#endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_INFO, "%s", DPG_START);
 	ia_css_debug_vdtrace(IA_CSS_DEBUG_INFO, fmt, ap);
@@ -2378,8 +2357,10 @@ STORAGE_CLASS_INLINE void dtrace_dot(const char *fmt, ...)
 	 * As post processing, we remove incomplete lines and make lines uniq.
 	 * */
 	ia_css_debug_dtrace(IA_CSS_DEBUG_INFO, "%s", DPG_START);
-	ia_css_debug_vdtrace(IA_CSS_DEBUG_INFO, fmt, ap);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_INFO, "%s", DPG_END);
+	ia_css_debug_vdtrace(IA_CSS_DEBUG_INFO, fmt, ap2);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_INFO, "%s", DPG_END);\
+
+	va_end(ap2);
 #endif
 	va_end(ap);
 }
@@ -2785,7 +2766,6 @@ void
 ia_css_debug_pipe_graph_dump_sp_raw_copy(
 	struct ia_css_frame *out_frame)
 {
-
 	assert(out_frame != NULL);
 	if (pg_inst.do_init) {
 		ia_css_debug_pipe_graph_dump_prologue();
@@ -2814,7 +2794,6 @@ ia_css_debug_pipe_graph_dump_sp_raw_copy(
 		"sp_raw_copy", 1, HOST_ADDRESS(out_frame));
 
 	snprintf(dot_id_input_bin, sizeof(dot_id_input_bin), "%s(pipe%d)", "sp_raw_copy", 1);
-
 }
 
 void
@@ -2909,12 +2888,16 @@ ia_css_debug_dump_pipe_config(
 	ia_css_debug_dump_resolution(&config->dvs_crop_out_res,
 			"dvs_crop_out_res");
 	ia_css_debug_dump_frame_info(&config->output_info, "output_info");
+	ia_css_debug_dump_frame_info(&config->vf_output_info,
+			"vf_output_info");
+	ia_css_debug_dump_frame_info(&config->second_output_info,
+			"second_output_info");
+	ia_css_debug_dump_frame_info(&config->second_vf_output_info,
+			"second_vf_output_info");
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "acc_extension: 0x%x\n",
 			config->acc_extension);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "num_acc_stages: %d\n",
 			config->num_acc_stages);
-	ia_css_debug_dump_frame_info(&config->vf_output_info,
-			"vf_output_info");
 	ia_css_debug_dump_capture_config(&config->default_capture_config);
 	ia_css_debug_dump_resolution(&config->dvs_envelope, "dvs_envelope");
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "dvs_frame_delay: %d\n",

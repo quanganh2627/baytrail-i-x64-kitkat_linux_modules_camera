@@ -115,7 +115,7 @@ sh_css_metrics_start_binary(struct sh_css_binary_metrics *metrics)
 	isp_histogram = &metrics->isp_histogram;
 	sp_histogram = &metrics->sp_histogram;
 	make_histogram(isp_histogram, ISP_PMEM_DEPTH);
-#if !defined(IS_ISP_2500_SKYCAM_SYSTEM)
+#if !defined(IS_ISP_2500_SYSTEM)
 	make_histogram(sp_histogram, SP_PMEM_DEPTH);
 #endif
 	insert_binary_metrics(&sh_css_metrics.binary_metrics, metrics);

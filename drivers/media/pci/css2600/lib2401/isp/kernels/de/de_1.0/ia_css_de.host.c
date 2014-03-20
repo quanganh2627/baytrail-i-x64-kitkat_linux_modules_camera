@@ -23,7 +23,6 @@
 #include "sh_css_defs.h"
 #include "ia_css_debug.h"
 #include "sh_css_frac.h"
-
 #include "ia_css_de.host.h"
 
 const struct ia_css_de_config default_de_config = {
@@ -76,3 +75,8 @@ ia_css_de_debug_dtrace(
 		config->c1_coring_threshold, config->c2_coring_threshold);
 }
 
+void
+ia_css_init_de_state(void/*struct sh_css_isp_de_vmem_state *state*/)
+{
+	//memset(state, 0, sizeof(*state));
+}

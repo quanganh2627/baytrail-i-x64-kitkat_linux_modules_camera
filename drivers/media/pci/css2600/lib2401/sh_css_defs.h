@@ -22,10 +22,28 @@
 #ifndef _SH_CSS_DEFS_H_
 #define _SH_CSS_DEFS_H_
 
+#if !defined(__SP1)
 #include "isp.h"
+#else
+#include "system_local.h"  /* to get IS_ISP_2500_SYSTEM for SP1*/
+#endif
 /*#include "vamem.h"*/ /* Cannot include for VAMEM properties this file is visible on ISP -> pipeline generator */
 
 #include "math_support.h"	/* max(), min, etc etc */
+
+/* Macros for Controlling SP1 enabling and compilation */
+/* CHECK_IF_SH_CSS_DEFS_INCLUDED is to test whether all SP1 dependent files have included
+	sh_css_defs.h file or not */
+#define CHECK_IF_SH_CSS_DEFS_INCLUDED
+
+#if defined(IS_ISP_2500_SYSTEM)
+#define ENABLE_SP1  /* Disabling this Macro excludes SP1 from the system */
+#define SWITCH_GACS_TO_SP1 /* Enabling this macro switches the GACs to SP1 */
+#endif /*defined(IS_ISP_2500_SYSTEM)*/
+
+#if !defined(ENABLE_SP1)
+#undef SWITCH_GACS_TO_SP1
+#endif
 
 /* ID's for refcount */
 #define IA_CSS_REFCOUNT_PARAM_SET_POOL  0xCAFE0001
@@ -195,6 +213,11 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 /* Each line of this table is aligned to the maximum line width. */
 #define SH_CSS_MAX_S3ATBL_WIDTH              SH_CSS_MAX_BQ_GRID_WIDTH
 
+
+#define MAX_DVS_FRAME_DELAY         2
+#define NUM_VIDEO_DELAY_FRAMES	(MAX_DVS_FRAME_DELAY + 1)  /* SN: Should this not always match NUM_REF_FRAMES ?*/
+#define NUM_VIDEO_TNR_FRAMES	2
+
 /* Rules: these implement logic shared between the host code and ISP firmware.
    The ISP firmware needs these rules to be applied at pre-processor time,
    that's why these are macros, not functions. */
@@ -231,9 +254,11 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
  * ********************************************************/
 /* Some binaries put the vertical coefficients in DMEM instead
    of VMEM to save VMEM. */
-#define _SDIS_VER_COEF_TBL_USE_DMEM(mode, enable_sdis, isp_pipe_version) \
+/* ISP dmem is not enough to hold all params, configs and states for video_yuv_ds
+   binary,  so put dis coef to vmem */
+#define _SDIS_VER_COEF_TBL_USE_DMEM(mode, enable_sdis, enable_ds, isp_pipe_version) \
 	(mode == IA_CSS_BINARY_MODE_VIDEO \
-	&& enable_sdis && isp_pipe_version == 1)
+	&& enable_sdis && enable_ds != 2 && isp_pipe_version == 1)
 
 /* For YUV upscaling, the internal size is used for DIS statistics */
 #define _ISP_SDIS_ELEMS_ISP(input, internal, enable_us) \
@@ -369,30 +394,20 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 
 #define __ISP_CHUNK_STRIDE_DDR(c_subsampling, num_chunks) \
 	((c_subsampling) * (num_chunks) * HIVE_ISP_DDR_WORD_BYTES)
-#if 0
-#define __ISP_RGBA_WIDTH(rgba, num_chunks) \
-	((rgba) ? (num_chunks)*4*2*ISP_VEC_NELEMS : 0)
-#else
-#define __ISP_RGBA_WIDTH(rgba, num_chunks) \
-	(0)
-#endif
 #define __ISP_INTERNAL_WIDTH(out_width, \
 			     dvs_env_width, \
 			     left_crop, \
 			     mode, \
 			     c_subsampling, \
 			     num_chunks, \
-			     pipelining, \
-			     rgba) \
-	CEIL_MUL2(CEIL_MUL2(MAX(MAX(__ISP_PADDED_OUTPUT_WIDTH(out_width, \
+			     pipelining) \
+	CEIL_MUL2(CEIL_MUL2(MAX(__ISP_PADDED_OUTPUT_WIDTH(out_width, \
 							    dvs_env_width, \
 							    left_crop), \
 				  __ISP_MIN_INTERNAL_WIDTH(num_chunks, \
 							   pipelining, \
 							   mode) \
 				 ), \
-			      __ISP_RGBA_WIDTH(rgba, num_chunks) \
-			     ), \
 			  __ISP_CHUNK_STRIDE_ISP(mode) \
 			 ), \
 		 __ISP_CHUNK_STRIDE_DDR(c_subsampling, num_chunks) \

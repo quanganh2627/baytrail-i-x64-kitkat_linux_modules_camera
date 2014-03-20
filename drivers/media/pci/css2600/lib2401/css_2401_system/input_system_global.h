@@ -24,6 +24,9 @@
 
 #define IS_INPUT_SYSTEM_VERSION_VERSION_2401
 
+/* CSI reveiver has 3 ports. */
+#define		N_CSI_PORTS (3)
+
 #include "isys_dma.h"		/*	isys2401_dma_channel,
 				 *	isys2401_dma_cfg_t
 				 */
@@ -97,6 +100,11 @@ struct input_system_input_port_s {
 	} csi_rx;
 
 	struct {
+		csi_mipi_packet_type_t		packet_type;
+		csi_rx_backend_lut_entry_t	backend_lut_entry;
+	} metadata;
+
+	struct {
 		pixelgen_ID_t			pixelgen_id;
 	} pixelgen;
 };
@@ -106,6 +114,7 @@ struct input_system_input_port_cfg_s {
 	struct {
 		csi_rx_frontend_cfg_t	frontend_cfg;
 		csi_rx_backend_cfg_t	backend_cfg;
+		csi_rx_backend_cfg_t	md_backend_cfg;
 	} csi_rx_cfg;
 
 	struct {
@@ -124,7 +133,6 @@ struct input_system_cfg_s {
 
 	struct {
 		int32_t	active_lanes;
-
 		int32_t	fmt_type;
 		int32_t	ch_id;
 	} csi_port_attr;
@@ -138,19 +146,36 @@ struct input_system_cfg_s {
 		int32_t pixels_per_line;
 		int32_t lines_per_frame;
 	} input_port_resolution;
+
+	struct {
+		int32_t left_padding;
+		int32_t max_isp_input_width;
+	} output_port_attr;
+
+	struct {
+		bool    enable;
+		int32_t fmt_type;
+		int32_t bits_per_pixel;
+		int32_t pixels_per_line;
+		int32_t lines_per_frame;
+	} metadata;
 };
 
 typedef struct virtual_input_system_s virtual_input_system_t;
 struct virtual_input_system_s {
+	bool enable_metadata;
 	input_system_input_port_t	input_port;
 	input_system_channel_t		channel;
+	input_system_channel_t		md_channel; /* metadata channel */
 	bool online;
 };
 
 typedef struct virtual_input_system_cfg_s virtual_input_system_cfg_t;
 struct virtual_input_system_cfg_s {
+	bool enable_metadata;
 	input_system_input_port_cfg_t	input_port_cfg;
 	input_system_channel_cfg_t	channel_cfg;
+	input_system_channel_cfg_t	md_channel_cfg;
 };
 
 #define ISP_INPUT_BUF_START_ADDR	0

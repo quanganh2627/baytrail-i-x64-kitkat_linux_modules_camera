@@ -28,6 +28,9 @@
 #define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0
 #define IA_CSS_ISP_VMEM IA_CSS_ISP_VMEM0
 
+/* The driver depends on this, to be removed later. */
+#define IA_CSS_NUM_ISP_MEMORIES IA_CSS_NUM_MEMORIES
+
 /* Explicit member numbering to avoid fish type checker bug */
 enum ia_css_param_class {
 	IA_CSS_PARAM_CLASS_PARAM  = 0,	/* Late binding parameters, like 3A */

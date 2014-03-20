@@ -1,5 +1,5 @@
-/* Release Version: irci_master_20140303_1500 */
-/* Release Version: irci_master_20140303_1500 */
+/* Release Version: irci_master_20140320_1502 */
+/* Release Version: irci_master_20140320_1502 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -40,7 +40,6 @@
 #include "components_types.host.h"                /* Skylake kernel settings structs */
 #endif
 #endif
-
 
 #include "ia_css_frac.h"
 
@@ -156,6 +155,18 @@ struct ia_css_dvs_grid_info {
 	uint32_t num_ver_coefs;	/**< Number of vertical coefficients. */
 };
 
+#define DEFAULT_DVS_GRID_INFO \
+{ \
+	0,				/* enable */ \
+	0,				/* width */ \
+	0,				/* aligned_width */ \
+	0,				/* height */ \
+	0,				/* aligned_height */ \
+	0,				/* bqs_per_grid_cell */ \
+	0,				/* num_hor_coefs */ \
+	0,				/* num_ver_coefs */ \
+}
+
 /** structure that describes the 3A and DIS grids */
 struct ia_css_grid_info {
 	/** \name ISP input size
@@ -172,6 +183,15 @@ struct ia_css_grid_info {
 	enum ia_css_vamem_type vamem_type;
 };
 
+#define DEFAULT_GRID_INFO \
+{ \
+	0,				/* isp_in_width */ \
+	0,				/* isp_in_height */ \
+	DEFAULT_3A_GRID_INFO,		/* s3a_grid */ \
+	DEFAULT_DVS_GRID_INFO,		/* dvs_grid */ \
+	IA_CSS_VAMEM_TYPE_1		/* vamem_type */ \
+}
+
 /** Morphing table, used for geometric distortion and chromatic abberration
  *  correction (GDCAC, also called GDC).
  *  This table describes the imperfections introduced by the lens, the
@@ -179,7 +199,7 @@ struct ia_css_grid_info {
  */
 struct ia_css_morph_table {
 	uint32_t enable; /**< To disable GDC, set this field to false. The
-		          coordinates fields can be set to NULL in this case. */
+			  coordinates fields can be set to NULL in this case. */
 	uint32_t height; /**< Table height */
 	uint32_t width;  /**< Table width */
 	uint16_t *coordinates_x[IA_CSS_MORPH_TABLE_NUM_PLANES];
@@ -230,6 +250,14 @@ struct ia_css_capture_config {
 	uint32_t enable_raw_output;
 };
 
+#define DEFAULT_CAPTURE_CONFIG \
+{ \
+	IA_CSS_CAPTURE_MODE_PRIMARY,	/* mode (capture) */ \
+	false,				/* enable_xnr */ \
+	false				/* enable_raw_output */ \
+}
+
+
 /** ISP filter configuration. This is a collection of configurations
  *  for each of the ISP filters (modules).
  *
@@ -265,7 +293,7 @@ struct ia_css_isp_config {
 							[CTC2, 2only] */
 	struct ia_css_aa_config   *aa_config;	/**< YUV Anti-Aliasing
 							[AA2, 2only]
-						        (not used currently) */
+							(not used currently) */
 	struct ia_css_aa_config   *baa_config;	/**< Bayer Anti-Aliasing
 							[BAA2, 1&2] */
 	struct ia_css_ce_config   *ce_config;	/**< Chroma Enhancement
@@ -321,6 +349,7 @@ struct ia_css_isp_config {
 	struct ia_css_2500_shd_kernel_config     *shd_2500_config;       /**< Skylake: shading config */
 	struct ia_css_2500_dm_kernel_config      *dm_2500_config;        /**< Skylake: demosaic config */
 	struct ia_css_2500_rgbpp_kernel_config   *rgbpp_2500_config;     /**< Skylake: RGBPP config */
+	struct ia_css_2500_dvs_statistics_kernel_config *dvs_stat_2500_config; /**< Skylake: DVS STAT config */
 	struct ia_css_2500_lace_stat_kernel_config *lace_stat_2500_config; /**< Skylake: LACE STAT config */
 	struct ia_css_2500_yuvp1_kernel_config   *yuvp1_2500_config;     /**< Skylake: yuvp1 config */
 	struct ia_css_2500_yuvp2_kernel_config   *yuvp2_2500_config;     /**< Skylake: yuvp2 config */
@@ -336,7 +365,7 @@ struct ia_css_isp_config {
 	struct ia_css_2500_res_mgr_config        *res_mgr_2500_config;
 
 	struct ia_css_frame	*output_frame;	/**< Output frame the config is to be applied to (optional) */
-	uint32_t 			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
+	uint32_t			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
 };
 
 /** DVS 1.0 Coefficients.
@@ -374,7 +403,7 @@ struct ia_css_dvs2_coef_types {
 };
 
 /** DVS 2.0 Coefficients. This structure describes the coefficients that are needed for the dvs statistics.
- *  e.g. hor_coefs.odd_real is the pointer to int16_t[grid.num_hor_coefs] containing the horizontal odd real 
+ *  e.g. hor_coefs.odd_real is the pointer to int16_t[grid.num_hor_coefs] containing the horizontal odd real
  *  coefficients.
  */
 struct ia_css_dvs2_coefficients {
@@ -394,7 +423,7 @@ struct ia_css_dvs2_stat_types {
 };
 
 /** DVS 2.0 Statistics. This structure describes the statistics that are generated using the provided coefficients.
- *  e.g. hor_prod.odd_real is the pointer to int16_t[grid.aligned_height][grid.aligned_width] containing 
+ *  e.g. hor_prod.odd_real is the pointer to int16_t[grid.aligned_height][grid.aligned_width] containing
  *  the horizontal odd real statistics. Valid statistics data area is int16_t[0..grid.height-1][0..grid.width-1]
  */
 struct ia_css_dvs2_statistics {

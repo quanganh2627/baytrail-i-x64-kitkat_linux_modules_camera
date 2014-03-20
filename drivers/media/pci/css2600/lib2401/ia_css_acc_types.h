@@ -186,7 +186,9 @@ struct ia_css_binary_info {
 		uint8_t	high_quality;
 		uint8_t	kerneltest;
 		uint8_t	routing_bnr_to_anr;
-		uint8_t routing_anr_to_de;
+		uint8_t	routing_anr_to_de;
+		uint8_t	routing_rgb_to_yuvp1;
+		uint8_t	routing_yuvp1_to_yuvp2;
 #endif
 		uint8_t	reduced_pipe;
 		uint8_t	vf_veceven;
@@ -349,17 +351,15 @@ struct ia_css_acc_fw;
 /** Structure describing the SP binary of a stand-alone accelerator.
  */
  struct ia_css_acc_sp {
-	void (*init) (struct ia_css_acc_fw *); /**< init for crun */
-	uint32_t      sp_prog_name_offset; /**< program name offset wrt hdr
-						in bytes */
-	uint32_t      sp_blob_offset;	   /**< blob offset wrt hdr in bytes */
-	void	     *entry;		   /**< Address of sp entry point */
-	uint32_t *css_abort;	   /**< SP dmem abort flag */
-	void	     *isp_code;		   /**< SP dmem address holding xmem
-						address of isp code */
-	struct ia_css_fw_info fw;	   /**< SP fw descriptor */
-	const uint8_t *code;	   /**< ISP pointer of allocated
-						SP code */
+	void (*init)(struct ia_css_acc_fw *);	/**< init for crun */
+	uint32_t sp_prog_name_offset;		/**< program name offset wrt hdr in bytes */
+	uint32_t sp_blob_offset;		/**< blob offset wrt hdr in bytes */
+	void	 *entry;			/**< Address of sp entry point */
+	uint32_t *css_abort;			/**< SP dmem abort flag */
+	void	 *isp_code;			/**< SP dmem address holding xmem
+						     address of isp code */
+	struct ia_css_fw_info fw;		/**< SP fw descriptor */
+	const uint8_t *code;			/**< ISP pointer of allocated SP code */
 };
 
 /** Acceleration firmware descriptor.

@@ -109,6 +109,16 @@ struct ia_css_frame_info {
 						      for RAW bayer frames */
 };
 
+#define IA_CSS_BINARY_DEFAULT_FRAME_INFO \
+{ \
+	{0,                      /* width */ \
+	 0},                     /* height */ \
+	0,                       /* padded_width */ \
+	IA_CSS_FRAME_FORMAT_NUM, /* format */ \
+	0,                       /* raw_bit_depth */ \
+	IA_CSS_BAYER_ORDER_NUM   /* raw_bayer_order */ \
+}
+
 /**
  *  Specifies the DVS loop delay in "frame periods"
  */
@@ -165,6 +175,21 @@ struct ia_css_frame {
 	} planes; /**< frame planes, select the right one based on
 		       info.format */
 };
+
+#define DEFAULT_FRAME \
+{ \
+	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* info */ \
+	0,					/* data */ \
+	0,					/* data_bytes */ \
+	SH_CSS_INVALID_QUEUE_ID,		/* dynamic_data_index */ \
+	IA_CSS_BUFFER_TYPE_INVALID,			/* buf_type */ \
+	IA_CSS_FRAME_FLASH_STATE_NONE,		/* flash_state */ \
+	0,					/* exp_id */ \
+	0,					/* isp_config_id */ \
+	false,					/* valid */ \
+	false,					/* contiguous  */ \
+	{ 0 }					/* planes */ \
+}
 
 /** @brief Fill a frame with zeros
  *
