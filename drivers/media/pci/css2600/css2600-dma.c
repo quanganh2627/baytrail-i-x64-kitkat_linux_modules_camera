@@ -328,6 +328,8 @@ struct dma_map_ops css2600_dma_ops = {
 	.map_sg = css2600_dma_map_sg,
 	.unmap_sg = css2600_dma_unmap_sg,
 	.sync_single_for_cpu = css2600_dma_sync_single_for_cpu,
+	.sync_single_for_device = css2600_dma_sync_single_for_cpu,
 	.sync_sg_for_cpu = css2600_dma_sync_sg_for_cpu,
+	.sync_sg_for_device = css2600_dma_sync_sg_for_cpu,
 };
 EXPORT_SYMBOL_GPL(css2600_dma_ops);
