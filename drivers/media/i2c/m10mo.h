@@ -39,6 +39,7 @@
 #define M10MO_I2C_RETRY			5
 #define M10MO_MIPI_FREQ			(963000000/2)
 #define M10MO_INIT_TIMEOUT		500
+#define M10MO_BOOT_TIMEOUT		50
 
 #define M10MO_MIN_EV -3
 #define M10MO_MAX_EV  3
@@ -52,6 +53,15 @@
 #define M10MO_MEMORY_WRITE_16BIT	0x06
 #define M10MO_MEMORY_READ_32BIT		0x07
 #define M10MO_MEMORY_WRITE_32BIT	0x08
+
+struct m10mo_spi {
+	int spi_enabled;
+	struct spi_device *spi_device;
+	int (*write)(struct spi_device *spi, const u8 *addr,
+		     const int len, const int txSize);
+	int (*read)(struct spi_device *spi, u8 *buf, size_t len,
+		    const int rxSize);
+};
 
 struct m10mo_version {
 	int customer;
@@ -105,6 +115,16 @@ int m10mo_writel(struct v4l2_subdev *sd, u8 category, u8 reg, u32 val);
 int m10mo_readb(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_readw(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_readl(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
+
+void m10mo_register_spi_fw_flash_interface(struct m10mo_spi *m10mo_spi_dev);
+
+int m10mo_dump_fw(struct m10mo_device *m10mo_dev);
+int m10mo_get_isp_fw_version(struct m10mo_device *dev);
+int m10mo_fw_checksum(struct m10mo_device *dev, u16 *result);
+int m10mo_program_device(struct m10mo_device *m10mo_dev);
+
+int m10mo_get_spi_state(struct m10mo_device *m10mo_dev);
+int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 
 /* Below contents are based on the M10MO_categoryParameter-a1.xls */
 
@@ -264,9 +284,41 @@ int m10mo_readl(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 #define REG_CAP_START_MAIN	0x01
 
 /* Category F_Flash */
+#define REG_FLASH_ADD           0x00
+#define REG_FLASH_BYTE          0x04
+#define REG_FLASH_ERASE         0x06
+#define REG_FLASH_WRITE         0x07
+#define REG_FLASH_CHECK         0x09
+#define REG_FLASH_SUM           0x0a
+#define REG_CAM_START_ADD       0x0c
+#define REG_CAM_START           0x12
+#define REG_DATA_RAM_ADDR       0x14
+#define REG_DATA_TRANS_SIZE     0x18
+#define REG_PLL_VALUES          0x1c /* 2 dividers, 2 multipliers */
+#define REG_SDRAM_CFG           0x48
+#define REG_RAM_START           0x4a
+#define REG_SIO_MODE            0x4b
+#define REG_FW_READ             0x57
+#define REG_CHECK_SUM_SIZE      0x5c
+
+#define REG_RAM_START_SRAM      0x01
+#define REG_RAM_START_SDRAM     0x02
+
+#define REG_FLASH_WRITE_START_PRG      0x01
+
+#define REG_FLASH_ERASE_SECTOR_ERASE   0x01
+#define REG_FLASH_ERASE_CHIP_ERASE     0x02
+#define REG_FLASH_ERASE_BLOCK64k_ERASE 0x04
+#define REG_FLASH_ERASE_BLOCK32k_ERASE 0x08
+
+#define REG_FW_READ_CMD_READ    0x01
+#define REG_FW_READ_CMD_NONE    0x00
+
+#define REG_SIO_MODE_RISING_LATCH 0x4c
+#define REG_SIO_MODE_FALLING_LATCH 0x44
 
 /* Starts internal ARM core, 1st command to be sent to ISP */
-#define FLASH_CAM_START			0x12
+#define FLASH_CAM_START		REG_CAM_START
 
 /* Internal modes of M10MO */
 #define M10MO_SYSTEM_INIT_MODE		0x0

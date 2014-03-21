@@ -17,6 +17,7 @@
  * 02110-1301, USA.
  *
  */
+
 #include <asm/intel-mid.h>
 #include <asm/irq.h>
 #include <linux/atomisp_platform.h>
@@ -314,8 +315,6 @@ static int m10mo_wait_interrupt(struct v4l2_subdev *sd, u32 timeout)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
-	dev->irq = 0;
-
 	ret = wait_event_interruptible_timeout(dev->irq_waitq,
 					       dev->irq != 0,
 					       msecs_to_jiffies(timeout));
@@ -350,6 +349,7 @@ static int m10mo_detect(struct v4l2_subdev *sd)
 static int __m10mo_fw_start(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
 
 	/* Temporary Fix, Bug in M10MO Firmware */
@@ -361,6 +361,7 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 		return ret;
 	}
 
+	dev->irq = 0;
 	/* Start the Camera firmware */
 	ret = m10mo_write(sd, 1, CATEGORY_FLASHROM, FLASH_CAM_START, 0x01);
 	if (ret < 0) {
@@ -423,16 +424,41 @@ static int power_down(struct v4l2_subdev *sd)
 	return ret;
 }
 
-static int __m10mo_s_power(struct v4l2_subdev *sd, int on)
+static int __m10mo_bootrom_mode_start(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	u32 dummy;
+	int ret;
+
+	ret = m10mo_wait_interrupt(sd, M10MO_BOOT_TIMEOUT);
+	if (ret < 0) {
+		dev_err(&client->dev, "Flash rom mode timeout\n");
+		return ret;
+	}
+
+	/* Dummy read to verify I2C functionality */
+	ret = m10mo_readl(sd, CATEGORY_FLASHROM,  REG_FLASH_ADD, &dummy);
+	if (ret < 0)
+		dev_err(&client->dev, "Dummy I2C access fails\n");
+
+	return ret;
+}
+
+static int __m10mo_s_power(struct v4l2_subdev *sd, int on, bool fw_update_mode)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
 
 	if (on) {
+		dev->irq = 0;
 		ret = power_up(sd);
 		if (!ret) {
 			dev->power = 1;
-			ret =  __m10mo_fw_start(sd);
+			ret = __m10mo_bootrom_mode_start(sd);
+			if (ret)
+				return ret;
+			if (!fw_update_mode)
+				ret = __m10mo_fw_start(sd);
 		}
 	} else {
 		ret = power_down(sd);
@@ -448,7 +474,7 @@ static int m10mo_s_power(struct v4l2_subdev *sd, int on)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 
 	mutex_lock(&dev->input_lock);
-	ret = __m10mo_s_power(sd, on);
+	ret = __m10mo_s_power(sd, on, false);
 	mutex_unlock(&dev->input_lock);
 
 	return ret;
@@ -644,7 +670,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 		return ret;
 	}
 
-	ret = __m10mo_s_power(sd, 1);
+	ret = __m10mo_s_power(sd, 1, true);
 	if (ret) {
 		dev_err(&client->dev, "power-up err.\n");
 		mutex_unlock(&dev->input_lock);
@@ -655,7 +681,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 	if (ret)
 		goto fail_csi_cfg;
 
-	ret = __m10mo_s_power(sd, 0);
+	ret = __m10mo_s_power(sd, 0, true);
 	mutex_unlock(&dev->input_lock);
 	if (ret) {
 		dev_err(&client->dev, "power-down err.\n");
@@ -665,7 +691,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 	return 0;
 
 fail_csi_cfg:
-	__m10mo_s_power(sd, 0);
+	__m10mo_s_power(sd, 0, true);
 	mutex_unlock(&dev->input_lock);
 	dev_err(&client->dev, "External ISP power-gating failed\n");
 	return ret;
@@ -891,22 +917,6 @@ static const struct media_entity_operations m10mo_entity_ops = {
 	.link_setup = NULL,
 };
 
-static int m10mo_remove(struct i2c_client *client)
-{
-	struct v4l2_subdev *sd = i2c_get_clientdata(client);
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
-
-	if (dev->platform_data->platform_deinit)
-		dev->platform_data->platform_deinit();
-
-	media_entity_cleanup(&dev->sd.entity);
-	v4l2_device_unregister_subdev(sd);
-	free_irq(client->irq, sd);
-	kfree(dev);
-
-	return 0;
-}
-
 static int m10mo_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
 	switch (ctrl->id) {
@@ -1012,6 +1022,158 @@ static const struct v4l2_subdev_ops m10mo_ops = {
 	.video	= &m10mo_video_ops,
 };
 
+static int dump_fw(struct m10mo_device *dev)
+{
+	int ret = 0;
+	mutex_lock(&dev->input_lock);
+	if (dev->power == 1) {
+		ret = -EBUSY;
+		goto leave;
+	}
+	__m10mo_s_power(&dev->sd, 1, true);
+	m10mo_dump_fw(dev);
+	__m10mo_s_power(&dev->sd, 0, true);
+leave:
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static int read_fw_version(struct m10mo_device *dev, u16 *result)
+{
+	int ret = 0;
+
+	mutex_lock(&dev->input_lock);
+	if (dev->power == 1) {
+		ret = -EBUSY;
+		goto leave;
+	}
+	__m10mo_s_power(&dev->sd, 1, true);
+	ret = m10mo_fw_checksum(dev, result);
+	__m10mo_s_power(&dev->sd, 0, true);
+leave:
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static int update_fw(struct m10mo_device *dev)
+{
+	int ret = 0;
+
+	mutex_lock(&dev->input_lock);
+	if (dev->power == 1) {
+		ret = -EBUSY;
+		goto leave;
+	}
+	__m10mo_s_power(&dev->sd, 1, true);
+	m10mo_program_device(dev);
+	__m10mo_s_power(&dev->sd, 0, true);
+leave:
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static ssize_t m10mo_flash_rom_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "flash\n");
+}
+
+static ssize_t m10mo_flash_rom_store(struct device *dev,
+                                  struct device_attribute *attr,
+                                  const char *buf, size_t len)
+{
+	struct m10mo_device *m10mo_dev = dev_get_drvdata(dev);
+
+	if (!strncmp(buf, "flash", 5)) {
+		update_fw(m10mo_dev);
+		return len;
+	}
+	return -EINVAL;
+}
+static DEVICE_ATTR(isp_flashfw, S_IRUGO | S_IWUSR, m10mo_flash_rom_show,
+		   m10mo_flash_rom_store);
+
+static ssize_t m10mo_flash_spi_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct m10mo_device *m10mo_dev = dev_get_drvdata(dev);
+	return sprintf(buf, "%d\n", m10mo_get_spi_state(m10mo_dev));
+}
+
+static ssize_t m10mo_flash_spi_store(struct device *dev,
+                                  struct device_attribute *attr,
+                                  const char *buf, size_t len)
+{
+	struct m10mo_device *m10mo_dev = dev_get_drvdata(dev);
+	unsigned long value;
+	int ret;
+
+	if (strict_strtoul(buf, 0, &value))
+		return -EINVAL;
+
+	ret = m10mo_set_spi_state(m10mo_dev, value);
+	if (ret)
+		return ret;
+	return len;
+}
+static DEVICE_ATTR(isp_spi, S_IRUGO | S_IWUSR, m10mo_flash_spi_show,
+		   m10mo_flash_spi_store);
+
+static ssize_t m10mo_flash_checksum_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct m10mo_device *m10_dev = dev_get_drvdata(dev);
+	ssize_t ret;
+	u16 result;
+
+	ret  = read_fw_version(m10_dev, &result);
+	if (ret)
+		return ret;
+
+	return sprintf(buf, "%04x\n", result);
+}
+static DEVICE_ATTR(isp_checksum, S_IRUGO, m10mo_flash_checksum_show, NULL);
+
+static ssize_t m10mo_flash_dump_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct m10mo_device *m10_dev = dev_get_drvdata(dev);
+	dump_fw(m10_dev);
+	return sprintf(buf, "done\n");
+}
+static DEVICE_ATTR(isp_fw_dump, S_IRUGO, m10mo_flash_dump_show, NULL);
+
+static struct attribute *sysfs_attrs_ctrl[] = {
+	&dev_attr_isp_flashfw.attr,
+	&dev_attr_isp_checksum.attr,
+	&dev_attr_isp_fw_dump.attr,
+	&dev_attr_isp_spi.attr,
+	NULL
+};
+
+static struct attribute_group m10mo_attribute_group[] = {
+	{.attrs = sysfs_attrs_ctrl },
+};
+
+static int m10mo_remove(struct i2c_client *client)
+{
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+
+	sysfs_remove_group(&client->dev.kobj,
+			   m10mo_attribute_group);
+
+	if (dev->platform_data->platform_deinit)
+		dev->platform_data->platform_deinit();
+
+	media_entity_cleanup(&dev->sd.entity);
+	v4l2_device_unregister_subdev(sd);
+	free_irq(client->irq, sd);
+	kfree(dev);
+
+	return 0;
+}
+
 static int m10mo_probe(struct i2c_client *client,
 				  const struct i2c_device_id *id)
 {
@@ -1056,9 +1218,20 @@ static int m10mo_probe(struct i2c_client *client,
 
 	ret = media_entity_init(&dev->sd.entity, 1, &dev->pad, 0);
 	if (ret)
-		m10mo_remove(client);
-	return ret;
+		goto out_free_irq;
 
+	ret = sysfs_create_group(&client->dev.kobj,
+				m10mo_attribute_group);
+	if (ret) {
+		dev_err(&client->dev, "%s Failed to create sysfs\n", __func__);
+		goto out_sysfs_fail;
+	}
+	return 0;
+
+out_sysfs_fail:
+	media_entity_cleanup(&dev->sd.entity);
+out_free_irq:
+	free_irq(client->irq, &dev->sd);
 out_free:
 	v4l2_device_unregister_subdev(&dev->sd);
 	kfree(dev);
