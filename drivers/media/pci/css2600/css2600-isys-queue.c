@@ -452,7 +452,6 @@ static int stop_streaming(struct vb2_queue *q)
 	}
 	spin_unlock_irqrestore(&aq->lock, flags);
 
-out:
 	spin_lock_irqsave(&av->isys->lock, flags);
 	av->isys->pipes[av->ip.source] = NULL;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
