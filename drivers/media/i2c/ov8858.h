@@ -1,5 +1,5 @@
 /*
- * Support for Omnivision OV8858 camera sensor.
+ * Support for the Omnivision OV8858 camera sensor.
  *
  * Copyright (c) 2014 Intel Corporation. All Rights Reserved.
  *
@@ -24,7 +24,6 @@
 #include <linux/atomisp_platform.h>
 #include <media/v4l2-ctrls.h>
 
-
 #define I2C_MSG_LENGTH		0x2
 
 /*
@@ -33,18 +32,19 @@
  * */
 #define V4L2_IDENT_OV8858	V4L2_IDENT_UNKNOWN
 
-
-/* Indexes for VCM driver lists */
+/*
+ * Indexes for VCM driver lists
+ * */
 #define OV8858_ID_DEFAULT	0
 #define OV8858_SUNNY		1
 
 /*
  * ov8858 System control registers
- */
-#define OV8858_PLL_PLL10			0x3090 // Soren: Fix
-#define OV8858_PLL_PLL11			0x3091 // Soren: Fix
-#define OV8858_PLL_PLL12			0x3092 // Soren: Fix
-#define OV8858_PLL_PLL13			0x3093 // Soren: Fix
+ * */
+#define OV8858_PLL_PLL10			0x3090 /* ToDo: Fix */
+#define OV8858_PLL_PLL11			0x3091 /* ToDo: Fix */
+#define OV8858_PLL_PLL12			0x3092 /* ToDo: Fix */
+#define OV8858_PLL_PLL13			0x3093 /* ToDo: Fix */
 
 #define OV8858_TIMING_HTS			0x380C
 #define OV8858_TIMING_VTS			0x380E
@@ -69,12 +69,12 @@
 #define OV8858_CHIP_ID				0x8858
 
 #define OV8858_LONG_EXPO			0x3500
-#define OV8858_AGC_ADJ				0x350B // Soren: Fix
+#define OV8858_AGC_ADJ				0x3508 /* OV Long Gain? */
 
-#define OV8858_MWB_RED_GAIN_H			0x3400 // Soren: Fix
-#define OV8858_MWB_GREEN_GAIN_H			0x3402 // Soren: Fix
-#define OV8858_MWB_BLUE_GAIN_H			0x3404 // Soren: Fix
-#define OV8858_MWB_GAIN_MAX			0x0FFF // Soren: ??
+#define OV8858_MWB_RED_GAIN_H			0x5032 /* ToDo: Fixed? */
+#define OV8858_MWB_GREEN_GAIN_H			0x5034 /* ToDo: Fixed? */
+#define OV8858_MWB_BLUE_GAIN_H			0x5036 /* ToDo: Fixed? */
+#define OV8858_MWB_GAIN_MAX			0x0FFF /* ToDo: Fixed? */
 
 #define OV8858_CHIP_ID_HIGH			0x300B
 #define OV8858_CHIP_ID_LOW			0x300C
@@ -90,16 +90,15 @@
 #define OV8858_V_INC_ODD			0x382A
 #define OV8858_V_INC_EVEN			0x382B
 
-/* sensor_mode_data read_mode adaptation */
-#define OV8858_READ_MODE_BINNING_ON		0x0400 // Soren: Check this
-#define OV8858_READ_MODE_BINNING_OFF		0x00 // Soren: Check this
+#define OV8858_READ_MODE_BINNING_ON		0x0400 /* ToDo: Check this */
+#define OV8858_READ_MODE_BINNING_OFF		0x00   /* ToDo: Check this */
 #define OV8858_BIN_FACTOR_MAX			2
 #define OV8858_INTEGRATION_TIME_MARGIN		14
 
-#define OV8858_MAX_VTS_VALUE			0x7FFF // Soren: ??
+#define OV8858_MAX_VTS_VALUE			0x7FFF /* ToDo: ?? */
 #define OV8858_MAX_EXPOSURE_VALUE \
 		(OV8858_MAX_VTS_VALUE - OV8858_INTEGRATION_TIME_MARGIN)
-#define OV8858_MAX_GAIN_VALUE			0xFF // Soren: ??
+#define OV8858_MAX_GAIN_VALUE			0xFF   /* ToDo: ?? */
 
 #define OV8858_MAX_FOCUS_POS			1023
 
@@ -118,7 +117,9 @@ struct ov8858_vcm {
 	int (*t_vcm_timing)(struct v4l2_subdev *sd, s32 value);
 };
 
-/* Defines for register writes and register array processing */
+/*
+ * Defines for register writes and register array processing
+ * */
 #define OV8858_BYTE_MAX				32
 #define OV8858_SHORT_MAX			16
 #define OV8858_TOK_MASK				0xFFF0
@@ -175,7 +176,9 @@ struct ov8858_resolution {
 	const struct ov8858_fps_setting fps_options[MAX_FPS_OPTIONS_SUPPORTED];
 };
 
-/* ov8858 device structure */
+/*
+ * ov8858 device structure
+ * */
 struct ov8858_device {
 	struct v4l2_subdev sd;
 	struct media_pad pad;
@@ -629,522 +632,9 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_TOK_TERM, 0, 0}
 };
 
-#if 0
-	{OV8858_8BIT, 0x0102, 0x01},
-	{OV8858_8BIT, 0x3000, 0x00},
-	{OV8858_8BIT, 0x3001, 0x2a},
-	{OV8858_8BIT, 0x3002, 0x88},
-	{OV8858_8BIT, 0x3003, 0x00},
-	{OV8858_8BIT, 0x3004, 0x00},
-	{OV8858_8BIT, 0x3005, 0x00},
-	{OV8858_8BIT, 0x3006, 0x00},
-	{OV8858_8BIT, 0x3007, 0x00},
-	{OV8858_8BIT, 0x3008, 0x00},
-	{OV8858_8BIT, 0x3009, 0x00},
-	{OV8858_8BIT, 0x3011, 0x41},
-	{OV8858_8BIT, 0x3012, 0x08},
-	{OV8858_8BIT, 0x3013, 0x10},
-	{OV8858_8BIT, 0x3014, 0x00},
-	{OV8858_8BIT, 0x3015, 0x08},
-	{OV8858_8BIT, 0x3016, 0xf0},
-	{OV8858_8BIT, 0x3017, 0xf0},
-	{OV8858_8BIT, 0x3018, 0xf0},
-	{OV8858_8BIT, 0x301b, 0xb4},
-	{OV8858_8BIT, 0x301d, 0x02},
-	{OV8858_8BIT, 0x3021, 0x00},
-	{OV8858_8BIT, 0x3022, 0x00},
-	{OV8858_8BIT, 0x3024, 0x00},
-	{OV8858_8BIT, 0x3026, 0x00},
-	{OV8858_8BIT, 0x3027, 0x00},
-	{OV8858_8BIT, 0x3081, 0x02},
-	{OV8858_8BIT, 0x3083, 0x01},
-	{OV8858_8BIT, 0x3090, 0x01}, /* PLL2 Settings SCLK 192mhZ*/
-	{OV8858_8BIT, 0x3091, 0x14},
-	{OV8858_8BIT, 0x3094, 0x00},
-	{OV8858_8BIT, 0x3092, 0x01},
-	{OV8858_8BIT, 0x3093, 0x00},
-	{OV8858_8BIT, 0x3098, 0x03}, /* PLL3 Settings REF_CLK */
-	{OV8858_8BIT, 0x3099, 0x13},
-	{OV8858_8BIT, 0x309a, 0x00},
-	{OV8858_8BIT, 0x309b, 0x00},
-	{OV8858_8BIT, 0x309c, 0x01},
-	{OV8858_8BIT, 0x30b3, 0x6b}, /* MIPI PLL1 Settings 684.4Mbps */
-	{OV8858_8BIT, 0x30b4, 0x03},
-	{OV8858_8BIT, 0x30b5, 0x04},
-	{OV8858_8BIT, 0x30b6, 0x01},
-	{OV8858_8BIT, 0x3104, 0xa1},
-	{OV8858_8BIT, 0x3106, 0x01},
-	{OV8858_8BIT, 0x3300, 0x00},
-	{OV8858_8BIT, 0x3400, 0x04},
-	{OV8858_8BIT, 0x3401, 0x00},
-	{OV8858_8BIT, 0x3402, 0x04},
-	{OV8858_8BIT, 0x3403, 0x00},
-	{OV8858_8BIT, 0x3404, 0x04},
-	{OV8858_8BIT, 0x3405, 0x00},
-	{OV8858_8BIT, 0x3406, 0x01},
-	{OV8858_8BIT, 0x3500, 0x00},
-	{OV8858_8BIT, 0x3501, 0x30},
-	{OV8858_8BIT, 0x3502, 0x00},
-	{OV8858_8BIT, 0x3503, 0x07},
-	{OV8858_8BIT, 0x3504, 0x00},
-	{OV8858_8BIT, 0x3505, 0x30},
-	{OV8858_8BIT, 0x3506, 0x00},
-	{OV8858_8BIT, 0x3507, 0x10},
-	{OV8858_8BIT, 0x3508, 0x80},
-	{OV8858_8BIT, 0x3509, 0x10},
-	{OV8858_8BIT, 0x350a, 0x00},
-	{OV8858_8BIT, 0x350b, 0x38},
-	{OV8858_8BIT, 0x350c, 0x00},
-	{OV8858_8BIT, 0x350d, 0x00},
-	{OV8858_8BIT, 0x3600, 0x78},
-	/* Next 2 values As Per OV recomm. Only for OV8858 */
-	{OV8858_8BIT, 0x3601, 0x0a},
-	{OV8858_8BIT, 0x3602, 0x9c},
-	{OV8858_8BIT, 0x3604, 0x38},
-	{OV8858_8BIT, 0x3620, 0x64},
-	{OV8858_8BIT, 0x3621, 0xb5},
-	{OV8858_8BIT, 0x3622, 0x03},
-	{OV8858_8BIT, 0x3625, 0x64},
-	{OV8858_8BIT, 0x3630, 0x55},
-	{OV8858_8BIT, 0x3631, 0xd2},
-	{OV8858_8BIT, 0x3632, 0x00},
-	{OV8858_8BIT, 0x3633, 0x34},
-	{OV8858_8BIT, 0x3634, 0x03},
-	{OV8858_8BIT, 0x3660, 0x80},
-	{OV8858_8BIT, 0x3662, 0x10},
-	{OV8858_8BIT, 0x3665, 0x00},
-	{OV8858_8BIT, 0x3666, 0x00},
-	{OV8858_8BIT, 0x3667, 0x00},
-	{OV8858_8BIT, 0x366a, 0x80},
-	{OV8858_8BIT, 0x366c, 0x00},
-	{OV8858_8BIT, 0x366d, 0x00},
-	{OV8858_8BIT, 0x366e, 0x00},
-	{OV8858_8BIT, 0x366f, 0x20},
-	{OV8858_8BIT, 0x3680, 0xe0},
-	{OV8858_8BIT, 0x3681, 0x00},
-	{OV8858_8BIT, 0x3701, 0x14},
-	{OV8858_8BIT, 0x3702, 0xbf},
-	{OV8858_8BIT, 0x3703, 0x8c},
-	{OV8858_8BIT, 0x3704, 0x78},
-	{OV8858_8BIT, 0x3705, 0x02},
-	{OV8858_8BIT, 0x3708, 0xe4},
-	{OV8858_8BIT, 0x3709, 0x03},
-	{OV8858_8BIT, 0x370a, 0x00},
-	{OV8858_8BIT, 0x370b, 0x20},
-	{OV8858_8BIT, 0x370c, 0x0c},
-	{OV8858_8BIT, 0x370d, 0x11},
-	{OV8858_8BIT, 0x370e, 0x00},
-	{OV8858_8BIT, 0x370f, 0x00},
-	{OV8858_8BIT, 0x3710, 0x00},
-	{OV8858_8BIT, 0x371c, 0x01},
-	{OV8858_8BIT, 0x371f, 0x0c},
-	{OV8858_8BIT, 0x3721, 0x00},
-	{OV8858_8BIT, 0x3724, 0x10},
-	{OV8858_8BIT, 0x3726, 0x00},
-	{OV8858_8BIT, 0x372a, 0x01},
-	{OV8858_8BIT, 0x3730, 0x18},
-	{OV8858_8BIT, 0x3738, 0x22},
-	{OV8858_8BIT, 0x3739, 0x08},
-	{OV8858_8BIT, 0x373a, 0x51},
-	{OV8858_8BIT, 0x373b, 0x02},
-	{OV8858_8BIT, 0x373c, 0x20},
-	{OV8858_8BIT, 0x373f, 0x02},
-	{OV8858_8BIT, 0x3740, 0x42},
-	{OV8858_8BIT, 0x3741, 0x02},
-	{OV8858_8BIT, 0x3742, 0x18},
-	{OV8858_8BIT, 0x3743, 0x01},
-	{OV8858_8BIT, 0x3744, 0x02},
-	{OV8858_8BIT, 0x3747, 0x10},
-	{OV8858_8BIT, 0x374c, 0x04},
-	{OV8858_8BIT, 0x3751, 0xf0},
-	{OV8858_8BIT, 0x3752, 0x00},
-	{OV8858_8BIT, 0x3753, 0x00},
-	{OV8858_8BIT, 0x3754, 0xc0},
-	{OV8858_8BIT, 0x3755, 0x00},
-	{OV8858_8BIT, 0x3756, 0x1a},
-	{OV8858_8BIT, 0x3758, 0x00},
-	{OV8858_8BIT, 0x3759, 0x0f},
-	{OV8858_8BIT, 0x375c, 0x04},
-	{OV8858_8BIT, 0x3767, 0x01},
-	{OV8858_8BIT, 0x376b, 0x44},
-	{OV8858_8BIT, 0x3774, 0x10},
-	{OV8858_8BIT, 0x3776, 0x00},
-	{OV8858_8BIT, 0x377f, 0x08},
-	{OV8858_8BIT, 0x3780, 0x22},
-	{OV8858_8BIT, 0x3781, 0x0c},
-	{OV8858_8BIT, 0x3784, 0x2c},
-	{OV8858_8BIT, 0x3785, 0x1e},
-	{OV8858_8BIT, 0x378f, 0xf5},
-	{OV8858_8BIT, 0x3791, 0xb0},
-	{OV8858_8BIT, 0x3795, 0x00},
-	{OV8858_8BIT, 0x3796, 0x64},
-	{OV8858_8BIT, 0x3797, 0x11},
-	{OV8858_8BIT, 0x3798, 0x30},
-	{OV8858_8BIT, 0x3799, 0x41},
-	{OV8858_8BIT, 0x379a, 0x07},
-	{OV8858_8BIT, 0x379b, 0xb0},
-	{OV8858_8BIT, 0x379c, 0x0c},
-	{OV8858_8BIT, 0x37c0, 0x00},
-	{OV8858_8BIT, 0x37c1, 0x00},
-	{OV8858_8BIT, 0x37c2, 0x00},
-	{OV8858_8BIT, 0x37c3, 0x00},
-	{OV8858_8BIT, 0x37c4, 0x00},
-	{OV8858_8BIT, 0x37c5, 0x00},
-	{OV8858_8BIT, 0x37c6, 0xa0},
-	{OV8858_8BIT, 0x37c7, 0x00},
-	{OV8858_8BIT, 0x37c8, 0x00},
-	{OV8858_8BIT, 0x37c9, 0x00},
-	{OV8858_8BIT, 0x37ca, 0x00},
-	{OV8858_8BIT, 0x37cb, 0x00},
-	{OV8858_8BIT, 0x37cc, 0x00},
-	{OV8858_8BIT, 0x37cd, 0x00},
-	{OV8858_8BIT, 0x37ce, 0x01},
-	{OV8858_8BIT, 0x37cf, 0x00},
-	{OV8858_8BIT, 0x37d1, 0x01},
-	{OV8858_8BIT, 0x37de, 0x00},
-	{OV8858_8BIT, 0x37df, 0x00},
-	{OV8858_8BIT, 0x3820, 0x10},
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_8BIT, 0x3823, 0x00},
-	{OV8858_8BIT, 0x3824, 0x00},
-	{OV8858_8BIT, 0x3825, 0x00},
-	{OV8858_8BIT, 0x3826, 0x00},
-	{OV8858_8BIT, 0x3827, 0x00},
-	{OV8858_8BIT, 0x382a, 0x04},
-	{OV8858_8BIT, 0x3a04, 0x09},
-	{OV8858_8BIT, 0x3a05, 0xa9},
-	{OV8858_8BIT, 0x3a06, 0x00},
-	{OV8858_8BIT, 0x3a07, 0xf8},
-	{OV8858_8BIT, 0x3a18, 0x00},
-	{OV8858_8BIT, 0x3a19, 0x00},
-	{OV8858_8BIT, 0x3b00, 0x00},
-	{OV8858_8BIT, 0x3b01, 0x00},
-	{OV8858_8BIT, 0x3b02, 0x00},
-	{OV8858_8BIT, 0x3b03, 0x00},
-	{OV8858_8BIT, 0x3b04, 0x00},
-	{OV8858_8BIT, 0x3b05, 0x00},
-	{OV8858_8BIT, 0x3d00, 0x00},
-	{OV8858_8BIT, 0x3d01, 0x00},
-	{OV8858_8BIT, 0x3d02, 0x00},
-	{OV8858_8BIT, 0x3d03, 0x00},
-	{OV8858_8BIT, 0x3d04, 0x00},
-	{OV8858_8BIT, 0x3d05, 0x00},
-	{OV8858_8BIT, 0x3d06, 0x00},
-	{OV8858_8BIT, 0x3d07, 0x00},
-	{OV8858_8BIT, 0x3d08, 0x00},
-	{OV8858_8BIT, 0x3d09, 0x00},
-	{OV8858_8BIT, 0x3d0a, 0x00},
-	{OV8858_8BIT, 0x3d0b, 0x00},
-	{OV8858_8BIT, 0x3d0c, 0x00},
-	{OV8858_8BIT, 0x3d0d, 0x00},
-	{OV8858_8BIT, 0x3d0e, 0x00},
-	{OV8858_8BIT, 0x3d0f, 0x00},
-	{OV8858_8BIT, 0x3d80, 0x00},
-	{OV8858_8BIT, 0x3d81, 0x00},
-	{OV8858_8BIT, 0x3d84, 0x00},
-	{OV8858_8BIT, 0x3e07, 0x20},
-	{OV8858_8BIT, 0x4000, 0x18},
-	{OV8858_8BIT, 0x4001, 0x04},
-	{OV8858_8BIT, 0x4002, 0x45},
-	{OV8858_8BIT, 0x4004, 0x02},
-	{OV8858_8BIT, 0x4005, 0x18},
-	{OV8858_8BIT, 0x4006, 0x16},
-	{OV8858_8BIT, 0x4008, 0x20},
-	{OV8858_8BIT, 0x4009, 0x10},
-	{OV8858_8BIT, 0x400c, 0x00},
-	{OV8858_8BIT, 0x400d, 0x00},
-	{OV8858_8BIT, 0x4058, 0x00},
-	{OV8858_8BIT, 0x4101, 0x12},
-	{OV8858_8BIT, 0x4104, 0x5b},
-	{OV8858_8BIT, 0x4303, 0x00},
-	{OV8858_8BIT, 0x4304, 0x08},
-	{OV8858_8BIT, 0x4307, 0x30},
-	{OV8858_8BIT, 0x4315, 0x00},
-	{OV8858_8BIT, 0x4511, 0x05},
-	{OV8858_8BIT, 0x4512, 0x01}, /* Binning option = Average */
-	{OV8858_8BIT, 0x4750, 0x00},
-	{OV8858_8BIT, 0x4751, 0x00},
-	{OV8858_8BIT, 0x4752, 0x00},
-	{OV8858_8BIT, 0x4753, 0x00},
-	{OV8858_8BIT, 0x4805, 0x01},
-	{OV8858_8BIT, 0x4806, 0x00},
-	{OV8858_8BIT, 0x481f, 0x36},
-	{OV8858_8BIT, 0x4831, 0x6c},
-	{OV8858_8BIT, 0x4837, 0x0c}, /* MIPI global timing */
-	{OV8858_8BIT, 0x4a00, 0xaa},
-	{OV8858_8BIT, 0x4a03, 0x01},
-	{OV8858_8BIT, 0x4a05, 0x08},
-	{OV8858_8BIT, 0x4a0a, 0x88},
-	{OV8858_8BIT, 0x5000, 0x06},
-	{OV8858_8BIT, 0x5001, 0x01},
-	{OV8858_8BIT, 0x5002, 0x80},
-	{OV8858_8BIT, 0x5003, 0x20},
-	{OV8858_8BIT, 0x5013, 0x00},
-	{OV8858_8BIT, 0x5046, 0x4a},
-	{OV8858_8BIT, 0x5780, 0x1c},
-	{OV8858_8BIT, 0x5786, 0x20},
-	{OV8858_8BIT, 0x5787, 0x10},
-	{OV8858_8BIT, 0x5788, 0x18},
-	{OV8858_8BIT, 0x578a, 0x04},
-	{OV8858_8BIT, 0x578b, 0x02},
-	{OV8858_8BIT, 0x578c, 0x02},
-	{OV8858_8BIT, 0x578e, 0x06},
-	{OV8858_8BIT, 0x578f, 0x02},
-	{OV8858_8BIT, 0x5790, 0x02},
-	{OV8858_8BIT, 0x5791, 0xff},
-	{OV8858_8BIT, 0x5a08, 0x02},
-	{OV8858_8BIT, 0x5e00, 0x00},
-	{OV8858_8BIT, 0x5e10, 0x0c},
-#endif
-
 /*****************************STILL********************************/
 
-#if 0
-static const struct ov8858_reg ov8858_cont_cap_720P[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x0c},
-	{OV8858_8BIT, 0x3802, 0x01},
-	{OV8858_8BIT, 0x3803, 0x40},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xe3},
-	{OV8858_8BIT, 0x3806, 0x08},
-	{OV8858_8BIT, 0x3807, 0x75},
-	{OV8858_8BIT, 0x3808, 0x05}, /* Output size 1296x736 */
-	{OV8858_8BIT, 0x3809, 0x10},
-	{OV8858_8BIT, 0x380a, 0x02},
-	{OV8858_8BIT, 0x380b, 0xe0},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11}, /* Binning on */
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_1080P_STILL[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x0c},
-	{OV8858_8BIT, 0x3802, 0x01},
-	{OV8858_8BIT, 0x3803, 0x40},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xe3},
-	{OV8858_8BIT, 0x3806, 0x08},
-	{OV8858_8BIT, 0x3807, 0x75},
-	{OV8858_8BIT, 0x3808, 0x07}, /* Output size 1936x1104 */
-	{OV8858_8BIT, 0x3809, 0x90},
-	{OV8858_8BIT, 0x380a, 0x04},
-	{OV8858_8BIT, 0x380b, 0x50},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x11},
-	{OV8858_8BIT, 0x3815, 0x11},
-	{OV8858_8BIT, 0x3820, 0x10}, /* Binning off */
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_cont_cap_qvga[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x04},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x04},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xdb},
-	{OV8858_8BIT, 0x3806, 0x09},
-	{OV8858_8BIT, 0x3807, 0xab},
-	{OV8858_8BIT, 0x3808, 0x01}, /* O/p 336x256 Bin+skip+scale */
-	{OV8858_8BIT, 0x3809, 0x50},
-	{OV8858_8BIT, 0x380a, 0x01},
-	{OV8858_8BIT, 0x380b, 0x00},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x71},
-	{OV8858_8BIT, 0x3815, 0x71},
-	{OV8858_8BIT, 0x3820, 0x11}, /* Binning+skipping on */
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_VGA_STILL[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x04},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x04},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xdb},
-	{OV8858_8BIT, 0x3806, 0x09},
-	{OV8858_8BIT, 0x3807, 0xab},
-	{OV8858_8BIT, 0x3808, 0x02}, /* Ouput Size 656x496 */
-	{OV8858_8BIT, 0x3809, 0x90},
-	{OV8858_8BIT, 0x380a, 0x01},
-	{OV8858_8BIT, 0x380b, 0xf0},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11}, /* Binning on */
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_1M_STILL[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x04},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x04},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xdb},
-	{OV8858_8BIT, 0x3806, 0x09},
-	{OV8858_8BIT, 0x3807, 0xab},
-	{OV8858_8BIT, 0x3808, 0x04}, /* Ouput Size 1040x784 1229x922 */
-	{OV8858_8BIT, 0x3809, 0x10},
-	{OV8858_8BIT, 0x380a, 0x03},
-	{OV8858_8BIT, 0x380b, 0x10},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x11},
-	{OV8858_8BIT, 0x3815, 0x11},
-	{OV8858_8BIT, 0x3820, 0x10}, /* Binning off */
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_2M_STILL[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x04},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x04},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xdb},
-	{OV8858_8BIT, 0x3806, 0x09},
-	{OV8858_8BIT, 0x3807, 0xab},
-	{OV8858_8BIT, 0x3808, 0x06}, /* Ouput Size 1640x1232 */
-	{OV8858_8BIT, 0x3809, 0x68},
-	{OV8858_8BIT, 0x380a, 0x04},
-	{OV8858_8BIT, 0x380b, 0xd0},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x11},
-	{OV8858_8BIT, 0x3815, 0x11},
-	{OV8858_8BIT, 0x3820, 0x10}, /* Binning off */
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_3M_STILL[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x04},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x04},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xdb},
-	{OV8858_8BIT, 0x3806, 0x09},
-	{OV8858_8BIT, 0x3807, 0xab},
-	{OV8858_8BIT, 0x3808, 0x08}, /* Ouput Size 2064x1552 */
-	{OV8858_8BIT, 0x3809, 0x10},
-	{OV8858_8BIT, 0x380a, 0x06},
-	{OV8858_8BIT, 0x380b, 0x10},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x11},
-	{OV8858_8BIT, 0x3815, 0x11},
-	{OV8858_8BIT, 0x3820, 0x10}, /* Binning off */
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_5M_STILL[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x04},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x04},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xdb},
-	{OV8858_8BIT, 0x3806, 0x09},
-	{OV8858_8BIT, 0x3807, 0xab},
-	{OV8858_8BIT, 0x3808, 0x0a}, /* Ouput Size 2576x1936 */
-	{OV8858_8BIT, 0x3809, 0x10},
-	{OV8858_8BIT, 0x380a, 0x07},
-	{OV8858_8BIT, 0x380b, 0x90},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x11},
-	{OV8858_8BIT, 0x3815, 0x11},
-	{OV8858_8BIT, 0x3820, 0x10}, /* Binning off */
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_6M_STILL[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x04},
-	{OV8858_8BIT, 0x3802, 0x01},
-	{OV8858_8BIT, 0x3803, 0x36},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xdb},
-	{OV8858_8BIT, 0x3806, 0x08},
-	{OV8858_8BIT, 0x3807, 0x79}, /* Read Array: 3291 x 2169 */
-	{OV8858_8BIT, 0x3808, 0x0c}, /* Output size 3280x1852 */
-	{OV8858_8BIT, 0x3809, 0xd0},
-	{OV8858_8BIT, 0x380a, 0x07},
-	{OV8858_8BIT, 0x380b, 0x3c},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x11},
-	{OV8858_8BIT, 0x3815, 0x11},
-	{OV8858_8BIT, 0x3820, 0x10}, /* Binning off */
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_8M_STILL[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x04},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x04},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xdb},
-	{OV8858_8BIT, 0x3806, 0x09},
-	{OV8858_8BIT, 0x3807, 0xab},
-	{OV8858_8BIT, 0x3808, 0x0c}, /* Output size 3280x2464 */
-	{OV8858_8BIT, 0x3809, 0xd0},
-	{OV8858_8BIT, 0x380a, 0x09},
-	{OV8858_8BIT, 0x380b, 0xa0},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x11},
-	{OV8858_8BIT, 0x3815, 0x11},
-	{OV8858_8BIT, 0x3820, 0x10}, /* Binning off */
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_TOK_TERM, 0, 0}
-};
-#endif
-
-#define OMNIVISION_SETTINGS 1
-
 static const struct ov8858_reg ov8858_8M[] = {
-#if OMNIVISION_SETTINGS
 	{OV8858_8BIT, 0x3800, 0x00}, /* h_crop_start high */
 	{OV8858_8BIT, 0x3801, 0x0C}, /* h_crop_start low */
 	{OV8858_8BIT, 0x3802, 0x00}, /* v_crop_start high */
@@ -1152,8 +642,8 @@ static const struct ov8858_reg ov8858_8M[] = {
 	{OV8858_8BIT, 0x3804, 0x0C}, /* h_crop_end high */
 	{OV8858_8BIT, 0x3805, 0xD3}, /* h_crop_end low */
 	{OV8858_8BIT, 0x3806, 0x09}, /* v_crop_end high */
-	{OV8858_8BIT, 0x3807, 0xA3}, /* v_crop_end low */	
-	{OV8858_8BIT, 0x3808, 0x0C}, /* h_output_size high */
+	{OV8858_8BIT, 0x3807, 0xA3}, /* v_crop_end low */
+	{OV8858_8BIT, 0x3808, 0x0C}, /* h_output_size high 3280 x 2448 */
 	{OV8858_8BIT, 0x3809, 0xD0}, /* h_output_size low */
 	{OV8858_8BIT, 0x380A, 0x09}, /* v_output_size high */
 	{OV8858_8BIT, 0x380B, 0xa0}, /* v_output_size low */
@@ -1161,39 +651,10 @@ static const struct ov8858_reg ov8858_8M[] = {
 	{OV8858_8BIT, 0x3811, 0x04}, /* h_win offset low */
 	{OV8858_8BIT, 0x3812, 0x00}, /* v_win offset high */
 	{OV8858_8BIT, 0x3813, 0x02}, /* v_win offset low */
-#else // Settings from OV8830
-	{OV8858_8BIT, 0x3800, 0x00}, /* h_crop_start high */
-	{OV8858_8BIT, 0x3801, 0x04}, /* h_crop_start low */
-	{OV8858_8BIT, 0x3802, 0x00}, /* v_crop_start high */
-	{OV8858_8BIT, 0x3803, 0x04}, /* v_crop_start low */
-	{OV8858_8BIT, 0x3804, 0x0C}, /* h_crop_end high */
-	{OV8858_8BIT, 0x3805, 0xDB}, /* h_crop_end low */
-	{OV8858_8BIT, 0x3806, 0x09}, /* v_crop_end high */
-	{OV8858_8BIT, 0x3807, 0xAB}, /* v_crop_end low */
-	{OV8858_8BIT, 0x3808, 0x0C}, /* h_output_size high */
-	{OV8858_8BIT, 0x3809, 0xD0}, /* h_output_size low */
-	{OV8858_8BIT, 0x380A, 0x09}, /* v_output_size high */
-	{OV8858_8BIT, 0x380B, 0xA0}, /* v_output_size low */
-	{OV8858_8BIT, 0x380C, 0x07}, /* horizontal timing size high */
-	{OV8858_8BIT, 0x380D, 0x4C}, /* horizontal timing size low */
-	{OV8858_8BIT, 0x380E, 0x0A}, /* vertical timing size high */
-	{OV8858_8BIT, 0x380F, 0x74}, /* vertical timing size low */
-	{OV8858_8BIT, 0x3810, 0x00}, /* h_win offset high */
-	{OV8858_8BIT, 0x3811, 0x04}, /* h_win offset low */
-	{OV8858_8BIT, 0x3812, 0x00}, /* v_win offset high */
-	{OV8858_8BIT, 0x3813, 0x04}, /* v_win offset low */
-	{OV8858_8BIT, 0x3814, 0x01}, /* h_odd_inc */
-	{OV8858_8BIT, 0x3815, 0x01}, /* h_even_inc */
-	{OV8858_8BIT, 0x3820, 0x00}, /* format1 */
-	{OV8858_8BIT, 0x3821, 0x46}, /* format2 */
-	{OV8858_8BIT, 0x382A, 0x01}, /* v_odd_inc */
-	{OV8858_8BIT, 0x382B, 0x01}, /* v_even_inc */
-#endif
 	{OV8858_TOK_TERM, 0, 0}
 };
 
 static const struct ov8858_reg ov8858_6M[] = {
-#if OMNIVISION_SETTINGS
 	{OV8858_8BIT, 0x3800, 0x00}, /* h_crop_start high */
 	{OV8858_8BIT, 0x3801, 0x0C}, /* h_crop_start low */
 	{OV8858_8BIT, 0x3802, 0x01}, /* v_crop_start high */
@@ -1202,7 +663,7 @@ static const struct ov8858_reg ov8858_6M[] = {
 	{OV8858_8BIT, 0x3805, 0xD3}, /* h_crop_end low */
 	{OV8858_8BIT, 0x3806, 0x08}, /* v_crop_end high */
 	{OV8858_8BIT, 0x3807, 0x71}, /* v_crop_end low */
-	{OV8858_8BIT, 0x3808, 0x0C}, /* h_output_size high */
+	{OV8858_8BIT, 0x3808, 0x0C}, /* h_output_size high 3280 x 1852 */
 	{OV8858_8BIT, 0x3809, 0xD0}, /* h_output_size low */
 	{OV8858_8BIT, 0x380A, 0x07}, /* v_output_size high */
 	{OV8858_8BIT, 0x380B, 0x3C}, /* v_output_size low */
@@ -1210,479 +671,10 @@ static const struct ov8858_reg ov8858_6M[] = {
 	{OV8858_8BIT, 0x3811, 0x04}, /* h_win offset low */
 	{OV8858_8BIT, 0x3812, 0x00}, /* v_win offset high */
 	{OV8858_8BIT, 0x3813, 0x02}, /* v_win offset low */
-#else // Settings from OV8830
-	{OV8858_8BIT, 0x3800, 0x00}, /* h_crop_start high */
-	{OV8858_8BIT, 0x3801, 0x04}, /* h_crop_start low */
-	{OV8858_8BIT, 0x3802, 0x01}, /* v_crop_start high */
-	{OV8858_8BIT, 0x3803, 0x36}, /* v_crop_start low */
-	{OV8858_8BIT, 0x3804, 0x0C}, /* h_crop_end high */
-	{OV8858_8BIT, 0x3805, 0xDB}, /* h_crop_end low */
-	{OV8858_8BIT, 0x3806, 0x08}, /* v_crop_end high */
-	{OV8858_8BIT, 0x3807, 0x79}, /* v_crop_end low */
-	{OV8858_8BIT, 0x3808, 0x0C}, /* h_output_size high */
-	{OV8858_8BIT, 0x3809, 0xD0}, /* h_output_size low */
-	{OV8858_8BIT, 0x380A, 0x07}, /* v_output_size high */
-	{OV8858_8BIT, 0x380B, 0x3C}, /* v_output_size low */
-	{OV8858_8BIT, 0x380C, 0x07}, /* horizontal timing size high */
-	{OV8858_8BIT, 0x380D, 0x4C}, /* horizontal timing size low */
-	{OV8858_8BIT, 0x380E, 0x0A}, /* vertical timing size high */
-	{OV8858_8BIT, 0x380F, 0x74}, /* vertical timing size low */
-	{OV8858_8BIT, 0x3810, 0x00}, /* h_win offset high */
-	{OV8858_8BIT, 0x3811, 0x04}, /* h_win offset low */
-	{OV8858_8BIT, 0x3812, 0x00}, /* v_win offset high */
-	{OV8858_8BIT, 0x3813, 0x04}, /* v_win offset low */
-	{OV8858_8BIT, 0x3814, 0x01}, /* h_odd_inc */
-	{OV8858_8BIT, 0x3815, 0x01}, /* h_even_inc */
-	{OV8858_8BIT, 0x3820, 0x00}, /* format1 */
-	{OV8858_8BIT, 0x3821, 0x46}, /* format2 */
-	{OV8858_8BIT, 0x382A, 0x01}, /* v_odd_inc */
-	{OV8858_8BIT, 0x382B, 0x01}, /* v_even_inc */
-#endif
 	{OV8858_TOK_TERM, 0, 0}
 };
-
-#if 0
-/*****************************OV8858 PREVIEW********************************/
-
-static struct ov8858_reg const ov8858_PREVIEW_848x616[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x08},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x08},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xd7},
-	{OV8858_8BIT, 0x3806, 0x09}, /* 8, 3287, 8, 2471 Binning*/
-	{OV8858_8BIT, 0x3807, 0xa7}, /* Actual Size 3280x2464 */
-	{OV8858_8BIT, 0x3808, 0x03},
-	{OV8858_8BIT, 0x3809, 0x50},
-	{OV8858_8BIT, 0x380a, 0x02},
-	{OV8858_8BIT, 0x380b, 0x68}, /* O/p 848x616 Binning+Scaling */
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11}, /* Vertical Binning 0n */
-	{OV8858_8BIT, 0x3821, 0x0f}, /* Horizontal Binning 0n */
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static struct ov8858_reg const ov8858_PREVIEW_WIDE_PREVIEW[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x0c},
-	{OV8858_8BIT, 0x3802, 0x01},
-	{OV8858_8BIT, 0x3803, 0x40},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xd3},
-	{OV8858_8BIT, 0x3806, 0x08},
-	{OV8858_8BIT, 0x3807, 0x73}, /* 3268x1840 */
-	{OV8858_8BIT, 0x3808, 0x05},
-	{OV8858_8BIT, 0x3809, 0x00},
-	{OV8858_8BIT, 0x380a, 0x02},
-	{OV8858_8BIT, 0x380b, 0xd0}, /* 1280X720*/
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11}, /* Binning on */
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static struct ov8858_reg const ov8858_PREVIEW_1632x1224[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x08},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x08},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xd7},
-	{OV8858_8BIT, 0x3806, 0x09},
-	{OV8858_8BIT, 0x3807, 0xa7}, /* Actual Size 3280x2464 */
-	{OV8858_8BIT, 0x3808, 0x06},
-	{OV8858_8BIT, 0x3809, 0x60},
-	{OV8858_8BIT, 0x380a, 0x04},
-	{OV8858_8BIT, 0x380b, 0xc8}, /* Output size: 1632x1224 */
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11}, /* Vertical Binning 0n */
-	{OV8858_8BIT, 0x3821, 0x0f}, /* Horizontal Binning 0n */
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-/***************** OV8858 VIDEO ***************************************/
-
-static const struct ov8858_reg ov8858_QCIF_strong_dvs[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x08},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x08},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xd7},
-	{OV8858_8BIT, 0x3806, 0x09}, /* 8, 3287, 8, 2471 Binning on*/
-	{OV8858_8BIT, 0x3807, 0xa7}, /* Actual Size 3280x2464 */
-	{OV8858_8BIT, 0x3808, 0x00}, /* O/p Binning + Scaling 216x176 */
-	{OV8858_8BIT, 0x3809, 0xd8},
-	{OV8858_8BIT, 0x380a, 0x00},
-	{OV8858_8BIT, 0x380b, 0xb0},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11},
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_QVGA_strong_dvs[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x08},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x08},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xd7},
-	{OV8858_8BIT, 0x3806, 0x09}, /* 8, 3287, 8, 2471 Binning on*/
-	{OV8858_8BIT, 0x3807, 0xa7}, /* Actual Size 3280x2464 */
-	{OV8858_8BIT, 0x3808, 0x01}, /* 408x308 Binning+Scaling */
-	{OV8858_8BIT, 0x3809, 0x98},
-	{OV8858_8BIT, 0x380a, 0x01},
-	{OV8858_8BIT, 0x380b, 0x34},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11},
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_VGA_strong_dvs[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x08},
-	{OV8858_8BIT, 0x3802, 0x00},
-	{OV8858_8BIT, 0x3803, 0x08},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xd7},
-	{OV8858_8BIT, 0x3806, 0x09}, /* 8, 3287, 8, 2471 Binning on*/
-	{OV8858_8BIT, 0x3807, 0xa7}, /* Actual Size 3280x2464 */
-	{OV8858_8BIT, 0x3808, 0x03}, /* 820x616 Binning + Scaling */
-	{OV8858_8BIT, 0x3809, 0x34},
-	{OV8858_8BIT, 0x380a, 0x02},
-	{OV8858_8BIT, 0x380b, 0x68},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11},
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static struct ov8858_reg const ov8858_480p_strong_dvs[] = {
-	{OV8858_8BIT, 0x3800, 0x01},
-	{OV8858_8BIT, 0x3801, 0x09},
-	{OV8858_8BIT, 0x3802, 0x01},
-	{OV8858_8BIT, 0x3803, 0x40},
-	{OV8858_8BIT, 0x3804, 0x0b},
-	{OV8858_8BIT, 0x3805, 0xd6},
-	{OV8858_8BIT, 0x3806, 0x08},
-	{OV8858_8BIT, 0x3807, 0x73}, /* TODO! 2766 x 1844 */
-	{OV8858_8BIT, 0x3808, 0x03}, /* 936x602 Binning + Scaling */
-	{OV8858_8BIT, 0x3809, 0xa8},
-	{OV8858_8BIT, 0x380a, 0x02},
-	{OV8858_8BIT, 0x380b, 0x5a},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11}, /* Binning on */
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static struct ov8858_reg const ov8858_720p_strong_dvs[] = {
-	{OV8858_8BIT, 0x3800, 0x00},
-	{OV8858_8BIT, 0x3801, 0x0c},
-	{OV8858_8BIT, 0x3802, 0x01},
-	{OV8858_8BIT, 0x3803, 0x40},
-	{OV8858_8BIT, 0x3804, 0x0c},
-	{OV8858_8BIT, 0x3805, 0xd3},
-	{OV8858_8BIT, 0x3806, 0x08},
-	{OV8858_8BIT, 0x3807, 0x73},
-	{OV8858_8BIT, 0x3808, 0x06}, /* O/p 1568*880 Bin+Scale */
-	{OV8858_8BIT, 0x3809, 0x20},
-	{OV8858_8BIT, 0x380a, 0x03},
-	{OV8858_8BIT, 0x380b, 0x70},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x31},
-	{OV8858_8BIT, 0x3815, 0x31},
-	{OV8858_8BIT, 0x3820, 0x11},
-	{OV8858_8BIT, 0x3821, 0x0f},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-static const struct ov8858_reg ov8858_1080p_strong_dvs[] = {
-	{OV8858_8BIT, 0x3800, 0x01},
-	{OV8858_8BIT, 0x3801, 0xd8},
-	{OV8858_8BIT, 0x3802, 0x02},
-	{OV8858_8BIT, 0x3803, 0x36},
-	{OV8858_8BIT, 0x3804, 0x0a},
-	{OV8858_8BIT, 0x3805, 0xff},
-	{OV8858_8BIT, 0x3806, 0x07},
-	{OV8858_8BIT, 0x3807, 0x65}, /* 2344 x 1328 Crop */
-	{OV8858_8BIT, 0x3808, 0x09}, /* 2336x1320 DVS O/p */
-	{OV8858_8BIT, 0x3809, 0x20},
-	{OV8858_8BIT, 0x380a, 0x05},
-	{OV8858_8BIT, 0x380b, 0x28},
-	{OV8858_8BIT, 0x3810, 0x00},
-	{OV8858_8BIT, 0x3811, 0x04},
-	{OV8858_8BIT, 0x3812, 0x00},
-	{OV8858_8BIT, 0x3813, 0x04},
-	{OV8858_8BIT, 0x3814, 0x11},
-	{OV8858_8BIT, 0x3815, 0x11},
-	{OV8858_8BIT, 0x3820, 0x10},
-	{OV8858_8BIT, 0x3821, 0x0e},
-	{OV8858_TOK_TERM, 0, 0}
-};
-
-#endif
 
 static struct ov8858_resolution ov8858_res_preview[] = {
-#if 0
-	{
-		 .desc = "OV8858_PREVIEW_848x616",
-		 .width = 848,
-		 .height = 616,
-		 .used = 0,
-		 .regs = ov8858_PREVIEW_848x616,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options = {
-			{
-				.fps = 30,
-				.pixels_per_line = 3608,
-				.lines_per_frame = 2773,
-			},
-			{
-			}
-		}
-	},
-	{
-		 .desc = "ov8858_wide_preview",
-		 .width = 1280,
-		 .height = 720,
-		 .used = 0,
-		 .regs = ov8858_PREVIEW_WIDE_PREVIEW,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options = {
-			{
-				.fps = 30,
-				.pixels_per_line = 3608,
-				.lines_per_frame = 2773,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "ov8858_cont_cap_qvga",
-		 .width = 336,
-		 .height = 256,
-		 .used = 0,
-		 .regs = ov8858_cont_cap_qvga,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options = {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "ov8858_cont_cap_vga",
-		 .width = 656,
-		 .height = 496,
-		 .used = 0,
-		 .regs = ov8858_VGA_STILL,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		}
-	},
-	{
-		 .desc = "OV8858_PREVIEW1600x1200",
-		 .width = 1632,
-		 .height = 1224,
-		 .used = 0,
-		 .regs = ov8858_PREVIEW_1632x1224,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options = {
-			{
-				.fps = 30,
-				.pixels_per_line = 3608,
-				.lines_per_frame = 2773,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "ov8858_cont_cap_720P",
-		 .width = 1296,
-		 .height = 736,
-		 .used = 0,
-		 .regs = ov8858_cont_cap_720P,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "ov8858_cont_cap_1M",
-		 .width = 1040,
-		 .height = 784,
-		 .used = 0,
-		 .regs = ov8858_1M_STILL,
-		 .bin_factor_x = 0,
-		 .bin_factor_y = 0,
-		 .skip_frames = 0,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "ov8858_cont_cap_1080P",
-		 .width = 1936,
-		 .height = 1104,
-		 .used = 0,
-		 .regs = ov8858_1080P,
-		 .bin_factor_x = 0,
-		 .bin_factor_y = 0,
-		 .skip_frames = 0,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		.desc = "ov8858_cont_cap_3M",
-		.width = 2064,
-		.height = 1552,
-		.used = 0,
-		.regs = ov8858_3M_STILL,
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.skip_frames = 0,
-		.fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		.desc = "ov8858_cont_cap_5M",
-		.width = 2576,
-		.height = 1936,
-		.used = 0,
-		.regs = ov8858_5M_STILL,
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.skip_frames = 0,
-		.fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-/*	
-	{
-		 .desc = "ov8858_cont_cap_6M",
-		 .width = 3280,
-		 .height = 1852,
-		 .used = 0,
-		 .regs = ov8858_6M,
-		 .bin_factor_x = 0,
-		 .bin_factor_y = 0,
-		 .skip_frames = 0,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	*/
-#endif
 	{
 		.desc = "ov8858_6M_PREVIEW",
 		.width = 3280,
@@ -1724,122 +716,6 @@ static struct ov8858_resolution ov8858_res_preview[] = {
 };
 
 static struct ov8858_resolution ov8858_res_still[] = {
-#if 0
-	{
-		 .desc = "STILL_VGA",
-		 .width = 656,
-		 .height = 496,
-		 .used = 0,
-		 .regs = ov8858_VGA_STILL,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 1,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "STILL_1080P",
-		 .width = 1936,
-		 .height = 1104,
-		 .used = 0,
-		 .regs = ov8858_1080P,
-		 .bin_factor_x = 0,
-		 .bin_factor_y = 0,
-		 .skip_frames = 1,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "STILL_1M",
-		 .width = 1040,
-		 .height = 784,
-		 .used = 0,
-		 .regs = ov8858_1M_STILL,
-		 .bin_factor_x = 0,
-		 .bin_factor_y = 0,
-		 .skip_frames = 1,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "STILL_2M",
-		 .width = 1640,
-		 .height = 1232,
-		 .used = 0,
-		 .regs = ov8858_2M_STILL,
-		 .bin_factor_x = 0,
-		 .bin_factor_y = 0,
-		 .skip_frames = 1,
-		 .fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		.desc = "STILL_3M",
-		.width = 2064,
-		.height = 1552,
-		.used = 0,
-		.regs = ov8858_3M_STILL,
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.skip_frames = 1,
-		.fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-	{
-		.desc = "STILL_5M",
-		.width = 2576,
-		.height = 1936,
-		.used = 0,
-		.regs = ov8858_5M_STILL,
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.skip_frames = 1,
-		.fps_options =  {
-			{
-				.fps = 15,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2724,
-			},
-			{
-			}
-		},
-	},
-#endif
 	{
 		 .desc = "ov8858_6M_STILL",
 		 .width = 3280,
@@ -1881,121 +757,25 @@ static struct ov8858_resolution ov8858_res_still[] = {
 };
 
 static struct ov8858_resolution ov8858_res_video[] = {
-#if 0
 	{
-		 .desc = "QCIF_strong_dvs",
-		 .width = 216,
-		 .height = 176,
+		 .desc = "ov8858_6M_STILL",
+		 .width = 3280,
+		 .height = 1852,
 		 .used = 0,
-		 .regs = ov8858_QCIF_strong_dvs,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options = {
-			{
-				 .fps = 30,
-				 .pixels_per_line = 4128,
-				 .lines_per_frame = 1550,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "QVGA_strong_dvs",
-		 .width = 408,
-		 .height = 308,
-		 .used = 0,
-		 .regs = ov8858_QVGA_strong_dvs,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options = {
-			{
-				 .fps = 30,
-				 .pixels_per_line = 4128,
-				 .lines_per_frame = 1550,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "VGA_strong_dvs",
-		 .width = 820,
-		 .height = 616,
-		 .used = 0,
-		 .regs = ov8858_VGA_strong_dvs,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options = {
-			{
-				 .fps = 30,
-				 .pixels_per_line = 4128,
-				 .lines_per_frame = 1550,
-			},
-			{
-			}
-		},
-	},
-	{
-		.desc = "480p_strong_dvs",
-		.width = 936,
-		.height = 602,
-		.regs = ov8858_480p_strong_dvs,
-		.bin_factor_x = 1,
-		.bin_factor_y = 1,
-		.skip_frames = 0,
-		.fps_options = {
-			{
-				 .fps = 30,
-				 .pixels_per_line = 4128,
-				 .lines_per_frame = 1550,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "720p_strong_dvs",
-		 .width = 1568,
-		 .height = 880,
-		 .used = 0,
-		 .regs = ov8858_720p_strong_dvs,
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		 .skip_frames = 0,
-		 .fps_options = {
-			{
-				 .fps = 30,
-				 .pixels_per_line = 4128,
-				 .lines_per_frame = 1550,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "MODE1920x1080",
-		 .width = 2336,
-		 .height = 1320,
-		 .used = 0,
-		 .regs = ov8858_1080p_strong_dvs,
+		 .regs = ov8858_6M,
 		 .bin_factor_x = 0,
 		 .bin_factor_y = 0,
-		 .skip_frames = 0,
-		 .fps_options = {
+		 .skip_frames = 1,
+		 .fps_options =  {
 			{
-				 .fps = 30,
-				 .pixels_per_line = 4100,
-				 .lines_per_frame = 1561,
+				.fps = 30,
+				.pixels_per_line = 4464,
+				.lines_per_frame = 2867,
 			},
 			{
 			}
 		},
 	},
-#endif
 	{
 		.desc = "ov8858_8M_VIDEO",
 		.width = 3280,
