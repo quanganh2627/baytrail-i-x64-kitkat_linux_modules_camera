@@ -79,7 +79,6 @@ struct m10mo_device {
 	int power;
 	u8 fps;
 	u8 mode;
-	bool streaming;
 	int fmt_idx;
 	unsigned int irq;	/* irq issued by ISP */
 	wait_queue_head_t irq_waitq;

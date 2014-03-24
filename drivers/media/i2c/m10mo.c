@@ -394,31 +394,46 @@ static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 	return ret;
 }
 
-static int m10mo_set_streaming(struct v4l2_subdev *sd)
+static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
+	dev_info(&client->dev," Width: %d, height: %d, command: 0x%x\n",
+		dev->curr_res_table[dev->fmt_idx].width,
+		dev->curr_res_table[dev->fmt_idx].height,
+		dev->curr_res_table[dev->fmt_idx].command);
 
 	/*Change to Monitor Size (e,g. VGA) */
-	(void) m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE, 0x17);
-	(void) m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
+			dev->curr_res_table[dev->fmt_idx].command);
+	if (ret)
+		goto out;
+
+	/* TODO: FPS setting must be changed */
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
+	if (ret)
+		goto out;
 
 	/* Enable interrupt signal */
-	(void) m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+	if (ret)
+		goto out;
 
 	/* Go to Monitor mode and output YUV Data */
-	(void) m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
+	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
+	if (ret)
+		goto out;
 
-	dev->streaming = true;
+	ret = m10mo_wait_interrupt(sd, 500);
+	if (ret)
+		goto out;
 
 	return 0;
-}
-
-static int m10mo_set_suspend(struct v4l2_subdev *sd)
-{
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
-
-	dev->streaming = false;
-	return 0;
+out:
+	dev_err(&client->dev, "Streaming failed %d\n", ret);
+	return ret;
 }
 
 static int power_up(struct v4l2_subdev *sd)
@@ -520,17 +535,90 @@ out_free:
 	return ret;
 }
 
+#define LARGEST_ALLOWED_RATIO_MISMATCH 500
+static int distance(struct m10mo_resolution const *res, const u32 w,
+				const u32 h)
+{
+	unsigned int w_ratio = ((res->width << 13) / w);
+	unsigned int h_ratio = ((res->height << 13) / h);
+	int match = abs(((w_ratio << 13) / h_ratio) - ((int)8192));
+
+	if ((w_ratio < 8192) || (h_ratio < 8192)
+		|| (match > LARGEST_ALLOWED_RATIO_MISMATCH))
+		return -1;
+
+	return w_ratio + h_ratio;
+}
+
+static int nearest_resolution_index(struct v4l2_subdev *sd, u32 w, u32 h)
+{
+	const struct m10mo_resolution *tmp_res = NULL;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int min_dist = INT_MAX;
+	int idx = -1;
+	int i, dist;
+
+	for (i = 0; i < dev->entries_curr_table; i++) {
+		tmp_res = &dev->curr_res_table[i];
+		dist = distance(tmp_res, w, h);
+		if (dist == -1)
+			continue;
+		if (dist < min_dist) {
+			min_dist = dist;
+			idx = i;
+		}
+	}
+	return idx;
+}
+
+static int get_resolution_index(struct v4l2_subdev *sd, int w, int h)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int i;
+
+	for (i = 0; i < dev->entries_curr_table; i++) {
+		if (w != dev->curr_res_table[i].width)
+			continue;
+		if (h != dev->curr_res_table[i].height)
+			continue;
+		/* Found it */
+		return i;
+	}
+	return -1;
+}
+
+static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
+				 struct v4l2_mbus_framefmt *fmt)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int idx;
+
+	if (!fmt)
+		return -EINVAL;
+
+	idx = nearest_resolution_index(sd, fmt->width, fmt->height);
+
+	/* Fall back to the last if not found */
+	if (idx == -1)
+		idx = dev->entries_curr_table - 1;
+
+	fmt->width = dev->curr_res_table[idx].width;
+	fmt->height = dev->curr_res_table[idx].height;
+	fmt->code = M10MO_FORMAT;
+	return 0;
+}
+
 static int m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	int idx = 0;
+	int r;
 
-	fmt->width = dev->curr_res_table[idx].width;
-	fmt->height = dev->curr_res_table[idx].height;
+	mutex_lock(&dev->input_lock);
+	r = __m10mo_try_mbus_fmt(sd, fmt);
+	mutex_unlock(&dev->input_lock);
 
-	fmt->code = M10MO_FORMAT;
-	return 0;
+	return r;
 }
 
 static int m10mo_get_mbus_fmt(struct v4l2_subdev *sd,
@@ -557,12 +645,17 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	mutex_lock(&dev->input_lock);
 
-	if (dev->streaming) {
-		ret = -EBUSY;
+	ret = __m10mo_try_mbus_fmt(sd, fmt);
+	if (ret)
+		goto out;
+
+	/* This will be set during the next stream on call */
+	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
+	if (dev->fmt_idx == -1) {
+		ret = -EINVAL;
 		goto out;
 	}
 
-	ret = m10mo_try_mbus_fmt(sd, fmt);
 out:
 	mutex_unlock(&dev->input_lock);
 	return ret;
@@ -624,13 +717,12 @@ fail_csi_cfg:
 static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	int ret;
+	int ret = 0;
 
+	/* TODO: Handle Stream OFF case */
 	mutex_lock(&dev->input_lock);
 	if (enable)
-		ret = m10mo_set_streaming(sd);
-	else
-		ret = m10mo_set_suspend(sd);
+		ret = m10mo_set_monitor_mode(sd);
 	mutex_unlock(&dev->input_lock);
 	return ret;
 }
