@@ -129,9 +129,8 @@ static const struct css2600_isys_pixelformat *__vidioc_try_fmt_vid_cap(
 		css2600_isys_get_pixelformat(av, pix->pixelformat);
 
 	pix->pixelformat = pfmt->pixelformat;
-	pix->bytesperline = max(
-		pix->bytesperline, pix->width * DIV_ROUND_UP(pfmt->bpp, 8));
-	pix->sizeimage = pix->bytesperline * pix->height;
+	pix->bytesperline = pix->width * DIV_ROUND_UP(pfmt->bpp, 8);
+	pix->sizeimage = max(pix->sizeimage, pix->bytesperline * pix->height);
 
 	return pfmt;
 }
