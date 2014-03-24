@@ -50,7 +50,7 @@ static int queue_setup(struct vb2_queue *q, const struct v4l2_format *fmt,
 
 	*num_planes = 1;
 
-	sizes[0] = pfmt->bpp * pix->width * pix->height / 8;
+	sizes[0] = pix->height * pix->width * DIV_ROUND_UP(pfmt->bpp, 8);
 	alloc_ctxs[0] = aq->ctx;
 
 	dev_dbg(&av->isys->adev->dev, "queue setup: buffer size %d\n",
