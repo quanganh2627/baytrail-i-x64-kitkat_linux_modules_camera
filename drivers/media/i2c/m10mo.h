@@ -62,6 +62,12 @@ struct m10mo_version {
 	int awb;
 };
 
+struct m10mo_resolution {
+	u32 width;
+	u32 height;
+	u32 command;
+};
+
 struct m10mo_device {
 	struct v4l2_subdev sd;
 	struct media_pad pad;
@@ -86,6 +92,8 @@ struct m10mo_device {
 	struct v4l2_ctrl *run_mode;
 	struct v4l2_ctrl *link_freq;
 	unsigned int num_lanes;
+	const struct m10mo_resolution *curr_res_table;
+	int entries_curr_table;
 };
 
 #define to_m10mo_sensor(x) container_of(x, struct m10mo_device, sd)
@@ -266,6 +274,64 @@ int m10mo_readl(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 #define M10MO_PARAM_SETTING_MODE	0x1
 #define M10MO_MONITOR_MODE		0x2
 #define M10MO_SINGLE_CAPTURE_MODE	0x3
+
+
+static const struct m10mo_resolution const m10mo_preview_modes[] = {
+	{
+		.width = 640,
+		.height = 480,
+		.command = 0x17,
+	},
+	{
+		.width = 1280,
+		.height = 720,
+		.command = 0x21,
+	},
+	{
+		.width = 1920,
+		.height = 1080,
+		.command = 0x40,
+	},
+};
+
+static const struct m10mo_resolution const m10mo_capture_modes[] = {
+	{
+		.width = 640,
+		.height = 480,
+		.command = 0x09,
+	},
+	{
+		.width = 960,
+		.height = 720,
+		.command = 0x2f,
+	},
+	{
+		.width = 1280,
+		.height = 720,
+		.command = 0x10,
+	},
+	{
+		.width = 1920,
+		.height = 1080,
+		.command = 0x19,
+	},
+	{
+		.width = 2048,
+		.height = 1536,
+		.command = 0x1b,
+	},
+	{
+		.width = 4128,
+		.height = 2336,
+		.command = 0x30,
+	},
+	{
+		.width = 4128,
+		.height = 3096,
+		.command = 0x2c,
+	},
+};
+
 
 #endif	/* M10MO_H */
 

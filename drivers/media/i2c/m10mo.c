@@ -43,25 +43,6 @@
 
 #define M10MO_FORMAT	V4L2_MBUS_FMT_UYVY8_1X16
 
-struct m10mo_resolution {
-	unsigned int width;
-	unsigned int height;
-	unsigned int fps;
-};
-
-static const struct m10mo_resolution const m10mo_res_modes[] = {
-	{
-		.width = 640,
-		.height = 480,
-		.fps = 30,
-	},
-	{
-		.width = 1280,
-		.height = 720,
-		.fps = 30,
-	}
-};
-
 /*
  * m10mo_read -  I2C read function
  * @reg: combination of size, category and command for the I2C packet
@@ -542,10 +523,11 @@ out_free:
 static int m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int idx = 0;
 
-	fmt->width = m10mo_res_modes[idx].width;
-	fmt->height = m10mo_res_modes[idx].height;
+	fmt->width = dev->curr_res_table[idx].width;
+	fmt->height = dev->curr_res_table[idx].height;
 
 	fmt->code = M10MO_FORMAT;
 	return 0;
@@ -558,8 +540,8 @@ static int m10mo_get_mbus_fmt(struct v4l2_subdev *sd,
 
 	mutex_lock(&dev->input_lock);
 
-	fmt->width = m10mo_res_modes[dev->fmt_idx].width;
-	fmt->height = m10mo_res_modes[dev->fmt_idx].height;
+	fmt->width = dev->curr_res_table[dev->fmt_idx].width;
+	fmt->height = dev->curr_res_table[dev->fmt_idx].height;
 	fmt->code = M10MO_FORMAT;
 
 	mutex_unlock(&dev->input_lock);
@@ -658,13 +640,13 @@ m10mo_enum_framesizes(struct v4l2_subdev *sd, struct v4l2_frmsizeenum *fsize)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 
-	if (fsize->index >= ARRAY_SIZE(m10mo_res_modes))
+	if (fsize->index >= dev->entries_curr_table)
 		return -EINVAL;
 
 	mutex_lock(&dev->input_lock);
 	fsize->type = V4L2_FRMSIZE_TYPE_DISCRETE;
-	fsize->discrete.width = m10mo_res_modes[fsize->index].width;
-	fsize->discrete.height = m10mo_res_modes[fsize->index].height;
+	fsize->discrete.width = dev->curr_res_table[fsize->index].width;
+	fsize->discrete.height = dev->curr_res_table[fsize->index].height;
 	mutex_unlock(&dev->input_lock);
 
 	return 0;
@@ -865,6 +847,9 @@ static int m10mo_probe(struct i2c_client *client,
 		goto out_free;
 
 	dev->num_lanes = mipi_info->num_lanes;
+
+	dev->curr_res_table = m10mo_preview_modes;
+	dev->entries_curr_table = ARRAY_SIZE(m10mo_preview_modes);
 
 	dev->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	dev->pad.flags = MEDIA_PAD_FL_SOURCE;
