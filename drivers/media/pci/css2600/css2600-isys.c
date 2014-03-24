@@ -477,6 +477,11 @@ static int isys_probe(struct css2600_bus_device *adev)
 	dev_info(&adev->dev, "isys probe %p %p\n", adev, &adev->dev);
 	css2600_bus_set_drvdata(adev, isys);
 
+	if (isys->pdata->type == CSS2600_ISYS_TYPE_CSS2401)
+		isys->line_align = CSS2600_ISYS_2401_MEM_LINE_ALIGN;
+	else
+		isys->line_align = 128; /* FIXME! What's this for 2600? */
+
 #if IS_ENABLED(CONFIG_VIDEO_CSS2600_2401)
 	rval = isys_runtime_pm(1);
 	if (rval) {

@@ -27,6 +27,8 @@
 #include "css2600-isys-video.h"
 #include "css2600-pdata.h"
 
+#define CSS2600_ISYS_2401_MEM_LINE_ALIGN	128
+
 #define CSS2600_ISYS_MAX_CSI2_PORTS		4
 /*
  * 2401 has a test pattern generator per port (3) whereas 2600 has two
@@ -40,6 +42,7 @@
  * @lock: serialise access to pipes
  * @pipes: pipelines per stream ID
  * @ssi: ssi library private pointer
+ * @line_align: line alignment in memory
  */
 struct css2600_isys {
 	struct media_device media_dev;
@@ -48,6 +51,7 @@ struct css2600_isys {
 	spinlock_t lock;
 	struct css2600_isys_pipeline *pipes[N_IA_CSS_ISYS_STREAM_SRC];
 	void *ssi;
+	unsigned int line_align;
 
 	struct css2600_isys_pdata *pdata;
 
