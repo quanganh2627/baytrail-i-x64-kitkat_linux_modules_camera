@@ -15,11 +15,25 @@
 #ifndef CSS2600_PSYS_H
 #define CSS2600_PSYS_H
 
+#include <linux/cdev.h>
+
 #include "css2600.h"
 #include "css2600-pdata.h"
 
 struct css2600_psys {
+	struct cdev cdev;
+	struct device dev;
+
+	struct mutex mutex;
+	struct list_head fhs;
 	struct css2600_psys_pdata *pdata;
 };
 
-#endif /* CSS2600_ISYS_H */
+struct css2600_psys_fh {
+	struct list_head list;
+};
+
+#define inode_to_css2600_psys(inode) \
+	container_of((inode)->i_cdev, struct css2600_psys, cdev)
+
+#endif /* CSS2600_PSYS_H */
