@@ -43,7 +43,9 @@ int ia_css_psysapi_init(unsigned int *task_buffer_size, unsigned int ttl)
 	(void) ttl;
 
 	*task_buffer_size = sizeof(struct ia_css_psys_task);
+#ifndef __KERNEL__
 	psysapi_dbg_print = printf;
+#endif
 	return 0;
 }
 
@@ -62,7 +64,7 @@ int ia_css_psysapi_task_create(
 	assert(pg_info->terminal_list.no_of_terminals <=
 		IA_CSS_PSYSAPI_MAX_TERMINALS);
 
-	tmp_task = (struct ia_css_psys_task *)(intptr_t)(task_buffer->driver_address);
+	tmp_task = (struct ia_css_psys_task *)(task_buffer->driver_address);
 	memset(tmp_task, 0, sizeof(struct ia_css_psys_task));
 
 	tmp_task->task_buffer = *task_buffer;
@@ -215,7 +217,7 @@ int ia_css_psysapi_task_get_event(
 		/*Note : This is used to find who is the originator of the task
 		 * task.task_buffer.driver_address is tested for crun and sched
 		 event->task is ia_css_psys_task* which holds task address in driver address space*/
-		event->task = (struct ia_css_psys_task*)(intptr_t)(task.task_buffer.driver_address);
+		event->task = (struct ia_css_psys_task*)(task.task_buffer.driver_address);
 
 		psysapi_dbg_print("ia_css_psysapi_task_get_event: PSYS EVENT->TASK = ox%x\n", event->task);
 		/*TODO: Fill in the following in the event

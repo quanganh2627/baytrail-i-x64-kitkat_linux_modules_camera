@@ -5,6 +5,10 @@ lib2401-mod-objs := lib2401/sh_css.o \
 		    lib2401/sh_css_metrics.o \
 		    lib2401/sh_css_firmware.o \
 		    lib2401/sh_css_param_shading.o \
+		    lib2401/css_2401_system/host/isys_dma.o \
+		    lib2401/css_2401_system/host/isys_stream2mmio.o \
+		    lib2401/css_2401_system/host/ibuf_ctrl.o \
+		    lib2401/css_2401_system/host/csi_rx.o \
 		    lib2401/hive_isp_css_2400_system/host/gdc.o \
 		    lib2401/hive_isp_css_2400_system/host/irq.o \
 		    lib2401/hive_isp_css_2400_system/host/mmu.o \
@@ -37,6 +41,7 @@ lib2401-mod-objs := lib2401/sh_css.o \
 		    lib2401/runtime/queue/src/queue.o \
 		    lib2401/runtime/queue/src/queue_access.o \
 		    lib2401/runtime/spctrl/src/spctrl.o \
+		    lib2401/isp/kernels/iterator/iterator_1.0/ia_css_iterator.host.o \
 		    lib2401/isp/kernels/raw/raw_1.0/ia_css_raw.host.o \
 		    lib2401/isp/kernels/ob/ob_1.0/ia_css_ob.host.o \
 		    lib2401/isp/kernels/aa/aa_2/ia_css_aa2.host.o \
@@ -73,6 +78,7 @@ lib2401-mod-objs := lib2401/sh_css.o \
 		    lib2401/isp/kernels/output/output_1.0/ia_css_output.host.o \
 		    lib2401/isp/kernels/raw_aa_binning/raw_aa_binning_1.0/ia_css_raa.host.o \
 		    lib2401/isp/kernels/bh/bh_2/ia_css_bh.host.o \
+		    lib2401/isp/kernels/copy_output/copy_output_1.0/ia_css_copy_output.host.o \
 		    lib2401/camera/pipe/src/pipe_binarydesc.o \
 		    lib2401/camera/util/src/util.o \
 		    lib2401/camera/pipe/src/pipe_util.o \
@@ -85,6 +91,7 @@ lib2401-mod-objs := lib2401/sh_css.o \
 		    lib2401/runtime/isys/src/isys_stream2mmio_rmgr.o \
 		    lib2401/hive_isp_css_2401_system_bxtpoc_generated/ia_css_isp_params.o \
 		    lib2401/hive_isp_css_2401_system_bxtpoc_generated/ia_css_isp_configs.o \
+		    lib2401/hive_isp_css_2401_system_bxtpoc_generated/ia_css_isp_states.o \
 		    lib2401/runtime/bufq/src/bufq.o \
 		    lib2401/bxt_sandbox/fwctrlpoc/src/fwctrl.o \
 		    lib2401/bxt_sandbox/fwctrlpoc/src/isys_bufpool.o \
@@ -95,6 +102,7 @@ lib2401-mod-objs := lib2401/sh_css.o \
 		    lib2401/bxt_sandbox/psyspoc/src/psys_sppipeline.o \
 		    lib2401/bxt_sandbox/ia_camera/frameadapter/src/psys_frameadapter.o \
 		    lib2401/host/module/lib2401.o
+
 
 obj-$(CONFIG_VIDEO_CSS2600)	+= lib2401-mod.o
 
