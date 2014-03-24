@@ -2229,7 +2229,6 @@ static int __atomisp_set_general_isp_parameters(
 					struct atomisp_sub_device *asd,
 					struct atomisp_parameters *arg)
 {
-
 	/* TODO: add cnr_config when it's ready */
 	if (arg->wb_config) {
 		if (copy_from_user(&asd->params.wb_config, arg->wb_config,
@@ -2250,20 +2249,6 @@ static int __atomisp_set_general_isp_parameters(
 				   sizeof(struct atomisp_css_dp_config)))
 			return -EFAULT;
 		atomisp_css_set_dp_config(asd, &asd->params.dp_config);
-	}
-
-	if (arg->de_config) {
-		if (copy_from_user(&asd->params.de_config, arg->de_config,
-				   sizeof(struct atomisp_css_de_config)))
-			return -EFAULT;
-		atomisp_css_set_de_config(asd, &asd->params.de_config);
-	}
-
-	if (arg->ce_config) {
-		if (copy_from_user(&asd->params.ce_config, arg->ce_config,
-				   sizeof(struct atomisp_css_ce_config)))
-			return -EFAULT;
-		atomisp_css_set_ce_config(asd, &asd->params.ce_config);
 	}
 
 	if (arg->nr_config) {
@@ -2287,28 +2272,6 @@ static int __atomisp_set_general_isp_parameters(
 		atomisp_css_set_tnr_config(asd, &asd->params.tnr_config);
 	}
 
-	if (arg->cc_config) {
-		if (copy_from_user(&asd->params.cc_config, arg->cc_config,
-				   sizeof(struct atomisp_css_cc_config)))
-			return -EFAULT;
-		atomisp_css_set_cc_config(asd, &asd->params.cc_config);
-	}
-
-	if (arg->ctc_table) {
-		if (copy_from_user(&asd->params.ctc_table,
-				   arg->ctc_table,
-				   sizeof(asd->params.ctc_table)))
-			return -EFAULT;
-		atomisp_css_set_ctc_table(asd, &asd->params.ctc_table);
-	}
-
-	if (arg->gc_config) {
-		if (copy_from_user(&asd->params.gc_config, arg->gc_config,
-				   sizeof(asd->params.gc_config)))
-			return -EFAULT;
-		atomisp_css_set_gc_config(asd, &asd->params.gc_config);
-	}
-
 	if (arg->a3a_config) {
 		if (copy_from_user(&asd->params.s3a_config, arg->a3a_config,
 				   sizeof(asd->params.s3a_config)))
@@ -2323,13 +2286,6 @@ static int __atomisp_set_general_isp_parameters(
 			return -EFAULT;
 		asd->params.color_effect = arg->macc_config->color_effect;
 		atomisp_css_set_macc_table(asd, &asd->params.macc_table);
-	}
-
-	if (arg->gamma_table) {
-		if (copy_from_user(&asd->params.gamma_table, arg->gamma_table,
-			sizeof(asd->params.gamma_table)))
-			return -EFAULT;
-		atomisp_css_set_gamma_table(asd, &asd->params.gamma_table);
 	}
 
 #ifdef CSS20
@@ -2462,6 +2418,19 @@ static int __atomisp_set_general_isp_parameters(
 		atomisp_css_set_anr_thres(asd, &asd->params.anr_thres);
 	}
 #endif /* CSS20 */
+
+	/*
+	 * These configurations are on used by ISP1.x, not for ISP2.x,
+	 * so do not handle them. see comments of ia_css_isp_config.
+	 * 1 cc_config
+	 * 2 ce_config
+	 * 3 de_config
+	 * 4 gc_config
+	 * 5 gamma_table
+	 * 6 ctc_table
+	 * 7 dvs_coefs
+	 */
+
 	return 0;
 }
 
