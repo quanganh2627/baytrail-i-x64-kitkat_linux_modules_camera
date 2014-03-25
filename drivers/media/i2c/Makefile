@@ -19,6 +19,8 @@ obj-$(CONFIG_VIDEO_GC2235)     += gc2235.o
 obj-$(CONFIG_VIDEO_OV9724)     += ov9724.o
 obj-$(CONFIG_VIDEO_OV2722)     += ov2722.o
 obj-$(CONFIG_VIDEO_OV8830)     += ov8830.o
+obj-$(CONFIG_VIDEO_OV8858)     += ov8858_driver.o
+ov8858_driver-objs := ov8858.o imx/dw9718.o imx/vcm.o
 
 obj-$(CONFIG_VIDEO_S5K8AAY)    += s5k8aay.o
 

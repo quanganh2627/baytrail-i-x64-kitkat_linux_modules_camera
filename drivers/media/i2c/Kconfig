@@ -66,6 +66,15 @@ config VIDEO_OV8830
 
          It currently only works with the atomisp driver.
 
+config VIDEO_OV8858
+       tristate "Omnivision ov8858 sensor support"
+       depends on I2C && VIDEO_V4L2 && VIDEO_ATOMISP
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the Omnivision
+         ov8858 8MP RAW sensor.
+
+         It currently only works with the atomisp driver.
+
 config VIDEO_CSI_XACTOR
         tristate "csi xactor"
         depends on I2C && VIDEO_V4L2 && VIDEO_ATOMISP
