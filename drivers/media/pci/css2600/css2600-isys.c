@@ -22,6 +22,8 @@
 #include <linux/sizes.h>
 #include <linux/string.h>
 
+#include <media/css2600-isys.h>
+#include <media/v4l2-subdev.h>
 #include <media/videobuf2-core.h>
 
 #include "css2600.h"
@@ -319,6 +321,91 @@ fail:
 	return rval;
 }
 
+static int isys_register_ext_subdev(struct css2600_isys *isys,
+				    struct css2600_isys_subdev_info *sd_info)
+{
+	struct i2c_adapter *adapter =
+		i2c_get_adapter(sd_info->i2c.i2c_adapter_id);
+	struct v4l2_subdev *sd;
+	unsigned int i;
+	int rval;
+
+	dev_info(&isys->adev->dev,
+		 "creating new i2c subdev for %s (address %2.2x, bus %d) on port %u\n",
+		 sd_info->i2c.board_info.type, sd_info->i2c.board_info.addr,
+		 sd_info->i2c.i2c_adapter_id, sd_info->csi2->port);
+
+	if (!adapter) {
+		dev_warn(&isys->adev->dev, "can't find adapter\n");
+		return -ENOENT;
+	}
+
+	if (sd_info->csi2->port >= CSS2600_ISYS_MAX_CSI2_PORTS ||
+	    !isys->csi2[sd_info->csi2->port].isys) {
+		dev_warn(&isys->adev->dev, "invalid csi2 port %u\n",
+			 sd_info->csi2->port);
+		rval = -EINVAL;
+		goto skip_put_adapter;
+	}
+
+	sd = v4l2_i2c_new_subdev_board(&isys->v4l2_dev, adapter,
+				       &sd_info->i2c.board_info, 0);
+
+	if (!sd) {
+		dev_warn(&isys->adev->dev, "can't create new i2c subdev\n");
+		rval = -EINVAL;
+		goto skip_put_adapter;
+	}
+
+	v4l2_set_subdev_hostdata(sd, sd_info->csi2);
+
+	for (i = 0; i < sd->entity.num_pads; i++) {
+		if (sd->entity.pads[i].flags & MEDIA_PAD_FL_SOURCE)
+			break;
+	}
+
+	if (i == sd->entity.num_pads) {
+		dev_warn(&isys->adev->dev,
+			 "no source pad in external entity\n");
+		v4l2_device_unregister_subdev(sd);
+		rval = -ENOENT;
+		goto skip_unregister_subdev;
+	}
+
+	rval = media_entity_create_link(
+		&sd->entity, i,
+		&isys->csi2[sd_info->csi2->port].asd.sd.entity, 0,
+		MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE);
+	if (rval) {
+		dev_warn(&isys->adev->dev, "can't create link\n");
+		goto skip_unregister_subdev;
+	}
+
+	return 0;
+
+skip_unregister_subdev:
+	v4l2_device_unregister_subdev(sd);
+
+skip_put_adapter:
+	i2c_put_adapter(adapter);
+
+	return rval;
+}
+
+static void isys_register_ext_subdevs(struct css2600_isys *isys)
+{
+	struct css2600_isys_subdev_pdata *spdata = isys->pdata->spdata;
+	struct css2600_isys_subdev_info **sd_info;
+
+	if (!spdata) {
+		dev_info(&isys->adev->dev, "no external subdevs found\n");
+		return;
+	}
+
+	for (sd_info = spdata->subdevs; *sd_info; sd_info++)
+		isys_register_ext_subdev(isys, *sd_info);
+}
+
 static int isys_register_devices(struct css2600_isys *isys)
 {
 	int rval;
@@ -354,6 +441,8 @@ static int isys_register_devices(struct css2600_isys *isys)
 		dev_info(&isys->adev->dev, "can't register csi2 devices\n");
 		goto out_v4l2_device_unregister;
 	}
+
+	isys_register_ext_subdevs(isys);
 
 	rval = v4l2_device_register_subdev_nodes(&isys->v4l2_dev);
 	if (rval)
