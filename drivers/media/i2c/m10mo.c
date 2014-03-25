@@ -21,6 +21,7 @@
 #include <asm/intel-mid.h>
 #include <asm/irq.h>
 #include <linux/atomisp_platform.h>
+#include <media/m10mo_atomisp.h>
 #include <linux/delay.h>
 #include <linux/i2c.h>
 #include <linux/io.h>
@@ -400,14 +401,23 @@ static int power_up(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
 
+	if (dev->pdata->flisclk_ctrl) {
+		ret = dev->pdata->flisclk_ctrl(sd, 1);
+		if (ret)
+			goto fail_clk_off;
+	}
+
 	/**ISP RESET**/
-	ret = dev->platform_data->gpio_ctrl(sd, 1);
+	ret = dev->pdata->gpio_ctrl(sd, 1);
 	if (ret)
-		goto fail_gpio;
+		goto fail_power_off;
 	return 0;
 
-fail_gpio:
-	dev->platform_data->gpio_ctrl(sd, 0);
+fail_power_off:
+	dev->pdata->gpio_ctrl(sd, 0);
+fail_clk_off:
+	if (dev->pdata->flisclk_ctrl)
+		ret = dev->pdata->flisclk_ctrl(sd, 0);
 	return ret;
 }
 
@@ -417,10 +427,16 @@ static int power_down(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
-	ret = dev->platform_data->gpio_ctrl(sd, 0);
+	ret = dev->pdata->gpio_ctrl(sd, 0);
 	if (ret)
 		dev_err(&client->dev, "gpio failed");
 
+	/* Even if the first one fails we still want to turn clock off */
+	if (dev->pdata->flisclk_ctrl) {
+		ret = dev->pdata->flisclk_ctrl(sd, 0);
+		if (ret)
+			dev_err(&client->dev, "stop clock failed");
+	}
 	return ret;
 }
 
@@ -497,8 +513,13 @@ static int m10mo_setup_irq(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int pin, ret;
 
-	pin = dev->platform_data->gpio_intr_ctrl(sd);
+	if (!dev->pdata->gpio_intr_ctrl) {
+		dev_err(&client->dev,
+			"Missing gpio information in interrupt setup!\n");
+		return -ENODEV;
+	}
 
+	pin = dev->pdata->gpio_intr_ctrl(sd);
 	ret = gpio_to_irq(pin);
 
 	if (ret < 0) {
@@ -652,15 +673,19 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
-
-	if (pdata == NULL)
-		return -ENODEV;
+	struct m10mo_fw_id *fw_ids = NULL;
+	struct m10mo_sensor_private_data *sdata;
 
 	mutex_lock(&dev->input_lock);
 
-	dev->platform_data = pdata;
-
 	init_waitqueue_head(&dev->irq_waitq);
+
+	dev->fw_type = M10MO_FW_TYPE_0;
+	sdata = dev->pdata->sensor_private_data;
+	if (sdata) {
+		dev->ref_clock = sdata->ref_clock_rate;
+		fw_ids = sdata->fw_ids;
+	}
 
 	/* set up irq */
 	ret = m10mo_setup_irq(sd);
@@ -677,9 +702,11 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 		return ret;
 	}
 
-	ret = dev->platform_data->csi_cfg(sd, 1);
-	if (ret)
-		goto fail_csi_cfg;
+	if (dev->pdata->csi_cfg) {
+		ret = dev->pdata->csi_cfg(sd, 1);
+		if (ret)
+			goto fail_csi_cfg;
+	}
 
 	ret = __m10mo_s_power(sd, 0, true);
 	mutex_unlock(&dev->input_lock);
@@ -1163,8 +1190,8 @@ static int m10mo_remove(struct i2c_client *client)
 	sysfs_remove_group(&client->dev.kobj,
 			   m10mo_attribute_group);
 
-	if (dev->platform_data->platform_deinit)
-		dev->platform_data->platform_deinit();
+	if (dev->pdata->platform_deinit)
+		dev->pdata->platform_deinit();
 
 	media_entity_cleanup(&dev->sd.entity);
 	v4l2_device_unregister_subdev(sd);
@@ -1181,6 +1208,11 @@ static int m10mo_probe(struct i2c_client *client,
 	struct camera_mipi_info *mipi_info = NULL;
 	int ret;
 
+	if (!client->dev.platform_data) {
+		dev_err(&client->dev, "platform data missing\n");
+		return -ENODEV;
+	}
+
 	/* allocate sensor device & init sub device */
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
 	if (!dev) {
@@ -1188,22 +1220,32 @@ static int m10mo_probe(struct i2c_client *client,
 		return -ENOMEM;
 	}
 
+	dev->pdata = client->dev.platform_data;
+
 	mutex_init(&dev->input_lock);
 
 	v4l2_i2c_subdev_init(&(dev->sd), client, &m10mo_ops);
 
-	if (client->dev.platform_data) {
-		ret = m10mo_s_config(&dev->sd, client->irq,
-				       client->dev.platform_data);
-		if (ret)
-			goto out_free;
+	ret = m10mo_s_config(&dev->sd, client->irq,
+			     client->dev.platform_data);
+	if (ret)
+		goto out_free;
+
+	/*
+	 * We must have a way to reset the chip. If that is missing we
+	 * simply can't continue.
+	 */
+	if (!dev->pdata->gpio_ctrl) {
+		dev_err(&client->dev, "gpio control function missing\n");
+		ret = -ENODEV;
+		goto out_free_irq;
 	}
 
 	mipi_info = v4l2_get_subdev_hostdata(&dev->sd);
 
 	ret = __m10mo_init_ctrl_handler(dev);
 	if (ret)
-		goto out_free;
+		goto out_free_irq;
 
 	dev->num_lanes = mipi_info->num_lanes;
 

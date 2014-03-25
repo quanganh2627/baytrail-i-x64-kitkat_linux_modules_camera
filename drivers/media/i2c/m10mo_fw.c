@@ -184,7 +184,7 @@ static int m10mo_to_fw_access_mode(struct m10mo_device *m10mo_dev)
 
 	err = m10mo_writel(sd, CATEGORY_FLASHROM,
 			   REG_PLL_VALUES,
-			   m10mo_get_pll_cfg(24000000));
+			   m10mo_get_pll_cfg(m10mo_dev->ref_clock));
 	if (err)
 		goto fail;
 	return 0;

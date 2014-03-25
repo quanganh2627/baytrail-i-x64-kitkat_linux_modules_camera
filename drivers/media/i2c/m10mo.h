@@ -82,7 +82,7 @@ struct m10mo_device {
 	struct v4l2_subdev sd;
 	struct media_pad pad;
 	struct v4l2_mbus_framefmt format;
-	struct camera_sensor_platform_data *platform_data;
+	struct camera_sensor_platform_data *pdata;
 	struct mutex input_lock; /* serialize sensor's ioctl */
 	u8 message_buffer[256]; /* Real buffer size TBD */
 	int res_type;
@@ -103,6 +103,8 @@ struct m10mo_device {
 	unsigned int num_lanes;
 	const struct m10mo_resolution *curr_res_table;
 	int entries_curr_table;
+	int ref_clock;
+	int fw_type;
 };
 
 #define to_m10mo_sensor(x) container_of(x, struct m10mo_device, sd)
