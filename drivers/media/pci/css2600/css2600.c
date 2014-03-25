@@ -58,7 +58,8 @@ static struct css2600_bus_device *css2600_mmu_init(
 static struct css2600_bus_device *css2600_isys_init(
 	struct pci_dev *pdev, struct device *parent,
 	struct css2600_bus_iommu *iommu, void __iomem *base,
-	unsigned int nr, unsigned int type)
+	struct css2600_isys_subdev_pdata *spdata, unsigned int nr,
+	unsigned int type)
 {
 	struct css2600_isys_pdata *pdata =
 		devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
@@ -68,6 +69,7 @@ static struct css2600_bus_device *css2600_isys_init(
 
 	pdata->base = base;
 	pdata->type = type;
+	pdata->spdata = spdata;
 
 	return css2600_bus_add_device(pdev, parent, pdata, iommu,
 				      CSS2600_ISYS_NAME, nr);
@@ -332,8 +334,9 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 		isys_iommu->dev = &isp->isys_iommu->dev;
 
-		isp->isys = css2600_isys_init(pdev, &isp->buttress->dev, isys_iommu, isp->base,
-					      0, CSS2600_ISYS_TYPE_CSS2600);
+		isp->isys = css2600_isys_init(
+			pdev, &isp->buttress->dev, isys_iommu, isp->base,
+			pdev->dev.platform_data, 0, CSS2600_ISYS_TYPE_CSS2600);
 		rval = PTR_ERR(isp->isys);
 		if (IS_ERR(isp->isys))
 			goto out_css2600_bus_del_devices;
@@ -379,8 +382,9 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		iommus++;
 
 		isys_iommu->dev = &isp->isys_iommu->dev;
-		isp->isys = css2600_isys_init(pdev, &pdev->dev, isys_iommu, isp->base, 0,
-					      CSS2600_ISYS_TYPE_CSS2401);
+		isp->isys = css2600_isys_init(
+			pdev, &pdev->dev, isys_iommu, isp->base,
+			pdev->dev.platform_data, 0, CSS2600_ISYS_TYPE_CSS2401);
 		rval = PTR_ERR(isp->isys);
 		if (rval < 0)
 			goto out_css2600_bus_del_devices;

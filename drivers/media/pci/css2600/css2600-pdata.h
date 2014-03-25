@@ -23,6 +23,8 @@
 
 #define CSS2600_MMU_MAX_DEVICES		2
 
+struct css2600_isys_subdev_pdata;
+
 struct css2600_mmu_pdata {
 	void __iomem *base[CSS2600_MMU_MAX_DEVICES];
 	unsigned int nr_base;
@@ -38,6 +40,7 @@ struct css2600_isys_csi2_pdata {
 struct css2600_isys_pdata {
 	void __iomem *base;
 	unsigned int type;
+	struct css2600_isys_subdev_pdata *spdata;
 };
 
 struct css2600_psys_pdata {
