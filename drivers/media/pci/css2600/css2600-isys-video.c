@@ -271,7 +271,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 		}
 		if (!state)
 			continue;
-		if (rval)
+		if (rval && rval != -ENOIOCTLCMD)
 			goto out_media_entity_stop_streaming;
 
 		if (entity->id >= sizeof(entities) << 3) {
