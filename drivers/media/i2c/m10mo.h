@@ -88,7 +88,7 @@ struct m10mo_device {
 	unsigned int initialized;
 	struct m10mo_version ver;
 	struct v4l2_ctrl_handler ctrl_handler;
-	struct v4l2_ctrl *run_mode;
+	int run_mode;
 	struct v4l2_ctrl *link_freq;
 	unsigned int num_lanes;
 	const struct m10mo_resolution *curr_res_table;
@@ -328,6 +328,14 @@ static const struct m10mo_resolution const m10mo_capture_modes[] = {
 		.width = 4128,
 		.height = 3096,
 		.command = 0x2c,
+	},
+};
+
+static const struct m10mo_resolution const m10mo_video_modes[] = {
+	{
+		.width = 1920,
+		.height = 1080,
+		.command = 0x40,
 	},
 };
 

@@ -394,48 +394,6 @@ static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 	return ret;
 }
 
-static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
-{
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int ret;
-
-	dev_info(&client->dev," Width: %d, height: %d, command: 0x%x\n",
-		dev->curr_res_table[dev->fmt_idx].width,
-		dev->curr_res_table[dev->fmt_idx].height,
-		dev->curr_res_table[dev->fmt_idx].command);
-
-	/*Change to Monitor Size (e,g. VGA) */
-	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
-			dev->curr_res_table[dev->fmt_idx].command);
-	if (ret)
-		goto out;
-
-	/* TODO: FPS setting must be changed */
-	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
-	if (ret)
-		goto out;
-
-	/* Enable interrupt signal */
-	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
-	if (ret)
-		goto out;
-
-	/* Go to Monitor mode and output YUV Data */
-	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
-	if (ret)
-		goto out;
-
-	ret = m10mo_wait_interrupt(sd, 500);
-	if (ret)
-		goto out;
-
-	return 0;
-out:
-	dev_err(&client->dev, "Streaming failed %d\n", ret);
-	return ret;
-}
-
 static int power_up(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -714,6 +672,128 @@ fail_csi_cfg:
 
 }
 
+static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
+	dev_info(&client->dev," Width: %d, height: %d, command: 0x%x\n",
+		dev->curr_res_table[dev->fmt_idx].width,
+		dev->curr_res_table[dev->fmt_idx].height,
+		dev->curr_res_table[dev->fmt_idx].command);
+
+	/*Change to Monitor Size (e,g. VGA) */
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
+			dev->curr_res_table[dev->fmt_idx].command);
+	if (ret)
+		goto out;
+
+	/* TODO: FPS setting must be changed */
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
+	if (ret)
+		goto out;
+
+	/* Enable interrupt signal */
+	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+	if (ret)
+		goto out;
+
+	dev->irq = 0;
+	/* Go to Monitor mode and output YUV Data */
+	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
+	if (ret)
+		goto out;
+
+	/* TODO: To move this to threaded IRQ */
+	ret = m10mo_wait_interrupt(sd, 500);
+	if (ret)
+		goto out;
+
+	return 0;
+out:
+	dev_err(&client->dev, "Streaming failed %d\n", ret);
+	return ret;
+}
+
+static int m10mo_set_still_capture(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
+	dev_info(&client->dev," Width: %d, height: %d, command: 0x%x\n",
+		dev->curr_res_table[dev->fmt_idx].width,
+		dev->curr_res_table[dev->fmt_idx].height,
+		dev->curr_res_table[dev->fmt_idx].command);
+
+	ret= m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x08);
+	if (ret)
+		goto out;
+
+	dev->irq = 0;
+	/* Set capture mode */
+	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x03);
+	if (ret)
+		goto out;
+
+	/* TODO: Move this to threaded IRQ */
+	ret = m10mo_wait_interrupt(sd, 5000);
+	if (ret)
+		goto out;
+
+	/* Select frame */
+	ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_CTRL,
+				CAPC_SEL_FRAME_MAIN, 0x01);
+	if (ret)
+		goto out;
+
+	/* Image format */
+	ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_PARAM,
+				CAPP_YUVOUT_MAIN, CAPP_YUVOUT_MAIN);
+	if (ret)
+		goto out;
+
+	/* Image size */
+	ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_PARAM,CAPP_MAIN_IMAGE_SIZE,
+			dev->curr_res_table[dev->fmt_idx].command);
+	if (ret)
+		goto out;
+
+	dev->irq = 0;
+	/* Start image transfer */
+	ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_CTRL,
+			CAPC_TRANSFER_START, 0x01);
+	if (ret)
+		goto out;
+
+	/* Wait for transfer to complete */
+	/* TODO: move this to threaded IRQ */
+	ret = m10mo_wait_interrupt(sd, 2000);
+
+out:
+	return ret;
+}
+
+static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret;
+
+	switch (dev->run_mode) {
+	case CI_MODE_VIDEO:
+		/* TODO: Differentiate the video mode */
+		ret = m10mo_set_monitor_mode(sd);
+		break;
+	case CI_MODE_STILL_CAPTURE:
+		ret = m10mo_set_still_capture(sd);
+		break;
+	default:
+		ret = m10mo_set_monitor_mode(sd);
+	}
+	return ret;
+}
+
 static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -722,7 +802,7 @@ static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 	/* TODO: Handle Stream OFF case */
 	mutex_lock(&dev->input_lock);
 	if (enable)
-		ret = m10mo_set_monitor_mode(sd);
+		ret = __m10mo_set_run_mode(sd);
 	mutex_unlock(&dev->input_lock);
 	return ret;
 }
@@ -879,11 +959,36 @@ static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
 	return 0;
 }
 
+/* TODO: To move this to s_ctrl framework */
+static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	dev->run_mode = param->parm.capture.capturemode;
+
+	mutex_lock(&dev->input_lock);
+	switch (dev->run_mode) {
+	case CI_MODE_VIDEO:
+		dev->curr_res_table = m10mo_video_modes;
+		dev->entries_curr_table = ARRAY_SIZE(m10mo_video_modes);
+		break;
+	case CI_MODE_STILL_CAPTURE:
+		dev->curr_res_table = m10mo_capture_modes;
+		dev->entries_curr_table = ARRAY_SIZE(m10mo_capture_modes);
+		break;
+	default:
+		dev->curr_res_table = m10mo_preview_modes;
+		dev->entries_curr_table = ARRAY_SIZE(m10mo_preview_modes);
+	}
+	mutex_unlock(&dev->input_lock);
+	return 0;
+}
+
 static const struct v4l2_subdev_video_ops m10mo_video_ops = {
 	.try_mbus_fmt = m10mo_try_mbus_fmt,
 	.s_mbus_fmt = m10mo_set_mbus_fmt,
 	.g_mbus_fmt = m10mo_get_mbus_fmt,
 	.s_stream = m10mo_s_stream,
+	.s_parm = m10mo_s_parm,
 	.enum_framesizes = m10mo_enum_framesizes,
 };
 
