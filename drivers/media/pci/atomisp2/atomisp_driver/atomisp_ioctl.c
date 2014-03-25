@@ -1772,9 +1772,23 @@ stopsensor:
 	 * Is it correct time to reset ISP when first node does streamoff?
 	 */
 	if (isp->sw_contex.power_state == ATOM_ISP_POWER_UP) {
+		unsigned int i;
 		if (isp->isp_timeout)
 			dev_err(isp->dev, "%s: Resetting with WA activated",
 				__func__);
+		/*
+		 * It is possible that the other asd stream is in the stage
+		 * that v4l2_setfmt is just get called on it, which will
+		 * create css stream on that stream. But at this point, there
+		 * is no way to destroy the css stream created on that stream.
+		 *
+		 * So force stream destroy here.
+		 */
+		for (i = 0; i < isp->num_of_streams; i++) {
+			if (isp->asd[i].stream_prepared)
+				atomisp_destroy_pipes_stream_force(&isp->
+						asd[i]);
+		}
 		atomisp_reset(isp);
 		isp->isp_timeout = false;
 	}

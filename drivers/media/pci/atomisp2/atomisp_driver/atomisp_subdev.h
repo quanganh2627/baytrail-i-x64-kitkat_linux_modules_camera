@@ -309,6 +309,7 @@ struct atomisp_sub_device {
 	atomic_t sequence_temp;
 
 	unsigned int streaming; /* Hold both mutex and lock to change this */
+	bool stream_prepared; /* whether css stream is created */
 
 	/* subdev index: will be used to show which subdev is holding the
 	 * resource, like which camera is used by which subdev

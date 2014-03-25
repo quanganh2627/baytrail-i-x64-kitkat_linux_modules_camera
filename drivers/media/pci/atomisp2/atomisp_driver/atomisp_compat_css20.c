@@ -559,6 +559,7 @@ static int __destroy_streams(struct atomisp_sub_device *asd, bool force)
 		if (ret)
 			return ret;
 	}
+	asd->stream_prepared = false;
 	return 0;
 }
 static int __create_stream(struct atomisp_sub_device *asd,
@@ -603,6 +604,7 @@ static int __create_streams(struct atomisp_sub_device *asd)
 		if (ret)
 			goto rollback;
 	}
+	asd->stream_prepared = true;
 	return 0;
 rollback:
 	for (i--; i >= 0; i--)
@@ -1190,6 +1192,28 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 		}
 	}
 
+	/*
+	 * For dual steam case, it is possible that:
+	 * 1: for this stream, it is at the stage that:
+	 * - after set_fmt is called
+	 * - before stream on is called
+	 * 2: for the other stream, the stream off is called which css reset
+	 * has been done.
+	 *
+	 * Thus the stream created in set_fmt get destroyed and need to be
+	 * recreated in the next stream on.
+	 */
+	if (asd->stream_prepared == false) {
+		if (__create_pipes(asd)) {
+			dev_err(isp->dev, "create pipe error.\n");
+			return -EINVAL;
+		}
+		if (__create_streams(asd)) {
+			dev_err(isp->dev, "create stream error.\n");
+			ret = -EINVAL;
+			goto stream_err;
+		}
+	}
 	/*
 	 * SP can only be started one time
 	 * if atomisp_subdev_streaming_count() tell there already has some
