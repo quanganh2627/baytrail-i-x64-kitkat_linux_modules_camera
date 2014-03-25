@@ -62,6 +62,14 @@
 #define FW_VERSION_SIZE	     11
 
 #define ONE_WRITE_SIZE	     64
+
+#define ONE_WAIT_LOOP_TIME   10 /* milliseconds */
+#define CHIP_ERASE_TIMEOUT (15000 / ONE_WAIT_LOOP_TIME)
+#define SECTOR_ERASE_TIMEOUT (5000 / ONE_WAIT_LOOP_TIME)
+#define PROGRAMMING_TIMEOUT (15000 / ONE_WAIT_LOOP_TIME)
+#define CHECKSUM_TIMEOUT   (5000 / ONE_WAIT_LOOP_TIME)
+#define STATE_TRANSITION_TIMEOUT (3000 / ONE_WAIT_LOOP_TIME)
+
 /*
  * TBD: proper matching between I2C and SPI devices instead of this global
  * variable.
@@ -136,10 +144,9 @@ static int m10mo_wait_operation_complete(struct v4l2_subdev *sd, u8 reg,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int res;
 	do {
-		msleep(10);
+		msleep(ONE_WAIT_LOOP_TIME);
 		m10mo_readb(sd, CATEGORY_FLASHROM, reg, &res);
-		timeout--;
-	} while ((res != 0) && timeout);
+	} while ((res != 0) && --timeout);
 
 	if (!timeout) {
 		dev_err(&client->dev,
@@ -292,7 +299,7 @@ int m10mo_dump_fw(struct m10mo_device *m10mo_dev)
 			   REG_FW_READ, REG_FW_READ_CMD_READ);
 
 	if (err) {
-		dev_err(&client->dev, "FW read cmd fails %d\n", err);
+		dev_err(&client->dev, "FW read cmd failed %d\n", err);
 		goto out_mem_free;
 	}
 
@@ -313,8 +320,7 @@ int m10mo_dump_fw(struct m10mo_device *m10mo_dev)
 	dev_dbg(&client->dev, "End of FW dump to file\n");
 
 out_mem_free:
-	if (buf)
-		kfree(buf);
+	kfree(buf);
 out_close:
 	if (!IS_ERR(fp))
 		filp_close(fp, current->files);
@@ -381,11 +387,12 @@ int m10mo_fw_checksum(struct m10mo_device *dev, u16 *result)
 		goto leave;
 	}
 
-	err = m10mo_wait_operation_complete(sd, REG_FLASH_CHECK, 1000);
+	err = m10mo_wait_operation_complete(sd, REG_FLASH_CHECK,
+					    CHECKSUM_TIMEOUT);
 	if (err)
 		goto leave;
 
-	m10mo_readw(sd, CATEGORY_FLASHROM, REG_FLASH_SUM , &res);
+	err = m10mo_readw(sd, CATEGORY_FLASHROM, REG_FLASH_SUM , &res);
 	if (err) {
 		dev_err(&client->dev, "Checksum read failed\n");
 		goto leave;
@@ -415,11 +422,12 @@ int m10mo_sector_erase_flash(struct m10mo_device *dev, u32 sector_addr)
 			   REG_FLASH_ERASE,
 			   REG_FLASH_ERASE_SECTOR_ERASE);
 	if (ret) {
-		dev_err(&client->dev, "Checksum cmd fails\n");
+		dev_err(&client->dev, "Checksum cmd failed\n");
 		return ret;
 	}
 
-	m10mo_wait_operation_complete(sd, REG_FLASH_ERASE, 1000);
+	m10mo_wait_operation_complete(sd, REG_FLASH_ERASE,
+				      SECTOR_ERASE_TIMEOUT);
 	return ret;
 }
 
@@ -455,7 +463,8 @@ int m10mo_chip_erase_flash(struct m10mo_device *dev)
 		dev_err(&client->dev, "Chip erase cmd failed\n");
 		return ret;
 	}
-	ret = m10mo_wait_operation_complete(sd, REG_FLASH_ERASE, 1000);
+	ret = m10mo_wait_operation_complete(sd, REG_FLASH_ERASE,
+					    CHIP_ERASE_TIMEOUT);
 	return ret;
 }
 
@@ -476,7 +485,7 @@ int m10mo_flash_write_block(struct m10mo_device *dev, u32 target_addr,
 	/* Set block size of 64k == 0 as reg value */
 	ret = m10mo_writew(sd, CATEGORY_FLASHROM, REG_FLASH_BYTE, 0);
 	if (ret) {
-		dev_err(&client->dev, "Set flash block size fails\n");
+		dev_err(&client->dev, "Set flash block size failed\n");
 		return ret;
 	}
 
@@ -487,31 +496,29 @@ int m10mo_flash_write_block(struct m10mo_device *dev, u32 target_addr,
 		if (ret) {
 			/* Retry once */
 			dev_err(&client->dev,
-				"FW write block fails - retry %d\n", i);
+				"Write block data send retry\n");
 			ret = m10mo_memory_write(sd, M10MO_MEMORY_WRITE_8BIT,
 						 ONE_WRITE_SIZE,
 						 ram_buffer, block);
+			if (ret) {
+				dev_err(&client->dev,
+					"Write block data send failed\n");
+				return ret;
+			}
 		}
-		if (ret)
-			break;
-
 		ram_buffer += ONE_WRITE_SIZE;
 		block += ONE_WRITE_SIZE;
-	}
-	if (ret) {
-		dev_err(&client->dev, "FW write block fails %d\n", i);
-		return ret;
 	}
 
 	/* Program block */
 	ret = m10mo_writeb(sd, CATEGORY_FLASHROM, REG_FLASH_WRITE,
 			   REG_FLASH_WRITE_START_PRG);
 	if (ret) {
-		dev_err(&client->dev, "FW program block fails %d\n", i);
+		dev_err(&client->dev, "FW program block failed\n");
 		return ret;
 	}
 
-	m10mo_wait_operation_complete(sd, REG_FLASH_WRITE, 1000);
+	m10mo_wait_operation_complete(sd, REG_FLASH_WRITE, PROGRAMMING_TIMEOUT);
 
 	return 0;
 }
@@ -532,7 +539,7 @@ static int m10mo_sio_write(struct m10mo_device *m10mo_dev, u8 *buf)
 	ret = m10mo_writel(sd, CATEGORY_FLASHROM, REG_DATA_RAM_ADDR,
 			   SDRAM_BUFFER_ADDRESS);
 	if (ret) {
-		dev_err(&client->dev, "sio address setting fails\n");
+		dev_err(&client->dev, "sio address setting failed\n");
 		return ret;
 	}
 
@@ -567,7 +574,8 @@ static int m10mo_sio_write(struct m10mo_device *m10mo_dev, u8 *buf)
 		return ret;
 	}
 
-	m10mo_wait_operation_complete(sd, REG_RAM_START, 1000);
+	m10mo_wait_operation_complete(sd, REG_RAM_START,
+				      STATE_TRANSITION_TIMEOUT);
 	usleep_range(30000, 30000);  /* TDB: is that required */
 
 	fw_spi_device->write(fw_spi_device->spi_device,
@@ -594,7 +602,8 @@ static int m10mo_sio_write(struct m10mo_device *m10mo_dev, u8 *buf)
 		dev_err(&client->dev, "SIO start programming failed\n");
 		return ret;
 	}
-	ret = m10mo_wait_operation_complete(sd, REG_FLASH_WRITE, 1000);
+	ret = m10mo_wait_operation_complete(sd, REG_FLASH_WRITE,
+					    PROGRAMMING_TIMEOUT);
 	return ret;
 }
 
