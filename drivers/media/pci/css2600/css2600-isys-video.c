@@ -251,24 +251,21 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 		dev_dbg(&av->isys->adev->dev, "entity %s\n", entity->name);
 
 		/* We don't support non-linear pipelines yet. */
-		if (media_entity_type(entity) != MEDIA_ENT_T_V4L2_SUBDEV) {
-			rval = -EINVAL;
-			goto out_media_entity_stop_streaming;
-		}
-
+		if (media_entity_type(entity) != MEDIA_ENT_T_V4L2_SUBDEV)
+			continue;
 		/*
 		 * Is the entity external or not? This is a little bit
 		 * hackish but entirely local and not intrusive at
-		 * all. The first of such entity is the "sensor".
+		 * all. The last such entity is the "sensor".
 		 */
-		if (sd->owner != THIS_MODULE)
-			break;
-
-		if (entity != av->ip.external) {
-			dev_dbg(&av->isys->adev->dev, "s_stream %s\n",
-				entity->name);
-			rval = v4l2_subdev_call(sd, video, s_stream, state);
+		if (sd->owner != THIS_MODULE) {
+			av->ip.external = entity;
+			continue;
 		}
+
+		dev_dbg(&av->isys->adev->dev, "s_stream %s\n",
+			entity->name);
+		rval = v4l2_subdev_call(sd, video, s_stream, state);
 		if (!state)
 			continue;
 		if (rval && rval != -ENOIOCTLCMD)
@@ -279,8 +276,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 			goto out_media_entity_stop_streaming;
 		}
 
-		if (entity != av->ip.external)
-			entities |= 1 << entity->id;
+		entities |= 1 << entity->id;
 	}
 
 	dev_dbg(&av->isys->adev->dev, "s_stream %s\n", av->ip.external->name);
