@@ -54,7 +54,7 @@ static struct v4l2_subdev_internal_ops tpg_sd_internal_ops = {
 static const struct v4l2_subdev_core_ops tpg_sd_core_ops = {
 };
 
-static int set_stream_one(struct css2600_isys_tpg_2401 *tpg)
+static int set_stream_one(struct css2600_isys_tpg *tpg)
 {
 	struct css2600_isys_pipeline *ip = tpg->isys->pipes[tpg->asd.source];
 	int rval;
@@ -92,7 +92,7 @@ static int set_stream_one(struct css2600_isys_tpg_2401 *tpg)
 
 static int set_stream(struct v4l2_subdev *sd, int enable)
 {
-	struct css2600_isys_tpg_2401 *tpg = to_css2600_isys_tpg_2401(sd);
+	struct css2600_isys_tpg *tpg = to_css2600_isys_tpg(sd);
 	struct v4l2_mbus_framefmt *ffmt = __css2600_isys_get_ffmt(
 		sd, NULL, TPG_PAD_SOURCE, V4L2_SUBDEV_FORMAT_ACTIVE);
 	struct pixelgen_tpg_cfg_s cfg = {
@@ -161,7 +161,7 @@ static struct media_entity_operations tpg_entity_ops = {
 	.link_validate = v4l2_subdev_link_validate,
 };
 
-void css2600_isys_tpg_2401_cleanup(struct css2600_isys_tpg_2401 *tpg)
+void css2600_isys_tpg_2401_cleanup(struct css2600_isys_tpg *tpg)
 {
 	v4l2_device_unregister_subdev(&tpg->asd.sd);
 	css2600_isys_subdev_cleanup(&tpg->asd);
@@ -172,7 +172,7 @@ void css2600_isys_tpg_2401_cleanup(struct css2600_isys_tpg_2401 *tpg)
 	css2600_isys_video_cleanup(&tpg->av);
 }
 
-int css2600_isys_tpg_2401_init(struct css2600_isys_tpg_2401 *tpg,
+int css2600_isys_tpg_2401_init(struct css2600_isys_tpg *tpg,
 			       struct css2600_isys *isys,
 			       void __iomem *base, unsigned int index)
 {
@@ -236,6 +236,6 @@ fail:
 	return rval;
 }
 
-void css2600_isys_tpg_2401_isr(struct css2600_isys_tpg_2401 *tpg)
+void css2600_isys_tpg_2401_isr(struct css2600_isys_tpg *tpg)
 {
 }

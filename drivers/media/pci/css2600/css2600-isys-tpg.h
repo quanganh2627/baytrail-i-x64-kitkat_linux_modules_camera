@@ -42,6 +42,7 @@ struct css2600_isys_tpg {
 
 	void __iomem *base;
 	unsigned int index;
+	int streaming;
 };
 
 #define to_css2600_isys_tpg(sd)					\

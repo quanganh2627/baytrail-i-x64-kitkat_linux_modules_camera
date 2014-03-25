@@ -53,7 +53,7 @@ static int link_validate(struct v4l2_subdev *sd, struct media_link *link,
 			 struct v4l2_subdev_format *source_fmt,
 			 struct v4l2_subdev_format *sink_fmt)
 {
-	struct css2600_isys_csi2_2401 *csi2 = to_css2600_isys_csi2_2401(sd);
+	struct css2600_isys_csi2 *csi2 = to_css2600_isys_csi2(sd);
 	struct css2600_isys_pipeline *pipe =
 		container_of(sd->entity.pipe,
 			     struct css2600_isys_pipeline, pipe);
@@ -84,7 +84,7 @@ static const struct v4l2_subdev_core_ops csi2_sd_core_ops = {
 
 static int set_stream(struct v4l2_subdev *sd, int enable)
 {
-	struct css2600_isys_csi2_2401 *csi2 = to_css2600_isys_csi2_2401(sd);
+	struct css2600_isys_csi2 *csi2 = to_css2600_isys_csi2(sd);
 
 	dev_dbg(&csi2->isys->adev->dev, "csi2_2401 s_stream %d\n", enable);
 
@@ -111,14 +111,14 @@ static struct media_entity_operations csi2_entity_ops = {
 	.link_validate = v4l2_subdev_link_validate,
 };
 
-void css2600_isys_csi2_2401_cleanup(struct css2600_isys_csi2_2401 *csi2)
+void css2600_isys_csi2_2401_cleanup(struct css2600_isys_csi2 *csi2)
 {
 	v4l2_device_unregister_subdev(&csi2->asd.sd);
 	css2600_isys_subdev_cleanup(&csi2->asd);
 	css2600_isys_video_cleanup(&csi2->av);
 }
 
-int css2600_isys_csi2_2401_init(struct css2600_isys_csi2_2401 *csi2,
+int css2600_isys_csi2_2401_init(struct css2600_isys_csi2 *csi2,
 				struct css2600_isys *isys, void __iomem *base,
 				unsigned int nlanes, unsigned int index)
 {
@@ -180,6 +180,6 @@ fail:
 	return rval;
 }
 
-void css2600_isys_csi2_2401_isr(struct css2600_isys_csi2_2401 *csi2)
+void css2600_isys_csi2_2401_isr(struct css2600_isys_csi2 *csi2)
 {
 }

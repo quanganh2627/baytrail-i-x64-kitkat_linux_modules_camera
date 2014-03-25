@@ -21,18 +21,18 @@
 #include <media/media-device.h>
 
 #include "css2600.h"
-#include "css2600-isys-csi2-2401.h"
 #include "css2600-isys-csi2.h"
 #include "css2600-isys-lib.h"
 #include "css2600-isys-tpg.h"
-#include "css2600-isys-tpg-2401.h"
 #include "css2600-isys-video.h"
 #include "css2600-pdata.h"
 
 #define CSS2600_ISYS_MAX_CSI2_PORTS		4
-#define CSS2600_ISYS_MAX_TPGS			2
-/* 2401 has a test pattern generator per port */
-#define CSS2600_ISYS_2401_MAX_TPGS		3
+/*
+ * 2401 has a test pattern generator per port (3) whereas 2600 has two
+ * port-independent ones.
+ */
+#define CSS2600_ISYS_MAX_TPGS			3
 
 /*
  * struct css2600_isys
@@ -52,9 +52,7 @@ struct css2600_isys {
 	struct css2600_isys_pdata *pdata;
 
 	struct css2600_isys_csi2 csi2[CSS2600_ISYS_MAX_CSI2_PORTS];
-	struct css2600_isys_csi2_2401 csi2_2401[CSS2600_ISYS_MAX_CSI2_PORTS];
 	struct css2600_isys_tpg tpg[CSS2600_ISYS_MAX_TPGS];
-	struct css2600_isys_tpg_2401 tpg_2401[CSS2600_ISYS_2401_MAX_TPGS];
 };
 
 extern const struct v4l2_ioctl_ops css2600_isys_ioctl_ops;

@@ -19,9 +19,9 @@
 #include <media/v4l2-device.h>
 #include <media/videobuf2-core.h>
 
+#include "css2600-isys-queue.h"
 #include "css2600-isys-subdev.h"
 #include "css2600-isys-video.h"
-#include "css2600-isys-queue.h"
 
 struct css2600_isys_csi2_pdata;
 struct css2600_isys;

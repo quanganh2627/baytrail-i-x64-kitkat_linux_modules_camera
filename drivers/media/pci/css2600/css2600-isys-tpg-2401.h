@@ -24,30 +24,10 @@
 #include "css2600-isys-queue.h"
 #include "css2600-isys-tpg.h"
 
-/*
- * struct css2600_isys_tpg
- *
- * @nlanes: number of lanes in the receiver
- */
-struct css2600_isys_tpg_2401 {
-	struct css2600_isys_tpg_pdata *pdata;
-	struct css2600_isys *isys;
-	struct css2600_isys_subdev asd;
-	struct css2600_isys_video av;
-
-	void __iomem *base;
-	unsigned int index;
-	int streaming;
-};
-
-#define to_css2600_isys_tpg_2401(sd)			\
-	container_of(to_css2600_isys_subdev(sd),	\
-		     struct css2600_isys_tpg_2401, asd)
-
-int css2600_isys_tpg_2401_init(struct css2600_isys_tpg_2401 *tpg,
+int css2600_isys_tpg_2401_init(struct css2600_isys_tpg *tpg,
 			       struct css2600_isys *isys,
 			       void __iomem *base, unsigned int index);
-void css2600_isys_tpg_2401_cleanup(struct css2600_isys_tpg_2401 *tpg);
-void css2600_isys_tpg_2401_isr(struct css2600_isys_tpg_2401 *tpg);
+void css2600_isys_tpg_2401_cleanup(struct css2600_isys_tpg *tpg);
+void css2600_isys_tpg_2401_isr(struct css2600_isys_tpg *tpg);
 
 #endif /* CSS2600_ISYS_TPG_2401_H */

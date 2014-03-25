@@ -32,6 +32,8 @@
 #include "css2600-isys-csi2.h"
 #include "css2600-isys-csi2-2401.h"
 #include "css2600-isys-lib.h"
+#include "css2600-isys-tpg.h"
+#include "css2600-isys-tpg-2401.h"
 #include "css2600-isys-video.h"
 #include "css2600-regs.h"
 #include "css2600-wrapper-2401.h"
@@ -264,8 +266,8 @@ static void isys_unregister_csi2_2401(struct css2600_isys *isys)
 	unsigned int i;
 
 	for (i = 0; i < cfg->nports; i++) {
-		css2600_isys_csi2_2401_cleanup(&isys->csi2_2401[i]);
-		css2600_isys_tpg_2401_cleanup(&isys->tpg_2401[i]);
+		css2600_isys_csi2_2401_cleanup(&isys->csi2[i]);
+		css2600_isys_tpg_2401_cleanup(&isys->tpg[i]);
 	}
 }
 
@@ -303,21 +305,21 @@ static int isys_register_csi2_2401(struct css2600_isys *isys)
 
 	for (i = 0; i < cfg->nports; i++) {
 		int rval = css2600_isys_csi2_2401_init(
-			&isys->csi2_2401[i], isys,
+			&isys->csi2[i], isys,
 			isys->pdata->base + cfg->offsets[i], cfg->nlanes[i],
 			i);
 		if (rval)
 			goto fail;
 
 		rval = css2600_isys_tpg_2401_init(
-			&isys->tpg_2401[i], isys,
+			&isys->tpg[i], isys,
 			isys->pdata->base + cfg->tpg_offsets[i], i);
 		if (rval)
 			goto fail;
 
 		rval = media_entity_create_link(
-			&isys->tpg_2401[i].asd.sd.entity, TPG_PAD_SOURCE,
-			&isys->csi2_2401[i].asd.sd.entity, CSI2_PAD_SINK,
+			&isys->tpg[i].asd.sd.entity, TPG_PAD_SOURCE,
+			&isys->csi2[i].asd.sd.entity, CSI2_PAD_SINK,
 			0);
 		if (rval)
 			goto fail;
