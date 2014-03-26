@@ -56,9 +56,19 @@ struct css2600_isys_csi2 {
 	} sensor_cfg;
 };
 
+struct css2600_isys_csi2_timing {
+	uint32_t ctermen;
+	uint32_t csettle;
+	uint32_t dtermen;
+	uint32_t dsettle;
+};
+
 #define to_css2600_isys_csi2(sd)					\
 	container_of(to_css2600_isys_subdev(sd), struct css2600_isys_csi2, asd)
 
+int css2600_isys_csi2_calc_timing(struct css2600_isys_csi2 *csi2,
+				  struct css2600_isys_csi2_timing *timing,
+				  uint32_t accinv);
 int css2600_isys_csi2_init(struct css2600_isys_csi2 *csi2, struct css2600_isys *isys,
 		      void __iomem *base, unsigned int lanes,
 		      unsigned int index);

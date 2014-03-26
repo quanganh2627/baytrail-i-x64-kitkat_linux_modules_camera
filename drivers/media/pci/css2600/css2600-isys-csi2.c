@@ -71,6 +71,103 @@ static struct v4l2_subdev_internal_ops csi2_sd_internal_ops = {
 static const struct v4l2_subdev_core_ops csi2_sd_core_ops = {
 };
 
+/*
+ * The ISP2401 new input system CSI2+ receiver has several
+ * parameters affecting the receiver timings. These depend
+ * on the MIPI bus frequency F in Hz (sensor transmitter rate)
+ * as follows:
+ *	register value = (A/1e9 + B * UI) / COUNT_ACC
+ * where
+ *	UI = 1 / (2 * F) in seconds
+ *	COUNT_ACC = counter accuracy in seconds
+ *	For ANN and CHV, COUNT_ACC = 0.0625 ns
+ *	For BXT,  COUNT_ACC = 0.125 ns
+ *
+ * A and B are coefficients from the table below,
+ * depending whether the register minimum or maximum value is
+ * calculated.
+ *				       Minimum     Maximum
+ * Clock lane			       A     B     A     B
+ * reg_rx_csi_dly_cnt_termen_clane     0     0    38     0
+ * reg_rx_csi_dly_cnt_settle_clane    95    -8   300   -16
+ * Data lanes
+ * reg_rx_csi_dly_cnt_termen_dlane0    0     0    35     4
+ * reg_rx_csi_dly_cnt_settle_dlane0   85    -2   145    -6
+ * reg_rx_csi_dly_cnt_termen_dlane1    0     0    35     4
+ * reg_rx_csi_dly_cnt_settle_dlane1   85    -2   145    -6
+ * reg_rx_csi_dly_cnt_termen_dlane2    0     0    35     4
+ * reg_rx_csi_dly_cnt_settle_dlane2   85    -2   145    -6
+ * reg_rx_csi_dly_cnt_termen_dlane3    0     0    35     4
+ * reg_rx_csi_dly_cnt_settle_dlane3   85    -2   145    -6
+ *
+ * We use the minimum values of both A and B.
+ */
+
+#define DIV_SHIFT	8
+
+static uint32_t calc_timing(int32_t a, int32_t b, int64_t link_freq,
+			    int32_t accinv)
+{
+	return accinv * a + (accinv * b * (500000000 >> DIV_SHIFT)
+			     / (int32_t)(link_freq >> DIV_SHIFT));
+}
+
+int css2600_isys_csi2_calc_timing(struct css2600_isys_csi2 *csi2,
+				  struct css2600_isys_csi2_timing *timing,
+				  uint32_t accinv)
+{
+	struct css2600_isys_pipeline *pipe =
+		container_of(csi2->asd.sd.entity.pipe,
+			     struct css2600_isys_pipeline, pipe);
+	struct v4l2_subdev *ext_sd =
+		media_entity_to_v4l2_subdev(pipe->external);
+	struct v4l2_ext_control c = { .id = V4L2_CID_LINK_FREQ, };
+	struct v4l2_ext_controls cs = { .count = 1,
+					.controls = &c, };
+	struct v4l2_querymenu qm = { .id = c.id, };
+	int rval;
+
+	rval = v4l2_g_ext_ctrls(ext_sd->ctrl_handler, &cs);
+	if (rval) {
+		dev_info(&csi2->isys->adev->dev, "can't get link frequency\n");
+		return rval;
+	}
+
+	qm.index = c.value;
+
+	rval = v4l2_querymenu(ext_sd->ctrl_handler, &qm);
+	if (rval) {
+		dev_info(&csi2->isys->adev->dev, "can't get menu item\n");
+		return rval;
+	}
+
+	dev_dbg(&csi2->isys->adev->dev, "%s: link frequency %lld\n", __func__,
+		qm.value);
+
+	if (!qm.value)
+		return -EINVAL;
+
+	timing->ctermen = calc_timing(
+		CSI2_CSI_RX_DLY_CNT_TERMEN_CLANE_A,
+		CSI2_CSI_RX_DLY_CNT_TERMEN_CLANE_B, qm.value, accinv);
+	timing->csettle = calc_timing(
+		CSI2_CSI_RX_DLY_CNT_SETTLE_CLANE_A,
+		CSI2_CSI_RX_DLY_CNT_SETTLE_CLANE_B, qm.value, accinv);
+	dev_dbg(&csi2->isys->adev->dev, "ctermen %u\n", timing->ctermen);
+	dev_dbg(&csi2->isys->adev->dev, "csettle %u\n", timing->csettle);
+
+	timing->dtermen = calc_timing(
+		CSI2_CSI_RX_DLY_CNT_TERMEN_DLANE_A,
+		CSI2_CSI_RX_DLY_CNT_TERMEN_DLANE_B, qm.value, accinv);
+	timing->dsettle = calc_timing(
+		CSI2_CSI_RX_DLY_CNT_SETTLE_DLANE_A,
+		CSI2_CSI_RX_DLY_CNT_SETTLE_DLANE_B, qm.value, accinv);
+	dev_dbg(&csi2->isys->adev->dev, "dtermen %u\n", timing->dtermen);
+	dev_dbg(&csi2->isys->adev->dev, "dsettle %u\n", timing->dsettle);
+
+	return 0;
+}
+
 static int set_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct css2600_isys_csi2 *csi2 = to_css2600_isys_csi2(sd);
