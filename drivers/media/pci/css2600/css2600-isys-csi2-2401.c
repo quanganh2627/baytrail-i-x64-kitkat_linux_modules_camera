@@ -29,6 +29,7 @@
 #include "css2600-bus.h"
 #include "css2600-isys.h"
 #include "css2600-isys-csi2-2401.h"
+#include "css2600-isys-csi2-2401-reg.h"
 #include "css2600-isys-lib.h"
 #include "css2600-isys-subdev.h"
 #include "css2600-isys-video.h"
@@ -83,6 +84,8 @@ static struct v4l2_subdev_internal_ops csi2_sd_internal_ops = {
 static const struct v4l2_subdev_core_ops csi2_sd_core_ops = {
 };
 
+#define CSI2_ACCINV	16
+
 static int set_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct css2600_isys_csi2 *csi2 = to_css2600_isys_csi2(sd);
@@ -91,7 +94,10 @@ static int set_stream(struct v4l2_subdev *sd, int enable)
 			     struct css2600_isys_pipeline, pipe);
 	struct v4l2_subdev *ext_sd =
 		media_entity_to_v4l2_subdev(pipe->external);
+	struct css2600_isys_csi2_timing timing;
 	struct css2600_isys_csi2_config *cfg;
+	unsigned int i;
+	int rval;
 
 	dev_dbg(&csi2->isys->adev->dev, "csi2_2401 s_stream %d\n", enable);
 
@@ -107,6 +113,21 @@ static int set_stream(struct v4l2_subdev *sd, int enable)
 
 	cfg = v4l2_get_subdev_hostdata(ext_sd);
 
+	rval = css2600_isys_csi2_calc_timing(csi2, &timing, CSI2_ACCINV);
+	if (rval)
+		return rval;
+
+	writel(timing.ctermen,
+	       csi2->base + CSI2_REG_2401_CSI_RX_DLY_CNT_TERMEN_CLANE);
+	writel(timing.csettle,
+	       csi2->base + CSI2_REG_2401_CSI_RX_DLY_CNT_SETTLE_CLANE);
+
+	for (i = 0; i < cfg->nlanes; i++) {
+		writel(timing.dtermen, csi2->base +
+		       CSI2_REG_2401_CSI_RX_DLY_CNT_TERMEN_DLANE(i));
+		writel(timing.dsettle, csi2->base +
+		       CSI2_REG_2401_CSI_RX_DLY_CNT_SETTLE_DLANE(i));
+	}
 	ia_css_isysapi_rx_set_csi_port_cfg(
 		csi2->isys->ssi, csi2->asd.ffmt_entry->mipi_data_type,
 		0, pipe->source, cfg->nlanes);
