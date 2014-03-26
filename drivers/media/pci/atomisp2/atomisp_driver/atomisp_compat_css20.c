@@ -325,9 +325,9 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 		dev_dbg(isp->dev,
 			 "pipe_config.pipe_mode:%d.\n", p_config->mode);
 		dev_dbg(isp->dev,
-			 "pipe_config.output_info w=%d, h=%d.\n",
-			 p_config->output_info.res.width,
-			 p_config->output_info.res.height);
+			 "pipe_config.output_info[0] w=%d, h=%d.\n",
+			 p_config->output_info[0].res.width,
+			 p_config->output_info[0].res.height);
 #ifndef CSS21
 		dev_dbg(isp->dev,
 			 "pipe_config.bin_out w=%d, h=%d.\n",
@@ -345,11 +345,11 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 #endif /* CSS21 */
 		dev_dbg(isp->dev,
 			 "pipe_config.output.padded w=%d.\n",
-			 p_config->output_info.padded_width);
+			 p_config->output_info[0].padded_width);
 		dev_dbg(isp->dev,
-			 "pipe_config.vf_output_info w=%d, h=%d.\n",
-			 p_config->vf_output_info.res.width,
-			 p_config->vf_output_info.res.height);
+			 "pipe_config.vf_output_info[0] w=%d, h=%d.\n",
+			 p_config->vf_output_info[0].res.width,
+			 p_config->vf_output_info[0].res.height);
 		dev_dbg(isp->dev,
 			 "pipe_config.bayer_ds_out_res w=%d, h=%d.\n",
 			 p_config->bayer_ds_out_res.width,
@@ -812,7 +812,7 @@ static int __create_pipe(struct atomisp_sub_device *asd,
 	struct atomisp_device *isp = asd->isp;
 	struct ia_css_pipe_extra_config extra_config;
 	enum ia_css_err ret;
-	if (!stream_env->pipe_configs[pipe_id].output_info.res.width ||
+	if (!stream_env->pipe_configs[pipe_id].output_info[0].res.width ||
 	    !is_pipe_valid_to_current_run_mode(asd, pipe_id))
 		return 0;
 
@@ -1816,7 +1816,7 @@ void atomisp_css_enable_raw_binning(struct atomisp_sub_device *asd,
 		stream_env->pipe_configs[pipe].bin_out_res.height =
 		    stream_env->stream_config.effective_res.height;
 #endif /* CSS21 */
-		stream_env->pipe_configs[pipe].output_info.padded_width =
+		stream_env->pipe_configs[pipe].output_info[0].padded_width =
 		    stream_env->stream_config.effective_res.width;
 	}
 }
@@ -2199,10 +2199,10 @@ static void __configure_output(struct atomisp_sub_device *asd,
 		__pipe_id_to_pipe_mode(pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
-	stream_env->pipe_configs[pipe_id].output_info.res.width = width;
-	stream_env->pipe_configs[pipe_id].output_info.res.height = height;
-	stream_env->pipe_configs[pipe_id].output_info.format = format;
-	stream_env->pipe_configs[pipe_id].output_info.padded_width = min_width;
+	stream_env->pipe_configs[pipe_id].output_info[0].res.width = width;
+	stream_env->pipe_configs[pipe_id].output_info[0].res.height = height;
+	stream_env->pipe_configs[pipe_id].output_info[0].format = format;
+	stream_env->pipe_configs[pipe_id].output_info[0].padded_width = min_width;
 
 	/* isp binary 2.2 specific setting*/
 	if (width > stream_env->stream_config.effective_res.width ||
@@ -2235,10 +2235,10 @@ static void __configure_pp_input(struct atomisp_sub_device *asd,
 
 	if (width * 9 / 10 <
 	    stream_env->pipe_configs[pipe_id].
-	    output_info.res.width ||
+	    output_info[0].res.width ||
 	    height * 9 / 10 <
 	    stream_env->pipe_configs[pipe_id].
-	    output_info.res.height
+	    output_info[0].res.height
 	   )
 		return;
 	stream_env->pipe_configs[pipe_id].mode =
@@ -2274,8 +2274,8 @@ static void __configure_capture_pp_input(struct atomisp_sub_device *asd,
 	if (width == 0 && height == 0)
 		return;
 
-	if (width * 9 / 10 < pipe_configs->output_info.res.width ||
-	    height * 9 / 10 < pipe_configs->output_info.res.height)
+	if (width * 9 / 10 < pipe_configs->output_info[0].res.width ||
+	    height * 9 / 10 < pipe_configs->output_info[0].res.height)
 		return;
 
 	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
@@ -2325,8 +2325,8 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 
 	pipe_extra_configs->enable_yuv_ds = true;
 
-	out_width = pipe_configs->output_info.res.width;
-	out_height = pipe_configs->output_info.res.height;
+	out_width = pipe_configs->output_info[0].res.width;
+	out_height = pipe_configs->output_info[0].res.height;
 
 	/*
 	 * The ISP could do bayer downscaling, yuv decimation and yuv
@@ -2447,11 +2447,11 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 	 */
 	/* taking at least 10% as envelope */
 	if (asd->params.video_dis_en) {
-		out_width = pipe_configs->output_info.res.width * 110 / 100;
-		out_height = pipe_configs->output_info.res.height * 110 / 100;
+		out_width = pipe_configs->output_info[0].res.width * 110 / 100;
+		out_height = pipe_configs->output_info[0].res.height * 110 / 100;
 	} else {
-		out_width = pipe_configs->output_info.res.width;
-		out_height = pipe_configs->output_info.res.height;
+		out_width = pipe_configs->output_info[0].res.width;
+		out_height = pipe_configs->output_info[0].res.height;
 	}
 
 	/*
@@ -2514,10 +2514,10 @@ static void __configure_vf_output(struct atomisp_sub_device *asd,
 					__pipe_id_to_pipe_mode(pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
-	stream_env->pipe_configs[pipe_id].vf_output_info.res.width = width;
-	stream_env->pipe_configs[pipe_id].vf_output_info.res.height = height;
-	stream_env->pipe_configs[pipe_id].vf_output_info.format = format;
-	stream_env->pipe_configs[pipe_id].vf_output_info.padded_width =
+	stream_env->pipe_configs[pipe_id].vf_output_info[0].res.width = width;
+	stream_env->pipe_configs[pipe_id].vf_output_info[0].res.height = height;
+	stream_env->pipe_configs[pipe_id].vf_output_info[0].format = format;
+	stream_env->pipe_configs[pipe_id].vf_output_info[0].padded_width =
 		min_width;
 	dev_dbg(isp->dev,
 		"configuring pipe[%d] vf output info w=%d.h=%d.f=%d.\n",
@@ -2553,11 +2553,11 @@ static int __get_frame_info(struct atomisp_sub_device *asd,
 	if (ret == IA_CSS_SUCCESS) {
 		switch (type) {
 		case ATOMISP_CSS_VF_FRAME:
-			*info = p_info.vf_output_info;
+			*info = p_info.vf_output_info[0];
 			dev_dbg(isp->dev, "getting vf frame info.\n");
 			break;
 		case ATOMISP_CSS_OUTPUT_FRAME:
-			*info = p_info.output_info;
+			*info = p_info.output_info[0];
 			dev_dbg(isp->dev, "getting main frame info.\n");
 			break;
 		case ATOMISP_CSS_RAW_FRAME:
@@ -2621,20 +2621,20 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 	switch (source_pad) {
 	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
 	case ATOMISP_SUBDEV_PAD_SOURCE_VIDEO:
-		*frame_info = info.output_info;
+		*frame_info = info.output_info[0];
 		break;
 	case ATOMISP_SUBDEV_PAD_SOURCE_VF:
 		if (stream_index == ATOMISP_INPUT_STREAM_POSTVIEW)
-			*frame_info = info.output_info;
+			*frame_info = info.output_info[0];
 		else
-			*frame_info = info.vf_output_info;
+			*frame_info = info.vf_output_info[0];
 		break;
 	case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
 		    pipe_index == IA_CSS_PIPE_ID_VIDEO)
-			*frame_info = info.vf_output_info;
+			*frame_info = info.vf_output_info[0];
 		else
-			*frame_info = info.output_info;
+			*frame_info = info.output_info[0];
 		break;
 	default:
 		frame_info = NULL;

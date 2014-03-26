@@ -2046,8 +2046,8 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 		return -EINVAL;
 
 	/* the GDC output resolution */
-	bq_res->output_bq.width_bq = pipe_cfg->output_info.res.width / 2;
-	bq_res->output_bq.height_bq = pipe_cfg->output_info.res.height / 2;
+	bq_res->output_bq.width_bq = pipe_cfg->output_info[0].res.width / 2;
+	bq_res->output_bq.height_bq = pipe_cfg->output_info[0].res.height / 2;
 
 	bq_res->envelope_bq.width_bq = 0;
 	bq_res->envelope_bq.height_bq = 0;
@@ -2138,14 +2138,14 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 			bq_res->gdc_shift_bq.height_bq = 4 / 2;
 
 			dvs_w = pipe_cfg->bayer_ds_out_res.width -
-			        pipe_cfg->output_info.res.width;
+			        pipe_cfg->output_info[0].res.width;
 			dvs_h = pipe_cfg->bayer_ds_out_res.height -
-			        pipe_cfg->output_info.res.height;
+			        pipe_cfg->output_info[0].res.height;
 			dvs_w_max = rounddown(
-					pipe_cfg->output_info.res.width / 5,
+					pipe_cfg->output_info[0].res.width / 5,
 					ATOM_ISP_STEP_WIDTH);
 			dvs_h_max = rounddown(
-					pipe_cfg->output_info.res.height / 5,
+					pipe_cfg->output_info[0].res.height / 5,
 					ATOM_ISP_STEP_HEIGHT);
 			bq_res->envelope_bq.width_bq =
 				min((dvs_w / 2), (dvs_w_max / 2)) -
@@ -2815,14 +2815,14 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 			unsigned int dvs_w, dvs_h, dvs_w_max, dvs_h_max;
 
 			dvs_w = vp_cfg->bayer_ds_out_res.width -
-			        vp_cfg->output_info.res.width;
+			        vp_cfg->output_info[0].res.width;
 			dvs_h = vp_cfg->bayer_ds_out_res.height -
-			        vp_cfg->output_info.res.height;
+			        vp_cfg->output_info[0].res.height;
 			dvs_w_max = rounddown(
-					vp_cfg->output_info.res.width / 5,
+					vp_cfg->output_info[0].res.width / 5,
 					ATOM_ISP_STEP_WIDTH);
 			dvs_h_max = rounddown(
-					vp_cfg->output_info.res.height / 5,
+					vp_cfg->output_info[0].res.height / 5,
 					ATOM_ISP_STEP_HEIGHT);
 
 			config->dvs_envelop.width = min(dvs_w, dvs_w_max);
