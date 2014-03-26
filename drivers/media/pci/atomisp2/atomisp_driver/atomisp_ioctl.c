@@ -1365,7 +1365,8 @@ enum atomisp_css_pipe_id atomisp_get_css_pipe_id(struct atomisp_sub_device *asd)
 
 static unsigned int atomisp_sensor_start_stream(struct atomisp_sub_device *asd)
 {
-	if (asd->vfpp->val != ATOMISP_VFPP_ENABLE)
+	if (asd->vfpp->val != ATOMISP_VFPP_ENABLE ||
+	    asd->copy_mode)
 		return 1;
 
 	if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO ||
