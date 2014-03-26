@@ -561,28 +561,6 @@ int atomisp_alloc_metadata_output_buf(struct atomisp_sub_device *asd)
 	return 0;
 }
 
-int atomisp_css_get_3a_statistics(struct atomisp_sub_device *asd,
-				  struct atomisp_css_buffer *isp_css_buffer)
-{
-	enum sh_css_err err;
-
-	if (asd->params.s3a_output_buf && asd->params.s3a_output_bytes) {
-		/* To avoid racing with atomisp_3a_stat() */
-		err = sh_css_get_3a_statistics(
-			asd->params.s3a_output_buf,
-			asd->params.curr_grid_info.s3a_grid.use_dmem,
-			isp_css_buffer->s3a_data);
-		if (err != sh_css_success) {
-			dev_err(asd->isp->dev,
-				"sh_css_get_3a_statistics failed: 0x%x\n", err);
-			return -EINVAL;
-		}
-		asd->params.s3a_buf_data_valid = true;
-	}
-
-	return 0;
-}
-
 void atomisp_css_get_dis_statistics(struct atomisp_sub_device *asd,
 				    struct atomisp_css_buffer *isp_css_buffer)
 {
@@ -594,7 +572,6 @@ void atomisp_css_get_dis_statistics(struct atomisp_sub_device *asd,
 		sh_css_get_dis_projections(asd->params.dis_hor_proj_buf,
 				   asd->params.dis_ver_proj_buf,
 				   isp_css_buffer->dis_data);
-		asd->params.dis_proj_data_valid = true;
 	}
 }
 

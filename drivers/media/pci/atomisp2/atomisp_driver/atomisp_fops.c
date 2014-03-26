@@ -164,21 +164,35 @@ int atomisp_q_s3a_buffers_to_css(struct atomisp_sub_device *asd,
 				enum atomisp_css_pipe_id css_pipe_id)
 {
 	struct atomisp_s3a_buf *s3a_buf;
-
-	if (list_empty(&asd->s3a_stats)) {
-		WARN(1, "%s: No s3a buffers available!\n", __func__);
-		return -EINVAL;
-	}
+	unsigned long irqflags;
 
 	while (asd->s3a_bufs_in_css[css_pipe_id] < ATOMISP_CSS_Q_DEPTH) {
-		s3a_buf = list_entry(asd->s3a_stats.next,
+		spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
+		if (list_empty(&asd->s3a_stats)) {
+			spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
+			dev_warn(asd->isp->dev, "%s: No s3a buffers available!\n",
+			         __func__);
+			return -EINVAL;
+		}
+
+		s3a_buf = list_entry(asd->s3a_stats.prev,
 				struct atomisp_s3a_buf, list);
-		list_move_tail(&s3a_buf->list, &asd->s3a_stats);
+		list_del_init(&s3a_buf->list);
+		spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
 
 		hmm_flush_vmap(s3a_buf->s3a_data->data_ptr);
 		if (atomisp_q_s3a_buffer_to_css(asd, s3a_buf,
-						stream_id, css_pipe_id))
+						stream_id, css_pipe_id)) {
+			spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
+			/* got from head, so return back to the head */
+			list_add(&s3a_buf->list, &asd->s3a_stats);
+			spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
 			return -EINVAL;
+		} else {
+			spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
+			list_add_tail(&s3a_buf->list, &asd->s3a_stats_in_css);
+			spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
+		}
 
 		asd->s3a_bufs_in_css[css_pipe_id]++;
 	}
@@ -190,21 +204,36 @@ int atomisp_q_dis_buffers_to_css(struct atomisp_sub_device *asd,
 				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_pipe_id css_pipe_id)
 {
-	if (list_empty(&asd->dis_stats)) {
-		WARN(1, "%s: No dis buffers available!\n", __func__);
-		return -EINVAL;
-	}
+	struct atomisp_dis_buf *dis_buf;
+	unsigned long irqflags;
 
 	while (asd->dis_bufs_in_css < ATOMISP_CSS_Q_DEPTH) {
-		struct atomisp_dis_buf *dis_buf =
-			list_entry(asd->dis_stats.next,
-				   struct atomisp_dis_buf, list);
-		list_move_tail(&dis_buf->list, &asd->dis_stats);
+		spin_lock_irqsave(&asd->dis_stats_lock, irqflags);
+		if (list_empty(&asd->dis_stats)) {
+			spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
+			dev_warn(asd->isp->dev, "%s: No dis buffers available!\n",
+			         __func__);
+			return -EINVAL;
+		}
+
+		dis_buf = list_entry(asd->dis_stats.prev,
+				struct atomisp_dis_buf, list);
+		list_del_init(&dis_buf->list);
+		spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
 
 		hmm_flush_vmap(dis_buf->dis_data->data_ptr);
 		if (atomisp_q_dis_buffer_to_css(asd, dis_buf,
-						stream_id, css_pipe_id))
+						stream_id, css_pipe_id)) {
+			spin_lock_irqsave(&asd->dis_stats_lock, irqflags);
+			/* got from head, so return back to the head */
+			list_add(&dis_buf->list, &asd->dis_stats);
+			spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
 			return -EINVAL;
+		} else {
+			spin_lock_irqsave(&asd->dis_stats_lock, irqflags);
+			list_add_tail(&dis_buf->list, &asd->dis_stats_in_css);
+			spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
+		}
 
 		asd->dis_bufs_in_css++;
 	}

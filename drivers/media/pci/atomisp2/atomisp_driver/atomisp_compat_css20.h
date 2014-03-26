@@ -163,12 +163,14 @@ struct atomisp_css_env {
 struct atomisp_s3a_buf {
 	atomisp_css_3a_data *s3a_data;
 	struct ia_css_isp_3a_statistics_map *s3a_map;
+	unsigned int exp_id;
 	struct list_head list;
 };
 
 struct atomisp_dis_buf {
 	struct atomisp_css_dis_data *dis_data;
 	struct ia_css_isp_dvs_statistics_map *dvs_map;
+	unsigned int exp_id;
 	struct list_head list;
 };
 

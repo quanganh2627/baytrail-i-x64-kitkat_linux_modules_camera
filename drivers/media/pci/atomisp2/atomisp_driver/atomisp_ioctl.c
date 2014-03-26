@@ -898,8 +898,7 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 	struct atomisp_dis_buf *dis_buf = NULL, *_dis_buf;
 	struct atomisp_metadata_buf *md_buf = NULL, *_md_buf;
 
-	/* 2 css pipes consuming 3a buffers */
-	int count = ATOMISP_CSS_Q_DEPTH * 2;
+	int count;
 	struct atomisp_device *isp = asd->isp;
 
 	if (!list_empty(&asd->s3a_stats) &&
@@ -907,8 +906,8 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 	    !list_empty(&asd->metadata))
 		return 0;
 
+	count = ATOMISP_CSS_Q_DEPTH + 1;
 	dev_dbg(isp->dev, "allocating %d 3a & dis buffers\n", count);
-
 	while (count--) {
 		s3a_buf = kzalloc(sizeof(struct atomisp_s3a_buf), GFP_KERNEL);
 		if (!s3a_buf) {
@@ -922,25 +921,32 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 			kfree(s3a_buf);
 			goto error;
 		}
+		if (atomisp_css_allocate_stat_buffers(
+					asd, s3a_buf, dis_buf, NULL)) {
+			kfree(s3a_buf);
+			kfree(dis_buf);
+			goto error;
+		}
 
+		list_add_tail(&s3a_buf->list, &asd->s3a_stats);
+		list_add_tail(&dis_buf->list, &asd->dis_stats);
+	}
+
+	count = ATOMISP_CSS_Q_DEPTH * 2;
+	dev_dbg(isp->dev, "allocating %d metadata buffers\n", count);
+	while (count--) {
 		md_buf = kzalloc(sizeof(struct atomisp_metadata_buf),
 				 GFP_KERNEL);
 		if (!md_buf) {
 			dev_err(isp->dev, "metadata buf alloc failed\n");
-			kfree(s3a_buf);
-			kfree(dis_buf);
 			goto error;
 		}
 
 		if (atomisp_css_allocate_stat_buffers(
-					asd, s3a_buf, dis_buf, md_buf)) {
-			kfree(s3a_buf);
-			kfree(dis_buf);
+					asd, NULL, NULL, md_buf)) {
 			kfree(md_buf);
 			goto error;
 		}
-		list_add_tail(&s3a_buf->list, &asd->s3a_stats);
-		list_add_tail(&dis_buf->list, &asd->dis_stats);
 		list_add_tail(&md_buf->list, &asd->metadata);
 	}
 

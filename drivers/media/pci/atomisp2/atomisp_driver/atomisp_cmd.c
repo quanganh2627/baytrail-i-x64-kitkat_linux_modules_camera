@@ -768,38 +768,6 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 	return &asd->video_out_capture;
 }
 
-static struct ia_css_isp_3a_statistics_map *
-find_s3a_map(struct atomisp_sub_device *asd,
-		const struct ia_css_isp_3a_statistics *stats)
-{
-	struct atomisp_s3a_buf *s3a_buf = NULL, *_s3a_buf_tmp;
-
-	list_for_each_entry_safe(s3a_buf, _s3a_buf_tmp,
-					&asd->s3a_stats, list) {
-		if (s3a_buf->s3a_data == stats)
-			return s3a_buf->s3a_map;
-	}
-
-	dev_err(asd->isp->dev, "could not find s3a_map for stats %p\n", stats);
-	return NULL;
-}
-
-static struct ia_css_isp_dvs_statistics_map *
-find_dvs_map(struct atomisp_sub_device *asd,
-		const struct ia_css_isp_dvs_statistics *stats)
-{
-	struct atomisp_dis_buf *dvs_buf = NULL, *_dvs_buf_tmp;
-
-	list_for_each_entry_safe(dvs_buf, _dvs_buf_tmp,
-					&asd->dis_stats, list) {
-		if (dvs_buf->dis_data == stats)
-			return dvs_buf->dvs_map;
-	}
-
-	dev_err(asd->isp->dev, "could not find dvs_map for stats %p\n", stats);
-	return NULL;
-}
-
 void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 		      enum atomisp_css_buffer_type buf_type,
 		      enum atomisp_css_pipe_id css_pipe_id,
@@ -812,6 +780,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 	int err;
 	unsigned long irqflags;
 	struct atomisp_css_frame *frame = NULL;
+	struct atomisp_s3a_buf *s3a_buf = NULL, *_s3a_buf_tmp;
+	struct atomisp_dis_buf *dis_buf = NULL, *_dis_buf_tmp;
 	struct atomisp_device *isp = asd->isp;
 
 	if (
@@ -845,17 +815,20 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 
 	switch (buf_type) {
 		case CSS_BUFFER_TYPE_3A_STATISTICS:
-			/* update the 3A data to ISP context */
-			if (!error) {
-				struct ia_css_isp_3a_statistics_map *map;
-
-				map = find_s3a_map(asd,
-					buffer.css_buffer.data.stats_3a);
-				atomisp_css_get_3a_statistics(asd, &buffer, map);
+			list_for_each_entry_safe(s3a_buf, _s3a_buf_tmp,
+							&asd->s3a_stats_in_css, list) {
+				if (s3a_buf->s3a_data == buffer.css_buffer.data.stats_3a) {
+					spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
+					list_del_init(&s3a_buf->list);
+					s3a_buf->exp_id = buffer.css_buffer.exp_id;
+					list_add(&s3a_buf->list, &asd->s3a_stats);
+					asd->params.s3a_buf_data_valid = true;
+					spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
+					break;
+				}
 			}
 
 			asd->s3a_bufs_in_css[css_pipe_id]--;
-
 			atomisp_3a_stats_ready_event(asd);
 			break;
 		case CSS_BUFFER_TYPE_METADATA:
@@ -868,14 +841,18 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			atomisp_metadata_ready_event(asd);
 			break;
 		case CSS_BUFFER_TYPE_DIS_STATISTICS:
-			if (!error) {
-				struct ia_css_isp_dvs_statistics_map *map;
-
-				map = find_dvs_map(asd,
-					buffer.css_buffer.data.stats_dvs);
-				atomisp_css_get_dis_statistics(asd, &buffer, map);
+			list_for_each_entry_safe(dis_buf, _dis_buf_tmp,
+							&asd->dis_stats_in_css, list) {
+				if (dis_buf->dis_data == buffer.css_buffer.data.stats_dvs) {
+					spin_lock_irqsave(&asd->dis_stats_lock, irqflags);
+					list_del_init(&dis_buf->list);
+					dis_buf->exp_id = buffer.css_buffer.exp_id;
+					list_add(&dis_buf->list, &asd->dis_stats);
+					asd->params.dis_proj_data_valid = true;
+					spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
+					break;
+				}
 			}
-
 			asd->dis_bufs_in_css--;
 			break;
 		case CSS_BUFFER_TYPE_VF_OUTPUT_FRAME:
@@ -2201,8 +2178,10 @@ int atomisp_set_dis_coefs(struct atomisp_sub_device *asd,
 int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 		    struct atomisp_3a_statistics *config)
 {
-	unsigned long ret;
 	struct atomisp_device *isp = asd->isp;
+	struct atomisp_s3a_buf *s3a_buf;
+	unsigned long irqflags;
+	unsigned long ret;
 
 	if (flag != 0)
 		return -EINVAL;
@@ -2218,26 +2197,38 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 		return -EAGAIN;
 	}
 
-	/* This is done in the atomisp_s3a_buf_done() */
-	if (!asd->params.s3a_buf_data_valid) {
+	spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
+	if (!asd->params.s3a_buf_data_valid || list_empty(&asd->s3a_stats)) {
+		spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
 		dev_err(isp->dev, "3a statistics is not valid.\n");
 		return -EAGAIN;
 	}
 
-#ifdef CSS20
+	s3a_buf = list_entry(asd->s3a_stats.next,
+			struct atomisp_s3a_buf, list);
+	list_del_init(&s3a_buf->list);
+	spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
+
+	if (s3a_buf->s3a_map)
+		ia_css_translate_3a_statistics(
+			asd->params.s3a_user_stat, s3a_buf->s3a_map);
+	else
+		ia_css_get_3a_statistics(asd->params.s3a_user_stat,
+			s3a_buf->s3a_data);
+
+	config->exp_id = s3a_buf->exp_id;
+
+	spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
+	list_add_tail(&s3a_buf->list, &asd->s3a_stats);
+	spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
+
 	ret = copy_to_user(config->data, asd->params.s3a_user_stat->data,
 			   asd->params.s3a_output_bytes);
-#else /* CSS20 */
-	ret = copy_to_user(config->data, asd->params.s3a_output_buf,
-			   asd->params.s3a_output_bytes);
-#endif /* CSS20 */
 	if (ret) {
 		dev_err(isp->dev, "copy to user failed: copied %lu bytes\n",
 				ret);
 		return -EFAULT;
 	}
-	config->exp_id = asd->params.s3a_exp_id;
-
 	return 0;
 }
 

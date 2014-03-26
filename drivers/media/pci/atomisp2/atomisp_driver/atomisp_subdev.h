@@ -195,11 +195,11 @@ struct atomisp_css_params {
 
 	struct atomisp_css_isp_config config;
 
-	/* Intermediate buffers used to communicate data between
-	   CSS and user space. These are needed to perform the
-	   copy_to_user. */
+	/*
+	 * Intermediate buffers used to communicate data between
+	 * CSS and user space.
+	 */
 	struct ia_css_3a_statistics *s3a_user_stat;
-	uint32_t s3a_exp_id;
 	void *metadata_user;
 	/* The metadata_exp_id is used sensor metadata. */
 	uint32_t metadata_exp_id;
@@ -291,7 +291,11 @@ struct atomisp_sub_device {
 	struct list_head metadata;
 
 	struct list_head s3a_stats;
+	struct list_head s3a_stats_in_css;
+	spinlock_t s3a_stats_lock;
 	struct list_head dis_stats;
+	struct list_head dis_stats_in_css;
+	spinlock_t dis_stats_lock;
 
 	struct atomisp_css_frame *vf_frame; /* TODO: needed? */
 	struct atomisp_css_frame *raw_output_frame;
