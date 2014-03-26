@@ -570,6 +570,7 @@ static unsigned int atomisp_subdev_streaming_count(
 	return asd->video_out_preview.capq.streaming
 		+ asd->video_out_capture.capq.streaming
 		+ asd->video_out_video_capture.capq.streaming
+		+ asd->video_out_vf.capq.streaming
 		+ asd->video_in.capq.streaming;
 }
 
