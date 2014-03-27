@@ -311,7 +311,8 @@ static int get_atomisp_3a_statistics32(struct atomisp_3a_statistics *kp,
 #ifdef CSS20
 		get_user(rgby_data, &up->rgby_data) ||
 #endif
-		get_user(data, &up->data))
+		get_user(data, &up->data) ||
+		get_user(kp->exp_id, &up->exp_id))
 			return -EFAULT;
 
 	kp->data = compat_ptr(data);
@@ -335,7 +336,8 @@ static int put_atomisp_3a_statistics32(struct atomisp_3a_statistics *kp,
 #ifdef CSS20
 		put_user(rgby_data, &up->rgby_data) ||
 #endif
-		put_user(data, &up->data))
+		put_user(data, &up->data) ||
+		put_user(kp->exp_id, &up->exp_id))
 			return -EFAULT;
 
 	return 0;
