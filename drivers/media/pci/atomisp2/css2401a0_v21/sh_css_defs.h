@@ -32,9 +32,9 @@
 #include "math_support.h"	/* max(), min, etc etc */
 
 /* Macros for Controlling SP1 enabling and compilation */
-/* SH_CSS_DEFS_INCLUDED is to test whether all SP1 dependent files have included
+/* CHECK_IF_SH_CSS_DEFS_INCLUDED is to test whether all SP1 dependent files have included
 	sh_css_defs.h file or not */
-#define SH_CSS_DEFS_INCLUDED
+#define CHECK_IF_SH_CSS_DEFS_INCLUDED
 
 #if defined(IS_ISP_2500_SYSTEM)
 #define ENABLE_SP1  /* Disabling this Macro excludes SP1 from the system */

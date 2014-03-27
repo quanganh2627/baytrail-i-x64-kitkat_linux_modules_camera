@@ -24,13 +24,33 @@
 #ifndef __CSS_API_VERSION_H
 #define __CSS_API_VERSION_H
 
-#define CSS_API_VERSION_STRING	"2.0.1.0"
+/*
+The last two digits of the CSS_API_VERSION_STRING give the major and minor
+versions of the CSS-API. The minor version number will be increased by one when
+a backwards-compatible change is made. The major version number will be
+increased (and the minor version number reset) when a non-backwards-compatbile
+change is made.
+*/
+#define CSS_API_VERSION_STRING	"2.1.0.0"
 
 /*
 Change log
-V2.0.1.0, initial version:
- - added API verioning
-*/
 
+V2.0.1.0, initial version:
+ - added API versioning
+
+V2.0.1.1, activate CSS-API versioning:
+ - added description of major and minor version numbers
+
+v2.0.1.2, modified struct ia_css_frame_info:
+ - added new member ia_css_crop_info
+
+V2.0.1.3, added IA_CSS_ERR_NOT_SUPPORTED
+
+V2.1.0.0
+- moved version number to 2.1.0.0
+- created new files for refactoring the code
+
+*/
 
 #endif __CSS_API_VERSION_H

@@ -527,6 +527,21 @@ STORAGE_CLASS_ISP_OP1W_H tvector2w OP_1w_cast_to_2w (
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_2w_cast_to_1w (
     const tvector2w    _a);
 
+
+/** @brief Cast from int to 1w with saturation
+ *
+ * @param[in] _a	input
+ *
+ * @return		_a
+ *
+ * This function cast the input from double precision type to
+ * single precision after saturating it to the range of single
+ * precision.
+ *
+ */
+STORAGE_CLASS_ISP_OP1W_H tvector1w OP_2w_sat_cast_to_1w (
+    const tvector2w    _a);
+
 /* clipping */
 
 /** @brief Clip asymetrical

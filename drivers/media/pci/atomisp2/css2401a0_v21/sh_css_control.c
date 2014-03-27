@@ -19,18 +19,5 @@
  *
  */
 
-#ifndef __SW_EVENT_GLOBAL_H_INCLUDED__
-#define __SW_EVENT_GLOBAL_H_INCLUDED__
-
-#define MAX_NR_OF_PAYLOADS_PER_SW_EVENT 4
-
-#define SP_SW_EVENT_ID_0	0	/* for the error		*/
-#define SP_SW_EVENT_ID_1	1	/* for the host2sp_buffer_queue */
-#define SP_SW_EVENT_ID_2	2	/* for the sp2host_buffer_queue */
-#define SP_SW_EVENT_ID_3	3	/* for the sp2host_event_queue  */
-#define SP_SW_EVENT_ID_4	4	/* for the start stream cmd */
-#define SP_SW_EVENT_ID_5	5	/* for the stop stream cmd  */
-#define SP_SW_EVENT_ID_6	6	/* for the host2sp empty mipi buffers */
-
-#endif /* __SW_EVENT_GLOBAL_H_INCLUDED__ */
-
+/* This file will contain the code to implement the functions declared in ia_css_control.h
+   and associated helper functions */

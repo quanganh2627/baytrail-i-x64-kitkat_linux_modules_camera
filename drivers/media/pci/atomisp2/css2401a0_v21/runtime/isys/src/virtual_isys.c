@@ -21,6 +21,7 @@
 
 #include "ia_css_isys.h"
 #include "math_support.h"
+#include "string_support.h"
 #include "virtual_isys.h"
 #include "isp.h"
 #include "sh_css_defs.h"
@@ -146,6 +147,10 @@ static csi_mipi_packet_type_t get_csi_mipi_packet_type(
 static int32_t calculate_input_system_alignment(
 	int32_t fmt_type,
         int32_t bytes_per_pixel);
+
+static int32_t calculate_packed_stride(
+	int32_t bits_per_pixel,
+	int32_t pixels_per_line);
 
 /** end of Forwarded Declaration */
 
@@ -450,7 +455,7 @@ static bool calculate_input_system_channel_cfg(
 
 	rc = calculate_isys2401_dma_port_cfg(
 			isys_cfg,
-			false,
+			isys_cfg->raw_packed,
 			metadata,
 			&(channel_cfg->dma_dest_port_cfg));
 	if (rc == false)
@@ -540,6 +545,31 @@ static int32_t calculate_input_system_alignment(
 	return memory_alignment_in_bytes;
 }
 
+static int32_t calculate_packed_stride(
+	int32_t bits_per_pixel,
+	int32_t pixels_per_line)
+{
+	const int32_t bits_per_byte = 8;
+	const int32_t bits_per_word = 256;
+
+	int32_t bytes_per_line;
+	int32_t pixels_per_word;
+	int32_t words_per_line;
+	int32_t bytes_per_word;
+	int32_t pixels_per_line_padded;
+
+	bytes_per_word  = bits_per_word / bits_per_byte;
+
+	pixels_per_line_padded = CEIL_MUL(pixels_per_line, 2 * ISP_VEC_NELEMS);
+
+	/* compact as many pixels as possible into a word */
+	pixels_per_word = bits_per_word / bits_per_pixel;
+	words_per_line  = ceil_div(pixels_per_line_padded, pixels_per_word);
+	bytes_per_line  = bytes_per_word * words_per_line;
+
+	return bytes_per_line;
+}
+
 static bool acquire_ib_buffer(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
@@ -610,11 +640,11 @@ static bool calculate_tpg_cfg(
 	(void)channel;
 	(void)input_port;
 
-	memcpy(
+	memcpy_s(
 		(void *)cfg,
+		sizeof(pixelgen_tpg_cfg_t),
 		(void *)(&(isys_cfg->tpg_port_attr)),
 		sizeof(pixelgen_tpg_cfg_t));
-
 	return true;
 }
 
@@ -627,11 +657,11 @@ static bool calculate_prbs_cfg(
 	(void)channel;
 	(void)input_port;
 
-	memcpy(
+	memcpy_s(
 		(void *)cfg,
+		sizeof(pixelgen_prbs_cfg_t),
 		(void *)(&(isys_cfg->prbs_port_attr)),
 		sizeof(pixelgen_prbs_cfg_t));
-
 	return true;
 }
 
@@ -649,9 +679,12 @@ static bool calculate_be_cfg(
 	bool metadata,
 	csi_rx_backend_cfg_t		*cfg)
 {
-	memcpy((void *)(&cfg->lut_entry),
+
+	memcpy_s(
+		(void *)(&cfg->lut_entry),
+		sizeof(csi_rx_backend_lut_entry_t),
 		metadata ? (void *)(&input_port->metadata.backend_lut_entry) :
-		(void *)(&input_port->csi_rx.backend_lut_entry),
+			(void *)(&input_port->csi_rx.backend_lut_entry),
 		sizeof(csi_rx_backend_lut_entry_t));
 
 	cfg->csi_mipi_packet_type = metadata ?
@@ -729,6 +762,9 @@ static bool calculate_ibuf_ctrl_cfg(
 		cfg->dest_buf_cfg.stride	= bytes_per_pixel
 			* isys_cfg->output_port_attr.max_isp_input_width;
 		cfg->dest_buf_cfg.lines		= LINES_OF_ISP_INPUT_BUF;
+	} else if (isys_cfg->raw_packed) {
+		cfg->dest_buf_cfg.stride	= calculate_packed_stride(bits_per_pixel,
+							isys_cfg->input_port_resolution.pixels_per_line);
 	} else {
 		cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
 	}
@@ -808,11 +844,9 @@ static bool calculate_isys2401_dma_port_cfg(
 	bytes_per_word  = bits_per_word / bits_per_byte;
 
 	if (is_compact_mode) {
-		/* compact as many pixels as possible into a word */
 		pixels_per_word = bits_per_word / bits_per_pixel;
-
-		words_per_line  = ceil_div(pixels_per_line, pixels_per_word);
-		bytes_per_line  = bytes_per_word * words_per_line;
+		bytes_per_line  = calculate_packed_stride(bits_per_pixel, pixels_per_line);
+		words_per_line  = bytes_per_line / bytes_per_word;
 	} else {
 		/* up-round "bits_per_pixel" to N times of 8-bit */
 		bytes_per_pixel = ceil_div(bits_per_pixel, bits_per_byte);
@@ -825,7 +859,12 @@ static bool calculate_isys2401_dma_port_cfg(
 						bytes_per_pixel);
 	}
 
-	cfg->stride	= CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
+	if (is_compact_mode) {
+		cfg->stride = bytes_per_line;
+	} else {
+		cfg->stride = CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
+	}
+
 	cfg->elements	= pixels_per_word;
 	cfg->cropping	= 0;
 	cfg->width	= CEIL_MUL(words_per_line,

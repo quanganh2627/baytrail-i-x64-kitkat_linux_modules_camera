@@ -31,16 +31,16 @@ ia_css_copy_output_config(
 	struct sh_css_isp_copy_output_isp_config      *to,
 	const struct ia_css_copy_output_configuration *from)
 {
-	to->enable = from->output != NULL;
+	to->enable = from->enable;
 }
 
 void
 ia_css_copy_output_configure(
 	const struct ia_css_binary     *binary,
-	const struct ia_css_frame_info *output)
+	bool enable)
 {
 	const struct ia_css_copy_output_configuration config =
-		{ output };
+		{ enable };
 	ia_css_configure_copy_output(binary, &config);
 }
 

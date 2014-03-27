@@ -28,6 +28,7 @@
 #include "dma.h"	/* N_DMA_CHANNEL_ID */
 
 #include "ia_css.h"
+#include "ia_css_buffer.h"
 #include "ia_css_binary.h"
 #include "sh_css_hrt.h"
 #include "sh_css_defs.h"
@@ -559,6 +560,7 @@ set_input_frame_buffer(const struct ia_css_frame *frame)
 	case IA_CSS_FRAME_FORMAT_RAW_PACKED:
 	case IA_CSS_FRAME_FORMAT_RAW:
 	case IA_CSS_FRAME_FORMAT_YUV420:
+	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
 	case IA_CSS_FRAME_FORMAT_NV12:
 		break;
@@ -805,7 +807,7 @@ configure_isp_from_args(
 	ia_css_qplane_configure(pipe, binary, &binary->in_frame_info);
 	ia_css_output0_configure(binary, &args->out_frame[0]->info);
 	ia_css_output1_configure(binary, &args->out_vf_frame->info);
-	ia_css_copy_output_configure(binary, &args->out_frame[0]->info);
+	ia_css_copy_output_configure(binary, args->copy_output);
 	ia_css_output0_configure(binary, &args->out_frame[0]->info);
 #endif
 	ia_css_iterator_configure (binary, &args->in_frame->info);
@@ -842,7 +844,7 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 	const struct ia_css_binary_info  *info;
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	int i;
-
+	struct ia_css_pipe *pipe = NULL;
 	unsigned int thread_id;
 	enum sh_css_queue_id queue_id;
 	bool continuous = sh_css_continuous_is_enabled((uint8_t)pipe_num);
@@ -951,7 +953,11 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_3A_STATISTICS, thread_id, &queue_id);
 		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_3A_STATISTICS] = queue_id;
 	}
+#if defined(IS_ISP_2500_SYSTEM)
+	if (binary->info->sp.enable.dvs_stats) {
+#else
 	if (binary->info->sp.enable.dis) {
+#endif
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_DIS_STATISTICS, thread_id, &queue_id);
 		sh_css_sp_stage.frames.static_frame_data[IA_CSS_BUFFER_TYPE_DIS_STATISTICS] = queue_id;
 	}
@@ -967,6 +973,18 @@ sh_css_sp_init_stage(struct ia_css_binary *binary,
 #endif
 	if (err != IA_CSS_SUCCESS)
 		return err;
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	if (args->in_frame) {
+		pipe = find_pipe_by_num(sh_css_sp_group.pipe[thread_id].pipe_num);
+		ia_css_get_crop_offsets(pipe, &args->in_frame->info);
+	} else if (&binary->in_frame_info) {
+		pipe = find_pipe_by_num(sh_css_sp_group.pipe[thread_id].pipe_num);
+		ia_css_get_crop_offsets(pipe, &binary->in_frame_info);
+	}
+#else
+	(void)pipe; /*avoid build warning*/
+#endif
 
 	configure_isp_from_args(&sh_css_sp_group.pipe[thread_id],
 			binary, args, two_ppc, sh_css_sp_stage.deinterleaved);
@@ -1393,7 +1411,7 @@ sh_css_update_host2sp_mipi_frame(
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
 	/* MIPI buffers are dedicated to port, so now there are more of them. */
-	assert(frame_num < 2 * NUM_MIPI_FRAMES_PER_STREAM);
+	assert(frame_num < (N_CSI_PORTS * NUM_MIPI_FRAMES_PER_STREAM));
 
 	/* Write new frame data into SP DMEM */
 	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;

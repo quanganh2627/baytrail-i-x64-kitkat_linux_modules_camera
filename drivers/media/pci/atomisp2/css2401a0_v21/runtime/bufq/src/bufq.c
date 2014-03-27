@@ -20,6 +20,7 @@
  */
 
 #include "assert_support.h"		/* assert */
+#include "ia_css_buffer.h"
 #include "sp.h"
 #include "ia_css_bufq.h"		/* Bufq API's */
 #include "ia_css_queue.h"		/* ia_css_queue_t */

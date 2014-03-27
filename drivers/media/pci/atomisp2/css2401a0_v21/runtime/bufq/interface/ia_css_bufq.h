@@ -24,6 +24,7 @@
 
 #include <type_support.h>
 #include "ia_css_bufq_comm.h"
+#include "ia_css_buffer.h"
 #include "ia_css_err.h"
 #define BUFQ_EVENT_SIZE 4
 

@@ -213,6 +213,26 @@ STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_qrmul (
     const mpsdata_t             in1,
     const bitdepth_t            bitdepth);
 
+STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_qdiv (
+    const mpsdata_t             in0,
+    const mpsdata_t             in1,
+    const bitdepth_t            bitdepth);
+
+STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_qdivh (
+    const mpsdata_t             in0,
+    const mpsdata_t             in1,
+    const bitdepth_t            bitdepth);
+
+STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_div (
+    const mpsdata_t             in0,
+    const mpsdata_t             in1,
+    const bitdepth_t            bitdepth);
+
+STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_divh (
+    const mpsdata_t             in0,
+    const mpsdata_t             in1,
+    const bitdepth_t            bitdepth);
+
 STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_and (
     const mpsdata_t             in0,
     const mpsdata_t             in1,

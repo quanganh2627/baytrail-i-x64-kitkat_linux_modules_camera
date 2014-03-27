@@ -38,9 +38,7 @@ ia_css_output_config(
 	to->width_a_over_b = elems_a / to->port_b.elems;
 	to->height = from->info->res.height;
 	to->enable = from->info != NULL;
-	if (from->info) {
-		ia_css_frame_info_to_frame_sp_info(&to->info, from->info);
-	}
+	ia_css_frame_info_to_frame_sp_info(&to->info, from->info);
 
 	/* Assume divisiblity here, may need to generalize to fixed point. */
 	assert (elems_a % to->port_b.elems == 0);

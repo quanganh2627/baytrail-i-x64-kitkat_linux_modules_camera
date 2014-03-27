@@ -26,8 +26,8 @@
 #ifndef __CSS_VERSION_H
 #define __CSS_VERSION_H
 
-#define VER	0
-#define SUBVER	9
+#define VER	1
+#define SUBVER	0
 
 /*
 Changelog
@@ -69,6 +69,14 @@ VER 0.9, released 09/03/14:
 	Changes/Fixes:
 		added striding support
 		new ATE refernces B0 official branch fixes
+
+
+VER 1.0, released 19/03/14:
+        - Version release for : striping
+
+        Changes/Fixes:
+                added striping
+                BZ #1717 fix - raw8 input support
 
 
 

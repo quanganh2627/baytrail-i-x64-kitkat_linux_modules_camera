@@ -19,18 +19,16 @@
  *
  */
 
-#ifndef __SW_EVENT_GLOBAL_H_INCLUDED__
-#define __SW_EVENT_GLOBAL_H_INCLUDED__
+#ifndef __IA_CSS_ANR2_PARAM_H
+#define __IA_CSS_ANR2_PARAM_H
 
-#define MAX_NR_OF_PAYLOADS_PER_SW_EVENT 4
+#include "vmem.h"
+#include "ia_css_anr2_types.h"
 
-#define SP_SW_EVENT_ID_0	0	/* for the error		*/
-#define SP_SW_EVENT_ID_1	1	/* for the host2sp_buffer_queue */
-#define SP_SW_EVENT_ID_2	2	/* for the sp2host_buffer_queue */
-#define SP_SW_EVENT_ID_3	3	/* for the sp2host_event_queue  */
-#define SP_SW_EVENT_ID_4	4	/* for the start stream cmd */
-#define SP_SW_EVENT_ID_5	5	/* for the stop stream cmd  */
-#define SP_SW_EVENT_ID_6	6	/* for the host2sp empty mipi buffers */
+/** Advanced Noise Reduction (ANR) thresholds */
 
-#endif /* __SW_EVENT_GLOBAL_H_INCLUDED__ */
+struct ia_css_isp_anr2_params {
+	VMEM_ARRAY(data, ANR_PARAM_SIZE*ISP_VEC_NELEMS);
+};
 
+#endif /* __IA_CSS_ANR2_PARAM_H */

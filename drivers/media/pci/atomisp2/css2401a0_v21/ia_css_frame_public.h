@@ -26,6 +26,7 @@
 #include "ia_css_err.h"
 #include "ia_css_types.h"
 #include "ia_css_frame_format.h"
+#include "ia_css_buffer.h"
 #include "runtime/bufq/interface/ia_css_bufq.h"
 
 /** For RAW input, the bayer order needs to be specified separately. There
@@ -97,6 +98,15 @@ struct ia_css_frame_plane6_planes {
 	struct ia_css_frame_plane b_at_r; /**< Blue at red plane */
 };
 
+/* Crop info struct - stores the lines to be cropped in isp */
+struct ia_css_crop_info {
+	/* the final start column and start line
+	 * sum of lines to be cropped + bayer offset
+	 */
+	unsigned int start_column;
+	unsigned int start_line;
+};
+
 /** Frame info struct. This describes the contents of an image frame buffer.
   */
 struct ia_css_frame_info {
@@ -107,6 +117,11 @@ struct ia_css_frame_info {
 					 only valid for RAW bayer frames */
 	enum ia_css_bayer_order raw_bayer_order; /**< bayer order, only valid
 						      for RAW bayer frames */
+	/* the params below are computed based on bayer_order
+	 * we can remove the raw_bayer_order if it is redundant
+	 * keeping it for now as bxt and fpn code seem to use it
+	 */
+	struct ia_css_crop_info crop_info;
 };
 
 #define IA_CSS_BINARY_DEFAULT_FRAME_INFO \
@@ -116,7 +131,9 @@ struct ia_css_frame_info {
 	0,                       /* padded_width */ \
 	IA_CSS_FRAME_FORMAT_NUM, /* format */ \
 	0,                       /* raw_bit_depth */ \
-	IA_CSS_BAYER_ORDER_NUM   /* raw_bayer_order */ \
+	IA_CSS_BAYER_ORDER_NUM,  /* raw_bayer_order */ \
+	{0,                       /*start col */ \
+	 0},                       /*start line */ \
 }
 
 /**

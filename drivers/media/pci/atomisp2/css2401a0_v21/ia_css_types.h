@@ -1,5 +1,5 @@
-/* Release Version: irci_master_20140317_1119 */
-/* Release Version: irci_master_20140317_1119 */
+/* Release Version: irci_master_20140327_0818 */
+/* Release Version: irci_master_20140327_0818 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -41,7 +41,6 @@
 #endif
 #endif
 
-
 #include "ia_css_frac.h"
 
 #include "isp/kernels/aa/aa_2/ia_css_aa2_types.h"
@@ -76,6 +75,10 @@
 #define IA_CSS_DVS_NUM_COEF_TYPES      6
 #define IA_CSS_DVS_COEF_TYPES_ON_DMEM  2
 #define IA_CSS_DVS2_NUM_COEF_TYPES     4
+
+/* opaque types */
+struct ia_css_isp_parameters;
+struct ia_css_pipe;
 
 /* Virtual address within the CSS address space. */
 typedef uint32_t ia_css_ptr;
@@ -350,6 +353,7 @@ struct ia_css_isp_config {
 	struct ia_css_2500_shd_kernel_config     *shd_2500_config;       /**< Skylake: shading config */
 	struct ia_css_2500_dm_kernel_config      *dm_2500_config;        /**< Skylake: demosaic config */
 	struct ia_css_2500_rgbpp_kernel_config   *rgbpp_2500_config;     /**< Skylake: RGBPP config */
+	struct ia_css_2500_dvs_statistics_kernel_config *dvs_stat_2500_config; /**< Skylake: DVS STAT config */
 	struct ia_css_2500_lace_stat_kernel_config *lace_stat_2500_config; /**< Skylake: LACE STAT config */
 	struct ia_css_2500_yuvp1_kernel_config   *yuvp1_2500_config;     /**< Skylake: yuvp1 config */
 	struct ia_css_2500_yuvp2_kernel_config   *yuvp2_2500_config;     /**< Skylake: yuvp2 config */

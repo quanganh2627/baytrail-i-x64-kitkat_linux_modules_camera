@@ -40,6 +40,7 @@
  */
 
 typedef unsigned short tscalar1w_3bit;
+typedef unsigned short tscalar1w_5bit;
 typedef unsigned short tvector_5bit;
 typedef unsigned short tvector_4bit;
 typedef unsigned short tvector1w_unsigned;

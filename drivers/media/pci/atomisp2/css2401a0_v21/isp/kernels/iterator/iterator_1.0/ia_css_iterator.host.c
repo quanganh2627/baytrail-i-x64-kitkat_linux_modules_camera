@@ -42,6 +42,7 @@ ia_css_iterator_configure(
 	const struct ia_css_binary *binary,
 	const struct ia_css_frame_info *in_info)
 {
+	struct ia_css_frame_info my_info;
 	struct ia_css_iterator_configuration config = {
 		&binary->in_frame_info,
 		&binary->internal_frame_info,
@@ -55,6 +56,20 @@ ia_css_iterator_configure(
 		config.input_info = in_info;
 	if (binary->out_frame_info[0].res.width == 0)
 		config.output_info = &binary->out_frame_info[1];
+	my_info = *config.output_info;
+	config.output_info = &my_info;
+	/* we do this only for preview pipe because in fill_binary_info function
+	 * we assign vf_out res to out res, but for ISP internal processing, we need
+	 * the original out res. for video pipe, it has two output pins --- out and
+	 * vf_out, so it can keep these two resolutions already. */
+	if (binary->info->sp.mode == IA_CSS_BINARY_MODE_PREVIEW &&
+	    binary->vf_downscale_log2 > 0) {
+		/* TODO: Remove this after preview output decimation is fixed
+		 * by configuring out&vf info files properly */
+		my_info.padded_width <<= binary->vf_downscale_log2;
+		my_info.res.width    <<= binary->vf_downscale_log2;
+		my_info.res.height   <<= binary->vf_downscale_log2;
+	}
 	ia_css_configure_iterator (binary, &config);
 	return IA_CSS_SUCCESS;
 }

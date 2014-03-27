@@ -57,6 +57,9 @@ static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage);
 static enum ia_css_err pipeline_stage_create(
 	struct ia_css_pipeline_stage_desc *stage_desc,
 	struct ia_css_pipeline_stage **new_stage);
+static void ia_css_pipeline_set_zoom_stage(struct ia_css_pipeline *pipeline);
+static void ia_css_pipeline_configure_inout_port(struct ia_css_pipeline *me,
+	bool continuous);
 
 /*******************************************************
 *** Public functions
@@ -312,7 +315,8 @@ enum ia_css_err ia_css_pipeline_create_and_add_stage(
 	return IA_CSS_SUCCESS;
 }
 
-void ia_css_pipeline_finalize_stages(struct ia_css_pipeline *pipeline)
+void ia_css_pipeline_finalize_stages(struct ia_css_pipeline *pipeline,
+			bool continuous)
 {
 	unsigned i = 0;
 	struct ia_css_pipeline_stage *stage;
@@ -323,6 +327,9 @@ void ia_css_pipeline_finalize_stages(struct ia_css_pipeline *pipeline)
 		i++;
 	}
 	pipeline->num_stages = i;
+
+	ia_css_pipeline_set_zoom_stage(pipeline);
+	ia_css_pipeline_configure_inout_port(pipeline, continuous);
 }
 
 enum ia_css_err ia_css_pipeline_get_stage(struct ia_css_pipeline *pipeline,
@@ -599,4 +606,98 @@ static void pipeline_init_defaults(
 	pipeline->acquire_isp_each_stage = true;
 	pipeline->pipe_num = pipe_num;
 	pipeline->dvs_frame_delay = dvs_frame_delay;
+}
+
+static void ia_css_pipeline_set_zoom_stage(struct ia_css_pipeline *pipeline)
+{
+	struct ia_css_pipeline_stage *stage = NULL;
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	assert(pipeline != NULL);
+	if (pipeline->pipe_id == IA_CSS_PIPE_ID_PREVIEW) {
+		/* in preview pipeline, vf_pp stage should do zoom */
+		err = ia_css_pipeline_get_stage(pipeline, IA_CSS_BINARY_MODE_VF_PP, &stage);
+		if (err == IA_CSS_SUCCESS)
+			stage->enable_zoom = true;
+	} else if (pipeline->pipe_id == IA_CSS_PIPE_ID_CAPTURE) {
+		/* in capture pipeline, capture_pp stage should do zoom */
+		err = ia_css_pipeline_get_stage(pipeline, IA_CSS_BINARY_MODE_CAPTURE_PP, &stage);
+		if (err == IA_CSS_SUCCESS)
+			stage->enable_zoom = true;
+	} else if (pipeline->pipe_id == IA_CSS_PIPE_ID_VIDEO) {
+		/* in video pipeline, video stage should do zoom */
+		err = ia_css_pipeline_get_stage(pipeline, IA_CSS_BINARY_MODE_VIDEO, &stage);
+		if (err == IA_CSS_SUCCESS)
+			stage->enable_zoom = true;
+	} else if (pipeline->pipe_id == IA_CSS_PIPE_ID_YUVPP) {
+		/* in yuvpp pipeline, first yuv_scaler stage should do zoom */
+		err = ia_css_pipeline_get_stage(pipeline, IA_CSS_BINARY_MODE_CAPTURE_PP, &stage);
+		if (err == IA_CSS_SUCCESS)
+			stage->enable_zoom = true;
+	}
+}
+
+static void
+ia_css_pipeline_configure_inout_port(struct ia_css_pipeline *me, bool continuous)
+{
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"ia_css_pipeline_configure_inout_port() enter: pipe_id(%d) continuous(%d)\n",
+			me->pipe_id, continuous);
+	switch(me->pipe_id) {
+		case IA_CSS_PIPE_ID_PREVIEW:
+		case IA_CSS_PIPE_ID_VIDEO:
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_INPUT,
+						   (uint8_t)(continuous ? SH_CSS_COPYSINK_TYPE : SH_CSS_HOST_TYPE),1);
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_OUTPUT,
+						   (uint8_t)SH_CSS_HOST_TYPE,1);
+			break;
+		case IA_CSS_PIPE_ID_COPY: /*Copy pipe ports configured to "offline" mode*/
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_INPUT,
+						   (uint8_t)SH_CSS_HOST_TYPE,1);
+			if (continuous) {
+				SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_OUTPUT,
+						   (uint8_t)SH_CSS_COPYSINK_TYPE,1);
+				SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_OUTPUT,
+						   (uint8_t)SH_CSS_TAGGERSINK_TYPE,1);
+			} else {
+				SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_OUTPUT,
+						   (uint8_t)SH_CSS_HOST_TYPE,1);
+			}
+			break;
+		case IA_CSS_PIPE_ID_CAPTURE:
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_INPUT,
+						   (uint8_t)(continuous ? SH_CSS_TAGGERSINK_TYPE : SH_CSS_HOST_TYPE),1);
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_OUTPUT,
+						   (uint8_t)SH_CSS_HOST_TYPE,1);
+			break;
+		case IA_CSS_PIPE_ID_YUVPP:
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_INPUT,
+						   (uint8_t)(SH_CSS_HOST_TYPE),1);
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_OUTPUT,
+						   (uint8_t)SH_CSS_HOST_TYPE,1);
+			break;
+		case IA_CSS_PIPE_ID_ACC:
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_INPUT,
+						   (uint8_t)SH_CSS_HOST_TYPE,1);
+			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
+						   (uint8_t)SH_CSS_PORT_OUTPUT,
+						   (uint8_t)SH_CSS_HOST_TYPE,1);
+			break;
+		default:
+			break;
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"ia_css_pipeline_configure_inout_port() leave: inout_port_config(%x)\n",
+		me->inout_port_config);
 }

@@ -22,11 +22,12 @@
 #ifndef __IA_CSS_LACE_STAT_H
 #define __IA_CSS_LACE_STAT_H
 
-#include <type_support.h>
-#include "ia_css_types.h"
 #if defined(IS_ISP_2500_SYSTEM)
 #include <components/acc_cluster/acc_lace_stat/lace_stat_public.h>
 #endif
+
+
+struct ia_css_isp_lace_statistics;
 
 #if defined(IS_ISP_2500_SYSTEM)
 /** @brief Copy LACE statistics from an ACC buffer to a host
@@ -36,7 +37,7 @@
  * @return		None
  */
 void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
-				    const ia_css_ptr isp_stats);
+			const struct ia_css_isp_lace_statistics *isp_stats);
 #endif
 
 /** @brief Allocate mem for the LACE statistics on the ISP
@@ -44,13 +45,13 @@ void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
  * @return	Pointer to the allocated LACE statistics
  *         buffer on the ISP
 */
-ia_css_ptr ia_css_lace_statistics_allocate(void);
+struct ia_css_isp_lace_statistics* ia_css_lace_statistics_allocate(void);
 
 /** @brief Free the ACC LACE statistics memory on the isp
  * @param[in]	me Pointer to the LACE statistics buffer on the
  *       ISP.
  * @return		None
 */
-void ia_css_lace_statistics_free(ia_css_ptr me);
+void ia_css_lace_statistics_free(struct ia_css_isp_lace_statistics* me);
 
 #endif /*  __IA_CSS_LACE_STAT_H */

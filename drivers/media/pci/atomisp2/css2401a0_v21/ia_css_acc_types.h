@@ -186,7 +186,9 @@ struct ia_css_binary_info {
 		uint8_t	high_quality;
 		uint8_t	kerneltest;
 		uint8_t	routing_bnr_to_anr;
-		uint8_t routing_anr_to_de;
+		uint8_t	routing_anr_to_de;
+		uint8_t	routing_rgb_to_yuvp1;
+		uint8_t	routing_yuvp1_to_yuvp2;
 #endif
 		uint8_t	reduced_pipe;
 		uint8_t	vf_veceven;

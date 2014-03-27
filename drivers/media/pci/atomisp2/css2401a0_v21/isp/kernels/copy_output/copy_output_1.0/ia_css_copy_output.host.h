@@ -35,6 +35,6 @@ ia_css_copy_output_config(
 void
 ia_css_copy_output_configure(
 	const struct ia_css_binary     *binary,
-	const struct ia_css_frame_info *output);
+	bool enable);
 
 #endif /* __IA_CSS_COPY_OUTPUT_HOST_H */

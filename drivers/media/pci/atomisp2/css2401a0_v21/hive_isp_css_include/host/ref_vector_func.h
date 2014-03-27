@@ -26,11 +26,44 @@
 #ifndef _REF_VECTOR_FUNC_H_INCLUDED_
 #define _REF_VECTOR_FUNC_H_INCLUDED_
 
-#ifndef STORAGE_CLASS_REF_VECTOR_FUNC_C
-#define STORAGE_CLASS_REF_VECTOR_FUNC_C extern
+#ifndef STORAGE_CLASS_REF_VECTOR_FUNC_H
+#define STORAGE_CLASS_REF_VECTOR_FUNC_H extern
 #endif
 
 #include "ref_vector_func_types.h"
+
+/** @brief Doubling multiply accumulate
+ *
+ * @param[in] acc accumulator
+ * @param[in] a multiply input
+ * @param[in] b multiply input
+  *
+ * @return		acc + (a*b)
+ *
+ * This function will do a doubling multiply ont
+ * inputs a and b, and will add the result to acc.
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector2w OP_1w_maccd(
+	tvector2w acc,
+	tvector1w a,
+	tvector1w b );
+
+/** @brief Re-aligning multiply
+ *
+ * @param[in] a multiply input
+ * @param[in] b multiply input
+ * @param[in] shift shift amount
+ *
+ * @return		(a*b)>>shift
+ *
+ * This function will multiply a with b, followed by a right
+ * shift with rounding. the result is saturated and casted
+ * to single precision.
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_mul_realining(
+	tvector1w a,
+	tvector1w b,
+	tscalar1w shift );
 
 /** @brief Normalised FIR with coefficients [3,4,1]
  *
@@ -42,7 +75,7 @@
  * Normalised FIR with coefficients [3,4,1],
  *-5dB at Fs/2, -90 degree phase shift (quarter pixel)
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_5dB_m90_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_5dB_m90_nrm (
 	const s_1w_1x3_matrix		m);
 
 /** @brief Normalised FIR with coefficients [1,4,3]
@@ -55,7 +88,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_5dB_m90_nrm (
  * Normalised FIR with coefficients [1,4,3],
  *-5dB at Fs/2, +90 degree phase shift (quarter pixel)
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_5dB_p90_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_5dB_p90_nrm (
 	const s_1w_1x3_matrix		m);
 
 /** @brief Normalised FIR with coefficients [1,2,1]
@@ -67,7 +100,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_5dB_p90_nrm (
  * This function will calculate the
  * Normalised FIR with coefficients [1,2,1], -6dB at Fs/2
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_6dB_nrm (
 	const s_1w_1x3_matrix		m);
 
 /** @brief Normalised FIR with coefficients [13,16,3]
@@ -79,7 +112,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm (
  * This function will calculate the
  * Normalised FIR with coefficients [13,16,3],
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph0 (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_6dB_nrm_ph0 (
 	const s_1w_1x3_matrix		m);
 
 /** @brief Normalised FIR with coefficients [9,16,7]
@@ -91,7 +124,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph0 (
  * This function will calculate the
  * Normalised FIR with coefficients [9,16,7],
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph1 (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_6dB_nrm_ph1 (
 	const s_1w_1x3_matrix		m);
 
 /** @brief Normalised FIR with coefficients [5,16,11]
@@ -103,7 +136,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph1 (
  * This function will calculate the
  * Normalised FIR with coefficients [5,16,11],
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph2 (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_6dB_nrm_ph2 (
 	const s_1w_1x3_matrix		m);
 
 /** @brief Normalised FIR with coefficients [1,16,15]
@@ -115,7 +148,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph2 (
  * This function will calculate the
  * Normalised FIR with coefficients [1,16,15],
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph3 (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_6dB_nrm_ph3 (
 	const s_1w_1x3_matrix		m);
 
 /** @brief Normalised FIR with programable phase shift
@@ -128,7 +161,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_ph3 (
  * This function will calculate the
  * Normalised FIR with coefficients [8-coeff,16,8+coeff],
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_calc_coeff (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_6dB_nrm_calc_coeff (
 	const s_1w_1x3_matrix		m, tscalar1w_3bit coeff);
 
 /** @brief 3 tab FIR with coefficients [1,1,1]
@@ -140,7 +173,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_6dB_nrm_calc_coeff (
  * This function will calculate the
  * FIR with coefficients [1,1,1], -9dB at Fs/2 normalized with factor 1/2
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_9dB_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x3m_9dB_nrm (
 	const s_1w_1x3_matrix		m);
 
 
@@ -158,7 +191,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x3m_9dB_nrm (
  * _______
  *   14 total operations
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir3x3m_6dB_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir3x3m_6dB_nrm (
 	const s_1w_3x3_matrix		m);
 
 /** @brief Normalised 2D FIR with coefficients  [1;1;1] * [1,1,1]
@@ -176,7 +209,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir3x3m_6dB_nrm (
  * _______
  *   14 operations
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir3x3m_9dB_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir3x3m_9dB_nrm (
 	const s_1w_3x3_matrix		m);
 
 /** @brief Normalised dual output 2D FIR with coefficients  [1;2;1] * [1,2,1]
@@ -196,7 +229,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir3x3m_9dB_nrm (
  * _______
  *   10 total operations
  */
- STORAGE_CLASS_REF_VECTOR_FUNC_C s_1w_2x1_matrix fir3x3m_6dB_out2x1_nrm (
+ STORAGE_CLASS_REF_VECTOR_FUNC_H s_1w_2x1_matrix fir3x3m_6dB_out2x1_nrm (
 	const s_1w_4x3_matrix		m);
 
 /** @brief Normalised dual output 2D FIR with coefficients [1;1;1] * [1,1,1]
@@ -216,7 +249,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir3x3m_9dB_nrm (
  * _______
  *   11 total operations
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_C s_1w_2x1_matrix fir3x3m_9dB_out2x1_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H s_1w_2x1_matrix fir3x3m_9dB_out2x1_nrm (
 	const s_1w_4x3_matrix		m);
 
 /** @brief Normalised 2D FIR 5x5
@@ -234,7 +267,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C s_1w_2x1_matrix fir3x3m_9dB_out2x1_nrm (
  * _______
  *   48 total operations
 */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir5x5m_15dB_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir5x5m_15dB_nrm (
 	const s_1w_5x5_matrix	m);
 
 /** @brief Normalised FIR 1x5
@@ -252,7 +285,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir5x5m_15dB_nrm (
  * _______
  *   9 total operations
 */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x5m_12dB_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x5m_12dB_nrm (
 	const s_1w_1x5_matrix m);
 
 /** @brief Normalised 2D FIR 5x5
@@ -270,13 +303,13 @@ STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x5m_12dB_nrm (
  * _______
  *   50 total operations
 */
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir5x5m_12dB_nrm (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir5x5m_12dB_nrm (
 	const s_1w_5x5_matrix m);
 
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x5m_box (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x5m_box (
 	s_1w_1x5_matrix m);
 
-STORAGE_CLASS_REF_VECTOR_FUNC_C tvector1w fir1x9m_box (
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x9m_box (
 	s_1w_1x9_matrix m);
 
 #endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/

@@ -25,6 +25,12 @@
 #include <ia_css_err.h>
 #include <ia_css_types.h>
 #include "ia_css_debug.h"
+#include "memory_access.h"
+
+#if defined(IS_ISP_2500_SYSTEM)
+#include <components/acc_cluster/acc_dvs_stat/dvs_stat_private.h>
+#include <components/acc_cluster/acc_dvs_stat/host/dvs_stat.host.h>
+#endif
 
 struct ia_css_dvs_6axis_config *
 generate_dvs_6axis_table(const struct ia_css_resolution	*frame_res, const struct ia_css_resolution *dvs_offset)
@@ -242,3 +248,123 @@ void copy_dvs_6axis_table(struct ia_css_dvs_6axis_config *dvs_config_dst,
 	memcpy(dvs_config_dst->ycoords_uv,dvs_config_src->ycoords_uv, (width_uv * height_uv * sizeof(uint32_t)));
 
 }
+
+#if defined(IS_ISP_2500_SYSTEM)
+enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *host_stats,
+				   const struct ia_css_isp_skc_dvs_statistics *isp_stats)
+{
+	dvs_stat_private_dvs_stat_cfg_t	dvs_stat_cfg;
+	dvs_stat_private_motion_vec_t*	dvs_stat_mv_p = NULL;
+	unsigned char			set_idx, entry_idx, idx, i;
+	hrt_vaddress			dvs_stat_ddr_addr;
+	hrt_vaddress			dvs_stat_cfg_ddr_addr;
+	dvs_stat_private_raw_buffer_t*	raw_buffer_p =
+			(dvs_stat_private_raw_buffer_t*)isp_stats;
+	struct dvs_stat_mv_entry_public *p_host_entry;
+	struct dvs_stat_mv_private *p_isp_entry;
+
+	dvs_stat_mv_p =
+		(dvs_stat_private_motion_vec_t*)
+			sh_css_malloc(sizeof(dvs_stat_private_motion_vec_t));
+	if(dvs_stat_mv_p == NULL)
+	{
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_get_skc_dvs_statistics() malloc error\n");
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	}
+
+	dvs_stat_ddr_addr = (hrt_vaddress) &raw_buffer_p->dvs_motion_vec;
+	dvs_stat_cfg_ddr_addr = (hrt_vaddress) &raw_buffer_p->dvs_stat_cfg;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_get_skc_dvs_statistics() enter: "
+			"host_stats=%p, isp_stats=%p\n",
+			host_stats, isp_stats);
+
+	mmgr_load(dvs_stat_ddr_addr,
+			(void*)dvs_stat_mv_p,
+			sizeof(dvs_stat_private_motion_vec_t));
+
+
+	/* Load configuration */
+	mmgr_load(dvs_stat_cfg_ddr_addr,
+			(void*)&(dvs_stat_cfg),
+			sizeof(dvs_stat_private_dvs_stat_cfg_t));
+
+	/* Translate between private and public configuration */
+	ia_css_dvs_stat_private_to_public_cfg(&host_stats->dvs_stat_cfg, &dvs_stat_cfg);
+
+	// Translate between private and public motion vectors
+	for(i = 0; i < IA_CSS_SKC_DVS_STAT_NUM_OF_LEVELS; i++) {
+
+		for(set_idx = 0;
+		     set_idx < host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_height;
+		     set_idx++)
+		{
+			if(i == 0) {
+				p_host_entry = host_stats->dvs_stat_mv_l0;
+				p_isp_entry = &dvs_stat_mv_p->dvs_mv_output_l0[set_idx].mv_entry[0];
+			} else if(i == 1) {
+				p_host_entry = host_stats->dvs_stat_mv_l1;
+				p_isp_entry = &dvs_stat_mv_p->dvs_mv_output_l1[set_idx].mv_entry[0];
+			} else {
+				p_host_entry = host_stats->dvs_stat_mv_l2;
+				p_isp_entry = &dvs_stat_mv_p->dvs_mv_output_l2[set_idx].mv_entry[0];
+			}
+			for(entry_idx = 0;
+			     entry_idx < host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_width;
+			     entry_idx++)
+			{
+				idx = set_idx * host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_width + entry_idx;
+				p_host_entry[idx].vec_fe_x_pos =
+					p_isp_entry->part0.vec_fe_x_pos;
+				p_host_entry[idx].vec_fe_y_pos =
+					p_isp_entry->part0.vec_fe_y_pos;
+				p_host_entry[idx].vec_fm_x_pos =
+					p_isp_entry->part1.vec_fm_x_pos;
+				p_host_entry[idx].vec_fm_y_pos =
+					p_isp_entry->part1.vec_fm_y_pos;
+				p_host_entry[idx].harris_grade =
+					p_isp_entry->part2.harris_grade;
+				p_host_entry[idx].match_grade =
+					p_isp_entry->part3.match_grade;
+				p_host_entry[idx].level =
+					p_isp_entry->part3.level;
+				p_isp_entry++;
+			}
+		}
+	}
+
+	free(dvs_stat_mv_p);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_get_skc_dvs_statistics() leave: return_void\n");
+
+	return IA_CSS_SUCCESS;
+}
+#endif
+
+void
+ia_css_dvs_statistics_get(enum dvs_statistics_type type,
+                          union ia_css_dvs_statistics_host  *host_stats,
+                          const union ia_css_dvs_statistics_isp *isp_stats)
+{
+	if(DVS_STATISTICS == type)
+	{
+		ia_css_get_dvs_statistics(host_stats->p_dvs_statistics_host,
+			isp_stats->p_dvs_statistics_isp);
+	} else if(DVS2_STATISTICS == type)
+	{
+		ia_css_get_dvs2_statistics(host_stats->p_dvs2_statistics_host,
+			isp_stats->p_dvs_statistics_isp);
+	}
+#if defined(IS_ISP_2500_SYSTEM)
+	else if(SKC_DVS_STATISTICS == type)
+	{
+		ia_css_get_skc_dvs_statistics(host_stats->p_skc_dvs_statistics_host,
+			(struct ia_css_isp_skc_dvs_statistics*)isp_stats);
+	}
+#endif
+	return;
+}
+
