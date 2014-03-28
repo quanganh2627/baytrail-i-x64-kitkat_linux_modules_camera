@@ -59,7 +59,6 @@
 #define DUMP_BLOCK_SIZE      0x1000
 
 #define FW_VERSION_INFO_ADDR 0x181EF080
-#define FW_VERSION_SIZE	     11
 
 #define ONE_WRITE_SIZE	     64
 
@@ -330,12 +329,11 @@ out_file:
 	return err;
 }
 
-int m10mo_get_isp_fw_version(struct m10mo_device *dev)
+int m10mo_get_isp_fw_version_string(struct m10mo_device *dev, char *buf, int len)
 {
 	int err;
 	struct v4l2_subdev *sd = &dev->sd;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	u8 isp_ver[FW_VERSION_SIZE + 1] = {0, };
 
 	err = m10mo_to_fw_access_mode(dev);
 	if (err)
@@ -349,14 +347,13 @@ int m10mo_get_isp_fw_version(struct m10mo_device *dev)
 	}
 	msleep(10);
 
-	err = m10mo_memory_read(sd, FW_VERSION_SIZE, FW_VERSION_INFO_ADDR,
-				isp_ver);
-	if (err) {
+	memset(buf, 0, len);
+	err = m10mo_memory_read(sd, len - 1, FW_VERSION_INFO_ADDR,
+				buf);
+	if (err < 0) {
 		dev_err(&client->dev, "version read failed\n");
 		goto out;
 	}
-	dev_err(&client->dev, "version string %s\n", isp_ver);
-
 out:
 	err = m10mo_writeb(sd, CATEGORY_FLASHROM,
 			   REG_FW_READ, REG_FW_READ_CMD_NONE);

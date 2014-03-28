@@ -125,7 +125,7 @@ int m10mo_setup_flash_controller(struct v4l2_subdev *sd);
 void m10mo_register_spi_fw_flash_interface(struct m10mo_spi *m10mo_spi_dev);
 
 int m10mo_dump_fw(struct m10mo_device *m10mo_dev);
-int m10mo_get_isp_fw_version(struct m10mo_device *dev);
+int m10mo_get_isp_fw_version_string(struct m10mo_device *dev, char *buf, int len);
 int m10mo_fw_checksum(struct m10mo_device *dev, u16 *result);
 int m10mo_program_device(struct m10mo_device *m10mo_dev);
 

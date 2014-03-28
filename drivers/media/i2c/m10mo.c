@@ -690,6 +690,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 	struct m10mo_fw_id *fw_ids = NULL;
 	struct m10mo_sensor_private_data *sdata;
 	u16 result = M10MO_INVALID_CHECKSUM;
+	char buffer[M10MO_MAX_FW_ID_STRING];
 
 	mutex_lock(&dev->input_lock);
 
@@ -732,6 +733,23 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 		dev_err(&client->dev, "Firmware checksum is not 0.\n");
 		/* TBD: Trig FW update here */
 
+	ret = m10mo_get_isp_fw_version_string(dev, buffer, sizeof(buffer));
+	while(fw_ids && fw_ids->id_string[0]) {
+		/*
+		 * Null char is skipped (strlen - 1) because the string in
+		 * platform data can be shorter than the string in the FW.
+		 * There can be some additional information
+		 * after the match.
+		 */
+		if (!strncmp(fw_ids->id_string, buffer,
+			     strlen(fw_ids->id_string) - 1))
+		{
+			dev_info(&client->dev, "FW id %s detected\n", buffer);
+			dev->fw_type = fw_ids->fw_type;
+		}
+		fw_ids++;
+	}
+
 	ret = __m10mo_s_power(sd, 0, true);
 	mutex_unlock(&dev->input_lock);
 	if (ret) {
@@ -766,10 +784,16 @@ static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
-	/* TODO: FPS setting must be changed */
-	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
-	if (ret)
-		goto out;
+	if (dev->fw_type == M10MO_FW_TYPE_0) {
+		/* TODO: FPS setting must be changed */
+		ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
+		if (ret)
+			goto out;
+
+		ret = m10mo_write(sd, 1, CATEGORY_PARAM, 0x67, 0x00);
+		if (ret)
+			goto out;
+	}
 
 	/* Enable interrupt signal */
 	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
@@ -1089,9 +1113,9 @@ leave:
 	return ret;
 }
 
-static int read_fw_version(struct m10mo_device *dev, u16 *result)
+static int read_fw_checksum(struct m10mo_device *dev, u16 *result)
 {
-	int ret = 0;
+	int ret;
 
 	mutex_lock(&dev->input_lock);
 	if (dev->power == 1) {
@@ -1100,6 +1124,23 @@ static int read_fw_version(struct m10mo_device *dev, u16 *result)
 	}
 	__m10mo_s_power(&dev->sd, 1, true);
 	ret = m10mo_fw_checksum(dev, result);
+	__m10mo_s_power(&dev->sd, 0, true);
+leave:
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static int read_fw_version(struct m10mo_device *dev, char *buf)
+{
+	int ret;
+
+	mutex_lock(&dev->input_lock);
+	if (dev->power == 1) {
+		ret = -EBUSY;
+		goto leave;
+	}
+	__m10mo_s_power(&dev->sd, 1, true);
+	ret = m10mo_get_isp_fw_version_string(dev, buf, M10MO_MAX_FW_ID_STRING);
 	__m10mo_s_power(&dev->sd, 0, true);
 leave:
 	mutex_unlock(&dev->input_lock);
@@ -1177,13 +1218,27 @@ static ssize_t m10mo_flash_checksum_show(struct device *dev,
 	ssize_t ret;
 	u16 result;
 
-	ret  = read_fw_version(m10_dev, &result);
+	ret  = read_fw_checksum(m10_dev, &result);
 	if (ret)
 		return ret;
 
 	return sprintf(buf, "%04x\n", result);
 }
 static DEVICE_ATTR(isp_checksum, S_IRUGO, m10mo_flash_checksum_show, NULL);
+
+static ssize_t m10mo_flash_version_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct m10mo_device *m10_dev = dev_get_drvdata(dev);
+	ssize_t ret;
+
+	ret  = read_fw_version(m10_dev, buf);
+	if (ret)
+		return ret;
+
+	return sprintf(buf, "%s\n", buf);
+}
+static DEVICE_ATTR(isp_version, S_IRUGO, m10mo_flash_version_show, NULL);
 
 static ssize_t m10mo_flash_dump_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
@@ -1199,6 +1254,7 @@ static struct attribute *sysfs_attrs_ctrl[] = {
 	&dev_attr_isp_checksum.attr,
 	&dev_attr_isp_fw_dump.attr,
 	&dev_attr_isp_spi.attr,
+	&dev_attr_isp_version.attr,
 	NULL
 };
 
