@@ -298,7 +298,7 @@ struct atomisp_dvs_6axis_config32 {
 	_IOW('v', BASE_VIDIOC_PRIVATE + 6, struct atomisp_dvs_6axis_config32)
 
 #define ATOMISP_IOC_G_3A_STAT32 \
-	_IOW('v', BASE_VIDIOC_PRIVATE + 7, struct atomisp_3a_statistics32)
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 7, struct atomisp_3a_statistics32)
 
 #define ATOMISP_IOC_G_ISP_GDC_TAB32 \
 	_IOR('v', BASE_VIDIOC_PRIVATE + 10, struct atomisp_morph_table32)
