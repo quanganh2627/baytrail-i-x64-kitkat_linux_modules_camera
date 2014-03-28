@@ -368,8 +368,11 @@ int m10mo_fw_checksum(struct m10mo_device *dev, u16 *result)
 	int err;
 	struct v4l2_subdev *sd = &dev->sd;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-
 	int res = 0;
+
+	err = m10mo_setup_flash_controller(sd);
+	if (err)
+		goto leave;
 
 	err = m10mo_to_fw_access_mode(dev);
 	if (err)

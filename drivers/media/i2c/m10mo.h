@@ -44,6 +44,9 @@
 #define M10MO_MIN_EV -3
 #define M10MO_MAX_EV  3
 
+#define M10MO_INVALID_CHECKSUM          0xffff
+#define M10MO_VALID_CHECKSUM            0
+
 /* M10MO I2C commands */
 #define M10MO_BYTE_READ			0x01
 #define M10MO_BYTE_WRITE		0x02
@@ -117,6 +120,7 @@ int m10mo_writel(struct v4l2_subdev *sd, u8 category, u8 reg, u32 val);
 int m10mo_readb(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_readw(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_readl(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
+int m10mo_setup_flash_controller(struct v4l2_subdev *sd);
 
 void m10mo_register_spi_fw_flash_interface(struct m10mo_spi *m10mo_spi_dev);
 

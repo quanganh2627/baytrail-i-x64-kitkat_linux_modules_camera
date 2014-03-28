@@ -304,6 +304,25 @@ int m10mo_memory_read(struct v4l2_subdev *sd, u16 len, u32 addr, u8 *val)
 }
 
 /**
+ * m10mo_setup_flash_controller - initialize flash controller
+ *
+ * Flash controller requires additional setup before
+ * the use.
+ */
+int m10mo_setup_flash_controller(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	u8 data = 0x7F;
+	int res;
+
+	res = m10mo_memory_write(sd, M10MO_MEMORY_WRITE_8BIT,
+				 1, 0x13000005, &data);
+	if (res < 0)
+		dev_err(&client->dev, "Setup flash controller failed\n");
+	return res;
+}
+
+/**
  * m10mo_wait_interrupt - Clear interrupt pending bits and unmask interrupts
  *
  * Before writing desired interrupt value the INT_FACTOR register should
@@ -353,14 +372,9 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
 
-	/* Temporary Fix, Bug in M10MO Firmware */
-	u8 data = 0x7F;
-	ret = m10mo_memory_write(sd, M10MO_MEMORY_WRITE_8BIT,
-				 1, 0x13000005, &data);
-	if (ret < 0) {
-		dev_err(&client->dev, "Memory Write failed\n");
+	ret = m10mo_setup_flash_controller(sd);
+	if (ret < 0)
 		return ret;
-	}
 
 	dev->irq = 0;
 	/* Start the Camera firmware */
@@ -675,6 +689,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 	int ret;
 	struct m10mo_fw_id *fw_ids = NULL;
 	struct m10mo_sensor_private_data *sdata;
+	u16 result = M10MO_INVALID_CHECKSUM;
 
 	mutex_lock(&dev->input_lock);
 
@@ -705,8 +720,17 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 	if (dev->pdata->csi_cfg) {
 		ret = dev->pdata->csi_cfg(sd, 1);
 		if (ret)
-			goto fail_csi_cfg;
+			goto fail;
 	}
+
+	ret = m10mo_fw_checksum(dev, &result);
+	if (ret) {
+		dev_err(&client->dev, "Checksum calculation fails.\n");
+		goto fail;
+	}
+	if (result != 0)
+		dev_err(&client->dev, "Firmware checksum is not 0.\n");
+		/* TBD: Trig FW update here */
 
 	ret = __m10mo_s_power(sd, 0, true);
 	mutex_unlock(&dev->input_lock);
@@ -717,7 +741,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 
 	return 0;
 
-fail_csi_cfg:
+fail:
 	__m10mo_s_power(sd, 0, true);
 	mutex_unlock(&dev->input_lock);
 	dev_err(&client->dev, "External ISP power-gating failed\n");
