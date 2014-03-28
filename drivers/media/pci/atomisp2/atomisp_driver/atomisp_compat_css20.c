@@ -2354,7 +2354,7 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 	struct ia_css_resolution  *effective_res =
 		&stream_config->effective_res;
 	const struct bayer_ds_factor bds_factors[] =
-		{{8, 1}, {4, 1}, {2, 1}, {3, 2}, {5, 4}};
+		{{8, 1}, {4, 1}, {2, 1}, {3, 2}};
 	unsigned int i;
 
 	if (width == 0 && height == 0)
@@ -2372,10 +2372,10 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 	 * envelope. But,  if the bayer_ds_out_res is less than 120% of the
 	 * destination. The ISP can still work,  but DVS quality is not good.
 	 */
-	/* taking at least 18% as envelope */
+	/* taking at least 10% as envelope */
 	if (asd->params.video_dis_en) {
-		out_width = pipe_configs->output_info.res.width * 118 / 100;
-		out_height = pipe_configs->output_info.res.height * 118 / 100;
+		out_width = pipe_configs->output_info.res.width * 110 / 100;
+		out_height = pipe_configs->output_info.res.height * 110 / 100;
 	} else {
 		out_width = pipe_configs->output_info.res.width;
 		out_height = pipe_configs->output_info.res.height;
@@ -2383,7 +2383,7 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 
 	/*
 	 * calculate bayer decimate factor:
-	 * 1: only 1.25, 1.5, 2, 4 and 8 get supported
+	 * 1: only 1.5, 2, 4 and 8 get supported
 	 * 2: Do not configure bayer_ds_out_res if:
 	 *    online == 1 or continuous == 0 or raw_binning = 0
 	 */
@@ -2413,24 +2413,13 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 		}
 	}
 
-	if (asd->params.video_dis_en) {
-		unsigned int dvs_w, dvs_h, dvs_w_max, dvs_h_max;
-
-		dvs_w = pipe_configs->bayer_ds_out_res.width -
-		        pipe_configs->output_info.res.width;
-		dvs_h = pipe_configs->bayer_ds_out_res.height -
-		        pipe_configs->output_info.res.height;
-		dvs_w_max = rounddown(
-				pipe_configs->output_info.res.width / 5,
-				ATOM_ISP_STEP_WIDTH);
-		dvs_h_max = rounddown(
-				pipe_configs->output_info.res.height / 5,
-				ATOM_ISP_STEP_HEIGHT);
-		pipe_configs->dvs_envelope.width =
-				dvs_w > dvs_w_max ? dvs_w_max : dvs_w;
-		pipe_configs->dvs_envelope.height =
-				dvs_h > dvs_h_max ? dvs_h_max : dvs_h;
-	}
+	/*
+	 * DVS is cropped from BDS output, so we do not really need to set the
+	 * envelope to 20% of output resolution here. always set it to 12x12
+	 * per firmware requirement.
+	 */
+	pipe_configs->dvs_envelope.width = 12;
+	pipe_configs->dvs_envelope.height = 12;
 
 done:
 	stream_config->left_padding = 12;

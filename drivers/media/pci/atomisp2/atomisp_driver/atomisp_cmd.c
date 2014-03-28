@@ -2030,7 +2030,8 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 	bq_res->output_bq.width_bq = pipe_cfg->output_info.res.width / 2;
 	bq_res->output_bq.height_bq = pipe_cfg->output_info.res.height / 2;
 
-
+	bq_res->envelope_bq.width_bq = 0;
+	bq_res->envelope_bq.height_bq = 0;
 	/* the GDC input resolution */
 	if (!asd->continuous_mode->val) {
 		bq_res->source_bq.width_bq = bq_res->output_bq.width_bq +
@@ -2049,6 +2050,12 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 		bq_res->gdc_shift_bq.width_bq = 4 / 2;
 		bq_res->gdc_shift_bq.height_bq = 4 / 2;
 
+		if (asd->params.video_dis_en) {
+			bq_res->envelope_bq.width_bq = pipe_cfg->dvs_envelope.width
+					/ 2 - bq_res->ispfilter_bq.width_bq;
+			bq_res->envelope_bq.height_bq = pipe_cfg->dvs_envelope.height
+					/ 2 - bq_res->ispfilter_bq.height_bq;
+		}
 	} else {
 		unsigned int w_padding;
 
@@ -2056,54 +2063,80 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 		 * the GDC input is:
 		 *     (effective_input + 12 filter padding) / bayer_ds_ratio
 		 */
-		bq_res->source_bq.width_bq = ((stream_cfg->effective_res.width + 12) *
-					pipe_cfg->bayer_ds_out_res.width /
-					stream_cfg->effective_res.width + 1) / 2;
-		bq_res->source_bq.height_bq = ((stream_cfg->effective_res.height + 12) *
-					pipe_cfg->bayer_ds_out_res.height /
-					stream_cfg->effective_res.height + 1) / 2;
-
-		/*
-		 * Bad pixels caused by spatial filter processing
-		 * FIXME: see vied bz 1786, 32 is the experience value,
-		 * we need firmware team to explain why 8 does not work
-		 */
-		bq_res->ispfilter_bq.width_bq = 32 / 2;
-		bq_res->ispfilter_bq.height_bq = 32 / 2;
-
-		/*
-		 * spatial filter shift and more left padding in SDV case,
-		 * the left padding is (w_padding + 24) / Bayer_DS_Ratio
-		 *          w_padding = ceiling(effective_width/128, 1) * 128 -
-		 *                      effective_width
-		 * FIXME: see vied bz 1786, w_padding + 24 is experience value,
-		 *        we need firmware team to explain why w_padding - 12
-		 *        does not work.
-		 *
-		 * and there is still 4 pixel spatial filter shift
-		 */
-		w_padding = roundup(stream_cfg->effective_res.width, 128) -
-				stream_cfg->effective_res.width;
-		bq_res->gdc_shift_bq.width_bq = 4 / 2 +
-				((w_padding + 24) *
+		bq_res->source_bq.width_bq =
+				((stream_cfg->effective_res.width + 12) *
 				pipe_cfg->bayer_ds_out_res.width /
 				stream_cfg->effective_res.width + 1) / 2;
-		bq_res->gdc_shift_bq.height_bq = 4 / 2;
+		bq_res->source_bq.height_bq =
+				((stream_cfg->effective_res.height + 12) *
+				pipe_cfg->bayer_ds_out_res.height /
+				stream_cfg->effective_res.height + 1) / 2;
+
+		if (!asd->params.video_dis_en) {
+			/*
+			 * Bad pixels caused by spatial filter processing
+			 * FIXME: see vied bz 1786, 32 is the experience value,
+			 * we need firmware team to explain why 8 does not work
+			 */
+			bq_res->ispfilter_bq.width_bq = 32 / 2;
+			bq_res->ispfilter_bq.height_bq = 32 / 2;
+
+			/*
+			 * spatial filter shift and more left padding in SDV
+			 * case, the left padding is
+			 *	(w_padding + 24) / Bayer_DS_Ratio
+			 *
+			 *	w_padding = ceiling(effective_width/128, 1) *
+			 *			128 - effective_width
+			 * FIXME: see vied bz 1786, w_padding + 24 is
+			 * experience value. we need firmware team to explain
+			 * why w_padding - 12 does not work.
+			 *
+			 * and there is still 4 pixel spatial filter shift
+			 */
+			w_padding =
+			    roundup(stream_cfg->effective_res.width, 128) -
+			    stream_cfg->effective_res.width;
+			bq_res->gdc_shift_bq.width_bq = 4 / 2 +
+					((w_padding + 24) *
+					pipe_cfg->bayer_ds_out_res.width /
+					stream_cfg->effective_res.width + 1) /
+					2;
+			bq_res->gdc_shift_bq.height_bq = 4 / 2;
+		} else {
+			unsigned int dvs_w, dvs_h, dvs_w_max, dvs_h_max;
+
+			bq_res->ispfilter_bq.width_bq = 8 / 2;
+			bq_res->ispfilter_bq.height_bq = 8 / 2;
+
+			w_padding =
+			    roundup(stream_cfg->effective_res.width, 128) -
+			    stream_cfg->effective_res.width;
+			bq_res->gdc_shift_bq.width_bq = 4 / 2 +
+				((w_padding - 12) *
+				pipe_cfg->bayer_ds_out_res.width /
+				stream_cfg->effective_res.width + 1) / 2;
+			bq_res->gdc_shift_bq.height_bq = 4 / 2;
+
+			dvs_w = pipe_cfg->bayer_ds_out_res.width -
+			        pipe_cfg->output_info.res.width;
+			dvs_h = pipe_cfg->bayer_ds_out_res.height -
+			        pipe_cfg->output_info.res.height;
+			dvs_w_max = rounddown(
+					pipe_cfg->output_info.res.width / 5,
+					ATOM_ISP_STEP_WIDTH);
+			dvs_h_max = rounddown(
+					pipe_cfg->output_info.res.height / 5,
+					ATOM_ISP_STEP_HEIGHT);
+			bq_res->envelope_bq.width_bq =
+				min((dvs_w / 2), (dvs_w_max / 2)) -
+				bq_res->ispfilter_bq.width_bq;
+			bq_res->envelope_bq.height_bq =
+				min((dvs_h / 2), (dvs_h_max / 2)) -
+				bq_res->ispfilter_bq.height_bq;
+		}
 	}
 
-	/*
-	 * The DVS envelope resolution which does not include the ISP filter
-	 * resolution.
-	 */
-	if (!asd->params.video_dis_en) {
-		bq_res->envelope_bq.width_bq = 0;
-		bq_res->envelope_bq.height_bq = 0;
-	} else {
-		bq_res->envelope_bq.width_bq = pipe_cfg->dvs_envelope.width
-		                          / 2 - bq_res->ispfilter_bq.width_bq;
-		bq_res->envelope_bq.height_bq = pipe_cfg->dvs_envelope.height
-		                          / 2 - bq_res->ispfilter_bq.height_bq;
-	}
 	dev_dbg(asd->isp->dev, "source_bq.width_bq %d, source_bq.height_bq %d,\nispfilter_bq.width_bq %d, ispfilter_bq.height_bq %d,\ngdc_shift_bq.width_bq %d, gdc_shift_bq.height_bq %d,\nenvelope_bq.width_bq %d, envelope_bq.height_bq %d,\noutput_bq.width_bq %d, output_bq.height_bq %d\n",
 	      bq_res->source_bq.width_bq, bq_res->source_bq.height_bq,
 	      bq_res->ispfilter_bq.width_bq, bq_res->ispfilter_bq.height_bq,
@@ -2708,6 +2741,9 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 		  struct atomisp_parm *config)
 {
 	struct atomisp_device *isp = asd->isp;
+	struct ia_css_pipe_config *vp_cfg =
+		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+		pipe_configs[IA_CSS_PIPE_ID_VIDEO];
 
 	/* Read parameter for 3A binary info */
 	if (flag == 0) {
@@ -2716,19 +2752,7 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 			return -EINVAL;
 		}
 		atomisp_curr_user_grid_info(asd, &config->info);
-#ifdef CSS20
-		/* update dvs grid info */
-		memcpy(&config->dvs_grid, &asd->params.curr_grid_info.dvs_grid,
-			sizeof(struct atomisp_css_dvs_grid_info));
-		/* update dvs envelop info */
-		config->dvs_envelop.width =
-		    asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipe_configs[IA_CSS_PIPE_ID_VIDEO].
-		    dvs_envelope.width;
-		config->dvs_envelop.height =
-		    asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipe_configs[IA_CSS_PIPE_ID_VIDEO].
-		    dvs_envelope.height;
-#endif
-#ifdef CSS21
+
 		/* We always return the resolution and stride even if there is
 		 * no valid metadata. This allows the caller to get the
 		 * information needed to allocate user-space buffers. */
@@ -2738,7 +2762,40 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 		config->metadata_config.metadata_stride = asd->
 			stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.
 			metadata_info.stride;
-#endif
+
+		/* update dvs grid info */
+		memcpy(&config->dvs_grid, &asd->params.curr_grid_info.dvs_grid,
+			sizeof(struct atomisp_css_dvs_grid_info));
+
+		if (asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO) {
+			config->dvs_envelop.width = 0;
+			config->dvs_envelop.height = 0;
+			return 0;
+		}
+
+		/* update dvs envelop info */
+		if (!asd->continuous_mode->val) {
+			config->dvs_envelop.width = vp_cfg->dvs_envelope.width;
+			config->dvs_envelop.height =
+					vp_cfg->dvs_envelope.height;
+		} else {
+			unsigned int dvs_w, dvs_h, dvs_w_max, dvs_h_max;
+
+			dvs_w = vp_cfg->bayer_ds_out_res.width -
+			        vp_cfg->output_info.res.width;
+			dvs_h = vp_cfg->bayer_ds_out_res.height -
+			        vp_cfg->output_info.res.height;
+			dvs_w_max = rounddown(
+					vp_cfg->output_info.res.width / 5,
+					ATOM_ISP_STEP_WIDTH);
+			dvs_h_max = rounddown(
+					vp_cfg->output_info.res.height / 5,
+					ATOM_ISP_STEP_HEIGHT);
+
+			config->dvs_envelop.width = min(dvs_w, dvs_w_max);
+			config->dvs_envelop.height = min(dvs_h, dvs_h_max);
+		}
+
 		return 0;
 	}
 
