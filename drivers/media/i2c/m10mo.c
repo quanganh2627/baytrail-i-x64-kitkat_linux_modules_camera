@@ -329,22 +329,52 @@ int m10mo_setup_flash_controller(struct v4l2_subdev *sd)
  * be read to clear pending interrupts.
  */
 
-static int m10mo_wait_interrupt(struct v4l2_subdev *sd, u32 timeout)
+static int m10mo_request_mode_change(struct v4l2_subdev *sd, u8 requested_mode)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = 0;
+
+	dev->requested_mode = requested_mode;
+
+	switch (dev->requested_mode) {
+	case M10MO_FLASH_WRITE_MODE:
+		break;
+	case M10MO_PARAM_SETTING_MODE:
+		ret = m10mo_write(sd, 1, CATEGORY_FLASHROM, FLASH_CAM_START, 0x01);
+		if (ret < 0)
+			dev_err(&client->dev, "Unable to change to PARAM_SETTING_MODE\n");
+		break;
+	case M10MO_MONITOR_MODE:
+		ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
+		if (ret < 0)
+			dev_err(&client->dev, "Unable to change to MONITOR_MODE\n");
+		break;
+	case M10MO_SINGLE_CAPTURE_MODE:
+		ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x03);
+		if (ret < 0)
+			dev_err(&client->dev, "Unable to change to SINGLE_CAPTURE_MODE\n");
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+static int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
 	ret = wait_event_interruptible_timeout(dev->irq_waitq,
-					       dev->irq != 0,
+					       dev->mode == mode,
 					       msecs_to_jiffies(timeout));
 	if (ret <= 0) {
-		dev_err(&client->dev, "m10mo_wait_interrupt timed out");
+		dev_err(&client->dev, "m10mo_wait_mode_change timed out");
 		return -ETIMEDOUT;
 	}
-
-	ret = m10mo_read(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_FACTOR,
-			 &dev->int_factor);
 
 	return ret;
 }
@@ -369,22 +399,18 @@ static int m10mo_detect(struct v4l2_subdev *sd)
 static int __m10mo_fw_start(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
 
 	ret = m10mo_setup_flash_controller(sd);
 	if (ret < 0)
 		return ret;
 
-	dev->irq = 0;
-	/* Start the Camera firmware */
-	ret = m10mo_write(sd, 1, CATEGORY_FLASHROM, FLASH_CAM_START, 0x01);
-	if (ret < 0) {
-		dev_err(&client->dev, "FW start: i2c failed");
+	ret = m10mo_request_mode_change(sd, M10MO_PARAM_SETTING_MODE);
+	if (ret)
 		return ret;
-	}
 
-	ret = m10mo_wait_interrupt(sd, M10MO_INIT_TIMEOUT);
+	ret = m10mo_wait_mode_change(sd, M10MO_PARAM_SETTING_MODE,
+				     M10MO_INIT_TIMEOUT);
 	if (ret < 0) {
 		dev_err(&client->dev, "Initialization timeout");
 		return ret;
@@ -457,10 +483,12 @@ static int power_down(struct v4l2_subdev *sd)
 static int __m10mo_bootrom_mode_start(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+
 	u32 dummy;
 	int ret;
 
-	ret = m10mo_wait_interrupt(sd, M10MO_BOOT_TIMEOUT);
+	ret = m10mo_wait_mode_change(sd, M10MO_FLASH_WRITE_MODE,
+				     M10MO_BOOT_TIMEOUT);
 	if (ret < 0) {
 		dev_err(&client->dev, "Flash rom mode timeout\n");
 		return ret;
@@ -480,7 +508,9 @@ static int __m10mo_s_power(struct v4l2_subdev *sd, int on, bool fw_update_mode)
 	int ret;
 
 	if (on) {
-		dev->irq = 0;
+		dev->mode = M10MO_POWERING_ON;
+		m10mo_request_mode_change(sd, M10MO_FLASH_WRITE_MODE);
+
 		ret = power_up(sd);
 		if (!ret) {
 			dev->power = 1;
@@ -510,12 +540,82 @@ static int m10mo_s_power(struct v4l2_subdev *sd, int on)
 	return ret;
 }
 
-static irqreturn_t m10mo_irq_handler(int irq, void *dev_id)
+static int m10mo_single_capture_process(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret;
+
+	/* Select frame */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
+			  CAPC_SEL_FRAME_MAIN, 0x01);
+
+	if (ret)
+		return ret;
+
+	/* Image format */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM,
+			  CAPP_YUVOUT_MAIN, CAPP_YUVOUT_MAIN);
+
+	if (ret)
+		return ret;
+
+	/* Image size */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
+			  dev->curr_res_table[dev->fmt_idx].command);
+
+	if (ret)
+		return ret;
+
+	/* Start image transfer */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
+			  CAPC_TRANSFER_START, 0x01);
+
+	return ret;
+}
+
+static irqreturn_t m10mo_irq_thread(int irq, void *dev_id)
 {
 	struct v4l2_subdev *sd = (struct v4l2_subdev *)dev_id;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	u32 int_factor;
 
-	dev->irq = 1;
+	/* Clear interrupt by reading interrupt factor register */
+	(void) m10mo_read(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_FACTOR,
+			  &int_factor);
+
+	dev_info(&client->dev, "INT_FACTOR: 0x%x\n", int_factor);
+
+	switch (dev->requested_mode) {
+	case M10MO_FLASH_WRITE_MODE:
+		if (dev->mode == M10MO_POWERING_ON)
+			dev->mode = M10MO_FLASH_WRITE_MODE;
+		else
+			dev_err(&client->dev, "Illegal flash write mode request\n");
+		break;
+	case M10MO_PARAM_SETTING_MODE:
+		if (int_factor & REG_INT_STATUS_MODE) {
+			dev->mode = M10MO_PARAM_SETTING_MODE;
+		}
+		break;
+	case M10MO_MONITOR_MODE:
+		if (int_factor & REG_INT_STATUS_MODE) {
+			dev->mode = M10MO_MONITOR_MODE;
+		}
+		break;
+	case M10MO_SINGLE_CAPTURE_MODE:
+		if (int_factor & REG_INT_STATUS_CAPTURE) {
+			dev->mode = M10MO_SINGLE_CAPTURE_MODE;
+			m10mo_single_capture_process(sd);
+		}
+		break;
+	default:
+		return IRQ_HANDLED;
+	}
+
+	if (dev->requested_mode == dev->mode)
+		dev->requested_mode = M10MO_NO_MODE_REQUEST;
+
 	wake_up_interruptible(&dev->irq_waitq);
 
 	return IRQ_HANDLED;
@@ -542,8 +642,8 @@ static int m10mo_setup_irq(struct v4l2_subdev *sd)
 	}
 	client->irq = ret;
 
-	ret = request_irq(client->irq, m10mo_irq_handler,
-			  IRQF_TRIGGER_RISING, M10MO_NAME, sd);
+	ret = request_threaded_irq(client->irq, NULL, m10mo_irq_thread,
+			  IRQF_TRIGGER_RISING | IRQF_ONESHOT, M10MO_NAME, sd);
 	if (ret < 0) {
 		dev_err(&client->dev, "Cannot register IRQ: %d\n", ret);
 		goto out_free;
@@ -799,15 +899,8 @@ static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
 	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
 	if (ret)
 		goto out;
-
-	dev->irq = 0;
 	/* Go to Monitor mode and output YUV Data */
-	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
-	if (ret)
-		goto out;
-
-	/* TODO: To move this to threaded IRQ */
-	ret = m10mo_wait_interrupt(sd, 500);
+	ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE);
 	if (ret)
 		goto out;
 
@@ -832,45 +925,8 @@ static int m10mo_set_still_capture(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
-	dev->irq = 0;
 	/* Set capture mode */
-	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x03);
-	if (ret)
-		goto out;
-
-	/* TODO: Move this to threaded IRQ */
-	ret = m10mo_wait_interrupt(sd, 5000);
-	if (ret)
-		goto out;
-
-	/* Select frame */
-	ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_CTRL,
-				CAPC_SEL_FRAME_MAIN, 0x01);
-	if (ret)
-		goto out;
-
-	/* Image format */
-	ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_PARAM,
-				CAPP_YUVOUT_MAIN, CAPP_YUVOUT_MAIN);
-	if (ret)
-		goto out;
-
-	/* Image size */
-	ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_PARAM,CAPP_MAIN_IMAGE_SIZE,
-			dev->curr_res_table[dev->fmt_idx].command);
-	if (ret)
-		goto out;
-
-	dev->irq = 0;
-	/* Start image transfer */
-	ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_CTRL,
-			CAPC_TRANSFER_START, 0x01);
-	if (ret)
-		goto out;
-
-	/* Wait for transfer to complete */
-	/* TODO: move this to threaded IRQ */
-	ret = m10mo_wait_interrupt(sd, 2000);
+	ret = m10mo_request_mode_change(sd, M10MO_SINGLE_CAPTURE_MODE);
 
 out:
 	return ret;
@@ -1301,6 +1357,8 @@ static int m10mo_probe(struct i2c_client *client,
 	}
 
 	dev->pdata = client->dev.platform_data;
+	dev->mode = M10MO_POWERED_OFF;
+	dev->requested_mode = M10MO_NO_MODE_REQUEST;
 
 	mutex_init(&dev->input_lock);
 

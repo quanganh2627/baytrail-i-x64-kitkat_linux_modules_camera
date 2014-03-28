@@ -91,11 +91,10 @@ struct m10mo_device {
 	int res_type;
 	int power;
 	u8 fps;
+	u8 requested_mode;
 	u8 mode;
 	int fmt_idx;
-	unsigned int irq;	/* irq issued by ISP */
 	wait_queue_head_t irq_waitq;
-	unsigned int int_factor;
 	unsigned int bad_fw:1;
 	unsigned int isp_ready:1;
 	unsigned int initialized;
@@ -327,11 +326,15 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define FLASH_CAM_START		REG_CAM_START
 
 /* Internal modes of M10MO */
-#define M10MO_SYSTEM_INIT_MODE		0x0
-#define M10MO_PARAM_SETTING_MODE	0x1
-#define M10MO_MONITOR_MODE		0x2
-#define M10MO_SINGLE_CAPTURE_MODE	0x3
-
+enum M10MO_MODES {
+	M10MO_NO_MODE_REQUEST,
+	M10MO_POWERED_OFF,
+	M10MO_POWERING_ON,
+	M10MO_FLASH_WRITE_MODE,
+	M10MO_PARAM_SETTING_MODE,
+	M10MO_MONITOR_MODE,
+	M10MO_SINGLE_CAPTURE_MODE
+};
 
 static const struct m10mo_resolution const m10mo_preview_modes[] = {
 	{
