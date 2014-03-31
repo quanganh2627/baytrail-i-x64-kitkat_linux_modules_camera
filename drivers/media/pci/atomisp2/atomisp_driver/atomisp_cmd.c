@@ -423,12 +423,12 @@ static void atomisp_sof_event(struct atomisp_sub_device *asd)
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }
 
-void atomisp_eof_event(struct atomisp_sub_device *asd)
+void atomisp_eof_event(struct atomisp_sub_device *asd, uint8_t exp_id)
 {
 	struct v4l2_event event = {0};
 
 	event.type = V4L2_EVENT_FRAME_END;
-	event.u.frame_sync.frame_sequence = atomic_inc_return(&asd->eof_count);
+	event.u.frame_sync.frame_sequence = exp_id;
 
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }

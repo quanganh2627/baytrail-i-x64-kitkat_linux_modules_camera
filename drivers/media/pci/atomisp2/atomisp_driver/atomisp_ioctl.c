@@ -1508,7 +1508,6 @@ static int atomisp_streamon(struct file *file, void *fh,
 	asd->params.css_update_params_needed = true;
 	asd->streaming = ATOMISP_DEVICE_STREAMING_ENABLED;
 	atomic_set(&asd->sof_count, -1);
-	atomic_set(&asd->eof_count, -1);
 	atomic_set(&asd->sequence, -1);
 	atomic_set(&asd->sequence_temp, -1);
 	atomic_set(&isp->wdt_count, 0);

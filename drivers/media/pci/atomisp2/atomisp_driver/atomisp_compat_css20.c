@@ -3900,21 +3900,7 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			css_pipe_done[asd->index] = true;
 			break;
 		case CSS_EVENT_PORT_EOF:
-			atomisp_eof_event(asd);
-			/*
-			 * If sequence_temp and sequence are the same
-			 * there was no frame lost so we can increase
-			 * sequence_temp. If not then processing of frame is
-			 * still in progress and driver needs to keep old
-			 * sequence_temp value.
-			 * NOTE: There is assumption here that ISP will not
-			 * start processing next frame from sensor before old
-			 * one is completely done.
-			 */
-			if (atomic_read(&asd->sequence) ==
-					atomic_read(&asd->sequence_temp))
-				atomic_set(&asd->sequence_temp,
-						atomic_read(&asd->eof_count));
+			atomisp_eof_event(asd, current_event.event.exp_id);
 
 			/* signal streamon after delayed init is done */
 			if (asd->delayed_init ==
