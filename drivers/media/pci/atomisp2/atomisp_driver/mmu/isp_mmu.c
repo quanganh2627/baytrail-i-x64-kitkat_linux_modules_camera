@@ -269,6 +269,8 @@ static int mmu_l1_map(struct isp_mmu *mmu, phys_addr_t l1_pt,
 
 			l2_pte = isp_pgaddr_to_pte_valid(mmu, l2_pt);
 
+			kmemleak_ignore(phys_to_virt(l2_pt));
+
 			atomisp_set_pte(l1_pt, idx, l2_pte);
 		}
 
@@ -335,6 +337,7 @@ static int mmu_map(struct isp_mmu *mmu, unsigned int isp_virt,
 			return ret;
 		}
 		mmu->base_address = l1_pt;
+		kmemleak_ignore(phys_to_virt(l1_pt));
 		mmu->l1_pte = isp_pgaddr_to_pte_valid(mmu, l1_pt);
 	}
 
