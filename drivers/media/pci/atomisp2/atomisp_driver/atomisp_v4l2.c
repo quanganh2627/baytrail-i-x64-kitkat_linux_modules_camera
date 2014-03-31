@@ -1283,6 +1283,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	pm_runtime_put_noidle(&dev->dev);
 	pm_runtime_allow(&dev->dev);
 
+	hmm_init_mem_stat(repool_pgnr, dypool_enable, dypool_pgnr);
 	err = hmm_pool_register(repool_pgnr, HMM_POOL_TYPE_RESERVED);
 	if (err)
 		dev_err(&dev->dev, "Failed to register reserved memory pool.\n");

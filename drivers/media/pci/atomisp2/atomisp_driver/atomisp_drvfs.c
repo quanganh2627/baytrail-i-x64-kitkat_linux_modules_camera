@@ -25,6 +25,7 @@
 #include "atomisp_compat.h"
 #include "atomisp_internal.h"
 #include "atomisp_ioctl.h"
+#include "hmm/hmm.h"
 
 /*
  * _iunit_debug:
@@ -80,12 +81,8 @@ static inline int iunit_dump_dbgopt(struct atomisp_device *isp,
 			}
 		}
 
-		if (opt & OPTION_MEM_STAT) {
-			ret = -EPERM;
-			dev_err(atomisp_dev, "%s dump mem stat to be added[ret:%d]\n",
-				__func__, ret);
-			goto opt_err;
-		}
+		if (opt & OPTION_MEM_STAT)
+			hmm_show_mem_stat(__func__, __LINE__);
 	} else {
 		ret = -EINVAL;
 		dev_err(atomisp_dev, "%s dump nothing[ret=%d]\n", __func__,

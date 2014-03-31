@@ -318,9 +318,11 @@ static void free_private_bo_pages(struct hmm_buffer_object *bo,
 		switch (bo->page_obj[i].type) {
 		case HMM_PAGE_TYPE_RESERVED:
 			if (repool->pops
-			    && repool->pops->pool_free_pages)
+			    && repool->pops->pool_free_pages) {
 				repool->pops->pool_free_pages(repool->pool_info,
 							&bo->page_obj[i]);
+				hmm_mem_stat.res_cnt--;
+			}
 			break;
 		/*
 		 * HMM_PAGE_TYPE_GENERAL indicates that pages are from system
@@ -349,6 +351,7 @@ static void free_private_bo_pages(struct hmm_buffer_object *bo,
 				dev_err(atomisp_dev,
 						"set page to WB err ...\n");
 			__free_pages(bo->page_obj[i].page, 0);
+			hmm_mem_stat.sys_size--;
 			break;
 		}
 	}
@@ -392,6 +395,8 @@ static int alloc_private_pages(struct hmm_buffer_object *bo, int from_highmem,
 		alloc_pgnr = dypool->pops->pool_alloc_pages(dypool->pool_info,
 							bo->page_obj, pgnr,
 							cached);
+		hmm_mem_stat.dyc_size -= alloc_pgnr;
+
 		if (alloc_pgnr == pgnr)
 			return 0;
 	}
@@ -406,6 +411,7 @@ static int alloc_private_pages(struct hmm_buffer_object *bo, int from_highmem,
 		alloc_pgnr = repool->pops->pool_alloc_pages(repool->pool_info,
 							&bo->page_obj[i], pgnr,
 							cached);
+		hmm_mem_stat.res_cnt += alloc_pgnr;
 		if (alloc_pgnr == pgnr)
 			return 0;
 	}
@@ -489,6 +495,7 @@ retry:
 			}
 
 			pgnr -= blk_pgnr;
+			hmm_mem_stat.sys_size += blk_pgnr;
 
 			/*
 			 * if order is not reduced this time, clear
@@ -753,7 +760,7 @@ static int alloc_user_pages(struct hmm_buffer_object *bo,
 		bo->page_obj[i].page = pages[i];
 		bo->page_obj[i].type = HMM_PAGE_TYPE_GENERAL;
 	}
-
+	hmm_mem_stat.usr_size += bo->pgnr;
 	atomisp_kernel_free(pages);
 
 	return 0;
@@ -780,6 +787,7 @@ static void free_user_pages(struct hmm_buffer_object *bo)
 
 	for (i = 0; i < bo->pgnr; i++)
 		put_page(bo->page_obj[i].page);
+	hmm_mem_stat.usr_size -= bo->pgnr;
 
 	atomisp_kernel_free(bo->page_obj);
 }
