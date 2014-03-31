@@ -141,6 +141,17 @@ config VIDEO_LM3554
          To compile this driver as a module, choose M here: the
          module will be called lm3554
 
+config VIDEO_LM3642
+       tristate "LM3642 flash light driver"
+       depends on VIDEO_V4L2 && I2C
+       ---help---
+         This is a Video4Linux2 sub-dev driver for the LM3642
+         flash light driver.
+
+         To compile this driver as a module, choose M here: the
+         module will be called lm3642
+
+
 config VIDEO_LM3559
        tristate "LM3559 flash light driver"
        depends on VIDEO_V4L2 && I2C
