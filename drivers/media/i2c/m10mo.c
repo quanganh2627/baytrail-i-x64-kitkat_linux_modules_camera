@@ -1048,6 +1048,47 @@ static const struct media_entity_operations m10mo_entity_ops = {
 	.link_setup = NULL,
 };
 
+static int m10mo_set_flicker_freq(struct v4l2_subdev *sd, s32 val)
+{
+	unsigned int flicker_freq;
+
+	switch (val) {
+	case V4L2_CID_POWER_LINE_FREQUENCY_DISABLED:
+		flicker_freq = M10MO_FLICKER_OFF;
+		break;
+	case V4L2_CID_POWER_LINE_FREQUENCY_50HZ:
+		flicker_freq = M10MO_FLICKER_50HZ;
+		break;
+	case V4L2_CID_POWER_LINE_FREQUENCY_60HZ:
+		flicker_freq = M10MO_FLICKER_60HZ;
+		break;
+	case V4L2_CID_POWER_LINE_FREQUENCY_AUTO:
+		flicker_freq = M10MO_FLICKER_AUTO;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return m10mo_writeb(sd, CATEGORY_AE, AE_FLICKER, flicker_freq);
+}
+
+static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
+{
+	struct m10mo_device *dev = container_of(
+		ctrl->handler, struct m10mo_device, ctrl_handler);
+	int ret;
+
+	switch (ctrl->id) {
+	case V4L2_CID_POWER_LINE_FREQUENCY:
+		ret = m10mo_set_flicker_freq(&dev->sd, ctrl->val);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
 static int m10mo_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
 	switch (ctrl->id) {
@@ -1059,46 +1100,11 @@ static int m10mo_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 	}
 	return 0;
 }
+
 static struct v4l2_ctrl_ops m10mo_ctrl_ops = {
 	.g_volatile_ctrl = m10mo_g_volatile_ctrl,
+	.s_ctrl = m10mo_s_ctrl,
 };
-
-static const struct v4l2_ctrl_config v4l2_ctrl_link_freq = {
-	.ops = &m10mo_ctrl_ops,
-	.id = V4L2_CID_LINK_FREQ,
-	.name = "Link Frequency",
-	.type = V4L2_CTRL_TYPE_INTEGER,
-	.min = 1,
-	.max = 1500000 * 1000,
-	.step = 1,
-	.def = 1,
-	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
-};
-
-static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
-{
-	struct v4l2_ctrl_handler *hdl;
-	int ret;
-
-	hdl = &dev->ctrl_handler;
-
-	ret = v4l2_ctrl_handler_init(&dev->ctrl_handler, 1);
-	if (ret)
-		return ret;
-
-	dev->link_freq = v4l2_ctrl_new_custom(&dev->ctrl_handler,
-					      &v4l2_ctrl_link_freq,
-					      NULL);
-
-	if (dev->link_freq == NULL) {
-		v4l2_ctrl_handler_free(&dev->ctrl_handler);
-		return dev->ctrl_handler.error;
-	}
-
-	dev->sd.ctrl_handler = hdl;
-
-	return 0;
-}
 
 /* TODO: To move this to s_ctrl framework */
 static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
@@ -1121,6 +1127,60 @@ static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 		dev->entries_curr_table = ARRAY_SIZE(m10mo_preview_modes);
 	}
 	mutex_unlock(&dev->input_lock);
+	return 0;
+}
+
+static const struct v4l2_ctrl_config ctrls[] = {
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_LINK_FREQ,
+		.name = "Link Frequency",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 1,
+		.max = 1500000 * 1000,
+		.step = 1,
+		.def = 1,
+		.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_POWER_LINE_FREQUENCY,
+		.name = "Light frequency filter",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 3,
+		.max = 3,
+		.step = 1,
+	},
+};
+
+static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
+{
+	struct v4l2_ctrl_handler *hdl;
+	int ret, i;
+
+	hdl = &dev->ctrl_handler;
+
+	ret = v4l2_ctrl_handler_init(&dev->ctrl_handler, ARRAY_SIZE(ctrls));
+	if (ret)
+		return ret;
+
+	for (i = 0; i < ARRAY_SIZE(ctrls); i++)
+		v4l2_ctrl_new_custom(&dev->ctrl_handler, &ctrls[i], NULL);
+
+	if (dev->ctrl_handler.error) {
+		ret = dev->ctrl_handler.error;
+		v4l2_ctrl_handler_free(&dev->ctrl_handler);
+		return ret;
+	}
+
+	dev->ctrl_handler.lock = &dev->input_lock;
+	dev->sd.ctrl_handler = hdl;
+	v4l2_ctrl_handler_setup(hdl);
+
+	dev->link_freq = v4l2_ctrl_find(&dev->ctrl_handler, V4L2_CID_LINK_FREQ);
+	v4l2_ctrl_s_ctrl(dev->link_freq, V4L2_CID_LINK_FREQ);
+
 	return 0;
 }
 

@@ -43,6 +43,10 @@
 
 #define M10MO_MIN_EV -3
 #define M10MO_MAX_EV  3
+#define M10MO_FLICKER_AUTO 		0x00
+#define M10MO_FLICKER_50HZ 		0x01
+#define M10MO_FLICKER_60HZ 		0x02
+#define M10MO_FLICKER_OFF 		0x03
 
 #define M10MO_INVALID_CHECKSUM          0xffff
 #define M10MO_VALID_CHECKSUM            0
