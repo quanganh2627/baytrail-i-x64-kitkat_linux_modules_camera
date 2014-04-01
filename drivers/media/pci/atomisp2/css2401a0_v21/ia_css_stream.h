@@ -23,6 +23,7 @@
 #define _IA_CSS_STREAM_H_
 
 #include <type_support.h>
+#include <system_local.h>
 #if !defined(HAS_NO_INPUT_SYSTEM) && !defined(USE_INPUT_SYSTEM_VERSION_2401)
 #include <input_system.h>
 #endif

@@ -30,6 +30,9 @@
 /** @brief Retrieves the current CSS version
  * @param[out]	version		A pointer to a buffer where to put the generated
  *				version string. NULL is ignored.
+ * @param[in]	max_size	Size of the version buffer. If version string
+ *				would be larger than max_size, an error is
+ *				returned by this function.
  *
  * This function generates and returns the version string. If FW is loaded, it
  * attaches the FW version.

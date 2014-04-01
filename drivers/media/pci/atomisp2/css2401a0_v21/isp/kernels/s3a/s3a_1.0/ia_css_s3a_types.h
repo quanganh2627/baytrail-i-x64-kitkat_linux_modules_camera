@@ -22,6 +22,8 @@
 #ifndef __IA_CSS_S3A_TYPES_H
 #define __IA_CSS_S3A_TYPES_H
 
+#include <ia_css_frac.h>
+
 #if (defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system)) && (! defined(PIPE_GENERATION) )
 #include "../../../../components/stats_3a/src/stats_3a_public.h"
 #endif

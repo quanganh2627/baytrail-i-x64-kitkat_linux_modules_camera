@@ -24,11 +24,8 @@
 
 /*! \file */
 
-/** @file ia_css_types.h
- * This file contains types used for the ia_css parameters.
- * These types are in a separate file because they are expected
- * to be used in software layers that do not access the CSS API
- * directly but still need to forward parameters for it.
+/** @file ia_css_acc_types.h
+ * This file contains types used for acceleration
  */
 
 #include <system_types.h>	/* HAS_IRQ_MAP_VERSION_# */
@@ -38,6 +35,12 @@
 
 #include "ia_css_types.h"
 #include "ia_css_frame_public.h"
+
+/* Should be included without the path.
+   However, that requires adding the path to numerous makefiles
+   that have nothing to do with isp parameters.
+ */
+#include "runtime/isp_param/interface/ia_css_isp_param_types.h"
 
 /* Types for the acceleration API.
  * These should be moved to sh_css_internal.h once the old acceleration
@@ -65,12 +68,6 @@ enum ia_css_fw_type {
 	ia_css_isp_firmware,	/**< Firmware for the ISP */
 	ia_css_acc_firmware		/**< Firmware for accelrations */
 };
-
-/* Should be included without the path.
-   However, that requires adding the path to numerous makefiles
-   that have nothing to do with isp parameters.
- */
-#include "runtime/isp_param/interface/ia_css_isp_param_types.h"
 
 struct ia_css_blob_descr;
 

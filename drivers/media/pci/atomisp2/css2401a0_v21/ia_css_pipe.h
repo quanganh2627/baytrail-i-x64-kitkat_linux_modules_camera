@@ -23,7 +23,6 @@
 #define __IA_CSS_PIPE_H__
 
 #include <type_support.h>
-#include "ia_css.h"
 #include "ia_css_stream.h"
 #include "ia_css_frame.h"
 #include "ia_css_pipeline.h"

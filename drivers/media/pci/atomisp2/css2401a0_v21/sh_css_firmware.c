@@ -43,10 +43,10 @@ struct firmware_header {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140327_0818) is a place holder
+/* The string STR(irci_master_20140401_0455) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char* release_version = STR(irci_master_20140327_0818);
+static const char* release_version = STR(irci_master_20140401_0455);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";

@@ -27,7 +27,6 @@
 #include "ia_css_types.h"
 #include "ia_css_frame_format.h"
 #include "ia_css_buffer.h"
-#include "runtime/bufq/interface/ia_css_bufq.h"
 
 /** For RAW input, the bayer order needs to be specified separately. There
  *  are 4 possible orders. The name is constructed by taking the first two

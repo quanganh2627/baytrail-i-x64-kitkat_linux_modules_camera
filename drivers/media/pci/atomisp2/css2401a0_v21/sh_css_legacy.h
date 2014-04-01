@@ -73,6 +73,7 @@ ia_css_temp_pipe_to_pipe_id(const struct ia_css_pipe *pipe,
 /** @brief Enable cont_capt mode (continuous preview+capture running together).
  *
  * @param	enable	Enabling value.
+ * @param	stop_copy_preview boolean stop_copy_preview
  *
  * Enable or disable continuous binaries if available. Default is disabled.
  */

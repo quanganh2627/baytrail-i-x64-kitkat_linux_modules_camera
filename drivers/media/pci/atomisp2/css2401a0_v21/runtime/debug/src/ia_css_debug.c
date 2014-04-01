@@ -2668,9 +2668,10 @@ ia_css_debug_pipe_graph_dump_stage(
 					/* we cannot use ei as argument because
 					 * it is not guarenteed dword aligned
 					 */
-					strcpy_s(enable_info2,
+					strncpy_s(enable_info2,
 						sizeof(enable_info2),
-						ei);
+						ei, l);
+					enable_info2[l]='\0';
 					snprintf(enable_info, 200, "%s\\n%s",
 						enable_info1, enable_info2);
 

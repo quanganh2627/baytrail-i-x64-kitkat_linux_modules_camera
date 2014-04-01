@@ -1791,10 +1791,15 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 
 	struct ia_css_4a_private_config stats_config;
 	struct stats_3a_bubble_info_per_stripe stats_bubble_info;
+	ae_private_raw_buffer_aligned_t	ae_raw_buffer_s;
+	unsigned int ae_join_buffers;
 
 	hrt_vaddress af_ddr_addr = (hrt_vaddress)(long int)&(((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->af_raw_buffer);
 	hrt_vaddress awb_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->awb_raw_buffer;
-	hrt_vaddress ae_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->ae_raw_buffer;
+
+	hrt_vaddress ae_buff_0_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->ae_raw_buffer[0];
+	hrt_vaddress ae_buff_1_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->ae_raw_buffer[1];
+
 	hrt_vaddress awb_fr_ddr_addr = (hrt_vaddress)(long int)&((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->awb_fr_raw_buffer;
 
 	hrt_vaddress stats_bubble_info_addr = (hrt_vaddress)(long int)
@@ -1803,28 +1808,15 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 	hrt_vaddress stats_config_addr = (hrt_vaddress)(long int)
 	  &((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->stats_4a_config;
 
+	hrt_vaddress ae_pp_info_addr = (hrt_vaddress)(long int)
+	  &((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->ae_join_buffers;
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			"ia_css_get_4a_statistics() enter: "
 			"host_stats=%p, isp_stats=%p\n",
 			host_stats, isp_stats);
 
-	/* load meta data */
-	mmgr_load(af_ddr_addr,
-		  (void*)&(host_stats->data->af_raw_buffer),
-		  sizeof(af_public_raw_buffer_t));
-	mmgr_load(awb_ddr_addr,
-		  (void*)&(host_stats->data->awb_raw_buffer),
-		  sizeof(awb_public_raw_buffer_t));
-	mmgr_load(ae_ddr_addr,
-		  (void*)&(host_stats->data->ae_raw_buffer),
-		  sizeof(ae_public_raw_buffer_t));
-	mmgr_load(awb_fr_ddr_addr,
-			  (void*)&(host_stats->data->awb_fr_raw_buffer),
-		  sizeof(awb_fr_public_raw_buffer_t));
-
-
 	/* load grid configuration */
-
 	mmgr_load(stats_config_addr,
 		  (void*)&(stats_config),
 		  sizeof(struct  ia_css_4a_private_config));
@@ -1832,10 +1824,43 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 	/* load bubble info */
 	mmgr_load(stats_bubble_info_addr,
 		  (void*)&(stats_bubble_info),
-		  sizeof(struct stats_3a_bubble_info_per_stripe ));
+		  sizeof(struct stats_3a_bubble_info_per_stripe));
+
+	/* load ae post processing info */
+	mmgr_load(ae_pp_info_addr,
+		  (void*)&(ae_join_buffers),
+		  sizeof(unsigned int));
+
+	/* load meta data */
+	mmgr_load(af_ddr_addr,
+		  (void*)&(host_stats->data->af_raw_buffer),
+		  sizeof(af_public_raw_buffer_t));
+
+	mmgr_load(awb_ddr_addr,
+		  (void*)&(host_stats->data->awb_raw_buffer),
+		  sizeof(awb_public_raw_buffer_t));
+
+	mmgr_load(ae_buff_0_ddr_addr,
+		  (void*)&(host_stats->data->ae_raw_buffer),
+		  sizeof(ae_public_raw_buffer_t));
+
+	if(ae_join_buffers == 1) {
+		mmgr_load(ae_buff_1_ddr_addr,
+			  (void*)&(ae_raw_buffer_s),
+			  sizeof(ae_public_raw_buffer_t));
+	}
+
+	mmgr_load(awb_fr_ddr_addr,
+		  (void*)&(host_stats->data->awb_fr_raw_buffer),
+		  sizeof(awb_fr_public_raw_buffer_t));
 
 	/* decode must be prior to debubbling! */
 	ia_css_3a_grid_config_ddr_decode(host_stats->stats_4a_config, &stats_config);
+
+	/* for striping might need to combine buffers of ae */
+	if(ae_join_buffers == 1) {
+		ia_css_3a_join_ae_buffers(&host_stats->data->ae_raw_buffer , &ae_raw_buffer_s);
+	}
 
 	ia_css_3a_debubble(host_stats->data,
 			   &stats_bubble_info);

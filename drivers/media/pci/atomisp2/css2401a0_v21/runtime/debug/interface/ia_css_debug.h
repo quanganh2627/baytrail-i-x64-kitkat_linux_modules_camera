@@ -262,6 +262,7 @@ ia_css_debug_wake_up_sp(void);
 
 /*! \brief Function to dump isp parameters.
  * Dump isp parameters to tracing output
+ * \param[in]	stream		pointer to ia_css_stream struct
  * \param[in]	enable		flag indicating which parameters to dump.
  * \return	None
  */
@@ -310,7 +311,7 @@ ia_css_debug_dump_frame_info(
 
 /*! \brief Dump the capture config info to the trace output
  * Dumps the capture config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_capture_config
+ * \param[in]	config	pointer to struct ia_css_capture_config
  * \return	None
  */
 extern void
@@ -319,7 +320,7 @@ ia_css_debug_dump_capture_config(
 
 /*! \brief Dump the pipe extra config info to the trace output
  * Dumps the pipe extra config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_pipe_extra_config
+ * \param[in]	extra_config	pointer to struct ia_css_pipe_extra_config
  * \return	None
  */
 extern void
@@ -328,7 +329,7 @@ ia_css_debug_dump_pipe_extra_config(
 
 /*! \brief Dump the pipe config info to the trace output
  * Dumps the pipe config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_pipe_config
+ * \param[in]	config	pointer to struct ia_css_pipe_config
  * \return	None
  */
 extern void
@@ -338,7 +339,7 @@ ia_css_debug_dump_pipe_config(
 extern void
 /*! \brief Dump the stream config source info to the trace output
  * Dumps the stream config source info to the trace output.
- * \param[in]	info	pointer to struct ia_css_stream_config
+ * \param[in]	config	pointer to struct ia_css_stream_config
  * \return	None
  */
 ia_css_debug_dump_stream_config_source(
@@ -346,7 +347,7 @@ ia_css_debug_dump_stream_config_source(
 
 /*! \brief Dump the mipi buffer config info to the trace output
  * Dumps the mipi buffer config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_mipi_buffer_config
+ * \param[in]	config	pointer to struct ia_css_mipi_buffer_config
  * \return	None
  */
 extern void
@@ -355,7 +356,7 @@ ia_css_debug_dump_mipi_buffer_config(
 
 /*! \brief Dump the metadata config info to the trace output
  * Dumps the metadata config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_metadata_config
+ * \param[in]	config	pointer to struct ia_css_metadata_config
  * \return	None
  */
 extern void
@@ -364,7 +365,7 @@ ia_css_debug_dump_metadata_config(
 
 /*! \brief Dump the stream config info to the trace output
  * Dumps the stream config info to the trace output.
- * \param[in]	info		pointer to struct ia_css_stream_config
+ * \param[in]	config		pointer to struct ia_css_stream_config
  * \param[in]	num_pipes	number of pipes for the stream
  * \return	None
  */
@@ -413,7 +414,7 @@ extern bool ia_css_debug_mode_disable_dma_channel(
 /**
  * @brief Enable the DMA channel.
  *
- * @param[in]	dma_id		The ID of the target DMA.
+ * @param[in]	dma_ID		The ID of the target DMA.
  * @param[in]	channel_id	The ID of the target DMA channel.
  * @param[in]	request_type	The type of the DMA request.
  *				For example:

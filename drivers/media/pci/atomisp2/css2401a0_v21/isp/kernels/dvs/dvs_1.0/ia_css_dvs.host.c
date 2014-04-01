@@ -19,8 +19,7 @@
  *
  */
 
-#include "ia_css_frame.h"
-#include "math_support.h"
+#include "ia_css_frame_public.h"
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
 

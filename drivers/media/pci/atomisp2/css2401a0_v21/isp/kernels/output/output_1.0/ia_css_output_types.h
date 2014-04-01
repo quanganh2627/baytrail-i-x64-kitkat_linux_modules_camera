@@ -27,7 +27,7 @@
  *  ISP block: output frame
  */
 
-#include "ia_css.h"
+#include "ia_css_frame_public.h"
 
 struct ia_css_output_configuration {
 	const struct ia_css_frame_info *info;
