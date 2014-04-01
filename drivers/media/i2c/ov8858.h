@@ -337,6 +337,10 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x0312, 0x01},
 	{OV8858_8BIT, 0x031E, 0x0C}, /* pll1_no_lat = 1, mipi_bitsel_man = 0 */
 
+	{OV8858_8BIT, 0x300D, 0x00}, /* PAD SEL2, VSYNC out value = 0 */
+	{OV8858_8BIT, 0x3002, 0x80}, /* PAD OEN2, VSYNC out enable */
+	{OV8858_8BIT, 0x3010, 0x00}, /* PAD OUT2, VSYNC out select = 0 */
+
 	{OV8858_8BIT, 0x3600, 0x00}, /* Unknown */
 	{OV8858_8BIT, 0x3601, 0x00}, /* Unknown */
 	{OV8858_8BIT, 0x3602, 0x00}, /* Unknown */
