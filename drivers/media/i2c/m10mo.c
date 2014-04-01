@@ -780,6 +780,46 @@ out:
 	return ret;
 }
 
+static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct m10mo_fw_id *fw_ids = NULL;
+	struct m10mo_sensor_private_data *sdata;
+	char buffer[M10MO_MAX_FW_ID_STRING];
+	int ret;
+
+	sdata = dev->pdata->sensor_private_data;
+	if (!sdata)
+		return 0;
+
+	fw_ids = sdata->fw_ids;
+	if (!fw_ids)
+		return 0;
+
+	ret = m10mo_get_isp_fw_version_string(dev, buffer, sizeof(buffer));
+	if (ret)
+		return ret;
+
+	while(fw_ids && fw_ids->id_string[0]) {
+		/*
+		 * Null char is skipped (strlen - 1) because the string in
+		 * platform data can be shorter than the string in the FW.
+		 * There can be some additional information
+		 * after the match.
+		 */
+		if (!strncmp(fw_ids->id_string, buffer,
+			     strlen(fw_ids->id_string) - 1))
+		{
+			dev_info(&client->dev, "FW id %s detected\n", buffer);
+			dev->fw_type = fw_ids->fw_type;
+			return 0;
+		}
+		fw_ids++;
+	}
+	dev_err(&client->dev, "FW id string table given but no match found");
+	return 0;
+}
 
 static int m10mo_s_config(struct v4l2_subdev *sd,
 			    int irq, void *pdata)
@@ -787,10 +827,8 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
-	struct m10mo_fw_id *fw_ids = NULL;
 	struct m10mo_sensor_private_data *sdata;
 	u16 result = M10MO_INVALID_CHECKSUM;
-	char buffer[M10MO_MAX_FW_ID_STRING];
 
 	mutex_lock(&dev->input_lock);
 
@@ -798,10 +836,8 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 
 	dev->fw_type = M10MO_FW_TYPE_0;
 	sdata = dev->pdata->sensor_private_data;
-	if (sdata) {
+	if (sdata)
 		dev->ref_clock = sdata->ref_clock_rate;
-		fw_ids = sdata->fw_ids;
-	}
 
 	/* set up irq */
 	ret = m10mo_setup_irq(sd);
@@ -829,26 +865,16 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 		dev_err(&client->dev, "Checksum calculation fails.\n");
 		goto fail;
 	}
-	if (result != 0)
+	if (result != M10MO_VALID_CHECKSUM)
 		dev_err(&client->dev, "Firmware checksum is not 0.\n");
 		/* TBD: Trig FW update here */
 
-	ret = m10mo_get_isp_fw_version_string(dev, buffer, sizeof(buffer));
-	while(fw_ids && fw_ids->id_string[0]) {
-		/*
-		 * Null char is skipped (strlen - 1) because the string in
-		 * platform data can be shorter than the string in the FW.
-		 * There can be some additional information
-		 * after the match.
-		 */
-		if (!strncmp(fw_ids->id_string, buffer,
-			     strlen(fw_ids->id_string) - 1))
-		{
-			dev_info(&client->dev, "FW id %s detected\n", buffer);
-			dev->fw_type = fw_ids->fw_type;
-		}
-		fw_ids++;
-	}
+	/*
+	 * We don't care about the return value here. Even in case of
+	 * wrong or non-existent fw this phase must pass.
+	 * FW can be updated later.
+	 */
+	m10mo_identify_fw_type(sd);
 
 	ret = __m10mo_s_power(sd, 0, true);
 	mutex_unlock(&dev->input_lock);
@@ -1273,7 +1299,13 @@ static int update_fw(struct m10mo_device *dev)
 		goto leave;
 	}
 	__m10mo_s_power(&dev->sd, 1, true);
-	m10mo_program_device(dev);
+	ret = m10mo_program_device(dev);
+	__m10mo_s_power(&dev->sd, 0, true);
+	if (ret)
+		goto leave;
+	/* Power cycle chip and re-identify the version */
+	__m10mo_s_power(&dev->sd, 1, true);
+	ret = m10mo_identify_fw_type(&dev->sd);
 	__m10mo_s_power(&dev->sd, 0, true);
 leave:
 	mutex_unlock(&dev->input_lock);
