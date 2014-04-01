@@ -20,6 +20,7 @@ atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_file.o \
 		atomisp_driver/atomisp_v4l2.o \
 		atomisp_driver/atomisp_acc.o \
+		atomisp_driver/atomisp_drvfs.o \
 		atomisp_driver/mmu/isp_mmu.o \
 		atomisp_driver/mmu/sh_mmu_mrfld.o \
 		atomisp_driver/mmu/sh_mmu_mfld.o \

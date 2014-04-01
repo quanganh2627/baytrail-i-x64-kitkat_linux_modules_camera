@@ -39,6 +39,7 @@
 #include "atomisp_acc.h"
 #include "atomisp-regs.h"
 #include "atomisp_dfs_tables.h"
+#include "atomisp_drvfs.h"
 #include "hmm/hmm.h"
 
 #include "hrt/hive_isp_css_mm_hrt.h"
@@ -1112,6 +1113,8 @@ static bool is_valid_device(struct pci_dev *dev,
 #endif /* ISP2400 */
 }
 
+static struct pci_driver atomisp_pci_driver;
+
 /* Declared in hmm.c. */
 extern bool atomisp_hmm_is_2400;
 
@@ -1385,6 +1388,8 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	}
 #endif /* CSS20 */
 
+	atomisp_drvfs_init(&atomisp_pci_driver, isp);
+
 	return 0;
 
 #ifdef CSS20
@@ -1406,6 +1411,8 @@ static void atomisp_pci_remove(struct pci_dev *dev)
 {
 	struct atomisp_device *isp = (struct atomisp_device *)
 		pci_get_drvdata(dev);
+
+	atomisp_drvfs_exit();
 
 	atomisp_acc_cleanup(isp);
 #ifdef CSS20
