@@ -19,11 +19,5 @@
  *
  */
 
-#ifndef __IA_CSS_ANR2_PARAM_H
-#define __IA_CSS_ANR2_PARAM_H
-
-#include "type_support.h"
-
-/* ANR (Advanced Noise Reduction) */
-
-#endif /* __IA_CSS_ANR2_PARAM_H */
+/* This file will contain the code to implement the functions declared in ia_css_stream.h
+   and associated helper functions */

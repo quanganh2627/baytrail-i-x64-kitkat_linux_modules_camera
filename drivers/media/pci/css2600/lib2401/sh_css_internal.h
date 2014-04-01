@@ -35,6 +35,7 @@
 
 #include "ia_css_types.h"
 #include "ia_css_acc_types.h"
+#include "ia_css_buffer.h"
 
 #include "ia_css_binary.h"
 #include "sh_css_firmware.h"
@@ -213,6 +214,9 @@ enum sh_css_sp_event_type {
 
 #if !defined(IS_ISP_2500_SYSTEM)
 /* xmem address map allocation per pipeline, css pointers */
+/* Note that the struct below should only consist of hrt_vaddress-es
+   Otherwise this will cause a fail in the function ref_sh_css_ddr_address_map
+ */
 struct sh_css_ddr_address_map {
 	hrt_vaddress isp_param;
 	hrt_vaddress isp_mem_param[SH_CSS_MAX_STAGES][IA_CSS_NUM_MEMORIES];
@@ -234,12 +238,11 @@ struct sh_css_ddr_address_map {
 	hrt_vaddress tetra_batr_x;
 	hrt_vaddress tetra_batr_y;
 	hrt_vaddress dvs_6axis_params_y;
-	hrt_vaddress anr_thres;
 };
 #define SIZE_OF_SH_CSS_DDR_ADDRESS_MAP_STRUCT					\
 	(SIZE_OF_HRT_VADDRESS +							\
 	(SH_CSS_MAX_STAGES * IA_CSS_NUM_MEMORIES * SIZE_OF_HRT_VADDRESS) +	\
-	(19 * SIZE_OF_HRT_VADDRESS))
+	(18 * SIZE_OF_HRT_VADDRESS))
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -265,7 +268,6 @@ struct sh_css_ddr_address_map_size {
 	size_t tetra_batr_x;
 	size_t tetra_batr_y;
 	size_t dvs_6axis_params_y;
-	size_t anr_thres;
 };
 #endif
 
@@ -959,11 +961,11 @@ sh_css_update_uds_and_crop_info(
 		const struct ia_css_frame_info *in_frame_info,
 		const struct ia_css_frame_info *out_frame_info,
 		const struct ia_css_resolution *dvs_env,
-		bool preview_mode,
 		const struct ia_css_dz_config *zoom,
 		const struct ia_css_vector *motion_vector,
 		struct sh_css_uds_info *uds,		/* out */
-		struct sh_css_crop_pos *sp_out_crop_pos	/* out */
+		struct sh_css_crop_pos *sp_out_crop_pos,	/* out */
+		bool enable_zoom
 		);
 
 void
@@ -988,5 +990,15 @@ ia_css_pipe_get_isp_pipe_version(const struct ia_css_pipe *pipe);
 
 bool
 sh_css_continuous_is_enabled(uint8_t pipe_num);
+
+struct ia_css_pipe *
+find_pipe_by_num(uint8_t pipe_num);
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+void
+ia_css_get_crop_offsets (
+		struct ia_css_pipe *pipe,
+		struct ia_css_frame_info *in_frame);
+#endif
 
 #endif /* _SH_CSS_INTERNAL_H_ */

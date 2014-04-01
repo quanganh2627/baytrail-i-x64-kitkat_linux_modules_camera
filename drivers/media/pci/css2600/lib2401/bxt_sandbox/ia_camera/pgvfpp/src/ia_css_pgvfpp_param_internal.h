@@ -19,27 +19,36 @@
  *
  */
 
-#ifndef __IA_CSS_PSYS_VFPPOPT_PARAM_INTERNAL_H__
-#define __IA_CSS_PSYS_VFPPOPT_PARAM_INTERNAL_H__
+#ifndef __IA_CSS_PG_VFPP_PARAM_INTERNAL_H__
+#define __IA_CSS_PG_VFPP_PARAM_INTERNAL_H__
 
-#include "ia_css_pg_info.h"
+#include "ia_css_program_group.h"
 #include "sh_css_uds.h"
-#include "ia_css_psys_frameadapter.h"
+#include "ia_css_buffer.h"
 
-struct ia_css_supported_frames {
-	uint8_t cc_frame;       /* continuous capture frame */
-	uint8_t in_frame;	     /* input frame */
-	uint8_t in_ref_frame;   /* reference input frame */
-	uint8_t in_tnr_frame;   /* tnr input frame */
-	uint8_t out_frame;      /* output frame */
-	uint8_t out_ref_frame;  /* reference output frame */
-	uint8_t out_tnr_frame;  /* tnr output frame */
-	uint8_t out_vf_frame;   /* viewfinder output frame */
-	uint8_t extra_ref_frame;    /* reference extra frame */
+/* TODO: belongs to a helper. */
+enum ia_css_frame_pin_type {
+	IA_CSS_FRAME_PIN_CC_FRAME = 0,
+	IA_CSS_FRAME_PIN_IN_FRAME,
+	IA_CSS_FRAME_PIN_IN_REF_FRAME,
+	IA_CSS_FRAME_PIN_IN_TNR_FRAME,
+	IA_CSS_FRAME_PIN_OUT_FRAME,
+	IA_CSS_FRAME_PIN_OUT_REF_FRAME,
+	IA_CSS_FRAME_PIN_OUT_TNR_FRAME,
+	IA_CSS_FRAME_PIN_OUT_VF_FRAME,
+	IA_CSS_FRAME_PIN_EXTRA_REF_FRAME,
+	IA_CSS_FRAME_PIN_NUM_TYPES
 };
 
+struct ia_css_supported_frame_pins {
+	uint8_t enable;
+	ia_css_frame_descriptor_t desc;
+};
 
-struct ia_css_vfppopt_param {
+struct ia_css_pgvfpp_param {
+	ia_css_dimension_t dvs_envelope[IA_CSS_N_DATA_DIMENSION];
+	ia_css_dimension_t effective_in_frame_res[IA_CSS_N_DATA_DIMENSION];
+	ia_css_frame_descriptor_t internal_frame_desc;
 	uint8_t xnr;
 	uint8_t enable_vf_output;
 	uint8_t isp_vf_downscale_bits;
@@ -48,15 +57,10 @@ struct ia_css_vfppopt_param {
 	uint32_t required_bds_factor;
 	uint32_t dvs_frame_delay;
 	uint32_t top_cropping;
-	/* Add support for zoom config */
+	/* Add support for zoom config. */
 	struct sh_css_uds_info uds;
-	struct ia_css_pg_resolution dvs_envelope;
-	struct ia_css_pg_resolution effective_in_frame_res;
 	struct sh_css_crop_pos sp_out_crop_pos;
-	struct ia_css_pg_frame_info in_frame_info;
-	struct ia_css_pg_frame_info out_frame_info;
-	struct ia_css_pg_frame_info internal_frame_info;
-	struct ia_css_supported_frames supported_frames;
+	struct ia_css_supported_frame_pins supported_pins[IA_CSS_FRAME_PIN_NUM_TYPES];
 };
 
-#endif /* __IA_CSS_PSYS_VFPPOPT_PARAM_INTERNAL_H__ */
+#endif /* __IA_CSS_PG_VFPP_PARAM_INTERNAL_H__ */

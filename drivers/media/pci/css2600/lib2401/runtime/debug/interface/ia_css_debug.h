@@ -81,6 +81,29 @@ enum ia_css_debug_enable_param_dump {
 	IA_CSS_DEBUG_DUMP_ALL = 1 << 14  /**< Dump all device parameters */
 };
 
+#define IA_CSS_ENTER(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
+		"%s(): enter: " fmt "\n", __func__, ##__VA_ARGS__)
+
+/* Use this macro for small functions that do not call other functions. */
+#define IA_CSS_ENTER_LEAVE(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
+		"%s(): enter: leave: " fmt "\n", __func__, ##__VA_ARGS__)
+
+#define IA_CSS_LEAVE(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
+		"%s(): leave: " fmt "\n", __func__, ##__VA_ARGS__)
+
+/* Shorthand for returning an enum ia_css_err return value */
+#define IA_CSS_LEAVE_ERR(__err) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
+		"%s(): leave: return_err=%d\n", __func__, __err)
+
+/* Use this macro for logging other than enter/leave. */
+#define IA_CSS_LOG(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
+		"%s(): " fmt "\n", __func__, ##__VA_ARGS__)
+
 /*! \brief Function for tracing to the provided printf function in the
  *	environment.
  * \param[in]	level		Level of the message.
@@ -239,6 +262,7 @@ ia_css_debug_wake_up_sp(void);
 
 /*! \brief Function to dump isp parameters.
  * Dump isp parameters to tracing output
+ * \param[in]	stream		pointer to ia_css_stream struct
  * \param[in]	enable		flag indicating which parameters to dump.
  * \return	None
  */
@@ -287,7 +311,7 @@ ia_css_debug_dump_frame_info(
 
 /*! \brief Dump the capture config info to the trace output
  * Dumps the capture config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_capture_config
+ * \param[in]	config	pointer to struct ia_css_capture_config
  * \return	None
  */
 extern void
@@ -296,7 +320,7 @@ ia_css_debug_dump_capture_config(
 
 /*! \brief Dump the pipe extra config info to the trace output
  * Dumps the pipe extra config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_pipe_extra_config
+ * \param[in]	extra_config	pointer to struct ia_css_pipe_extra_config
  * \return	None
  */
 extern void
@@ -305,7 +329,7 @@ ia_css_debug_dump_pipe_extra_config(
 
 /*! \brief Dump the pipe config info to the trace output
  * Dumps the pipe config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_pipe_config
+ * \param[in]	config	pointer to struct ia_css_pipe_config
  * \return	None
  */
 extern void
@@ -315,7 +339,7 @@ ia_css_debug_dump_pipe_config(
 extern void
 /*! \brief Dump the stream config source info to the trace output
  * Dumps the stream config source info to the trace output.
- * \param[in]	info	pointer to struct ia_css_stream_config
+ * \param[in]	config	pointer to struct ia_css_stream_config
  * \return	None
  */
 ia_css_debug_dump_stream_config_source(
@@ -323,7 +347,7 @@ ia_css_debug_dump_stream_config_source(
 
 /*! \brief Dump the mipi buffer config info to the trace output
  * Dumps the mipi buffer config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_mipi_buffer_config
+ * \param[in]	config	pointer to struct ia_css_mipi_buffer_config
  * \return	None
  */
 extern void
@@ -332,7 +356,7 @@ ia_css_debug_dump_mipi_buffer_config(
 
 /*! \brief Dump the metadata config info to the trace output
  * Dumps the metadata config info to the trace output.
- * \param[in]	info	pointer to struct ia_css_metadata_config
+ * \param[in]	config	pointer to struct ia_css_metadata_config
  * \return	None
  */
 extern void
@@ -341,7 +365,7 @@ ia_css_debug_dump_metadata_config(
 
 /*! \brief Dump the stream config info to the trace output
  * Dumps the stream config info to the trace output.
- * \param[in]	info		pointer to struct ia_css_stream_config
+ * \param[in]	config		pointer to struct ia_css_stream_config
  * \param[in]	num_pipes	number of pipes for the stream
  * \return	None
  */
@@ -390,7 +414,7 @@ extern bool ia_css_debug_mode_disable_dma_channel(
 /**
  * @brief Enable the DMA channel.
  *
- * @param[in]	dma_id		The ID of the target DMA.
+ * @param[in]	dma_ID		The ID of the target DMA.
  * @param[in]	channel_id	The ID of the target DMA channel.
  * @param[in]	request_type	The type of the DMA request.
  *				For example:

@@ -236,6 +236,7 @@ bool
 ia_css_stream_get_two_pixels_per_clock(const struct ia_css_stream *stream);
 
 /** @brief Sets the output frame stride (at the last pipe)
+ * @param[in]	stream The stream
  * @param[in]	output_padded_width - the output buffer stride.
  * @return	ia_css_err
  *
@@ -245,7 +246,7 @@ enum ia_css_err
 ia_css_stream_set_output_padded_width(struct ia_css_stream *stream, unsigned int output_padded_width);
 
 /** @brief Return max number of continuous RAW frames.
- * @param[in]	stream The Stream.
+ * @param[in]	stream The stream.
  * @param[out]	buffer_depth The maximum number of continuous RAW frames.
  * @return	IA_CSS_SUCCESS or IA_CSS_ERR_INVALID_ARGUMENTS
  *

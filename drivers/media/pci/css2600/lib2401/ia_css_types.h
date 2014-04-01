@@ -1,5 +1,5 @@
-/* Release Version: irci_master_20140320_1502 */
-/* Release Version: irci_master_20140320_1502 */
+/* Release Version: irci_master_20140401_0455 */
+/* Release Version: irci_master_20140401_0455 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -75,6 +75,10 @@
 #define IA_CSS_DVS_NUM_COEF_TYPES      6
 #define IA_CSS_DVS_COEF_TYPES_ON_DMEM  2
 #define IA_CSS_DVS2_NUM_COEF_TYPES     4
+
+/* opaque types */
+struct ia_css_isp_parameters;
+struct ia_css_pipe;
 
 /* Virtual address within the CSS address space. */
 typedef uint32_t ia_css_ptr;

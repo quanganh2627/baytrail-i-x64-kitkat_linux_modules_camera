@@ -2464,12 +2464,13 @@ ia_css_debug_pipe_graph_dump_frame(
 	dtrace_dot(
 		"node [shape = box, "
 		"fixedsize=true, width=2, height=0.7]; \"0x%08lx\" "
-		"[label = \"%s\\n%d(%d) x %d\\n%s\"];",
+		"[label = \"%s\\n%d(%d) x %d, %dbpp\\n%s\"];",
 		HOST_ADDRESS(frame),
 		format2str[frame->info.format],
 		frame->info.res.width,
 		frame->info.padded_width,
 		frame->info.res.height,
+		frame->info.raw_bit_depth,
 		bufinfo);
 
 	if (in_frame){
@@ -2667,9 +2668,10 @@ ia_css_debug_pipe_graph_dump_stage(
 					/* we cannot use ei as argument because
 					 * it is not guarenteed dword aligned
 					 */
-					strcpy_s(enable_info2,
+					strncpy_s(enable_info2,
 						sizeof(enable_info2),
-						ei);
+						ei, l);
+					enable_info2[l]='\0';
 					snprintf(enable_info, 200, "%s\\n%s",
 						enable_info1, enable_info2);
 

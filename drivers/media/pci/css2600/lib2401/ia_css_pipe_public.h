@@ -51,10 +51,6 @@ enum ia_css_pipe_mode {
 
 struct ia_css_pipe;
 
-/* Temporary hack, hivecc fails to properly compile if this struct is
- * included. */
-#ifndef __HIVECC__
-
 /**
  * Pipe configuration structure.
  */
@@ -99,9 +95,6 @@ struct ia_css_pipe_config {
 	     then setting a zoom factor will have no effect.
 	     In some use cases this provides better performance. */
 };
-#else
-struct ia_css_pipe_config;
-#endif
 
 #define DEFAULT_PIPE_CONFIG \
 { \

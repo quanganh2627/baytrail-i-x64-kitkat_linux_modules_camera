@@ -29,6 +29,7 @@
  */
 #include "hrt/defs.h"
 #include "storage_class.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -83,6 +84,7 @@ hrt_sleep(void)
  */
 #include "hrt/host.h"
 #include <string.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 #define CSS_ALIGN(d, a) d __attribute__((aligned(a)))

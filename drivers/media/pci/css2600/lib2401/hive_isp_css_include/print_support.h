@@ -22,11 +22,12 @@
 #ifndef __PRINT_SUPPORT_H_INCLUDED__
 #define __PRINT_SUPPORT_H_INCLUDED__
 
-#include <stdarg.h> /* for va_start, va_list, va_end */
+#include "storage_class.h"
+#include "platform_support.h"
 
 extern int (*sh_css_printf) (const char *fmt, va_list args);
 /* depends on host supplied print function in ia_css_init() */
-static __inline void ia_css_print(const char *fmt, ...)
+STORAGE_CLASS_INLINE void ia_css_print(const char *fmt, ...)
 {
 	va_list ap;
 	if (sh_css_printf) {
@@ -35,4 +36,5 @@ static __inline void ia_css_print(const char *fmt, ...)
 		va_end(ap);
 	}
 }
+
 #endif /* __PRINT_SUPPORT_H_INCLUDED__ */

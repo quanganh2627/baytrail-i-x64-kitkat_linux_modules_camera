@@ -79,10 +79,14 @@ ia_css_fpn_configure(
 		  },
 		  CEIL_DIV(info->padded_width, 2), /* Packed by 2x */
 		  info->format,
-		  info->raw_bit_depth,
-		  info->raw_bayer_order
+		  FPN_BITS_PER_PIXEL,
+		  info->raw_bayer_order,
+		  { info->crop_info.start_column,
+		    info->crop_info.start_line
+		  }
 		};
 	const struct ia_css_fpn_configuration config =
 		{ &my_info };
 	ia_css_configure_fpn(binary, &config);
 }
+

@@ -22,10 +22,13 @@
 #ifndef _IA_CSS_STREAM_H_
 #define _IA_CSS_STREAM_H_
 
-#if !defined(HAS_NO_INPUT_SYSTEM)
+#include <type_support.h>
+#include <system_local.h>
+#if !defined(HAS_NO_INPUT_SYSTEM) && !defined(USE_INPUT_SYSTEM_VERSION_2401)
 #include <input_system.h>
 #endif
-#include "ia_css.h"
+#include "ia_css_types.h"
+#include "ia_css_stream_public.h"
 
 /**
  * structure to hold all internal stream related information

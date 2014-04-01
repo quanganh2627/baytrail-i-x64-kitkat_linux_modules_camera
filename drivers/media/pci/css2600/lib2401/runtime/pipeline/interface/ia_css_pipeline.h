@@ -43,6 +43,7 @@ struct ia_css_pipeline_stage {
 	bool out_frame_allocated[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	bool vf_frame_allocated;
 	struct ia_css_pipeline_stage *next;
+	bool enable_zoom;
 };
 
 /* Pipeline of n stages to be executed on SP/ISP per stage */
@@ -184,7 +185,8 @@ enum ia_css_err ia_css_pipeline_create_and_add_stage(
  *
  * This API is expected to be called after adding all stages
 */
-void ia_css_pipeline_finalize_stages(struct ia_css_pipeline *pipeline);
+void ia_css_pipeline_finalize_stages(struct ia_css_pipeline *pipeline,
+			bool continuous);
 
 /** @brief gets a stage from the pipeline
  *

@@ -22,9 +22,13 @@
 #ifndef __IA_CSS_PSYS_SPPIPELINE_H__
 #define __IA_CSS_PSYS_SPPIPELINE_H__
 
-#include "ia_css_psysapi.h"
+#include "ia_css_process_group.h"
+#include "system_types.h"
 
-extern void ia_css_psys_sppipeline_create(
-	struct ia_css_psys_task *task);
+extern hrt_vaddress ia_css_psys_sppipeline_cmd_create(
+	ia_css_process_group_t *task);
+
+extern void ia_css_psys_sppipeline_cmd_free(
+	hrt_vaddress cmd);
 
 #endif /* __IA_CSS_PSYS_SPPIPELINE_H__ */

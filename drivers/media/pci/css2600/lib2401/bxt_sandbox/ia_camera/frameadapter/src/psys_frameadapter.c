@@ -20,119 +20,21 @@
  */
 
 #include "ia_css_psys_frameadapter.h"
-#include "ia_css_pg_info.h"
-
-#include "math_support.h"
 #include "assert_support.h"
+#include "platform_support.h"
 
-static void psys_frameadapter_init_plane(
-	struct ia_css_psys_buffer_plane_descr *plane,
-	unsigned int width,
-	unsigned int stride,
-	unsigned int height,
-	unsigned int offset)
+void ia_css_psys_helper_framedesc_to_frameinfo(
+	struct ia_css_frame_info *info,
+	const ia_css_frame_descriptor_t *desc)
 {
-	plane->width = width;
-	plane->height = height;
-	plane->stride = stride;
-	plane->offset = offset;
-	plane->size = stride * height;
+	assert(info != NULL && desc != NULL);
+	memset(info, 0, sizeof(struct ia_css_frame_info));
+	info->res.width = desc->size[IA_CSS_COL_DIMENSION];
+	info->res.height = desc->size[IA_CSS_ROW_DIMENSION];
+	info->padded_width = desc->stride[IA_CSS_COL_DIMENSION];
+	info->format = desc->frame_format_type;
+	info->raw_bit_depth = desc->bit_depth;
+	/* info->raw_bayer_order = ? */
 }
 
-static void psys_frameadapter_init_single_plane(
-	struct ia_css_psys_buffer_descr *buffer_descr,
-	unsigned int height,
-	unsigned int subpixels_per_line,
-	unsigned int bytes_per_pixel)
-{
-	unsigned int stride;
 
-	stride = subpixels_per_line * bytes_per_pixel;
-	buffer_descr->size = stride * CEIL_MUL2(height, 2);
-	psys_frameadapter_init_plane(&buffer_descr->planes[0],
-		subpixels_per_line, stride, height, 0);
-}
-
-static void psys_frameadapater_init_yuv_planes(
-	struct ia_css_psys_buffer_descr *buffer_descr,
-	const struct ia_css_pg_frame_info *info,
-	unsigned int horizontal_decimation,
-	unsigned int vertical_decimation,
-	bool swap_uv,
-	unsigned int bytes_per_element)
-{
-	unsigned int y_width = info->padded_width,
-	    y_height = info->res.height,
-	    uv_width = y_width / horizontal_decimation,
-	    uv_height = y_height / vertical_decimation,
-	    y_stride, y_bytes, uv_bytes, uv_stride;
-
-	y_stride = y_width * bytes_per_element;
-	uv_stride = uv_width * bytes_per_element;
-	y_bytes = y_stride * y_height;
-	uv_bytes = uv_stride * uv_height;
-
-	buffer_descr->size = y_bytes + 2 * uv_bytes;
-	psys_frameadapter_init_plane(&buffer_descr->planes[0], y_width, y_stride, y_height, 0);
-	if (swap_uv) {
-		psys_frameadapter_init_plane(&buffer_descr->planes[2], uv_width, uv_stride,
-				 uv_height, y_bytes);
-		psys_frameadapter_init_plane(&buffer_descr->planes[1], uv_width, uv_stride,
-				 uv_height, y_bytes + uv_bytes);
-	} else {
-		psys_frameadapter_init_plane(&buffer_descr->planes[1], uv_width, uv_stride,
-				 uv_height, y_bytes);
-		psys_frameadapter_init_plane(&buffer_descr->planes[2], uv_width, uv_stride,
-				 uv_height, y_bytes + uv_bytes);
-	}
-	return;
-}
-
-void ia_css_psys_frameadapter_get_descr(
-	struct ia_css_psys_buffer_descr *buffer_descr,
-	const struct ia_css_pg_frame_info *info)
-{
-	assert(buffer_descr != NULL);
-	assert(info != NULL);
-
-	buffer_descr->format = info->format;
-	switch(info->format) {
-	case IA_CSS_PG_IO_FRAME_FORMAT_YUV_LINE:
-		buffer_descr->nof_planes = 1;
-		/* Needs 3 extra lines to allow vf_pp prefetching */
-		psys_frameadapter_init_single_plane(buffer_descr,
-			info->res.height * 3 / 2 + 3,
-			info->padded_width, 1);
-		break;
-	case IA_CSS_PG_IO_FRAME_FORMAT_YUV420:
-		buffer_descr->nof_planes = 3;
-		psys_frameadapater_init_yuv_planes(buffer_descr, info, 2, 2, false, 1);
-		break;
-	case IA_CSS_PG_IO_FRAME_FORMAT_YUV422:
-		buffer_descr->nof_planes = 3;
-		psys_frameadapater_init_yuv_planes(buffer_descr, info, 2, 1, false, 1);
-		break;
-	case IA_CSS_PG_IO_FRAME_FORMAT_YUV444:
-		buffer_descr->nof_planes = 3;
-		psys_frameadapater_init_yuv_planes(buffer_descr, info, 1, 1, false, 1);
-		break;
-	case IA_CSS_PG_IO_FRAME_FORMAT_YUV420_16:
-		buffer_descr->nof_planes = 3;
-		psys_frameadapater_init_yuv_planes(buffer_descr, info, 2, 2, false, 2);
-		break;
-	case IA_CSS_PG_IO_FRAME_FORMAT_YUV422_16:
-		buffer_descr->nof_planes = 3;
-		psys_frameadapater_init_yuv_planes(buffer_descr, info, 2, 1, false, 2);
-		break;
-	case IA_CSS_PG_IO_FRAME_FORMAT_YV12:
-		buffer_descr->nof_planes = 3;
-		psys_frameadapater_init_yuv_planes(buffer_descr, info, 2, 2, true, 1);
-		break;
-	case IA_CSS_PG_IO_FRAME_FORMAT_YV16:
-		buffer_descr->nof_planes = 3;
-		psys_frameadapater_init_yuv_planes(buffer_descr, info, 2, 1, true, 1);
-		break;
-	default:
-		assert(0);
-	}
-}

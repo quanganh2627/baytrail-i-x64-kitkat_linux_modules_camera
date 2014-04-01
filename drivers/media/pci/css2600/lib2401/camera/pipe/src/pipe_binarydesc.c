@@ -28,6 +28,7 @@
 #include <assert_support.h>
 /* HRT_GDC_N */
 #include "gdc_device.h"
+#include "isp/kernels/anr/anr_1.0/ia_css_anr_types.h"
 
 static void pipe_binarydesc_get_offline(
 	struct ia_css_pipe const * const pipe,
@@ -738,7 +739,7 @@ void ia_css_pipe_get_anr_binarydesc(
 
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
-	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	in_info->raw_bit_depth = ANR_ELEMENT_BITS;
 	out_infos[0] = out_info;
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
@@ -768,7 +769,7 @@ void ia_css_pipe_get_post_anr_binarydesc(
 
 	*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
-	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+	in_info->raw_bit_depth = ANR_ELEMENT_BITS;
 	out_infos[0] = out_info;
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;

@@ -265,7 +265,7 @@ enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *
 
 	dvs_stat_mv_p =
 		(dvs_stat_private_motion_vec_t*)
-			malloc(sizeof(dvs_stat_private_motion_vec_t));
+			sh_css_malloc(sizeof(dvs_stat_private_motion_vec_t));
 	if(dvs_stat_mv_p == NULL)
 	{
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,

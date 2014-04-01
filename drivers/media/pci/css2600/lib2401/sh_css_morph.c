@@ -19,24 +19,5 @@
  *
  */
 
-#ifndef __IA_CSS_PSYS_TASK_INTERNAL_H__
-#define __IA_CSS_PSYS_TASK_INTERNAL_H__
-
-#include "ia_css_psysapi.h"
-#include "ia_css_pg_info.h"
-#include "ia_css_binary.h"
-#include "ia_css_psys_cmd_comm.h"
-
-#define IA_CSS_PSYSAPI_MAX_TERMINALS 10
-
-struct ia_css_psys_task {
-	struct ia_css_psysapi_task_buffer task_buffer;
-	struct ia_css_pg_info *pg_info;
-	struct ia_css_psysapi_cmd cmd;
-	struct ia_css_binary binary;
-	/* ASK: Assuming one terminal per buffer */
-	struct ia_css_psys_buffer *terminals[IA_CSS_PSYSAPI_MAX_TERMINALS];
-	void *cookie;
-};
-
-#endif /* __IA_CSS_PSYS_TASK_INTERNAL_H__ */
+/* This file will contain the code to implement the functions declared in ia_css_morph.h
+   and associated helper functions */

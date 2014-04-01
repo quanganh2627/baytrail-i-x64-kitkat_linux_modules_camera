@@ -27,6 +27,8 @@
 
 #define IA_CSS_PSYSPOC_CMD_FINISHED	(1)
 
+typedef struct ia_css_psysapi_cmd ia_css_psysapi_cmd_t;
+
 struct ia_css_psysapi_cmd {
 	/* TODO: Should all elements that SP access from DDR be 256 bit aligned? */
 	struct sh_css_isp_stage isp_stage;
@@ -37,6 +39,7 @@ struct ia_css_psysapi_cmd {
 	CSS_ALIGN(struct sh_css_ddr_address_map params, 32);
 	/*Return event from SP*/
 	uint32_t psys_event;
+	void *cookie;
 };
 
 #endif  /* __IA_CSS_PSYS_CMD_COMM_H__ */

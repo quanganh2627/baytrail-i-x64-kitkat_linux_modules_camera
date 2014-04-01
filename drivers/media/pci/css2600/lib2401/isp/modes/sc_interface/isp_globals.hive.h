@@ -47,7 +47,7 @@
 #include "dma_proxy.common.h"
 #endif
 
-#include <components/res_mgr/src/res_mgr_private.h>
+#include <components/resolutions_mgr/src/resolutions_mgr_private.h>
 
 /* Initialized by the SP: binary dependent */
 /* Some of these globals are used inside dma transfer/configure commands.

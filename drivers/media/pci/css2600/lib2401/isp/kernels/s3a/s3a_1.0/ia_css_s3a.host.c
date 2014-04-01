@@ -221,7 +221,7 @@ ia_css_s3a_hmem_decode(
 	struct ia_css_3a_statistics *host_stats,
 	const struct ia_css_bh_table *hmem_buf)
 {
-#if !defined(HAS_NO_HMEM)
+#if defined(HAS_NO_HMEM)
 	(void)host_stats;
 	(void)hmem_buf;
 #else

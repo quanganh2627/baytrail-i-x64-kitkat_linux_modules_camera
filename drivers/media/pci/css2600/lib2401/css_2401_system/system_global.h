@@ -93,7 +93,7 @@
 #define HAS_TIMED_CTRL_VERSION_1
 #define HAS_RX_VERSION_2
 #define HAS_NO_INPUT_FORMATTER
-#define HAS_NO_PACKED_RAW_PIXELS
+/*#define HAS_NO_PACKED_RAW_PIXELS*/
 /*
  * Semi global. "HRT" is accessible from SP, but
  * the HRT types do not fully apply

@@ -376,8 +376,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		     sc_3a_dis_height = 0,
 		     isp_internal_width = 0,
 		     isp_internal_height = 0,
-		     s3a_isp_width = 0,
-		     raw_bayer_order = IA_CSS_BAYER_ORDER_GRBG;
+		     s3a_isp_width = 0;
 
 	bool need_scaling = false;
 	struct ia_css_resolution binary_dvs_env, internal_res;
@@ -432,8 +431,6 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	binary->internal_frame_info.padded_width    = isp_internal_width;
 	binary->internal_frame_info.res.height      = isp_internal_height;
 	binary->internal_frame_info.raw_bit_depth   = bits_per_pixel;
-	binary->internal_frame_info.raw_bayer_order = raw_bayer_order;
-
 
 	if (in_info != NULL) {
 		binary->effective_in_frame_res.width = in_info->res.width;
@@ -457,6 +454,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 
 		binary->in_frame_info.format = in_info->format;
 		binary->in_frame_info.raw_bayer_order = in_info->raw_bayer_order;
+		binary->in_frame_info.crop_info = in_info->crop_info;
 	}
 
 	if (online) {
@@ -465,13 +463,21 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	}
 	binary->in_frame_info.raw_bit_depth = bits_per_pixel;
 
-
 	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		if (out_info[i] != NULL) {
 			binary->out_frame_info[i].res.width     = out_info[i]->res.width;
 			binary->out_frame_info[i].res.height    = out_info[i]->res.height;
 			binary->out_frame_info[i].padded_width  = out_info[i]->padded_width;
-			binary->out_frame_info[i].raw_bit_depth = bits_per_pixel;
+			if (info->mode == IA_CSS_BINARY_MODE_COPY) {
+				binary->out_frame_info[i].raw_bit_depth = bits_per_pixel;
+			} else {
+				/* Only relevant for RAW format.
+				 * At the moment, all outputs are raw, 16 bit per pixel, except for copy.
+				 * To do this cleanly, the binary should specify in its info
+				 * the bit depth per output channel.
+				 */
+				binary->out_frame_info[i].raw_bit_depth = 16;
+			}
 			binary->out_frame_info[i].format        = out_info[i]->format;
 		}
 	}

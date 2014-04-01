@@ -130,6 +130,7 @@ struct input_system_cfg_s {
 	input_system_source_type_t	mode;
 
 	bool online;
+	bool raw_packed;
 
 	struct {
 		int32_t	active_lanes;
