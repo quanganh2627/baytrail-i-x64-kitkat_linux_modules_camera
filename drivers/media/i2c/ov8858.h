@@ -34,17 +34,50 @@
 
 /*
  * Indexes for VCM driver lists
- * */
+ */
 #define OV8858_ID_DEFAULT	0
 #define OV8858_SUNNY		1
 
 /*
  * ov8858 System control registers
- * */
-#define OV8858_PLL_PLL10			0x3090 /* ToDo: Fix */
-#define OV8858_PLL_PLL11			0x3091 /* ToDo: Fix */
-#define OV8858_PLL_PLL12			0x3092 /* ToDo: Fix */
-#define OV8858_PLL_PLL13			0x3093 /* ToDo: Fix */
+ */
+#define OV8858_PLL1_PREDIV0		0x030A
+#define OV8858_PLL1_PREDIV		0x0300
+#define OV8858_PLL1_MULTIPLIER		0x0301
+#define OV8858_PLL1_SYS_PRE_DIV		0x0305
+#define OV8858_PLL1_SYS_DIVIDER		0x0306
+
+#define OV8858_PLL1_PREDIV0_MASK	BIT(0)
+#define OV8858_PLL1_PREDIV_MASK		(BIT(0) | BIT(1) | BIT(2))
+#define OV8858_PLL1_MULTIPLIER_MASK	0x01FF
+#define OV8858_PLL1_SYS_PRE_DIV_MASK	(BIT(0) | BIT(1))
+#define OV8858_PLL1_SYS_DIVIDER_MASK	BIT(0)
+
+#define OV8858_PLL2_PREDIV0		0x0312
+#define OV8858_PLL2_PREDIV		0x030B
+#define OV8858_PLL2_MULTIPLIER		0x030C
+#define OV8858_PLL2_DAC_DIVIDER		0x0312
+#define OV8858_PLL2_SYS_PRE_DIV		0x030F
+#define OV8858_PLL2_SYS_DIVIDER		0x030E
+
+#define OV8858_PLL2_PREDIV0_MASK	BIT(4)
+#define OV8858_PLL2_PREDIV_MASK		(BIT(0) | BIT(1) | BIT(2))
+#define OV8858_PLL2_MULTIPLIER_MASK	0x01FF
+#define OV8858_PLL2_DAC_DIVIDER_MASK	(BIT(0) | BIT(1) | BIT(2) | BIT(3))
+#define OV8858_PLL2_SYS_PRE_DIV_MASK	(BIT(0) | BIT(1) | BIT(2) | BIT(3))
+#define OV8858_PLL2_SYS_DIVIDER_MASK	(BIT(0) | BIT(1) | BIT(2))
+
+#define OV8858_PLL_SCLKSEL1		0x3032
+#define OV8858_PLL_SCLKSEL2		0x3033
+#define OV8858_SRB_HOST_INPUT_DIS	0x3106
+
+#define OV8858_PLL_SCLKSEL1_MASK	BIT(7)
+#define OV8858_PLL_SCLKSEL2_MASK	BIT(1)
+
+#define OV8858_SYS_PRE_DIV_OFFSET	2
+#define OV8858_SYS_PRE_DIV_MASK		(BIT(2) | BIT(3))
+#define OV8858_SCLK_PDIV_OFFSET		4
+#define OV8858_SCLK_PDIV_MASK		(BIT(4) | BIT(5) | BIT(6) | BIT(7))
 
 #define OV8858_TIMING_HTS			0x380C
 #define OV8858_TIMING_VTS			0x380E
@@ -293,7 +326,7 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x0100, 0x00}, /* software_standby */
 	/* PLL settings */
 	{OV8858_8BIT, 0x0300, 0x02}, /* pll1_pre_div = /2 */
-	{OV8858_8BIT, 0x0302, 0x4B}, /* pll1_multiplier = 75 */
+	{OV8858_8BIT, 0x0302, 0x50}, /* pll1_multiplier = 80 */
 	{OV8858_8BIT, 0x0303, 0x00}, /* pll1_divm = /(1 + 0) */
 	{OV8858_8BIT, 0x0304, 0x03}, /* pll1_div_mipi = /8 */
 	{OV8858_8BIT, 0x030B, 0x02}, /* pll2_pre_div = /2 */

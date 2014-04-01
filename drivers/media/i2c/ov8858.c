@@ -655,19 +655,214 @@ static int ov8858_get_register_16bit(struct v4l2_subdev *sd, int reg,
 	return 0;
 }
 
+static int __ov8858_get_pll1_values(struct v4l2_subdev *sd,
+				    int *value,
+				    const struct ov8858_reg *reglist)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	unsigned int prediv_idx;
+	unsigned int multiplier;
+	unsigned int sys_prediv;
+	unsigned int prediv_coef[] = {2, 3, 4, 5, 6, 8, 12, 16};
+	int ret;
+
+	ret = ov8858_get_register(sd, OV8858_PLL1_PREDIV0, reglist);
+
+	if (ret < 0)
+		return ret;
+
+	if (ret & OV8858_PLL1_PREDIV0_MASK)
+		*value /= 2;
+
+	ret = ov8858_get_register(sd, OV8858_PLL1_PREDIV, reglist);
+
+	if (ret < 0)
+		return ret;
+
+	prediv_idx = ret & OV8858_PLL1_PREDIV_MASK;
+	*value = *value * 2 / prediv_coef[prediv_idx];
+
+	ret = ov8858_get_register_16bit(sd, OV8858_PLL1_MULTIPLIER, reglist,
+					&multiplier);
+	if (ret < 0)
+		return ret;
+
+	*value *= multiplier & OV8858_PLL1_MULTIPLIER_MASK;
+	ret = ov8858_get_register(sd, OV8858_PLL1_SYS_PRE_DIV, reglist);
+
+	if (ret < 0)
+		return ret;
+
+	sys_prediv = ret & OV8858_PLL1_SYS_PRE_DIV_MASK;
+	*value /= (sys_prediv + 3);
+	ret = ov8858_get_register(sd, OV8858_PLL1_SYS_DIVIDER, reglist);
+
+	if (ret < 0)
+		return ret;
+
+	if (ret & OV8858_PLL1_SYS_DIVIDER_MASK)
+		*value /= 2;
+
+	dev_dbg(&client->dev, "%s: *value: %d\n", __func__, *value);
+
+	return 0;
+}
+
+static int __ov8858_get_pll2a_values(struct v4l2_subdev *sd, int *value,
+				     const struct ov8858_reg *reglist)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	unsigned int prediv_idx;
+	unsigned int multiplier;
+	unsigned int prediv_coef[] = {2, 3, 4, 5, 6, 8, 12, 16};
+	int ret;
+
+	ret = ov8858_get_register(sd, OV8858_PLL2_PREDIV0, reglist);
+	if (ret < 0)
+		return ret;
+
+	if (ret & OV8858_PLL2_PREDIV0_MASK)
+		*value /= 2;
+
+	ret = ov8858_get_register(sd, OV8858_PLL2_PREDIV, reglist);
+	if (ret < 0)
+		return ret;
+
+	prediv_idx = (ret & OV8858_PLL2_PREDIV_MASK);
+	*value = *value * 2 / prediv_coef[prediv_idx];
+
+	ret = ov8858_get_register_16bit(sd, OV8858_PLL2_MULTIPLIER, reglist,
+					&multiplier);
+	if (ret < 0)
+		return ret;
+
+	*value *= multiplier & OV8858_PLL2_MULTIPLIER_MASK;
+	dev_dbg(&client->dev, "%s: *value: %d\n", __func__, *value);
+
+	return 0;
+}
+static int __ov8858_get_pll2b_values(struct v4l2_subdev *sd, int *value,
+				     const struct ov8858_reg *reglist)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	unsigned int dac_divider;
+	int ret;
+
+	ret = ov8858_get_register(sd, OV8858_PLL2_DAC_DIVIDER, reglist);
+	if (ret < 0)
+		return ret;
+
+	dac_divider = (ret & OV8858_PLL2_DAC_DIVIDER_MASK) + 1;
+	*value /= dac_divider;
+
+	dev_dbg(&client->dev, "%s: *value: %d\n", __func__, *value);
+
+	return 0;
+}
+static int __ov8858_get_pll2c_values(struct v4l2_subdev *sd, int *value,
+				     const struct ov8858_reg *reglist)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	unsigned int sys_pre_div;
+	unsigned int sys_divider_idx;
+	unsigned int sys_divider_coef[] = {2, 3, 4, 5, 6, 7, 8, 10};
+	int ret;
+
+	ret = ov8858_get_register(sd, OV8858_PLL2_SYS_PRE_DIV, reglist);
+	if (ret < 0)
+		return ret;
+
+	sys_pre_div = (ret & OV8858_PLL2_SYS_PRE_DIV_MASK) + 1;
+	*value /= sys_pre_div;
+
+	ret = ov8858_get_register(sd, OV8858_PLL2_SYS_DIVIDER, reglist);
+	if (ret < 0)
+		return ret;
+
+	sys_divider_idx = ret & OV8858_PLL2_SYS_DIVIDER_MASK;
+	*value *= 2 /  sys_divider_coef[sys_divider_idx];
+
+	dev_dbg(&client->dev, "%s: *value: %d\n", __func__, *value);
+
+	return 0;
+}
+
 static int ov8858_get_intg_factor(struct v4l2_subdev *sd,
 				  struct camera_mipi_info *info,
 				  const struct ov8858_reg *reglist)
 {
+	const unsigned int ext_clk = 19200000; /* Hz */
 	struct atomisp_sensor_mode_data *m = &info->data;
 	struct ov8858_device *dev = to_ov8858_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct device *d = &client->dev;
 	const struct ov8858_resolution *res =
 				&dev->curr_res_table[dev->fmt_idx];
-	int sclk = 384000000; /* ToDo: replace with actual calculation */
+	unsigned int pll_sclksel1;
+	unsigned int pll_sclksel2;
+	unsigned int sys_pre_div;
+	unsigned int sclk_pdiv;
+	unsigned int sclk = ext_clk;
 	int ret;
 
 	memset(&info->data, 0, sizeof(info->data));
-	/* ToDo: Insert here reading PLL registers and calculate then sclk */
+
+	ret = ov8858_get_register(sd, OV8858_PLL_SCLKSEL1, reglist);
+	if (ret < 0)
+		return ret;
+
+	dev_dbg(d, "%s: OV8858_PLL_SCLKSEL1: 0x%02x\n", __func__, ret);
+	pll_sclksel1 = ret & OV8858_PLL_SCLKSEL1_MASK;
+
+	ret = ov8858_get_register(sd, OV8858_PLL_SCLKSEL2, reglist);
+	if (ret < 0)
+		return ret;
+
+	dev_dbg(d, "%s: OV8858_PLL_SCLKSEL2: 0x%02x\n", __func__, ret);
+	pll_sclksel2 = ret & OV8858_PLL_SCLKSEL2_MASK;
+
+	if (pll_sclksel2) {
+		ret = __ov8858_get_pll2a_values(sd, &sclk, reglist);
+		if (ret < 0)
+			return ret;
+		ret = __ov8858_get_pll2b_values(sd, &sclk, reglist);
+		if (ret < 0)
+			return ret;
+	} else if (pll_sclksel1) {
+		ret = __ov8858_get_pll2a_values(sd, &sclk, reglist);
+		if (ret < 0)
+			return ret;
+		ret = __ov8858_get_pll2c_values(sd, &sclk, reglist);
+		if (ret < 0)
+			return ret;
+	} else {
+		ret = __ov8858_get_pll1_values(sd, &sclk, reglist);
+		if (ret < 0)
+			return ret;
+	}
+
+	ret = ov8858_get_register(sd, OV8858_SRB_HOST_INPUT_DIS, reglist);
+	if (ret < 0)
+		return ret;
+
+	dev_dbg(d, "%s: OV8858_SRB_HOST_INPUT_DIS: 0x%02x\n", __func__, ret);
+
+	sys_pre_div = ret & OV8858_SYS_PRE_DIV_MASK;
+	sys_pre_div >>= OV8858_SYS_PRE_DIV_OFFSET;
+
+	if (sys_pre_div == 1)
+		sclk /= 2;
+	else if (sys_pre_div == 2)
+		sclk /= 4;
+
+	sclk_pdiv = ret & OV8858_SCLK_PDIV_MASK;
+	sclk_pdiv >>= OV8858_SCLK_PDIV_OFFSET;
+
+	if (sclk_pdiv > 1)
+		sclk /= sclk_pdiv;
+
+	dev_dbg(d, "%s: sclk: %d\n", __func__, sclk);
+
 	m->vt_pix_clk_freq_mhz = sclk;
 
 	/* HTS and VTS */
