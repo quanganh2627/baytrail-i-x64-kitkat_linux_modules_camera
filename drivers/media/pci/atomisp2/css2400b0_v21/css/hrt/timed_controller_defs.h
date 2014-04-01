@@ -19,11 +19,11 @@
  *
  */
 
-#ifndef __IA_CSS_ANR2_PARAM_H
-#define __IA_CSS_ANR2_PARAM_H
+#ifndef _timed_controller_defs_h
+#define _timed_controller_defs_h
 
-#include "type_support.h"
+#define _HRT_TIMED_CONTROLLER_CMD_REG_IDX 0
 
-/* ANR (Advanced Noise Reduction) */
+#define _HRT_TIMED_CONTROLLER_REG_ALIGN 4
 
-#endif /* __IA_CSS_ANR2_PARAM_H */
+#endif /* _timed_controller_defs_h */   
