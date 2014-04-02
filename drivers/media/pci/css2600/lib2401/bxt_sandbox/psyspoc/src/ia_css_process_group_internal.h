@@ -249,18 +249,10 @@ extern size_t ia_css_sizeof_terminal(
 	const ia_css_terminal_manifest_t		*manifest,
 	const ia_css_program_group_param_t		*param);
 
-extern int ia_css_terminal_print(
-	const ia_css_terminal_t					*terminal,
-	FILE									*fid);
-
 extern int ia_css_terminal_set_type(
 	ia_css_terminal_t						*terminal,
 	const ia_css_terminal_type_t			terminal_type);
 
-
-extern int ia_css_frame_print(
-	const ia_css_psys_frame_t				*frame,
-	FILE									*fid);
 
 extern uint8_t *ia_css_frame_get_buffer(
 	const ia_css_psys_frame_t				*frame);
@@ -275,14 +267,6 @@ extern ia_css_buffer_state_t ia_css_frame_get_buffer_state(
 extern int ia_css_frame_set_buffer_state(
 	ia_css_psys_frame_t						*frame,
 	const ia_css_buffer_state_t				buffer_state);
-
-extern int ia_css_frame_descriptor_print(
-	const ia_css_frame_descriptor_t			*frame_descriptor,
-	FILE									*fid);
-
-extern int ia_css_fragment_descriptor_print(
-	const ia_css_fragment_descriptor_t		*fragment_descriptor,
-	FILE									*fid);
 
 extern ia_css_terminal_t *ia_css_terminal_create(
 	const ia_css_terminal_manifest_t		*manifest,
@@ -336,10 +320,6 @@ extern uint8_t ia_css_process_group_compute_terminal_count(
 extern size_t ia_css_sizeof_process(
 	const ia_css_program_manifest_t			*manifest,
 	const ia_css_program_param_t			*param);
-
-extern int ia_css_process_print(
-	const ia_css_process_t					*process,
-	FILE									*fid);
 
 extern ia_css_process_t *ia_css_process_create(
 	const ia_css_program_manifest_t			*manifest,

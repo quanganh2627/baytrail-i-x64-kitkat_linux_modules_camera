@@ -98,10 +98,4 @@ extern uint8_t *ia_css_process_group_detach_buffer(
 	ia_css_process_group_t					*process_group,
 	const unsigned int						terminal_index);
 
-/* Debugging */
-extern int ia_css_process_group_print(
-	const ia_css_process_group_t			*process_group,
-	FILE									*fid);
-
-
 #endif /* __IA_CSS_PROCESS_GROUP_H__ */

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
  *
- * This program is free software; you can redistribute it and/or
+ * This program is sh_css_free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
  * 2 as published by the Free Software Foundation.
  *
@@ -26,16 +26,15 @@
 #include "ia_css_psys_state_change_actions.h"
 
 #include <error_support.h>
-#include <print_support.h>
 #include <assert_support.h>
 #include <misc_support.h>
 
-#include "malloc.h"
+#include <sh_css_internal.h>
 
 #define verifexit(cond,error_tag)   \
 do {                                \
 	if (!(cond)){                   \
-		errno = error_tag;          \
+		errno_local = (error_tag); \
 		goto EXIT;                  \
 	}                               \
 } while(0)
@@ -55,6 +54,7 @@ size_t ia_css_sizeof_terminal(
 {
 	size_t		size = 0;
 	uint16_t	fragment_count;
+	int errno_local = 0;
 
 	verifexit(manifest != NULL, EINVAL);
 	verifexit(param != NULL, EINVAL);
@@ -69,43 +69,11 @@ EXIT:
 	return size;
 }
 
-int ia_css_terminal_print(
-	const ia_css_terminal_t					*terminal,
-	FILE									*fid)
-{
-	int	retval = -1;
-	int	i;
-	uint16_t	fragment_count = ia_css_terminal_get_fragment_count(terminal);
-
-	verifexit(terminal != NULL, EINVAL);
-	verifexit(fid != NULL, EINVAL);
-	verifexit(fragment_count != 0, EINVAL);
-
-	fprintf(fid,"ia_css_terminal_print\n");
-	fprintf(fid,"sizeof(terminal) = %d\n",(int)ia_css_terminal_get_size(terminal));
-	fprintf(fid,"typeof(terminal) = %d\n",(int)ia_css_terminal_get_type(terminal));
-//	fprintf(fid,"typeof(terminal) = %s\n",(int)ia_css_terminal_type_string(ia_css_terminal_get_type(terminal)));
-	fprintf(fid,"parent(terminal) = %p\n",ia_css_terminal_get_parent(terminal));
-
-	retval = ia_css_frame_descriptor_print(ia_css_terminal_get_frame_descriptor(terminal), fid);
-	verifexit(retval == 0, EINVAL);
-	retval = ia_css_frame_print(ia_css_terminal_get_frame(terminal), fid);
-	verifexit(retval == 0, EINVAL);
-
-	for (i = 0; i < (int)fragment_count; i++) {
-		retval = ia_css_fragment_descriptor_print(ia_css_terminal_get_fragment_descriptor(terminal, i), fid);
-		verifexit(retval == 0, EINVAL);
-	}
-
-	retval = 0;
-EXIT:
-	return retval;
-}
-
 bool ia_css_is_terminal_input(
 	const ia_css_terminal_t					*terminal)
 {
 	bool is_input = false;
+	int errno_local = 0;
 	ia_css_terminal_type_t	terminal_type = ia_css_terminal_get_type(terminal);
 
 	verifexit(terminal != NULL, EINVAL);
@@ -147,29 +115,10 @@ int ia_css_terminal_set_type(
 	const ia_css_terminal_type_t			terminal_type)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(terminal != NULL, EINVAL);
 	terminal->terminal_type = terminal_type;
-
-	retval = 0;
-EXIT:
-	return retval;
-}
-
-int ia_css_frame_print(
-	const ia_css_psys_frame_t				*frame,
-	FILE									*fid)
-{
-	int	retval = -1;
-
-	verifexit(frame != NULL, EINVAL);
-	verifexit(fid != NULL, EINVAL);
-
-	fprintf(fid,"ia_css_frame_print\n");
-
-	fprintf(fid,"\tbuffer = %p\n",ia_css_frame_get_buffer(frame));
-	fprintf(fid,"\tbuffer_state = %d\n",ia_css_frame_get_buffer_state(frame));
-	fprintf(fid,"\tdata_size = %d\n",frame->css_frame.data_bytes);
 
 	retval = 0;
 EXIT:
@@ -180,6 +129,7 @@ uint8_t *ia_css_frame_get_buffer(
 	const ia_css_psys_frame_t				*frame)
 {
 	uint8_t	*buffer = NULL;
+	int errno_local = 0;
 
 	verifexit(frame != NULL, EINVAL);
 	buffer = (uint8_t *)frame->css_frame.data;
@@ -192,6 +142,7 @@ int ia_css_frame_set_buffer(
 	uint8_t									*buffer)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(frame != NULL, EINVAL);
 	/* frame->css_frame.data = (ia_css_ptr)buffer; */
@@ -208,6 +159,7 @@ EXIT:
 ia_css_buffer_state_t ia_css_frame_get_buffer_state(
 	const ia_css_psys_frame_t					*frame)
 {
+	int errno_local = 0;
 	ia_css_buffer_state_t	buffer_state = IA_CSS_N_BUFFER_STATES;
 
 	verifexit(frame != NULL, EINVAL);
@@ -221,92 +173,10 @@ int ia_css_frame_set_buffer_state(
 	const ia_css_buffer_state_t				buffer_state)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(frame != NULL, EINVAL);
 	frame->buffer_state = buffer_state;
-
-	retval = 0;
-EXIT:
-	return retval;
-}
-
-int ia_css_frame_descriptor_print(
-	const ia_css_frame_descriptor_t			*frame_descriptor,
-	FILE									*fid)
-{
-	int	retval = -1;
-	int	i;
-	uint8_t	frame_plane_count;
-
-assert(IA_CSS_N_DATA_DIMENSION > 0);
-
-	verifexit(frame_descriptor != NULL, EINVAL);
-	verifexit(fid != NULL, EINVAL);
-
-	fprintf(fid,"ia_css_frame_descriptor_print\n");
-
-	fprintf(fid,"\tframe_format_type = %d\n",frame_descriptor->frame_format_type);
-//	fprintf(fid,"\tframe_format_type = %s\n",ia_css_frame_format_string(frame_descriptor->frame_format_type));
-	fprintf(fid,"\taccess_unit_size = %d\n",frame_descriptor->access_unit_size);
-	fprintf(fid,"\tbit_depth = %d\n",frame_descriptor->bit_depth);
-
-	frame_plane_count = IA_CSS_N_FRAME_PLANES;
-//	frame_plane_count = ia_css_frame_plane_count(frame_descriptor->frame_format_type);
-
-	verifexit(frame_plane_count > 0, EINVAL);
-
-	fprintf(fid,"\tplane_offsets[%d]: [",frame_plane_count);
-	for (i = 0; i < (int)frame_plane_count - 1; i++) {
-		fprintf(fid,"%4d, ",frame_descriptor->plane_offsets[i]);
-	}
-	fprintf(fid,"%4d]\n",frame_descriptor->plane_offsets[i]);
-
-	fprintf(fid,"\tsize[%d]   = {",IA_CSS_N_DATA_DIMENSION);
-	for (i = 0; i < (int)IA_CSS_N_DATA_DIMENSION - 1; i++) {
-		fprintf(fid,"%4d, ",frame_descriptor->size[i]);
-	}
-	fprintf(fid,"%4d}\n",frame_descriptor->size[i]);
-
-	fprintf(fid,"\tstride[%d]  = {",IA_CSS_N_DATA_DIMENSION - 1);
-	for (i = 0; i < (int)IA_CSS_N_DATA_DIMENSION - 2; i++) {
-		fprintf(fid,"%4d, ",frame_descriptor->stride[i]);
-	}
-	fprintf(fid,"%4d}\n",frame_descriptor->stride[i]);
-
-	retval = 0;
-EXIT:
-	return retval;
-}
-
-int ia_css_fragment_descriptor_print(
-	const ia_css_fragment_descriptor_t		*fragment_descriptor,
-	FILE									*fid)
-{
-	int	retval = -1;
-	int	i;
-
-	verifexit(fragment_descriptor != NULL, EINVAL);
-	verifexit(fid != NULL, EINVAL);
-
-	fprintf(fid,"ia_css_fragment_descriptor_print\n");
-
-	fprintf(fid,"\tsize[%d]   = {",IA_CSS_N_DATA_DIMENSION);
-	for (i = 0; i < (int)IA_CSS_N_DATA_DIMENSION - 1; i++) {
-		fprintf(fid,"%4d, ",fragment_descriptor->size[i]);
-	}
-	fprintf(fid,"%4d}\n",fragment_descriptor->size[i]);
-
-	fprintf(fid,"\tindex[%d]  = {",IA_CSS_N_DATA_DIMENSION);
-	for (i = 0; i < (int)IA_CSS_N_DATA_DIMENSION - 1; i++) {
-		fprintf(fid,"%4d, ",fragment_descriptor->index[i]);
-	}
-	fprintf(fid,"%4d}\n",fragment_descriptor->index[i]);
-
-	fprintf(fid,"\toffset[%d] = {",IA_CSS_N_DATA_DIMENSION);
-	for (i = 0; i < (int)IA_CSS_N_DATA_DIMENSION - 1; i++) {
-		fprintf(fid,"%4d, ",fragment_descriptor->offset[i]);
-	}
-	fprintf(fid,"%4d}\n",fragment_descriptor->offset[i]);
 
 	retval = 0;
 EXIT:
@@ -319,6 +189,7 @@ size_t ia_css_sizeof_process_group(
 {
 	size_t	size = 0;
 	int		i;
+	int errno_local = 0;
 	uint8_t	program_count, terminal_count;
 
 	verifexit(manifest != NULL, EINVAL);
@@ -332,7 +203,7 @@ size_t ia_css_sizeof_process_group(
 	size += program_count*sizeof(ia_css_process_t *);
 	size += terminal_count*sizeof(ia_css_terminal_t *);
 
-/* All functions in the loops below can set errno, thus no need to exit on error, all can fail silently */
+/* All functions in the loops below can set errno_local, thus no need to exit on error, all can fail silently */
 	for (i = 0; i < (int)program_count; i++) {
 		ia_css_program_manifest_t	*program_manifest = ia_css_program_group_manifest_get_program_manifest(manifest, i);
 		ia_css_program_param_t		*program_param = ia_css_program_group_param_get_program_param(param, i);
@@ -348,45 +219,6 @@ EXIT:
 	return size;
 }
 
-int ia_css_process_group_print(
-	const ia_css_process_group_t			*process_group,
-	FILE									*fid)
-{
-	int	retval = -1;
-
-	int	i;
-
-	uint8_t	process_count, terminal_count;
-
-	verifexit(process_group != NULL, EINVAL);
-	verifexit(fid != NULL, EINVAL);
-
-	fprintf(fid,"ia_css_process_group_print\n");
-	fprintf(fid,"sizeof(process_group) = %d\n",(int)ia_css_process_group_get_size(process_group));
-
-	fprintf(fid,"program_group(process_group) = %d\n",(int)ia_css_process_group_get_program_group_ID(process_group));
-//	fprintf(fid,"program_group(process_group) = %s\n",(ia_css_program_group_string(ia_css_process_group_get_program_group_ID(process_group)));
-
-	process_count = ia_css_process_group_get_process_count(process_group);
-	terminal_count = ia_css_process_group_get_terminal_count(process_group);
-
-	fprintf(fid,"%d processes\n",(int)process_count);
-	for (i = 0; i < (int)process_count; i++) {
-		ia_css_process_t	*process = ia_css_process_group_get_process(process_group, i);
-		retval = ia_css_process_print(process, fid);
-		verifjmpexit(retval == 0);
-	}
-	fprintf(fid,"%d terminals\n",(int)terminal_count);
-	for (i = 0; i < (int)terminal_count; i++) {
-		ia_css_terminal_t	*terminal = ia_css_process_group_get_terminal(process_group, i);
-		retval = ia_css_terminal_print(terminal, fid);
-		verifjmpexit(retval == 0);
-	}
-
-	retval = 0;
-EXIT:
-	return retval;
-}
 
 bool ia_css_is_process_group_valid(
 	const ia_css_process_group_t			*process_group,
@@ -394,6 +226,7 @@ bool ia_css_is_process_group_valid(
 	const ia_css_program_group_param_t		*param)
 {
 	bool is_valid = false;
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 	verifexit(manifest != NULL, EINVAL);
@@ -410,6 +243,7 @@ bool ia_css_can_process_group_submit (
 	int		i;
 	bool	can_submit = false;
 	uint8_t	terminal_count = ia_css_process_group_get_terminal_count(process_group);
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 
@@ -442,6 +276,7 @@ bool ia_css_can_process_group_start (
 	int		i;
 	bool	can_start = false;
 	uint8_t	terminal_count = ia_css_process_group_get_terminal_count(process_group);
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 
@@ -474,6 +309,7 @@ size_t ia_css_sizeof_process(
 	const ia_css_program_param_t			*param)
 {
 	size_t	size = 0;
+	int errno_local = 0;
 
 	uint8_t	program_dependency_count, terminal_dependency_count;
 
@@ -492,88 +328,6 @@ EXIT:
 	return size;
 }
 
-int ia_css_process_print(
-	const ia_css_process_t					*process,
-	FILE									*fid)
-{
-	int		retval = -1;
-	int		i, mem_index, dev_chn_index;
-	uint8_t	cell_dependency_count, terminal_dependency_count;
-	vied_nci_cell_ID_t	cell_id = ia_css_process_get_cell(process);
-
-	verifexit(process != NULL, EINVAL);
-	verifexit(fid != NULL, EINVAL);
-
-	fprintf(fid,"ia_css_process_print\n");
-	fprintf(fid,"sizeof(process) = %d\n",(int)ia_css_process_get_size(process));
-	fprintf(fid,"program(process) = %d\n",(int)ia_css_process_get_program_ID(process));
-//	fprintf(fid,"program(process) = %s\n",(ia_css_program_ID_string(ia_css_process_get_program_ID(process)));
-	fprintf(fid,"state(process) = %d\n",(int)ia_css_process_get_state(process));
-	fprintf(fid,"parent(process) = %p\n",ia_css_process_get_parent(process));
-
-	fprintf(fid,"cell(process) = %d\n",(int)process->cell_id);
-//	fprintf(fid,"cell(process) = %s\n",vied_nci_cell_string(process->cell_id));
-
-
-	for (mem_index = 0; mem_index < (int)VIED_NCI_N_MEM_TYPE_ID; mem_index++) {
-		vied_nci_mem_type_ID_t	mem_type = vied_nci_cell_get_mem_type(cell_id, mem_index);
-		vied_nci_mem_ID_t		mem_id = (vied_nci_mem_ID_t)(process->int_mem_id[mem_index]);
-
-		verifexit(((mem_id == vied_nci_cell_get_mem(cell_id, mem_index)) || (mem_id == VIED_NCI_N_MEM_ID)), EINVAL);
-
-		fprintf(fid,"\ttype(internal mem) type = %d\n",(int)mem_type);
-//		fprintf(fid,"\ttype(internal mem) type = %s\n",vied_nci_mem_type_string(mem_type));
-		fprintf(fid,"\tid(internal mem) id = %d\n",(int)mem_id);
-//		fprintf(fid,"\tid(internal mem) id = %s\n",vied_nci_mem_ID_string(mem_id));
-		fprintf(fid,"\ttype(internal mem) offset = %d\n",process->int_mem_offset[mem_index]);
-	}
-
-	for (mem_index = 0; mem_index < (int)VIED_NCI_N_DATA_MEM_TYPE_ID; mem_index++) {
-		vied_nci_mem_ID_t		mem_id = (vied_nci_mem_ID_t)(process->ext_mem_id[mem_index]);
-		vied_nci_mem_type_ID_t	mem_type = vied_nci_mem_get_type(mem_id);
-
-		verifexit((!vied_nci_has_cell_mem_of_id(cell_id, mem_id) || (mem_id == VIED_NCI_N_MEM_ID)), EINVAL);
-
-		fprintf(fid,"\ttype(external mem) type = %d\n",(int)mem_type);
-//		fprintf(fid,"\ttype(external mem) type = %s\n",vied_nci_mem_type_string(mem_type));
-		fprintf(fid,"\tid(external mem) id = %d\n",(int)mem_id);
-//		fprintf(fid,"\tid(external mem) id = %s\n",vied_nci_mem_ID_string(mem_id));
-		fprintf(fid,"\ttype(external mem) offset = %d\n",process->ext_mem_offset[mem_index]);
-	}
-
-	for (dev_chn_index = 0; dev_chn_index < (int)VIED_NCI_N_DEV_CHN_ID; dev_chn_index++) {
-		fprintf(fid,"\ttype(device channel) type = %d\n",(int)dev_chn_index);
-//		fprintf(fid,"\ttype(device channel) type = %s\n",vied_nci_dev_chn_type_string(dev_chn_index));
-		fprintf(fid,"\ttype(device channel) offset = %d\n",process->chn_offset[dev_chn_index]);
-	}
-
-	cell_dependency_count = ia_css_process_get_cell_dependency_count(process);
-	if (cell_dependency_count == 0) {
-		fprintf(fid,"cell_dependencies[%d] {};\n",cell_dependency_count);
-	} else {
-		fprintf(fid,"cell_dependencies[%d] {",cell_dependency_count);
-		for (i = 0; i < (int)cell_dependency_count; i++) {
-			fprintf(fid,"%4d, ",process->cell_dependencies[i]);
-		}
-		fprintf(fid,"%4d}\n",process->cell_dependencies[i]);
-	}
-	if (terminal_dependency_count == 0) {
-		fprintf(fid,"terminal_dependencies[%d] {};\n",terminal_dependency_count);
-	} else {
-		terminal_dependency_count = ia_css_process_get_terminal_dependency_count(process);
-		fprintf(fid,"terminal_dependencies[%d] {",terminal_dependency_count);
-		for (i = 0; i < (int)terminal_dependency_count; i++) {
-			fprintf(fid,"%4d, ",process->terminal_dependencies[i]);
-		}
-		fprintf(fid,"%4d}\n",process->terminal_dependencies[i]);
-	}
-
-	retval = 0;
-EXIT:
-	return retval;
-}
-
-
 ia_css_process_t *ia_css_process_create(
 	const ia_css_program_manifest_t		*manifest,
 	const ia_css_program_param_t		*param)
@@ -581,15 +335,17 @@ ia_css_process_t *ia_css_process_create(
 	size_t	size = 0;
 	ia_css_process_t	*process = NULL;
 
+	int errno_local = 0;
+
 //	size_t	size = ia_css_sizeof_process(manifest, param);
 	uint8_t	program_dependency_count, terminal_dependency_count;
 
-	errno = 0;
+	errno_local = 0;
 
 	verifexit(manifest != NULL, EINVAL);
 	verifexit(param != NULL, EINVAL);
 
-	process = (ia_css_process_t *)calloc(1, sizeof(ia_css_process_t));
+	process = (ia_css_process_t *)sh_css_calloc(1, sizeof(ia_css_process_t));
 	verifexit(process != NULL, EINVAL);
 	size += sizeof(ia_css_process_t);
 
@@ -602,13 +358,13 @@ ia_css_process_t *ia_css_process_create(
     verifexit((program_dependency_count + terminal_dependency_count) != 0, EINVAL);
 
 	if (program_dependency_count != 0) {
-		process->cell_dependencies = (vied_nci_resource_id_t *)calloc(program_dependency_count, sizeof(vied_nci_resource_id_t));
+		process->cell_dependencies = (vied_nci_resource_id_t *)sh_css_calloc(program_dependency_count, sizeof(vied_nci_resource_id_t));
 		verifexit(process->cell_dependencies != NULL, EINVAL);
 		size += program_dependency_count * sizeof(vied_nci_resource_id_t);
 	}
 
 	if (terminal_dependency_count != 0) {
-		process->terminal_dependencies = (uint8_t *)calloc(terminal_dependency_count, sizeof(uint8_t));
+		process->terminal_dependencies = (uint8_t *)sh_css_calloc(terminal_dependency_count, sizeof(uint8_t));
 		verifexit(process->terminal_dependencies != NULL, EINVAL);
 		size += terminal_dependency_count * sizeof(uint8_t);
 	}
@@ -630,7 +386,7 @@ ia_css_process_t *ia_css_process_create(
 	process->state = IA_CSS_PROCESS_READY;
 
 EXIT:
-	if (errno != 0) {
+	if (errno_local != 0) {
 		process = ia_css_process_destroy(process);
 	}
 	return process;
@@ -640,9 +396,9 @@ ia_css_process_t *ia_css_process_destroy(
 	ia_css_process_t				 		*process)
 {
 	if (process != NULL) {
-		free((void *)process->cell_dependencies);
-		free((void *)process->terminal_dependencies);
-		free((void *)process);
+		sh_css_free((void *)process->cell_dependencies);
+		sh_css_free((void *)process->terminal_dependencies);
+		sh_css_free((void *)process);
 		process = NULL;
 	}
 	return process;
@@ -676,6 +432,7 @@ uint8_t ia_css_process_get_cell_dependency_count(
 	const ia_css_process_t					*process)
 {
 	uint8_t	cell_dependency_count = 0;
+	int errno_local = 0;
 
 	verifexit(process != NULL, EINVAL);
 	cell_dependency_count = process->cell_dependency_count;
@@ -688,6 +445,7 @@ uint8_t ia_css_process_get_terminal_dependency_count(
 	const ia_css_process_t					*process)
 {
 	uint8_t	terminal_dependency_count = 0;
+	int errno_local = 0;
 
 	verifexit(process != NULL, EINVAL);
 	terminal_dependency_count = process->terminal_dependency_count;
@@ -705,15 +463,16 @@ ia_css_process_group_t *ia_css_process_group_create(
 	ia_css_process_group_t	*process_group = NULL;
 	uint8_t		process_count, terminal_count;
 	uint16_t	fragment_count;
+	int errno_local = 0;
 
 //	size_t	size = ia_css_sizeof_process_group(manifest, param);
 
-	errno = 0;
+	errno_local = 0;
 
 	verifexit(manifest != NULL, EINVAL);
 	verifexit(param != NULL, EINVAL);
 
-	process_group = (ia_css_process_group_t	*)calloc(1, sizeof(ia_css_process_group_t));
+	process_group = (ia_css_process_group_t	*)sh_css_calloc(1, sizeof(ia_css_process_group_t));
 	verifexit(process_group != NULL, EINVAL);
 	size += sizeof(ia_css_process_group_t);
 
@@ -727,7 +486,7 @@ ia_css_process_group_t *ia_css_process_group_create(
 	process_group->process_count = process_count;
 	process_group->terminal_count = terminal_count;
 
-	process_group->processes = (ia_css_process_t **)calloc(process_count, sizeof(ia_css_process_t *));
+	process_group->processes = (ia_css_process_t **)sh_css_calloc(process_count, sizeof(ia_css_process_t *));
 	verifexit(process_group->processes != NULL, ENOBUFS);
 	size += process_count * sizeof(ia_css_process_t *);
 
@@ -745,7 +504,7 @@ ia_css_process_group_t *ia_css_process_group_create(
 		}
 	}
 
-	process_group->terminals = (ia_css_terminal_t **)calloc(terminal_count, sizeof(ia_css_terminal_t *));
+	process_group->terminals = (ia_css_terminal_t **)sh_css_calloc(terminal_count, sizeof(ia_css_terminal_t *));
 	verifexit(process_group->terminals != NULL, ENOBUFS);
 	size += terminal_count * sizeof(ia_css_terminal_t *);
 
@@ -772,7 +531,7 @@ ia_css_process_group_t *ia_css_process_group_create(
 	ia_css_process_group_state_change(process_group, manifest, param);
 
 EXIT:
-	if (errno != 0) {
+	if (errno_local != 0) {
 		process_group = ia_css_process_group_destroy(process_group);
 	}
 	return process_group;
@@ -790,7 +549,7 @@ ia_css_process_group_t *ia_css_process_group_destroy(
 				process_group->terminals[i] = ia_css_terminal_destroy(process_group->terminals[i]);
 			}
 
-			free((void *)process_group->terminals);
+			sh_css_free((void *)process_group->terminals);
 			process_group->terminals = NULL;
 		}
 
@@ -800,11 +559,11 @@ ia_css_process_group_t *ia_css_process_group_destroy(
 				process_group->processes[i] = ia_css_process_destroy(process_group->processes[i]);
 			}
 
-			free((void *)process_group->processes);
+			sh_css_free((void *)process_group->processes);
 			process_group->processes = NULL;
 		}
 
-		free((void *)process_group);
+		sh_css_free((void *)process_group);
 		process_group = NULL;
 	}
 	return process_group;
@@ -839,6 +598,7 @@ int ia_css_process_group_set_token(
 	const uint64_t							token)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 	verifexit(token != 0, EINVAL);
@@ -859,20 +619,21 @@ ia_css_terminal_t *ia_css_terminal_create(
 	ia_css_terminal_t	*terminal = NULL;
 	ia_css_psys_frame_t		*frame = NULL;
 	uint16_t			fragment_count;
+	int errno_local = 0;
 
 //	size_t	size = ia_css_sizeof_terminal(manifest, param);
 
 	fragment_count = ia_css_program_group_param_get_fragment_count(param);
 
-	errno = 0;
+	errno_local = 0;
 
 	verifexit(manifest != NULL, EINVAL);
 	verifexit(param != NULL, EINVAL);
-	terminal = (ia_css_terminal_t *)calloc(1, sizeof(ia_css_terminal_t));
+	terminal = (ia_css_terminal_t *)sh_css_calloc(1, sizeof(ia_css_terminal_t));
 	verifexit(terminal != NULL, EINVAL);
 	size += sizeof(ia_css_terminal_t);
 
-	terminal->fragment_descriptor = (ia_css_fragment_descriptor_t *)calloc(fragment_count, sizeof(ia_css_fragment_descriptor_t));
+	terminal->fragment_descriptor = (ia_css_fragment_descriptor_t *)sh_css_calloc(fragment_count, sizeof(ia_css_fragment_descriptor_t));
 	size += fragment_count * sizeof(ia_css_fragment_descriptor_t);
 
 	terminal->size = ia_css_sizeof_terminal(manifest, param);
@@ -886,7 +647,7 @@ ia_css_terminal_t *ia_css_terminal_create(
 	verifexit(ia_css_frame_set_buffer_state(frame, IA_CSS_BUFFER_NULL) == 0, EINVAL);
 
 EXIT:
-	if (errno != 0) {
+	if (errno_local != 0) {
 		terminal = ia_css_terminal_destroy(terminal);
 	}
 	return terminal;
@@ -895,7 +656,7 @@ EXIT:
 ia_css_terminal_t *ia_css_terminal_destroy(
 	ia_css_terminal_t						*terminal)
 {
-	free((void *)terminal);
+	sh_css_free((void *)terminal);
 	terminal = NULL;
 	return terminal;
 }
@@ -917,6 +678,7 @@ int ia_css_terminal_set_parent(
 	ia_css_process_group_t					*parent)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(terminal != NULL, EINVAL);
 	verifexit(parent != NULL, EINVAL);
@@ -932,6 +694,7 @@ ia_css_process_group_t *ia_css_terminal_get_parent(
 	const ia_css_terminal_t					*terminal)
 {
 	ia_css_process_group_t	*parent = NULL;
+	int errno_local = 0;
 
 	verifexit(terminal != NULL, EINVAL);
 
@@ -944,6 +707,7 @@ ia_css_psys_frame_t *ia_css_terminal_get_frame(
 	const ia_css_terminal_t					*terminal)
 {
 	ia_css_psys_frame_t	*frame = NULL;
+	int errno_local = 0;
 
 	verifexit(terminal != NULL, EINVAL);
 
@@ -956,6 +720,7 @@ ia_css_frame_descriptor_t *ia_css_terminal_get_frame_descriptor(
 	const ia_css_terminal_t					*terminal)
 {
 	ia_css_frame_descriptor_t	*frame_descriptor = NULL;
+	int errno_local = 0;
 
 	verifexit(terminal != NULL, EINVAL);
 
@@ -970,6 +735,7 @@ ia_css_fragment_descriptor_t *ia_css_terminal_get_fragment_descriptor(
 {
 	ia_css_fragment_descriptor_t	*fragment_descriptor = NULL;
 	uint16_t						fragment_count = ia_css_terminal_get_fragment_count(terminal);
+	int errno_local = 0;
 
 	verifexit(terminal != NULL, EINVAL);
 	verifexit(fragment_count != 0, EINVAL);
@@ -986,6 +752,7 @@ uint16_t ia_css_terminal_get_fragment_count(
 {
 	ia_css_process_group_t			*parent = ia_css_terminal_get_parent(terminal);
 	uint16_t						fragment_count = 0;
+	int errno_local = 0;
 
 	verifexit(terminal != NULL, EINVAL);
 	verifexit(parent != NULL, EINVAL);
@@ -1000,6 +767,7 @@ uint32_t ia_css_process_group_compute_cycle_count(
 	const ia_css_program_group_param_t		*param)
 {
 	uint32_t	cycle_count = 0;
+	int errno_local = 0;
 
 	verifexit(manifest != NULL, EINVAL);
 	verifexit(param != NULL, EINVAL);
@@ -1014,6 +782,7 @@ uint8_t ia_css_process_group_compute_process_count(
 	const ia_css_program_group_param_t		*param)
 {
 	uint8_t		process_count = 0;
+	int errno_local = 0;
 
 	verifexit(manifest != NULL, EINVAL);
 	verifexit(param != NULL, EINVAL);
@@ -1031,6 +800,7 @@ uint8_t ia_css_process_group_compute_terminal_count(
 	const ia_css_program_group_param_t		*param)
 {
 	uint8_t		terminal_count = 0;
+	int errno_local = 0;
 
 	verifexit(manifest != NULL, EINVAL);
 	verifexit(param != NULL, EINVAL);
@@ -1082,6 +852,7 @@ ia_css_terminal_t *ia_css_process_group_get_terminal(
 {
 	ia_css_terminal_t *terminal = NULL;
 
+	int errno_local = 0;
 	uint8_t		terminal_count = ia_css_process_group_get_terminal_count(process_group);
 
 	verifexit(process_group != NULL, EINVAL);
@@ -1098,6 +869,7 @@ ia_css_process_t *ia_css_process_group_get_process(
 {
 	ia_css_process_t *process = NULL;
 
+	int errno_local = 0;
 	uint8_t process_count = ia_css_process_group_get_process_count(process_group);
 
 	verifexit(process_group != NULL, EINVAL);
@@ -1112,6 +884,7 @@ ia_css_program_group_ID_t ia_css_process_group_get_program_group_ID(
 	const ia_css_process_group_t			*process_group)
 {
 	ia_css_program_group_ID_t	id = 0;
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 
@@ -1125,6 +898,7 @@ vied_nci_resource_bitmap_t ia_css_process_group_get_resource_bitmap(
 	const ia_css_process_group_t			*process_group)
 {
 	vied_nci_resource_bitmap_t	resource_bitmap = 0;
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 
@@ -1139,6 +913,7 @@ int ia_css_process_group_set_resource_bitmap(
 	const vied_nci_resource_bitmap_t		resource_bitmap)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 
@@ -1158,6 +933,7 @@ int ia_css_process_group_attach_buffer(
 	const unsigned int						terminal_index)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	ia_css_terminal_t	*terminal = ia_css_process_group_get_terminal(process_group, terminal_index);
 	ia_css_psys_frame_t	*frame = ia_css_terminal_get_frame(terminal);
 	ia_css_process_group_state_t	state = ia_css_process_group_get_state(process_group);
@@ -1179,6 +955,7 @@ uint8_t *ia_css_process_group_detach_buffer(
 {
 	uint8_t *buffer = NULL;
 
+	int errno_local = 0;
 	ia_css_terminal_t	*terminal = ia_css_process_group_get_terminal(process_group, terminal_index);
 	ia_css_psys_frame_t	*frame = ia_css_terminal_get_frame(terminal);
 	ia_css_process_group_state_t	state = ia_css_process_group_get_state(process_group);
@@ -1203,6 +980,7 @@ int ia_css_process_group_set_barrier(
 	int	retval = -1;
 	vied_nci_resource_bitmap_t	bit_mask;
 	vied_nci_resource_bitmap_t	resource_bitmap = ia_css_process_group_get_resource_bitmap(process_group);
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 
@@ -1225,6 +1003,7 @@ int ia_css_process_group_clear_barrier(
 	int	retval = -1;
 	vied_nci_resource_bitmap_t	bit_mask;
 	vied_nci_resource_bitmap_t	resource_bitmap = ia_css_process_group_get_resource_bitmap(process_group);
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 
@@ -1244,6 +1023,7 @@ int ia_css_process_acquire(
 	ia_css_process_t						*process)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(process != NULL, EINVAL);
 	retval = 0;
@@ -1255,6 +1035,7 @@ int ia_css_process_release(
 	ia_css_process_t						*process)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(process != NULL, EINVAL);
 	retval = 0;
@@ -1267,6 +1048,7 @@ int ia_css_process_set_parent(
 	ia_css_process_group_t					*parent)
 {
 	int	retval = -1;
+	int errno_local = 0;
 
 	verifexit(process != NULL, EINVAL);
 	verifexit(parent != NULL, EINVAL);
@@ -1281,6 +1063,7 @@ ia_css_process_group_t *ia_css_process_get_parent(
 	const ia_css_process_t					*process)
 {
 	ia_css_process_group_t	*parent = NULL;
+	int errno_local = 0;
 
 	verifexit(process != NULL, EINVAL);
 
@@ -1293,6 +1076,7 @@ ia_css_program_ID_t ia_css_process_get_program_ID(
 	const ia_css_process_t					*process)
 {
 	ia_css_program_ID_t		id = 0;
+	int errno_local = 0;
 
 	verifexit(process != NULL, EINVAL);
 
@@ -1306,6 +1090,7 @@ int ia_css_process_set_cell(
 	ia_css_process_t						*process,
 	const vied_nci_cell_ID_t				cell_id)
 {
+	int errno_local = 0;
 	int	retval = -1;
 	ia_css_process_group_t			*parent = ia_css_process_get_parent(process);
 	vied_nci_resource_bitmap_t		resource_bitmap, bit_mask;
@@ -1339,6 +1124,7 @@ int ia_css_process_clear_cell(
 	ia_css_process_t						*process)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	vied_nci_cell_ID_t				cell_id = ia_css_process_get_cell(process);
 	ia_css_process_group_t			*parent = ia_css_process_get_parent(process);
 	vied_nci_resource_bitmap_t		resource_bitmap, bit_mask;
@@ -1380,6 +1166,7 @@ int ia_css_process_set_int_mem(
 	const vied_nci_resource_size_t			offset)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	ia_css_process_group_t			*parent = ia_css_process_get_parent(process);
 	vied_nci_cell_ID_t				cell_id = ia_css_process_get_cell(process);
 	ia_css_process_group_state_t	parent_state = ia_css_process_group_get_state(parent);
@@ -1411,6 +1198,7 @@ int ia_css_process_clear_int_mem(
 	vied_nci_cell_ID_t				cell_id = ia_css_process_get_cell(process);
 	ia_css_process_group_state_t	parent_state = ia_css_process_group_get_state(parent);
 	ia_css_process_state_t			state = ia_css_process_get_state(process);
+	int errno_local = 0;
 
 	verifexit(process != NULL, EINVAL);
 	verifexit(((parent_state == IA_CSS_PROCESS_GROUP_BLOCKED) || (parent_state == IA_CSS_PROCESS_GROUP_STARTED)), EINVAL);
@@ -1440,6 +1228,7 @@ int ia_css_process_set_ext_mem(
 	const vied_nci_resource_size_t			offset)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	ia_css_process_group_t			*parent = ia_css_process_get_parent(process);
 	vied_nci_cell_ID_t				cell_id = ia_css_process_get_cell(process);
 	ia_css_process_group_state_t	parent_state = ia_css_process_group_get_state(parent);
@@ -1467,6 +1256,7 @@ int ia_css_process_clear_ext_mem(
 	const vied_nci_mem_type_ID_t			mem_type_id)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	ia_css_process_group_t			*parent = ia_css_process_get_parent(process);
 	ia_css_process_group_state_t	parent_state = ia_css_process_group_get_state(parent);
 	ia_css_process_state_t			state = ia_css_process_get_state(process);
@@ -1490,6 +1280,7 @@ int ia_css_process_set_dev_chn(
 	const vied_nci_resource_size_t			offset)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	ia_css_process_group_t			*parent = ia_css_process_get_parent(process);
 	ia_css_process_group_state_t	parent_state = ia_css_process_group_get_state(parent);
 	ia_css_process_state_t			state = ia_css_process_get_state(process);
@@ -1512,6 +1303,7 @@ int ia_css_process_clear_dev_chn(
 	const vied_nci_dev_chn_ID_t				dev_chn_id)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	ia_css_process_group_t			*parent = ia_css_process_get_parent(process);
 	ia_css_process_group_state_t	parent_state = ia_css_process_group_get_state(parent);
 	ia_css_process_state_t			state = ia_css_process_get_state(process);
@@ -1533,6 +1325,7 @@ int ia_css_process_clear_all(
 	ia_css_process_t						*process)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	ia_css_process_group_t			*parent = ia_css_process_get_parent(process);
 	ia_css_process_group_state_t	parent_state =  ia_css_process_group_get_state(parent);
 	ia_css_process_state_t			state = ia_css_process_get_state(process);
@@ -1620,6 +1413,7 @@ int ia_css_process_group_cmd(
 {
 	int	retval = -1;
 	ia_css_process_group_state_t	state = ia_css_process_group_get_state(process_group);
+	int errno_local = 0;
 
 	verifexit(process_group != NULL, EINVAL);
 	verifexit(state != IA_CSS_PROCESS_GROUP_ERROR, EINVAL);
@@ -1691,6 +1485,7 @@ int ia_css_process_cmd(
 	const ia_css_process_cmd_t				cmd)
 {
 	int	retval = -1;
+	int errno_local = 0;
 	ia_css_process_state_t	state = ia_css_process_get_state(process);
 
 	verifexit(process != NULL, EINVAL);

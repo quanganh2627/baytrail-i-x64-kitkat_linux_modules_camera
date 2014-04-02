@@ -65,10 +65,6 @@ extern ia_css_terminal_manifest_t *ia_css_terminal_manifest_free(
 extern size_t ia_css_sizeof_terminal_manifest(
 	const ia_css_terminal_manifest_t		*manifest);
 
-extern int ia_css_terminal_manifest_print(
-	const ia_css_terminal_manifest_t		*manifest,
-	FILE									*fid);
-
 extern size_t ia_css_terminal_manifest_get_size(
 	const ia_css_terminal_manifest_t		*manifest);
 

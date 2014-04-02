@@ -164,18 +164,4 @@ extern ia_css_program_group_manifest_t *ia_css_program_group_manifest_alloc(
 extern ia_css_program_group_manifest_t *ia_css_program_group_manifest_free(
 	ia_css_program_group_manifest_t			*manifest);
 
-/* Debugging purpose only. */
-extern int ia_css_terminal_manifest_print(
-	const ia_css_terminal_manifest_t		*manifest,
-	FILE									*fid);
-
-extern int ia_css_program_group_manifest_print(
-	const ia_css_program_group_manifest_t	*manifest,
-	FILE									*fid);
-
-extern int ia_css_program_manifest_print(
-	const ia_css_program_manifest_t			*manifest,
-	FILE									*fid);
-
-
 #endif /* __IA_CSS_PROGRAM_GROUP_H__ */
