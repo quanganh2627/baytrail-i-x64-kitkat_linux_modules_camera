@@ -594,7 +594,7 @@ static int __get_pfnmap_pages(struct task_struct *tsk, struct mm_struct *mm,
 				return i ? i : PTR_ERR(page);
 			if (pages) {
 				pages[i] = page;
-
+				get_page(page);
 				flush_anon_page(vma, page, start);
 				flush_dcache_page(page);
 			}
@@ -759,9 +759,8 @@ static int alloc_user_pages(struct hmm_buffer_object *bo,
 	return 0;
 
 out_of_mem:
-	if (bo->mem_type == HMM_BO_MEM_TYPE_USER)
-		for (i = 0; i < page_nr; i++)
-			put_page(pages[i]);
+	for (i = 0; i < page_nr; i++)
+		put_page(pages[i]);
 	atomisp_kernel_free(pages);
 	atomisp_kernel_free(bo->page_obj);
 
@@ -779,9 +778,8 @@ static void free_user_pages(struct hmm_buffer_object *bo)
 {
 	int i;
 
-	if (bo->mem_type == HMM_BO_MEM_TYPE_USER)
-		for (i = 0; i < bo->pgnr; i++)
-			put_page(bo->page_obj[i].page);
+	for (i = 0; i < bo->pgnr; i++)
+		put_page(bo->page_obj[i].page);
 
 	atomisp_kernel_free(bo->page_obj);
 }
