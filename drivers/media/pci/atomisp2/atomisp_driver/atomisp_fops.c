@@ -623,7 +623,7 @@ static int atomisp_open(struct file *file)
 
 
 	if (atomisp_dev_users(isp)) {
-		dev_err(isp->dev, "skip init isp in open\n");
+		dev_dbg(isp->dev, "skip init isp in open\n");
 		goto init_subdev;
 	}
 

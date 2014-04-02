@@ -1614,7 +1614,7 @@ int atomisp_alloc_3a_output_buf(struct atomisp_sub_device *asd)
 int atomisp_alloc_dis_coef_buf(struct atomisp_sub_device *asd)
 {
 	if (!asd->params.curr_grid_info.dvs_grid.enable) {
-		dev_err(asd->isp->dev, "%s: dvs_grid not enabled.\n", __func__);
+		dev_dbg(asd->isp->dev, "%s: dvs_grid not enabled.\n", __func__);
 		return 0;
 	}
 
@@ -3643,7 +3643,7 @@ void atomisp_css_set_cont_prev_start_time(struct atomisp_device *isp,
 					unsigned int overlap)
 {
 	/* CSS 2.0 doesn't support this API. */
-	dev_info(isp->dev, "set cont prev start time is not supported.\n");
+	dev_dbg(isp->dev, "set cont prev start time is not supported.\n");
 	return;
 }
 
@@ -4007,7 +4007,7 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 
 			break;
 		default:
-			dev_err(isp->dev, "unhandled css stored event: 0x%x\n",
+			dev_dbg(isp->dev, "unhandled css stored event: 0x%x\n",
 					current_event.event.type);
 			break;
 		}
