@@ -899,6 +899,115 @@ static int mt9m114_g_exposure(struct v4l2_subdev *sd, s32 *value)
 	return 0;
 }
 
+/*
+ * This function will return the sensor supported max exposure zone number.
+ * the sensor which supports max exposure zone number is 1.
+ */
+static int mt9m114_g_exposure_zone_num(struct v4l2_subdev *sd, s32 *val)
+{
+	*val = 1;
+
+	return 0;
+}
+
+/*
+ * set exposure metering, average/center_weighted/spot/matrix.
+ */
+static int mt9m114_s_exposure_metering(struct v4l2_subdev *sd, s32 val)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
+	switch (val) {
+	case V4L2_EXPOSURE_METERING_SPOT:
+		ret = mt9m114_write_reg_array(client, mt9m114_exp_average, NO_POLLING);
+		if (ret) {
+			dev_err(&client->dev, "write exp_average reg err.\n");
+			return ret;
+		}
+		break;
+	case V4L2_EXPOSURE_METERING_CENTER_WEIGHTED:
+	default:
+		ret = mt9m114_write_reg_array(client, mt9m114_exp_center, NO_POLLING);
+		if (ret) {
+			dev_err(&client->dev, "write exp_default reg err");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * This function is for touch exposure feature.
+ */
+static int mt9m114_s_exposure_selection(struct v4l2_subdev *sd,
+					struct v4l2_subdev_fh *fh,
+					struct v4l2_subdev_selection *sel)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct mt9m114_device *dev = to_mt9m114_sensor(sd);
+	struct misensor_reg exp_reg;
+	int width, height;
+	int grid_width, grid_height;
+	int grid_left, grid_top, grid_right, grid_bottom;
+	int win_left, win_top, win_right, win_bottom;
+	int i,j;
+	int ret;
+
+	if (sel->which != V4L2_SUBDEV_FORMAT_TRY &&
+	    sel->which != V4L2_SUBDEV_FORMAT_ACTIVE)
+		return -EINVAL;
+
+	grid_left = sel->r.left;
+	grid_top = sel->r.top;
+	grid_right = sel->r.left + sel->r.width - 1;
+	grid_bottom = sel->r.top + sel->r.height - 1;
+
+	ret = mt9m114_res2size(dev->res, &width, &height);
+	if (ret)
+		return ret;
+
+	grid_width = width / 5;
+	grid_height = height / 5;
+
+	if (grid_width && grid_height) {
+		win_left = grid_left / grid_width;
+		win_top = grid_top / grid_height;
+		win_right = grid_right / grid_width;
+		win_bottom = grid_bottom / grid_height;
+	} else {
+		dev_err(&client->dev, "Incorrect exp grid.\n");
+		return -EINVAL;
+	}
+
+	clamp_t(int, win_left, 0, 4);
+	clamp_t(int, win_top, 0, 4);
+	clamp_t(int, win_right, 0, 4);
+	clamp_t(int, win_bottom, 0, 4);
+
+	ret = mt9m114_write_reg_array(client, mt9m114_exp_average, NO_POLLING);
+	if (ret) {
+		dev_err(&client->dev, "write exp_average reg err.\n");
+		return ret;
+	}
+
+	for (i = win_top; i <= win_bottom; i++) {
+		for (j = win_left; j <= win_right; j++) {
+			exp_reg = mt9m114_exp_win[i][j];
+
+			ret = mt9m114_write_reg(client, exp_reg.length,
+						exp_reg.reg, exp_reg.val);
+			if (ret) {
+				dev_err(&client->dev, "write exp_reg err.\n");
+				return ret;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static struct mt9m114_control mt9m114_controls[] = {
 	{
 		.qc = {
@@ -1004,6 +1113,32 @@ static struct mt9m114_control mt9m114_controls[] = {
 			.flags = 0,
 		},
 		.query = mt9m114_g_exposure,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_EXPOSURE_ZONE_NUM,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "one-time exposure zone number",
+			.minimum = 0x0,
+			.maximum = 0xffff,
+			.step = 0x01,
+			.default_value = 0x00,
+			.flags = 0,
+		},
+		.query = mt9m114_g_exposure_zone_num,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_EXPOSURE_METERING,
+			.type = V4L2_CTRL_TYPE_MENU,
+			.name = "metering",
+			.minimum = 0,
+			.maximum = 3,
+			.step = 1,
+			.default_value = 1,
+			.flags = 0,
+		},
+		.tweak = mt9m114_s_exposure_metering,
 	},
 
 };
@@ -1419,6 +1554,7 @@ static const struct v4l2_subdev_pad_ops mt9m114_pad_ops = {
 	.enum_frame_size = mt9m114_enum_frame_size,
 	.get_fmt = mt9m114_get_pad_format,
 	.set_fmt = mt9m114_set_pad_format,
+	.set_selection = mt9m114_s_exposure_selection,
 };
 
 static const struct v4l2_subdev_ops mt9m114_ops = {
