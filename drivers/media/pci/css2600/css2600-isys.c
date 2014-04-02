@@ -374,8 +374,7 @@ static int isys_register_ext_subdev(struct css2600_isys *isys,
 
 	rval = media_entity_create_link(
 		&sd->entity, i,
-		&isys->csi2[sd_info->csi2->port].asd.sd.entity, 0,
-		MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE);
+		&isys->csi2[sd_info->csi2->port].asd.sd.entity, 0, 0);
 	if (rval) {
 		dev_warn(&isys->adev->dev, "can't create link\n");
 		goto skip_unregister_subdev;
