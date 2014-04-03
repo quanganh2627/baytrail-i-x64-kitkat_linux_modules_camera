@@ -1075,9 +1075,17 @@ void *hmm_bo_vmap(struct hmm_buffer_object *bo, bool cached)
 	check_bo_null_return(bo, NULL);
 
 	mutex_lock(&bo->mutex);
-	if (bo->status & HMM_BO_VMAPED || bo->status & HMM_BO_VMAPED_CACHED) {
+	if (((bo->status & HMM_BO_VMAPED) && !cached) ||
+	    ((bo->status & HMM_BO_VMAPED_CACHED) && cached)) {
 		mutex_unlock(&bo->mutex);
 		return bo->vmap_addr;
+	}
+
+	/* cached status need to be changed, so vunmap first */
+	if (bo->status & HMM_BO_VMAPED || bo->status & HMM_BO_VMAPED_CACHED) {
+		vunmap(bo->vmap_addr);
+		bo->vmap_addr = NULL;
+		bo->status &= ~(HMM_BO_VMAPED | HMM_BO_VMAPED_CACHED);
 	}
 
 	pages = atomisp_kernel_malloc(sizeof(*pages) * bo->pgnr);
