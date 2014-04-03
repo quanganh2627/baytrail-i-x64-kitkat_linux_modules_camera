@@ -253,37 +253,6 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 {
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
-	struct ia_css_isys_stream_cfg_data stream_cfg = {
-		.vc = 0,
-		.nof_input_pins = 1,
-		.input_pins = {
-			{
-				.dt = av->pfmt->mipi_data_type,
-				.input_res = {
-					.width = av->pix.width,
-					.height = av->pix.height,
-				},
-				.crop = {
-					 .top_offset = 0,
-					 .left_offset = 0,
-					 .bottom_offset = av->pix.width,
-					 .right_offset = av->pix.height,
-				 },
-			},
-		},
-		.nof_output_pins = 1,
-		.output_pins = {
-			{
-				.pt = IA_CSS_ISYS_PIN_TYPE_RAW_NS,
-				.type_specifics.ft = av->pfmt->css_pixelformat,
-				.output_res = {
-					.width = av->pix.width,
-					.height = av->pix.height,
-				},
-				.send_irq = 1,
-			},
-		 },
-	};
 	unsigned long flags;
 	int rval;
 
@@ -294,38 +263,13 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	dev_dbg(&av->isys->adev->dev, "css pixelformat %u\n",
 		av->pfmt->css_pixelformat);
 
-	rval = css2600_isys_video_set_streaming(av, 1);
-	if (rval)
-		goto out_dequeue_bufs;
-
-	stream_cfg.src = av->ip.source;
 	spin_lock_irqsave(&av->isys->lock, flags);
 	av->isys->pipes[av->ip.source] = &av->ip;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
 
-	reinit_completion(&av->ip.stream_open_completion);
-	rval = -ia_css_isys_stream_open(av->isys->ssi, av->ip.source,
-					&stream_cfg);
-	if (rval < 0) {
-		dev_dbg(&av->isys->adev->dev, "can't open stream (%d)\n",
-			rval);
+	rval = css2600_isys_video_set_streaming(av, 1);
+	if (rval)
 		goto out_pipe_null;
-	}
-
-	wait_for_completion(&av->ip.stream_open_completion);
-	dev_dbg(&av->isys->adev->dev, "stream open complete\n");
-
-	reinit_completion(&av->ip.stream_start_completion);
-	rval = -ia_css_isys_stream_start(av->isys->ssi, av->ip.source,
-					 NULL);
-	if (rval < 0) {
-		dev_dbg(&av->isys->adev->dev, "can't start streaning (%d)\n",
-			rval);
-		goto out_stream_close;
-	}
-
-	wait_for_completion(&av->ip.stream_start_completion);
-	dev_dbg(&av->isys->adev->dev, "stream start complete\n");
 
 	spin_lock_irqsave(&aq->lock, flags);
 	while (!list_empty(&aq->incoming)) {
@@ -351,24 +295,12 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 
 	return 0;
 
-out_stream_close:
-	reinit_completion(&av->ip.stream_close_completion);
-	rval = -ia_css_isys_stream_close(av->isys->ssi, av->ip.source);
-	if (rval < 0) {
-		dev_dbg(&av->isys->adev->dev, "can't close stream (%d)\n",
-			rval);
-	} else {
-		wait_for_completion(&av->ip.stream_close_completion);
-		dev_dbg(&av->isys->adev->dev, "stream close complete\n");
-	}
-
 out_pipe_null:
 	css2600_isys_video_set_streaming(av, 0);
 	spin_lock_irqsave(&av->isys->lock, flags);
 	av->isys->pipes[av->ip.source] = NULL;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
 
-out_dequeue_bufs:
 	spin_lock_irqsave(&aq->lock, flags);
 	while (!list_empty(&aq->incoming)) {
 		struct css2600_isys_buffer *ib =
@@ -392,31 +324,10 @@ static int stop_streaming(struct vb2_queue *q)
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
 	unsigned long flags;
-	int rval;
 
 	flush_workqueue(aq->wq);
 
 	css2600_isys_video_set_streaming(av, 0);
-
-	reinit_completion(&av->ip.stream_stop_completion);
-	rval = -ia_css_isys_stream_stop(av->isys->ssi, av->ip.source);
-	if (rval < 0) {
-		dev_dbg(&av->isys->adev->dev, "can't stop stream (%d)\n",
-			rval);
-	} else {
-		wait_for_completion(&av->ip.stream_stop_completion);
-		dev_dbg(&av->isys->adev->dev, "stream stop complete\n");
-	}
-
-	reinit_completion(&av->ip.stream_close_completion);
-	rval = -ia_css_isys_stream_close(av->isys->ssi, av->ip.source);
-	if (rval < 0) {
-		dev_dbg(&av->isys->adev->dev, "can't close stream (%d)\n",
-			rval);
-	} else {
-		wait_for_completion(&av->ip.stream_close_completion);
-		dev_dbg(&av->isys->adev->dev, "stream close complete\n");
-	}
 
 	spin_lock_irqsave(&aq->lock, flags);
 	while (!list_empty(&aq->incoming)) {

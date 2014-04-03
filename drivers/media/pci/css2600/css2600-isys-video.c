@@ -191,6 +191,107 @@ static int link_validate(struct media_link *link)
 	return 0;
 }
 
+/* Create stream and start it using the CSS library API. */
+static int start_stream_firmware(struct css2600_isys_video *av)
+{
+	struct ia_css_isys_stream_cfg_data stream_cfg = {
+		.vc = 0,
+		.nof_input_pins = 1,
+		.input_pins = {
+			{
+				.dt = av->pfmt->mipi_data_type,
+				.input_res = {
+					.width = av->pix.width,
+					.height = av->pix.height,
+				},
+				.crop = {
+					 .top_offset = 0,
+					 .left_offset = 0,
+					 .bottom_offset = av->pix.width,
+					 .right_offset = av->pix.height,
+				 },
+			},
+		},
+		.nof_output_pins = 1,
+		.output_pins = {
+			{
+				.pt = IA_CSS_ISYS_PIN_TYPE_RAW_NS,
+				.type_specifics.ft = av->pfmt->css_pixelformat,
+				.output_res = {
+					.width = av->pix.width,
+					.height = av->pix.height,
+				},
+				.send_irq = 1,
+			},
+		 },
+		.src = av->ip.source,
+	};
+	int rval;
+
+	reinit_completion(&av->ip.stream_open_completion);
+	rval = -ia_css_isys_stream_open(av->isys->ssi, av->ip.source,
+					&stream_cfg);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev, "can't open stream (%d)\n",
+			rval);
+		return rval;;
+	}
+
+	wait_for_completion(&av->ip.stream_open_completion);
+	dev_dbg(&av->isys->adev->dev, "stream open complete\n");
+
+	reinit_completion(&av->ip.stream_start_completion);
+	rval = -ia_css_isys_stream_start(av->isys->ssi, av->ip.source,
+					 NULL);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev, "can't start streaning (%d)\n",
+			rval);
+		goto out_stream_close;
+	}
+
+	wait_for_completion(&av->ip.stream_start_completion);
+	dev_dbg(&av->isys->adev->dev, "stream start complete\n");
+
+	return 0;
+
+out_stream_close:
+	reinit_completion(&av->ip.stream_close_completion);
+	rval = -ia_css_isys_stream_close(av->isys->ssi, av->ip.source);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev, "can't close stream (%d)\n",
+			rval);
+	} else {
+		wait_for_completion(&av->ip.stream_close_completion);
+		dev_dbg(&av->isys->adev->dev, "stream close complete\n");
+	}
+	return rval;
+}
+
+static void stop_streaming_firmware(struct css2600_isys_video *av)
+{
+	int rval;
+
+	reinit_completion(&av->ip.stream_stop_completion);
+	rval = -ia_css_isys_stream_stop(av->isys->ssi, av->ip.source);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev, "can't stop stream (%d)\n",
+			rval);
+	} else {
+		wait_for_completion(&av->ip.stream_stop_completion);
+		dev_dbg(&av->isys->adev->dev, "stream stop complete\n");
+	}
+
+	reinit_completion(&av->ip.stream_close_completion);
+	rval = -ia_css_isys_stream_close(av->isys->ssi, av->ip.source);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev, "can't close stream (%d)\n",
+			rval);
+	} else {
+		wait_for_completion(&av->ip.stream_close_completion);
+		dev_dbg(&av->isys->adev->dev, "stream close complete\n");
+	}
+}
+
 int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 				     unsigned int state)
 {
@@ -279,11 +380,20 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 		entities |= 1 << entity->id;
 	}
 
+	/* Oh crap */
+	if (state) {
+		rval = start_stream_firmware(av);
+		if (rval)
+			goto out_media_entity_stop_streaming;
+	} else {
+		stop_streaming_firmware(av);
+	}
+
 	dev_dbg(&av->isys->adev->dev, "s_stream %s\n", av->ip.external->name);
 	rval = v4l2_subdev_call(media_entity_to_v4l2_subdev(av->ip.external),
 				video, s_stream, state);
 	if (rval && state)
-		goto out_media_entity_stop_streaming;
+		goto out_media_entity_stop_streaming_firmware;
 
 	if (!state)
 		media_entity_pipeline_stop(&av->vdev.entity);
@@ -294,6 +404,9 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 
 	mutex_unlock(&av->mutex);
 	return 0;
+
+out_media_entity_stop_streaming_firmware:
+	stop_streaming_firmware(av);
 
 out_media_entity_stop_streaming:
 	media_entity_graph_walk_start(&graph, &av->vdev.entity);
