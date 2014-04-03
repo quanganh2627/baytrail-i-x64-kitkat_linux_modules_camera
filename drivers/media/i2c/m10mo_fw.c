@@ -69,12 +69,6 @@
 #define CHECKSUM_TIMEOUT   (5000 / ONE_WAIT_LOOP_TIME)
 #define STATE_TRANSITION_TIMEOUT (3000 / ONE_WAIT_LOOP_TIME)
 
-/*
- * TBD: proper matching between I2C and SPI devices instead of this global
- * variable.
- */
-static struct m10mo_spi *fw_spi_device;
-
 /* Tables for m10mo pin configurations */
 u8 buf_port_settings0_m10mo[] = {
 		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -530,7 +524,7 @@ static int m10mo_sio_write(struct m10mo_device *m10mo_dev, u8 *buf)
 	struct v4l2_subdev *sd = &m10mo_dev->sd;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 
-	if (!fw_spi_device) {
+	if (!m10mo_dev->spi) {
 		dev_err(&client->dev, "No spi device available");
 		return -ENODEV;
 	}
@@ -578,7 +572,7 @@ static int m10mo_sio_write(struct m10mo_device *m10mo_dev, u8 *buf)
 				      STATE_TRANSITION_TIMEOUT);
 	usleep_range(30000, 30000);  /* TDB: is that required */
 
-	fw_spi_device->write(fw_spi_device->spi_device,
+	m10mo_dev->spi->write(m10mo_dev->spi->spi_device,
 			     buf, FW_SIZE, SIO_BLOCK_SIZE);
 
 	msleep(5); /* TDB: is that required */
@@ -664,7 +658,7 @@ int m10mo_program_device(struct m10mo_device *m10mo_dev)
 		goto out_free_mem;
 	}
 
-	if (fw_spi_device && fw_spi_device->spi_enabled) {
+	if (m10mo_dev->spi && m10mo_dev->spi->spi_enabled) {
 		m10mo_sio_write(m10mo_dev, buf);
 	} else {
 		for (i = 0 ; i < FW_SIZE; i = i + FLASH_BLOCK_SIZE) {
@@ -696,24 +690,24 @@ out:
 
 int m10mo_get_spi_state(struct m10mo_device *m10mo_dev)
 {
-	if (fw_spi_device && fw_spi_device->spi_enabled)
+	if (m10mo_dev->spi && m10mo_dev->spi->spi_enabled)
 		return 1;
 	return 0;
 }
 
 int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled)
 {
-	if (fw_spi_device) {
-		fw_spi_device->spi_enabled = !!enabled;
+	if (m10mo_dev->spi) {
+		m10mo_dev->spi->spi_enabled = !!enabled;
 		return 0;
 	}
 	return -ENODEV;
 }
 
-
-void m10mo_register_spi_fw_flash_interface(struct m10mo_spi *m10mo_spi_dev)
+void m10mo_register_spi_fw_flash_interface(struct m10mo_device *dev,
+					   struct m10mo_spi *m10mo_spi_dev)
 {
 	pr_debug("m10mo: Spi interface registered\n");
-	fw_spi_device = m10mo_spi_dev;
+	dev->spi = m10mo_spi_dev;
 }
 EXPORT_SYMBOL_GPL(m10mo_register_spi_fw_flash_interface);

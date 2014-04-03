@@ -441,23 +441,23 @@ static int power_up(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
 
-	if (dev->pdata->flisclk_ctrl) {
-		ret = dev->pdata->flisclk_ctrl(sd, 1);
+	if (dev->pdata->common.flisclk_ctrl) {
+		ret = dev->pdata->common.flisclk_ctrl(sd, 1);
 		if (ret)
 			goto fail_clk_off;
 	}
 
 	/**ISP RESET**/
-	ret = dev->pdata->gpio_ctrl(sd, 1);
+	ret = dev->pdata->common.gpio_ctrl(sd, 1);
 	if (ret)
 		goto fail_power_off;
 	return 0;
 
 fail_power_off:
-	dev->pdata->gpio_ctrl(sd, 0);
+	dev->pdata->common.gpio_ctrl(sd, 0);
 fail_clk_off:
-	if (dev->pdata->flisclk_ctrl)
-		ret = dev->pdata->flisclk_ctrl(sd, 0);
+	if (dev->pdata->common.flisclk_ctrl)
+		ret = dev->pdata->common.flisclk_ctrl(sd, 0);
 	return ret;
 }
 
@@ -467,13 +467,13 @@ static int power_down(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
-	ret = dev->pdata->gpio_ctrl(sd, 0);
+	ret = dev->pdata->common.gpio_ctrl(sd, 0);
 	if (ret)
 		dev_err(&client->dev, "gpio failed");
 
 	/* Even if the first one fails we still want to turn clock off */
-	if (dev->pdata->flisclk_ctrl) {
-		ret = dev->pdata->flisclk_ctrl(sd, 0);
+	if (dev->pdata->common.flisclk_ctrl) {
+		ret = dev->pdata->common.flisclk_ctrl(sd, 0);
 		if (ret)
 			dev_err(&client->dev, "stop clock failed");
 	}
@@ -627,13 +627,13 @@ static int m10mo_setup_irq(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int pin, ret;
 
-	if (!dev->pdata->gpio_intr_ctrl) {
+	if (!dev->pdata->common.gpio_intr_ctrl) {
 		dev_err(&client->dev,
 			"Missing gpio information in interrupt setup!\n");
 		return -ENODEV;
 	}
 
-	pin = dev->pdata->gpio_intr_ctrl(sd);
+	pin = dev->pdata->common.gpio_intr_ctrl(sd);
 	ret = gpio_to_irq(pin);
 
 	if (ret < 0) {
@@ -785,15 +785,10 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct m10mo_fw_id *fw_ids = NULL;
-	struct m10mo_sensor_private_data *sdata;
 	char buffer[M10MO_MAX_FW_ID_STRING];
 	int ret;
 
-	sdata = dev->pdata->sensor_private_data;
-	if (!sdata)
-		return 0;
-
-	fw_ids = sdata->fw_ids;
+	fw_ids = dev->pdata->fw_ids;
 	if (!fw_ids)
 		return 0;
 
@@ -801,7 +796,7 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 	if (ret)
 		return ret;
 
-	while(fw_ids && fw_ids->id_string[0]) {
+	while(fw_ids->id_string) {
 		/*
 		 * Null char is skipped (strlen - 1) because the string in
 		 * platform data can be shorter than the string in the FW.
@@ -821,13 +816,11 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 	return 0;
 }
 
-static int m10mo_s_config(struct v4l2_subdev *sd,
-			    int irq, void *pdata)
+static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
-	struct m10mo_sensor_private_data *sdata;
 	u16 result = M10MO_INVALID_CHECKSUM;
 
 	mutex_lock(&dev->input_lock);
@@ -835,9 +828,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 	init_waitqueue_head(&dev->irq_waitq);
 
 	dev->fw_type = M10MO_FW_TYPE_0;
-	sdata = dev->pdata->sensor_private_data;
-	if (sdata)
-		dev->ref_clock = sdata->ref_clock_rate;
+	dev->ref_clock = dev->pdata->ref_clock_rate;
 
 	/* set up irq */
 	ret = m10mo_setup_irq(sd);
@@ -854,8 +845,8 @@ static int m10mo_s_config(struct v4l2_subdev *sd,
 		return ret;
 	}
 
-	if (dev->pdata->csi_cfg) {
-		ret = dev->pdata->csi_cfg(sd, 1);
+	if (dev->pdata->common.csi_cfg) {
+		ret = dev->pdata->common.csi_cfg(sd, 1);
 		if (ret)
 			goto fail;
 	}
@@ -1418,8 +1409,8 @@ static int m10mo_remove(struct i2c_client *client)
 	sysfs_remove_group(&client->dev.kobj,
 			   m10mo_attribute_group);
 
-	if (dev->pdata->platform_deinit)
-		dev->pdata->platform_deinit();
+	if (dev->pdata->common.platform_deinit)
+		dev->pdata->common.platform_deinit();
 
 	media_entity_cleanup(&dev->sd.entity);
 	v4l2_device_unregister_subdev(sd);
@@ -1448,7 +1439,17 @@ static int m10mo_probe(struct i2c_client *client,
 		return -ENOMEM;
 	}
 
-	dev->pdata = client->dev.platform_data;
+	/*
+	 * This I2C device is created by atomisp driver. Atomisp driver has
+	 * a nasty assumption that all sensors uses similar platform data.
+	 * For this driver we need more information. Platform data what was
+	 * received with I2C device data structure points to the common
+	 * structure. Pick the real platform data for this driver.
+	 */
+	dev->pdata = container_of(client->dev.platform_data,
+				  struct m10mo_platform_data,
+				  common);
+
 	dev->mode = M10MO_POWERED_OFF;
 	dev->requested_mode = M10MO_NO_MODE_REQUEST;
 
@@ -1456,8 +1457,7 @@ static int m10mo_probe(struct i2c_client *client,
 
 	v4l2_i2c_subdev_init(&(dev->sd), client, &m10mo_ops);
 
-	ret = m10mo_s_config(&dev->sd, client->irq,
-			     client->dev.platform_data);
+	ret = m10mo_s_config(&dev->sd, client->irq);
 	if (ret)
 		goto out_free;
 
@@ -1465,7 +1465,7 @@ static int m10mo_probe(struct i2c_client *client,
 	 * We must have a way to reset the chip. If that is missing we
 	 * simply can't continue.
 	 */
-	if (!dev->pdata->gpio_ctrl) {
+	if (!dev->pdata->common.gpio_ctrl) {
 		dev_err(&client->dev, "gpio control function missing\n");
 		ret = -ENODEV;
 		goto out_free_irq;
@@ -1498,6 +1498,11 @@ static int m10mo_probe(struct i2c_client *client,
 		dev_err(&client->dev, "%s Failed to create sysfs\n", __func__);
 		goto out_sysfs_fail;
 	}
+
+	/* Request SPI interface to enable FW update over the SPI */
+	if (dev->pdata->spi_setup)
+		dev->pdata->spi_setup(&dev->pdata->spi_pdata, dev);
+
 	return 0;
 
 out_sysfs_fail:

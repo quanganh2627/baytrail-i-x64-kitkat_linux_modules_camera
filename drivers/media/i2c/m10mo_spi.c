@@ -160,6 +160,16 @@ static int m10mo_spi_probe(struct spi_device *spi)
 
 	dev_dbg(&spi->dev, "Probe M10MO SPI\n");
 
+	pdata = dev_get_platdata(&spi->dev);
+	if (!pdata) {
+		dev_err(&spi->dev, "Missing platform data. Can't continue");
+		return -ENODEV;
+	}
+	if (!pdata->device_data) {
+		dev_err(&spi->dev, "Missing link to m10mo main driver. Can't continue");
+		return -ENODEV;
+	}
+
 	m10mo_spi_dev = kzalloc(sizeof(struct m10mo_spi), GFP_KERNEL);
 	if (!m10mo_spi_dev) {
 		dev_err(&spi->dev, "Can't get memory\n");
@@ -171,7 +181,6 @@ static int m10mo_spi_probe(struct spi_device *spi)
 		ret = -EINVAL;
 		goto err_setup;
 	}
-	pdata = dev_get_platdata(&spi->dev);
 
 	spi_set_drvdata(spi, m10mo_spi_dev);
 	m10mo_spi_dev->spi_device  = spi;
@@ -179,10 +188,8 @@ static int m10mo_spi_probe(struct spi_device *spi)
 	m10mo_spi_dev->write       = m10mo_spi_write;
 	m10mo_spi_dev->spi_enabled = pdata->spi_enabled;
 
-	if (pdata && pdata->setup)
-		pdata->setup(pdata);
-
-	m10mo_register_spi_fw_flash_interface(m10mo_spi_dev);
+	m10mo_register_spi_fw_flash_interface(pdata->device_data,
+					      m10mo_spi_dev);
 
 	dev_err(&spi->dev, "m10mo_spi successfully probed\n");
 

@@ -90,8 +90,9 @@ struct m10mo_device {
 	struct v4l2_subdev sd;
 	struct media_pad pad;
 	struct v4l2_mbus_framefmt format;
-	struct camera_sensor_platform_data *pdata;
+	struct m10mo_platform_data *pdata;
 	struct mutex input_lock; /* serialize sensor's ioctl */
+	struct m10mo_spi *spi;
 	u8 message_buffer[256]; /* Real buffer size TBD */
 	int res_type;
 	int power;
@@ -126,7 +127,8 @@ int m10mo_readw(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_readl(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_setup_flash_controller(struct v4l2_subdev *sd);
 
-void m10mo_register_spi_fw_flash_interface(struct m10mo_spi *m10mo_spi_dev);
+void m10mo_register_spi_fw_flash_interface(struct m10mo_device *dev,
+					   struct m10mo_spi *m10mo_spi_dev);
 
 int m10mo_dump_fw(struct m10mo_device *m10mo_dev);
 int m10mo_get_isp_fw_version_string(struct m10mo_device *dev, char *buf, int len);
