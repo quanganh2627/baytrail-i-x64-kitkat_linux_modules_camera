@@ -1095,6 +1095,27 @@ static int m10mo_set_flicker_freq(struct v4l2_subdev *sd, s32 val)
 	return m10mo_writeb(sd, CATEGORY_AE, AE_FLICKER, flicker_freq);
 }
 
+static int m10mo_set_metering(struct v4l2_subdev *sd, s32 val)
+{
+	unsigned int metering;
+
+	switch (val) {
+	case V4L2_EXPOSURE_METERING_CENTER_WEIGHTED:
+		metering = M10MO_METERING_CENTER;
+		break;
+	case V4L2_EXPOSURE_METERING_SPOT:
+		metering = M10MO_METERING_SPOT;
+		break;
+	case V4L2_EXPOSURE_METERING_AVERAGE:
+		metering = M10MO_METERING_AVERAGE;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return m10mo_writeb(sd, CATEGORY_AE, AE_MODE, metering);
+}
+
 static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct m10mo_device *dev = container_of(
@@ -1104,6 +1125,9 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 	switch (ctrl->id) {
 	case V4L2_CID_POWER_LINE_FREQUENCY:
 		ret = m10mo_set_flicker_freq(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_EXPOSURE_METERING:
+		ret = m10mo_set_metering(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -1175,6 +1199,15 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.max = 3,
 		.step = 1,
 	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_EXPOSURE_METERING,
+		.name = "Metering",
+		.type = V4L2_CTRL_TYPE_MENU,
+		.min = 0,
+		.max = 2,
+	},
+
 };
 
 static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
