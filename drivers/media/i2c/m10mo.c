@@ -275,6 +275,9 @@ int m10mo_memory_read(struct v4l2_subdev *sd, u16 len, u32 addr, u8 *val)
 		msleep(20);
 	}
 
+	if (err == 0)
+		return -EIO;
+
 	if (err != 1)
 		return err;
 
@@ -288,6 +291,9 @@ int m10mo_memory_read(struct v4l2_subdev *sd, u16 len, u32 addr, u8 *val)
 		msleep(20);
 	}
 
+	if (err == 0)
+		return -EIO;
+
 	if (err != 1)
 		return err;
 
@@ -300,7 +306,7 @@ int m10mo_memory_read(struct v4l2_subdev *sd, u16 len, u32 addr, u8 *val)
 
 	memcpy(val, recv_data + 3, len);
 
-	return err;
+	return 0;
 }
 
 /**

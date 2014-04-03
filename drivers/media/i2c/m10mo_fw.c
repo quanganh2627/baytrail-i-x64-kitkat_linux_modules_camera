@@ -71,7 +71,7 @@
 #define STATE_TRANSITION_TIMEOUT (3000 / ONE_WAIT_LOOP_TIME)
 
 /* Tables for m10mo pin configurations */
-u8 buf_port_settings0_m10mo[] = {
+static const u8 buf_port_settings0_m10mo[] = {
 		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		  0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x00,
 		  0x00, 0x00, 0x00, 0x3F, 0x00, 0x00, 0x00, 0x00,
@@ -82,7 +82,7 @@ u8 buf_port_settings0_m10mo[] = {
 		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF,
 		 };
 
-u8 buf_port_settings1_m10mo[] = {
+static const u8 buf_port_settings1_m10mo[] = {
 		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		  0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
 		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -93,7 +93,7 @@ u8 buf_port_settings1_m10mo[] = {
 		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		 };
 
-u8 buf_port_settings2_m10mo[] = {
+static const u8 buf_port_settings2_m10mo[] = {
 		  0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00,
 		  0x00, 0x00, 0x00, 0x0E, 0x00, 0x00, 0x00, 0x00,
 		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -157,21 +157,21 @@ static int m10mo_to_fw_access_mode(struct m10mo_device *m10mo_dev)
 	int err;
 
 	err = m10mo_memory_write(sd, M10MO_MEMORY_WRITE_8BIT, SZ_64,
-				PORT_SETTINGS0_ADDR , buf_port_settings0_m10mo);
+				 PORT_SETTINGS0_ADDR , (u8 *)buf_port_settings0_m10mo);
 	if (err)
 		goto fail;
 
 	usleep_range(PORT_SETTING_DELAY, PORT_SETTING_DELAY);
 
 	err = m10mo_memory_write(sd, M10MO_MEMORY_WRITE_8BIT, SZ_64,
-				PORT_SETTINGS1_ADDR, buf_port_settings1_m10mo);
+				 PORT_SETTINGS1_ADDR, (u8 *)buf_port_settings1_m10mo);
 	if (err)
 		goto fail;
 
 	usleep_range(PORT_SETTING_DELAY, PORT_SETTING_DELAY);
 
 	err = m10mo_memory_write(sd, M10MO_MEMORY_WRITE_8BIT, SZ_64,
-				PORT_SETTINGS2_ADDR, buf_port_settings2_m10mo);
+				 PORT_SETTINGS2_ADDR, (u8 *)buf_port_settings2_m10mo);
 	if (err)
 		goto fail;
 	usleep_range(PORT_SETTING_DELAY, PORT_SETTING_DELAY);
@@ -345,13 +345,12 @@ int m10mo_get_isp_fw_version_string(struct m10mo_device *dev, char *buf, int len
 	memset(buf, 0, len);
 	err = m10mo_memory_read(sd, len - 1, FW_VERSION_INFO_ADDR,
 				buf);
-	if (err < 0) {
+	if (err)
 		dev_err(&client->dev, "version read failed\n");
-		goto out;
-	}
-out:
-	err = m10mo_writeb(sd, CATEGORY_FLASHROM,
-			   REG_FW_READ, REG_FW_READ_CMD_NONE);
+
+	/* Return value checking intentionally omitted */
+	(void) m10mo_writeb(sd, CATEGORY_FLASHROM,
+			    REG_FW_READ, REG_FW_READ_CMD_NONE);
 	return err;
 }
 
@@ -421,11 +420,10 @@ int m10mo_sector_erase_flash(struct m10mo_device *dev, u32 sector_addr)
 		return ret;
 	}
 
-	m10mo_wait_operation_complete(sd, REG_FLASH_ERASE,
-				      SECTOR_ERASE_TIMEOUT);
+	ret = m10mo_wait_operation_complete(sd, REG_FLASH_ERASE,
+					    SECTOR_ERASE_TIMEOUT);
 	return ret;
 }
-
 
 /* Full chip erase */
 int m10mo_chip_erase_flash(struct m10mo_device *dev)
@@ -513,11 +511,10 @@ int m10mo_flash_write_block(struct m10mo_device *dev, u32 target_addr,
 		return ret;
 	}
 
-	m10mo_wait_operation_complete(sd, REG_FLASH_WRITE, PROGRAMMING_TIMEOUT);
+	ret = m10mo_wait_operation_complete(sd, REG_FLASH_WRITE, PROGRAMMING_TIMEOUT);
 
-	return 0;
+	return ret;
 }
-
 
 static int m10mo_sio_write(struct m10mo_device *m10mo_dev, u8 *buf)
 {
@@ -569,12 +566,17 @@ static int m10mo_sio_write(struct m10mo_device *m10mo_dev, u8 *buf)
 		return ret;
 	}
 
-	m10mo_wait_operation_complete(sd, REG_RAM_START,
-				      STATE_TRANSITION_TIMEOUT);
+	ret = m10mo_wait_operation_complete(sd, REG_RAM_START,
+					    STATE_TRANSITION_TIMEOUT);
+	if (ret)
+		return ret;
+
 	usleep_range(30000, 30000);  /* TDB: is that required */
 
-	m10mo_dev->spi->write(m10mo_dev->spi->spi_device,
-			     buf, FW_SIZE, SIO_BLOCK_SIZE);
+	ret = m10mo_dev->spi->write(m10mo_dev->spi->spi_device,
+				    buf, FW_SIZE, SIO_BLOCK_SIZE);
+	if (ret)
+		return ret;
 
 	msleep(5); /* TDB: is that required */
 
