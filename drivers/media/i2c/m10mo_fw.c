@@ -20,6 +20,7 @@
 
 #include <linux/atomisp_platform.h>
 #include <linux/delay.h>
+#include <linux/firmware.h>
 #include <linux/i2c.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
@@ -36,7 +37,7 @@
  * TBD: flexible interface for defining proper path as needed
  */
 #define M10MO_FW_DUMP_PATH "/data/M10MO_dump.bin"
-#define M10MO_FW_PATH "/data/M10MO_fw.bin"
+#define M10MO_FW_NAME "M10MO_fw.bin"
 
 #define SRAM_BUFFER_ADDRESS 0x01100000
 #define SDRAM_BUFFER_ADDRESS 0x20000000
@@ -601,90 +602,82 @@ static int m10mo_sio_write(struct m10mo_device *m10mo_dev, u8 *buf)
 	return ret;
 }
 
+static const struct firmware *
+m10mo_load_firmware(struct m10mo_device *m10mo_dev)
+{
+	struct v4l2_subdev *sd = &m10mo_dev->sd;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	const struct firmware *fw;
+	int ret;
+
+	ret = request_firmware(&fw, M10MO_FW_NAME, &client->dev);
+	if (ret) {
+		dev_err(&client->dev,
+			"Error %d while requesting firmware %s\n",
+			ret, M10MO_FW_NAME);
+		return NULL;
+	}
+
+	if (fw->size != FW_SIZE) {
+		dev_err(&client->dev,
+			"Illegal FW size detected\n");
+		release_firmware(fw);
+		return NULL;
+	}
+
+	return fw;
+}
+
 int m10mo_program_device(struct m10mo_device *m10mo_dev)
 {
 	struct v4l2_subdev *sd = &m10mo_dev->sd;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-
-	struct file *fp;
-	mm_segment_t old_fs;
-	long fsize, nread;
-	u8 *buf = NULL;
 	int ret = -ENODEV;
 	u32 i;
+	const struct firmware *fw;
 
-	dev_dbg(&client->dev, "Start FW update\n");
+	dev_info(&client->dev, "Start FW update\n");
 
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	fp = filp_open(M10MO_FW_PATH, O_RDONLY, 0);
-	if (IS_ERR(fp)) {
-		dev_err(&client->dev, "failed to open %s, err %ld\n",
-		       M10MO_FW_PATH, PTR_ERR(fp));
-		ret = -ENOENT;
-		goto out;
-	}
-
-	fsize = fp->f_path.dentry->d_inode->i_size;
-	if (fsize > FW_SIZE) {
-		dev_err(&client->dev, "FW file size too big\n");
-		goto out;
-	}
-
-	/* Looks that we have the fw image: 2Mbytes of flash memory */
-	buf = kzalloc(FW_SIZE, GFP_KERNEL);
-	if (!buf) {
-		dev_err(&client->dev, "No memory for fw update\n");
-		ret = -ENOMEM;
-		goto out;
-	}
-
-	nread = vfs_read(fp, (char __user *)buf, fsize, &fp->f_pos);
-	if (nread != fsize) {
-		dev_err(&client->dev,
-			"failed to read firmware file, %ld Bytes\n", nread);
-		ret = -EIO;
-		goto out_free_mem;
-	}
+	fw = m10mo_load_firmware(m10mo_dev);
+	if (!fw)
+		return -ENOENT;
 
 	ret = m10mo_to_fw_access_mode(m10mo_dev);
 	if (ret)
-		goto out_free_mem;
+		goto release_fw;
 
 	ret = m10mo_chip_erase_flash(m10mo_dev);
 	if (ret) {
 		dev_err(&client->dev, "Erase failed\n");
-		goto out_free_mem;
+		goto release_fw;
 	}
 
 	if (m10mo_dev->spi && m10mo_dev->spi->spi_enabled) {
-		m10mo_sio_write(m10mo_dev, buf);
+		ret = m10mo_sio_write(m10mo_dev, (u8 *)fw->data);
+		if (ret) {
+			dev_err(&client->dev, "Flash write failed\n");
+			goto release_fw;
+		}
 	} else {
 		for (i = 0 ; i < FW_SIZE; i = i + FLASH_BLOCK_SIZE) {
-			dev_dbg(&client->dev, "Writing block %d\n", i);
+			dev_dbg(&client->dev, "Writing block %d\n", i / FLASH_BLOCK_SIZE);
 			ret = m10mo_flash_write_block(m10mo_dev,
-						      i, &buf[i],
+						      i, (u8 *)&fw->data[i],
 						      FLASH_BLOCK_SIZE);
 			if (ret) {
 				dev_err(&client->dev, "Flash write failed\n");
-				return ret;
+				goto release_fw;
 			}
-
 		}
 	}
-	dev_dbg(&client->dev, "Flashing done");
+
+	dev_info(&client->dev, "Flashing done");
 	msleep(50);
 
 	ret = 0;
-out_free_mem:
-	kfree(buf);
 
-out:
-	if (!IS_ERR(fp))
-		filp_close(fp, current->files);
-
-	set_fs(old_fs);
+release_fw:
+	release_firmware(fw);
 	return ret;
 }
 
