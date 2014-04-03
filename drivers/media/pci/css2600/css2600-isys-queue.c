@@ -253,6 +253,8 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 {
 	struct css2600_isys_queue *aq = vb2_queue_to_css2600_isys_queue(q);
 	struct css2600_isys_video *av = css2600_isys_queue_to_video(aq);
+	struct css2600_isys_buffer *ib = NULL;
+	struct vb2_buffer *vb;
 	unsigned long flags;
 	int rval;
 
@@ -267,16 +269,29 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	av->isys->pipes[av->ip.source] = &av->ip;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
 
-	rval = css2600_isys_video_set_streaming(av, 1);
+	spin_lock_irqsave(&aq->lock, flags);
+	if (!list_empty(&aq->incoming)) {
+		ib = list_last_entry(&aq->incoming,
+				     struct css2600_isys_buffer, head);
+		vb = css2600_isys_buffer_to_vb2_buffer(ib);
+
+		list_del(&ib->head);
+		list_add(&ib->head, &aq->active);
+		dev_dbg(&av->isys->adev->dev,
+			"pre-queueing buffer %u/%p from incoming\n",
+			vb->v4l2_buf.index, ib);
+	}
+	spin_unlock_irqrestore(&aq->lock, flags);
+
+	rval = css2600_isys_video_set_streaming(av, 1, ib);
 	if (rval)
 		goto out_pipe_null;
 
 	spin_lock_irqsave(&aq->lock, flags);
 	while (!list_empty(&aq->incoming)) {
-		struct css2600_isys_buffer *ib =
-			list_last_entry(&aq->incoming,
-					struct css2600_isys_buffer, head);
-		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
+		ib = list_last_entry(&aq->incoming,
+				     struct css2600_isys_buffer, head);
+		vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
 		list_del(&ib->head);
 
@@ -296,7 +311,14 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	return 0;
 
 out_pipe_null:
-	css2600_isys_video_set_streaming(av, 0);
+	spin_lock_irqsave(&aq->lock, flags);
+	if (ib) {
+		list_del(&ib->head);
+		list_add(&ib->head, &aq->incoming);
+	}
+	spin_unlock_irqrestore(&aq->lock, flags);
+
+	css2600_isys_video_set_streaming(av, 0, NULL);
 	spin_lock_irqsave(&av->isys->lock, flags);
 	av->isys->pipes[av->ip.source] = NULL;
 	spin_unlock_irqrestore(&av->isys->lock, flags);
@@ -327,7 +349,7 @@ static int stop_streaming(struct vb2_queue *q)
 
 	flush_workqueue(aq->wq);
 
-	css2600_isys_video_set_streaming(av, 0);
+	css2600_isys_video_set_streaming(av, 0, NULL);
 
 	spin_lock_irqsave(&aq->lock, flags);
 	while (!list_empty(&aq->incoming)) {

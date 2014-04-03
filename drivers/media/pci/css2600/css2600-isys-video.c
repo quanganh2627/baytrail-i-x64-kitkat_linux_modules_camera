@@ -192,7 +192,8 @@ static int link_validate(struct media_link *link)
 }
 
 /* Create stream and start it using the CSS library API. */
-static int start_stream_firmware(struct css2600_isys_video *av)
+static int start_stream_firmware(struct css2600_isys_video *av,
+				 struct css2600_isys_buffer *ib)
 {
 	struct ia_css_isys_stream_cfg_data stream_cfg = {
 		.vc = 0,
@@ -226,7 +227,31 @@ static int start_stream_firmware(struct css2600_isys_video *av)
 		 },
 		.src = av->ip.source,
 	};
+	struct ia_css_isys_frame_buff_set buf = {
+		.output_pins = {
+			{
+				.info.type_specifics.dt =
+					av->pfmt->mipi_data_type,
+				.info.pt = IA_CSS_ISYS_PIN_TYPE_RAW_NS,
+				.info.output_res = {
+					.width = av->pix.width,
+					.height = av->pix.height,
+				},
+			}
+		},
+		.send_irq_sof = 1,
+		.send_irq_eof = 1,
+	};
+	struct ia_css_isys_frame_buff_set *__buf = NULL;
 	int rval;
+
+	if (ib) {
+		struct vb2_buffer *vb = css2600_isys_buffer_to_vb2_buffer(ib);
+
+		buf.output_pins[0].payload.addr =
+			*(dma_addr_t *)vb2_plane_cookie(vb, 0);
+		__buf = &buf;
+	}
 
 	reinit_completion(&av->ip.stream_open_completion);
 	rval = -ia_css_isys_stream_open(av->isys->ssi, av->ip.source,
@@ -241,8 +266,7 @@ static int start_stream_firmware(struct css2600_isys_video *av)
 	dev_dbg(&av->isys->adev->dev, "stream open complete\n");
 
 	reinit_completion(&av->ip.stream_start_completion);
-	rval = -ia_css_isys_stream_start(av->isys->ssi, av->ip.source,
-					 NULL);
+	rval = -ia_css_isys_stream_start(av->isys->ssi, av->ip.source, __buf);
 	if (rval < 0) {
 		dev_dbg(&av->isys->adev->dev, "can't start streaning (%d)\n",
 			rval);
@@ -293,7 +317,8 @@ static void stop_streaming_firmware(struct css2600_isys_video *av)
 }
 
 int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
-				     unsigned int state)
+				     unsigned int state,
+				     struct css2600_isys_buffer *ib)
 {
 	struct media_entity_graph graph;
 	struct media_entity *entity, *entity2;
@@ -382,7 +407,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 
 	/* Oh crap */
 	if (state) {
-		rval = start_stream_firmware(av);
+		rval = start_stream_firmware(av, ib);
 		if (rval)
 			goto out_media_entity_stop_streaming;
 	} else {
