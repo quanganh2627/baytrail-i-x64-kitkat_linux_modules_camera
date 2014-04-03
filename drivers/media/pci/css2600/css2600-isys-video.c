@@ -283,7 +283,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 	rval = v4l2_subdev_call(media_entity_to_v4l2_subdev(av->ip.external),
 				video, s_stream, state);
 	if (rval && state)
-		goto out_media_entity_pipeline_stop;
+		goto out_media_entity_stop_streaming;
 
 	if (!state)
 		media_entity_pipeline_stop(&av->vdev.entity);
