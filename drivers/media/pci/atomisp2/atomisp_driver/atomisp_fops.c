@@ -369,15 +369,18 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 
 
 	if (asd->params.curr_grid_info.s3a_grid.enable) {
-		if (css_capture_pipe_id == asd->params.s3a_enabled_pipe)
+		if (css_capture_pipe_id < CSS_PIPE_ID_NUM &&
+		    css_capture_pipe_id == asd->params.s3a_enabled_pipe)
 			atomisp_q_s3a_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
 					css_capture_pipe_id);
-		if (css_preview_pipe_id == asd->params.s3a_enabled_pipe)
+		if (css_preview_pipe_id < CSS_PIPE_ID_NUM &&
+		    css_preview_pipe_id == asd->params.s3a_enabled_pipe)
 			atomisp_q_s3a_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
 					css_preview_pipe_id);
-		if (css_video_pipe_id == asd->params.s3a_enabled_pipe)
+		if (css_video_pipe_id < CSS_PIPE_ID_NUM &&
+		    css_video_pipe_id == asd->params.s3a_enabled_pipe)
 			atomisp_q_s3a_buffers_to_css(asd,
 					ATOMISP_INPUT_STREAM_GENERAL,
 					css_video_pipe_id);
