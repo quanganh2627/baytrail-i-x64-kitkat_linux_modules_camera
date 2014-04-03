@@ -427,7 +427,7 @@ static int ov8858_g_priv_int_data(struct v4l2_subdev *sd,
 {
 	u32 size;
 	/* TODO: Need to add reading of OTP data here */
-	void *b = 0;/*le24l042cs_read(v4l2_get_subdevdata(sd), &size);*/
+	void *b = NULL; /*le24l042cs_read(v4l2_get_subdevdata(sd), &size);*/
 	int r = 0;
 
 	if (!b)
@@ -512,7 +512,7 @@ static int power_up(struct v4l2_subdev *sd)
 
 	/* Minumum delay is 8192 clock cycles before first i2c transaction,
 	 * which is 1.37 ms at the lowest allowed clock rate 6 MHz */
-	msleep(2);
+	usleep_range(2000, 2500);
 	return 0;
 
 fail_gpio:
@@ -1544,8 +1544,8 @@ static int __ov8858_s_frame_interval(struct v4l2_subdev *sd,
 
 	if (res->fps_options[fps_index].regs &&
 	    res->fps_options[fps_index].regs != dev->regs) {
-		dev_err(&client->dev, "Sensor is streaming, "\
-				      "cannot apply new configuration\n");
+		dev_err(&client->dev,
+			"Sensor is streaming, can't apply new configuration\n");
 		return -EBUSY;
 	}
 

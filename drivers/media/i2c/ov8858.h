@@ -291,7 +291,7 @@ extern int dw9718_t_vcm_timing(struct v4l2_subdev *sd, s32 value);
 extern int vcm_power_up(struct v4l2_subdev *sd);
 extern int vcm_power_down(struct v4l2_subdev *sd);
 
-struct ov8858_vcm ov8858_vcms[] = {
+static struct ov8858_vcm ov8858_vcms[] = {
 	[OV8858_SUNNY] = {
 		.power_up = dw9718_vcm_power_up,
 		.power_down = dw9718_vcm_power_down,
