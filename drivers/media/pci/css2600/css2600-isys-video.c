@@ -266,7 +266,7 @@ static int start_stream_firmware(struct css2600_isys_video *av,
 	dev_dbg(&av->isys->adev->dev, "stream open complete\n");
 
 	reinit_completion(&av->ip.stream_start_completion);
-	rval = -ia_css_isys_stream_start(av->isys->ssi, av->ip.source, __buf);
+	rval = -ia_css_isys_stream_start(av->isys->ssi, av->ip.source, NULL);
 	if (rval < 0) {
 		dev_dbg(&av->isys->adev->dev, "can't start streaning (%d)\n",
 			rval);
@@ -276,7 +276,26 @@ static int start_stream_firmware(struct css2600_isys_video *av,
 	wait_for_completion(&av->ip.stream_start_completion);
 	dev_dbg(&av->isys->adev->dev, "stream start complete\n");
 
+	rval = -ia_css_isys_stream_capture_indication(av->isys->ssi,
+						      av->ip.source, &buf);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev,
+			"capture indication failed (%d)\n", rval);
+		goto out_stream_stop;
+	}
+
 	return 0;
+
+out_stream_stop:
+	reinit_completion(&av->ip.stream_stop_completion);
+	rval = -ia_css_isys_stream_stop(av->isys->ssi, av->ip.source);
+	if (rval < 0) {
+		dev_dbg(&av->isys->adev->dev, "can't stop stream (%d)\n",
+			rval);
+	} else {
+		wait_for_completion(&av->ip.stream_stop_completion);
+		dev_dbg(&av->isys->adev->dev, "stream stop complete\n");
+	}
 
 out_stream_close:
 	reinit_completion(&av->ip.stream_close_completion);
