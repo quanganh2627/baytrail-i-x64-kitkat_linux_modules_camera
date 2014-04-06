@@ -65,6 +65,9 @@
 #define M10MO_MEMORY_READ_32BIT		0x07
 #define M10MO_MEMORY_WRITE_32BIT	0x08
 
+#define CAPTURE_FORMAT_YUV422		0x00
+#define CAPTURE_FORMAT_JPEG8		0x01
+
 struct m10mo_spi {
 	int spi_enabled;
 	struct spi_device *spi_device;

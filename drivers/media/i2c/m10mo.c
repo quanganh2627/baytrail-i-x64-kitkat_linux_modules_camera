@@ -43,8 +43,6 @@
 #include <media/v4l2-device.h>
 #include "m10mo.h"
 
-#define M10MO_FORMAT	V4L2_MBUS_FMT_UYVY8_1X16
-
 /*
  * m10mo_read -  I2C read function
  * @reg: combination of size, category and command for the I2C packet
@@ -550,6 +548,7 @@ static int m10mo_single_capture_process(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
+	u32 fmt;
 
 	/* Select frame */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
@@ -559,8 +558,11 @@ static int m10mo_single_capture_process(struct v4l2_subdev *sd)
 		return ret;
 
 	/* Image format */
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM,
-			  CAPP_YUVOUT_MAIN, CAPP_YUVOUT_MAIN);
+	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8)
+		fmt = CAPTURE_FORMAT_JPEG8;
+	else
+		fmt = CAPTURE_FORMAT_YUV422;
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_YUVOUT_MAIN, fmt);
 
 	if (ret)
 		return ret;
@@ -721,6 +723,7 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 				 struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int idx;
 
 	if (!fmt)
@@ -734,7 +737,14 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 
 	fmt->width = dev->curr_res_table[idx].width;
 	fmt->height = dev->curr_res_table[idx].height;
-	fmt->code = M10MO_FORMAT;
+
+	/* Check if the code asked is not supported by m10mo */
+	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
+		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16) {
+		dev_info(&client->dev,
+			"%s code set to V4L2_MBUS_FMT_UYVY8_1X16 \n", __func__);
+		fmt->code = V4L2_MBUS_FMT_UYVY8_1X16;
+	}
 	return 0;
 }
 
@@ -760,7 +770,7 @@ static int m10mo_get_mbus_fmt(struct v4l2_subdev *sd,
 
 	fmt->width = dev->curr_res_table[dev->fmt_idx].width;
 	fmt->height = dev->curr_res_table[dev->fmt_idx].height;
-	fmt->code = M10MO_FORMAT;
+	fmt->code = dev->format.code;
 
 	mutex_unlock(&dev->input_lock);
 
@@ -771,6 +781,7 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 			      struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
 	mutex_lock(&dev->input_lock);
@@ -778,6 +789,8 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	ret = __m10mo_try_mbus_fmt(sd, fmt);
 	if (ret)
 		goto out;
+
+	dev->format.code = fmt->code;
 
 	/* This will be set during the next stream on call */
 	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
@@ -787,6 +800,9 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	}
 
 out:
+	dev_info(&client->dev,
+		"%s index: %d width: %d, height: %d, code; 0x%x\n", __func__,
+		dev->fmt_idx, fmt->width, fmt->height, dev->format.code);
 	mutex_unlock(&dev->input_lock);
 	return ret;
 }
@@ -1032,10 +1048,12 @@ static int m10mo_enum_mbus_code(struct v4l2_subdev *sd,
 				  struct v4l2_subdev_fh *fh,
 				  struct v4l2_subdev_mbus_code_enum *code)
 {
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+
 	if (code->index)
 		return -EINVAL;
 
-	code->code = V4L2_MBUS_FMT_UYVY8_1X16;
+	code->code = dev->format.code;
 	return 0;
 }
 
