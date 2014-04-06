@@ -908,11 +908,22 @@ static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
+	u32 val;
 
-	dev_info(&client->dev," Width: %d, height: %d, command: 0x%x\n",
-		dev->curr_res_table[dev->fmt_idx].width,
+	dev_info(&client->dev,"%s mode: %d Width: %d, height: %d, cmd: 0x%x\n",
+		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
 		dev->curr_res_table[dev->fmt_idx].height,
 		dev->curr_res_table[dev->fmt_idx].command);
+
+	/* Check if m10mo already streaming @ required resolution */
+	ret = m10mo_readb(sd, CATEGORY_PARAM,  PARAM_MON_SIZE, &val);
+	if (ret)
+		goto out;
+
+	/* If mode is monitor mode and size same, do not configure again*/
+	if (dev->mode == M10MO_MONITOR_MODE &&
+		val == dev->curr_res_table[dev->fmt_idx].command)
+		return 0;
 
 	/*Change to Monitor Size (e,g. VGA) */
 	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
@@ -952,8 +963,8 @@ static int m10mo_set_still_capture(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
-	dev_info(&client->dev," Width: %d, height: %d, command: 0x%x\n",
-		dev->curr_res_table[dev->fmt_idx].width,
+	dev_info(&client->dev,"%s mode: %d width: %d, height: %d, cmd: 0x%x\n",
+		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
 		dev->curr_res_table[dev->fmt_idx].height,
 		dev->curr_res_table[dev->fmt_idx].command);
 
