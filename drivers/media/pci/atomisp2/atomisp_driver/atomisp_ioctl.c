@@ -436,6 +436,12 @@ const struct atomisp_format_bridge atomisp_output_fmts[] = {
 		.mbus_code = V4L2_MBUS_FMT_BGR565_2X8_LE,
 		.sh_fmt = CSS_FRAME_FORMAT_RGB565,
 		.description = "16 RGB 5-6-5"
+	},{
+		.pixelformat = V4L2_PIX_FMT_JPEG,
+		.depth = 8,
+		.mbus_code = V4L2_MBUS_FMT_JPEG_1X8,
+		.sh_fmt = CSS_FRAME_FORMAT_BINARY_8,
+		.description = "JPEG"
 	},
 };
 
