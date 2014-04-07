@@ -223,6 +223,7 @@ static irqreturn_t css2600_isr(int irq, void *priv)
 
 void css2600_msi_irq_init(struct pci_dev *dev)
 {
+	u32 val32;
 	u16 val16;
 
 	pci_read_config_dword(dev, CSS2401_REG_PCI_MSI_CAPID, &val32);
@@ -363,6 +364,8 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 	}
 
 	if (pdev->device == CSS2600_HW_MRFLD_2401) {
+		u32 val;
+
 		mmu_base[0] = isp->base + CSS2600_MRFLD_DATA_IOMMU_OFFSET;
 		mmu_base[1] = isp->base + CSS2600_MRFLD_ICACHE_IOMMU_OFFSET;
 		isp->isys_iommu = css2600_mmu_init(pdev, &pdev->dev, mmu_base, 2, 0);
@@ -392,6 +395,30 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 		writel(CSS2401_CSI_RECEIVER_SELECTION_INTEL,
 		       isp->base + CSS2401_REG_CSI_RECEIVER_SELECTION);
+
+		/* Ensure read/write combining is enabled. */
+		pci_read_config_dword(pdev, CSS2401_REG_PCI_I_CONTROL, &val);
+		val |= CSS2401_PCI_I_CONTROL_ENABLE_READ_COMBINING |
+			CSS2401_PCI_I_CONTROL_ENABLE_WRITE_COMBINING;
+		pci_write_config_dword(pdev, CSS2401_REG_PCI_I_CONTROL, val);
+
+		/*
+		 * Hardware bugs require setting CSI_HS_OVR_CLK_GATE_ON_UPDATE.
+		 * ANN/CHV: RCOMP updates do not happen when using CSI2+ path
+		 * and sensor sending "continuous clock".
+		 * TNG/ANN/CHV: MIPI packets are lost if the HS entry sequence
+		 * is missed, and IUNIT can hang.
+		 * For both issues, setting this bit is a workaround.
+		 */
+		pci_read_config_dword(pdev, CSS2401_REG_PCI_CSI_RCOMP_CONTROL,
+				      &val);
+		val |= CSS2401_PCI_CSI_HS_OVR_CLK_GATE_ON_UPDATE;
+		pci_write_config_dword(pdev, CSS2401_REG_PCI_CSI_RCOMP_CONTROL,
+				       val);
+		
+		pci_read_config_dword(pdev, CSS2401_REG_PCI_CSI_CONTROL, &val);
+		val |= CSS2401_PCI_CSI_CONTROL_PARPATHEN;
+		pci_write_config_dword(pdev, CSS2401_REG_PCI_CSI_CONTROL, val);
 	}
 
 	if (isp->pdev->device != CSS2600_HW_BXT_FPGA) {

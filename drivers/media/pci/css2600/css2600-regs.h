@@ -35,11 +35,43 @@
 #define CSS2401_REG_ISPSSPM0_IUNIT_POWER_MASK		0x3
 
 /* PCI config space registers for 2401 */
+#define CSS2401_REG_PCI_PMCS				0x84
 #define CSS2401_REG_PCI_MSI_CAPID			0x90
 #define CSS2401_PCI_MSI_CAPID_MSI_ENABLE_BIT		BIT(16)
+#define CSS2401_REG_PCI_MSI_ADDR			0x94
+#define CSS2401_REG_PCI_MSI_DATA			0x98
 #define CSS2401_REG_PCI_INTERRUPT_CTRL			0x9c
 #define CSS2401_PCI_INTERRUPT_CTRL_INTR_IER		BIT(24)
 #define CSS2401_PCI_INTERRUPT_CTRL_INTR_IIR		BIT(16)
+#define CSS2401_REG_PCI_CSI_ACCESS_CTRL_VIOL		0xd4
+#define CSS2401_REG_PCI_CSI_AFE_HS_CONTROL		0xdc
+#define CSS2401_REG_PCI_CSI_AFE_RCOMP_CONTROL		0xe0
+/*
+ * If cleared, the high speed clock going to the digital logic is gated when
+ * RCOMP update is happening. The clock is gated for a minimum of 100 nsec.
+ * If this bit is set, then the high speed clock is not gated during the
+ * update cycle.
+ */
+#define CSS2401_PCI_CSI_HS_OVR_CLK_GATE_ON_UPDATE	0x800000
+#define CSS2401_REG_PCI_CSI_CONTROL			0xe8
+#define CSS2401_PCI_CSI_CONTROL_PARPATHEN		BIT(24)
+#define CSS2401_REG_PCI_CSI_AFE_TRIM_CONTROL		0xe4
+#define CSS2401_REG_PCI_CSI_DEADLINE_CONTROL		0xec
+#define CSS2401_REG_PCI_CSI_RCOMP_CONTROL		0xf4
+#define CSS2401_REG_PCI_I_CONTROL			0xfc
+/*
+ * Enables the combining of adjacent 32-byte read requests to the same
+ * cache line. When cleared, each 32-byte read request is sent as a
+ * separate request on the IB interface.
+ */
+#define CSS2401_PCI_I_CONTROL_ENABLE_READ_COMBINING	BIT(0)
+
+/*
+ * Enables the combining of adjacent 32-byte write requests to the same
+ * cache line. When cleared, each 32-byte write request is sent as a
+ * separate request on the IB interface.
+ */
+#define CSS2401_PCI_I_CONTROL_ENABLE_WRITE_COMBINING	BIT(1)
 
 /* Iunit 2401 MMIO registers */
 #define CSS2401_REG_CSI_RECEIVER_SELECTION		0x8081c
