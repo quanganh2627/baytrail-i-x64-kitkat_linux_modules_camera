@@ -305,9 +305,6 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 
 	css2600_wrapper_init(isp->base, isp->fw);
 
-	writel(CSS2401_CSI_RECEIVER_SELECTION_INTEL,
-	       isp->base + CSS2401_REG_CSI_RECEIVER_SELECTION);
-
 	if (pdev->device == CSS2600_HW_BXT) {
 		isp->buttress = css2600_buttress_init(pdev, &pdev->dev, isp->base, 0);
 		rval = PTR_ERR(isp->buttress);
@@ -392,6 +389,9 @@ static int css2600_pci_probe(struct pci_dev *pdev,
 		rval = PTR_ERR(isp->psys);
 		if (rval < 0)
 			goto out_css2600_bus_del_devices;
+
+		writel(CSS2401_CSI_RECEIVER_SELECTION_INTEL,
+		       isp->base + CSS2401_REG_CSI_RECEIVER_SELECTION);
 	}
 
 	if (isp->pdev->device != CSS2600_HW_BXT_FPGA) {
