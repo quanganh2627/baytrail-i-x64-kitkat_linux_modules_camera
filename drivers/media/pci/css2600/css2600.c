@@ -185,7 +185,7 @@ static irqreturn_t css2600_isr(int irq, void *priv)
 
 		pci_read_config_dword(isp->pdev,
 				      CSS2401_REG_PCI_INTERRUPT_CTRL, &val);
-		val |= 1 << CSS2401_PCI_INTERRUPT_CTRL_INTR_IIR;
+		val |= CSS2401_PCI_INTERRUPT_CTRL_INTR_IIR;
 		pci_write_config_dword(isp->pdev,
 				       CSS2401_REG_PCI_INTERRUPT_CTRL, val);
 
@@ -223,20 +223,19 @@ static irqreturn_t css2600_isr(int irq, void *priv)
 
 void css2600_msi_irq_init(struct pci_dev *dev)
 {
-	u32 val32;
 	u16 val16;
 
 	pci_read_config_dword(dev, CSS2401_REG_PCI_MSI_CAPID, &val32);
-	val32 |= 1 << CSS2401_PCI_MSI_CAPID_MSI_ENABLE_BIT;
-	pci_write_config_dword(dev, CSS2401_REG_PCI_MSI_CAPID, val32);
+	pci_write_config_dword(dev, CSS2401_REG_PCI_MSI_CAPID,
+			       val32 | CSS2401_PCI_MSI_CAPID_MSI_ENABLE_BIT);
 
 	pci_write_config_dword(dev, CSS2401_REG_PCI_INTERRUPT_CTRL,
-			       (1 << CSS2401_PCI_INTERRUPT_CTRL_INTR_IIR) |
-			       (1 << CSS2401_PCI_INTERRUPT_CTRL_INTR_IER));
+			       CSS2401_PCI_INTERRUPT_CTRL_INTR_IIR |
+			       CSS2401_PCI_INTERRUPT_CTRL_INTR_IER);
 
 	pci_read_config_word(dev, PCI_COMMAND, &val16);
-	val16 |= (PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER |
-		  PCI_COMMAND_INTX_DISABLE);
+	val16 |= PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER |
+		PCI_COMMAND_INTX_DISABLE;
 	pci_write_config_word(dev, PCI_COMMAND, val16);
 }
 
