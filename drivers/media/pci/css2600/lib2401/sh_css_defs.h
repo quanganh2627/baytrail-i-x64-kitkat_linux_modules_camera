@@ -37,25 +37,11 @@
 #define CHECK_IF_SH_CSS_DEFS_INCLUDED
 
 #if defined(IS_ISP_2500_SYSTEM)
-#define ENABLE_SP1  /* Disabling this Macro excludes SP1 from the system */
-#define SWITCH_GACS_TO_SP1 /* Enabling this macro switches the GACs to SP1 */
+#define ENABLE_SP1		/* Disabling this Macro excludes SP1 from the system */
+#define SWITCH_GACS_TO_SP1	/* Enabling this macro switches the GACs to SP1 */
 
 #if !defined(ENABLE_SP1)
 #undef SWITCH_GACS_TO_SP1
-#endif
-
-/*	the below macro should make the code compile in the following way
-	if SWITCH_GACS_TO_SP1is defined compile the code only on SP1
-	if SWITCH_GACS_TO_SP1 not defined the code should compile only on SP0 */
-/* For now the code will always compile on SP0 as we are in the intermediate stage
-	but we will change it later as intented*/
-#if ((!defined(__SP1))||(defined(__SP1)&&defined(SWITCH_GACS_TO_SP1)))
-#define COMPILE_ON_EITHER_SP0_OR_SP1
-#endif
-
-/*This macro is for intermediate porting purposes will be removed in the final version*/
-#if ((!defined(__SP1)&&!defined(SWITCH_GACS_TO_SP1))||(defined(__SP1)&&defined(SWITCH_GACS_TO_SP1)))
-#define TEMP_COMPILE_ON_EITHER_SP0_OR_SP1
 #endif
 
 #endif /*defined(IS_ISP_2500_SYSTEM)*/

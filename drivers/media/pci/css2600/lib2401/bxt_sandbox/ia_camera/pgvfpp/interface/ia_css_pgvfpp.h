@@ -24,21 +24,34 @@
 
 #include "ia_css_program_group.h"
 
-extern ia_css_program_group_manifest_t *
-ia_camera_vfpp_opt_program_group_manifest_alloc(void);
+typedef struct ia_css_pgvfpp_param ia_css_pgvfpp_param_t;
+
+extern size_t
+ia_camera_sizeof_vfpp_opt_program_group_manifest(void);
+
+extern size_t
+ia_camera_sizeof_vfpp_full_program_group_manifest(void);
 
 extern ia_css_program_group_manifest_t *
-ia_camera_vfpp_full_program_group_manifest_alloc(void);
+ia_camera_vfpp_opt_program_group_manifest_get(void *blob);
+
+extern ia_css_program_group_manifest_t *
+ia_camera_vfpp_full_program_group_manifest_get(void *blob);
+
+extern size_t
+ia_camera_sizeof_vfpp_program_group_param(void);
 
 extern ia_css_program_group_param_t *
-ia_camera_vfpp_program_group_param_alloc(void);
+ia_camera_vfpp_program_group_param_get(void *blob);
 
-extern void *ia_camera_vfpp_cached_param_alloc(
+extern size_t
+ia_camera_sizeof_vfpp_cached_param(void);
+
+extern ia_css_pgvfpp_param_t *
+ia_camera_vfpp_cached_param_get(
+	void *blob,
 	ia_css_frame_descriptor_t *in_desc,
 	ia_css_frame_descriptor_t *out_desc);
-
-extern void ia_camera_vfpp_cached_param_free(void *param_type5);
-extern uint32_t ia_camera_sizeof_vfpp_cached_param(void);
 
 /* TODO: Add symmetic _free() api's if something special needs to be done for
  * each PG while being freed. Otherwise, use base program_group_free() */

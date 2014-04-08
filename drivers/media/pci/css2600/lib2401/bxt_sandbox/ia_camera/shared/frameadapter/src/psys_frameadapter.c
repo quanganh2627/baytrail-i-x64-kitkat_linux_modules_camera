@@ -36,5 +36,3 @@ void ia_css_psys_helper_framedesc_to_frameinfo(
 	info->raw_bit_depth = desc->bit_depth;
 	/* info->raw_bayer_order = ? */
 }
-
-

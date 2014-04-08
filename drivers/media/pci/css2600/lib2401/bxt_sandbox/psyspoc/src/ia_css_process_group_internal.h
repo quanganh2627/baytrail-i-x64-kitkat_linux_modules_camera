@@ -23,7 +23,6 @@
 #define __IA_CSS_PSYSAPI_H_INCLUDED__
 
 #include <type_support.h>
-#include <print_support.h>
 #include "ia_css_psys_system_global.h"
 #include "ia_css_program_group.h"
 #include "ia_css_process_group.h"
@@ -252,7 +251,6 @@ extern size_t ia_css_sizeof_terminal(
 extern int ia_css_terminal_set_type(
 	ia_css_terminal_t						*terminal,
 	const ia_css_terminal_type_t			terminal_type);
-
 
 extern uint8_t *ia_css_frame_get_buffer(
 	const ia_css_psys_frame_t				*frame);

@@ -27,8 +27,6 @@
 #include "isp/modes/interface/isp_const.h"
 #include "ia_css_pgvfpp_param_internal.h"
 
-#include "malloc.h"
-
 /* TODO: This needs to come from manifest compiler */
 #define PSYS_VFPPOPT_N_TERMINALS 		3
 #define PSYS_VFPPOPT_N_PROGRAMS			1
@@ -69,8 +67,15 @@ static uint32_t calc_deci_log_factor(
 	return binary_grid_deci_factor_log2(s3a_isp_width, sc_3a_dis_height);
 }
 
+size_t
+ia_camera_sizeof_vfpp_opt_program_group_manifest(void)
+{
+	return ia_css_sizeof_program_group_manifest(PSYS_VFPPOPT_N_PROGRAMS,
+		PSYS_VFPPOPT_N_TERMINALS);
+}
+
 ia_css_program_group_manifest_t *
-ia_camera_vfpp_opt_program_group_manifest_alloc(void)
+ia_camera_vfpp_opt_program_group_manifest_get(void *blob)
 {
 	ia_css_program_group_manifest_t *prg_group_manifest;
 	ia_css_program_manifest_t *prg_manifest;
@@ -78,21 +83,29 @@ ia_camera_vfpp_opt_program_group_manifest_alloc(void)
 	uint32_t program_count;
 	uint32_t terminal_count;
 
+	assert(blob != NULL);
+
+	prg_group_manifest = (ia_css_program_group_manifest_t *)blob;
+	memset(prg_group_manifest, 0,
+		ia_camera_sizeof_vfpp_opt_program_group_manifest());
 	program_count = PSYS_VFPPOPT_N_PROGRAMS;
 	terminal_count = PSYS_VFPPOPT_N_TERMINALS;
-	prg_group_manifest = ia_css_program_group_manifest_alloc(
+	ia_css_program_group_manifest_init(
+		blob,
 		program_count,
 		terminal_count);
 
 	prg_group_manifest->ID = PSYS_VFPPOPT_PROGRAM_GROUP_ID;
 
 	/* Program manifest */
-	prg_manifest = prg_group_manifest->program_manifest[0];
+	prg_manifest = ia_css_program_group_manifest_get_program_manifest(
+		prg_group_manifest, 0);
 	prg_manifest->ID = PSYS_VFPPOPT_PROGRAM_GROUP_ID;
 	prg_manifest->cell_type_id = VIED_NCI_VP_TYPE_ID;
 
 	/* Input terminal */
-	terminal_manifest = prg_group_manifest->terminal_manifest[0];
+	terminal_manifest = ia_css_program_group_manifest_get_terminal_manifest(
+		prg_group_manifest, 0);
 	terminal_manifest->terminal_type = IA_CSS_TERMINAL_TYPE_DATA_IN;
 	terminal_manifest->frame_format_bitmap	= IA_CSS_FRAME_FORMAT_YUV_LINE;
 
@@ -104,24 +117,36 @@ ia_camera_vfpp_opt_program_group_manifest_alloc(void)
 #endif
 
 	/* Output terminal */
-	terminal_manifest = prg_group_manifest->terminal_manifest[1];
+	terminal_manifest = ia_css_program_group_manifest_get_terminal_manifest(
+		prg_group_manifest, 1);
 	terminal_manifest->terminal_type = IA_CSS_TERMINAL_TYPE_DATA_OUT;
 	terminal_manifest->frame_format_bitmap = IA_CSS_FRAME_FORMAT_YUV420;
 
 	/* Cached Param terminal */
-	terminal_manifest = prg_group_manifest->terminal_manifest[2];
+	terminal_manifest = ia_css_program_group_manifest_get_terminal_manifest(
+		prg_group_manifest, 2);
 	terminal_manifest->terminal_type = IA_CSS_TERMINAL_TYPE_PARAM_CACHED;
 
 	return prg_group_manifest;
 }
 
+size_t
+ia_camera_sizeof_vfpp_program_group_param(void)
+{
+	return ia_css_sizeof_program_group_param(PSYS_VFPPOPT_N_PROGRAMS, 1);
+}
+
 ia_css_program_group_param_t *
-ia_camera_vfpp_program_group_param_alloc(void)
+ia_camera_vfpp_program_group_param_get(void *blob)
 {
 	ia_css_program_group_param_t *prg_group_param;
 
-	prg_group_param = ia_css_program_group_param_alloc(1, 1);
-	assert(prg_group_param);
+	assert(blob != NULL);
+
+	prg_group_param = (ia_css_program_group_param_t *)blob;
+	memset(prg_group_param, 0, ia_camera_sizeof_vfpp_program_group_param());
+	ia_css_program_group_param_init(blob,
+		PSYS_VFPPOPT_N_PROGRAMS, 1);
 
 	/* param->kernel_enable_bitmap =
 		ENABLE_DS | ENABLE_OUTPUT | ENABLE_PARAMS; */
@@ -129,18 +154,28 @@ ia_camera_vfpp_program_group_param_alloc(void)
 	return prg_group_param;
 }
 
-void *ia_camera_vfpp_cached_param_alloc(
+size_t
+ia_camera_sizeof_vfpp_cached_param(void)
+{
+	return sizeof(ia_css_pgvfpp_param_t);
+}
+
+ia_css_pgvfpp_param_t *
+ia_camera_vfpp_cached_param_get(
+	void *blob,
 	ia_css_frame_descriptor_t *in_desc,
 	ia_css_frame_descriptor_t *out_desc)
 {
-	struct ia_css_pgvfpp_param *param = NULL;
+	ia_css_pgvfpp_param_t *param = NULL;
 
 	if(in_desc == NULL || out_desc == NULL) {
 		return NULL;
 	}
 
+	assert(blob != NULL);
+	param = (ia_css_pgvfpp_param_t *)blob;
+
 	/* replace with relevant callbacks */
-	param = calloc(1, sizeof(struct ia_css_pgvfpp_param));
 	if(param != NULL) {
 		param->isp_pipe_version = 1;
 		param->required_bds_factor = SH_CSS_BDS_FACTOR_1_00;
@@ -176,15 +211,4 @@ void *ia_camera_vfpp_cached_param_alloc(
 	}
 
 	return param;
-}
-
-void ia_camera_vfpp_cached_param_free(void *param_type5)
-{
-	if(param_type5)
-		free(param_type5);
-}
-
-uint32_t ia_camera_sizeof_vfpp_cached_param(void)
-{
-	return sizeof(struct ia_css_pgvfpp_param);
 }

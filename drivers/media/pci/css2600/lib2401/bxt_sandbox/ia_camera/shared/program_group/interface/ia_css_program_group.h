@@ -23,7 +23,6 @@
 #define __IA_CSS_PROGRAM_GROUP_H__
 
 #include "ia_css_frame_format.h"
-#include "print_support.h"
 #include "type_support.h"
 #include "ia_css_psys_system_global.h"
 #include "ia_css_frame_format.h"
@@ -79,7 +78,7 @@ typedef struct ia_css_program_manifest			ia_css_program_manifest_t;
 struct ia_css_program_group_param {
 	uint16_t							fragment_count;
 	uint8_t								program_count;
-	ia_css_program_param_t				**program_param;
+	uint32_t							program_param_offset;
 };
 
 /* public */
@@ -104,8 +103,8 @@ struct ia_css_program_group_manifest {
 	ia_css_program_group_ID_t			ID;												/**< Referal ID to program group FW */
 	uint8_t								program_count;									/**< Total number of program in this program group */
 	uint8_t								terminal_count;									/**< Total number of terminals on this program group */
-	ia_css_program_manifest_t			**program_manifest;								/**< Array[program_count] of program manifests addresses in this program group */
-	ia_css_terminal_manifest_t			**terminal_manifest;							/**< Array[terminal_count] of terminal manifests addresses in this program group */
+	uint32_t							program_manifest_offset;
+	uint32_t							terminal_manifest_offset;
 };
 
 /* private */
@@ -119,8 +118,8 @@ struct ia_css_program_manifest {
 	vied_nci_resource_size_t			chn_size[VIED_NCI_N_DEV_CHN_ID];				/**< Device channel allocation size needs of this program */
 	uint8_t								program_dependency_count;						/**< Number of programs this program depends on */
 	uint8_t								terminal_dependency_count;						/**< Number of terminals this program depends on */
-	uint8_t								*program_dependencies;							/**< Array[program_dependency_count] of indices of programs that generate input */
-	uint8_t								*terminal_dependencies;							/**< Array[terminal_dependency_count] of indices of connected terminals */
+	uint32_t							program_dependency_offset;
+	uint32_t							terminal_dependency_offset;
 };
 
 struct ia_css_frame_descriptor {
@@ -147,6 +146,18 @@ struct ia_css_program_param {
 };
 
 
+extern size_t ia_css_program_group_param_get_size(
+	const ia_css_program_group_param_t *manifest);
+
+extern size_t ia_css_sizeof_program_group_param(
+	const uint8_t							program_count,
+	const uint16_t							fragment_count);
+
+extern void ia_css_program_group_param_init(
+	ia_css_program_group_param_t *blob,
+	const uint8_t	program_count,
+	const uint16_t	fragment_count);
+
 extern ia_css_program_group_param_t *ia_css_program_group_param_alloc(
 	const uint8_t							program_count,
 	const uint16_t							fragment_count);
@@ -154,14 +165,30 @@ extern ia_css_program_group_param_t *ia_css_program_group_param_alloc(
 extern ia_css_program_group_param_t *ia_css_program_group_param_free(
 	ia_css_program_group_param_t			*program_group_param);
 
-extern size_t ia_css_sizeof_program_group_manifest(
+extern size_t ia_css_program_group_manifest_get_size(
 	const ia_css_program_group_manifest_t	*manifest);
 
-extern ia_css_program_group_manifest_t *ia_css_program_group_manifest_alloc(
-	const uint8_t							program_count,
-	const uint8_t							terminal_count);
+extern size_t ia_css_sizeof_program_group_manifest(
+	const uint8_t program_count,
+	const uint8_t terminal_count);
 
-extern ia_css_program_group_manifest_t *ia_css_program_group_manifest_free(
-	ia_css_program_group_manifest_t			*manifest);
+extern void ia_css_program_group_manifest_init(
+	ia_css_program_group_manifest_t *blob,
+	const uint8_t	program_count,
+	const uint8_t	terminal_count);
+
+extern uint8_t ia_css_program_group_manifest_get_program_count(
+	const ia_css_program_group_manifest_t	*manifest);
+
+extern uint8_t ia_css_program_group_manifest_get_terminal_count(
+	const ia_css_program_group_manifest_t	*manifest);
+
+extern ia_css_program_manifest_t *ia_css_program_group_manifest_get_program_manifest(
+	const ia_css_program_group_manifest_t	*manifest,
+	const unsigned int						program_index);
+
+extern ia_css_terminal_manifest_t *ia_css_program_group_manifest_get_terminal_manifest(
+	const ia_css_program_group_manifest_t	*manifest,
+	const unsigned int						terminal_index);
 
 #endif /* __IA_CSS_PROGRAM_GROUP_H__ */

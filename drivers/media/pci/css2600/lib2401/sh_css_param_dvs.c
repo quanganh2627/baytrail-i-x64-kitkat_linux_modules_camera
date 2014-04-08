@@ -48,132 +48,108 @@ generate_dvs_6axis_table(const struct ia_css_resolution	*frame_res, const struct
 	assert(dvs_offset != NULL);
 	
 	dvs_config = (struct ia_css_dvs_6axis_config *)sh_css_malloc(sizeof(struct ia_css_dvs_6axis_config));
-	if(dvs_config == NULL)
-	{
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "out of memory\n");
+	if (dvs_config == NULL)	{
+		IA_CSS_ERROR("out of memory");
 		err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-	}
-	else
-	{	/*Initialize new struct with latest config settings*/	
+	} else {
+		/*Initialize new struct with latest config settings*/
 		dvs_config->width_y = width_y = DVS_TABLE_IN_BLOCKDIM_X_LUMA(frame_res->width);
 		dvs_config->height_y = height_y = DVS_TABLE_IN_BLOCKDIM_Y_LUMA(frame_res->height);
 		dvs_config->width_uv = width_uv = DVS_TABLE_IN_BLOCKDIM_X_CHROMA(frame_res->width / 2); /* UV = Y/2, depens on colour format YUV 4.2.0*/
 		dvs_config->height_uv = height_uv = DVS_TABLE_IN_BLOCKDIM_Y_CHROMA(frame_res->height / 2);/* UV = Y/2, depens on colour format YUV 4.2.0*/
 
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "generate_dvs_6axis_table: Env_X %d Env_Y %d\n",dvs_offset->width,dvs_offset->height);
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "generate_dvs_6axis_table Y: W %d H %d\n",width_y,height_y);
+		IA_CSS_LOG("Env_X=%d, Env_Y=%d, width_y=%d, height_y=%d",
+			   dvs_offset->width, dvs_offset->height, width_y, height_y);
 		/* Generate Y buffers  */
 		dvs_config->xcoords_y = (uint32_t *)sh_css_malloc( width_y * height_y * sizeof(uint32_t));	
-		if(dvs_config->xcoords_y == NULL)
-		{
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "out of memory\n");
+		if (dvs_config->xcoords_y == NULL) {
+			IA_CSS_ERROR("out of memory");
 			err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-		}
-		else
-		{
-			for(y = 0; y < height_y; y++)
-			{
-				for(x=0;x<width_y;x++)
-				{
-					dvs_config->xcoords_y[y*width_y + x] =  (  ( dvs_offset->width + x*DVS_BLOCKDIM_X) << DVS_COORD_FRAC_BITS );
+		} else {
+			for(y = 0; y < height_y; y++) {
+				for(x=0;x<width_y;x++) {
+					dvs_config->xcoords_y[y*width_y + x] = 
+						(dvs_offset->width + x*DVS_BLOCKDIM_X) << DVS_COORD_FRAC_BITS;
 				}
 			}
 		}
 
 		dvs_config->ycoords_y = (uint32_t *)sh_css_malloc( width_y * height_y * sizeof(uint32_t));
-		if(dvs_config->ycoords_y == NULL)
-		{
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "out of memory\n");
+		if (dvs_config->ycoords_y == NULL) {
+			IA_CSS_ERROR("out of memory");
 			err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-		}
-		else
-		{			
-			for(y = 0; y < height_y; y++)
-			{
-				for(x=0;x<width_y;x++)
-				{
-					dvs_config->ycoords_y[y*width_y + x] =  (  ( dvs_offset->height + y*DVS_BLOCKDIM_Y_LUMA) << DVS_COORD_FRAC_BITS );
+		} else {
+			for(y = 0; y < height_y; y++) {
+				for(x=0;x<width_y;x++) {
+					dvs_config->ycoords_y[y*width_y + x] =
+						(dvs_offset->height + y*DVS_BLOCKDIM_Y_LUMA) << DVS_COORD_FRAC_BITS;
 				}
 			}
 		}
-		
-		/* Generate UV buffers  */		
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "generate_dvs_6axis_table UV W %d H %d\n",width_uv,height_uv);
+
+		/* Generate UV buffers  */
+		IA_CSS_LOG("UV W %d H %d", width_uv, height_uv);
 		
 		dvs_config->xcoords_uv = (uint32_t *)sh_css_malloc( width_uv * height_uv * sizeof(uint32_t));	
-		if(dvs_config->xcoords_uv == NULL)
-		{
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "out of memory\n");
+		if (dvs_config->xcoords_uv == NULL) {
+			IA_CSS_ERROR("out of memory");
 			err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-		}
-		else
-		{			
-			for(y = 0; y < height_uv; y++)
-			{
-				for(x=0;x<width_uv;x++)
-				{	/* Envelope dimesions set in Ypixels hence offset UV = offset Y/2 */
-					dvs_config->xcoords_uv[y*width_uv + x] =  (  ( (dvs_offset->width / 2) + x*DVS_BLOCKDIM_X) << DVS_COORD_FRAC_BITS ); 
+		} else {
+			for(y = 0; y < height_uv; y++) {
+				for(x=0;x<width_uv;x++) {
+					/* Envelope dimesions set in Ypixels hence offset UV = offset Y/2 */
+					dvs_config->xcoords_uv[y*width_uv + x] =
+						((dvs_offset->width / 2) + x*DVS_BLOCKDIM_X) << DVS_COORD_FRAC_BITS;
 				}
 			}
 		}
 		    
 		dvs_config->ycoords_uv = (uint32_t *)sh_css_malloc( width_uv * height_uv * sizeof(uint32_t));
-		if(dvs_config->ycoords_uv == NULL)
-		{
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "out of memory\n");
+		if (dvs_config->ycoords_uv == NULL) {
+			IA_CSS_ERROR("out of memory");
 			err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-		}
-		else
-		{	
-			for(y = 0; y < height_uv; y++)
-			{
-				for(x=0;x<width_uv;x++)
-				{ 	/* Envelope dimesions set in Ypixels hence offset UV = offset Y/2 */
-					dvs_config->ycoords_uv[y*width_uv + x] =  (  ( (dvs_offset->height / 2) + y*DVS_BLOCKDIM_Y_CHROMA) << DVS_COORD_FRAC_BITS );
+		} else {
+			for(y = 0; y < height_uv; y++) {
+				for(x=0;x<width_uv;x++) {
+					/* Envelope dimesions set in Ypixels hence offset UV = offset Y/2 */
+					dvs_config->ycoords_uv[y*width_uv + x] =
+						((dvs_offset->height / 2) + y*DVS_BLOCKDIM_Y_CHROMA) << DVS_COORD_FRAC_BITS;
 				}
 			}
 		}
 		
 #if 0
-		for(y = 0; y < height_y; y++)
-		{
+		for(y = 0; y < height_y; y++) {
 			for(x=0;x<width_y;x++)
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "xcoords_y: %d \n",dvs_config->xcoords_y[y*width_y + x]);
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "\n");
+				IA_CSS_LOG("xcoords_y: %d", dvs_config->xcoords_y[y*width_y + x]);
+			IA_CSS_LOG("");
 		}
-		
-		for(y = 0; y < height_y; y++)
-		{
+
+		for(y = 0; y < height_y; y++) {
 			for(x=0;x<width_y;x++)
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ycoords_y: %d \n",dvs_config->ycoords_y[y*width_y + x]);
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "\n");
-		}	
-		
-				for(y = 0; y < height_y; y++)
-		{
-			for(x=0;x<width_uv;x++)
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "xcoords_uv: %d \n",dvs_config->xcoords_uv[y*width_uv + x]);
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "\n");
+				IA_CSS_LOG("ycoords_y: %d", dvs_config->ycoords_y[y*width_y + x]);
+			IA_CSS_LOG("");
 		}
-		
-		for(y = 0; y < height_uv; y++)
-		{
+
+		for(y = 0; y < height_y; y++) {
 			for(x=0;x<width_uv;x++)
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ycoords_uv: %d \n",dvs_config->ycoords_uv[y*width_uv + x]);
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "\n");
+				IA_CSS_LOG("xcoords_uv: %d",dvs_config->xcoords_uv[y*width_uv + x]);
+			IA_CSS_LOG("");
+		}
+
+		for(y = 0; y < height_uv; y++) {
+			for(x=0;x<width_uv;x++)
+				IA_CSS_LOG("ycoords_uv: %d",dvs_config->ycoords_uv[y*width_uv + x]);
+			IA_CSS_LOG("");
 		}				
 #endif		    
-		if (err != IA_CSS_SUCCESS)
-		{
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "generate_dvs_6axis_table: err %d\n, leave() ",(int)err);
+		if (err != IA_CSS_SUCCESS) {
 			free_dvs_6axis_table(&dvs_config); /* we might have allocated some memory, release this */
-		}
-		else
-		{
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "generate_dvs_6axis_table leave() , dvs_config %p\n",dvs_config);
+			dvs_config = NULL;
 		}
 	}
 	
+	IA_CSS_LEAVE("dvs_config=%p", dvs_config);
 	return dvs_config;
 }
 
@@ -185,7 +161,7 @@ free_dvs_6axis_table(struct ia_css_dvs_6axis_config  **dvs_6axis_config)
 
 	if( (dvs_6axis_config != NULL) && (*dvs_6axis_config != NULL) ) 
 	{
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "-> free_dvs_6axis_table dvs_6axis_config %p\n",(*dvs_6axis_config));
+		IA_CSS_ENTER_PRIVATE("dvs_6axis_config %p", (*dvs_6axis_config));
 		if((*dvs_6axis_config)->xcoords_y != NULL)
 		{
 			 sh_css_free((*dvs_6axis_config)->xcoords_y);
@@ -212,7 +188,7 @@ free_dvs_6axis_table(struct ia_css_dvs_6axis_config  **dvs_6axis_config)
 		}
 		
 		sh_css_free(*dvs_6axis_config);
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "<- free_dvs_6axis_table dvs_6axis_config %p\n",(*dvs_6axis_config));
+		IA_CSS_LEAVE_PRIVATE("dvs_6axis_config %p", (*dvs_6axis_config));
 		*dvs_6axis_config = NULL;
 	}
 }
@@ -263,28 +239,22 @@ enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *
 	struct dvs_stat_mv_entry_public *p_host_entry;
 	struct dvs_stat_mv_private *p_isp_entry;
 
-	dvs_stat_mv_p =
-		(dvs_stat_private_motion_vec_t*)
-			sh_css_malloc(sizeof(dvs_stat_private_motion_vec_t));
-	if(dvs_stat_mv_p == NULL)
-	{
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_get_skc_dvs_statistics() malloc error\n");
+	IA_CSS_ENTER_PRIVATE("host_stats=%p, isp_stats=%p", host_stats, isp_stats);
+
+	dvs_stat_mv_p =	(dvs_stat_private_motion_vec_t*)
+			  sh_css_malloc(sizeof(dvs_stat_private_motion_vec_t));
+	if (dvs_stat_mv_p == NULL) {
+		IA_CSS_ERROR("out of memory");
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 	}
 
 	dvs_stat_ddr_addr = (hrt_vaddress) &raw_buffer_p->dvs_motion_vec;
 	dvs_stat_cfg_ddr_addr = (hrt_vaddress) &raw_buffer_p->dvs_stat_cfg;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_get_skc_dvs_statistics() enter: "
-			"host_stats=%p, isp_stats=%p\n",
-			host_stats, isp_stats);
-
 	mmgr_load(dvs_stat_ddr_addr,
 			(void*)dvs_stat_mv_p,
 			sizeof(dvs_stat_private_motion_vec_t));
-
 
 	/* Load configuration */
 	mmgr_load(dvs_stat_cfg_ddr_addr,
@@ -337,9 +307,7 @@ enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *
 
 	free(dvs_stat_mv_p);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_get_skc_dvs_statistics() leave: return_void\n");
-
+	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 	return IA_CSS_SUCCESS;
 }
 #endif

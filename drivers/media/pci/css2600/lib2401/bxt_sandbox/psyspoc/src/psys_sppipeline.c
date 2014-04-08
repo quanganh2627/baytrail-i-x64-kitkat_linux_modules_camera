@@ -37,6 +37,11 @@
 
 #include "memory_access.h"
 
+#define IA_CSS_INCLUDE_CONFIGURATIONS
+#include "ia_css_isp_configs.h"
+#define IA_CSS_INCLUDE_STATES
+#include "ia_css_isp_states.h"
+
 static struct ia_css_binary_xinfo *get_binary_xinfo(
 	const ia_css_process_group_t *process_group)
 {
@@ -348,6 +353,17 @@ static void construct_ispstage(
 		0, &in_info, NULL, ptr_out_info, NULL,
 		binary, &dvs_env, -1, false);
 	ia_css_init_memory_interface(&mem_if, &binary->mem_params, &binary->css_params);
+
+	/* Configure ISP via ISP specific host side functions.
+	TODO: Add other host configure's here. */
+	ia_css_iterator_configure (binary, &in_info);
+	ia_css_output0_configure(binary, &out_info);
+	ia_css_output_configure(binary, &out_info);
+
+	for (i = 0; i < IA_CSS_NUM_STATE_IDS; i++) {
+		ia_css_kernel_init_state[i](binary);
+	}
+
 	err = ia_css_isp_param_copy_isp_mem_if_to_ddr(
 		&binary->css_params,
 		&binary->mem_params,
@@ -398,7 +414,7 @@ hrt_vaddress ia_css_psys_sppipeline_cmd_create(
 
 	/* Create SP stage */
 	param_addr =
-		(hrt_vaddress) &((ia_css_psysapi_cmd_t *)cmd_ptr)->params;
+		(hrt_vaddress) &((ia_css_psysapi_cmd_t *)cmd_ptr)->isp_param_info;
 	construct_spstage(
 		process_group,
 		&temp_cmd.sp_stage,
@@ -419,7 +435,7 @@ hrt_vaddress ia_css_psys_sppipeline_cmd_create(
 
 	temp_cmd.uds_params[0].uds = param.uds;
 	temp_cmd.uds_params[0].crop_pos = param.sp_out_crop_pos;
-	temp_cmd.params.isp_param =
+	temp_cmd.isp_param_info.mem_map.isp_param =
 		(hrt_vaddress) &((ia_css_psysapi_cmd_t *)cmd_ptr)->uds_params[0];
 	temp_cmd.cookie = (void *) process_group;
 

@@ -20,15 +20,54 @@
  */
 
 #include "math_support.h"
+#include "sh_css_defs.h"
 #include "ia_css_types.h"
 #include "ia_css_xnr3.host.h"
 
-#define WORD_MAX 0x7FFF
-#define MIN_SIGMA 0.01
+/* Maximum value for alpha */
+#define XNR_MAX_ALPHA  ((1 << (ISP_VEC_ELEMBITS-1)) - 1)
+#define XNR_MIN_SIGMA  (0.01)
 
-/*TEMP FIX FOR COMPILATION WARNINGS FOR MIN FUNCTION
-  PROPER HEADER FILE WILL BE INCLUDED LATER*/
-#define MIN(X,Y) (X<Y?X:Y)
+/*
+ * Compute an alpha value for the ISP kernel from sigma value on the host
+ * parameter interface as: scale * 1/sigma
+ */
+static int
+compute_alpha(double sigma)
+{
+	int alpha;
+	if (sigma < XNR_MIN_SIGMA)
+	{
+		alpha = XNR_MAX_ALPHA;
+	}
+	else
+	{
+		/* The scale factor here must be the same as on the ISP. The
+		 * reference code (ATE) is not as precise as possible because
+		 * it rounds 1/sigma to an integer, and then does the scaling.
+		 * Better would be:
+		 * alpha = (int)(XNR_ALPHA_SCALE_FACTOR / sigma);
+		 */
+		alpha = XNR_ALPHA_SCALE_FACTOR * (int)(1 / sigma);
+		if (alpha > XNR_MAX_ALPHA)
+		{
+			alpha = XNR_MAX_ALPHA;
+		}
+	}
+
+	return alpha;
+}
+
+/*
+ * Compute the scaled coring value for the ISP kernel from the value on the
+ * host parameter interface.
+ */
+static int
+compute_coring(double coring)
+{
+	return (int)((coring * XNR_CORING_SCALE_FACTOR) + 0.5);
+}
+
 
 void
 ia_css_xnr3_encode(
@@ -44,30 +83,29 @@ ia_css_xnr3_encode(
 	to->sigma_p.sgm1_u = (int)from->sigma_p.sgm1_u;
 	to->sigma_p.sgm0_v = (int)from->sigma_p.sgm0_v;
 	to->sigma_p.sgm1_v = (int)from->sigma_p.sgm1_v;
-	/*Alpha's are represented in q11.5 format*/
-	to->alpha_p.alpha0_y = (from->sigma_p.sgm0_y<MIN_SIGMA) ? WORD_MAX : MIN(((int)(32*((int)(1/from->sigma_p.sgm0_y)))),WORD_MAX);
-	to->alpha_p.alpha1_y = (from->sigma_p.sgm1_y<MIN_SIGMA) ? WORD_MAX : MIN(((int)(32*((int)(1/from->sigma_p.sgm1_y)))),WORD_MAX);
-	to->alpha_p.alpha0_u = (from->sigma_p.sgm0_u<MIN_SIGMA) ? WORD_MAX : MIN(((int)(32*((int)(1/from->sigma_p.sgm0_u)))),WORD_MAX);
-	to->alpha_p.alpha1_u = (from->sigma_p.sgm1_u<MIN_SIGMA) ? WORD_MAX : MIN(((int)(32*((int)(1/from->sigma_p.sgm1_u)))),WORD_MAX);
-	to->alpha_p.alpha0_v = (from->sigma_p.sgm0_v<MIN_SIGMA) ? WORD_MAX : MIN(((int)(32*((int)(1/from->sigma_p.sgm0_v)))),WORD_MAX);
-	to->alpha_p.alpha1_v = (from->sigma_p.sgm1_v<MIN_SIGMA) ? WORD_MAX : MIN(((int)(32*((int)(1/from->sigma_p.sgm1_v)))),WORD_MAX);
+
+	/* alpha's are represented in qN.5 format */
+	to->alpha_p.alpha0_y = compute_alpha(from->sigma_p.sgm0_y);
+	to->alpha_p.alpha1_y = compute_alpha(from->sigma_p.sgm1_y);
+	to->alpha_p.alpha0_u = compute_alpha(from->sigma_p.sgm0_u);
+	to->alpha_p.alpha1_u = compute_alpha(from->sigma_p.sgm1_u);
+	to->alpha_p.alpha0_v = compute_alpha(from->sigma_p.sgm0_v);
+	to->alpha_p.alpha1_v = compute_alpha(from->sigma_p.sgm1_v);
 
 	to->alpha_p.alpha10_y = adjust_factor*(to->alpha_p.alpha1_y-to->alpha_p.alpha0_y)/kernel_size;
 	to->alpha_p.alpha10_u = adjust_factor*(to->alpha_p.alpha1_u-to->alpha_p.alpha0_u)/kernel_size;
 	to->alpha_p.alpha10_v = adjust_factor*(to->alpha_p.alpha1_v-to->alpha_p.alpha0_v)/kernel_size;
 
-	/*coring parameters are expressed in q1.15 format*/
-	to->coring_p.m_CnrCoringU0 = (int) (from->coring_p.m_CnrCoringU0 * (1<<15) + 0.5);
-	to->coring_p.m_CnrCoringU1 = (int) (from->coring_p.m_CnrCoringU1 * (1<<15) + 0.5);
-	to->coring_p.m_CnrCoringV0 = (int) (from->coring_p.m_CnrCoringV0 * (1<<15) + 0.5);
-	to->coring_p.m_CnrCoringV1 = (int) (from->coring_p.m_CnrCoringV1 * (1<<15) + 0.5);
+	/* coring parameters are expressed in q1.NN format */
+	to->coring_p.m_CnrCoringU0 = compute_coring(from->coring_p.m_CnrCoringU0);
+	to->coring_p.m_CnrCoringU1 = compute_coring(from->coring_p.m_CnrCoringU1);
+	to->coring_p.m_CnrCoringV0 = compute_coring(from->coring_p.m_CnrCoringV0);
+	to->coring_p.m_CnrCoringV1 = compute_coring(from->coring_p.m_CnrCoringV1);
 
 	to->coring_p.m_CnrCoringU01 = adjust_factor*(to->coring_p.m_CnrCoringU1-to->coring_p.m_CnrCoringU0)/kernel_size;
 	to->coring_p.m_CnrCoringV01 = adjust_factor*(to->coring_p.m_CnrCoringV1-to->coring_p.m_CnrCoringV0)/kernel_size;
-
-
-
 }
+
 /* Dummy Function added as the tool expects it*/
 void
 ia_css_xnr3_debug_dtrace(

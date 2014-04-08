@@ -43,10 +43,10 @@ struct firmware_header {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140401_0455) is a place holder
+/* The string STR(irci_master_20140408_1449) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char* release_version = STR(irci_master_20140401_0455);
+static const char* release_version = STR(irci_master_20140408_1449);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";
@@ -130,12 +130,12 @@ sh_css_load_firmware(const char *fw_data,
 	strcpy(FW_rel_ver_name, file_header->version);
 	if (strcmp(file_header->version, release_version) != 0) {
 #if (!defined HRT_CSIM && !defined HRT_RTL)
-		ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "CSS code and firmware version mismatch!\n");
+		IA_CSS_ERROR("CSS code and firmware version mismatch!");
 		assert(false);
 		return IA_CSS_ERR_VERSION_MISMATCH;
 #endif
 	} else {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "successfully load firmware version %s\n", release_version);
+		IA_CSS_LOG("successfully load firmware version %s", release_version);
 	}
 
 	/* some sanity checks */

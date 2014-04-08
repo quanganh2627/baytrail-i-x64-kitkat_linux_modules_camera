@@ -24,6 +24,18 @@
 
 #include "type_support.h"
 
+/* Scaling factor of the alpha values: which fixed-point value represents 1.0?
+ * It must be chosen such that 1/min_sigma still fits in an ISP vector
+ * element. */
+#define XNR_ALPHA_SCALE_LOG2        5
+#define XNR_ALPHA_SCALE_FACTOR      (1 << XNR_ALPHA_SCALE_LOG2)
+
+/* Scaling factor of the coring values. */
+#define XNR_CORING_SCALE_LOG2       (ISP_VEC_ELEMBITS-1)
+#define XNR_CORING_SCALE_FACTOR     (1 << XNR_CORING_SCALE_LOG2)
+
+
+
 struct sh_css_xnr3_sigma_params {
 	// XNR Sigma Parameters
 	int sgm0_y;

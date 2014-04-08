@@ -358,9 +358,9 @@ int ia_css_fwctrl_dequeue_event(
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_INFO, "ia_css_fwctrl_dequeue_event() : entered \n");
 
-	if (IA_CSS_SUCCESS == ia_css_queue_dequeue(
-					&fwctrl_comm_queues.sp2host_generic_q_handle,
-					&signal)) {
+	ret =  ia_css_queue_dequeue(&fwctrl_comm_queues.sp2host_generic_q_handle,
+					&signal);
+	if (IA_CSS_SUCCESS == ret) { 
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "received generic event %d, \n", *event_type);
 
 		if (SP_SW_EVENT_ISYS == signal) {
@@ -373,10 +373,6 @@ int ia_css_fwctrl_dequeue_event(
 		{
 			ret = EBADE;
 		}
-	}
-	else
-	{
-		ret = ENOTCONN;
 	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_INFO, "ia_css_fwctrl_dequeue_event() : leaving\n");

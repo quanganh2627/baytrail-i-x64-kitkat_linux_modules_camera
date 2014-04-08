@@ -82,22 +82,9 @@ typedef struct s_isp_globals {
   enum ia_css_frame_format output_image_format;
   enum ia_css_frame_format vf_image_format;
 
-  unsigned vf_crop_pos_x;  /* Cropping for ViewFinder image */
-  unsigned vf_crop_pos_y;  /* Cropping for ViewFinder image */
-
-  unsigned dma_crop_skip_words;
-  unsigned dma_crop_cropping_a;
-  unsigned dma_crop_block_width_a;
-  unsigned dma_crop_block_width_b;
-
-/* DMA settings for output image */
-  unsigned dma_output_skip_vecs;
+  /* DMA settings for output image */
   unsigned dma_output_block_width_a;
   unsigned dma_output_block_width_b;
-
-  unsigned dma_c_skip_vecs;
-  unsigned dma_c_block_width_a;
-  unsigned dma_c_block_width_b;
 
   unsigned anr;
 
@@ -195,7 +182,6 @@ extern s_isp_addresses NO_SYNC NO_HOIST isp_addresses;
 #define isp_vectors_per_line       iterator_config.vectors_per_line
 #define isp_vectors_per_input_line iterator_config.vectors_per_input_line
 #define isp_uv_internal_width_vecs iterator_config.uv_internal_width_vecs
-#define isp_vf_output_width_vecs   vf_config.output_width_vecs
 #define isp_sdis_horiproj_num      isp_globals.sdis_horiproj_num
 #define isp_sdis_vertproj_num      isp_globals.sdis_vertproj_num
 #define isp_sdis_horicoef_vectors  isp_globals.sdis_horicoef_vectors
@@ -205,25 +191,11 @@ extern s_isp_addresses NO_SYNC NO_HOIST isp_addresses;
 
 #define g_out_crop_pos_x           output_config.crop_pos_x
 #define g_out_crop_pos_y           output_config.crop_pos_y
-#define g_vf_crop_pos_x            isp_globals.vf_crop_pos_x
-#define g_vf_crop_pos_y            isp_globals.vf_crop_pos_y
 
 #define isp_vf_output_width_vecs   vf_config.output_width_vecs
-#define g_dma_vfout_skip_vecs      vf_config.dma_vfout_skip_vecs
-#define g_dma_vfout_cropping_a     vf_config.dma_vfout_cropping_a
-#define g_dma_vfout_block_width_a  vf_config.dma_vfout_block_width_a
 
-#define g_dma_crop_skip_words      isp_globals.dma_crop_skip_words
-#define g_dma_crop_cropping_a      isp_globals.dma_crop_cropping_a
-#define g_dma_crop_block_width_a   isp_globals.dma_crop_block_width_a
-#define g_dma_crop_block_width_b   isp_globals.dma_crop_block_width_b
-
-#define g_dma_output_skip_vecs     isp_globals.dma_output_skip_vecs
 #define g_dma_output_block_width_a isp_globals.dma_output_block_width_a
 #define g_dma_output_block_width_b isp_globals.dma_output_block_width_b
-#define g_dma_c_skip_vecs          isp_globals.dma_c_skip_vecs
-#define g_dma_c_block_width_a      isp_globals.dma_c_block_width_a
-#define g_dma_c_block_width_b      isp_globals.dma_c_block_width_b
 #endif
 
 extern unsigned isp_deci_log_factor;

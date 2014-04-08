@@ -26,10 +26,17 @@
 #include "type_support.h"
 #include "ia_css_psys_system_global.h"
 
+extern size_t ia_css_sizeof_program_param(void);
+
 extern ia_css_program_param_t *ia_css_program_param_alloc(void);
 
 extern ia_css_program_param_t *ia_css_program_param_free(
 	ia_css_program_param_t					*program_param);
+
+extern void ia_css_program_manifest_init(
+	ia_css_program_manifest_t	*blob,
+	const uint8_t	program_dependency_count,
+	const uint8_t	terminal_dependency_count);
 
 extern ia_css_program_manifest_t *ia_css_program_manifest_alloc(
 	const uint8_t							program_dependency_count,
@@ -57,13 +64,14 @@ extern ia_css_program_ID_t ia_css_program_manifest_get_program_ID(
 extern vied_nci_cell_ID_t ia_css_program_manifest_get_cell_ID(
 	const ia_css_program_manifest_t			*manifest);
 
+extern void ia_css_terminal_manifest_init(ia_css_terminal_manifest_t *blob);
+
 extern ia_css_terminal_manifest_t *ia_css_terminal_manifest_alloc(void);
 
 extern ia_css_terminal_manifest_t *ia_css_terminal_manifest_free(
 	ia_css_terminal_manifest_t *			manifest);
 
-extern size_t ia_css_sizeof_terminal_manifest(
-	const ia_css_terminal_manifest_t		*manifest);
+extern size_t ia_css_sizeof_terminal_manifest(void);
 
 extern size_t ia_css_terminal_manifest_get_size(
 	const ia_css_terminal_manifest_t		*manifest);
@@ -71,31 +79,15 @@ extern size_t ia_css_terminal_manifest_get_size(
 extern ia_css_terminal_type_t ia_css_terminal_manifest_get_type(
 	const ia_css_terminal_manifest_t		*manifest);
 
-extern size_t ia_css_sizeof_program_group_manifest(
-	const ia_css_program_group_manifest_t	*manifest);
-
 extern size_t ia_css_program_group_manifest_get_size(
 	const ia_css_program_group_manifest_t	*manifest);
 
 extern ia_css_program_group_ID_t ia_css_program_group_manifest_get_program_group_ID(
 	const ia_css_program_group_manifest_t	*manifest);
 
-extern uint8_t ia_css_program_group_manifest_get_program_count(
-	const ia_css_program_group_manifest_t	*manifest);
-
-extern uint8_t ia_css_program_group_manifest_get_terminal_count(
-	const ia_css_program_group_manifest_t	*manifest);
-
-extern ia_css_program_manifest_t *ia_css_program_group_manifest_get_program_manifest(
-	const ia_css_program_group_manifest_t	*manifest,
-	const unsigned int						program_index);
-
-extern ia_css_terminal_manifest_t *ia_css_program_group_manifest_get_terminal_manifest(
-	const ia_css_program_group_manifest_t	*manifest,
-	const unsigned int						terminal_index);
-
 extern size_t ia_css_sizeof_program_manifest(
-	const ia_css_program_manifest_t			*manifest);
+	const uint8_t	program_dependency_count,
+	const uint8_t terminal_dependency_count);
 
 /*
  * To build a working model, generate FW, test, verify etc ... Needs some sorting

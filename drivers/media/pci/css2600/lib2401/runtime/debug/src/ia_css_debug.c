@@ -2283,15 +2283,11 @@ void ia_css_debug_dump_ddr_debug_queue(void)
 {
 	int i;
 	sh_css_load_ddr_debug_queue();
-#ifdef __KERNEL__
-	for (i = 0; i < DEBUG_BUF_SIZE; i++)
-		printk(KERN_DEBUG, "ddr_debug_queue[%d] = 0x%x\n",
-				i, debug_data_ptr->buf[i]);
-#else
-	for (i = 0; i < DEBUG_BUF_SIZE; i++)
-		printf("ddr_debug_queue[%d] = 0x%x\n",
-				i, debug_data_ptr->buf[i]);
-#endif
+	for (i = 0; i < DEBUG_BUF_SIZE; i++) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
+			"ddr_debug_queue[%d] = 0x%x\n",
+			i, debug_data_ptr->buf[i]);
+	}
 }
 */
 

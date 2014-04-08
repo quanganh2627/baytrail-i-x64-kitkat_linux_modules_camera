@@ -36,7 +36,7 @@ struct ia_css_psysapi_cmd {
 	struct sh_css_sp_pipeline sp_pipeline;
 	/* TODO: uds_params should be moved to pg specific param modules? */
 	CSS_ALIGN(struct sh_css_sp_uds_params uds_params[SH_CSS_MAX_STAGES], 32);
-	CSS_ALIGN(struct sh_css_ddr_address_map params, 32);
+	CSS_ALIGN(struct ia_css_isp_parameter_set_info isp_param_info, 32);
 	/*Return event from SP*/
 	uint32_t psys_event;
 	void *cookie;
