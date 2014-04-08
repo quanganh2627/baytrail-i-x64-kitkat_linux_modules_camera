@@ -77,6 +77,7 @@ static struct pixter_dbgfs dbgfs[] = {
 	{"dat_zero", "timing", DBGFS_FILE, dev_off(dbg_timing.dat_zero)},
 	{"dat_trail", "timing", DBGFS_FILE, dev_off(dbg_timing.dat_trail)},
 	{"twakeup", "timing", DBGFS_FILE, dev_off(dbg_timing.twakeup)},
+	{"mipi_lanes_num", "timing", DBGFS_FILE, dev_off(dbg_timing.mipi_lanes_num)},
 };
 
 static u32 pixter_get_tx_freq_sel(u32 freq)
@@ -864,6 +865,9 @@ static int pixter_probe(struct i2c_client *client,
 		dev_err(&client->dev, "Faild to get mipi info.\n");
 		goto out_free;
 	}
+
+	/* Get the number of mipi lanes */
+	dev->dbg_timing.mipi_lanes_num = dev->mipi_info->num_lanes;
 
 	dev->regmap = devm_regmap_init_i2c(client,
 					   &pixter_reg_config);

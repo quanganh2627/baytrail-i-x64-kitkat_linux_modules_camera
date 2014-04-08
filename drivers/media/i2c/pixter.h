@@ -141,6 +141,8 @@ struct pixter_timing {
 	u32 dat_zero;
 	u32 dat_trail;
 	u32 twakeup;
+
+	u32 mipi_lanes_num;	/* The number of mipi lanes */
 };
 
 struct pixter_dbgfs {
