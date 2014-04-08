@@ -3727,6 +3727,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	/* ISP2401 new input system need to use copy pipe */
 	if (asd->copy_mode) {
 		pipe_id = CSS_PIPE_ID_COPY;
+		atomisp_css_capture_enable_online(asd, false);
 	} else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
 		/* video same in continuouscapture and online modes */
 		configure_output = atomisp_css_video_configure_output;
