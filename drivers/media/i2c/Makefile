@@ -25,7 +25,7 @@ ov8858_driver-objs := ov8858.o imx/dw9718.o imx/vcm.o
 obj-$(CONFIG_VIDEO_S5K8AAY)    += s5k8aay.o
 obj-$(CONFIG_VIDEO_S5K6B2YX)    += s5k6b2yx.o
 
-m10mo_isp-objs := m10mo.o m10mo_fw.o
+m10mo_isp-objs := m10mo.o m10mo_fw.o m10mo_tables.o
 obj-$(CONFIG_VIDEO_M10MO)    += m10mo_isp.o
 obj-$(CONFIG_VIDEO_M10MO)    += m10mo_spi.o
 

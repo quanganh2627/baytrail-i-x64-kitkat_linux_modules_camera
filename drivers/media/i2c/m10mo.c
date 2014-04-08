@@ -1170,22 +1170,24 @@ static struct v4l2_ctrl_ops m10mo_ctrl_ops = {
 static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int index;
 	dev->run_mode = param->parm.capture.capturemode;
 
 	mutex_lock(&dev->input_lock);
 	switch (dev->run_mode) {
 	case CI_MODE_VIDEO:
-		dev->curr_res_table = m10mo_video_modes;
-		dev->entries_curr_table = ARRAY_SIZE(m10mo_video_modes);
+		index = M10MO_MODE_VIDEO_INDEX;
 		break;
 	case CI_MODE_STILL_CAPTURE:
-		dev->curr_res_table = m10mo_capture_modes;
-		dev->entries_curr_table = ARRAY_SIZE(m10mo_capture_modes);
+		index = M10MO_MODE_CAPTURE_INDEX;
 		break;
 	default:
-		dev->curr_res_table = m10mo_preview_modes;
-		dev->entries_curr_table = ARRAY_SIZE(m10mo_preview_modes);
+		index = M10MO_MODE_PREVIEW_INDEX;
+		break;
 	}
+	dev->entries_curr_table = resolutions_sizes[dev->fw_type][index];
+	dev->curr_res_table = resolutions[dev->fw_type][index];
+
 	mutex_unlock(&dev->input_lock);
 	return 0;
 }
@@ -1532,8 +1534,8 @@ static int m10mo_probe(struct i2c_client *client,
 	if (mipi_info)
 		dev->num_lanes = mipi_info->num_lanes;
 
-	dev->curr_res_table = m10mo_preview_modes;
-	dev->entries_curr_table = ARRAY_SIZE(m10mo_preview_modes);
+	dev->curr_res_table = resolutions[0][M10MO_MODE_PREVIEW_INDEX];
+	dev->entries_curr_table = resolutions_sizes[0][M10MO_MODE_PREVIEW_INDEX];
 
 	dev->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	dev->pad.flags = MEDIA_PAD_FL_SOURCE;

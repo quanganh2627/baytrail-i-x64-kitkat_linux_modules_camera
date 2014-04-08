@@ -346,70 +346,11 @@ enum M10MO_MODES {
 	M10MO_SINGLE_CAPTURE_MODE
 };
 
-static const struct m10mo_resolution const m10mo_preview_modes[] = {
-	{
-		.width = 640,
-		.height = 480,
-		.command = 0x17,
-	},
-	{
-		.width = 1280,
-		.height = 720,
-		.command = 0x21,
-	},
-	{
-		.width = 1920,
-		.height = 1080,
-		.command = 0x40,
-	},
-};
-
-static const struct m10mo_resolution const m10mo_capture_modes[] = {
-	{
-		.width = 640,
-		.height = 480,
-		.command = 0x09,
-	},
-	{
-		.width = 960,
-		.height = 720,
-		.command = 0x2f,
-	},
-	{
-		.width = 1280,
-		.height = 720,
-		.command = 0x10,
-	},
-	{
-		.width = 1920,
-		.height = 1080,
-		.command = 0x19,
-	},
-	{
-		.width = 2048,
-		.height = 1536,
-		.command = 0x1b,
-	},
-	{
-		.width = 4128,
-		.height = 2336,
-		.command = 0x30,
-	},
-	{
-		.width = 4128,
-		.height = 3096,
-		.command = 0x2c,
-	},
-};
-
-static const struct m10mo_resolution const m10mo_video_modes[] = {
-	{
-		.width = 1920,
-		.height = 1080,
-		.command = 0x40,
-	},
-};
-
+#define M10MO_MODE_PREVIEW_INDEX	0
+#define M10MO_MODE_CAPTURE_INDEX	1
+#define M10MO_MODE_VIDEO_INDEX		2
+extern const struct m10mo_resolution *resolutions[][3];
+extern const ssize_t resolutions_sizes[][3];
 
 #endif	/* M10MO_H */
 
