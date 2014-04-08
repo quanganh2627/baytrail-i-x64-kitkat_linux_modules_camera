@@ -100,11 +100,12 @@ lib2401-mod-objs := lib2401/sh_css.o \
 		    lib2401/bxt_sandbox/isyspoc/src/isyspoc.o \
 		    lib2401/bxt_sandbox/psyspoc/src/psys_sppipeline.o \
 		    lib2401/bxt_sandbox/psyspoc/src/psys_event.o \
+		    lib2401/bxt_sandbox/ia_camera/shared/program_group/src/ia_css_program_group_param.o \
+		    lib2401/bxt_sandbox/ia_camera/shared/program_group/src/program_group_impl.o \
+		    lib2401/bxt_sandbox/ia_camera/shared/frameadapter/src/psys_frameadapter.o \
 		    lib2401/bxt_sandbox/psyspoc/src/process_group_impl.o \
-		    lib2401/bxt_sandbox/psyspoc/src/program_group_common_impl.o \
 		    lib2401/bxt_sandbox/psyspoc/src/psys_system.o \
 		    lib2401/bxt_sandbox/psyspoc/src/psys_actions.o \
-		    lib2401/bxt_sandbox/ia_camera/frameadapter/src/psys_frameadapter.o \
 		    lib2401/host/module/lib2401.o
 
 
@@ -160,9 +161,11 @@ INCLUDES := -I$(srctree)/$(src)/lib2401 \
 	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/isyspoc/src \
 	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/psyspoc/interface \
 	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/pocapp/interface \
-	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/frameadapter/interface \
-	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/pgvfpp/interface \
-	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/pgvfpp/src
+	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/pgvfpp/src \
+	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/shared/frameadapter/interface \
+	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/shared/program_group/interface \
+	    -I$(srctree)/$(src)/lib2401/bxt_sandbox/ia_camera/shared/program_group/src
+
 
 DEFINES := -DHRT_HW -DHRT_ISP_CSS_CUSTOM_HOST -DHRT_USE_VIR_ADDRS -DHRT_KERNEL -D__HOST__
 DEFINES += -DUSE_DYNAMIC_BIN
