@@ -792,7 +792,7 @@ struct host_sp_communication {
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	hrt_vaddress host2sp_mipi_frames[N_CSI_PORTS][NUM_MIPI_FRAMES_PER_STREAM];
-	uint32_t host2sp_num_mipi_frames;
+	uint32_t host2sp_num_mipi_frames[N_CSI_PORTS];
 #endif
 	uint32_t host2sp_cont_avail_num_raw_frames;
 	uint32_t host2sp_cont_extra_num_raw_frames;
@@ -806,7 +806,7 @@ struct host_sp_communication {
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
 	(N_CSI_PORTS * NUM_MIPI_FRAMES_PER_STREAM * SIZE_OF_HRT_VADDRESS) +			\
-	(4 * sizeof(uint32_t) ) +						\
+	((3 + N_CSI_PORTS) * sizeof(uint32_t) ) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
 #else
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\

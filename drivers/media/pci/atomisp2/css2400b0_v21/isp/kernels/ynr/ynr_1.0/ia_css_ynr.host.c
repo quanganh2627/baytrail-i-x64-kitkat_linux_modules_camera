@@ -209,9 +209,8 @@ ia_css_ee_debug_dtrace(
 	unsigned level)
 {
 	ia_css_debug_dtrace(level,
-		"config.gain=%d, config.detail_gain=%d\n",
-		config->threshold,
-		config->gain, config->detail_gain);
+		"config.threshold=%d, config.gain=%d, config.detail_gain=%d\n",
+		config->threshold, config->gain, config->detail_gain);
 }
 
 void

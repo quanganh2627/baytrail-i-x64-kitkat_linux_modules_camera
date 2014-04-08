@@ -81,6 +81,11 @@ enum ia_css_debug_enable_param_dump {
 	IA_CSS_DEBUG_DUMP_ALL = 1 << 14  /**< Dump all device parameters */
 };
 
+#define IA_CSS_ERROR(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, \
+		"%s(): error: " fmt "\n", __func__, ##__VA_ARGS__)
+
+/* Logging macros for public functions (API functions) */
 #define IA_CSS_ENTER(fmt, ...) \
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
 		"%s(): enter: " fmt "\n", __func__, ##__VA_ARGS__)
@@ -99,10 +104,31 @@ enum ia_css_debug_enable_param_dump {
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
 		"%s(): leave: return_err=%d\n", __func__, __err)
 
-/* Use this macro for logging other than enter/leave. */
+/* Use this macro for logging other than enter/leave.
+ * Note that this macro always uses the PRIVATE logging level.
+ */
 #define IA_CSS_LOG(fmt, ...) \
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, \
 		"%s(): " fmt "\n", __func__, ##__VA_ARGS__)
+
+/* Logging macros for non-API functions. These have a lower trace level */
+#define IA_CSS_ENTER_PRIVATE(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, \
+		"%s(): enter: " fmt "\n", __func__, ##__VA_ARGS__)
+
+#define IA_CSS_LEAVE_PRIVATE(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, \
+		"%s(): leave: " fmt "\n", __func__, ##__VA_ARGS__)
+
+/* Shorthand for returning an enum ia_css_err return value */
+#define IA_CSS_LEAVE_ERR_PRIVATE(__err) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, \
+		"%s(): leave: return_err=%d\n", __func__, __err)
+
+/* Use this macro for small functions that do not call other functions. */
+#define IA_CSS_ENTER_LEAVE_PRIVATE(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, \
+		"%s(): enter: leave: " fmt "\n", __func__, ##__VA_ARGS__)
 
 /*! \brief Function for tracing to the provided printf function in the
  *	environment.

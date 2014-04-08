@@ -36,7 +36,7 @@
  * communication channel to interpret that opaque handle(this handle is
  * maintained by host and needs to be populated to sp for every stream open)
  * */
-typedef virtual_input_system_t*		ia_css_isys_stream_h;
+typedef virtual_input_system_t		*ia_css_isys_stream_h;
 typedef virtual_input_system_cfg_t	ia_css_isys_stream_cfg_t;
 
 /*
