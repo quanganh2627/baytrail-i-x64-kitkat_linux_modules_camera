@@ -265,10 +265,6 @@ static int start_streaming(struct vb2_queue *q, unsigned int count)
 	dev_dbg(&av->isys->adev->dev, "css pixelformat %u\n",
 		av->pfmt->css_pixelformat);
 
-	spin_lock_irqsave(&av->isys->lock, flags);
-	av->isys->pipes[av->ip.source] = &av->ip;
-	spin_unlock_irqrestore(&av->isys->lock, flags);
-
 	spin_lock_irqsave(&aq->lock, flags);
 	if (!list_empty(&aq->incoming)) {
 		ib = list_last_entry(&aq->incoming,

@@ -322,6 +322,7 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 {
 	struct media_entity_graph graph;
 	struct media_entity *entity, *entity2;
+	unsigned long flags;
 	unsigned int entities = 0;
 	unsigned int i;
 	int rval = 0;
@@ -404,6 +405,10 @@ int css2600_isys_video_set_streaming(struct css2600_isys_video *av,
 
 		entities |= 1 << entity->id;
 	}
+
+	spin_lock_irqsave(&av->isys->lock, flags);
+	av->isys->pipes[av->ip.source] = &av->ip;
+	spin_unlock_irqrestore(&av->isys->lock, flags);
 
 	/* Oh crap */
 	if (state) {
