@@ -1336,7 +1336,9 @@ leave:
 
 static int update_fw(struct m10mo_device *dev)
 {
+	struct i2c_client *client = v4l2_get_subdevdata(&dev->sd);
 	int ret = 0;
+	u16 result;
 
 	mutex_lock(&dev->input_lock);
 	if (dev->power == 1) {
@@ -1352,6 +1354,14 @@ static int update_fw(struct m10mo_device *dev)
 	__m10mo_s_power(&dev->sd, 1, true);
 	ret = m10mo_identify_fw_type(&dev->sd);
 	__m10mo_s_power(&dev->sd, 0, true);
+	if (ret)
+		goto leave;
+
+	__m10mo_s_power(&dev->sd, 1, true);
+	ret = m10mo_fw_checksum(dev, &result);
+	__m10mo_s_power(&dev->sd, 0, true);
+	dev_info(&client->dev, "m10mo FW checksum: %d\n", result);
+
 leave:
 	mutex_unlock(&dev->input_lock);
 	return ret;
