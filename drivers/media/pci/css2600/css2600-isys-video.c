@@ -296,7 +296,7 @@ static void stop_streaming_firmware(struct css2600_isys_video *av)
 	int rval;
 
 	reinit_completion(&av->ip.stream_stop_completion);
-	rval = -ia_css_isys_stream_stop(av->isys->ssi, av->ip.source);
+	rval = -ia_css_isys_stream_flush(av->isys->ssi, av->ip.source);
 	if (rval < 0) {
 		dev_dbg(&av->isys->adev->dev, "can't stop stream (%d)\n",
 			rval);
