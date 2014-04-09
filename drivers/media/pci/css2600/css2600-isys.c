@@ -609,7 +609,6 @@ static void isys_isr(struct css2600_bus_device *adev)
 	dev_dbg(&adev->dev, "resp type %u\n", resp.type);
 	dev_dbg(&adev->dev, "resp error %d\n", resp.error);
 	dev_dbg(&adev->dev, "resp stream %u\n", resp.stream_handle);
-	dev_dbg(&adev->dev, "resp stream %u\n", resp.stream_handle);
 
 	if (resp.stream_handle >= N_IA_CSS_ISYS_STREAM_SRC) {
 		dev_err(&adev->dev, "bad stream handle %u\n",
@@ -643,6 +642,8 @@ static void isys_isr(struct css2600_bus_device *adev)
 		css2600_isys_queue_buf_done(pipe, &resp);
 		break;
 	default:
+		dev_err(&adev->dev, "unknown response type %u\n",
+			resp.type);
 		break;
 	}
 }
