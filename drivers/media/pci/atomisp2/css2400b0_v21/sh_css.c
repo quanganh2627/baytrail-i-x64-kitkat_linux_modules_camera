@@ -102,7 +102,7 @@ static int thread_alive;
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 #define SP1_PROG_NAME "sp1"
 #endif
 /* Size of Refcount List */
@@ -1584,7 +1584,7 @@ ia_css_init(const struct ia_css_env *env,
 {
 	enum ia_css_err err;
 	ia_css_spctrl_cfg spctrl_cfg;
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	ia_css_spctrl_cfg sp1ctrl_cfg;
 #endif
 
@@ -1735,7 +1735,7 @@ ia_css_init(const struct ia_css_env *env,
 		IA_CSS_LEAVE_ERR(err);
 		return err;
 	}
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	if(!sh_css_setup_spctrl_config(&sh_css_sp1_fw,SP1_PROG_NAME,&sp1ctrl_cfg))
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	err = ia_css_sp1ctrl_load_fw(SP1_ID, &sp1ctrl_cfg);
@@ -2363,12 +2363,12 @@ ia_css_uninit(void)
 		ia_css_unload_firmware();
 	}
 	ia_css_spctrl_unload_fw(SP0_ID);
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	ia_css_spctrl_unload_fw(SP1_ID);
 #endif
 
 	sh_css_sp_set_sp_running(false);
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	sh_css_sp1_set_sp1_running(false);
 #endif
 
@@ -8890,7 +8890,7 @@ ia_css_pipe_get_isp_pipe_version(const struct ia_css_pipe *pipe)
 
 #define SP_START_TIMEOUT_US 30000000
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 void
 ia_css_start_sp1(void)
 {
@@ -8942,7 +8942,7 @@ ia_css_start_sp(void)
 
 	sh_css_setup_queues();
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	/* Start the SP1 Core */
 	ia_css_start_sp1();
 #endif
@@ -8958,7 +8958,7 @@ ia_css_start_sp(void)
  */
 #define SP_SHUTDOWN_TIMEOUT_US 200000
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 enum ia_css_err
 ia_css_stop_sp1(void)
 {
@@ -8983,7 +8983,7 @@ ia_css_stop_sp1(void)
 
 	return IA_CSS_SUCCESS;
 }
-#endif //#if defined(IS_ISP_2500_SYSTEM)
+#endif //#if defined(ENABLE_SP1)
 
 enum ia_css_err
 ia_css_stop_sp(void)
@@ -9025,7 +9025,7 @@ ia_css_stop_sp(void)
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_stop_sp() exit\n");
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	/* Stop SP1 Core */
 	ia_css_stop_sp1();
 #endif

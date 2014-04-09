@@ -154,7 +154,7 @@
 #define COMPILATION_ERROR_IF(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 /* Number of SP's */
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 #define NUM_OF_SPS 2
 #else
 #define NUM_OF_SPS 1
@@ -163,7 +163,9 @@
 /* Enum for Number of Binaries */
 enum sh_css_num_binaries {
 	SP_FIRMWARE = 0,
+#if defined(ENABLE_SP1)
 	SP1_FIRMWARE,
+#endif
 	ISP_FIRMWARE
 };
 

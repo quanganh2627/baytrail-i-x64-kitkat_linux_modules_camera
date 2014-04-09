@@ -77,7 +77,7 @@ static struct sh_css_sp_per_frame_data per_frame_data;
 /* For the moment there is only code that sets this bool to true */
 /* TODO: add code that sets this bool to false */
 static bool sp_running;
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 static bool sp1_running;
 #endif
 
@@ -138,7 +138,7 @@ store_sp_per_frame_data(const struct ia_css_fw_info *fw)
 	case ia_css_sp_firmware:
 		HIVE_ADDR_sp_per_frame_data = fw->info.sp.per_frame_data;
 		break;
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	case ia_css_sp1_firmware:
 		(void)fw;
 		break;
@@ -1288,7 +1288,7 @@ init_host2sp_command(void)
 }
 #endif
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 void
 sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command)
 {
@@ -1575,7 +1575,7 @@ sh_css_sp_set_sp_running(bool flag)
 {
 	sp_running = flag;
 }
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 void
 sh_css_sp1_set_sp1_running(bool flag)
 {
@@ -1588,7 +1588,7 @@ sh_css_sp_is_running(void)
 	return sp_running;
 }
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 void
 sh_css_sp1_start(void)
 {

@@ -106,7 +106,7 @@ enum ia_css_err ia_css_spctrl_load_fw(sp_ID_t sp_id,
 	return IA_CSS_SUCCESS;
 }
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 /* Load firmware */
 enum ia_css_err ia_css_sp1ctrl_load_fw(sp_ID_t sp_id,
 				ia_css_spctrl_cfg *spctrl_cfg)
@@ -201,7 +201,7 @@ enum ia_css_err ia_css_spctrl_start(sp_ID_t sp_id)
 	hrt_cell_start_function(SP, sp_start_isp);
 	return IA_CSS_SUCCESS;
 }
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 enum ia_css_err ia_css_spctrl_start_sp1(sp_ID_t sp_id)
 {
 	unsigned int HIVE_ADDR_sp1_start_entry;
@@ -248,7 +248,7 @@ enum ia_css_err ia_css_spctrl_start(sp_ID_t sp_id)
 	sp_ctrl_setbit(sp_id, SP_SC_REG, SP_START_BIT);
 	return IA_CSS_SUCCESS;
 }
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 /* Initialize dmem_cfg in SP dmem  and  start SP1 program */
 enum ia_css_err ia_css_spctrl_start_sp1(sp_ID_t sp_id)
 {
@@ -276,7 +276,7 @@ enum ia_css_err ia_css_spctrl_start_sp1(sp_ID_t sp_id)
 #endif
 #endif
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 /* Query the state of SP1 */
 ia_css_spctrl_sp_sw_state ia_css_sp1ctrl_get_state(sp_ID_t sp_id)
 {

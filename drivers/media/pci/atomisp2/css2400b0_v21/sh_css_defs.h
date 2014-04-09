@@ -37,7 +37,6 @@
 #define CHECK_IF_SH_CSS_DEFS_INCLUDED
 
 #if defined(IS_ISP_2500_SYSTEM)
-#define ENABLE_SP1		/* Disabling this Macro excludes SP1 from the system */
 #define SWITCH_GACS_TO_SP1	/* Enabling this macro switches the GACs to SP1 */
 
 #if !defined(ENABLE_SP1)
