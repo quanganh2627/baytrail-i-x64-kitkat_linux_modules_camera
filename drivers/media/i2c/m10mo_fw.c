@@ -610,7 +610,8 @@ m10mo_load_firmware(struct m10mo_device *m10mo_dev)
 	struct v4l2_subdev *sd = &m10mo_dev->sd;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	const struct firmware *fw;
-	int ret;
+	int i, ret;
+	u16 *fw_ptr, csum = 0;
 
 	ret = request_firmware(&fw, M10MO_FW_NAME, &client->dev);
 	if (ret) {
@@ -625,6 +626,15 @@ m10mo_load_firmware(struct m10mo_device *m10mo_dev)
 			"Illegal FW size detected\n");
 		release_firmware(fw);
 		return NULL;
+	}
+
+	fw_ptr = (u16 *)fw->data;
+	for (i = 0; i < FW_SIZE/2; i++, fw_ptr++)
+		csum += be16_to_cpup(fw_ptr);
+
+	if (csum) {
+		dev_err(&client->dev,
+			"Illegal FW csum: %d\n", csum);
 	}
 
 	return fw;
