@@ -102,7 +102,7 @@ static int thread_alive;
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 #define SP1_PROG_NAME "sp1"
 #endif
 /* Size of Refcount List */
@@ -180,7 +180,7 @@ static struct sh_css_save my_css_save;
 static struct ia_css_rmgr_vbuf_handle *hmm_buffer_record_h[MAX_HMM_BUFFER_NUM];
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-static uint32_t ref_count_mipi_allocation = 0;
+static uint32_t ref_count_mipi_allocation[N_CSI_PORTS]; /* Initialized in ia_css_init. */
 #endif
 
 #define GPIO_FLASH_PIN_MASK (1 << HIVE_GPIO_STROBE_TRIGGER_PIN)
@@ -267,8 +267,8 @@ alloc_continuous_frames(
 static enum ia_css_err
 allocate_mipi_frames(struct ia_css_pipe *pipe);
 
-static void
-free_mipi_frames(struct ia_css_pipe *pipe, bool uninit);
+static enum ia_css_err
+free_mipi_frames(struct ia_css_pipe *pipe);
 #endif
 
 static void
@@ -1523,13 +1523,11 @@ ia_css_reset_defaults(struct sh_css* css)
 	/* Initialize the non zero values*/
 	default_css.check_system_idle = true;
 	default_css.num_cont_raw_frames = NUM_CONTINUOUS_FRAMES;
-#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	/* AM: maybe this is not the right place and moment fior init here.Maybe it should be 0, */
-	/* and then later initialize it to number needed.*/
-	default_css.num_mipi_frames[0] = NUM_MIPI_FRAMES_PER_STREAM;
-	default_css.num_mipi_frames[1] = NUM_MIPI_FRAMES_PER_STREAM;
-	default_css.num_mipi_frames[2] = 0;
-#endif
+
+	/* All should be 0: but memset does it already.
+	 * default_css.num_mipi_frames[N_CSI_PORTS] = 0;
+	 */
+
 	default_css.contiguous = true;
 	default_css.irq_type = IA_CSS_IRQ_TYPE_EDGE;
 
@@ -1586,10 +1584,9 @@ ia_css_init(const struct ia_css_env *env,
 {
 	enum ia_css_err err;
 	ia_css_spctrl_cfg spctrl_cfg;
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	ia_css_spctrl_cfg sp1ctrl_cfg;
 #endif
-	//uint32_t i = 0;
 
 	void *(*malloc_func) (size_t size, bool zero_mem);
 	void (*free_func) (void *ptr);
@@ -1690,7 +1687,12 @@ ia_css_init(const struct ia_css_env *env,
 		IA_CSS_LOG("init: %d mode=%d", my_css_save_initialized, my_css_save.mode);
 	}
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	ref_count_mipi_allocation = 0;
+	{
+		unsigned int i;
+		for(i = 0; i < N_CSI_PORTS; i++){
+			ref_count_mipi_allocation[i] = 0;
+		}
+	}
 #endif
 	/* In case this has been programmed already, update internal
 	   data structure ... DEPRECATED */
@@ -1733,7 +1735,7 @@ ia_css_init(const struct ia_css_env *env,
 		IA_CSS_LEAVE_ERR(err);
 		return err;
 	}
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	if(!sh_css_setup_spctrl_config(&sh_css_sp1_fw,SP1_PROG_NAME,&sp1ctrl_cfg))
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	err = ia_css_sp1ctrl_load_fw(SP1_ID, &sp1ctrl_cfg);
@@ -1762,7 +1764,6 @@ ia_css_init(const struct ia_css_env *env,
 			     __func__);
 		spying_thread_create();
 	}
-	sh_css_printf = printk;
 #endif
 	if (!sh_css_hrt_system_is_idle()) {
 		IA_CSS_LEAVE_ERR(IA_CSS_ERR_SYSTEM_NOT_IDLE);
@@ -2035,8 +2036,8 @@ create_host_pipeline(struct ia_css_stream *stream)
 	}
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	if((pipe_id != IA_CSS_PIPE_ID_ACC) &&
-	   (main_pipe->config.mode != IA_CSS_PIPE_MODE_COPY)) {
+	if ((pipe_id != IA_CSS_PIPE_ID_ACC)
+			&& (main_pipe->config.mode != IA_CSS_PIPE_MODE_COPY)) {
 		err = allocate_mipi_frames(main_pipe);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
@@ -2362,18 +2363,18 @@ ia_css_uninit(void)
 		ia_css_unload_firmware();
 	}
 	ia_css_spctrl_unload_fw(SP0_ID);
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	ia_css_spctrl_unload_fw(SP1_ID);
 #endif
 
 	sh_css_sp_set_sp_running(false);
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	sh_css_sp1_set_sp1_running(false);
 #endif
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* check and free any remaining mipi frames */
-	free_mipi_frames(NULL, true);
+	free_mipi_frames(NULL);
 #endif
 
 	sh_css_sp_reset_global_vars();
@@ -2885,18 +2886,12 @@ alloc_continuous_frames(
 	}
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
-	/* [Must Revert]
-	 * The following changes are interim updates in order to
-	 * have an immediate solution.  The formal solutions will
-	 * be forthcoming on follow-up updates. These changes
-	 * are intended to be reverted.
-	 */
+	/* For CSI2+, the continuous frame will hold the full input frame */
+	ref_info.res.width = pipe->stream->config.input_res.width;
+	ref_info.res.height = pipe->stream->config.input_res.height;
 
 	/* Ensure padded width is aligned for 2401 */
 	ref_info.padded_width = CEIL_MUL(ref_info.res.width, 2 * ISP_VEC_NELEMS);
-
-	/* avoid memguard error */
-	ref_info.res.height += 4;
 #endif
 
 #if !defined(HAS_NO_PACKED_RAW_PIXELS)
@@ -2970,7 +2965,7 @@ static enum ia_css_err
 allocate_mipi_frames(struct ia_css_pipe *pipe)
 {
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
-	unsigned int i, j, port;
+	unsigned int port;
 	struct ia_css_frame_info mipi_intermediate_info;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
@@ -2978,11 +2973,17 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
+	if ((pipe == NULL) || (pipe->stream == NULL)) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"allocate_mipi_frames(%p) exit: pipe or stream is null.\n",
+			pipe);
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	}
 
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 	if (pipe->stream->config.online) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"allocate_mipi_frames(%p) exit: no buffers needed for 2401 pipe mode\n",
+			"allocate_mipi_frames(%p) exit: no buffers needed for 2401 pipe mode.\n",
 			pipe);
 		return IA_CSS_SUCCESS;
 	}
@@ -2990,28 +2991,55 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 #endif
 	if (pipe->stream->config.mode != IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"allocate_mipi_frames(%p) exit: no buffers needed for pipe mode\n",
+			"allocate_mipi_frames(%p) exit: no buffers needed for pipe mode.\n",
 			pipe);
-		return IA_CSS_SUCCESS;
+		return IA_CSS_SUCCESS; /* AM TODO: Check  */
 	}
 
+	/* AM TODO: size_mem_words should come from stream struct. */
 	assert(my_css.size_mem_words != 0);
 	if (my_css.size_mem_words == 0) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"allocate_mipi_frames(%p) exit: mipi frame size not specified\n",
+			"allocate_mipi_frames(%p) exit: error: mipi frame size not specified.\n",
 			pipe);
 		return err;
 	}
 
-	ref_count_mipi_allocation++;
-	if (ref_count_mipi_allocation > 1) {
+	port = (unsigned int) pipe->stream->config.source.port.port;
+	assert(port < N_CSI_PORTS);
+	if (port >= N_CSI_PORTS) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"allocate_mipi_frames(%p) exit: already allocated\n",
-			pipe);
+			"allocate_mipi_frames(%p) exit: error: port is not correct (port=%d).\n",
+			pipe, port);
+		return err;
+	}
+
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
+	assert(ref_count_mipi_allocation[port] == 0);
+	if (ref_count_mipi_allocation[port] != 0) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"allocate_mipi_frames(%p) exit: error: already allocated for this port (port=%d).\n",
+			pipe, port);
+		return err;
+	}
+#else
+	/* 2401 system allows multiple streams to use same physical port. This is not
+	 * true for 2400 system. Currently 2401 uses MIPI buffers as a temporary solution.
+	 * TODO AM: Once that is changed (removed) this code should be removed as well.
+	 * In that case only 2400 related code should remain.
+	 */
+	if (ref_count_mipi_allocation[port] != 0) {
+		ref_count_mipi_allocation[port]++;
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"allocate_mipi_frames(%p) leave: nothing to do, already allocated for this port (port=%d).\n",
+			pipe, port);
 		return IA_CSS_SUCCESS;
 	}
-	assert(ref_count_mipi_allocation == 1);
+#endif
 
+	ref_count_mipi_allocation[port]++;
+
+	/* TODO: Cleaning needed. */
 // This code needs to modified to allocate the MIPI frames in the correct normal way with a allocate from info
 // by justin
 	mipi_intermediate_info = pipe->pipe_settings.video.video_binary.internal_frame_info;
@@ -3026,11 +3054,15 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 	// To indicate it is not valid frame.
 	//mipi_intermediate_info.dynamic_data_index = SH_CSS_INVALID_FRAME_ID;
 
-	/* Incremental allocation (per stream), not for all streams at once.*/
-	for (port = 0; port < N_CSI_PORTS; port++){
+	/* AM TODO: mipi frames number should come from stream struct. */
+	my_css.num_mipi_frames[port] = NUM_MIPI_FRAMES_PER_STREAM;
+
+	/* Incremental allocation (per stream), not for all streams at once. */
+	{ /* limit the scope of i,j */
+		unsigned i, j;
 		for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
 			/* free previous frame */
-			if (my_css.mipi_frames[port][i] != NULL) {
+			if (my_css.mipi_frames[port][i]) {
 				ia_css_frame_free(my_css.mipi_frames[port][i]);
 				my_css.mipi_frames[port][i] = NULL;
 			}
@@ -3048,6 +3080,9 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 							my_css.mipi_frames[port][j] = NULL;
 						}
 					}
+					ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+						"allocate_mipi_frames(%p, %d) exit: error: allocation failed.\n",
+						pipe, port);
 					return err;
 				}
 #ifdef HRT_CSIM
@@ -3062,90 +3097,155 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 	return err;
 }
 
-static void
-free_mipi_frames(struct ia_css_pipe *pipe, bool uninit)
+static enum ia_css_err
+free_mipi_frames(struct ia_css_pipe *pipe)
 {
-	unsigned int i, port;
+	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
+	unsigned int port;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"free_mipi_frames(%p, %d) enter:\n", pipe, uninit);
-	if (!uninit) {
-		assert(pipe != NULL);
+		"free_mipi_frames(%p) enter:\n", pipe);
+
+	/* assert(pipe != NULL); TEMP: TODO: Should be assert only. */
+	if (pipe != NULL) {
 		assert(pipe->stream != NULL);
+		if ((pipe == NULL) || (pipe->stream == NULL)) {
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+				"free_mipi_frames(%p) exit: error: pipe or stream is null.\n",
+				pipe);
+			return IA_CSS_ERR_INVALID_ARGUMENTS;
+		}
 
 		if (pipe->stream->config.mode != IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-				"free_mipi_frames() exit: wrong mode\n");
-			return;
+				"free_mipi_frames(%p) exit: error: wrong mode.\n",
+				pipe);
+			return err;
 		}
 
-		assert(ref_count_mipi_allocation > 0);
-		ref_count_mipi_allocation--;
-
-		if (ref_count_mipi_allocation > 0) {
+		port = (unsigned int) pipe->stream->config.source.port.port;
+		assert(port < N_CSI_PORTS);
+		if (port >= N_CSI_PORTS) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-				"free_mipi_frames(%p, %d) exit: "
-				"not last pipe (ref_count=%d):\n",
-				pipe, uninit, ref_count_mipi_allocation);
-			return;
+				"free_mipi_frames(%p, %d) exit: error: pipe port is not correct.\n",
+				pipe, port);
+			return err;
 		}
-	}
-	for (port = 0; port < N_CSI_PORTS; port++) {
-		for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
-			if (my_css.mipi_frames[port][i] != NULL) {
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-					"free_mipi_frames(port=%d, num=%d).\n",	port, i);
-				ia_css_frame_free(my_css.mipi_frames[port][i]);
-				my_css.mipi_frames[port][i] = NULL;
+	#if defined(USE_INPUT_SYSTEM_VERSION_2)
+		assert(ref_count_mipi_allocation[port] == 1);
+		if (ref_count_mipi_allocation[port] != 1) {
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+				"free_mipi_frames(%p) exit: error: wrong ref_count (ref_count=%d).\n",
+				pipe, ref_count_mipi_allocation[port]);
+			return err;
+		}
+	#else
+		/* 2401 system allows multiple streams to use same physical port. This is not
+		 * true for 2400 system. Currently 2401 uses MIPI buffers as a temporary solution.
+		 * TODO AM: Once that is changed (removed) this code should be removed as well.
+		 * In that case only 2400 related code should remain.
+		 */
+		if (ref_count_mipi_allocation[port] > 1) {
+			ref_count_mipi_allocation[port]--;
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+				"free_mipi_frames(%p) leave: nothing to do, other streams still use this port (port=%d).\n",
+				pipe, port);
+			return IA_CSS_SUCCESS;
+		}
+	#endif
+
+		{ /* limit the scope of variables */
+			unsigned int i;
+			for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
+				if (my_css.mipi_frames[port][i] != NULL) {
+					ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+						"free_mipi_frames(port=%d, num=%d).\n", port, i);
+					ia_css_frame_free(my_css.mipi_frames[port][i]);
+					my_css.mipi_frames[port][i] = NULL;
+				} else {
+					ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+						"free_mipi_frames(%p) exit: error: pointer null (port=%d,i=%d).\n",
+						pipe, port, i);
+					return err;
+				}
 			}
+		} /* limit the scope of variables */
+
+		ref_count_mipi_allocation[port]--;
+
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"free_mipi_frames(%p) exit (deallocated).\n", pipe);
+
+		return IA_CSS_ERR_INTERNAL_ERROR;
+	} else { /* pipe ==NULL */
+		/* AM TEMP: free-ing all mipi buffers just like a legacy code. */
+		for (port = CSI_PORT0_ID; port < N_CSI_PORTS; port++) {
+			unsigned int i;
+			for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
+				if (my_css.mipi_frames[port][i] != NULL) {
+					ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+						"free_mipi_frames(port=%d, num=%d).\n", port, i);
+					ia_css_frame_free(my_css.mipi_frames[port][i]);
+					my_css.mipi_frames[port][i] = NULL;
+				}
+			}
+			ref_count_mipi_allocation[port] = 0;
 		}
 	}
-	/* TODO: change into return error value instead of assert
-	 * task is pending, disable for now
-	 */
-	//assert(ref_count_mipi_allocation == 0);
-	ref_count_mipi_allocation = 0;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"free_mipi_frames(%p, %d) exit (deallocated):\n", pipe, uninit);
+
+	return IA_CSS_SUCCESS;
 }
 
-
-static void
+static enum ia_css_err
 send_mipi_frames(struct ia_css_pipe *pipe)
 {
+	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 	unsigned int i;
 	unsigned int port;
 
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"send_mipi_frames(%p) enter:\n", pipe);
+
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
+	if ((pipe == NULL) || (pipe->stream == NULL)) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"send_mipi_frames(%p) exit: error: pipe or stream is null.\n",
+			pipe);
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	}
+
 
 	/* multi stream video needs mipi buffers */
-	if (pipe->stream->config.mode != IA_CSS_INPUT_MODE_BUFFERED_SENSOR)
-		return;
+	/* nothing to be done in other cases. */
+	if (pipe->stream->config.mode != IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"send_mipi_frames(%p) exit: nothing to be done for this mode.\n",
+			pipe);
 
-	/* port_num = (unsigned int) pipe->stream->config.source.port.port;
-	 * magic number is N_MIPI_FRAMES / N_MIPI_FRAMES_PER_STREAM,
-	 * so we do it only for first two ports.
-	 */
-	for (port = 0; port < 2; port++) {
-
-		/* Hand-over the SP-internal mipi buffers */
-		for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
-			/* Need to include the ofset for port. */
-			sh_css_update_host2sp_mipi_frame(port * NUM_MIPI_FRAMES_PER_STREAM + i,
-				my_css.mipi_frames[port][i]);
-		}
-		sh_css_update_host2sp_num_mipi_frames
-			(my_css.num_mipi_frames[port]);
+		return IA_CSS_SUCCESS;
+	/* TODO: AM: maybe this should be returning an error. */
 	}
+
+	port = (unsigned int) pipe->stream->config.source.port.port;
+	assert(port < N_CSI_PORTS);
+	if (port >= N_CSI_PORTS) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+			"send_mipi_frames(%p) exit: error: port is not correct(port=%d).\n",
+			pipe, port);
+		return err;
+	}
+
+	/* Hand-over the SP-internal mipi buffers */
+	for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
+		/* Need to include the ofset for port. */
+		sh_css_update_host2sp_mipi_frame(port * NUM_MIPI_FRAMES_PER_STREAM + i,
+			my_css.mipi_frames[port][i]);
+	}
+	sh_css_update_host2sp_num_mipi_frames
+		(my_css.num_mipi_frames[port]);
 
 	/**********************************
 	 *
-	 * Hack for Baytrail.
-	 *
-	 * AUTHOR: zhengjie.lu@intel.com
-	 * TIME: 2013-01-19, 14:38.
-	 * LOCATION: Santa Clara, U.S.A.
-	 * COMMENT:
 	 * Send an event to inform the SP
 	 * that all MIPI frames are passed.
 	 *
@@ -3153,15 +3253,22 @@ send_mipi_frames(struct ia_css_pipe *pipe)
 	{
 		if (!sh_css_sp_is_running()) {
 			/* SP is not running. The queues are not valid */
-			return;
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+				"send_mipi_frames(%p) exit: error: sp is not running.\n",
+				pipe);
+			return err;
 		}
-		ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_6,	/* the event ID  */
-			0,				/* not used */
-			0,				/* not used */
-			0				/* not used */);
 
+		ia_css_bufq_enqueue_event(
+			SP_SW_EVENT_ID_6,				/* the event ID	*/
+			port,							/* port			*/
+			my_css.num_mipi_frames[port],	/* n_of_buffers	*/
+			0								/* not used		*/);
 	}
-	/** End of hack of Baytrail **/
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"send_mipi_frames(%p) exit: Done.\n",
+		pipe);
+	return IA_CSS_SUCCESS;
 }
 /* end of MIPI functions */
 #endif
@@ -3703,11 +3810,15 @@ ia_css_get_crop_offsets (
 {
 	unsigned row = 0;
 	unsigned column = 0;
+	assert(in_frame != NULL);
+	in_frame->raw_bayer_order = pipe->stream->config.bayer_order;
+
+#if 0   //disabling cropping for now - has issues on MORFLD HW
+	//only doing bayer offset for now
+
 	struct ia_css_resolution *input_res = &pipe->stream->config.input_res;
 	struct ia_css_resolution *effective_res = &pipe->stream->config.effective_res;
 
-	assert(in_frame != NULL);
-	in_frame->raw_bayer_order = pipe->stream->config.bayer_order;
 	if (effective_res->height < input_res->height) {
 		row = (input_res->height - effective_res->height - SH_CSS_MAX_LEFT_CROPPING) / 2;
 		row &= ~0x1;
@@ -3725,6 +3836,7 @@ ia_css_get_crop_offsets (
 	/* ISP expects GRBG bayer order, we skip one line and/or one row
 	 * to correct in case the input bayer order is different.
 	 */
+#endif
 	column += get_crop_columns_for_bayer_order(&pipe->stream->config);
 	row += get_crop_lines_for_bayer_order(&pipe->stream->config);
 
@@ -4172,7 +4284,9 @@ preview_start(struct ia_css_pipe *pipe)
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* multi stream video needs mipi buffers */
-	send_mipi_frames(pipe);
+	err = send_mipi_frames(pipe);
+	if (err != IA_CSS_SUCCESS)
+		goto ERR;
 #endif
 	send_raw_frames(pipe);
 
@@ -4540,7 +4654,13 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 				{
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-					free_mipi_frames(pipe, false);
+					return_err = free_mipi_frames(pipe);
+					if (return_err != IA_CSS_SUCCESS) {
+						ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+							"ia_css_pipe_dequeue_buffer() leaving:"
+							"free_mipi_frames() failed\n");
+						return return_err;
+					}
 #endif
 					pipe->stop_requested = false;
 				}
@@ -4806,9 +4926,6 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 	pipe_id = pipe->mode;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_pipe_start() enter: pipe_id=%d\n", pipe_id);
-#ifdef __KERNEL__
-	printk("sh_css_pipe_start() enter: pipe_id=%d\n", pipe_id);
-#endif
 
 	if(stream->started == true) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -5451,7 +5568,9 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 	/* multi stream video needs mipi buffers */
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	send_mipi_frames(pipe);
+	err = send_mipi_frames(pipe);
+	if (err != IA_CSS_SUCCESS)
+		return err;
 #endif
 
 	send_raw_frames(pipe);
@@ -6514,7 +6633,9 @@ static enum ia_css_err yuvpp_start(struct ia_css_pipe *pipe)
 	/* multi stream video needs mipi buffers */
 
 #if !defined(HAS_NO_INPUT_SYSTEM) && ( defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401) )
-	send_mipi_frames(pipe);
+	err = send_mipi_frames(pipe);
+	if (err != IA_CSS_SUCCESS)
+		return err;
 #endif
 
 	{
@@ -7138,7 +7259,9 @@ static enum ia_css_err capture_start(
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* multi stream video needs mipi buffers */
 	if (pipe->config.mode != IA_CSS_PIPE_MODE_COPY) {
-		send_mipi_frames(pipe);
+		err = send_mipi_frames(pipe);
+		if (err != IA_CSS_SUCCESS)
+			return err;
 	}
 #endif
 
@@ -8767,7 +8890,7 @@ ia_css_pipe_get_isp_pipe_version(const struct ia_css_pipe *pipe)
 
 #define SP_START_TIMEOUT_US 30000000
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 void
 ia_css_start_sp1(void)
 {
@@ -8819,7 +8942,7 @@ ia_css_start_sp(void)
 
 	sh_css_setup_queues();
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	/* Start the SP1 Core */
 	ia_css_start_sp1();
 #endif
@@ -8835,7 +8958,7 @@ ia_css_start_sp(void)
  */
 #define SP_SHUTDOWN_TIMEOUT_US 200000
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 enum ia_css_err
 ia_css_stop_sp1(void)
 {
@@ -8845,9 +8968,7 @@ ia_css_stop_sp1(void)
 	/* For now, stop whole SP1 */
 	sh_css_write_host2sp1_command(host2sp_cmd_terminate);
 	sh_css_sp1_set_sp1_running(false);
-#ifdef __KERNEL__
-	printk("STOP_FUNC SP1: reach point 1\n");
-#endif
+
 	timeout = SP_SHUTDOWN_TIMEOUT_US;
 	while ((ia_css_sp1ctrl_get_state(SP1_ID)!= IA_CSS_SP_SW_TERMINATED) && timeout) {
 		timeout--;
@@ -8856,19 +8977,13 @@ ia_css_stop_sp1(void)
 	if (timeout == 0) {
 		ia_css_debug_dump_debug_info("sh_css_stop_sp1 point1");
 		//ia_css_debug_dump_sp_sw_debug_info();
-#ifdef __KERNEL__
-		printk(KERN_ERR "%s poll timeout point 1!!!\n", __func__);
-#endif
 	}
-#ifdef __KERNEL__
-	printk("STOP_FUNC SP1: reach point 2\n");
-#endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_stop_sp1() exit\n");
 
 	return IA_CSS_SUCCESS;
 }
-#endif //#if defined(IS_ISP_2500_SYSTEM)
+#endif //#if defined(ENABLE_SP1)
 
 enum ia_css_err
 ia_css_stop_sp(void)
@@ -8880,9 +8995,7 @@ ia_css_stop_sp(void)
 	/* For now, stop whole SP */
 	sh_css_write_host2sp_command(host2sp_cmd_terminate);
 	sh_css_sp_set_sp_running(false);
-#ifdef __KERNEL__
-	printk("STOP_FUNC: reach point 1\n");
-#endif
+
 	timeout = SP_SHUTDOWN_TIMEOUT_US;
 	while ((ia_css_spctrl_get_state(SP0_ID)!= IA_CSS_SP_SW_TERMINATED) && timeout) {
 		timeout--;
@@ -8891,13 +9004,7 @@ ia_css_stop_sp(void)
 	if (timeout == 0) {
 		ia_css_debug_dump_debug_info("sh_css_stop_sp point1");
 		ia_css_debug_dump_sp_sw_debug_info();
-#ifdef __KERNEL__
-		printk(KERN_ERR "%s poll timeout point 1!!!\n", __func__);
-#endif
 	}
-#ifdef __KERNEL__
-	printk("STOP_FUNC: reach point 2\n");
-#endif
 	while (!isp_ctrl_getbit(ISP0_ID, ISP_SC_REG, ISP_IDLE_BIT) && timeout) {
 		timeout--;
 		hrt_sleep();
@@ -8905,13 +9012,7 @@ ia_css_stop_sp(void)
 	if (timeout == 0) {
 		ia_css_debug_dump_debug_info("sh_css_stop_sp point2");
 		ia_css_debug_dump_sp_sw_debug_info();
-#ifdef __KERNEL__
-		printk(KERN_ERR "%s poll timeout point 2!!!\n", __func__);
-#endif
 	}
-#ifdef __KERNEL__
-	printk("STOP_FUNC: reach point 3\n");
-#endif
 
 	for (i = 0; i < MAX_HMM_BUFFER_NUM; i++) {
 		if (hmm_buffer_record_h[i] != NULL) {
@@ -8924,7 +9025,7 @@ ia_css_stop_sp(void)
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_stop_sp() exit\n");
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	/* Stop SP1 Core */
 	ia_css_stop_sp1();
 #endif

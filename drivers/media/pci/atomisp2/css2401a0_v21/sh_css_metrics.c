@@ -170,13 +170,6 @@ sh_css_metrics_sample_pcs(void)
 			isp_histogram->stall[pc]++;
 		else
 			isp_histogram->run[pc]++;
-
-#if MULTIPLE_PCS
-		printk(KERN_INFO "msink = 0%X\n", msink);
-		for (i = 0; i < NOF_PCS; i++)
-			printk(KERN_INFO "PC = %d  ", pc_tab[i]);
-		printk(KERN_INFO "\n");
-#endif
 	}
 
 	if (sp_histogram && 0) {

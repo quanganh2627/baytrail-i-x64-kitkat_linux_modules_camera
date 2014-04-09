@@ -299,15 +299,18 @@ ia_css_shading_table_alloc(
 	unsigned int height)
 {
 	unsigned int i;
-	struct ia_css_shading_table *me = sh_css_malloc(sizeof(*me));
+	struct ia_css_shading_table *me;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_shading_table_alloc() enter:\n");
+	IA_CSS_ENTER("");
 
+	me = sh_css_malloc(sizeof(*me));
 	if (me == NULL) {
+		IA_CSS_ERROR("out of memory");
 		return me;
 	}
-	me->width		 = width;
-	me->height		= height;
+
+	me->width         = width;
+	me->height        = height;
 	me->sensor_width  = 0;
 	me->sensor_height = 0;
 	me->fraction_bits = 0;
@@ -323,8 +326,7 @@ ia_css_shading_table_alloc(
 		}
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_shading_table_alloc() leave:\n");
-
+	IA_CSS_LEAVE("");
 	return me;
 }
 
@@ -333,12 +335,13 @@ ia_css_shading_table_free(struct ia_css_shading_table *table)
 {
 	unsigned int i;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_shading_table_free() enter:\n");
-
-	if (table == NULL) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_shading_table_free() leave:\n");
+	if (table == NULL)
 		return;
-	}
+
+	/* We only output logging when the table is not NULL, otherwise
+	 * logs will give the impression that a table was freed.
+	 * */
+	IA_CSS_ENTER("");
 
 	for (i = 0; i < IA_CSS_SC_NUM_COLORS; i++) {
 		if (table->data[i])
@@ -346,6 +349,6 @@ ia_css_shading_table_free(struct ia_css_shading_table *table)
 	}
 	sh_css_free(table);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_shading_table_free() leave:\n");
+	IA_CSS_LEAVE("");
 }
 

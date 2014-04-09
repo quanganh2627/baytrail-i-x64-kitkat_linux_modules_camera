@@ -80,8 +80,6 @@ enum ia_css_frame_format {
 							   even line */
 };
 #define IA_CSS_FRAME_FORMAT_NUM		(IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10 + 1)
-/** Number of valid input frame formats for ISP **/
-#define IA_CSS_FRAME_IN_FORMAT_NUM	(IA_CSS_FRAME_FORMAT_RGBA888 + 1)
 /** Number of valid output frame formats for ISP **/
 #define IA_CSS_FRAME_OUT_FORMAT_NUM	(IA_CSS_FRAME_FORMAT_RGBA888 + 1)
 

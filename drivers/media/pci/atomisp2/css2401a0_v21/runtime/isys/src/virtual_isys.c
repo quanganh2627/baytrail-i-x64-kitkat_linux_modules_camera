@@ -146,7 +146,7 @@ static csi_mipi_packet_type_t get_csi_mipi_packet_type(
 
 static int32_t calculate_input_system_alignment(
 	int32_t fmt_type,
-        int32_t bytes_per_pixel);
+	int32_t bytes_per_pixel);
 
 static int32_t calculate_packed_stride(
 	int32_t bits_per_pixel,
@@ -159,7 +159,7 @@ static int32_t calculate_packed_stride(
  * Public Method
  *
  **************************************************/
- ia_css_isys_error_t ia_css_isys_stream_create(
+ia_css_isys_error_t ia_css_isys_stream_create(
 	ia_css_isys_descr_t	*isys_stream_descr,
 	ia_css_isys_stream_h	isys_stream)
 {
@@ -530,17 +530,17 @@ static int32_t calculate_input_system_alignment(
 {
 	int32_t memory_alignment_in_bytes;
 
-        /* make input system 2401 stride aligned with frame buffer
-           ISP_VEC_NELEMS is 64 for ISP on 2401 css system */
-        if (fmt_type <= MIPI_FORMAT_RAW14 && fmt_type >= MIPI_FORMAT_RAW6)
-                memory_alignment_in_bytes = bytes_per_pixel * 2 * ISP_VEC_NELEMS;
-	/* YUV420 double the Y plane to make all plane aligned
-	   YUV422 2 subpixles per pixel, need double the alignment */
-        else if (fmt_type == MIPI_FORMAT_YUV420_8 ||
-		 fmt_type == MIPI_FORMAT_YUV422_8)
-                memory_alignment_in_bytes = bytes_per_pixel * 2 * HIVE_ISP_DDR_WORD_BYTES;
-        else
-                memory_alignment_in_bytes = bytes_per_pixel * HIVE_ISP_DDR_WORD_BYTES;
+		/* make input system 2401 stride aligned with frame buffer
+			ISP_VEC_NELEMS is 64 for ISP on 2401 css system */
+		if (fmt_type <= MIPI_FORMAT_RAW14 && fmt_type >= MIPI_FORMAT_RAW6)
+			memory_alignment_in_bytes = bytes_per_pixel * 2 * ISP_VEC_NELEMS;
+		/* YUV420 double the Y plane to make all plane aligned
+			YUV422 2 subpixles per pixel, need double the alignment */
+		else if (fmt_type == MIPI_FORMAT_YUV420_8 ||
+				fmt_type == MIPI_FORMAT_YUV422_8)
+			memory_alignment_in_bytes = bytes_per_pixel * 2 * HIVE_ISP_DDR_WORD_BYTES;
+		else
+			memory_alignment_in_bytes = bytes_per_pixel * HIVE_ISP_DDR_WORD_BYTES;
 
 	return memory_alignment_in_bytes;
 }

@@ -735,15 +735,11 @@ ia_css_set_dvs_coefficients(struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			    "ia_css_set_dvs_coefficients() enter: \
-			    hcoef=%p, vcoef=%p",
-			    coefs->hor_coefs, coefs->ver_coefs);
+	IA_CSS_ENTER_PRIVATE("hcoef=%p, vcoef=%p", coefs->hor_coefs, coefs->ver_coefs);
 	params->dis_hor_coef_tbl = coefs->hor_coefs;
 	params->dis_ver_coef_tbl = coefs->ver_coefs;
 	params->dis_coef_table_changed = true;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "ia_css_set_dvs_coefficients() leave: void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -765,6 +761,7 @@ ia_css_get_dvs_statistics(struct ia_css_dvs_statistics           *host_stats,
 		ia_css_translate_dvs_statistics(host_stats, map);
 		ia_css_isp_dvs_statistics_map_free(map);
 	} else {
+		IA_CSS_ERROR("out of memory");
 		ret = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 	}
 
@@ -822,26 +819,24 @@ ia_css_set_dvs2_coefficients(struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "sh_css_set_dvs2_coefficients() enter: \
-			    hor_coefs.odd_real=%p, hor_coefs.odd_imag=%p\
-			    hor_coefs.even_real=%p, hor_coefs.even_imag=%p\
-			    ver_coefs.odd_real=%p, ver_coefs.odd_imag=%p\
-			    ver_coefs.even_real=%p, ver_coefs.even_imag=%p",
-			    coefs->hor_coefs.odd_real,
-			    coefs->hor_coefs.odd_imag,
-			    coefs->hor_coefs.even_real,
-			    coefs->hor_coefs.even_imag,
-			    coefs->ver_coefs.odd_real,
-			    coefs->ver_coefs.odd_imag,
-			    coefs->ver_coefs.even_real,
-			    coefs->ver_coefs.even_imag);
+	IA_CSS_ENTER_PRIVATE("hor_coefs.odd_real=%p, hor_coefs.odd_imag=%p, "
+		     "hor_coefs.even_real=%p, hor_coefs.even_imag=%p, "
+		     "ver_coefs.odd_real=%p, ver_coefs.odd_imag=%p, "
+		     "ver_coefs.even_real=%p, ver_coefs.even_imag=%p",
+		     coefs->hor_coefs.odd_real,
+		     coefs->hor_coefs.odd_imag,
+		     coefs->hor_coefs.even_real,
+		     coefs->hor_coefs.even_imag,
+		     coefs->ver_coefs.odd_real,
+		     coefs->ver_coefs.odd_imag,
+		     coefs->ver_coefs.even_real,
+		     coefs->ver_coefs.even_imag);
 
 	params->dvs2_hor_coefs = coefs->hor_coefs;
 	params->dvs2_ver_coefs = coefs->ver_coefs;
 
 	params->dvs2_coef_table_changed = true;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_dvs2_coefficients() leave: void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -863,6 +858,7 @@ ia_css_get_dvs2_statistics(struct ia_css_dvs2_statistics           *host_stats,
 		ia_css_translate_dvs2_statistics(host_stats, map);
 		ia_css_isp_dvs_statistics_map_free(map);
 	} else {
+		IA_CSS_ERROR("out of memory");
 		ret = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 	}
 
@@ -978,9 +974,10 @@ convert_coords_to_ispparams(
 		height = config->height_uv;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "convert_coords_to_ispparams blockdim_x %d blockdim_y %d\n", DVS_BLOCKDIM_X, DVS_BLOCKDIM_Y_LUMA >> uv_flag);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "convert_coords_to_ispparams num_blocks_x %d num_blocks_y %d\n",num_blocks_x,num_blocks_y);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "convert_coords_to_ispparams width %d height %d\n",width,height);
+	IA_CSS_LOG("blockdim_x %d blockdim_y %d",
+		   DVS_BLOCKDIM_X, DVS_BLOCKDIM_Y_LUMA >> uv_flag);
+	IA_CSS_LOG("num_blocks_x %d num_blocks_y %d", num_blocks_x,num_blocks_y);
+	IA_CSS_LOG("width %d height %d", width, height);
 
 	assert(width == num_blocks_x + 1); // the width and height of the provided morphing table should be 1 more than the number of blocks
 	assert(height == num_blocks_y + 1);
@@ -1260,8 +1257,7 @@ sh_css_set_black_frame(struct ia_css_stream *stream,
 	ptr = raw_black_frame->data
 		+ raw_black_frame->planes.raw.offset;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_black_frame() enter: \
-		black_frame=%p\n",raw_black_frame);
+	IA_CSS_ENTER_PRIVATE("black_frame=%p", raw_black_frame);
 
 #if defined(IS_ISP_2500_SYSTEM)
 	(void)ptr;
@@ -1281,8 +1277,8 @@ sh_css_set_black_frame(struct ia_css_stream *stream,
 	if (params->fpn_config.data == NULL) {
 		params->fpn_config.data = sh_css_malloc(height * width * sizeof(short));
 		if (!params->fpn_config.data) {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_black_frame() leave: \
-		return_err=%d\n",IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+			IA_CSS_ERROR("out of memory");
+			IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 			return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 		}
 		params->fpn_config.width = width;
@@ -1320,8 +1316,7 @@ sh_css_set_black_frame(struct ia_css_stream *stream,
 	ia_css_process_kernel(stream, params, ia_css_kernel_process_param[IA_CSS_FPN_ID]);
 #endif
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_black_frame() leave: \
-		return_err=%d\n",IA_CSS_SUCCESS);
+	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 
 	return IA_CSS_SUCCESS;
 }
@@ -1330,8 +1325,8 @@ bool
 sh_css_params_set_binning_factor(struct ia_css_stream *stream, unsigned int binning_fact)
 {
 	struct ia_css_isp_parameters *params;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_set_binning_factor() enter:\n");
 
+	IA_CSS_ENTER_PRIVATE("void");
 	assert(stream != NULL);
 
 	params = stream->isp_params_configs;
@@ -1341,7 +1336,7 @@ sh_css_params_set_binning_factor(struct ia_css_stream *stream, unsigned int binn
 		params->sc_table_changed = true;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_set_binning_factor() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 
 	return params->sc_table_changed;
 }
@@ -1352,8 +1347,8 @@ sh_css_set_shading_table(struct ia_css_stream *stream,
 			 const struct ia_css_shading_table *table)
 {
 	struct ia_css_isp_parameters *params;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_shading_table() enter:\n");
 
+	IA_CSS_ENTER_PRIVATE("");
 	if (table == NULL)
 		return;
 	assert(stream != NULL);
@@ -1373,7 +1368,7 @@ sh_css_set_shading_table(struct ia_css_stream *stream,
 		sh_css_invalidate_shading_tables(stream);
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_shading_table() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1391,11 +1386,10 @@ store_sctbl(
 	assert(shading_table != NULL);
 	assert(ddr_addr != mmgr_NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "store_sctbl() enter:\n");
+	IA_CSS_ENTER_PRIVATE("");
 
 	if (shading_table == NULL) {
-/* Checkpatch patch */
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "store_sctbl() leave:\n");
+		IA_CSS_LEAVE_PRIVATE("void");
 		return;
 	}
 
@@ -1415,7 +1409,7 @@ store_sctbl(
 		}
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "store_sctbl() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1423,13 +1417,14 @@ store_sctbl(
 static void
 sh_css_enable_pipeline(const struct ia_css_binary *binary)
 {
-	if (!binary) return;
+	if (!binary)
+		return;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_enable_pipeline() enter:\n");
+	IA_CSS_ENTER_PRIVATE("");
 
 	ia_css_isp_param_enable_pipeline(&binary->mem_params);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_enable_pipeline() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1443,7 +1438,7 @@ static void ia_css_process_zoom_and_motion(
 
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_zoom_and_motion() enter:\n");
+	IA_CSS_ENTER_PRIVATE("");
 
 	/* Go through all stages to udate uds and cropping */
 	for (stage = first_stage; stage; stage = stage->next) {
@@ -1490,7 +1485,7 @@ static void ia_css_process_zoom_and_motion(
 	}
 	params->isp_params_changed = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_zoom_and_motion() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1501,19 +1496,13 @@ sh_css_set_gamma_table(struct ia_css_isp_parameters *params,
 {
 	if (table == NULL)
 		return;
-	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_gamma_table() enter: "
-			    "table=%p\n", table);
+	IA_CSS_ENTER_PRIVATE("table=%p", table);
 
 	assert(params != NULL);
-	assert(table != NULL);
-
 	params->gc_table = *table;
 	params->config_changed[IA_CSS_GC_ID] = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_gamma_table() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1524,15 +1513,12 @@ sh_css_get_gamma_table(const struct ia_css_isp_parameters *params,
 {
 	if (table == NULL)
 		return;
+	IA_CSS_ENTER_PRIVATE("table=%p", table);
+
 	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_gamma_table() enter: "
-		"table=%p\n", table);
-
 	*table = params->gc_table;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_gamma_table() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1543,16 +1529,14 @@ sh_css_set_ctc_table(struct ia_css_isp_parameters *params,
 {
 	if (table == NULL)
 		return;
+
+	IA_CSS_ENTER_PRIVATE("table=%p", table);
+
 	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_ctc_table() enter: "
-		"table=%p\n", table);
-
 	params->ctc_table = *table;
 	params->config_changed[IA_CSS_CTC_ID] = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_ctc_table() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1563,15 +1547,13 @@ sh_css_get_ctc_table(const struct ia_css_isp_parameters *params,
 {
 	if (table == NULL)
 		return;
+
+	IA_CSS_ENTER_PRIVATE("table=%p", table);
+
 	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_ctc_table() enter: "
-		"table=%p\n", table);
-
 	*table = params->ctc_table;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_ctc_table() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1582,16 +1564,14 @@ sh_css_set_macc_table(struct ia_css_isp_parameters *params,
 {
 	if (table == NULL)
 		return;
+
+	IA_CSS_ENTER_PRIVATE("table=%p", table);
+
 	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_macc_table() enter: "
-		"table=%p\n", table);
-
 	params->macc_table = *table;
 	params->config_changed[IA_CSS_MACC_ID] = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_macc_table() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1602,15 +1582,13 @@ sh_css_get_macc_table(const struct ia_css_isp_parameters *params,
 {
 	if (table == NULL)
 		return;
+
+	IA_CSS_ENTER_PRIVATE("table=%p", table);
+
 	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_macc_table() enter: "
-		"table=%p\n", table);
-
 	*table = params->macc_table;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_macc_table() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -1620,11 +1598,10 @@ void ia_css_morph_table_free(
 {
 	unsigned int i;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_morph_table_free() enter:\n");
-
-	if (me == NULL) {
+	if (me == NULL)
 		return;
-	}
+
+	IA_CSS_ENTER("");
 
 	for (i = 0; i < IA_CSS_MORPH_TABLE_NUM_PLANES; i++) {
 		if (me->coordinates_x[i])
@@ -1633,9 +1610,8 @@ void ia_css_morph_table_free(
 			sh_css_free(me->coordinates_y[i]);
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_morph_table_free() leave:\n");
-
 	sh_css_free(me);
+	IA_CSS_LEAVE("void");
 }
 #endif
 
@@ -1645,11 +1621,13 @@ struct ia_css_morph_table *ia_css_morph_table_allocate(
 	unsigned int height)
 {
 	unsigned int i;
-	struct ia_css_morph_table *me = sh_css_malloc(sizeof(*me));
+	struct ia_css_morph_table *me;
+	       
+	IA_CSS_ENTER("");
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_morph_table_allocate() enter:\n");
-
+	me = sh_css_malloc(sizeof(*me));
 	if (me == NULL) {
+		IA_CSS_ERROR("out of memory");
 		return me;
 	}
 
@@ -1676,8 +1654,7 @@ struct ia_css_morph_table *ia_css_morph_table_allocate(
 	me->width = width;
 	me->height = height;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_morph_table_allocate() leave:\n");
-
+	IA_CSS_LEAVE("");
 	return me;
 }
 #endif
@@ -1687,7 +1664,7 @@ static enum ia_css_err sh_css_params_default_morph_table(
 	struct ia_css_morph_table **table,
 	const struct ia_css_binary *binary)
 {
-/* MW 2400 advanced requires different scaling */
+	/* MW 2400 advanced requires different scaling */
 	unsigned int i, j, k, step, width, height;
 	short start_x[IA_CSS_MORPH_TABLE_NUM_PLANES] = { -8, 0, -8, 0, 0, -8 },
 	      start_y[IA_CSS_MORPH_TABLE_NUM_PLANES] = { 0, 0, -8, -8, -8, 0 };
@@ -1696,17 +1673,15 @@ static enum ia_css_err sh_css_params_default_morph_table(
 	assert(table != NULL);
 	assert(binary != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_params_default_morph_table() enter:\n");
+	IA_CSS_ENTER_PRIVATE("");
 
 	step = (ISP_VEC_NELEMS / 16) * 128,
 	width = binary->morph_tbl_width,
 	height = binary->morph_tbl_height;
 
 	tab = ia_css_morph_table_allocate(width, height);
-	if (tab == NULL) {
-
+	if (tab == NULL)
 		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-	}
 
 	for (i = 0; i < IA_CSS_MORPH_TABLE_NUM_PLANES; i++) {
 		short val_y = start_y[i];
@@ -1734,7 +1709,7 @@ static enum ia_css_err sh_css_params_default_morph_table(
 	}
 	*table = tab;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_params_default_morph_table() leave:\n");
+	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 
 	return IA_CSS_SUCCESS;
 }
@@ -1747,17 +1722,15 @@ sh_css_set_morph_table(struct ia_css_isp_parameters *params,
 {
 	if (table == NULL)
 		return;
+
+	IA_CSS_ENTER_PRIVATE("table=%p", table);
+
 	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_morph_table() enter: "
-		"table=%p\n", table);
-
 	if (table->enable == false)
 		table = NULL;
 	params->morph_table = table;
 	params->morph_table_changed = true;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_morph_table() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #if 0
 /* TODO: connect this properly. The table would have to be copied
@@ -1769,15 +1742,13 @@ sh_css_get_morph_table(struct ia_css_isp_parameters *params,
 {
 	if (table == NULL)
 		return;
+
+	IA_CSS_ENTER_PRIVATE("table=%p", table);
+
 	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_morph_table() enter: "
-		"table=%p\n", table);
-
 	*table = params->morph_table;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_morph_table() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 #endif
@@ -1811,10 +1782,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 	hrt_vaddress ae_pp_info_addr = (hrt_vaddress)(long int)
 	  &((struct stats_4a_private_raw_buffer*)(long int)isp_stats->data.dmem.s3a_tbl)->ae_join_buffers;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_get_4a_statistics() enter: "
-			"host_stats=%p, isp_stats=%p\n",
-			host_stats, isp_stats);
+	IA_CSS_ENTER("host_stats=%p, isp_stats=%p", host_stats, isp_stats);
 
 	/* load grid configuration */
 	mmgr_load(stats_config_addr,
@@ -1865,9 +1833,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 	ia_css_3a_debubble(host_stats->data,
 			   &stats_bubble_info);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"ia_css_get_4a_statistics() leave: return_void\n");
-
+	IA_CSS_LEAVE("void");
 }
 
 void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
@@ -1886,10 +1852,7 @@ void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
 		(hrt_vaddress)&((lace_stat_private_raw_buffer_t*)
 			isp_stats)->lace_stat_cfg;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_get_acc_lace_statistics() enter: "
-			"host_stats=%p, isp_stats=%p\n",
-			host_stats, isp_stats);
+	IA_CSS_ENTER("host_stats=%p, isp_stats=%p", host_stats, isp_stats);
 
 	/* Load configuration */
 	mmgr_load(lace_stat_cfg_ddr_addr,
@@ -1904,10 +1867,9 @@ void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
 			host_stats->lace_stat_cfg.lace_stat.y_grd_hor_cfg.grid_width *
 			ACC_LACE_STAT_NUM_OF_BINS_PER_BLOCK;
 	host_stats->lace_stat_hist_p = (unsigned char*)sh_css_malloc(hist_size);
-	if(host_stats->lace_stat_hist_p == NULL)
-	{
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_get_acc_lace_statistics() malloc error\n");
+	if (host_stats->lace_stat_hist_p == NULL) {
+		IA_CSS_LEAVE("malloc error");
+		/* TODO: need to return a proper error code here */
 		return;
 	}
 
@@ -1915,8 +1877,7 @@ void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
 		  (void*)host_stats->lace_stat_hist_p,
 		  hist_size);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_get_acc_lace_statistics() leave: return_void\n");
+	IA_CSS_LEAVE("void");
 }
 #endif
 
@@ -1935,14 +1896,13 @@ dump_3a_statistics(const struct ia_css_3a_statistics *host_stats)
 
 	for (h = 0; h < height; h++) {
 		for (w = 0; w < width; w++) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"3A: (%2d,%2d) %10d %10d %10d %10d %10d\n",
-				h, w,
-				host_stats->data[h*width + w].awb_r,
-				host_stats->data[h*width + w].awb_gr,
-				host_stats->data[h*width + w].awb_gb,
-				host_stats->data[h*width + w].awb_b,
-				host_stats->data[h*width + w].awb_cnt);
+			IA_CSS_LOG("3A: (%2d,%2d) %10d %10d %10d %10d %10d",
+				   h, w,
+				   host_stats->data[h*width + w].awb_r,
+				   host_stats->data[h*width + w].awb_gr,
+				   host_stats->data[h*width + w].awb_gb,
+				   host_stats->data[h*width + w].awb_b,
+				   host_stats->data[h*width + w].awb_cnt);
 		}
 	}
 }
@@ -1996,8 +1956,7 @@ ia_css_isp_3a_statistics_map_allocate(
 
 	me = sh_css_malloc(sizeof(*me));
 	if (!me) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"cannot allocate memory");
+		IA_CSS_LEAVE("cannot allocate memory");
 		goto err;
 	}
 
@@ -2006,8 +1965,7 @@ ia_css_isp_3a_statistics_map_allocate(
 	if (!data_ptr) {
 		me->data_ptr = sh_css_malloc(isp_stats->size);
 		if (!me->data_ptr) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"cannot allocate memory");
+			IA_CSS_LEAVE("cannot allocate memory");
 			goto err;
 		}
 	}
@@ -2023,6 +1981,7 @@ ia_css_isp_3a_statistics_map_allocate(
 	me->hmem_stats    = (void*)(base_ptr + isp_stats->dmem_size +
 				    2 * isp_stats->vmem_size);
 
+	IA_CSS_LEAVE("map=%p", me);
 	return me;
 
 err:
@@ -2050,6 +2009,7 @@ ia_css_get_3a_statistics(struct ia_css_3a_statistics           *host_stats,
 		ia_css_translate_3a_statistics(host_stats, map);
 		ia_css_isp_3a_statistics_map_free(map);
 	} else {
+		IA_CSS_ERROR("out of memory");
 		ret = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 	}
 
@@ -2084,7 +2044,8 @@ sh_css_set_nr_config(struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_nr_config() enter: ");
+	IA_CSS_ENTER_PRIVATE("config=%p", config);
+
 	ia_css_nr_debug_dtrace(config, IA_CSS_DEBUG_TRACE_PRIVATE);
 	params->nr_config = *config;
 	params->yee_config.nr = *config;
@@ -2092,9 +2053,7 @@ sh_css_set_nr_config(struct ia_css_isp_parameters *params,
 	params->config_changed[IA_CSS_YEE_ID] = true;
 	params->config_changed[IA_CSS_BNR_ID] = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_set_nr_config() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2107,15 +2066,14 @@ sh_css_set_ee_config(struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_ee_config() enter: ");
+	IA_CSS_ENTER_PRIVATE("config=%p", config);
 	ia_css_ee_debug_dtrace(config, IA_CSS_DEBUG_TRACE_PRIVATE);
+
 	params->ee_config = *config;
 	params->yee_config.ee = *config;
 	params->config_changed[IA_CSS_YEE_ID] = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_set_ee_config() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2126,15 +2084,14 @@ sh_css_get_ee_config(const struct ia_css_isp_parameters *params,
 {
 	if (config == NULL)
 		return;
+
+	IA_CSS_ENTER_PRIVATE("config=%p", config);
+
 	assert(params != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_ee_config() enter: "
-		"config=%p\n",config);
-
 	*config = params->ee_config;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_ee_config() enter: ");
 	ia_css_ee_debug_dtrace(config, IA_CSS_DEBUG_TRACE_PRIVATE);
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2149,17 +2106,15 @@ sh_css_set_dvs_6axis_config(struct ia_css_isp_parameters *params,
 	assert(dvs_config->height_y == dvs_config->height_uv);
 	assert( (dvs_config->width_y - 1) == 2 * (dvs_config->width_uv - 1));
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_set_dvs_config() enter: "
-	"dvs_config=%p\n",dvs_config);
+	IA_CSS_ENTER_PRIVATE("dvs_config=%p", dvs_config);
 
 	copy_dvs_6axis_table(params->dvs_6axis_config,dvs_config);
 
+#if !defined(HAS_NO_DVS_6AXIS_CONFIG_UPDATE)
 	params->dvs_6axis_config_changed = true;
+#endif
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_set_dvs_6axis_config() leave: "
-		"return_void\n");
-
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2174,8 +2129,7 @@ sh_css_get_dvs_6axis_config(const struct ia_css_isp_parameters *params,
 	assert(dvs_config->height_y == dvs_config->height_uv);
 	assert( (dvs_config->width_y - 1) == 2 * dvs_config->width_uv - 1);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_dvs_6axis_config() enter: "
-		"dvs_config=%p\n",dvs_config);
+	IA_CSS_ENTER_PRIVATE("dvs_config=%p", dvs_config);
 
 	if ((dvs_config->width_y == params->dvs_6axis_config->width_y) &&
 	    (dvs_config->height_y == params->dvs_6axis_config->height_y) &&
@@ -2189,9 +2143,7 @@ sh_css_get_dvs_6axis_config(const struct ia_css_isp_parameters *params,
 		copy_dvs_6axis_table(dvs_config,params->dvs_6axis_config);
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_get_dvs_6axis_config() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2204,15 +2156,13 @@ sh_css_set_baa_config(struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_set_baa_config() enter: ");
+	IA_CSS_ENTER_PRIVATE("config=%p", config);
 	ia_css_aa_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 
 	params->raw_config = *config;
 	params->config_changed[IA_CSS_RAW_ID] = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"sh_css_set_baa_config() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2225,13 +2175,12 @@ sh_css_get_baa_config(const struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_get_baa_config() enter: "
-		"config=%p\n",config);
+	IA_CSS_ENTER_PRIVATE("config=%p", config);
 
 	*config = params->raw_config;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_get_baa_config() leave: ");
 	ia_css_aa_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2244,9 +2193,7 @@ sh_css_set_dz_config(struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"sh_css_set_zoom_factor() enter: dx=%d, dy=%d\n",
-		config->dx, config->dy);
+	IA_CSS_ENTER_PRIVATE("dx=%d, dy=%d", config->dx, config->dy);
 
 	assert(config->dx <= HRT_GDC_N);
 	assert(config->dy <= HRT_GDC_N);
@@ -2256,9 +2203,7 @@ sh_css_set_dz_config(struct ia_css_isp_parameters *params,
 	/* JK: Why isp params changed?? */
 	params->isp_params_changed = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_set_zoom_factor() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2271,13 +2216,11 @@ sh_css_get_dz_config(const struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_dz_config() enter:\n");
+	IA_CSS_ENTER_PRIVATE("config=%p", config);
 
 	*config = params->dz_config;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_get_dz_config() leave: dx=%d, dy=%d\n",
-		config->dx, config->dy);
+	IA_CSS_LEAVE_PRIVATE("dx=%d, dy=%d", config->dx, config->dy);
 }
 #endif
 
@@ -2290,18 +2233,14 @@ sh_css_set_motion_vector(struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"sh_css_set_motion_vector() enter: x=%d, y=%d\n",
-		motion->x, motion->y);
+	IA_CSS_ENTER_PRIVATE("x=%d, y=%d", motion->x, motion->y);
 
 	params->motion_config = *motion;
 	/* JK: Why do isp params change? */
 	params->motion_config_changed = true;
 	params->isp_params_changed = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_set_motion_vector() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -2314,13 +2253,11 @@ sh_css_get_motion_vector(const struct ia_css_isp_parameters *params,
 		return;
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_get_motion_vector() enter\n");
+	IA_CSS_ENTER_PRIVATE("motion=%p", motion);
 
 	*motion = params->motion_config;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_get_motion_vector() leave: x=%d, y=%d\n",
-		motion->x, motion->y);
+	IA_CSS_LEAVE_PRIVATE("x=%d, y=%d", motion->x, motion->y);
 }
 #endif
 
@@ -2341,8 +2278,7 @@ ia_css_stream_set_isp_config_on_pipe(
 	struct ia_css_isp_parameters *params;
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_set_isp_config_on_pipe() enter: "
-		"stream=%p, config=%p, pipe=%p\n", stream, config, pipe);
+	IA_CSS_ENTER("stream=%p, config=%p, pipe=%p", stream, config, pipe);
 
 	if ((stream == NULL) || (config == NULL)) {
 		err = IA_CSS_ERR_INVALID_ARGUMENTS;
@@ -2387,8 +2323,7 @@ ia_css_stream_set_isp_config_on_pipe(
 	sh_css_param_update_isp_params(stream, sh_css_sp_is_running(), pipe);
 
 ret:
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_stream_set_isp_config_on_pipe() leave: \n");
+	IA_CSS_LEAVE_ERR(err);
 	return err;
 }
 
@@ -2402,8 +2337,7 @@ ia_css_stream_get_isp_config(
 
 	assert(config != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_get_isp_config() enter: "
-		"config=%p\n", config);
+	IA_CSS_ENTER("config=%p", config);
 
 #if defined(IS_ISP_2500_SYSTEM)
 	(void) stream;
@@ -2434,9 +2368,7 @@ ia_css_stream_get_isp_config(
 	if (config->xnr_config != NULL)
 		ia_css_get_xnr_config(config->xnr_config);
 */
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"sh_css_get_isp_config() leave: "
-		"return_void\n");
+	IA_CSS_LEAVE("void");
 }
 
 /*
@@ -2451,19 +2383,20 @@ static bool realloc_isp_css_mm_buf(
 	uint16_t	mmgr_attribute)
 {
 	int32_t id;
+
 	*err = IA_CSS_SUCCESS;
 	/* Possible optimization: add a function sh_css_isp_css_mm_realloc()
 	 * and implement on top of hmm. */
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "realloc_isp_css_mm_buf() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	if (!force && *curr_size >= needed_size) {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "realloc_isp_css_mm_buf() leave:\n");
+		IA_CSS_LEAVE_PRIVATE("false");
 		return false;
 	}
 	/* don't reallocate if single ref to buffer and same size */
 	if (*curr_size == needed_size && ia_css_refcount_is_single(*curr_buf)) {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "realloc_isp_css_mm_buf() leave:\n");
+		IA_CSS_LEAVE_PRIVATE("false");
 		return false;
 	}
 
@@ -2478,7 +2411,7 @@ static bool realloc_isp_css_mm_buf(
 	} else {
 		*curr_size = needed_size;
 	}
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "realloc_isp_css_mm_buf() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("true");
 	return true;
 }
 
@@ -2493,12 +2426,12 @@ static bool reallocate_buffer(
 	bool ret;
 	uint16_t	mmgr_attribute = MMGR_ATTRIBUTE_DEFAULT;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "reallocate_buffer() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	ret = realloc_isp_css_mm_buf(curr_buf,
 		curr_size, needed_size, force, err, mmgr_attribute);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "reallocate_buffer() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("ret=%d", ret);
 	return ret;
 }
 
@@ -2511,15 +2444,15 @@ static bool reallocate_cached_buffer(
 	enum ia_css_err *err)
 {
 	bool ret;
-	uint16_t	mmgr_attribute = MMGR_ATTRIBUTE_DEFAULT |
-		MMGR_ATTRIBUTE_CACHED;
+	uint16_t mmgr_attribute = MMGR_ATTRIBUTE_DEFAULT |
+				  MMGR_ATTRIBUTE_CACHED;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "reallocate_cached_buffer() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	ret = realloc_isp_css_mm_buf(curr_buf,
 		curr_size, needed_size, false, err, mmgr_attribute);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "reallocate_cached_buffer() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 
 	return ret;
 }
@@ -2530,7 +2463,7 @@ ia_css_isp_3a_statistics_allocate(const struct ia_css_3a_grid_info *grid)
 {
 	struct ia_css_isp_3a_statistics *me;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_3a_statistics_allocate() enter: grid=%p\n", grid);
+	IA_CSS_ENTER("grid=%p", grid);
 
 /* MW: Does "grid->enable" also control the histogram output ?? */
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -2585,7 +2518,7 @@ ia_css_isp_3a_statistics_allocate(const struct ia_css_3a_grid_info *grid)
 
 
 err:
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_3a_statistics_allocate() leave: return=%p\n",me);
+	IA_CSS_LEAVE("return=%p", me);
 	return me;
 }
 
@@ -2603,13 +2536,12 @@ struct ia_css_isp_skc_dvs_statistics* ia_css_skc_dvs_statistics_allocate(void)
 #if defined(IS_ISP_2500_SYSTEM)
 	struct ia_css_isp_skc_dvs_statistics *me;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_skc_dvs_statistics_allocate() enter\n");
+	IA_CSS_ENTER("void");
 
 	me = (struct ia_css_isp_skc_dvs_statistics *)
 		mmgr_malloc(sizeof(dvs_stat_private_raw_buffer_t));
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_skc_dvs_statistics_allocate() leave: return=%p\n",me);
-
+	IA_CSS_LEAVE("return=%p", me);
 	return me;
 #else
 	return NULL;
@@ -2620,9 +2552,8 @@ void
 ia_css_lace_statistics_free(struct ia_css_isp_lace_statistics* me)
 {
 #if defined(IS_ISP_2500_SYSTEM)
-	if (me != 0) {
+	if (me)
 		mmgr_free((hrt_vaddress)me);
-	}
 #else
 	me = NULL;
 #endif
@@ -2633,12 +2564,12 @@ struct ia_css_isp_lace_statistics* ia_css_lace_statistics_allocate(void)
 #if defined(IS_ISP_2500_SYSTEM)
 	struct ia_css_isp_lace_statistics* me = 0;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_lace_statistics_allocate() enter\n");
+	IA_CSS_ENTER("void");
 
 	me = (struct ia_css_isp_lace_statistics*)
 		mmgr_malloc(sizeof(lace_stat_private_raw_buffer_t));
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_lace_statistics_allocate() leave: return=%p\n",NULL);
+	IA_CSS_LEAVE("return=%p", me);
 	return me;
 #endif
 	return NULL;
@@ -2652,7 +2583,7 @@ ia_css_isp_dvs_statistics_allocate(const struct ia_css_dvs_grid_info *grid)
 
 	assert(grid != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_dvs_statistics_allocate() enter: grid=%p\n",grid);
+	IA_CSS_ENTER("grid=%p", grid);
 
 	if (!grid->enable)
 		return NULL;
@@ -2675,13 +2606,13 @@ ia_css_isp_dvs_statistics_allocate(const struct ia_css_dvs_grid_info *grid)
 	me->ver_size = ver_size;
 	me->ver_proj = me->data_ptr + hor_size;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_dvs_statistics_allocate() leave: return=%p\n",me);
+	IA_CSS_LEAVE("return=%p", me);
 
 	return me;
 err:
 	ia_css_isp_dvs_statistics_free(me);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_dvs_statistics_allocate() leave: return=%p\n",NULL);
+	IA_CSS_LEAVE("return=%p", NULL);
 
 	return NULL;
 }
@@ -2704,7 +2635,7 @@ ia_css_isp_dvs2_statistics_allocate(const struct ia_css_dvs_grid_info *grid)
 
 	assert(grid != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_dvs2_statistics_allocate() enter: grid=%p\n",grid);
+	IA_CSS_ENTER("grid=%p", grid);
 
 	if (!grid->enable)
 		return NULL;
@@ -2726,13 +2657,11 @@ ia_css_isp_dvs2_statistics_allocate(const struct ia_css_dvs_grid_info *grid)
 	me->ver_proj = me->data_ptr + size;
 	me->ver_size = size;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_dvs2_statistics_allocate() leave: return=%p\n",me);
-
+	IA_CSS_LEAVE("return=%p", me);
 	return me;
 err:
 	ia_css_isp_dvs2_statistics_free(me);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_isp_dvs2_statistics_allocate() leave: return=%p\n",NULL);
+	IA_CSS_LEAVE("return=%p", NULL);
 
 	return NULL;
 }
@@ -2758,8 +2687,7 @@ ia_css_isp_dvs_statistics_map_allocate(
 
 	me = sh_css_malloc(sizeof(*me));
 	if (!me) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"cannot allocate memory");
+		IA_CSS_LOG("cannot allocate memory");
 		goto err;
 	}
 
@@ -2769,8 +2697,7 @@ ia_css_isp_dvs_statistics_map_allocate(
 	if (!me->data_ptr) {
 		me->data_ptr = sh_css_malloc(isp_stats->size);
 		if (!me->data_ptr) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-					"cannot allocate memory");
+			IA_CSS_LOG("cannot allocate memory");
 			goto err;
 		}
 	}
@@ -2804,20 +2731,17 @@ union ia_css_dvs_statistics_isp *
 ia_css_dvs_statistics_allocate_isp(enum dvs_statistics_type type,
                                struct ia_css_dvs_grid_info *params)
 {
-	if(DVS_STATISTICS == type)
-	{
+	if (DVS_STATISTICS == type) {
 		return (union ia_css_dvs_statistics_isp *)
 			ia_css_isp_dvs_statistics_allocate(params);
 	}
 
-		if(DVS2_STATISTICS == type)
-	{
+	if (DVS2_STATISTICS == type) {
 		return (union ia_css_dvs_statistics_isp *)
 			ia_css_isp_dvs2_statistics_allocate(params);
 	}
 #if defined(IS_ISP_2500_SYSTEM)
-	if(SKC_DVS_STATISTICS == type)
-	{
+	if(SKC_DVS_STATISTICS == type) {
 		return (union ia_css_dvs_statistics_isp *)
 			ia_css_skc_dvs_statistics_allocate();
 	}
@@ -2829,21 +2753,17 @@ void
 ia_css_dvs_statistics_free_isp(enum dvs_statistics_type type,
                            union ia_css_dvs_statistics_isp *me)
 {
-	if (me != NULL)
-	{
-		if(DVS_STATISTICS == type || DVS2_STATISTICS == type)
-		{
+	if (me != NULL) {
+		if (DVS_STATISTICS == type || DVS2_STATISTICS == type) {
 			mmgr_free(me->p_dvs_statistics_isp->hor_proj);
 			mmgr_free(me->p_dvs_statistics_isp->ver_proj);
 			sh_css_free(me->p_dvs_statistics_isp);
 		}
 	}
 #if defined(IS_ISP_2500_SYSTEM)
-	if(SKC_DVS_STATISTICS == type)
-	{
-		if (me != 0) {
+	if (SKC_DVS_STATISTICS == type) {
+		if (me != 0)
 			mmgr_free((hrt_vaddress)me);
-		}
 		me = 0;
 	}
 #endif
@@ -2854,8 +2774,7 @@ ia_css_metadata_allocate(const struct ia_css_metadata_info *metadata_info)
 {
 	struct ia_css_metadata *md = NULL;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_metadata_allocate() enter\n");
+	IA_CSS_ENTER("");
 
 	if (metadata_info->size == 0)
 		return NULL;
@@ -2870,30 +2789,29 @@ ia_css_metadata_allocate(const struct ia_css_metadata_info *metadata_info)
 	if (md->address == mmgr_NULL)
 		goto error;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_metadata_allocate() leave: return=%p\n", md);
+	IA_CSS_LEAVE("return=%p", md);
 	return md;
 
 error:
 	ia_css_metadata_free(md);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_metadata_allocate() leave: return=%p\n", NULL);
+	IA_CSS_LEAVE("return=%p", NULL);
 	return NULL;
 }
 
 void
 ia_css_metadata_free(struct ia_css_metadata *me)
 {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_metadata_free() enter: me=%p\n", me);
-
 	if (me != NULL) {
+		/* The enter and leave macros are placed inside
+		 * the condition to avoid false logging of metadata
+		 * free events when metadata is disabled.
+		 * We found this to be confusing during development
+		 * and debugging. */
+		IA_CSS_ENTER("me=%p", me);
 		mmgr_free(me->address);
 		sh_css_free(me);
+		IA_CSS_LEAVE("void");
 	}
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_metadata_free() leave: return_void\n");
 }
 
 void
@@ -2924,8 +2842,7 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 
 	assert(stream != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			    "ia_css_stream_isp_parameters_init() enter: void\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	/* TMP: tracking of paramsets */
 	g_param_buffer_dequeue_count = 0;
@@ -2938,11 +2855,9 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	}
 
 	stream->isp_params_configs = sh_css_malloc(sizeof(*stream->isp_params_configs));
-	if (!stream->isp_params_configs)
-	{
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_stream_isp_parameters_init() leave: "
-			"return_err=%d\n",IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+	if (!stream->isp_params_configs) {
+		IA_CSS_ERROR("out of memory");
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 	} else {
 		memset(stream->isp_params_configs, 0, sizeof(*stream->isp_params_configs));
@@ -3075,9 +2990,7 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 		params->pipe_ddr_ptrs_size[i] = *ddr_ptrs_size;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_stream_isp_parameters_init() leave: "
-		"return_err=%d\n",IA_CSS_SUCCESS);
+	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 
 	return IA_CSS_SUCCESS;
 }
@@ -3087,7 +3000,7 @@ sh_css_params_init(void)
 {
 	int i, p;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_init() enter: void\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	/* TMP: tracking of paramsets */
 	g_param_buffer_dequeue_count = 0;
@@ -3105,12 +3018,9 @@ sh_css_params_init(void)
 					    sizeof(struct sh_css_isp_stage)));
 
 			if ((xmem_sp_stage_ptrs[p][i] == mmgr_NULL) ||
-				(xmem_isp_stage_ptrs[p][i] == mmgr_NULL))
-			{
+			    (xmem_isp_stage_ptrs[p][i] == mmgr_NULL)) {
 				sh_css_params_uninit();
-				ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR,
-					"sh_css_params_init() leave: "
-					"return_err=%d\n",IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+				IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 				return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 			}
 		}
@@ -3132,14 +3042,10 @@ sh_css_params_init(void)
 	if ((sp_ddr_ptrs == mmgr_NULL) ||
 	    (xmem_sp_group_ptrs == mmgr_NULL)) {
 		ia_css_uninit();
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"sh_css_params_init() leave: "
-			"return_err=%d\n",IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
-			return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 	}
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"sh_css_params_init() leave: "
-		"return_err=%d\n",IA_CSS_SUCCESS);
+	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 	return IA_CSS_SUCCESS;
 }
 
@@ -3148,43 +3054,43 @@ void sh_css_params_reconfigure_gdc_lut(void)
 {
 	unsigned i;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_reconfigure_gdc_lut() enter: void\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	for (i = 0; i < N_GDC_ID; i++)
 		gdc_lut_store((gdc_ID_t)i, zoom_table);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_reconfigure_gdc_lut() leave: return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
 static void free_param_set_callback(
 	hrt_vaddress ptr)
 {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_param_set_callback() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	free_ia_css_isp_parameter_set_info(ptr);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_param_set_callback() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 static void free_buffer_callback(
 	hrt_vaddress ptr)
 {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_buffer_callback() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	mmgr_free(ptr);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_buffer_callback() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 void
 sh_css_param_clear_param_sets(void)
 {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_param_clear_param_sets() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	ia_css_refcount_clear(IA_CSS_REFCOUNT_PARAM_SET_POOL, &free_param_set_callback);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_param_clear_param_sets() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 /*
@@ -3203,7 +3109,7 @@ static void free_map(struct sh_css_ddr_address_map *map)
 
 	hrt_vaddress *addrs = (hrt_vaddress *)map;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_map() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	/* free buffers */
 	for (i = 0; i < (sizeof(struct sh_css_ddr_address_map_size)/
@@ -3213,7 +3119,7 @@ static void free_map(struct sh_css_ddr_address_map *map)
 		safe_free(IA_CSS_REFCOUNT_PARAM_BUFFER, addrs[i]);
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_map() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 void
@@ -3222,7 +3128,7 @@ ia_css_stream_isp_parameters_uninit(struct ia_css_stream *stream)
 	int i;
 	struct ia_css_isp_parameters *params = stream->isp_params_configs;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_isp_parameters_uninit() enter\n");
+	IA_CSS_ENTER_PRIVATE("void");
 	/* free existing ddr_ptr maps */
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
 		free_map(&params->pipe_ddr_ptrs[i]);
@@ -3233,12 +3139,12 @@ ia_css_stream_isp_parameters_uninit(struct ia_css_stream *stream)
 		sh_css_free(params->fpn_config.data);
 #endif
 
-	/*Free up theDVS table memory blocks before recomputing new table  */
-	if(params->dvs_6axis_config)
+	/* Free up theDVS table memory blocks before recomputing new table */
+	if (params->dvs_6axis_config)
 		free_dvs_6axis_table(&(params->dvs_6axis_config));
 
 	sh_css_free(params);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_isp_parameters_uninit() leave\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 void
@@ -3246,7 +3152,7 @@ sh_css_params_uninit(void)
 {
 	unsigned p, i;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_uninit() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	ia_css_refcount_decrement(-1, sp_ddr_ptrs);
 	sp_ddr_ptrs = mmgr_NULL;
@@ -3266,7 +3172,7 @@ sh_css_params_uninit(void)
 	ia_css_refcount_clear(IA_CSS_REFCOUNT_PARAM_BUFFER, &free_buffer_callback);
 	ia_css_refcount_clear(-1, &free_buffer_callback);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_uninit() leave: return_void\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -3279,7 +3185,7 @@ static void write_morph_plane(
 {
 	unsigned int i, padding, w;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "write_morph_plane() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	/* currently we don't have morph table interpolation yet,
 	 * so we allow a wider table to be used. This will be removed
@@ -3300,7 +3206,7 @@ static void write_morph_plane(
 		data += width;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "write_morph_plane() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -3324,6 +3230,7 @@ static void store_dis_coefficients(
 	hrt_vaddress hor_ptr_isp = ddr_addr_hor,
 		ver_ptr_isp = ddr_addr_ver;
 
+	IA_CSS_ENTER_PRIVATE("void");
 	assert(params != NULL);
 	assert(binary != NULL);
 	assert(ddr_addr_hor != mmgr_NULL);
@@ -3337,8 +3244,6 @@ static void store_dis_coefficients(
 	ver_padding = ver_num_isp - ver_num_3a;
 	hor_ptr_3a = params->dis_hor_coef_tbl,
 	ver_ptr_3a = params->dis_ver_coef_tbl;
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "store_dis_coefficients() enter:\n");
 
 	for (i = 0; i < IA_CSS_DVS_NUM_COEF_TYPES; i++) {
 		if (params->dis_hor_coef_tbl != NULL) {
@@ -3367,18 +3272,18 @@ static void store_dis_coefficients(
 		ver_ptr_isp += ver_padding * sizeof(short);
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "store_dis_coefficients() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
 static void storedvs2_coef(const short *ptr_3a, hrt_vaddress ptr_isp, unsigned num_3a, unsigned padding)
 {
-	if (ptr_3a != NULL) {
+	if (ptr_3a != NULL)
 		mmgr_store(ptr_isp, ptr_3a, num_3a * sizeof(*ptr_3a));
-	} else {
+	else
 		mmgr_clear(ptr_isp, num_3a * sizeof(*ptr_3a));
-	}
+
 	ptr_isp += num_3a * sizeof(short);
 	mmgr_clear(ptr_isp, padding * sizeof(short));
 
@@ -3398,6 +3303,8 @@ static void store_dvs2_coefficients(
 	hrt_vaddress hor_ptr_isp = ddr_addr_hor,
 		ver_ptr_isp = ddr_addr_ver;
 
+	IA_CSS_ENTER_PRIVATE("void");
+
 	assert(binary != NULL);
 	assert(ddr_addr_hor != mmgr_NULL);
 	assert(ddr_addr_ver != mmgr_NULL);
@@ -3408,8 +3315,6 @@ static void store_dvs2_coefficients(
 	ver_num_3a  = binary->dis_ver_coef_num_3a,
 	hor_padding = hor_num_isp - hor_num_3a,
 	ver_padding = ver_num_isp - ver_num_3a;
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "store_dvs2_coefficients() enter:\n");
 
 	storedvs2_coef(params->dvs2_hor_coefs.odd_real, hor_ptr_isp, hor_num_3a, hor_padding);
 	hor_ptr_isp += hor_num_isp * sizeof(short);
@@ -3427,7 +3332,7 @@ static void store_dvs2_coefficients(
 	ver_ptr_isp += ver_num_isp * sizeof(short);
 	storedvs2_coef(params->dvs2_ver_coefs.even_imag, ver_ptr_isp, ver_num_3a, ver_padding);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "store_dvs2_coefficients() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -3441,10 +3346,9 @@ static void sh_css_update_isp_params_to_ddr(
 	size_t size = sizeof(struct sh_css_isp_params);
 #endif
 
-	assert(params != NULL);
+	IA_CSS_ENTER_PRIVATE("void");
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "sh_css_update_isp_params_to_ddr() enter:\n");
+	assert(params != NULL);
 
 #ifdef HRT_CSIM
 	{
@@ -3469,7 +3373,7 @@ static void sh_css_update_isp_params_to_ddr(
 	mmgr_store(ddr_ptr, &(params->isp_parameters), size);
 #endif
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_update_isp_params_to_ddr() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -3481,12 +3385,12 @@ static void sh_css_update_isp_mem_params_to_ddr(
 {
 	const struct ia_css_host_data *params;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_update_isp_mem_params_to_ddr() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	params = ia_css_isp_param_get_mem_init(&binary->mem_params, IA_CSS_PARAM_CLASS_PARAM, mem);
 	mmgr_store(ddr_mem_ptr, params->address, size);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_update_isp_memparams_to_ddr() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -3519,12 +3423,10 @@ void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 	hrt_vaddress cpy;
 	enum sh_css_queue_id queue_id;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_param_buffers() enter\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	if (!sh_css_sp_is_running()) {
-
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_dequeue_param_buffers() invalid args leave \n");
+		IA_CSS_LEAVE_PRIVATE("sp is not running");
 		/* SP is not running. The queues are not valid */
 		return ;
 	}
@@ -3547,18 +3449,11 @@ void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 			queue_id,
 			0);
 
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_dequeue_param_buffers: "
-			"dequeued param set %x from %d\n",
-			cpy, 0);
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"ia_css_dequeue_param_buffers: "
-				"release ref on param set %x\n",
-				cpy);
-			free_ia_css_isp_parameter_set_info(cpy);
+		IA_CSS_LOG("dequeued param set %x from %d, release ref", cpy, 0);
+		free_ia_css_isp_parameter_set_info(cpy);
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_param_buffers() leave\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -3613,15 +3508,14 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 
 	params = stream->isp_params_configs;
 
+	IA_CSS_ENTER_PRIVATE("pipe=%p, isp_parameters_id=%d", pipe_in, params->isp_parameters_id);
+
 	raw_bit_depth = ia_css_stream_input_format_bits_per_pixel(stream);
 	isp_pipe_version = ia_css_pipe_get_isp_pipe_version(stream->pipes[0]);
 	// this code assuemes that all the pipes have the same pipeversion.
-	for(i=1; i< stream->num_pipes; i++) {
+	for (i = 1; i < stream->num_pipes; i++) {
 		assert(isp_pipe_version == ia_css_pipe_get_isp_pipe_version(stream->pipes[i]));
 	}
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_param_update_isp_params() enter: "
-		"pipe=%p, isp_parameters_id=%d\n", pipe_in, params->isp_parameters_id);
 
 #if !defined(IS_ISP_2500_SYSTEM)
 #else /* defined(IS_ISP_2500_SYSTEM) */
@@ -3631,8 +3525,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 
 	/* now make the map available to the sp */
 	if (!commit) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"sh_css_param_update_isp_params() leave:\n");
+		IA_CSS_LEAVE_ERR_PRIVATE(err);
 		return err;
 	}
 	/* enqueue a copies of the mem_map to
@@ -3657,9 +3550,6 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
 		if (!sh_css_sp_is_running()) {
 			/* SP is not running. The queues are not valid */
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"sh_css_param_update_isp_params() leaving:"
-				"queue unavailable\n");
 			err = IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 			break;
 		}
@@ -3740,10 +3630,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 
 		/* check if to actually update the parameters for this pipe */
 		if (pipe_in && (pipe != pipe_in)) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"sh_css_param_update_isp_params: "
-				"skipping pipe %x\n",
-				pipe);
+			IA_CSS_LOG("skipping pipe %x", pipe);
 			continue;
 		}
 		/* last make referenced copy */
@@ -3766,15 +3653,11 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 			break;
 
 		/* enqueue the set to sp */
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"sh_css_param_update_isp_params: "
-			"queue param set %x to %d\n",
-			cpy, thread_id);
+		IA_CSS_LOG("queue param set %x to %d", cpy, thread_id);
 
-			if (IA_CSS_SUCCESS != ia_css_bufq_enqueue_buffer(thread_id,queue_id,(uint32_t)cpy)) {
-				free_ia_css_isp_parameter_set_info(cpy);
-			}
-			else {
+		if (IA_CSS_SUCCESS != ia_css_bufq_enqueue_buffer(thread_id,queue_id,(uint32_t)cpy)) {
+			free_ia_css_isp_parameter_set_info(cpy);
+		} else {
 			/* TMP: check discrepancy between nr of enqueued
 			 * parameter sets and dequeued sets
 			 */
@@ -3786,9 +3669,8 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 			 * by sending the software event.
 			 */
 			if (!sh_css_sp_is_running()) {
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"sh_css_param_update_isp_params() error leave:\n");
-			/* SP is not running. The queues are not valid */
+				/* SP is not running. The queues are not valid */
+				IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
 				return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 			}
 			 ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_1,
@@ -3812,7 +3694,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 
 	memset(&params->config_changed[0], 0, sizeof(params->config_changed));
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_param_update_isp_params() leave:\n");
+	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
 }
 
@@ -3836,13 +3718,11 @@ sh_css_params_write_to_ddr_internal(
 	static struct ia_css_macc_table converted_macc_table;
 #endif
 
+	IA_CSS_ENTER_PRIVATE("void");
 	assert(params != NULL);
 	assert(ddr_map != NULL);
 	assert(ddr_map_size != NULL);
 	assert(stage != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "sh_css_params_write_to_ddr_internal() enter:\n");
 
 	binary = stage->binary;
 	assert(binary != NULL);
@@ -3855,7 +3735,8 @@ sh_css_params_write_to_ddr_internal(
 	(void)stage_num;
 	/* pass call to product specific to handle copying of tables to DDR */
 	err = sh_css_params_to_ddr( binary, ddr_map, ddr_map_size, &params->isp_parameters );
-	if (err != IA_CSS_SUCCESS) return err;
+	if (err != IA_CSS_SUCCESS)
+		return err;
 #else  /* !defined(IS_ISP_2500_SYSTEM) */
 
 	stage_num = stage->stage_num;
@@ -3864,7 +3745,8 @@ sh_css_params_write_to_ddr_internal(
 		const struct ia_css_isp_data *isp_data =
 			ia_css_isp_param_get_isp_mem_init(&binary->info->sp.mem_initializers, IA_CSS_PARAM_CLASS_PARAM, mem);
 		size_t size = isp_data->size;
-		if (!size) continue;
+		if (!size)
+			continue;
 		buff_realloced = reallocate_buffer(&ddr_map->isp_mem_param[stage_num][mem],
 			&ddr_map_size->isp_mem_param[stage_num][mem],
 			size,
@@ -3920,8 +3802,10 @@ sh_css_params_write_to_ddr_internal(
 				params->sensor_binning,
 				&params->sc_config,
 				binary);
-			if (params->sc_config == NULL)
+			if (params->sc_config == NULL) {
+				IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 				return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+			}
 			store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
 			ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
 
@@ -3976,10 +3860,14 @@ sh_css_params_write_to_ddr_internal(
 	}
 
 	if (binary->info->sp.enable.dvs_6axis) {
+		/* because UV is packed into the Y plane, calc total
+		 * YYU size = /2 gives size of UV-only,
+		 * total YYU size = UV-only * 3.
+		 */
 		buff_realloced = reallocate_buffer(
 				&ddr_map->dvs_6axis_params_y,
 				&ddr_map_size->dvs_6axis_params_y,
-				(size_t)((DVS_6AXIS_BYTES(binary) / 2) * 3), // because UV is packed into the Y plane, calc total YYU size = /2 gives size of UV-only, total YYU size = UV-only * 3
+				(size_t)((DVS_6AXIS_BYTES(binary) / 2) * 3),
 				params->dvs_6axis_config_changed,
 				&err);
 		if (err != IA_CSS_SUCCESS)
@@ -3993,8 +3881,10 @@ sh_css_params_write_to_ddr_internal(
 
 				params->dvs_6axis_config = generate_dvs_6axis_table(&binary->out_frame_info[0].res,
 										    &dvs_offset);
-				if(params->dvs_6axis_config == NULL)
+				if (params->dvs_6axis_config == NULL) {
+					IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 					return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+				}
 			}
 
 			store_dvs_6axis_config(params,
@@ -4146,9 +4036,8 @@ sh_css_params_write_to_ddr_internal(
 	}
 
 #endif
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_params_write_to_ddr_internal() leave:\n");
-
-return IA_CSS_SUCCESS;
+	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
+	return IA_CSS_SUCCESS;
 }
 
 /**
@@ -4164,11 +4053,10 @@ sh_css_params_write_to_ddr(struct ia_css_stream *stream,
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	struct ia_css_isp_parameters *params;
 
+	IA_CSS_ENTER_PRIVATE("void");
 	assert(stream != NULL);
 
 	params = stream->isp_params_configs;
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_params_write_to_ddr() enter:\n");
 
 	for (i = 0; i < stream->num_pipes; i++) {
 		struct ia_css_pipe *pipe = stream->pipes[i];
@@ -4184,8 +4072,7 @@ sh_css_params_write_to_ddr(struct ia_css_stream *stream,
 			break;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_params_write_to_ddr() leave:\n");
-
+	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
 }
 
@@ -4193,12 +4080,11 @@ const struct ia_css_fpn_table *ia_css_get_fpn_table(struct ia_css_stream *stream
 {
 	struct ia_css_isp_parameters *params;
 
+	IA_CSS_ENTER_LEAVE("void");
 	assert(stream != NULL);
 
 	params = stream->isp_params_configs;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "ia_css_get_fpn_table() enter & leave:\n");
 	return &(params->fpn_config);
 }
 
@@ -4210,12 +4096,11 @@ struct ia_css_shading_table * ia_css_get_shading_table(struct ia_css_stream *str
 	struct ia_css_isp_parameters *params;
 	int i;
 
+	IA_CSS_ENTER("void");
+
 	assert(stream != NULL);
 
 	params = stream->isp_params_configs;
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "ia_css_get_shading_table() enter:\n");
 
 	for (i = 0; i < stream->num_pipes; i++) {
 		struct ia_css_pipe *pipe = stream->pipes[i];
@@ -4244,7 +4129,7 @@ struct ia_css_shading_table * ia_css_get_shading_table(struct ia_css_stream *str
 			&sc_config,
 			binary);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_get_shading_table() leave:\n");
+	IA_CSS_LEAVE("sc_config=%p", sc_config);
 
 	return sc_config;
 #endif
@@ -4269,12 +4154,10 @@ void ia_css_get_isp_dis_coefficients(
 	hrt_vaddress ver_ptr_isp;
 	struct ia_css_binary *dvs_binary;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_get_isp_dis_coefficients() enter\n");
+	IA_CSS_ENTER("void");
+
 	assert(horizontal_coefficients != NULL);
 	assert(vertical_coefficients != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "ia_css_get_isp_dis_coefficients() enter\n");
 
 	params = stream->isp_params_configs;
 
@@ -4299,7 +4182,7 @@ void ia_css_get_isp_dis_coefficients(
 		ver_ptr     += ver_num_isp;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_get_isp_dis_coefficients() leave\n");
+	IA_CSS_LEAVE("void");
 }
 #endif
 
@@ -4321,6 +4204,8 @@ void ia_css_get_isp_dvs2_coefficients(struct ia_css_stream *stream,
 	hrt_vaddress ver_ptr_isp;
 	struct ia_css_binary *dvs_binary;
 
+	IA_CSS_ENTER("void");
+
 	assert(stream != NULL);
 	assert(hor_coefs_odd_real != NULL);
 	assert(hor_coefs_odd_imag != NULL);
@@ -4330,9 +4215,6 @@ void ia_css_get_isp_dvs2_coefficients(struct ia_css_stream *stream,
 	assert(ver_coefs_odd_imag != NULL);
 	assert(ver_coefs_even_real != NULL);
 	assert(ver_coefs_even_imag != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "ia_css_get_isp_dvs2_coefficients() enter\n");
 
 	params = stream->isp_params_configs;
 
@@ -4364,13 +4246,13 @@ void ia_css_get_isp_dvs2_coefficients(struct ia_css_stream *stream,
 	ver_ptr_isp += ver_num_isp * sizeof(short);
 	mmgr_load(ver_ptr_isp, ver_coefs_even_imag, ver_num_3a * sizeof(short));
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_get_isp_dvs2_coefficients() leave\n");
+	IA_CSS_LEAVE("void");
 }
 #endif
 
 hrt_vaddress sh_css_store_sp_group_to_ddr(void)
 {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_store_sp_group_to_ddr() enter & leave:\n");
+	IA_CSS_ENTER_LEAVE_PRIVATE("void");
 	mmgr_store(xmem_sp_group_ptrs,
 			     &sh_css_sp_group,
 			     sizeof(struct sh_css_sp_group));
@@ -4381,7 +4263,7 @@ hrt_vaddress sh_css_store_sp_stage_to_ddr(
 	unsigned pipe,
 	unsigned stage)
 {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_store_sp_stage_to_ddr() enter & leave:\n");
+	IA_CSS_ENTER_LEAVE_PRIVATE("void");
 	mmgr_store(xmem_sp_stage_ptrs[pipe][stage],
 			     &sh_css_sp_stage,
 			     sizeof(struct sh_css_sp_stage));
@@ -4392,7 +4274,7 @@ hrt_vaddress sh_css_store_isp_stage_to_ddr(
 	unsigned pipe,
 	unsigned stage)
 {
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_store_isp_stage_to_ddr() enter & leave:\n");
+	IA_CSS_ENTER_LEAVE_PRIVATE("void");
 	mmgr_store(xmem_isp_stage_ptrs[pipe][stage],
 			     &sh_css_isp_stage,
 			     sizeof(struct sh_css_isp_stage));
@@ -4415,6 +4297,7 @@ static enum ia_css_err ref_sh_css_ddr_address_map(
 		hrt_vaddress *addrs;
 	} in_addrs, to_addrs;
 
+	IA_CSS_ENTER_PRIVATE("void");
 	assert(map != NULL);
 	assert(out != NULL);
 
@@ -4423,9 +4306,6 @@ static enum ia_css_err ref_sh_css_ddr_address_map(
 
 	assert(sizeof(struct sh_css_ddr_address_map_size)/sizeof(size_t) ==
 	       sizeof(struct sh_css_ddr_address_map)/sizeof(hrt_vaddress));
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "ref_sh_css_ddr_address_map() enter:\n");
 
 	/* copy map using size info */
 	for (i = 0; i < (sizeof(struct sh_css_ddr_address_map_size)/
@@ -4436,8 +4316,7 @@ static enum ia_css_err ref_sh_css_ddr_address_map(
 			to_addrs.addrs[i] = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER, in_addrs.addrs[i]);
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ref_sh_css_ddr_address_map() leave:\n");
-
+	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
 }
 
@@ -4448,10 +4327,10 @@ static enum ia_css_err write_ia_css_isp_parameter_set_info_to_ddr(
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	bool succ;
 
+	IA_CSS_ENTER_PRIVATE("void");
+
 	assert(me != NULL);
 	assert(out != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "write_ia_css_isp_parameter_set_info_to_ddr() enter:\n");
 
 	*out = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_SET_POOL, mmgr_malloc(
 				sizeof(struct ia_css_isp_parameter_set_info)));
@@ -4462,8 +4341,7 @@ static enum ia_css_err write_ia_css_isp_parameter_set_info_to_ddr(
 	else
 		err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "write_ia_css_isp_parameter_set_info_to_ddr() leave:\n");
-
+	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
 }
 
@@ -4476,7 +4354,7 @@ free_ia_css_isp_parameter_set_info(
 	unsigned int i;
 	hrt_vaddress *addrs = (hrt_vaddress *)&isp_params_info.mem_map;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_ia_css_isp_parameter_set_info() enter:\n");
+	IA_CSS_ENTER_PRIVATE("void");
 
 	mmgr_load(ptr, &isp_params_info.mem_map, sizeof(struct sh_css_ddr_address_map));
 	/* copy map using size info */
@@ -4488,8 +4366,7 @@ free_ia_css_isp_parameter_set_info(
 	}
 	ia_css_refcount_decrement(IA_CSS_REFCOUNT_PARAM_SET_POOL, ptr);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "free_ia_css_isp_parameter_set_info() leave:\n");
-
+	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
 }
 
@@ -4500,10 +4377,8 @@ sh_css_invalidate_params(struct ia_css_stream *stream)
 	struct	ia_css_isp_parameters *params;
 	unsigned i, j, mem;
 
+	IA_CSS_ENTER_PRIVATE("void");
 	assert(stream != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "sh_css_invalidate_params() enter:\n");
 
 	params = stream->isp_params_configs;
 	params->isp_params_changed = true;
@@ -4524,11 +4399,11 @@ sh_css_invalidate_params(struct ia_css_stream *stream)
 	params->motion_config_changed = true;
 
 	/*Free up theDVS table memory blocks before recomputing new table  */
-	if(params->dvs_6axis_config)
+	if (params->dvs_6axis_config)
 		free_dvs_6axis_table(&(params->dvs_6axis_config));
 	params->dvs_6axis_config_changed = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_invalidate_params() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -4544,6 +4419,8 @@ sh_css_update_uds_and_crop_info(
 	struct sh_css_crop_pos *sp_out_crop_pos,	/* out */
 	bool enable_zoom)
 {
+	IA_CSS_ENTER_PRIVATE("void");
+
 	assert(info != NULL);
 	assert(in_frame_info != NULL);
 	assert(out_frame_info != NULL);
@@ -4552,9 +4429,6 @@ sh_css_update_uds_and_crop_info(
 	assert(motion_vector != NULL);
 	assert(uds != NULL);
 	assert(sp_out_crop_pos != NULL);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			    "sh_css_update_uds_and_crop_info() enter:\n");
 
 	uds->curr_dx   = enable_zoom ? (uint16_t)zoom->dx : HRT_GDC_N;
 	uds->curr_dy   = enable_zoom ? (uint16_t)zoom->dy : HRT_GDC_N;
@@ -4667,7 +4541,7 @@ sh_css_update_uds_and_crop_info(
 		sp_out_crop_pos->x = (uint16_t)info->left_cropping;
 		sp_out_crop_pos->y = (uint16_t)info->top_cropping;
 	}
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_update_uds_and_crop_info() leave:\n");
+	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
 
@@ -4678,9 +4552,9 @@ ia_css_3a_statistics_allocate(const struct ia_css_3a_grid_info *grid)
 	struct ia_css_3a_statistics *me;
 	int grid_size;
 
-	assert(grid != NULL);
+	IA_CSS_ENTER("grid=%p", grid);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_3a_statistics_allocate() enter: grid=%p\n",grid);
+	assert(grid != NULL);
 
 	me = sh_css_calloc(1,sizeof(*me));
 	if (!me)
@@ -4698,14 +4572,12 @@ ia_css_3a_statistics_allocate(const struct ia_css_3a_grid_info *grid)
 	me->rgby_data = NULL;
 #endif
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_3a_statistics_allocate() leave: return=%p\n",me);
-
+	IA_CSS_LEAVE("return=%p", me);
 	return me;
 err:
 	ia_css_3a_statistics_free(me);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_3a_statistics_allocate() leave: return=%p\n",NULL);
-
+	IA_CSS_LEAVE("return=%p", NULL);
 	return NULL;
 }
 #endif
@@ -4967,29 +4839,29 @@ ia_css_dvs2_6axis_config_allocate(const struct ia_css_stream *stream)
     assert(params->dvs_6axis_config != NULL);
 
     dvs_config = (struct ia_css_dvs_6axis_config *)sh_css_calloc(1, sizeof(struct ia_css_dvs_6axis_config));
-    if(!dvs_config)
+    if (!dvs_config)
           goto err;
 
     dvs_config->width_y = width_y = params->dvs_6axis_config->width_y;
     dvs_config->height_y = height_y = params->dvs_6axis_config->height_y;
     dvs_config->width_uv = width_uv = params->dvs_6axis_config->width_uv;
     dvs_config->height_uv = height_uv = params->dvs_6axis_config->height_uv;
-    ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "config_allocate table Y: W %d H %d\n",width_y,height_y);
-    ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "config_allocate table UV: W %d H %d\n",width_uv,height_uv);
+    IA_CSS_LOG("table Y: W %d H %d", width_y, height_y);
+    IA_CSS_LOG("table UV: W %d H %d", width_uv, height_uv);
     dvs_config->xcoords_y = (uint32_t *)sh_css_malloc( width_y * height_y * sizeof(uint32_t));
-    if(!dvs_config->xcoords_y)
+    if (!dvs_config->xcoords_y)
         goto err;
 
     dvs_config->ycoords_y = (uint32_t *)sh_css_malloc( width_y * height_y * sizeof(uint32_t));
-    if(!dvs_config->ycoords_y)
+    if (!dvs_config->ycoords_y)
         goto err;
 
     dvs_config->xcoords_uv = (uint32_t *)sh_css_malloc( width_uv * height_uv * sizeof(uint32_t));
-    if(!dvs_config->xcoords_uv)
+    if (!dvs_config->xcoords_uv)
         goto err;
 
     dvs_config->ycoords_uv = (uint32_t *)sh_css_malloc( width_uv * height_uv * sizeof(uint32_t));
-    if(!dvs_config->ycoords_uv)
+    if (!dvs_config->ycoords_uv)
         goto err;
 
     return dvs_config;
