@@ -408,6 +408,8 @@ void css2600_isys_queue_buf_done(struct css2600_isys_pipeline *ip,
 
 	vb = css2600_isys_buffer_to_vb2_buffer(ib);
 
+	v4l2_get_timestamp(&vb->v4l2_buf.timestamp);
+
 	vb2_buffer_done(vb, VB2_BUF_STATE_DONE);
 
 	if (!ip->continuous)
