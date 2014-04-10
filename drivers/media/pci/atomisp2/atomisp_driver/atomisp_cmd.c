@@ -2100,42 +2100,54 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 			bq_res->ispfilter_bq.width_bq = 32 / 2;
 			bq_res->ispfilter_bq.height_bq = 32 / 2;
 
-			/*
-			 * spatial filter shift and more left padding in SDV
-			 * case, the left padding is
-			 *	(w_padding + 24) / Bayer_DS_Ratio
-			 *
-			 *	w_padding = ceiling(effective_width/128, 1) *
-			 *			128 - effective_width
-			 * FIXME: see vied bz 1786, w_padding + 24 is
-			 * experience value. we need firmware team to explain
-			 * why w_padding - 12 does not work.
-			 *
-			 * and there is still 4 pixel spatial filter shift
-			 */
-			w_padding =
-			    roundup(stream_cfg->effective_res.width, 128) -
-			    stream_cfg->effective_res.width;
-			bq_res->gdc_shift_bq.width_bq = 4 / 2 +
+			if (IS_HWREVISION(asd->isp, ATOMISP_HW_REVISION_ISP2401)) {
+				/* No additional left padding for ISYS2401 */
+				bq_res->gdc_shift_bq.width_bq = 4 / 2;
+				bq_res->gdc_shift_bq.height_bq = 4 / 2;
+			} else {
+				/*
+				 * spatial filter shift and more left padding in SDV
+				 * case, the left padding is
+				 *	(w_padding + 24) / Bayer_DS_Ratio
+				 *
+				 *	w_padding = ceiling(effective_width/128, 1) *
+				 *			128 - effective_width
+				 * FIXME: see vied bz 1786, w_padding + 24 is
+				 * experience value. we need firmware team to explain
+				 * why w_padding - 12 does not work.
+				 *
+				 * and there is still 4 pixel spatial filter shift
+				 */
+				w_padding =
+					roundup(stream_cfg->effective_res.width, 128) -
+					stream_cfg->effective_res.width;
+				bq_res->gdc_shift_bq.width_bq = 4 / 2 +
 					((w_padding + 24) *
 					pipe_cfg->bayer_ds_out_res.width /
 					stream_cfg->effective_res.width + 1) /
 					2;
-			bq_res->gdc_shift_bq.height_bq = 4 / 2;
+				bq_res->gdc_shift_bq.height_bq = 4 / 2;
+			}
 		} else {
 			unsigned int dvs_w, dvs_h, dvs_w_max, dvs_h_max;
 
 			bq_res->ispfilter_bq.width_bq = 8 / 2;
 			bq_res->ispfilter_bq.height_bq = 8 / 2;
 
-			w_padding =
-			    roundup(stream_cfg->effective_res.width, 128) -
-			    stream_cfg->effective_res.width;
-			bq_res->gdc_shift_bq.width_bq = 4 / 2 +
-				((w_padding - 12) *
-				pipe_cfg->bayer_ds_out_res.width /
-				stream_cfg->effective_res.width + 1) / 2;
-			bq_res->gdc_shift_bq.height_bq = 4 / 2;
+			if (IS_HWREVISION(asd->isp, ATOMISP_HW_REVISION_ISP2401)) {
+				/* No additional left padding for ISYS2401 */
+				bq_res->gdc_shift_bq.width_bq = 4 / 2;
+				bq_res->gdc_shift_bq.height_bq = 4 / 2;
+			} else {
+				w_padding =
+					roundup(stream_cfg->effective_res.width, 128) -
+					stream_cfg->effective_res.width;
+				bq_res->gdc_shift_bq.width_bq = 4 / 2 +
+					((w_padding - 12) *
+					pipe_cfg->bayer_ds_out_res.width /
+					stream_cfg->effective_res.width + 1) / 2;
+				bq_res->gdc_shift_bq.height_bq = 4 / 2;
+			}
 
 			dvs_w = pipe_cfg->bayer_ds_out_res.width -
 			        pipe_cfg->output_info[0].res.width;
