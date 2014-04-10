@@ -640,11 +640,16 @@ static int m10mo_setup_irq(struct v4l2_subdev *sd)
 	}
 
 	pin = dev->pdata->common.gpio_intr_ctrl(sd);
+	if (pin < 0) {
+		ret = pin;
+		goto out;
+	}
+
 	ret = gpio_to_irq(pin);
 
 	if (ret < 0) {
 		dev_err(&client->dev, "Configure gpio to irq failed!\n");
-		goto out_free;
+		goto out;
 	}
 	client->irq = ret;
 
@@ -652,11 +657,11 @@ static int m10mo_setup_irq(struct v4l2_subdev *sd)
 			  IRQF_TRIGGER_RISING | IRQF_ONESHOT, M10MO_NAME, sd);
 	if (ret < 0) {
 		dev_err(&client->dev, "Cannot register IRQ: %d\n", ret);
-		goto out_free;
+		goto out;
 	}
 	return 0;
-out_free:
-	gpio_free(pin);
+
+out:
 	return ret;
 }
 
@@ -835,6 +840,14 @@ static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 
 	dev->fw_type = M10MO_FW_TYPE_0;
 	dev->ref_clock = dev->pdata->ref_clock_rate;
+
+	if (dev->pdata->common.platform_init) {
+		ret = dev->pdata->common.platform_init(client);
+		if (ret) {
+			mutex_unlock(&dev->input_lock);
+			return ret;
+		}
+	}
 
 	/* set up irq */
 	ret = m10mo_setup_irq(sd);
@@ -1516,7 +1529,8 @@ static int m10mo_probe(struct i2c_client *client,
 	if (ret)
 		goto out_free_irq;
 
-	dev->num_lanes = mipi_info->num_lanes;
+	if (mipi_info)
+		dev->num_lanes = mipi_info->num_lanes;
 
 	dev->curr_res_table = m10mo_preview_modes;
 	dev->entries_curr_table = ARRAY_SIZE(m10mo_preview_modes);
