@@ -102,6 +102,15 @@ config VIDEO_S5K8AAY
 
          It currently only works with the atomisp driver.
 
+config VIDEO_S5K6B2YX
+       tristate "Samsung S5K6B2YX (VS) sensor support"
+       depends on I2C && VIDEO_V4L2 && VIDEO_ATOMISP && VIDEO_MSRLIST_HELPER
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the Samsung
+         S5K6B2YX (VS) 1/6" 2MP RAW sensor.
+
+         It currently only works with the atomisp driver.
+
 config VIDEO_MT9D113
        tristate "Aptina mt9d113 sensor support"
        depends on I2C && VIDEO_V4L2
