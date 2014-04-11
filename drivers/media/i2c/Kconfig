@@ -29,6 +29,15 @@ config VIDEO_OV2722
 
          It currently only works with the atomisp driver.
 
+config VIDEO_OV5648
+    tristate "Omnivision ov5648 sensor support"
+    depends on I2C && VIDEO_V4L2
+    ---help---
+      This is a Video4Linux2 sensor-level driver for the Omnivision
+      ov5648 5MP RAW sensor.
+
+      It currently only works with the atomisp driver.
+
 config VIDEO_GC2235
        tristate "Galaxy gc2235 sensor support"
        depends on I2C && VIDEO_V4L2
