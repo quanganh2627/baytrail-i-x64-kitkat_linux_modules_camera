@@ -4129,11 +4129,25 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	atomisp_get_dis_envelop(asd, f->fmt.pix.width, f->fmt.pix.height,
 				&dvs_env_w, &dvs_env_h);
 
-	if (asd->continuous_mode->val)
-		asd->capture_pad = ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE;
-	else
-		asd->capture_pad = source_pad;
+	if (asd->continuous_mode->val) {
+		struct v4l2_rect *r;
 
+		r = atomisp_subdev_get_rect(
+			&asd->subdev, NULL,
+			V4L2_SUBDEV_FORMAT_ACTIVE,
+			ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE,
+			V4L2_SEL_TGT_COMPOSE);
+		/*
+		 * The ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE should get resolutions
+		 * properly set otherwise, it should not be the capture_pad.
+		 */
+		if (r->width && r->height)
+			asd->capture_pad = ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE;
+		else
+			asd->capture_pad = source_pad;
+	} else {
+		asd->capture_pad = source_pad;
+	}
 	/*
 	 * set format info to sensor
 	 * In continuous mode, resolution is set only if it is higher than
