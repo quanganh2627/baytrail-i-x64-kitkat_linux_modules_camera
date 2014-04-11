@@ -35,7 +35,7 @@ struct  sh_css_fw_bi_file_h {
 };
 
 extern struct ia_css_fw_info     sh_css_sp_fw;
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 extern struct ia_css_fw_info     sh_css_sp1_fw;
 #endif
 extern struct ia_css_blob_descr *sh_css_blob_info;

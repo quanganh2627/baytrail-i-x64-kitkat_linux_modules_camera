@@ -131,8 +131,7 @@ struct ia_css_pipe {
 	unsigned int				required_bds_factor;
 	enum ia_css_frame_delay		dvs_frame_delay;
 	int				num_invalid_frames;
-	bool				enable_viewfinder;
-	bool				enable_second_viewfinder;
+	bool				enable_viewfinder[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	struct ia_css_stream		*stream;
 	struct ia_css_frame		in_frame_struct;
 	struct ia_css_frame		out_frame_struct;
@@ -172,8 +171,7 @@ struct ia_css_pipe {
 	SH_CSS_BDS_FACTOR_1_00,			/* required_bds_factor */ \
 	IA_CSS_FRAME_DELAY_1,			/* dvs_frame_delay */ \
 	0,					/* num_invalid_frames */ \
-	true,					/* enable_viewfinder */ \
-	true,					/* enable_second_viewfinder */ \
+	{true},					/* enable_viewfinder */ \
 	NULL,					/* stream */ \
 	DEFAULT_FRAME,				/* in_frame_struct */ \
 	DEFAULT_FRAME,				/* out_frame_struct */ \

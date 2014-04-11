@@ -84,10 +84,10 @@ ia_css_mipi_frame_calculate_size(const unsigned int width,
 	width_padded += (2 * ISP_VEC_NELEMS);
 #endif
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_mipi_frame_calculate_size() "
-		"enter: padded_width=%d, height=%d, format=%d, hasSOLandEOL=%d, embedded_data_size_words=%d\n",
-		width_padded, height, format, hasSOLandEOL, embedded_data_size_words);
+	IA_CSS_ENTER("padded_width=%d, height=%d, format=%d, hasSOLandEOL=%d"
+		     ", embedded_data_size_words=%d\n",
+		     width_padded, height, format, hasSOLandEOL,
+		     embedded_data_size_words);
 
 	switch (format) {
 		case IA_CSS_STREAM_FORMAT_RAW_6:			/* 4p, 3B, 24bits */
@@ -179,8 +179,7 @@ ia_css_mipi_frame_calculate_size(const unsigned int width,
 
 	*size_mem_words = mem_words; /* ceil(words/8); mem word is 32B = 8words. */ //Check if this is still needed.
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_mipi_frame_calculate_size() leave: return_err=%d\n",err);
+	IA_CSS_LEAVE_ERR(err);
 	return err;
 }
 

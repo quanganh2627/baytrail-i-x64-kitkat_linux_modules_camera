@@ -77,7 +77,7 @@ static struct sh_css_sp_per_frame_data per_frame_data;
 /* For the moment there is only code that sets this bool to true */
 /* TODO: add code that sets this bool to false */
 static bool sp_running;
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 static bool sp1_running;
 #endif
 
@@ -138,7 +138,7 @@ store_sp_per_frame_data(const struct ia_css_fw_info *fw)
 	case ia_css_sp_firmware:
 		HIVE_ADDR_sp_per_frame_data = fw->info.sp.per_frame_data;
 		break;
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 	case ia_css_sp1_firmware:
 		(void)fw;
 		break;
@@ -209,17 +209,16 @@ sh_css_sp_start_binary_copy(unsigned int pipe_num, struct ia_css_frame *out_fram
 	pipe->thread_id = thread_id;
 	pipe->pipe_config = 0x0; /* No parameters */
 
-	if(pipe->inout_port_config == 0)
-	{
+	if (pipe->inout_port_config == 0) {
 		SH_CSS_PIPE_PORT_CONFIG_SET(pipe->inout_port_config,
 						(uint8_t)SH_CSS_PORT_INPUT,
 						(uint8_t)SH_CSS_HOST_TYPE,1);
 		SH_CSS_PIPE_PORT_CONFIG_SET(pipe->inout_port_config,
 						(uint8_t)SH_CSS_PORT_OUTPUT,
 						(uint8_t)SH_CSS_HOST_TYPE,1);
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_sp_start_binary_copy pipe_id %d port_config %08x\n",pipe->pipe_id,pipe->inout_port_config);
 	}
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_sp_start_binary_copy pipe_id %d port_config %08x\n",pipe->pipe_id,pipe->inout_port_config);
+	IA_CSS_LOG("pipe_id %d port_config %08x",
+		   pipe->pipe_id, pipe->inout_port_config);
 
 #if !defined(HAS_NO_INPUT_FORMATTER)
 	sh_css_sp_group.config.input_formatter.isp_2ppc = (uint8_t)two_ppc;
@@ -286,16 +285,16 @@ sh_css_sp_start_raw_copy(struct ia_css_frame *out_frame,
 		pipe->pipe_config = pipe_conf_override;
 
 
-	if(pipe->inout_port_config == 0)
-	{
+	if (pipe->inout_port_config == 0) {
 		SH_CSS_PIPE_PORT_CONFIG_SET(pipe->inout_port_config,
 						(uint8_t)SH_CSS_PORT_INPUT,
 						(uint8_t)SH_CSS_HOST_TYPE,1);
 		SH_CSS_PIPE_PORT_CONFIG_SET(pipe->inout_port_config,
 						(uint8_t)SH_CSS_PORT_OUTPUT,
 						(uint8_t)SH_CSS_HOST_TYPE,1);
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_sp_start_raw_copy pipe_id %d port_config %08x\n",pipe->pipe_id,pipe->inout_port_config);
 	}
+	IA_CSS_LOG("pipe_id %d port_config %08x",
+		   pipe->pipe_id, pipe->inout_port_config);
 
 #if !defined(HAS_NO_INPUT_FORMATTER)
 	sh_css_sp_group.config.input_formatter.isp_2ppc = (uint8_t)two_ppc;
@@ -421,10 +420,8 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 {
 	assert(frame_in != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"sh_css_copy_frame_to_spframe frame id %d ptr 0x%08x\n",
-		type,
-		sh_css_sp_stage.frames.static_frame_data[type]);
+	IA_CSS_LOG("frame id %d ptr 0x%08x",
+		   type, sh_css_sp_stage.frames.static_frame_data[type]);
 
 
 	if (frame_in->dynamic_data_index >= 0) {
@@ -1090,10 +1087,6 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	}
 
-#ifdef __KERNEL__
-	printk(KERN_ERR "load binary: %s\n", binary_name);
-#endif
-
 	err = sh_css_sp_init_stage(binary,
 			     (const char *)binary_name,
 			     blob_info,
@@ -1250,7 +1243,8 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 	(void)md_info;
 #endif
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_sp_init_pipeline pipe_id %d port_config %08x\n",pipe_id,sh_css_sp_group.pipe[thread_id].inout_port_config);
+	IA_CSS_LOG("pipe_id %d port_config %08x",
+		   pipe_id, sh_css_sp_group.pipe[thread_id].inout_port_config);
 
 	for (stage = me->stages, num = 0; stage; stage = stage->next, num++) {
 		sh_css_sp_group.pipe[thread_id].num_stages++;
@@ -1294,7 +1288,7 @@ init_host2sp_command(void)
 }
 #endif
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 void
 sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command)
 {
@@ -1523,9 +1517,7 @@ ia_css_pipe_set_irq_mask(struct ia_css_pipe *pipe,
 
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_pipe_set_irq_mask("
-				"or_mask=%x, and_mask=%x)\n",
-				or_mask, and_mask);
+	IA_CSS_LOG("or_mask=%x, and_mask=%x", or_mask, and_mask);
 	event_irq_mask.or_mask  = (uint16_t)or_mask;
 	event_irq_mask.and_mask = (uint16_t)and_mask;
 
@@ -1554,7 +1546,7 @@ ia_css_event_get_irq_mask(const struct ia_css_pipe *pipe,
 
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_event_get_irq_mask()\n");
+	IA_CSS_ENTER_LEAVE("");
 
 	assert(pipe != NULL);
 	assert(IA_CSS_PIPE_ID_NUM == NR_OF_PIPELINES);
@@ -1583,7 +1575,7 @@ sh_css_sp_set_sp_running(bool flag)
 {
 	sp_running = flag;
 }
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 void
 sh_css_sp1_set_sp1_running(bool flag)
 {
@@ -1596,7 +1588,7 @@ sh_css_sp_is_running(void)
 	return sp_running;
 }
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 void
 sh_css_sp1_start(void)
 {

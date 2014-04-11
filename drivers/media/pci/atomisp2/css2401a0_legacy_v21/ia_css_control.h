@@ -121,7 +121,7 @@ ia_css_sp_has_initialized(void);
 bool
 ia_css_sp_has_terminated(void);
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 /** @brief start SP1 hardware
  *
  * @return			IA_CSS_SUCCESS or error code upon error.
@@ -145,7 +145,7 @@ ia_css_start_sp1(void);
 enum ia_css_err
 ia_css_start_sp(void);
 
-#if defined(IS_ISP_2500_SYSTEM)
+#if defined(ENABLE_SP1)
 /** @brief stop SP1 hardware
  *
  * @return			IA_CSS_SUCCESS or error code upon error.

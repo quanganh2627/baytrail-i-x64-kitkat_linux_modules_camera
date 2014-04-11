@@ -2283,15 +2283,11 @@ void ia_css_debug_dump_ddr_debug_queue(void)
 {
 	int i;
 	sh_css_load_ddr_debug_queue();
-#ifdef __KERNEL__
-	for (i = 0; i < DEBUG_BUF_SIZE; i++)
-		printk(KERN_DEBUG, "ddr_debug_queue[%d] = 0x%x\n",
-				i, debug_data_ptr->buf[i]);
-#else
-	for (i = 0; i < DEBUG_BUF_SIZE; i++)
-		printf("ddr_debug_queue[%d] = 0x%x\n",
-				i, debug_data_ptr->buf[i]);
-#endif
+	for (i = 0; i < DEBUG_BUF_SIZE; i++) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
+			"ddr_debug_queue[%d] = 0x%x\n",
+			i, debug_data_ptr->buf[i]);
+	}
 }
 */
 
@@ -2878,6 +2874,8 @@ void
 ia_css_debug_dump_pipe_config(
 	const struct ia_css_pipe_config *config)
 {
+	unsigned int i;
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s()\n", __func__);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "mode: %d\n", config->mode);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "isp_pipe_version: %d\n",
@@ -2889,13 +2887,11 @@ ia_css_debug_dump_pipe_config(
 	ia_css_debug_dump_resolution(&config->vf_pp_in_res, "vf_pp_in_res");
 	ia_css_debug_dump_resolution(&config->dvs_crop_out_res,
 			"dvs_crop_out_res");
-	ia_css_debug_dump_frame_info(&config->output_info, "output_info");
-	ia_css_debug_dump_frame_info(&config->vf_output_info,
-			"vf_output_info");
-	ia_css_debug_dump_frame_info(&config->second_output_info,
-			"second_output_info");
-	ia_css_debug_dump_frame_info(&config->second_vf_output_info,
-			"second_vf_output_info");
+	for (i = 0; i < IA_CSS_PIPE_MAX_OUTPUT_STAGE; i++) {
+		ia_css_debug_dump_frame_info(&config->output_info[i], "output_info");
+		ia_css_debug_dump_frame_info(&config->vf_output_info[i],
+				"vf_output_info");
+	}
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "acc_extension: 0x%x\n",
 			config->acc_extension);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "num_acc_stages: %d\n",

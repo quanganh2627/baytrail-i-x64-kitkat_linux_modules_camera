@@ -31,7 +31,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatbile
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.0.0"
+#define CSS_API_VERSION_STRING	"2.1.1.0"
 
 /*
 Change log
@@ -51,6 +51,8 @@ V2.1.0.0
 - moved version number to 2.1.0.0
 - created new files for refactoring the code
 
+v2.1.1.0, modified struct ia_css_pipe_config and struct ia_css_pipe_info and struct ia_css_pipe:
+ - use array to handle multiple output ports
 */
 
 #endif __CSS_API_VERSION_H
