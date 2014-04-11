@@ -40,6 +40,15 @@ config VIDEO_GC2235
 
          It currently only works with the atomisp driver.
 
+config VIDEO_GC5004
+    tristate "GC sensor support"
+    depends on I2C && VIDEO_V4L2
+    ---help---
+      This is a Video4Linux2 sensor-level driver for the galaxy
+      gc5004 5MP RAW sensor.
+
+      It currently only works with the atomisp driver.
+
 config VIDEO_GC0339
        tristate "GALAXYCORE gc0339 sensor support"
        depends on I2C && VIDEO_V4L2

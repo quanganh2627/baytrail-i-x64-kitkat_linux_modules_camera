@@ -22,6 +22,8 @@ obj-$(CONFIG_VIDEO_GC2235)     += gc2235.o
 obj-$(CONFIG_VIDEO_OV9724)     += ov9724.o
 obj-$(CONFIG_VIDEO_OV2722)     += ov2722.o
 obj-$(CONFIG_VIDEO_OV8830)     += ov8830.o
+obj-$(CONFIG_VIDEO_GC2235)     += gc2235.o
+obj-$(CONFIG_VIDEO_GC5004)     += gc5004.o vm149.o
 obj-$(CONFIG_VIDEO_GC0339)     += gc0339.o
 
 obj-$(CONFIG_VIDEO_S5K8AAY)    += s5k8aay.o
