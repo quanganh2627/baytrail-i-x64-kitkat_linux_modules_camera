@@ -392,7 +392,10 @@ static int ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
 	}
 
 	res = &dev->curr_res_table[dev->fmt_idx];
-	hts = res->fps_options[dev->fps_index].pixels_per_line;
+	/*
+	 * Vendor: HTS reg value is half the total pixel line
+	 */
+	hts = res->fps_options[dev->fps_index].pixels_per_line >> 1;
 	vts = res->fps_options[dev->fps_index].lines_per_frame;
 
 	ret = __ov8858_set_exposure(sd, exposure, gain, dig_gain, &hts, &vts);

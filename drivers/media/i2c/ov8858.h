@@ -724,8 +724,8 @@ static struct ov8858_resolution ov8858_res_preview[] = {
 		.fps_options = {
 			{
 				.fps = 30,
-				.pixels_per_line = 4696,
-				.lines_per_frame = 2867,
+				.pixels_per_line = 3880,
+				.lines_per_frame = 2474,
 			},
 			{
 			}
@@ -743,8 +743,8 @@ static struct ov8858_resolution ov8858_res_preview[] = {
 		.fps_options = {
 			{
 				.fps = 30,
-				.pixels_per_line = 4464,
-				.lines_per_frame = 2867,
+				.pixels_per_line = 3880,
+				.lines_per_frame = 2474,
 			},
 			{
 			}
@@ -765,8 +765,8 @@ static struct ov8858_resolution ov8858_res_still[] = {
 		 .fps_options =  {
 			{
 				.fps = 30,
-				.pixels_per_line = 4464,
-				.lines_per_frame = 2867,
+				.pixels_per_line = 3880,
+				.lines_per_frame = 2474,
 			},
 			{
 			}
@@ -784,8 +784,8 @@ static struct ov8858_resolution ov8858_res_still[] = {
 		.fps_options = {
 			{
 				.fps = 30,
-				.pixels_per_line = 4464,
-				.lines_per_frame = 2867,
+				.pixels_per_line = 3880,
+				.lines_per_frame = 2474,
 			},
 			{
 			}
@@ -806,8 +806,8 @@ static struct ov8858_resolution ov8858_res_video[] = {
 		 .fps_options =  {
 			{
 				.fps = 30,
-				.pixels_per_line = 4464,
-				.lines_per_frame = 2867,
+				.pixels_per_line = 3880,
+				.lines_per_frame = 2474,
 			},
 			{
 			}
@@ -825,8 +825,8 @@ static struct ov8858_resolution ov8858_res_video[] = {
 		.fps_options = {
 			{
 				.fps = 30,
-				.pixels_per_line = 4464,
-				.lines_per_frame = 2867,
+				.pixels_per_line = 3880,
+				.lines_per_frame = 2474,
 			},
 			{
 			}
