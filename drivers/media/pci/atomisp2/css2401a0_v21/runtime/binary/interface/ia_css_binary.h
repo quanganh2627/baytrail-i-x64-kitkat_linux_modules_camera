@@ -42,10 +42,6 @@
 #define IA_CSS_BINARY_INPUT_MEMORY   1
 #define IA_CSS_BINARY_INPUT_VARIABLE 2
 
-/* now these ports only include output ports but not vf output ports */
-#define IA_CSS_BINARY_OUTPUT_PORT_0 	0
-#define IA_CSS_BINARY_OUTPUT_PORT_1 	1
-#define IA_CSS_BINARY_MAX_OUTPUT_PORTS 	2
 
 #include "ia_css.h"
 #include "sh_css_metrics.h"
@@ -56,6 +52,13 @@
    that have nothing to do with isp parameters.
  */
 #include "runtime/isp_param/interface/ia_css_isp_param_types.h"
+
+/* now these ports only include output ports but not vf output ports */
+enum {
+	IA_CSS_BINARY_OUTPUT_PORT_0 = 0,
+	IA_CSS_BINARY_OUTPUT_PORT_1,
+	IA_CSS_BINARY_MAX_OUTPUT_PORTS,
+};
 
 struct ia_css_cas_binary_descr {
 	unsigned int num_stage;

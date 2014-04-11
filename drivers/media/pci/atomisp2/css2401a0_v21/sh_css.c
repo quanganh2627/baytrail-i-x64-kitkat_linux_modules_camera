@@ -3969,7 +3969,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 	if (err != IA_CSS_SUCCESS)
 		goto ERR;
 
-	if (!pipe->enable_viewfinder) {
+	if (!pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0]) {
 		/* These situations don't support viewfinder output */
 		vf_frame = NULL;
 	} else {
@@ -4010,7 +4010,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 		(pipe->vf_output_info[0].res.width != pipe->output_info[0].res.width) ||
 		(pipe->vf_output_info[0].res.height != pipe->output_info[0].res.height);
 
-	need_vf_pp = pipe->enable_viewfinder && ((num_output_pins == 1) ||
+	need_vf_pp = pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0] && ((num_output_pins == 1) ||
 		((num_output_pins == 2) && resolution_differs));
 
 	/* when the video binary supports a second output pin,
@@ -4179,7 +4179,7 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 		/* When continuous is enabled, configure in_frame with the
 		 * last pipe, which is the copy pipe.
 		 */
-		if (continuous){
+		if (continuous || !online){
 			in_frame = pipe->stream->last_pipe->continuous_frames[0];
 		}
 #else
@@ -5389,7 +5389,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	/* cannot have online video and input_mode memory */
 	if (online && pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	if (pipe->enable_viewfinder) {
+	if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0]) {
 		err = ia_css_util_check_vf_out_info(pipe_out_info,
 					pipe_vf_out_info);
 		if (err != IA_CSS_SUCCESS)
@@ -5401,7 +5401,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	}
 
 	/* Video */
-	if (pipe->enable_viewfinder){
+	if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0]){
 		video_vf_info = pipe_vf_out_info;
 		resolution_differs = (video_vf_info->res.width != pipe_out_info->res.width) ||
 				(video_vf_info->res.height != pipe_out_info->res.height);
@@ -5446,7 +5446,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 #endif
 
 	/* Viewfinder post-processing */
-	if (pipe->enable_viewfinder &&  // only when viewfinder is enabled.
+	if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0] &&  // only when viewfinder is enabled.
 	   ((num_output_pins == 1)        // when the binary has a single output pin, we need vf_pp
       || ((num_output_pins == 2) && resolution_differs)) ) { // when the binary has dual output pin, we only need vf_pp in case the resolution is different.
 		struct ia_css_binary_descr vf_pp_descr;
@@ -6197,6 +6197,10 @@ static enum ia_css_err load_capture_binaries(
 	switch (pipe->config.default_capture_config.mode) {
 	case IA_CSS_CAPTURE_MODE_RAW:
 		err = load_copy_binaries(pipe);
+#if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
+	  if (err == IA_CSS_SUCCESS)
+		  pipe->pipe_settings.capture.copy_binary.online = pipe->stream->config.online;
+#endif
 		break;
 	case IA_CSS_CAPTURE_MODE_BAYER:
 		err = load_bayer_isp_binaries(pipe);
@@ -7097,8 +7101,17 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 	if (pipe->pipe_settings.capture.copy_binary.info) {
 		if(raw) {
 			ia_css_pipe_util_set_output_frames(out_frames, 0, out_frame);
+#if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
+			if(!continuous)
+			  ia_css_pipe_get_generic_stage_desc(&stage_desc, copy_binary,
+			          out_frames, in_frame, NULL, NULL);
+			else
+			  ia_css_pipe_get_generic_stage_desc(&stage_desc, copy_binary,
+			          out_frames, NULL, NULL, NULL);
+#else
 			ia_css_pipe_get_generic_stage_desc(&stage_desc, copy_binary,
 				out_frames, NULL, NULL, NULL);
+#endif
 		} else {
 			ia_css_pipe_util_set_output_frames(out_frames, 0, in_frame);
 			ia_css_pipe_get_generic_stage_desc(&stage_desc, copy_binary,
@@ -7740,10 +7753,8 @@ void ia_css_pipe_config_defaults(struct ia_css_pipe_config *pipe_config)
 		{0, 0}, /* capt_pp_in_res */
 		{0, 0}, /* vf_pp_in_res */
 		{0, 0}, /* dvs_crop_out_res */
-		IA_CSS_BINARY_DEFAULT_FRAME_INFO, /* output_info */
-		IA_CSS_BINARY_DEFAULT_FRAME_INFO, /* second_output_info */
-		IA_CSS_BINARY_DEFAULT_FRAME_INFO, /* vf_output_info */
-		IA_CSS_BINARY_DEFAULT_FRAME_INFO, /* second_vf_output_info */
+		{IA_CSS_BINARY_DEFAULT_FRAME_INFO}, /* output_info */
+		{IA_CSS_BINARY_DEFAULT_FRAME_INFO}, /* vf_output_info */
 		NULL,   /* acc_extension */
 		NULL,   /* acc_stages */
 		0,      /* num_acc_stages */
@@ -7821,9 +7832,6 @@ ia_css_pipe_create_extra(const struct ia_css_pipe_config *config,
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 	struct ia_css_pipe *internal_pipe = NULL;
 	unsigned int i;
-	struct ia_css_frame_info *tmp_output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE],
-				 *tmp_vf_output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
-	bool *tmp_enable_viewfinder[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_pipe_create()\n");
 	ia_css_debug_dump_pipe_config(config);
@@ -7908,28 +7916,22 @@ ia_css_pipe_create_extra(const struct ia_css_pipe_config *config,
 				IA_CSS_FRAME_FORMAT_RAW, 0);
 	}
 
-	tmp_output_info[0]	= &internal_pipe->config.output_info;
-	tmp_output_info[1]	= &internal_pipe->config.second_output_info;
-	tmp_vf_output_info[0]	= &internal_pipe->config.vf_output_info;
-	tmp_vf_output_info[1]	= &internal_pipe->config.second_vf_output_info;
-	tmp_enable_viewfinder[0]= &internal_pipe->enable_viewfinder;
-	tmp_enable_viewfinder[1]= &internal_pipe->enable_second_viewfinder;
 	/* handle output info, asume always needed */
 	for (i = 0; i < IA_CSS_PIPE_MAX_OUTPUT_STAGE; i++) {
-		if (tmp_output_info[i]->res.width) {
+		if (internal_pipe->config.output_info[i].res.width) {
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
-			if ( tmp_output_info[i]->format == IA_CSS_FRAME_FORMAT_BINARY_8) {
-				tmp_output_info[i]->res.height =
-					ceil_div(tmp_output_info[i]->res.width, HIVE_ISP_DDR_WORD_BYTES);
-				tmp_output_info[i]->res.width = HIVE_ISP_DDR_WORD_BYTES;
+			if (internal_pipe->config.output_info[i].format == IA_CSS_FRAME_FORMAT_BINARY_8) {
+				internal_pipe->config.output_info[i].res.height =
+					ceil_div(internal_pipe->config.output_info[i].res.width, HIVE_ISP_DDR_WORD_BYTES);
+				internal_pipe->config.output_info[i].res.width = HIVE_ISP_DDR_WORD_BYTES;
 			}
 #endif
 			err = sh_css_pipe_configure_output(
 					internal_pipe,
-					tmp_output_info[i]->res.width,
-					tmp_output_info[i]->res.height,
-					tmp_output_info[i]->padded_width,
-					tmp_output_info[i]->format,
+					internal_pipe->config.output_info[i].res.width,
+					internal_pipe->config.output_info[i].res.height,
+					internal_pipe->config.output_info[i].padded_width,
+					internal_pipe->config.output_info[i].format,
 					i);
 			if (err != IA_CSS_SUCCESS) {
 				ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "ia_css_pipe_create: "
@@ -7941,14 +7943,14 @@ ia_css_pipe_create_extra(const struct ia_css_pipe_config *config,
 		}
 
 		/* handle vf output info, when configured */
-		*tmp_enable_viewfinder[i] = (tmp_vf_output_info[i]->res.width != 0);
-		if (tmp_vf_output_info[i]->res.width) {
+		internal_pipe->enable_viewfinder[i] = (internal_pipe->config.vf_output_info[i].res.width != 0);
+		if (internal_pipe->config.vf_output_info[i].res.width) {
 			err = sh_css_pipe_configure_viewfinder(
 					internal_pipe,
-					tmp_vf_output_info[i]->res.width,
-					tmp_vf_output_info[i]->res.height,
-					tmp_vf_output_info[i]->padded_width,
-					tmp_vf_output_info[i]->format,
+					internal_pipe->config.vf_output_info[i].res.width,
+					internal_pipe->config.vf_output_info[i].res.height,
+					internal_pipe->config.vf_output_info[i].padded_width,
+					internal_pipe->config.vf_output_info[i].format,
 					i);
 			if (err != IA_CSS_SUCCESS) {
 				ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "ia_css_pipe_create: "
@@ -8134,7 +8136,7 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	struct ia_css_stream *curr_stream = NULL;
 	bool spcopyonly;
 	bool sensor_binning_changed;
-	int i;
+	int i, j;
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 	struct ia_css_metadata_info md_info;
 
@@ -8154,6 +8156,15 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	if (stream_config->format == IA_CSS_STREAM_FORMAT_BINARY_8 &&
 	    stream_config->metadata_config.resolution.height > 0)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	if (stream_config->online && stream_config->pack_raw_pixels) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_stream_create() exit, online and pack raw is invalid on input system 2401\n");
+		err = IA_CSS_ERR_INVALID_ARGUMENTS;
+		goto ERR;
+	}
+#endif
 
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	ia_css_debug_pipe_graph_dump_stream_config(stream_config);
@@ -8385,27 +8396,23 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 
 		/* handle each pipe */
 		pipe_info = &curr_pipe->info;
-		err = sh_css_pipe_get_output_frame_info(curr_pipe,
-				&pipe_info->output_info, 0);
-		if (err != IA_CSS_SUCCESS)
-			goto ERR;
-		err = sh_css_pipe_get_output_frame_info(curr_pipe,
-				&pipe_info->second_output_info, 1);
-		if (err != IA_CSS_SUCCESS)
-			goto ERR;
+		for (j = 0; j < IA_CSS_PIPE_MAX_OUTPUT_STAGE; j++) {
+			err = sh_css_pipe_get_output_frame_info(curr_pipe,
+					&pipe_info->output_info[j], j);
+			if (err != IA_CSS_SUCCESS)
+				goto ERR;
+		}
 		if (!spcopyonly){
 			err = sh_css_pipe_get_grid_info(curr_pipe,
 						&pipe_info->grid_info);
 			if (err != IA_CSS_SUCCESS)
 				goto ERR;
-			sh_css_pipe_get_viewfinder_frame_info(curr_pipe,
-					&pipe_info->vf_output_info, 0);
-			if (err != IA_CSS_SUCCESS)
-				goto ERR;
-			sh_css_pipe_get_viewfinder_frame_info(curr_pipe,
-					&pipe_info->second_vf_output_info, 1);
-			if (err != IA_CSS_SUCCESS)
-				goto ERR;
+			for (j = 0; j < IA_CSS_PIPE_MAX_OUTPUT_STAGE; j++) {
+				sh_css_pipe_get_viewfinder_frame_info(curr_pipe,
+						&pipe_info->vf_output_info[j], j);
+				if (err != IA_CSS_SUCCESS)
+					goto ERR;
+			}
 		}
 
 		my_css.active_pipes[ia_css_pipe_get_pipe_num(curr_pipe)] = curr_pipe;
@@ -8796,8 +8803,8 @@ ia_css_stream_set_output_padded_width(struct ia_css_stream *stream, unsigned int
 	assert(pipe != NULL);
 
 	// set the config also just in case (redundant info? why do we save config in pipe?)
-	pipe->config.output_info.padded_width = output_padded_width;
-	pipe->output_info[0].padded_width = output_padded_width;
+	pipe->config.output_info[IA_CSS_PIPE_OUTPUT_STAGE_0].padded_width = output_padded_width;
+	pipe->output_info[IA_CSS_PIPE_OUTPUT_STAGE_0].padded_width = output_padded_width;
 
 	return err;
 }
@@ -9118,7 +9125,7 @@ void ia_css_pipe_map_queue(struct ia_css_pipe *pipe, bool map)
 		if (need_input_queue)
 			ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_INPUT_FRAME, map);
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_OUTPUT_FRAME, map);
-		if (pipe->enable_viewfinder)
+		if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0])
 			ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME, map);
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_PARAMETER_SET, map);
 #if defined SH_CSS_ENABLE_METADATA
@@ -9159,9 +9166,9 @@ void ia_css_pipe_map_queue(struct ia_css_pipe *pipe, bool map)
 	} else if (pipe->mode == IA_CSS_PIPE_ID_YUVPP) {
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_OUTPUT_FRAME, map);
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME, map);
-		if (pipe->enable_viewfinder)
+		if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0])
 			ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME, map);
-		if (pipe->enable_second_viewfinder)
+		if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_1])
 			ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME, map);
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_PARAMETER_SET, map);
 #if defined SH_CSS_ENABLE_METADATA

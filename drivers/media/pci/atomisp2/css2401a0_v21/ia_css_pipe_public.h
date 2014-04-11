@@ -28,7 +28,11 @@
 #include "ia_css_buffer.h"
 
 
-#define IA_CSS_PIPE_MAX_OUTPUT_STAGE 2
+enum {
+	IA_CSS_PIPE_OUTPUT_STAGE_0 = 0,
+	IA_CSS_PIPE_OUTPUT_STAGE_1,
+	IA_CSS_PIPE_MAX_OUTPUT_STAGE,
+};
 
 /** Enumeration of pipe modes. This mode can be used to create
  *  an image pipe for this mode. These pipes can be combined
@@ -67,14 +71,10 @@ struct ia_css_pipe_config {
 	/**< bayer down scaling */
 	struct ia_css_resolution dvs_crop_out_res;
 	/**< dvs crop, video only, not in use yet. Use dvs_envelope below. */
-	struct ia_css_frame_info output_info;
+	struct ia_css_frame_info output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	/**< output of YUV scaling */
-	struct ia_css_frame_info second_output_info;
-	/**< second output of the pipe if applicable */
-	struct ia_css_frame_info vf_output_info;
+	struct ia_css_frame_info vf_output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	/**< output of VF YUV scaling */
-	struct ia_css_frame_info second_vf_output_info;
-	/**< second vf output of the pipe if applicable */
 	struct ia_css_fw_info *acc_extension;
 	/**< Pipeline extension accelerator */
 	struct ia_css_fw_info **acc_stages;
@@ -104,10 +104,8 @@ struct ia_css_pipe_config {
 	{ 0, 0 },				/* vf_pp_in_res */ \
 	{ 0, 0 },				/* capt_pp_in_res */ \
 	{ 0, 0 },				/* dvs_crop_out_res */ \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* output_info */ \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* second_output_info */ \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* vf_output_info */ \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* second_vf_output_info */ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* output_info */ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* vf_output_info */ \
 	NULL,					/* acc_extension */ \
 	NULL,					/* acc_stages */ \
 	0,					/* num_acc_stages */ \
@@ -122,12 +120,10 @@ struct ia_css_pipe_config {
  * been created.
  */
 struct ia_css_pipe_info {
-	struct ia_css_frame_info output_info;
-	struct ia_css_frame_info second_output_info;
+	struct ia_css_frame_info output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	/**< Info about output resolution. This contains the stride which
 	     should be used for memory allocation. */
-	struct ia_css_frame_info vf_output_info;
-	struct ia_css_frame_info second_vf_output_info;
+	struct ia_css_frame_info vf_output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	/**< Info about viewfinder output resolution (optional). This contains
 	     the stride that should be used for memory allocation. */
 	struct ia_css_frame_info raw_output_info;
@@ -147,10 +143,8 @@ struct ia_css_pipe_info {
 
 #define DEFAULT_PIPE_INFO \
 { \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* output_info */ \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* second_output_info */ \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* vf_output_info */ \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* second_vf_output_info */ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* output_info */ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* vf_output_info */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* raw_output_info */ \
 	DEFAULT_GRID_INFO			/* grid_info */ \
 }
