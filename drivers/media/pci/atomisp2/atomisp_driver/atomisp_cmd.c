@@ -1973,6 +1973,8 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 	struct ia_css_stream_config *stream_cfg =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
 		.stream_config;
+	struct ia_css_stream_input_config *input_config =
+		&stream_cfg->input_config;
 
 	if (!bq_res)
 		return -EINVAL;
@@ -2015,14 +2017,13 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 		 *     (effective_input + 12 filter padding) / bayer_ds_ratio
 		 */
 		bq_res->source_bq.width_bq =
-				((stream_cfg->effective_res.width + 12) *
+				((input_config->effective_res.width + 12) *
 				pipe_cfg->bayer_ds_out_res.width /
-				stream_cfg->effective_res.width + 1) / 2;
+				input_config->effective_res.width + 1) / 2;
 		bq_res->source_bq.height_bq =
-				((stream_cfg->effective_res.height + 12) *
+				((input_config->effective_res.height + 12) *
 				pipe_cfg->bayer_ds_out_res.height /
-				stream_cfg->effective_res.height + 1) / 2;
-
+				input_config->effective_res.height + 1) / 2;
 		if (!asd->params.video_dis_en) {
 			/*
 			 * Bad pixels caused by spatial filter processing
@@ -2051,12 +2052,13 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 				 * and there is still 4 pixel spatial filter shift
 				 */
 				w_padding =
-					roundup(stream_cfg->effective_res.width, 128) -
-					stream_cfg->effective_res.width;
+				    roundup(input_config->effective_res.width, 128) -
+				    input_config->effective_res.width;
+
 				bq_res->gdc_shift_bq.width_bq = 4 / 2 +
 					((w_padding + 24) *
 					pipe_cfg->bayer_ds_out_res.width /
-					stream_cfg->effective_res.width + 1) /
+					input_config->effective_res.width + 1) /
 					2;
 				bq_res->gdc_shift_bq.height_bq = 4 / 2;
 			}
@@ -2072,12 +2074,12 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 				bq_res->gdc_shift_bq.height_bq = 4 / 2;
 			} else {
 				w_padding =
-					roundup(stream_cfg->effective_res.width, 128) -
-					stream_cfg->effective_res.width;
+				    roundup(input_config->effective_res.width, 128) -
+				    input_config->effective_res.width;
 				bq_res->gdc_shift_bq.width_bq = 4 / 2 +
-					((w_padding - 12) *
-					pipe_cfg->bayer_ds_out_res.width /
-					stream_cfg->effective_res.width + 1) / 2;
+				    ((w_padding - 12) *
+				     pipe_cfg->bayer_ds_out_res.width /
+				input_config->effective_res.width + 1) / 2;
 				bq_res->gdc_shift_bq.height_bq = 4 / 2;
 			}
 

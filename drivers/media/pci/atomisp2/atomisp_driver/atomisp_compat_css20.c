@@ -441,15 +441,35 @@ static void __dump_stream_config(struct atomisp_sub_device *asd,
 				s_config->source.prbs.seed1);
 	}
 
-	dev_dbg(isp->dev, "stream_config.input_res w=%d, h=%d.\n",
-			s_config->input_res.width,
-			s_config->input_res.height);
-	dev_dbg(isp->dev, "stream_config.effective_res w=%d, h=%d.\n",
-			s_config->effective_res.width,
-			s_config->effective_res.height);
-	dev_dbg(isp->dev, "stream_config.format=%d.\n", s_config->format);
-	dev_dbg(isp->dev, "stream_config.bayer_order=%d.\n",
-			s_config->bayer_order);
+	for (j = 0; j < IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH; j++) {
+		dev_dbg(isp->dev, "stream_configisys_config[%d].input_res w=%d, h=%d.\n",
+			j,
+			s_config->isys_config[j].input_res.width,
+			s_config->isys_config[j].input_res.height);
+
+		dev_dbg(isp->dev, "stream_configisys_config[%d].linked_isys_stream_id=%d\n",
+			j,
+			s_config->isys_config[j].linked_isys_stream_id);
+
+		dev_dbg(isp->dev, "stream_configisys_config[%d].valid=%d.\n",
+			j,
+			s_config->isys_config[j].valid);
+	}
+
+	dev_dbg(isp->dev, "stream_config.input_config.input_res w=%d, h=%d.\n",
+		s_config->input_config.input_res.width,
+		s_config->input_config.input_res.height);
+
+	dev_dbg(isp->dev, "stream_config.input_config.effective_res w=%d, h=%d.\n",
+		s_config->input_config.effective_res.width,
+		s_config->input_config.effective_res.height);
+
+	dev_dbg(isp->dev, "stream_config.input_config.format=%d\n",
+		s_config->input_config.format);
+
+	dev_dbg(isp->dev, "stream_config.input_config.bayer_order=%d.\n",
+		s_config->input_config.bayer_order);
+
 	dev_dbg(isp->dev, "stream_config.2ppc=%d.\n",
 			s_config->two_pixels_per_clock);
 	dev_dbg(isp->dev, "stream_config.online=%d.\n", s_config->online);
@@ -1666,10 +1686,15 @@ int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
 				enum atomisp_input_stream_id stream_id,
 				struct v4l2_mbus_framefmt *ffmt)
 {
-	asd->stream_env[stream_id]
-	    .stream_config.input_res.width = ffmt->width;
-	asd->stream_env[stream_id]
-	    .stream_config.input_res.height = ffmt->height;
+	struct ia_css_stream_config *s_config =
+			&asd->stream_env[stream_id].stream_config;
+
+	/* TBD: New interface to isys cfg */
+	s_config->isys_config[IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX].input_res.width = ffmt->width;
+	s_config->isys_config[IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX].input_res.height = ffmt->height;
+
+	s_config->input_config.input_res.width = ffmt->width;
+	s_config->input_config.input_res.height = ffmt->height;
 	return 0;
 }
 
@@ -1685,16 +1710,35 @@ void atomisp_css_input_set_bayer_order(struct atomisp_sub_device *asd,
 				enum atomisp_input_stream_id stream_id,
 				enum atomisp_css_bayer_order bayer_order)
 {
-	asd->stream_env[stream_id]
-	    .stream_config.bayer_order = bayer_order;
+	struct ia_css_stream_config *s_config =
+			&asd->stream_env[stream_id].stream_config;
+	s_config->input_config.bayer_order = bayer_order;
 }
 
 void atomisp_css_input_set_format(struct atomisp_sub_device *asd,
 					enum atomisp_input_stream_id stream_id,
 					enum atomisp_css_stream_format format)
 {
-	asd->stream_env[stream_id]
-	    .stream_config.format = format;
+
+	struct ia_css_stream_config *s_config =
+			&asd->stream_env[stream_id].stream_config;
+	int i;
+
+	s_config->input_config.format = format;
+
+	/*
+	 * Set all isys configs to not valid.
+	 * Currently we support only one stream per channel
+	 */
+	for (i = IA_CSS_STREAM_ISYS_STREAM_0;
+	     i < IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH; i++)
+		s_config->isys_config[i].valid = false;
+
+	/* TBD: Interface for isys configuration. */
+	i = IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX;
+	s_config->isys_config[i].format = format;
+	s_config->isys_config[i].linked_isys_stream_id = -1;
+	s_config->isys_config[i].valid = true;
 }
 
 int atomisp_css_input_set_effective_resolution(
@@ -1702,11 +1746,10 @@ int atomisp_css_input_set_effective_resolution(
 					enum atomisp_input_stream_id stream_id,
 					unsigned int width, unsigned int height)
 {
-	asd->stream_env[stream_id]
-	    .stream_config.effective_res.width = width;
-	asd->stream_env[stream_id]
-	    .stream_config.effective_res.height = height;
-
+	struct ia_css_stream_config *s_config =
+			&asd->stream_env[stream_id].stream_config;
+	s_config->input_config.effective_res.width = width;
+	s_config->input_config.effective_res.height = height;
 	return 0;
 }
 
@@ -1752,7 +1795,7 @@ void atomisp_css_enable_raw_binning(struct atomisp_sub_device *asd,
 	stream_env->update_pipe[pipe] = true;
 	if (enable)
 		stream_env->pipe_configs[pipe].output_info[0].padded_width =
-		    stream_env->stream_config.effective_res.width;
+			stream_env->stream_config.input_config.effective_res.width;
 }
 
 void atomisp_css_enable_dz(struct atomisp_sub_device *asd, bool enable)
@@ -1811,11 +1854,14 @@ void atomisp_css_input_set_mode(struct atomisp_sub_device *asd,
 		 */
 		struct ia_css_stream_config *s_config =
 			&asd->stream_env[i].stream_config;
-		if (s_config->input_res.width == 0)
+
+		if (s_config->input_config.input_res.width == 0)
 			continue;
-		if (ia_css_mipi_frame_calculate_size(s_config->input_res.width,
-					s_config->input_res.height,
-					s_config->format,
+
+		if (ia_css_mipi_frame_calculate_size(
+					s_config->input_config.input_res.width,
+					s_config->input_config.input_res.height,
+					s_config->input_config.format,
 					true,
 					0x13000,
 					&size_mem_words) != IA_CSS_SUCCESS) {
@@ -2122,6 +2168,7 @@ static void __configure_output(struct atomisp_sub_device *asd,
 	struct atomisp_device *isp = asd->isp;
 	struct atomisp_stream_env *stream_env =
 		&asd->stream_env[stream_index];
+	struct ia_css_stream_config *s_config = &stream_env->stream_config;
 
 	stream_env->pipe_configs[pipe_id].mode =
 		__pipe_id_to_pipe_mode(asd, pipe_id);
@@ -2133,10 +2180,10 @@ static void __configure_output(struct atomisp_sub_device *asd,
 	stream_env->pipe_configs[pipe_id].output_info[0].padded_width = min_width;
 
 	/* isp binary 2.2 specific setting*/
-	if (width > stream_env->stream_config.effective_res.width ||
-	    height > stream_env->stream_config.effective_res.height) {
-		stream_env->stream_config.effective_res.width = width;
-		stream_env->stream_config.effective_res.height = height;
+	if (width > s_config->input_config.effective_res.width ||
+	    height > s_config->input_config.effective_res.height) {
+		s_config->input_config.effective_res.width = width;
+		s_config->input_config.effective_res.height = height;
 	}
 
 	dev_dbg(isp->dev, "configuring pipe[%d] output info w=%d.h=%d.f=%d.\n",
@@ -2171,9 +2218,12 @@ static void __configure_capture_pp_input(struct atomisp_sub_device *asd,
 	stream_env->update_pipe[pipe_id] = true;
 
 	pipe_extra_configs->enable_yuv_ds = true;
-	pipe_configs->capt_pp_in_res.width = stream_config->effective_res.width;
+
+	pipe_configs->capt_pp_in_res.width =
+		stream_config->input_config.effective_res.width;
 	pipe_configs->capt_pp_in_res.height =
-		stream_config->effective_res.height;
+		stream_config->input_config.effective_res.height;
+
 	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
 		pipe_id, width, height);
 }
@@ -2200,7 +2250,8 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	struct ia_css_resolution *vf_pp_in_res =
 		&pipe_configs->vf_pp_in_res;
 	struct ia_css_resolution  *effective_res =
-		&stream_config->effective_res;
+		&stream_config->input_config.effective_res;
+
 	const struct bayer_ds_factor bds_fct[] =
 		{{2, 1}, {3, 2}, {5, 4}};
 	const unsigned int yuv_dec_fct[] = {4, 2};
@@ -2314,7 +2365,8 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 	struct ia_css_resolution *bayer_ds_out_res =
 		&pipe_configs->bayer_ds_out_res;
 	struct ia_css_resolution  *effective_res =
-		&stream_config->effective_res;
+		&stream_config->input_config.effective_res;
+
 	const struct bayer_ds_factor bds_factors[] =
 		{{8, 1}, {4, 1}, {2, 1}, {3, 2}};
 	unsigned int i;
