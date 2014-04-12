@@ -3907,7 +3907,12 @@ static void atomisp_check_copy_mode(struct atomisp_sub_device *asd,
 		int source_pad)
 {
 #if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
-	if (!atomisp_subdev_format_conversion(asd, source_pad))
+	/*
+	 * For SOC camera we are using copy_mode all the time
+	 * TDB: Do we have some cases where the copy_mode can't be used?
+	 */
+	if ((asd->isp->inputs[asd->input_curr].type == SOC_CAMERA) ||
+	    (!atomisp_subdev_format_conversion(asd, source_pad)))
 		asd->copy_mode = true;
 	else
 #endif
@@ -3915,6 +3920,18 @@ static void atomisp_check_copy_mode(struct atomisp_sub_device *asd,
 		asd->copy_mode = false;
 
 	dev_dbg(asd->isp->dev, "copy_mode: %d\n", asd->copy_mode);
+
+#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+	/*
+	 * In copy mode we can still make a format conversion if formats
+	 * doesn't match
+	 */
+	if (asd->copy_mode)
+		asd->copy_mode_format_conv =
+			atomisp_subdev_copy_format_conversion(asd, source_pad);
+	dev_dbg(asd->isp->dev, "copy_mode_format_conv: %d\n", asd->copy_mode_format_conv);
+#endif
+
 }
 
 static int atomisp_set_fmt_to_snr(struct video_device *vdev,

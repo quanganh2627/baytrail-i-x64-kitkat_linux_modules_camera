@@ -2162,11 +2162,14 @@ void atomisp_css_disable_vf_pp(struct atomisp_sub_device *asd,
 }
 
 static enum ia_css_pipe_mode __pipe_id_to_pipe_mode(
+					struct atomisp_sub_device *asd,
 					enum ia_css_pipe_id pipe_id)
 {
 	switch (pipe_id) {
 #ifdef CSS21
 	case IA_CSS_PIPE_ID_COPY:
+		if (asd->copy_mode_format_conv)
+			return IA_CSS_PIPE_MODE_CAPTURE;
 		return IA_CSS_PIPE_MODE_COPY;
 #endif
 	case IA_CSS_PIPE_ID_PREVIEW:
@@ -2196,7 +2199,7 @@ static void __configure_output(struct atomisp_sub_device *asd,
 		&asd->stream_env[stream_index];
 
 	stream_env->pipe_configs[pipe_id].mode =
-		__pipe_id_to_pipe_mode(pipe_id);
+		__pipe_id_to_pipe_mode(asd, pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
 	stream_env->pipe_configs[pipe_id].output_info[0].res.width = width;
@@ -2242,7 +2245,7 @@ static void __configure_pp_input(struct atomisp_sub_device *asd,
 	   )
 		return;
 	stream_env->pipe_configs[pipe_id].mode =
-					__pipe_id_to_pipe_mode(pipe_id);
+		__pipe_id_to_pipe_mode(asd, pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
 	stream_env->pipe_extra_configs[pipe_id].enable_yuv_ds = true;
@@ -2278,7 +2281,7 @@ static void __configure_capture_pp_input(struct atomisp_sub_device *asd,
 	    height * 9 / 10 < pipe_configs->output_info[0].res.height)
 		return;
 
-	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
+	pipe_configs->mode = __pipe_id_to_pipe_mode(asd, pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
 	pipe_extra_configs->enable_yuv_ds = true;
@@ -2320,7 +2323,7 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 	if (width == 0 && height == 0)
 		return;
 
-	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
+	pipe_configs->mode = __pipe_id_to_pipe_mode(asd, pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
 	pipe_extra_configs->enable_yuv_ds = true;
@@ -2433,7 +2436,7 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 	if (width == 0 && height == 0)
 		return;
 
-	pipe_configs->mode = __pipe_id_to_pipe_mode(pipe_id);
+	pipe_configs->mode = __pipe_id_to_pipe_mode(asd, pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
 	pipe_extra_configs->enable_yuv_ds = false;
@@ -2511,7 +2514,7 @@ static void __configure_vf_output(struct atomisp_sub_device *asd,
 	struct atomisp_stream_env *stream_env =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 	stream_env->pipe_configs[pipe_id].mode =
-					__pipe_id_to_pipe_mode(pipe_id);
+		__pipe_id_to_pipe_mode(asd, pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
 
 	stream_env->pipe_configs[pipe_id].vf_output_info[0].res.width = width;
