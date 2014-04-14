@@ -233,6 +233,30 @@ int atomisp_css_dequeue_event(struct atomisp_css_event *current_event);
 void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_sub_device *asd,
 				      struct atomisp_css_event *current_event);
 
+int atomisp_css_isys_set_resolution(struct atomisp_sub_device *asd,
+				    enum atomisp_input_stream_id stream_id,
+				    struct v4l2_mbus_framefmt *ffmt,
+				    int isys_stream);
+
+void atomisp_css_isys_set_link(struct atomisp_sub_device *asd,
+			       enum atomisp_input_stream_id stream_id,
+			       int link,
+			       int isys_stream);
+
+void atomisp_css_isys_set_valid(struct atomisp_sub_device *asd,
+				enum atomisp_input_stream_id stream_id,
+				bool valid,
+				int isys_stream);
+
+void atomisp_css_isys_set_format(struct atomisp_sub_device *asd,
+				 enum atomisp_input_stream_id stream_id,
+				 enum atomisp_css_stream_format format,
+				 int isys_stream);
+
+int atomisp_css_set_default_isys_config(struct atomisp_sub_device *asd,
+					enum atomisp_input_stream_id stream_id,
+					struct v4l2_mbus_framefmt *ffmt);
+
 int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
 					enum atomisp_input_stream_id stream_id,
 					struct v4l2_mbus_framefmt *ffmt);

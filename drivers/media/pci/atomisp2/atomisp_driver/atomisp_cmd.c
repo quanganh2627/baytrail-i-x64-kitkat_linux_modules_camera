@@ -3647,6 +3647,8 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 					__func__, input_format);
 
 		atomisp_css_input_set_format(asd, stream_id, input_format);
+		atomisp_css_isys_set_format(asd, stream_id, input_format,
+				IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
 	}
 
 	atomisp_css_input_configure_port(asd,

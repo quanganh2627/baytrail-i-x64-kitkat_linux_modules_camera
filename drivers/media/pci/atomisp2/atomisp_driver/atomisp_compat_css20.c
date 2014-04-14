@@ -47,6 +47,9 @@
 /* Assume max number of ACC stages */
 #define MAX_ACC_STAGES	20
 
+/* Ideally, this should come from CSS headers */
+#define NO_LINK -1
+
 /*
  * to serialize MMIO access , this is due to ISP2400 silicon issue Sighting
  * #4684168, if concurrency access happened, system may hard hang.
@@ -1707,16 +1710,28 @@ void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_sub_device *asd,
 				&current_event->pipe);
 }
 
+int atomisp_css_isys_set_resolution(struct atomisp_sub_device *asd,
+				    enum atomisp_input_stream_id stream_id,
+				    struct v4l2_mbus_framefmt *ffmt,
+				    int isys_stream)
+{
+	struct ia_css_stream_config *s_config =
+			&asd->stream_env[stream_id].stream_config;
+
+	if (isys_stream > IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH)
+		return -EINVAL;
+
+	s_config->isys_config[isys_stream].input_res.width = ffmt->width;
+	s_config->isys_config[isys_stream].input_res.height = ffmt->height;
+	return 0;
+}
+
 int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
 				enum atomisp_input_stream_id stream_id,
 				struct v4l2_mbus_framefmt *ffmt)
 {
 	struct ia_css_stream_config *s_config =
 			&asd->stream_env[stream_id].stream_config;
-
-	/* TBD: New interface to isys cfg */
-	s_config->isys_config[IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX].input_res.width = ffmt->width;
-	s_config->isys_config[IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX].input_res.height = ffmt->height;
 
 	s_config->input_config.input_res.width = ffmt->width;
 	s_config->input_config.input_res.height = ffmt->height;
@@ -1740,6 +1755,40 @@ void atomisp_css_input_set_bayer_order(struct atomisp_sub_device *asd,
 	s_config->input_config.bayer_order = bayer_order;
 }
 
+void atomisp_css_isys_set_link(struct atomisp_sub_device *asd,
+			       enum atomisp_input_stream_id stream_id,
+			       int link,
+			       int isys_stream)
+{
+	struct ia_css_stream_config *s_config =
+		&asd->stream_env[stream_id].stream_config;
+
+	s_config->isys_config[isys_stream].linked_isys_stream_id = link;
+}
+
+void atomisp_css_isys_set_valid(struct atomisp_sub_device *asd,
+				enum atomisp_input_stream_id stream_id,
+				bool valid,
+				int isys_stream)
+{
+	struct ia_css_stream_config *s_config =
+		&asd->stream_env[stream_id].stream_config;
+
+	s_config->isys_config[isys_stream].valid = valid;
+}
+
+void atomisp_css_isys_set_format(struct atomisp_sub_device *asd,
+				 enum atomisp_input_stream_id stream_id,
+				 enum atomisp_css_stream_format format,
+				 int isys_stream)
+{
+
+	struct ia_css_stream_config *s_config =
+			&asd->stream_env[stream_id].stream_config;
+
+	s_config->isys_config[isys_stream].format = format;
+}
+
 void atomisp_css_input_set_format(struct atomisp_sub_device *asd,
 					enum atomisp_input_stream_id stream_id,
 					enum atomisp_css_stream_format format)
@@ -1747,10 +1796,17 @@ void atomisp_css_input_set_format(struct atomisp_sub_device *asd,
 
 	struct ia_css_stream_config *s_config =
 			&asd->stream_env[stream_id].stream_config;
-	int i;
 
 	s_config->input_config.format = format;
+}
 
+int atomisp_css_set_default_isys_config(struct atomisp_sub_device *asd,
+					enum atomisp_input_stream_id stream_id,
+					struct v4l2_mbus_framefmt *ffmt)
+{
+	int i;
+	struct ia_css_stream_config *s_config =
+			&asd->stream_env[stream_id].stream_config;
 	/*
 	 * Set all isys configs to not valid.
 	 * Currently we support only one stream per channel
@@ -1759,11 +1815,17 @@ void atomisp_css_input_set_format(struct atomisp_sub_device *asd,
 	     i < IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH; i++)
 		s_config->isys_config[i].valid = false;
 
-	/* TBD: Interface for isys configuration. */
-	i = IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX;
-	s_config->isys_config[i].format = format;
-	s_config->isys_config[i].linked_isys_stream_id = -1;
-	s_config->isys_config[i].valid = true;
+	atomisp_css_isys_set_resolution(asd, stream_id, ffmt,
+					IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
+	atomisp_css_isys_set_format(asd, stream_id,
+				    s_config->input_config.format,
+				    IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
+	atomisp_css_isys_set_link(asd, stream_id, NO_LINK,
+				  IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
+	atomisp_css_isys_set_valid(asd, stream_id, true,
+				   IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
+
+	return 0;
 }
 
 int atomisp_css_input_set_effective_resolution(

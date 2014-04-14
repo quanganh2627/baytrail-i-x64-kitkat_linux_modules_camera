@@ -584,6 +584,8 @@ void atomisp_subdev_set_ffmt(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
 							  fc->bayer_order);
 			atomisp_css_input_set_format(isp_sd, stream_id,
 						fc->in_sh_fmt);
+			atomisp_css_set_default_isys_config(isp_sd, stream_id,
+							    ffmt);
 		}
 
 		break;
