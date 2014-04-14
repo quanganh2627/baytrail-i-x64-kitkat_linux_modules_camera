@@ -532,6 +532,62 @@ static int __m10mo_s_power(struct v4l2_subdev *sd, int on, bool fw_update_mode)
 	return ret;
 }
 
+static int m10mo_set_zsl_capture(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret,i, dual_status;
+
+	/* Set ZSL mode First*/
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, INFINITY_CAPTURE_MODE, 0x0F);
+	if (ret)
+		goto out;
+
+	/* Enable interrupt signal */
+	ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+	if (ret)
+		goto out;
+
+	/* Go to Monitor mode and output NV12/21 YUV Data */
+	ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE);
+	if (ret)
+		goto out;
+
+	ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE,
+				     M10MO_INIT_TIMEOUT);
+	if (ret < 0)
+		goto out;
+
+	/* SET ZSL_TRANSFER_NO, The oldest frame written to memory */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, ZSL_TRANSFER_NO, 0x01);
+	if (ret)
+		goto out;
+
+	/* Set NV12 mode to "normal capture" */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAP_NV12_MODE, 0x00);
+	if (ret)
+		goto out;
+
+	/* Start polling START_DUAL_STATUS */
+	for (i = POLL_NUM; i; i--) {
+		ret = m10mo_readb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_STATUS,
+					&dual_status);
+		if (ret)
+			continue;
+		if (dual_status == 0)
+			break;
+		msleep(10);
+	}
+
+	/* Start Single Capture, JPEG encode & transfer start */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, 0x01);
+	if (ret)
+		goto out;
+	return 0;
+out:
+	dev_err(&client->dev, "ZSL Mode failed %d\n", ret);
+	return ret;
+}
+
 static int m10mo_s_power(struct v4l2_subdev *sd, int on)
 {
 	int ret;
@@ -1007,6 +1063,9 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 		break;
 	case CI_MODE_STILL_CAPTURE:
 		ret = m10mo_set_still_capture(sd);
+		break;
+	case CI_MODE_CONTINUOUS:
+		ret = m10mo_set_zsl_capture(sd);
 		break;
 	default:
 		ret = m10mo_set_monitor_mode(sd);

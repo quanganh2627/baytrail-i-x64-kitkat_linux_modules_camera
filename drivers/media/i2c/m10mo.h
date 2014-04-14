@@ -41,6 +41,7 @@
 #define M10MO_MIPI_FREQ			(963000000/2)
 #define M10MO_INIT_TIMEOUT		500
 #define M10MO_BOOT_TIMEOUT		50
+#define POLL_NUM			5
 
 #define M10MO_MIN_EV -3
 #define M10MO_MAX_EV  3
@@ -208,6 +209,15 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define MONITOR_ZSL_MODE_STATUS	0x5f
 #define REG_NORMAL_MONITOR	0x00
 #define REG_ZSL_MONITOR 	0x01
+#define ZSL_MODE		0x6e
+#define ZSL_INTERVAL 		0x6f
+
+/*  ZSL MODE */
+#define INFINITY_CAPTURE_MODE	0x00
+#define ZSL_TRANSFER_NO 	0x16
+#define CAP_NV12_MODE		0x0a
+#define START_DUAL_STATUS	0x1f
+#define START_DUAL_CAPTURE 	0x05
 
 
 /* Category 3_Auto Exposure */
