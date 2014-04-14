@@ -3677,11 +3677,25 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 		if (asd->stream_env[stream_id].isys_configs == 1) {
 			input_format =
 			asd->stream_env[stream_id].isys_info[0].input_format;
+			atomisp_css_isys_set_format(asd, stream_id,
+			input_format, IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
+		} else if (asd->stream_env[stream_id].isys_configs == 2) {
+			atomisp_css_isys_two_stream_cfg_update_stream1(
+			asd, stream_id,
+			asd->stream_env[stream_id].isys_info[0].input_format,
+			asd->stream_env[stream_id].isys_info[0].width,
+			asd->stream_env[stream_id].isys_info[0].height);
+
+			atomisp_css_isys_two_stream_cfg_update_stream2(
+			asd, stream_id,
+			asd->stream_env[stream_id].isys_info[1].input_format,
+			asd->stream_env[stream_id].isys_info[1].width,
+			asd->stream_env[stream_id].isys_info[1].height);
 		}
 
+		/* Input stream config is still needs configured */
+		/* TODO: Check if this is necessary */
 		atomisp_css_input_set_format(asd, stream_id, input_format);
-		atomisp_css_isys_set_format(asd, stream_id, input_format,
-				IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
 	}
 
 	atomisp_css_input_configure_port(asd,

@@ -1828,6 +1828,67 @@ int atomisp_css_set_default_isys_config(struct atomisp_sub_device *asd,
 	return 0;
 }
 
+int atomisp_css_isys_two_stream_cfg(struct atomisp_sub_device *asd,
+				    enum atomisp_input_stream_id stream_id,
+				    enum atomisp_css_stream_format input_format)
+{
+	struct ia_css_stream_config *s_config =
+		&asd->stream_env[stream_id].stream_config;
+
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].input_res.width =
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_0].input_res.width;
+
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].input_res.height =
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_0].input_res.height / 2;
+
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].linked_isys_stream_id
+		= IA_CSS_STREAM_ISYS_STREAM_0;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_0].format =
+		IA_CSS_STREAM_FORMAT_USER_DEF1;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].format =
+		IA_CSS_STREAM_FORMAT_USER_DEF2;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].valid = true;
+	return 0;
+}
+
+void atomisp_css_isys_two_stream_cfg_update_stream1(
+				    struct atomisp_sub_device *asd,
+				    enum atomisp_input_stream_id stream_id,
+				    enum atomisp_css_stream_format input_format,
+				    unsigned int width, unsigned int height)
+{
+	struct ia_css_stream_config *s_config =
+		&asd->stream_env[stream_id].stream_config;
+
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_0].input_res.width =
+		width;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_0].input_res.height =
+		height;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_0].format =
+		input_format;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_0].valid = true;
+}
+
+void atomisp_css_isys_two_stream_cfg_update_stream2(
+				    struct atomisp_sub_device *asd,
+				    enum atomisp_input_stream_id stream_id,
+				    enum atomisp_css_stream_format input_format,
+				    unsigned int width, unsigned int height)
+{
+	struct ia_css_stream_config *s_config =
+		&asd->stream_env[stream_id].stream_config;
+
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].input_res.width =
+		width;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].input_res.height =
+	height;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].linked_isys_stream_id
+		= IA_CSS_STREAM_ISYS_STREAM_0;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].format =
+		input_format;
+	s_config->isys_config[IA_CSS_STREAM_ISYS_STREAM_1].valid = true;
+}
+
 int atomisp_css_input_set_effective_resolution(
 					struct atomisp_sub_device *asd,
 					enum atomisp_input_stream_id stream_id,

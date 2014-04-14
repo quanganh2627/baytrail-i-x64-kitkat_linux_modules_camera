@@ -257,6 +257,22 @@ int atomisp_css_set_default_isys_config(struct atomisp_sub_device *asd,
 					enum atomisp_input_stream_id stream_id,
 					struct v4l2_mbus_framefmt *ffmt);
 
+int atomisp_css_isys_two_stream_cfg(struct atomisp_sub_device *asd,
+				    enum atomisp_input_stream_id stream_id,
+				    enum atomisp_css_stream_format input_format);
+
+void atomisp_css_isys_two_stream_cfg_update_stream1(
+				    struct atomisp_sub_device *asd,
+				    enum atomisp_input_stream_id stream_id,
+				    enum atomisp_css_stream_format input_format,
+				    unsigned int width, unsigned int height);
+
+void atomisp_css_isys_two_stream_cfg_update_stream2(
+				    struct atomisp_sub_device *asd,
+				    enum atomisp_input_stream_id stream_id,
+				    enum atomisp_css_stream_format input_format,
+				    unsigned int width, unsigned int height);
+
 int atomisp_css_input_set_resolution(struct atomisp_sub_device *asd,
 					enum atomisp_input_stream_id stream_id,
 					struct v4l2_mbus_framefmt *ffmt);
