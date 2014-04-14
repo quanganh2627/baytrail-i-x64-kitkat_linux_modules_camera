@@ -60,7 +60,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector2w OP_1w_maccd(
  * shift with rounding. the result is saturated and casted
  * to single precision.
  */
-STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_mul_realining(
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_mul_realigning(
 	tvector1w a,
 	tvector1w b,
 	tscalar1w shift );

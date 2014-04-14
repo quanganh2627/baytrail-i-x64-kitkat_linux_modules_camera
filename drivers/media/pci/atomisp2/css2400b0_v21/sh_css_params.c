@@ -3432,9 +3432,9 @@ void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 	}
 
 #if 0
-	»	/* Get queue instance */
-	»	ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
-	» 	ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
+		/* Get queue instance */
+		ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
 #else
 		/* use hard-coded value for backward compatibility, will enable above code later */
 		queue_id = IA_CSS_PARAMETER_SET_QUEUE_ID;
@@ -3512,7 +3512,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 
 	raw_bit_depth = ia_css_stream_input_format_bits_per_pixel(stream);
 	isp_pipe_version = ia_css_pipe_get_isp_pipe_version(stream->pipes[0]);
-	// this code assuemes that all the pipes have the same pipeversion.
+	/* this code assuemes that all the pipes have the same pipeversion. */
 	for (i = 1; i < stream->num_pipes; i++) {
 		assert(isp_pipe_version == ia_css_pipe_get_isp_pipe_version(stream->pipes[i]));
 	}
@@ -3520,7 +3520,12 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 #if !defined(IS_ISP_2500_SYSTEM)
 #else /* defined(IS_ISP_2500_SYSTEM) */
 	sh_css_process_product_specific(&params->isp_parameters,&params->isp_params_changed);
-	sh_css_process_acc_cluster_parameters(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed);
+	err = sh_css_process_acc_cluster_parameters(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed);
+	if (err != IA_CSS_SUCCESS) {
+		IA_CSS_LOG("sh_css_process_acc_cluster_parameters() returned INVALID KERNEL CONFIGURATION\n");
+		IA_CSS_LEAVE_ERR_PRIVATE(err);
+		return err;
+	}
 #endif
 
 	/* now make the map available to the sp */
@@ -3566,16 +3571,16 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		if (params->isp_params_changed || params->dz_config_changed ||
 				params->motion_config_changed) {
 #else
-		/* This should be unconditional, since the sh_css_params_write_to_ddr_internal below
-		 * is also unconditional. Otherwise, the old uds parameters, e.g. for
-		 * another pipeline, can be taken.
-		*/
+			/* This should be unconditional, since the sh_css_params_write_to_ddr_internal below
+			 * is also unconditional. Otherwise, the old uds parameters, e.g. for
+			 * another pipeline, can be taken.
+			 */
 		{
 #endif
 			/* we have to do this per pipeline because */
 			/* the processing is a.o. resolution dependent */
 			ia_css_process_zoom_and_motion(params,
-							pipeline->stages);
+					pipeline->stages);
 			params->isp_params_changed = true;
 		}
 #endif
@@ -3585,33 +3590,36 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		for (stage = pipeline->stages; stage; stage = stage->next) {
 			unsigned mem;
 
-			if (!stage || !stage->binary) continue;
+			if (!stage || !stage->binary)
+				continue;
+
 #if !defined(IS_ISP_2500_SYSTEM)
 			process_kernel_parameters(pipeline->pipe_id,
-				stage, params,
-				isp_pipe_version, raw_bit_depth);
+					stage, params,
+					isp_pipe_version, raw_bit_depth);
 #endif
 			err =
-			  sh_css_params_write_to_ddr_internal(
-						pipeline->pipe_id,
-						params,
-						stage,
-						cur_map,
-						cur_map_size);
+					sh_css_params_write_to_ddr_internal(
+							pipeline->pipe_id,
+							params,
+							stage,
+							cur_map,
+							cur_map_size);
 			if (err != IA_CSS_SUCCESS)
 				break;
 			for (mem = 0; mem < IA_CSS_NUM_MEMORIES; mem++) {
 				params->isp_mem_params_changed
-					[pipeline->pipe_id][stage->stage_num][mem] = false;
+				[pipeline->pipe_id][stage->stage_num][mem] = false;
 			}
-		}
+		} /* for */
+
 		/* update isp_params to pipe specific copies */
 		if (params->isp_params_changed) {
 			reallocate_buffer(&cur_map->isp_param,
-				  &cur_map_size->isp_param,
-				  cur_map_size->isp_param,
-				  true,
-				  &err);
+					&cur_map_size->isp_param,
+					cur_map_size->isp_param,
+					true,
+					&err);
 			if (err != IA_CSS_SUCCESS)
 				break;
 			sh_css_update_isp_params_to_ddr(params, cur_map->isp_param);
@@ -3620,23 +3628,23 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		if (acc_cluster_params_changed || params->isp_params_changed)
 		{
 			reallocate_buffer(&cur_map->acc_cluster_params_for_sp ,
-				  &cur_map_size->acc_cluster_params_for_sp ,
-				  cur_map_size->acc_cluster_params_for_sp ,
-				  true,
-				  &err);
+					&cur_map_size->acc_cluster_params_for_sp ,
+					cur_map_size->acc_cluster_params_for_sp ,
+					true,
+					&err);
 			sh_css_update_acc_cluster_params_to_ddr( cur_map->acc_cluster_params_for_sp );
 		}
 #endif
 
-		/* check if to actually update the parameters for this pipe */
+			/* check if to actually update the parameters for this pipe */
 		if (pipe_in && (pipe != pipe_in)) {
 			IA_CSS_LOG("skipping pipe %x", pipe);
 			continue;
 		}
 		/* last make referenced copy */
 		err = ref_sh_css_ddr_address_map(
-					cur_map,
-					&isp_params_info.mem_map);
+				cur_map,
+				&isp_params_info.mem_map);
 		if (err != IA_CSS_SUCCESS)
 			break;
 
@@ -3645,7 +3653,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 
 		/* Update output frame pointer */
 		isp_params_info.output_frame_ptr =
-                        (params->output_frame) ? params->output_frame->data : mmgr_NULL;
+				(params->output_frame) ? params->output_frame->data : mmgr_NULL;
 
 		/* now write the copy to ddr */
 		err = write_ia_css_isp_parameter_set_info_to_ddr(&isp_params_info, &cpy);
@@ -3657,7 +3665,8 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 
 		if (IA_CSS_SUCCESS != ia_css_bufq_enqueue_buffer(thread_id,queue_id,(uint32_t)cpy)) {
 			free_ia_css_isp_parameter_set_info(cpy);
-		} else {
+		}
+		else {
 			/* TMP: check discrepancy between nr of enqueued
 			 * parameter sets and dequeued sets
 			 */
@@ -3673,16 +3682,16 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 				IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
 				return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 			}
-			 ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_1,
+			ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_1,
 					(uint8_t)thread_id,
 					(uint8_t)queue_id,
 					0);
 		}
 		/* clean-up old copy */
 		ia_css_dequeue_param_buffers(/*pipe_num*/);
-	} /* end for each 'active' pipeline */
+	}/* end for each 'active' pipeline */
 	/* clear the changed flags after all params
-	   for all pipelines have been updated */
+	for all pipelines have been updated */
 	params->isp_params_changed = false;
 	params->sc_table_changed = false;
 	params->dis_coef_table_changed = false;
