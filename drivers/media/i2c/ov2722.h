@@ -75,7 +75,7 @@
 #define OV2722_FINE_INTG_TIME_MIN 0
 #define OV2722_FINE_INTG_TIME_MAX_MARGIN 0
 #define OV2722_COARSE_INTG_TIME_MIN 1
-#define OV2722_COARSE_INTG_TIME_MAX_MARGIN (0xffff - 6)
+#define OV2722_COARSE_INTG_TIME_MAX_MARGIN 4
 
 /*
  * OV2722 System control registers
@@ -140,6 +140,10 @@
 #define OV2722_VTS_DIFF_H			0x350c
 #define OV2722_VTS_DIFF_L			0x350d
 #define OV2722_GROUP_ACCESS			0x3208
+#define OV2722_HTS_H				0x380c
+#define OV2722_HTS_L				0x380d
+#define OV2722_VTS_H				0x380e
+#define OV2722_VTS_L				0x380f
 
 #define OV2722_MWB_GAIN_R_H			0x5186
 #define OV2722_MWB_GAIN_R_L			0x5187
@@ -212,6 +216,8 @@ struct ov2722_device {
 	int vt_pix_clk_freq_mhz;
 	int fmt_idx;
 	int run_mode;
+	u16 pixels_per_line;
+	u16 lines_per_frame;
 	u8 res;
 	u8 type;
 

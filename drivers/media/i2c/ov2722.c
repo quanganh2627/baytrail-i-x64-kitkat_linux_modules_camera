@@ -393,19 +393,21 @@ static long __ov2722_set_exposure(struct v4l2_subdev *sd, int coarse_itg,
 
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	u16 vts;
-	int frame_length;
+	struct ov2722_device *dev = to_ov2722_sensor(sd);
+	u16 hts, vts;
 	int ret;
 
-	ret = ov2722_read_reg(client, OV2722_16BIT,
-					OV2722_VTS_DIFF_H, &vts);
+	/* clear VTS_DIFF on manual mode */
+	ret = ov2722_write_reg(client, OV2722_16BIT, OV2722_VTS_DIFF_H, 0);
 	if (ret)
 		return ret;
 
-	if ((coarse_itg + 6) >= vts)
-		frame_length = (coarse_itg + 6) - vts;
-	else
-		frame_length = 0;
+	hts = dev->pixels_per_line;
+	vts = dev->lines_per_frame;;
+
+	if ((coarse_itg + OV2722_COARSE_INTG_TIME_MAX_MARGIN) > vts)
+		vts = coarse_itg + OV2722_COARSE_INTG_TIME_MAX_MARGIN;
+
 	coarse_itg <<= 4;
 	digitgain <<= 2;
 
@@ -415,7 +417,12 @@ static long __ov2722_set_exposure(struct v4l2_subdev *sd, int coarse_itg,
 		return ret;
 
 	ret = ov2722_write_reg(client, OV2722_16BIT,
-				OV2722_VTS_DIFF_H, frame_length >> 8);
+				OV2722_VTS_H, vts);
+	if (ret)
+		return ret;
+
+	ret = ov2722_write_reg(client, OV2722_16BIT,
+				OV2722_HTS_H, hts);
 	if (ret)
 		return ret;
 
@@ -930,6 +937,9 @@ static int ov2722_s_mbus_fmt(struct v4l2_subdev *sd,
 		mutex_unlock(&dev->input_lock);
 		return -EINVAL;
 	}
+
+	dev->pixels_per_line = ov2722_res[dev->fmt_idx].pixels_per_line;
+	dev->lines_per_frame = ov2722_res[dev->fmt_idx].lines_per_frame;
 
 	ret = startup(sd);
 	if (ret) {
