@@ -695,8 +695,6 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 			isp->inputs[isp->input_cnt].type = subdevs->type;
 			isp->inputs[isp->input_cnt].port = subdevs->port;
 			isp->inputs[isp->input_cnt].camera = subdev;
-			isp->inputs[isp->input_cnt].shading_table = NULL;
-			isp->inputs[isp->input_cnt].morph_table = NULL;
 			/*
 			 * initialize the subdev frame size, then next we can
 			 * judge whether frame_size store effective value via
@@ -875,8 +873,6 @@ static int atomisp_register_entities(struct atomisp_device *isp)
 		"FILE_INPUT enable, camera_cnt: %d\n", isp->input_cnt);
 	isp->inputs[isp->input_cnt].type = FILE_INPUT;
 	isp->inputs[isp->input_cnt].port = -1;
-	isp->inputs[isp->input_cnt].shading_table = NULL;
-	isp->inputs[isp->input_cnt].morph_table = NULL;
 	isp->inputs[isp->input_cnt].camera_caps =
 		    atomisp_get_default_camera_caps();
 	isp->inputs[isp->input_cnt++].camera = &isp->file_dev.sd;
@@ -886,8 +882,6 @@ static int atomisp_register_entities(struct atomisp_device *isp)
 			"TPG detected, camera_cnt: %d\n", isp->input_cnt);
 		isp->inputs[isp->input_cnt].type = TEST_PATTERN;
 		isp->inputs[isp->input_cnt].port = -1;
-		isp->inputs[isp->input_cnt].shading_table = NULL;
-		isp->inputs[isp->input_cnt].morph_table = NULL;
 		isp->inputs[isp->input_cnt].camera_caps =
 		    atomisp_get_default_camera_caps();
 		isp->inputs[isp->input_cnt++].camera = &isp->tpg.sd;

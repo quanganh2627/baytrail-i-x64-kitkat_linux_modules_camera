@@ -513,6 +513,7 @@ static void atomisp_dev_init_struct(struct atomisp_device *isp)
 static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 {
 	v4l2_ctrl_s_ctrl(asd->run_mode, ATOMISP_RUN_MODE_STILL_CAPTURE);
+	memset(&asd->params.css_param, 0, sizeof(asd->params.css_param));
 	asd->params.color_effect = V4L2_COLORFX_NONE;
 	asd->params.bad_pixel_en = 1;
 	asd->params.gdc_cac_en = 0;
@@ -523,7 +524,6 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->params.false_color = 0;
 	asd->params.online_process = 1;
 	asd->params.yuv_ds_en = 0;
-	asd->params.dvs_6axis = NULL;
 	/* s3a grid not enabled for any pipe */
 	asd->params.s3a_enabled_pipe = CSS_PIPE_ID_NUM;
 
@@ -748,7 +748,6 @@ static int atomisp_release(struct file *file)
 		goto done;
 
 	atomisp_acc_release(isp);
-	atomisp_free_all_shading_tables(isp);
 	atomisp_destroy_pipes_stream_force(asd);
 	atomisp_css_uninit(isp);
 

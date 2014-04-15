@@ -1438,9 +1438,9 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 
 	/* 3A statistics use vmalloc, DIS use kmalloc */
 	if (asd->params.curr_grid_info.dvs_grid.enable) {
-		ia_css_dvs2_coefficients_free(asd->params.dvs_coeff);
+		ia_css_dvs2_coefficients_free(asd->params.css_param.dvs2_coeff);
 		ia_css_dvs2_statistics_free(asd->params.dvs_stat);
-		asd->params.dvs_coeff = NULL;
+		asd->params.css_param.dvs2_coeff = NULL;
 		asd->params.dvs_stat = NULL;
 		asd->params.dvs_hor_proj_bytes = 0;
 		asd->params.dvs_ver_proj_bytes = 0;
@@ -1479,9 +1479,9 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 		}
 	}
 
-	if (asd->params.dvs_6axis) {
-		ia_css_dvs2_6axis_config_free(asd->params.dvs_6axis);
-		asd->params.dvs_6axis = NULL;
+	if (asd->params.css_param.dvs_6axis) {
+		ia_css_dvs2_6axis_config_free(asd->params.css_param.dvs_6axis);
+		asd->params.css_param.dvs_6axis = NULL;
 	}
 
 	if (asd->params.metadata_allocated) {
@@ -1584,18 +1584,18 @@ int atomisp_alloc_dis_coef_buf(struct atomisp_sub_device *asd)
 	}
 
 	/* DIS coefficients. */
-	asd->params.dvs_coeff = ia_css_dvs2_coefficients_allocate(
-				&asd->params.curr_grid_info.dvs_grid);
-	if (!asd->params.dvs_coeff)
+	asd->params.css_param.dvs2_coeff = ia_css_dvs2_coefficients_allocate(
+					&asd->params.curr_grid_info.dvs_grid);
+	if (!asd->params.css_param.dvs2_coeff)
 		return -ENOMEM;
 
 	asd->params.dvs_hor_coef_bytes =
 		asd->params.curr_grid_info.dvs_grid.num_hor_coefs *
-		sizeof(*asd->params.dvs_coeff->hor_coefs.odd_real);
+		sizeof(*asd->params.css_param.dvs2_coeff->hor_coefs.odd_real);
 
 	asd->params.dvs_ver_coef_bytes =
 		asd->params.curr_grid_info.dvs_grid.num_ver_coefs *
-		sizeof(*asd->params.dvs_coeff->ver_coefs.odd_real);
+		sizeof(*asd->params.css_param.dvs2_coeff->ver_coefs.odd_real);
 
 	/* DIS projections. */
 	asd->params.dis_proj_data_valid = false;
@@ -3020,12 +3020,12 @@ void atomisp_css_video_set_dis_vector(struct atomisp_sub_device *asd,
 				struct atomisp_dis_vector *vector)
 {
 	if (!asd->params.config.motion_vector)
-		asd->params.config.motion_vector = &asd->params.motion_vector;
+		asd->params.config.motion_vector = &asd->params.css_param.motion_vector;
 
 	memset(asd->params.config.motion_vector,
 			0, sizeof(struct ia_css_vector));
-	asd->params.motion_vector.x = vector->x;
-	asd->params.motion_vector.y = vector->y;
+	asd->params.css_param.motion_vector.x = vector->x;
+	asd->params.css_param.motion_vector.y = vector->y;
 }
 
 static int atomisp_compare_dvs_grid(struct atomisp_sub_device *asd,
@@ -3064,43 +3064,43 @@ int atomisp_css_set_dis_coefs(struct atomisp_sub_device *asd,
 	    coefs->ver_coefs.odd_imag == NULL ||
 	    coefs->ver_coefs.even_real == NULL ||
 	    coefs->ver_coefs.even_imag == NULL ||
-	    asd->params.dvs_coeff->hor_coefs.odd_real == NULL ||
-	    asd->params.dvs_coeff->hor_coefs.odd_imag == NULL ||
-	    asd->params.dvs_coeff->hor_coefs.even_real == NULL ||
-	    asd->params.dvs_coeff->hor_coefs.even_imag == NULL ||
-	    asd->params.dvs_coeff->ver_coefs.odd_real == NULL ||
-	    asd->params.dvs_coeff->ver_coefs.odd_imag == NULL ||
-	    asd->params.dvs_coeff->ver_coefs.even_real == NULL ||
-	    asd->params.dvs_coeff->ver_coefs.even_imag == NULL)
+	    asd->params.css_param.dvs2_coeff->hor_coefs.odd_real == NULL ||
+	    asd->params.css_param.dvs2_coeff->hor_coefs.odd_imag == NULL ||
+	    asd->params.css_param.dvs2_coeff->hor_coefs.even_real == NULL ||
+	    asd->params.css_param.dvs2_coeff->hor_coefs.even_imag == NULL ||
+	    asd->params.css_param.dvs2_coeff->ver_coefs.odd_real == NULL ||
+	    asd->params.css_param.dvs2_coeff->ver_coefs.odd_imag == NULL ||
+	    asd->params.css_param.dvs2_coeff->ver_coefs.even_real == NULL ||
+	    asd->params.css_param.dvs2_coeff->ver_coefs.even_imag == NULL)
 		return -EINVAL;
 
-	if (copy_from_user(asd->params.dvs_coeff->hor_coefs.odd_real,
+	if (copy_from_user(asd->params.css_param.dvs2_coeff->hor_coefs.odd_real,
 	    coefs->hor_coefs.odd_real, asd->params.dvs_hor_coef_bytes))
 		return -EFAULT;
-	if (copy_from_user(asd->params.dvs_coeff->hor_coefs.odd_imag,
+	if (copy_from_user(asd->params.css_param.dvs2_coeff->hor_coefs.odd_imag,
 	    coefs->hor_coefs.odd_imag, asd->params.dvs_hor_coef_bytes))
 		return -EFAULT;
-	if (copy_from_user(asd->params.dvs_coeff->hor_coefs.even_real,
+	if (copy_from_user(asd->params.css_param.dvs2_coeff->hor_coefs.even_real,
 	    coefs->hor_coefs.even_real, asd->params.dvs_hor_coef_bytes))
 		return -EFAULT;
-	if (copy_from_user(asd->params.dvs_coeff->hor_coefs.even_imag,
+	if (copy_from_user(asd->params.css_param.dvs2_coeff->hor_coefs.even_imag,
 	    coefs->hor_coefs.even_imag, asd->params.dvs_hor_coef_bytes))
 		return -EFAULT;
 
-	if (copy_from_user(asd->params.dvs_coeff->ver_coefs.odd_real,
+	if (copy_from_user(asd->params.css_param.dvs2_coeff->ver_coefs.odd_real,
 	    coefs->ver_coefs.odd_real, asd->params.dvs_ver_coef_bytes))
 		return -EFAULT;
-	if (copy_from_user(asd->params.dvs_coeff->ver_coefs.odd_imag,
+	if (copy_from_user(asd->params.css_param.dvs2_coeff->ver_coefs.odd_imag,
 	    coefs->ver_coefs.odd_imag, asd->params.dvs_ver_coef_bytes))
 		return -EFAULT;
-	if (copy_from_user(asd->params.dvs_coeff->ver_coefs.even_real,
+	if (copy_from_user(asd->params.css_param.dvs2_coeff->ver_coefs.even_real,
 	    coefs->ver_coefs.even_real, asd->params.dvs_ver_coef_bytes))
 		return -EFAULT;
-	if (copy_from_user(asd->params.dvs_coeff->ver_coefs.even_imag,
+	if (copy_from_user(asd->params.css_param.dvs2_coeff->ver_coefs.even_imag,
 	    coefs->ver_coefs.even_imag, asd->params.dvs_ver_coef_bytes))
 		return -EFAULT;
 
-	asd->params.config.dvs2_coefs = asd->params.dvs_coeff;
+	asd->params.config.dvs2_coefs = asd->params.css_param.dvs2_coeff;
 	/* FIXME! */
 /*	asd->params.dis_proj_data_valid = false; */
 	asd->params.css_update_params_needed = true;

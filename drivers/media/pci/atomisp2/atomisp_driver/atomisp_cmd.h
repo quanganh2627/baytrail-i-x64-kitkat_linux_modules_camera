@@ -271,12 +271,6 @@ int atomisp_3a_config_param(struct atomisp_sub_device *asd, int flag,
 			    struct atomisp_3a_config *config);
 
 /*
- * Function to enable/disable lens shading correction
- */
-int atomisp_shading_correction(struct atomisp_sub_device *asd, int flag,
-				       __s32 *value);
-
-/*
  * Function to setup digital zoom
  */
 int atomisp_digital_zoom(struct atomisp_sub_device *asd, int flag,
@@ -302,7 +296,6 @@ int atomisp_try_fmt(struct video_device *vdev, struct v4l2_format *f,
 int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f);
 int atomisp_set_fmt_file(struct video_device *vdev, struct v4l2_format *f);
 
-void atomisp_free_all_shading_tables(struct atomisp_device *isp);
 int atomisp_set_shading_table(struct atomisp_sub_device *asd,
 			      struct atomisp_shading_table *shading_table);
 

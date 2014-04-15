@@ -103,7 +103,57 @@ enum atomisp_flash_state {
 	ATOMISP_FLASH_DONE
 };
 
+/*
+ * This structure is used to cache the CSS parameters, it aligns to
+ * struct ia_css_isp_config but without un-supported and deprecated parts.
+ */
 struct atomisp_css_params {
+	struct ia_css_wb_config   wb_config;
+	struct ia_css_cc_config   cc_config;
+	struct ia_css_tnr_config  tnr_config;
+	struct ia_css_ecd_config  ecd_config;
+	struct ia_css_ynr_config  ynr_config;
+	struct ia_css_fc_config   fc_config;
+	struct ia_css_cnr_config  cnr_config;
+	struct ia_css_macc_config macc_config;
+	struct ia_css_ctc_config  ctc_config;
+	struct ia_css_aa_config   aa_config;
+	struct ia_css_aa_config   baa_config;
+	struct ia_css_ce_config   ce_config;
+	struct ia_css_ob_config   ob_config;
+	struct ia_css_dp_config   dp_config;
+	struct ia_css_de_config   de_config;
+	struct ia_css_gc_config   gc_config;
+	struct ia_css_nr_config   nr_config;
+	struct ia_css_ee_config   ee_config;
+	struct ia_css_anr_config  anr_config;
+	struct ia_css_3a_config   s3a_config;
+	struct ia_css_xnr_config  xnr_config;
+	struct ia_css_dz_config   dz_config;
+	struct ia_css_cc_config yuv2rgb_cc_config;
+	struct ia_css_cc_config rgb2yuv_cc_config;
+	struct ia_css_macc_table  macc_table;
+	struct ia_css_gamma_table gamma_table;
+	struct ia_css_ctc_table   ctc_table;
+
+	struct ia_css_xnr_table   xnr_table;
+	struct ia_css_rgb_gamma_table r_gamma_table;
+	struct ia_css_rgb_gamma_table g_gamma_table;
+	struct ia_css_rgb_gamma_table b_gamma_table;
+
+	struct ia_css_vector      motion_vector;
+	struct ia_css_anr_thres   anr_thres;
+
+	struct ia_css_dvs_6axis_config *dvs_6axis;
+	struct ia_css_dvs2_coefficients *dvs2_coeff;
+	struct ia_css_shading_table *shading_table;
+	struct ia_css_morph_table   *morph_table;
+
+	struct ia_css_frame	*output_frame;
+	uint32_t		isp_config_id;
+};
+
+struct atomisp_subdev_params {
 	/* FIXME: Determines whether raw capture buffer are being passed to
 	 * user space. Unimplemented for now. */
 	int online_process;
@@ -129,67 +179,15 @@ struct atomisp_css_params {
 	bool metadata_buf_data_valid;
 
 	bool dis_proj_data_valid;
-
-	/* current configurations */
-	/* Dead Pixel config */
-	struct atomisp_css_dp_config   dp_config;
-	/* White Balance config */
-	struct atomisp_css_wb_config   wb_config;
-	/* Color Correction config */
-	struct atomisp_css_cc_config   cc_config;
-	/* Noise Reduction config */
-	struct atomisp_css_nr_config   nr_config;
-	/* Edge Enhancement config */
-	struct atomisp_css_ee_config   ee_config;
-	/* Objective Black config */
-	struct atomisp_css_ob_config   ob_config;
-	/* Demosaic config */
-	struct atomisp_css_de_config   de_config;
-	struct atomisp_css_ce_config   ce_config;
-	/* Gamma Correction config */
-	struct atomisp_css_gc_config   gc_config;
-	/* Temporal Noise Reduction */
-	struct atomisp_css_tnr_config  tnr_config;
-	/* 3A Statistics config */
-	struct atomisp_css_3a_config   s3a_config;
-	struct atomisp_css_gamma_table gamma_table;
-	struct atomisp_css_ctc_table   ctc_table;
-	struct atomisp_css_macc_table  macc_table;
-
 	bool metadata_allocated;
-	struct atomisp_css_ctc_config	ctc_config;
-	struct atomisp_css_cnr_config	cnr_config;
-	struct atomisp_css_macc_config	macc_config;
-	/* Eigen Color Demosaicing */
-	struct atomisp_css_ecd_config	ecd_config;
-	/* Y(Luma) Noise Reduction */
-	struct atomisp_css_ynr_config	ynr_config;
-	/* Fringe Control */
-	struct atomisp_css_fc_config	fc_config;
-	/* Anti-Aliasing */
-	struct atomisp_css_aa_config	aa_config;
-	/* Bayer Anti-Aliasing */
-	struct atomisp_css_aa_config	baa_config;
-	/* Advanced Noise Reduction */
-	struct atomisp_css_anr_config	anr_config;
-	/* eXtra Noise Reduction */
-	struct atomisp_css_xnr_config	xnr_config;
-	/* Color Correction config */
-	struct atomisp_css_cc_config	yuv2rgb_cc_config;
-	/* Color Correction config */
-	struct atomisp_css_cc_config	rgb2yuv_cc_config;
-	struct atomisp_css_xnr_table   xnr_table;
-	struct atomisp_css_rgb_gamma_table	r_gamma_table;
-	struct atomisp_css_rgb_gamma_table	g_gamma_table;
-	struct atomisp_css_rgb_gamma_table	b_gamma_table;
-	struct atomisp_css_anr_thres	anr_thres;
 
 	struct ia_css_dz_config   dz_config;  /**< Digital Zoom */
 	struct ia_css_capture_config   capture_config;
-	struct ia_css_dvs_coefficients dvs_coefs;
-	struct ia_css_vector  motion_vector;
 
 	struct atomisp_css_isp_config config;
+
+	/* current configurations */
+	struct atomisp_css_params css_param;
 
 	/*
 	 * Intermediate buffers used to communicate data between
@@ -201,9 +199,7 @@ struct atomisp_css_params {
 	uint32_t metadata_exp_id;
 	uint32_t metadata_width_size;
 
-	struct ia_css_dvs2_coefficients *dvs_coeff;
 	struct ia_css_dvs2_statistics *dvs_stat;
-	struct ia_css_dvs_6axis_config *dvs_6axis;
 	uint32_t exp_id;
 	int  dvs_hor_coef_bytes;
 	int  dvs_ver_coef_bytes;
@@ -246,7 +242,7 @@ struct atomisp_sub_device {
 	struct v4l2_ctrl *continuous_raw_buffer_size;
 	struct v4l2_ctrl *continuous_viewfinder;
 
-	struct atomisp_css_params params;
+	struct atomisp_subdev_params params;
 
 	struct atomisp_stream_env stream_env[ATOMISP_INPUT_STREAM_NUM];
 
