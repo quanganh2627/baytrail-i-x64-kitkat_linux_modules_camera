@@ -255,6 +255,7 @@ static int ov680_write_reg_array(struct v4l2_subdev *sd,
 }
 #endif
 
+#ifdef ov680_DUMP_DEBUG
 static int ov680_read_sensor(struct v4l2_subdev *sd, int sid,
 			     u16 reg, u8 *data) {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -343,25 +344,77 @@ static int ov680_dump_rx_regs(struct v4l2_subdev *sd)
 	}
 	return 0;
 }
+#endif
 
 static int ov680_load_firmware(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ov680_device *dev = to_ov680_device(sd);
 	int ret;
+	u8 read_value;
+	unsigned int read_timeout = 500;
 
 	dev_info(&client->dev, "Start to load firmware.\n");
 
+	/* Init clock PLL */
+	ret = ov680_write_reg_array(sd, ov680_init_clock_pll);
+	if (ret) {
+		dev_err(&client->dev, "%s - clock init failed\n", __func__);
+		return ret;
+	}
+
+	/* Change clock for FW loading */
+	ret = ov680_write_reg_array(sd, ov680_dw_fw_change_pll);
+	if (ret) {
+		dev_err(&client->dev, "%s - clock set failed\n", __func__);
+		return ret;
+	}
+
+	/* Load FW */
 	ret = ov680_write_reg_array(sd, dev->ov680_fw);
 	if (ret) {
-		dev_dbg(&client->dev, "%s - debug fw load failed\n", __func__);
+		dev_err(&client->dev, "%s - FW load failed\n", __func__);
+		return ret;
+	}
+
+	/* Restore clock for FW loading */
+	ret = ov680_write_reg_array(sd, ov680_dw_fw_change_back_pll);
+	if (ret) {
+		dev_err(&client->dev, "%s - clk restore failed\n", __func__);
+		return ret;
+	}
+
+	/* Check for readiness */
+	while (read_timeout) {
+		ret = ov680_i2c_read_reg(sd, REG_SC_66, &read_value);
+		if (ret) {
+			dev_err(&client->dev,
+				"%s - status check failed\n", __func__);
+			return ret;
+		} else if (REG_SC_66_GLOBAL_READY == read_value) {
+			break;
+		} else {
+			usleep_range(1000, 2000);
+			dev_dbg(&client->dev,
+				"%s - status check val: %x \n", __func__, read_value);
+			--read_timeout;
+		}
+	}
+
+	if (0 == read_timeout) {
+		dev_err(&client->dev,
+			"%s - status check timed out\n", __func__);
+		return -EBUSY;
+	}
+
+	/* Setup side-by-side */
+	ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
+	if (ret) {
+		dev_err(&client->dev, "%s - sbs setup failed\n", __func__);
 		return ret;
 	}
 
 	dev_info(&client->dev, "firmware load successfully.\n");
-	ov680_dump_res_regs(sd);
-	ov680_dump_rx_regs(sd);
-
 	return ret;
 }
 
@@ -790,15 +843,12 @@ static int ov680_s_stream(struct v4l2_subdev *sd, int enable)
 				"ov680_load_firmware failed. ret=%d\n", ret);
 			dev->sys_activated = 0;
 		}
+#ifdef OV680_DUMP_DEBUG
 		ov680_dump_rx_regs(sd);
 		ov680_dump_res_regs(sd);
-
-		dev->sys_activated = 1; /* fw loaded */
-		/* to be removed after get ov680 fw handshake document */
-		msleep(20000); /* wait enough for finish fw downloading */
 		ov680_dump_snr_regs(sd);
-		ov680_dump_rx_regs(sd);
-
+#endif
+		dev->sys_activated = 1; /* fw loaded */
 	} else { /* stream off */
 		dev->sys_activated = 0; /* fw loaded */
 	}

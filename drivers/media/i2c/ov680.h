@@ -90,8 +90,12 @@
 #define REG_SC_03 (REG_SC_BASE + 0x03)
 #define REG_SC_06 (REG_SC_BASE + 0x06)
 #define REG_SC_0A (REG_SC_BASE + 0x0a)
+#define REG_SC_66 (REG_SC_BASE + 0x66)
 #define REG_SC_90 (REG_SC_BASE + 0x90)
 #define REG_SC_93 (REG_SC_BASE + 0x93)
+
+#define REG_SC_03_GLOBAL_ENABLED 0x10
+#define REG_SC_66_GLOBAL_READY  (0x18)
 
 #define REG_SCCB_SLAVE_03 (REG_SCCB_SLAVE_BASE + 0x03)
 
@@ -245,9 +249,189 @@ static struct ov680_res_struct ov680_res_list[] = {
 	{
 		.width = 1280,
 		.height = 1440,
-		.fps = 15,
+		.fps = 30,
 	},
 };
 #define N_FW (ARRAY_SIZE(ov680_res_list))
+
+/* The instruction of delay */
+static struct ov680_reg const ov680_delay[] = {
+	{OV680_TOK_DELAY, 0x0, 0xFF},
+	{OV680_TOK_TERM, 0x0, 0x0}
+};
+
+/* ov680 init clock pll instructions */
+static struct ov680_reg const ov680_init_clock_pll[] = {
+	/*
+	 *----Start OV680 Clock and PLL configuration-----
+	 *new setting for 19.2M---------------------------
+	 *CCLK (sensor input clock/camera clock output)
+	 */
+
+	/* CCLK (camera clock) divider, 19.2/2=9.6MHz */
+	{OV680_8BIT, 0x601a, 0x02},
+
+	/* Common initial setting */
+	/* Reset MC to disable looking for F/W from E2PROM */
+	{OV680_8BIT, 0x6b00, 0x10},
+	/* MIPI Rx CIF sel Rx0 PHY clk (MIPI receiver sync clock select */
+	{OV680_8BIT, 0x6001, 0xa8},
+	/* Clock Drive Strength --YM (CMD_RDY driver - direct driver) */
+	{OV680_8BIT, 0x6060, 0x20},
+	/* PLL1 - for system clock */
+	{OV680_8BIT, 0x6020, 0x64},
+	{OV680_8BIT, 0x6021, 0x22},
+	{OV680_8BIT, 0x6022, 0x15},
+	{OV680_8BIT, 0x6023, 0x12},
+	{OV680_8BIT, 0x6024, 0x90},
+	/* sys clk = pll_sysclk/2 = 46.4 MHz */
+	{OV680_8BIT, 0x6018, 0x02},
+	/* PLL2 - for MIPI */
+	{OV680_8BIT, 0x6025, 0x59},
+	{OV680_8BIT, 0x6026, 0x22},
+	{OV680_8BIT, 0x6027, 0x15},
+	{OV680_8BIT, 0x6028, 0x01},
+	{OV680_8BIT, 0x6029, 0xa0},
+	/* mipi_pclk = 96/2 = 48 */
+	{OV680_8BIT, 0x6019, 0x02},
+	/* 1000/mipi_clk */
+	{OV680_8BIT, 0x6937, 0x11},
+	/* Sel PLL2 sys_clk as Tx clk, PLL1 sys_clk as sys clk */
+	{OV680_8BIT, 0x6103, 0x71},
+	/* CCLK (sensor input clock) */
+	/* Release AEC2&1, ISP2&1 */
+	{OV680_8BIT, 0x6009, 0x00},
+	/* Release Tx, stch 1~3, AWB1&2 */
+	{OV680_8BIT, 0x600a, 0x00},
+	/* Release Rx0~3 */
+	{OV680_8BIT, 0x600b, 0x00},
+	/* Release Tx, Rx PHY */
+	{OV680_8BIT, 0x600c, 0x00},
+	/* Enable CCLK, SCCB slave clock, MC, MC RAM */
+	{OV680_8BIT, 0x6010, 0x3c},
+	/* AEC2&1, ISP2&1 */
+	{OV680_8BIT, 0x6011, 0xff},
+	/* Sync FIFO, stch FIFO, Tx, stch 1~3, AWB1&2 */
+	{OV680_8BIT, 0x6012, 0xff},
+	/* Enable Rx0~Rx3 PHY clock */
+	{OV680_8BIT, 0x6002, 0xff},
+
+	{OV680_TOK_TERM, 0, 0}
+};
+
+/* ov680 pll change before fw loading */
+static struct ov680_reg const ov680_dw_fw_change_pll[] = {
+	/*
+	 * OV680 Firmware download--Start
+	 * ----inlude OV680 and OV6710 setting in firmware-------------
+	 * change to pll clock
+	 */
+
+	/* Select PLL2 as system clock & MIPI transmitter clock source */
+	{OV680_8BIT, 0x6103 ,0x20},
+
+	{OV680_8BIT, 0x6b00 ,0x10},
+	{OV680_8BIT, 0x6004 ,0x00},
+	{OV680_8BIT, 0x6008 ,0x00},
+	{OV680_8BIT, 0x6010 ,0xff},
+	{OV680_8BIT, 0x6101 ,0x02},
+	{OV680_8BIT, 0x6b0c ,0x00},
+	{OV680_8BIT, 0x6b0d ,0x00},
+
+	{OV680_TOK_TERM, 0, 0}
+};
+
+/* ov680 pll restore after fw loading */
+static struct ov680_reg const ov680_dw_fw_change_back_pll[] = {
+	/* Change back PLL */
+	{OV680_8BIT, 0x6103, 0x71},
+
+	{OV680_8BIT, 0x6b56, 0x22},
+	{OV680_8BIT, 0x6b57, 0xab},
+	{OV680_8BIT, 0x6b00, 0x1c},
+	{OV680_8BIT, 0x6b01, 0x04},
+	{OV680_8BIT, 0x6b0e, 0xff},
+
+	{OV680_TOK_TERM, 0, 0}
+};
+
+static struct ov680_reg const ov680_720p_2s_embedded_line[] = {
+	{OV680_8BIT, 0x6b18, 0x81}, /* TYPE_Sensor_Config */
+	{OV680_8BIT, 0x6b19, 0x05}, /* 2560x720p SBS */
+
+	/* sl 10 10 */
+	{OV680_TOK_DELAY, 0x0, 0x14},
+	{OV680_8BIT, 0x6b17, 0x80}, /* streaming */
+	/* sl 100 100 */
+	{OV680_TOK_DELAY, 0x0, 0xff},
+
+	{OV680_8BIT, 0x6003, 0x11},
+
+	{OV680_8BIT, 0x6AF1, 0x20}, /* 0100=0x00 */
+	{OV680_8BIT, 0x6AF2, 0x01},
+	{OV680_8BIT, 0x6AF3, 0x00},
+	{OV680_8BIT, 0x6AF5, 0x00},
+	{OV680_8BIT, 0x6AF9, 0x37},
+
+	{OV680_8BIT, 0x6AF1, 0x20}, /* 4307=0x00 */
+	{OV680_8BIT, 0x6AF2, 0x43},
+	{OV680_8BIT, 0x6AF3, 0x07},
+	{OV680_8BIT, 0x6AF5, 0x00},
+	{OV680_8BIT, 0x6AF9, 0x37},
+
+	{OV680_8BIT, 0x6AF1, 0x20}, /* 0100=0x01 */
+	{OV680_8BIT, 0x6AF2, 0x01},
+	{OV680_8BIT, 0x6AF3, 0x00},
+	{OV680_8BIT, 0x6AF5, 0x01},
+	{OV680_8BIT, 0x6AF9, 0x37},
+
+	{OV680_8BIT, 0x6AF1, 0x6c}, /* 0100=0x00 */
+	{OV680_8BIT, 0x6AF2, 0x01},
+	{OV680_8BIT, 0x6AF3, 0x00},
+	{OV680_8BIT, 0x6AF5, 0x00},
+	{OV680_8BIT, 0x6AF9, 0x37},
+	/* sl 100 100 */
+	{OV680_TOK_DELAY, 0x0, 0xff},
+
+	{OV680_8BIT, 0x6AF1, 0x6c}, /* 4307=0x00 */
+	{OV680_8BIT, 0x6AF2, 0x43},
+	{OV680_8BIT, 0x6AF3, 0x07},
+	{OV680_8BIT, 0x6AF5, 0x00},
+	{OV680_8BIT, 0x6AF9, 0x37},
+
+	{OV680_8BIT, 0x6AF1, 0x6c}, /* 0100=0x01 */
+	{OV680_8BIT, 0x6AF2, 0x01},
+	{OV680_8BIT, 0x6AF3, 0x00},
+	{OV680_8BIT, 0x6AF5, 0x01},
+	{OV680_8BIT, 0x6AF9, 0x37},
+
+	{OV680_8BIT, 0x6b02, 0xc0},
+	{OV680_8BIT, 0x6b03, 0x05},
+
+	/* turn on Embedded , in},e bypass */
+	{OV680_8BIT, 0x6b48, 0x88},
+	{OV680_8BIT, 0x6b49, 0x88},
+	{OV680_8BIT, 0x6b45, 0x88},
+	{OV680_8BIT, 0x6b46, 0x88},
+
+	/* turn on interrup */
+	{OV680_8BIT, 0x6b02, 0x00},
+	{OV680_8BIT, 0x6b03, 0x00},
+
+	/* sl 100 100 */
+	{OV680_TOK_DELAY, 0x0, 0xff},
+	/* turn on Embedded , in},e bypass */
+	{OV680_8BIT, 0x6b48, 0x88},
+	{OV680_8BIT, 0x6b49, 0x88},
+
+	{OV680_8BIT, 0x6025, 0x4f},
+	{OV680_8BIT, 0x6028, 0x00},
+	{OV680_8BIT, 0x6094, 0x01},
+	{OV680_8BIT, 0x6937, 0x08},
+
+	{OV680_8BIT, 0x6003, 0x10},
+
+	{OV680_TOK_TERM, 0, 0}
+};
 
 #endif
