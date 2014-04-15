@@ -538,8 +538,8 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x380B, 0x90}, /* v_output_size low */
 	{OV8858_8BIT, 0x380C, 0x07}, /* horizontal timing size high */
 	{OV8858_8BIT, 0x380D, 0x94}, /* horizontal timing size low */
-	{OV8858_8BIT, 0x380E, 0x09}, /* vertical timing size high */
-	{OV8858_8BIT, 0x380F, 0xAA}, /* vertical timing size low */
+	{OV8858_8BIT, 0x380E, 0x0C}, /* vertical timing size high */
+	{OV8858_8BIT, 0x380F, 0x14}, /* vertical timing size low */
 	{OV8858_8BIT, 0x3810, 0x00}, /* h_win offset high */
 	{OV8858_8BIT, 0x3811, 0x04}, /* h_win offset low */
 	{OV8858_8BIT, 0x3812, 0x00}, /* v_win offset high */
@@ -723,9 +723,9 @@ static struct ov8858_resolution ov8858_res_preview[] = {
 		.skip_frames = 0,
 		.fps_options = {
 			{
-				.fps = 30,
+				.fps = 24,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 2474,
+				.lines_per_frame = 3092,
 			},
 			{
 			}
@@ -742,9 +742,9 @@ static struct ov8858_resolution ov8858_res_preview[] = {
 		.skip_frames = 0,
 		.fps_options = {
 			{
-				.fps = 30,
+				.fps = 24,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 2474,
+				.lines_per_frame = 3092,
 			},
 			{
 			}
@@ -764,9 +764,9 @@ static struct ov8858_resolution ov8858_res_still[] = {
 		 .skip_frames = 1,
 		 .fps_options =  {
 			{
-				.fps = 30,
+				.fps = 24,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 2474,
+				.lines_per_frame = 3092,
 			},
 			{
 			}
@@ -783,9 +783,9 @@ static struct ov8858_resolution ov8858_res_still[] = {
 		.skip_frames = 1,
 		.fps_options = {
 			{
-				.fps = 30,
+				.fps = 24,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 2474,
+				.lines_per_frame = 3092,
 			},
 			{
 			}
@@ -805,9 +805,9 @@ static struct ov8858_resolution ov8858_res_video[] = {
 		 .skip_frames = 1,
 		 .fps_options =  {
 			{
-				.fps = 30,
+				.fps = 24,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 2474,
+				.lines_per_frame = 3092,
 			},
 			{
 			}
@@ -824,9 +824,9 @@ static struct ov8858_resolution ov8858_res_video[] = {
 		.skip_frames = 1,
 		.fps_options = {
 			{
-				.fps = 30,
+				.fps = 24,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 2474,
+				.lines_per_frame = 3092,
 			},
 			{
 			}
