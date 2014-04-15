@@ -32,11 +32,7 @@
 #include "mmu/isp_mmu.h"
 #include "hmm/hmm_common.h"
 #include "hmm/hmm_vm.h"
-#ifdef CSS20
 #include "ia_css_types.h"
-#else /* CSS20 */
-#include "sh_css_types.h"
-#endif /* CSS20 */
 
 #define	check_bodev_null_return(bdev, exp)	\
 		check_null_return(bdev, exp, \

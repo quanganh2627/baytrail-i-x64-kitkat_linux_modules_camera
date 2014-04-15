@@ -31,11 +31,7 @@
 
 #include "hmm/hmm_bo.h"
 #include "hmm/hmm_pool.h"
-#ifdef CSS20
 #include "ia_css_types.h"
-#else /* CSS20 */
-#include "sh_css_types.h"
-#endif /* CSS20 */
 
 #define HMM_CACHED true
 #define HMM_UNCACHED false

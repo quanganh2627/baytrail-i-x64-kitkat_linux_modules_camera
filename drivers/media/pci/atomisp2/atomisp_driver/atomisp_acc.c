@@ -33,15 +33,7 @@
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 #include "memory_access/memory_access.h"
-#ifdef CSS20
 #include "ia_css.h"
-#ifndef CSS21
-#include "ia_css_accelerate.h"
-#endif /* !CSS21 */
-#else /* CSS20 */
-#include "sh_css.h"
-#include "sh_css_accelerate.h"
-#endif /* CSS20 */
 
 static const struct {
 	unsigned int flag;
@@ -200,7 +192,6 @@ int atomisp_acc_load_to_pipe(struct atomisp_device *isp,
 	acc_fw->flags = user_fw->flags;
 	acc_fw->type = user_fw->type;
 
-#ifdef CSS20
 	/*
 	 * correct isp firmware type in order ISP firmware can be appended
 	 * to correct pipe properly
@@ -220,7 +211,6 @@ int atomisp_acc_load_to_pipe(struct atomisp_device *isp,
 			break;
 		}
 	}
-#endif /* CSS20 */
 
 	list_add_tail(&acc_fw->list, &isp->acc.fw);
 	return 0;

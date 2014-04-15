@@ -39,11 +39,7 @@
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 
-#ifndef CSS21
-#include "host/mmu_local.h"
-#else
 #include "type_support.h"
-#endif
 #include "device_access/device_access.h"
 #include "memory_access/memory_access.h"
 
@@ -326,11 +322,9 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 		buf_type = atomisp_get_css_buf_type(
 			asd, css_capture_pipe_id,
 			atomisp_subdev_source_pad(&vf_pipe->vdev));
-#ifdef CSS20
 		if (asd->stream_env[ATOMISP_INPUT_STREAM_POSTVIEW].stream)
 			input_stream_id = ATOMISP_INPUT_STREAM_POSTVIEW;
 		else
-#endif
 			input_stream_id = ATOMISP_INPUT_STREAM_GENERAL;
 		atomisp_q_video_buffers_to_css(asd, vf_pipe,
 					       input_stream_id,
@@ -341,11 +335,9 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 		buf_type = atomisp_get_css_buf_type(
 			asd, css_preview_pipe_id,
 			atomisp_subdev_source_pad(&preview_pipe->vdev));
-#ifdef CSS20
 		if (asd->stream_env[ATOMISP_INPUT_STREAM_PREVIEW].stream)
 			input_stream_id = ATOMISP_INPUT_STREAM_PREVIEW;
 		else
-#endif
 			input_stream_id = ATOMISP_INPUT_STREAM_GENERAL;
 		atomisp_q_video_buffers_to_css(asd, preview_pipe,
 					       input_stream_id,
@@ -356,11 +348,9 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 		buf_type = atomisp_get_css_buf_type(
 			asd, css_video_pipe_id,
 			atomisp_subdev_source_pad(&video_pipe->vdev));
-#ifdef CSS20
 		if (asd->stream_env[ATOMISP_INPUT_STREAM_VIDEO].stream)
 			input_stream_id = ATOMISP_INPUT_STREAM_VIDEO;
 		else
-#endif
 			input_stream_id = ATOMISP_INPUT_STREAM_GENERAL;
 		atomisp_q_video_buffers_to_css(asd, video_pipe,
 					       input_stream_id,
@@ -516,12 +506,8 @@ static void atomisp_dev_init_struct(struct atomisp_device *isp)
 	/*
 	 * For Merrifield, frequency is scalable.
 	 * After boot-up, the default frequency is 200MHz.
-	 * For Medfield/Clovertrail, all running at 320MHz
 	 */
-	if (IS_ISP24XX(isp))
-		isp->sw_contex.running_freq = ISP_FREQ_200MHZ;
-	else
-		isp->sw_contex.running_freq = ISP_FREQ_320MHZ;
+	isp->sw_contex.running_freq = ISP_FREQ_200MHZ;
 }
 
 static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
@@ -537,9 +523,7 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->params.false_color = 0;
 	asd->params.online_process = 1;
 	asd->params.yuv_ds_en = 0;
-#ifdef CSS20
 	asd->params.dvs_6axis = NULL;
-#endif
 	/* s3a grid not enabled for any pipe */
 	asd->params.s3a_enabled_pipe = CSS_PIPE_ID_NUM;
 
@@ -654,7 +638,7 @@ static int atomisp_open(struct file *file)
 		goto error;
 	}
 
-init_subdev: /* For CTP CSS1.5, below init depends on css global init */
+init_subdev:
 	if (atomisp_subdev_users(asd))
 		goto done;
 
@@ -765,15 +749,10 @@ static int atomisp_release(struct file *file)
 
 	atomisp_acc_release(isp);
 	atomisp_free_all_shading_tables(isp);
-#ifdef CSS20
 	atomisp_destroy_pipes_stream_force(asd);
-#endif
 	atomisp_css_uninit(isp);
-#ifndef CSS20
-	hrt_isp_css_mm_clear();
-#else /* CSS20 */
+
 	hmm_cleanup_mmu_l2();
-#endif /* CSS20 */
 	hmm_pool_unregister(HMM_POOL_TYPE_DYNAMIC);
 
 	ret = v4l2_subdev_call(isp->flash, core, s_power, 0);

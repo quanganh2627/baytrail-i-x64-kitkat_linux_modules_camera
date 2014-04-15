@@ -39,10 +39,6 @@
 
 #include "sh_css_hrt.h"
 
-#ifndef CSS20
-#include "sh_css.h"
-#endif /* CSS20 */
-
 #include "gp_device.h"
 #include "device_access.h"
 #include "irq.h"
@@ -1391,9 +1387,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 	unsigned int sensor_start_stream;
 	int ret = 0;
 	unsigned long irqflags;
-#ifdef PUNIT_CAMERA_BUSY
-	u32 msg_ret;
-#endif
+
 	if (type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		dev_dbg(isp->dev, "unsupported v4l2 buf type\n");
 		return -EINVAL;
@@ -1479,19 +1473,6 @@ static int atomisp_streamon(struct file *file, void *fh,
 		goto start_sensor;
 	}
 
-#ifdef PUNIT_CAMERA_BUSY
-	if (!IS_ISP24XX(isp) && isp->need_gfx_throttle) {
-		/*
-		 * As per h/w architect and ECO 697611 we need to throttle the
-		 * GFX performance (freq) while camera is up to prevent peak
-		 * current issues. this is done by setting the camera busy bit.
-		 */
-		msg_ret = intel_mid_msgbus_read32(PUNIT_PORT, MFLD_OR1);
-		msg_ret |= 0x100;
-		intel_mid_msgbus_write32(PUNIT_PORT, MFLD_OR1, msg_ret);
-	}
-#endif
-
 	css_pipe_id = atomisp_get_css_pipe_id(asd);
 
 	ret = atomisp_acc_load_extensions(asd);
@@ -1550,18 +1531,12 @@ start_sensor:
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp, CSS_IRQ_INFO_CSS_RECEIVER_SOF,
 				atomisp_css_valid_sof(isp));
-#if defined(CSS15) && defined(ISP2300)
-		atomisp_css_irq_enable(isp,
-				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
-#endif
 		atomisp_csi2_configure(asd);
 
-		if (IS_ISP24XX(isp) &&
-			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
+		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	} else {
-		if (IS_ISP24XX(isp) &&
-			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
+		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	}
 
@@ -1596,9 +1571,6 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 	int ret;
 	unsigned long flags;
 	bool first_streamoff = false;
-#ifdef PUNIT_CAMERA_BUSY
-	u32 msg_ret;
-#endif
 
 	BUG_ON(!mutex_is_locked(&isp->mutex));
 	BUG_ON(!mutex_is_locked(&isp->streamoff_mutex));
@@ -1696,14 +1668,9 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 
 	atomisp_clear_css_buffer_counters(asd);
 
-	if (!isp->sw_contex.file_input) {
+	if (!isp->sw_contex.file_input)
 		atomisp_css_irq_enable(isp, CSS_IRQ_INFO_CSS_RECEIVER_SOF,
 					false);
-#if defined(CSS15) && defined(ISP2300)
-		atomisp_css_irq_enable(isp,
-				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, false);
-#endif
-	}
 
 	if (asd->delayed_init == ATOMISP_DELAYED_INIT_QUEUED) {
 		cancel_work_sync(&asd->delayed_init_work);
@@ -1712,11 +1679,6 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 
 	css_pipe_id = atomisp_get_css_pipe_id(asd);
 	ret = atomisp_css_stop(asd, css_pipe_id, false);
-#ifndef CSS20
-	/* Workaround to avoid system wide crash */
-	if (ret == -EIO)
-		isp->isp_timeout = true;
-#endif
 
 	/* cancel work queue*/
 	if (asd->video_out_capture.users) {
@@ -1770,16 +1732,7 @@ stopsensor:
 		return 0;
 	}
 
-#ifdef PUNIT_CAMERA_BUSY
-	if (!IS_ISP24XX(isp) && isp->need_gfx_throttle) {
-		/* Free camera_busy bit */
-		msg_ret = intel_mid_msgbus_read32(PUNIT_PORT, MFLD_OR1);
-		msg_ret &= ~0x100;
-		intel_mid_msgbus_write32(PUNIT_PORT, MFLD_OR1, msg_ret);
-	}
-#endif
-
-	if (IS_ISP24XX(isp) && atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW))
+	if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW))
 		dev_warn(isp->dev, "DFS failed.\n");
 	/*
 	 * ISP work around, need to reset isp
@@ -2370,11 +2323,7 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 
 	case ATOMISP_IOC_S_DIS_VECTOR:
-#ifdef CSS20
 		err = atomisp_set_dvs_6axis_config(asd, arg);
-#else
-		err = atomisp_set_dis_vector(asd, arg);
-#endif
 		break;
 
 	case ATOMISP_IOC_G_ISP_PARM:

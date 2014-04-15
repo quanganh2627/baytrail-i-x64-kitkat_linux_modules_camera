@@ -43,12 +43,6 @@ const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[] = {
 	{ V4L2_MBUS_FMT_SGBRG10_1X10, 10, 10, CSS_FORMAT_RAW_10, CSS_BAYER_ORDER_GBRG },
 	{ V4L2_MBUS_FMT_SGRBG10_1X10, 10, 10, CSS_FORMAT_RAW_10, CSS_BAYER_ORDER_GRBG },
 	{ V4L2_MBUS_FMT_SRGGB10_1X10, 10, 10, CSS_FORMAT_RAW_10, CSS_BAYER_ORDER_RGGB },
-#ifndef CSS20
-	{ V4L2_MBUS_FMT_SBGGR10_DPCM8_1X8, 10, 8, CSS_FORMAT_RAW_8, CSS_BAYER_ORDER_BGGR },
-	{ V4L2_MBUS_FMT_SGBRG10_DPCM8_1X8, 10, 8, CSS_FORMAT_RAW_8, CSS_BAYER_ORDER_GBRG },
-	{ V4L2_MBUS_FMT_SGRBG10_DPCM8_1X8, 10, 8, CSS_FORMAT_RAW_8, CSS_BAYER_ORDER_GRBG },
-	{ V4L2_MBUS_FMT_SRGGB10_DPCM8_1X8, 10, 8, CSS_FORMAT_RAW_8, CSS_BAYER_ORDER_RGGB },
-#endif /* CSS20 */
 	{ V4L2_MBUS_FMT_SBGGR12_1X12, 12, 12, CSS_FORMAT_RAW_12, CSS_BAYER_ORDER_BGGR },
 	{ V4L2_MBUS_FMT_SGBRG12_1X12, 12, 12, CSS_FORMAT_RAW_12, CSS_BAYER_ORDER_GBRG },
 	{ V4L2_MBUS_FMT_SGRBG12_1X12, 12, 12, CSS_FORMAT_RAW_12, CSS_BAYER_ORDER_GRBG },
@@ -438,7 +432,6 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 					  ATOM_ISP_STEP_WIDTH);
 			dvs_h = rounddown(crop[pad]->height / 5,
 					  ATOM_ISP_STEP_HEIGHT);
-#ifdef CSS20
 		} else if (!isp_sd->params.video_dis_en &&
 			   isp_sd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
 			/*
@@ -446,7 +439,6 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 			 * when dvs is disabled.
 			 */
 			dvs_w = dvs_h = 12;
-#endif
 		} else
 			dvs_w = dvs_h = 0;
 

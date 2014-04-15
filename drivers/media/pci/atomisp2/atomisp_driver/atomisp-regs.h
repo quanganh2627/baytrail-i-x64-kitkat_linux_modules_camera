@@ -38,45 +38,6 @@
 #define PCI_INTERRUPT_CTRL	0x9C
 #define PCI_I_CONTROL		0xfc
 
-/* MFLD specific register definitions */
-#define MFLD_IUNITPHY_PORT	0x09
-
-#define MFLD_CSI_RCOMP		0x00
-#define MFLD_CSI_AFE		0x02
-#define MFLD_CSI_CONTROL	0x03
-#define MFLD_CG_DIS		0x36
-#define MFLD_OR1		0x72
-
-#define MFLD_PCI_PMCS		0xd4
-#define MFLD_PCI_CG_DIS		0xd8
-
-/*
- * Enables the combining of adjacent 32-byte read requests to the same
- * cache line. When cleared, each 32-byte read request is sent as a
- * separate request on the IB interface.
- */
-#define MFLD_PCI_I_CONTROL_ENABLE_READ_COMBINING	BIT(16)
-
-/*
- * Enables the combining of adjacent 32-byte write requests to the same
- * cache line. When cleared, each 32-byte write request is sent as a
- * separate request on the IB interface.
- */
-#define MFLD_PCI_I_CONTROL_ENABLE_WRITE_COMBINING	BIT(17)
-
-/* Ensure the correct bits are set for the clock gating disable regster */
-#define MFLD_PCI_CG_DIS_DISABLED_ISPCLK		BIT(0)
-#define MFLD_PCI_CG_DIS_DISABLED_PERF_MON	BIT(2)
-#define MFLD_PCI_CG_DIS_DISABLED_NOA_MON	BIT(3)
-
-/* The MIPI1 and MIPI4 interface and lanes configuration */
-#define MFLD_CSI_CONTROL_DIS_MIPI1_IF	BIT(8)
-#define MFLD_CSI_CONTROL_DIS_MIPI4_IF	BIT(9)
-#define MFLD_CSI_CONTROL_EN_MIPI1_LANE	BIT(10)
-#define MFLD_CSI_CONTROL_EN_MIPI4_LANE	(BIT(11) | BIT(12) | BIT(13) | BIT(14))
-
-#define MFLD_MAX_ZOOM_FACTOR	64
-
 /* MRFLD specific register definitions */
 #define MRFLD_CSI_AFE		0x39
 #define MRFLD_CSI_CONTROL	0x3a

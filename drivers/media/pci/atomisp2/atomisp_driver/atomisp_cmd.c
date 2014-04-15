@@ -56,16 +56,7 @@
 #include "device_access.h"
 #include "irq.h"
 
-#ifdef CSS20
-#ifndef CSS21
-#include "ia_css_accelerate.h"
-#endif /* !CSS21 */
 #include "ia_css_types.h"
-#else /* CSS20 */
-#include "sh_css_accelerate.h"
-#include "sh_css.h"
-#include "sh_css_types.h"
-#endif /* CSS20 */
 
 #include "hrt/bits.h"
 
@@ -564,12 +555,8 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 	if (irq_infos & CSS_IRQ_INFO_CSS_RECEIVER_SOF)
 		irq_infos &= ~CSS_IRQ_INFO_CSS_RECEIVER_SOF;
 
-#if defined(ISP2400) || defined(ISP2400B0) || defined(ISP2401)
 	if ((irq_infos & CSS_IRQ_INFO_INPUT_SYSTEM_ERROR) ||
 		(irq_infos & CSS_IRQ_INFO_IF_ERROR)) {
-#else
-	if (irq_infos & CSS_IRQ_INFO_CSS_RECEIVER_ERROR) {
-#endif
 		/* handle mipi receiver error */
 		u32 rx_infos;
 
@@ -577,20 +564,6 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 		atomisp_css_rx_get_irq_info(&rx_infos);
 		atomisp_css_rx_clear_irq_info(rx_infos);
 	}
-#if defined(CSS15) && defined(ISP2300)
-	if (irq_infos & CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW) {
-		atomic_inc(&isp->fast_reset);
-		queue_work(isp->wdt_work_queue, &isp->wdt_work);
-		goto out_nowake;
-	}
-#endif
-#ifndef CSS20
-	if (irq_infos & CSS_IRQ_INFO_INVALID_FIRST_FRAME) {
-		isp->sw_contex.invalid_frame = 1;
-		isp->sw_contex.invalid_vf_frame = 1;
-	}
-#endif /* CSS20 */
-
 	spin_unlock_irqrestore(&isp->lock, flags);
 
 	return IRQ_WAKE_THREAD;
@@ -869,10 +842,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 				WARN_ON(1);
 				break;
 			}
-#ifdef CSS20
 			if (!frame->valid)
 				error = true;
-#endif
 
 			if (asd->params.flash_state ==
 			    ATOMISP_FLASH_ONGOING) {
@@ -905,10 +876,9 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 				break;
 			}
 
-#ifdef CSS20
 			if (!frame->valid)
 				error = true;
-#endif
+
 			vb = atomisp_css_frame_to_vbuf(pipe, frame);
 			if (!vb) {
 				WARN_ON(1);
@@ -1025,14 +995,9 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 	bool stream_restart[MAX_STREAM_NUM] = {0};
 	int i, ret;
 
-	if (!isp->sw_contex.file_input) {
+	if (!isp->sw_contex.file_input)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_SOF, false);
-#if defined(CSS15) && defined(ISP2300)
-		atomisp_css_irq_enable(isp,
-				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, false);
-#endif
-	}
 
 
 	for (i = 0; i < isp->num_of_streams; i++) {
@@ -1106,17 +1071,11 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 	if (!isp->sw_contex.file_input) {
 		atomisp_css_irq_enable(isp, CSS_IRQ_INFO_CSS_RECEIVER_SOF,
 				atomisp_css_valid_sof(isp));
-#if defined(CSS15) && defined(ISP2300)
-		atomisp_css_irq_enable(isp,
-				CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW, true);
-#endif
 
-		if (IS_ISP24XX(isp) &&
-		    atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
+		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	} else {
-		if (IS_ISP24XX(isp) &&
-		    atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
+		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	}
 
@@ -1361,8 +1320,6 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 	 * So:
 	 * For CSS2.0: we change the way to not dequeue all the event at one
 	 * time, instead, dequue one and process one, then another
-	 *
-	 * For CSS1.5: still keep previous implementation.
 	 */
 	if (atomisp_css_isr_thread(isp, frame_done_found, css_pipe_done,
 				   &reset_wdt_timer))
@@ -1843,33 +1800,8 @@ err:
 static void atomisp_curr_user_grid_info(struct atomisp_sub_device *asd,
 				    struct atomisp_grid_info *info)
 {
-#ifndef CSS20
-	info->isp_in_width          = asd->params.curr_grid_info.isp_in_width;
-	info->isp_in_height         =
-		asd->params.curr_grid_info.isp_in_height;
-	info->s3a_width             =
-		asd->params.curr_grid_info.s3a_grid.width;
-	info->s3a_height            =
-		asd->params.curr_grid_info.s3a_grid.height;
-	info->s3a_bqs_per_grid_cell =
-		asd->params.curr_grid_info.s3a_grid.bqs_per_grid_cell;
-
-	info->dis_width          = asd->params.curr_grid_info.dvs_grid.width;
-	info->dis_aligned_width  =
-		asd->params.curr_grid_info.dvs_grid.aligned_width;
-	info->dis_height         = asd->params.curr_grid_info.dvs_grid.height;
-	info->dis_aligned_height =
-		asd->params.curr_grid_info.dvs_grid.aligned_height;
-	info->dis_bqs_per_grid_cell =
-		asd->params.curr_grid_info.dvs_grid.bqs_per_grid_cell;
-	info->dis_hor_coef_num      =
-		asd->params.curr_grid_info.dvs_hor_coef_num;
-	info->dis_ver_coef_num      =
-		asd->params.curr_grid_info.dvs_ver_coef_num;
-#else /* CSS20 */
 	memcpy(info, &asd->params.curr_grid_info.s3a_grid,
 			sizeof(struct atomisp_css_3a_grid_info));
-#endif /* CSS20 */
 }
 
 int atomisp_compare_grid(struct atomisp_sub_device *asd,
@@ -2365,7 +2297,6 @@ static int __atomisp_set_general_isp_parameters(
 		atomisp_css_set_macc_table(asd, &asd->params.macc_table);
 	}
 
-#ifdef CSS20
 	if (arg->ctc_config) {
 		if (copy_from_user(&asd->params.ctc_config, arg->ctc_config,
 					sizeof(struct atomisp_css_ctc_config)))
@@ -2494,7 +2425,6 @@ static int __atomisp_set_general_isp_parameters(
 			return -EFAULT;
 		atomisp_css_set_anr_thres(asd, &asd->params.anr_thres);
 	}
-#endif /* CSS20 */
 
 	/*
 	 * These configurations are on used by ISP1.x, not for ISP2.x,
@@ -2559,7 +2489,6 @@ static int __atomisp_set_lsc_table(struct atomisp_sub_device *asd,
 	shading_table->sensor_width = user_st->sensor_width;
 	shading_table->sensor_height = user_st->sensor_height;
 	shading_table->fraction_bits = user_st->fraction_bits;
-#ifdef CSS20
 	shading_table->enable = user_st->enable;
 
 	/* No need to update shading table if it is the same */
@@ -2585,7 +2514,6 @@ static int __atomisp_set_lsc_table(struct atomisp_sub_device *asd,
 			return 0;
 		}
 	}
-#endif
 
 set_lsc:
 	/* set LSC to CSS */
@@ -2599,7 +2527,6 @@ set_lsc:
 	return 0;
 }
 
-#ifdef CSS20
 #include "ia_css_stream.h"	/* FIXME */
 int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
 					  struct atomisp_dvs_6axis_config
@@ -2694,7 +2621,6 @@ error:
 		ia_css_dvs2_6axis_config_free(dvs_6axis_config);
 	return ret;
 }
-#endif
 
 static int __atomisp_set_morph_table(struct atomisp_sub_device *asd,
 				struct atomisp_morph_table *user_morph_table)
@@ -2767,7 +2693,6 @@ int atomisp_set_parameters(struct atomisp_sub_device *asd,
 	/* indicate to CSS that we have parametes to be updated */
 	asd->params.css_update_params_needed = true;
 
-#ifdef CSS20
 	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream
 		&& (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_state != CSS_STREAM_STARTED
 		|| asd->run_mode->val
@@ -2775,7 +2700,6 @@ int atomisp_set_parameters(struct atomisp_sub_device *asd,
 		atomisp_css_update_isp_params(asd);
 		asd->params.css_update_params_needed = false;
 	}
-#endif
 	return 0;
 }
 
@@ -2925,21 +2849,6 @@ int atomisp_color_effect(struct atomisp_sub_device *asd, int flag,
 	if (*effect == asd->params.color_effect)
 		return 0;
 
-#ifndef CSS20
-	/*
-	 * restore the default cc and ctc table config:
-	 * when change from sepia/mono to macc effect, the default
-	 * cc and ctc table should be used.
-	 */
-	cc_config = asd->params.default_cc_config;
-	ctc_table = asd->params.default_ctc_table;
-
-	/*
-	 * set macc table to default when change from macc to
-	 * sepia/mono,
-	 */
-	macc_table = asd->params.default_macc_table;
-#endif /* CSS20 */
 	/*
 	 * isp_subdev->params.macc_en should be set to false.
 	 */
@@ -3299,8 +3208,7 @@ int atomisp_digital_zoom(struct atomisp_sub_device *asd, int flag,
 	u32 zoom;
 	struct atomisp_device *isp = asd->isp;
 
-	unsigned int max_zoom =
-		IS_ISP24XX(isp) ? MRFLD_MAX_ZOOM_FACTOR : MFLD_MAX_ZOOM_FACTOR;
+	unsigned int max_zoom = MRFLD_MAX_ZOOM_FACTOR;
 
 	if (flag == 0) {
 		atomisp_css_get_zoom_factor(asd, &zoom);
@@ -3578,38 +3486,21 @@ static int css_input_resolution_changed(struct atomisp_device *isp,
 
 	if (asd->continuous_mode->val) {
 		/* Note for all checks: ffmt includes pad_w+pad_h */
-		if (IS_ISP24XX(isp)) {
 #if defined(ISP2401_NEW_INPUT_SYSTEM)
-			atomisp_css_input_set_two_pixels_per_clock(asd, false);
+		atomisp_css_input_set_two_pixels_per_clock(asd, false);
 #else
-			atomisp_css_input_set_two_pixels_per_clock(asd, true);
+		atomisp_css_input_set_two_pixels_per_clock(asd, true);
 #endif
-			if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO ||
-			    (ffmt->width >= 2048 || ffmt->height >= 1536)) {
-				/*
-				 * For preview pipe, enable only if resolution
-				 * is >= 3M for ISP2400.
-				 */
-				atomisp_css_enable_raw_binning(asd, true);
-			}
-		} else {
-			/* enable raw binning for >= 5M */
-			if (ffmt->width >= 2560 || ffmt->height >= 1920)
-				atomisp_css_enable_raw_binning(asd, true);
-			/* enable 2ppc for CTP if >= 9M */
-			if (ffmt->width >= 3648 || ffmt->height >= 2736)
-				atomisp_css_input_set_two_pixels_per_clock(
-					asd, true);
+		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO ||
+		    (ffmt->width >= 2048 || ffmt->height >= 1536)) {
+			/*
+			 * For preview pipe, enable only if resolution
+			 * is >= 3M for ISP2400.
+			 */
+			atomisp_css_enable_raw_binning(asd, true);
 		}
 	}
 
-#ifndef CSS20
-	ret = atomisp_css_capture_configure_pp_input(asd, ffmt->width,
-				ffmt->height);
-	if (ret)
-		dev_err(isp->dev, "configure_pp_input %ux%u\n",
-			ffmt->width, ffmt->height);
-#endif
 	return ret;
 
 	/*
@@ -3699,11 +3590,8 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		atomisp_subdev_set_ffmt(&asd->subdev, &fh,
 					V4L2_SUBDEV_FORMAT_ACTIVE,
 					ATOMISP_SUBDEV_PAD_SOURCE_VF, &vf_ffmt);
-#ifdef CSS20
 		asd->video_out_vf.sh_fmt = CSS_FRAME_FORMAT_NV12;
-#else
-		asd->video_out_vf.sh_fmt = CSS_FRAME_FORMAT_YUV420;
-#endif
+
 		if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
 			atomisp_css_video_configure_viewfinder(asd,
 				vf_size.width, vf_size.height, 0,
@@ -3836,7 +3724,6 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	if (asd->continuous_mode->val &&
 	    (configure_pp_input == atomisp_css_preview_configure_pp_input ||
 	     configure_pp_input == atomisp_css_video_configure_pp_input)) {
-#ifdef CSS20
 		/* for isp 2.2, configure pp input is available for continuous
 		 * mode */
 		ret = configure_pp_input(asd, isp_sink_crop->width,
@@ -3847,13 +3734,6 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 				isp_sink_crop->height);
 			return -EINVAL;
 		}
-#else
-		/* See PSI BZ 115124. preview_configure_pp_input()
-		 * API does not work correctly in continuous mode and
-		 * and must be disabled by setting it to (0, 0).
-		 */
-		configure_pp_input(asd, 0, 0);
-#endif
 	} else {
 		ret = configure_pp_input(asd, isp_sink_crop->width,
 					 isp_sink_crop->height);
@@ -3918,7 +3798,7 @@ static void atomisp_get_dis_envelop(struct atomisp_sub_device *asd,
 static void atomisp_check_copy_mode(struct atomisp_sub_device *asd,
 		int source_pad)
 {
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+#if defined(ISP2401_NEW_INPUT_SYSTEM)
 	/*
 	 * For SOC camera we are using copy_mode all the time
 	 * TDB: Do we have some cases where the copy_mode can't be used?
@@ -4009,7 +3889,7 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 	if (ret)
 		return ret;
 
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+#if defined(ISP2401_NEW_INPUT_SYSTEM)
 	/* assign virtual channel id return from sensor driver query */
 	asd->stream_env[stream_index].ch_id = stream_info->ch_id;
 #endif
@@ -4072,7 +3952,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	pipe->sh_fmt = format_bridge->sh_fmt;
 	pipe->pix.pixelformat = f->fmt.pix.pixelformat;
 
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+#if defined(ISP2401_NEW_INPUT_SYSTEM)
 	if (isp->inputs[asd->input_curr].camera_caps->sensor[asd->sensor_curr].
 			stream_num < 2 &&
 			(source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VF ||
@@ -4422,13 +4302,6 @@ int atomisp_set_shading_table(struct atomisp_sub_device *asd,
 	if (!user_shading_table)
 		return -EINVAL;
 
-#ifndef CSS20
-	if (user_shading_table->flags & ATOMISP_SC_FLAG_QUERY) {
-		user_shading_table->enable = asd->params.sc_en;
-		return 0;
-	}
-#endif
-
 	if (!user_shading_table->enable) {
 		atomisp_css_set_shading_table(asd, NULL);
 		asd->params.sc_en = 0;
@@ -4482,7 +4355,6 @@ out:
 int atomisp_ospm_dphy_down(struct atomisp_device *isp)
 {
 	unsigned long flags;
-	u32 pwr_cnt = 0;
 	int timeout = 100;
 	bool idle;
 	u32 reg;
@@ -4513,43 +4385,23 @@ int atomisp_ospm_dphy_down(struct atomisp_device *isp)
 	isp->sw_contex.power_state = ATOM_ISP_POWER_DOWN;
 	spin_unlock_irqrestore(&isp->lock, flags);
 done:
-	if (IS_ISP24XX(isp)) {
-		/*
-		 * MRFLD IUNIT DPHY is located in an always-power-on island
-		 * MRFLD HW design need all CSI ports are disabled before
-		 * powering down the IUNIT.
-		 */
-		pci_read_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, &reg);
-		reg |= MRFLD_ALL_CSI_PORTS_OFF_MASK;
-		pci_write_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, reg);
-	} else {
-		/* power down DPHY */
-		pwr_cnt = intel_mid_msgbus_read32(MFLD_IUNITPHY_PORT,
-							MFLD_CSI_CONTROL);
-		pwr_cnt |= 0x300;
-		intel_mid_msgbus_write32(MFLD_IUNITPHY_PORT,
-						MFLD_CSI_CONTROL, pwr_cnt);
-	}
-
+	/*
+	 * MRFLD IUNIT DPHY is located in an always-power-on island
+	 * MRFLD HW design need all CSI ports are disabled before
+	 * powering down the IUNIT.
+	 */
+	pci_read_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, &reg);
+	reg |= MRFLD_ALL_CSI_PORTS_OFF_MASK;
+	pci_write_config_dword(isp->pdev, MRFLD_PCI_CSI_CONTROL, reg);
 	return 0;
 }
 
 /*Turn on ISP dphy */
 int atomisp_ospm_dphy_up(struct atomisp_device *isp)
 {
-	u32 pwr_cnt = 0;
 	unsigned long flags;
 	dev_dbg(isp->dev, "%s\n", __func__);
 
-	/* MRFLD IUNIT DPHY is located in an always-power-on island */
-	if (!IS_ISP24XX(isp)) {
-		/* power on DPHY */
-		pwr_cnt = intel_mid_msgbus_read32(MFLD_IUNITPHY_PORT,
-							MFLD_CSI_CONTROL);
-		pwr_cnt &= ~0x300;
-		intel_mid_msgbus_write32(MFLD_IUNITPHY_PORT,
-						MFLD_CSI_CONTROL, pwr_cnt);
-	}
 	spin_lock_irqsave(&isp->lock, flags);
 	isp->sw_contex.power_state = ATOM_ISP_POWER_UP;
 	spin_unlock_irqrestore(&isp->lock, flags);

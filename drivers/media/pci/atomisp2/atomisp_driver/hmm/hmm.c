@@ -38,7 +38,6 @@
 #include "asm/cacheflush.h"
 #include "mmu/isp_mmu.h"
 #include "mmu/sh_mmu_mrfld.h"
-#include "mmu/sh_mmu_mfld.h"
 
 #ifdef USE_SSSE3
 #include <asm/ssse3.h>
@@ -48,19 +47,13 @@ struct hmm_bo_device bo_device;
 struct hmm_pool	dynamic_pool;
 struct hmm_pool	reserved_pool;
 static ia_css_ptr dummy_ptr;
-bool atomisp_hmm_is_2400;
 
 int hmm_init(void)
 {
 	int ret;
 
-	if (atomisp_hmm_is_2400)
-		ret = hmm_bo_device_init(&bo_device, &sh_mmu_mrfld,
-					 ISP_VM_START, ISP_VM_SIZE);
-	else
-		ret = hmm_bo_device_init(&bo_device, &sh_mmu_mfld,
-					 ISP_VM_START, ISP_VM_SIZE);
-
+	ret = hmm_bo_device_init(&bo_device, &sh_mmu_mrfld,
+				 ISP_VM_START, ISP_VM_SIZE);
 	if (ret)
 		dev_err(atomisp_dev, "hmm_bo_device_init failed.\n");
 

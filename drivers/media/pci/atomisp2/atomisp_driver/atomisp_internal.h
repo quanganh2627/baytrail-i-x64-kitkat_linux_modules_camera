@@ -34,12 +34,8 @@
 #include <media/media-device.h>
 #include <media/v4l2-subdev.h>
 
-#ifdef CSS20
 #include "ia_css_types.h"
 #include "sh_css_legacy.h"
-#else /* CSS20 */
-#include "sh_css_types.h"
-#endif /* CSS20 */
 
 #include "atomisp_csi2.h"
 #include "atomisp_file.h"
@@ -56,8 +52,6 @@
 	INTEL_MID_BOARD(1, TABLET, MOFD))
 #define IS_BYT (INTEL_MID_BOARD(1, PHONE, BYT) || \
 	INTEL_MID_BOARD(1, TABLET, BYT))
-#define IS_MFLD (INTEL_MID_BOARD(1, PHONE, MFLD) || \
-        INTEL_MID_BOARD(1, TABLET, MFLD))
 
 #define IS_HWREVISION(isp, rev) \
 	(((isp)->media_dev.hw_revision & ATOMISP_HW_REVISION_MASK) == \
@@ -259,13 +253,10 @@ struct atomisp_device {
 	struct atomisp_sub_device *asd;
 	/*
 	 * this will be assiged dyanamically.
-	 * For CTP(ISP2300), only 1 stream is supported.
 	 * For Merr/BTY(ISP2400), 2 streams are supported.
 	 */
 	unsigned int num_of_streams;
-	/*
-	 * MRFLD has 3 CSI ports, while MFLD has only 2.
-	 */
+
 	struct atomisp_mipi_csi2_device csi2_port[ATOMISP_CAMERA_NR_PORTS];
 	struct atomisp_tpg_device tpg;
 	struct atomisp_file_device file_dev;

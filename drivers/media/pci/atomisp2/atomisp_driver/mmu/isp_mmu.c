@@ -527,10 +527,6 @@ int isp_mmu_init(struct isp_mmu *mmu, struct isp_mmu_client *driver)
 
 	mutex_init(&mmu->pt_mutex);
 
-#ifndef CSS20
-	isp_mmu_flush_tlb(mmu);
-#endif /* CSS20 */
-
 #ifdef USE_KMEM_CACHE
 	mmu->tbl_cache = kmem_cache_create("iopte_cache", ISP_PAGE_SIZE,
 						//ISP_L1PT_PTES, SLAB_HWCACHE_ALIGN,

@@ -7,8 +7,6 @@ else ifneq ($(ISP2401), )
 	css_platform_folder = hive_isp_css_2401_system
 endif
 
-ifneq ($(CSS21), )
-# Objects for CSS 2.1
 atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_ioctl.o \
 		atomisp_driver/atomisp_compat_ioctl32.o \
@@ -23,7 +21,6 @@ atomisp-$(postfix)-objs := \
 		atomisp_driver/atomisp_drvfs.o \
 		atomisp_driver/mmu/isp_mmu.o \
 		atomisp_driver/mmu/sh_mmu_mrfld.o \
-		atomisp_driver/mmu/sh_mmu_mfld.o \
 		atomisp_driver/hmm/hmm.o \
 		atomisp_driver/hmm/hmm_bo.o \
 		atomisp_driver/hmm/hmm_bo_dev.o \
@@ -116,7 +113,6 @@ atomisp-$(postfix)-objs := \
 		css/camera/pipe/src/pipe_stagedesc.o \
 		css/runtime/isp_param/src/isp_param.o \
 		css/runtime/bufq/src/bufq.o
-                  
 
 ifneq ($(ISP2401_NEW_INPUT_SYSTEM), )
 atomisp-$(postfix)-objs += \
@@ -146,8 +142,6 @@ atomisp-$(postfix)-objs += \
 	css/$(css_platform_folder)_generated/ia_css_isp_params.o \
 	css/$(css_platform_folder)_generated/ia_css_isp_states.o \
 	css/$(css_platform_folder)_generated/ia_css_isp_configs.o
-endif
-
 endif
 
 obj-$(CONFIG_VIDEO_ATOMISP) = atomisp-$(postfix).o
@@ -186,8 +180,6 @@ INCLUDES += -I$(src)/css \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared \
 	    -I$(srctree)/$(src)/css/hive_isp_css_shared/host
 
-ifneq ($(CSS21), )
-# Includes for CSS host code, CSS 2.1 only
 INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/hive_isp_css_kernel/csc/host \
 	    -I$(srctree)/$(src)/css/runtime/debug/interface \
@@ -218,7 +210,6 @@ INCLUDES += -I$(srctree)/$(src)/css/isp/kernels \
 	    -I$(srctree)/$(src)/css/runtime/bufq/interface \
 	    -I$(srctree)/$(src)/css/isp/kernels/dvs/dvs_1.0 \
 	    -I$(srctree)/$(src)/css/isp/kernels/output/output_1.0
-endif
 
 DEFINES := -DHRT_HW -DHRT_ISP_CSS_CUSTOM_HOST -DHRT_USE_VIR_ADDRS -DHRT_KERNEL -D__HOST__
 DEFINES += -DUSE_DYNAMIC_BIN
@@ -228,14 +219,12 @@ DEFINES += -DUSE_INTERRUPTS
 DEFINES += -DPUNIT_CAMERA_BUSY
 DEFINES += -DUSE_KMEM_CACHE
 
-ifneq ($(CSS21), )
 ifneq ($(ISP2401), )
 DEFINES += -DSYSTEM_hive_isp_css_2401_system
 else ifneq ($(ISP2400B0), )
 DEFINES += -DSYSTEM_hive_isp_css_2400_system
 else
 $(error Undefined HIVE ISP CSS system version)
-endif
 endif
 
 ccflags-y += $(INCLUDES) $(DEFINES) -fno-common -Werror

@@ -30,11 +30,7 @@
 #include "atomisp_compat.h"
 #include "atomisp_v4l2.h"
 
-#ifdef CSS20
 #include "ia_css.h"
-#else /* CSS20 */
-#include "sh_css.h"
-#endif /* CSS20 */
 
 enum atomisp_subdev_input_entity {
 	ATOMISP_SUBDEV_INPUT_NONE,
@@ -159,7 +155,7 @@ struct atomisp_css_params {
 	struct atomisp_css_gamma_table gamma_table;
 	struct atomisp_css_ctc_table   ctc_table;
 	struct atomisp_css_macc_table  macc_table;
-#ifdef CSS20
+
 	bool metadata_allocated;
 	struct atomisp_css_ctc_config	ctc_config;
 	struct atomisp_css_cnr_config	cnr_config;
@@ -212,35 +208,6 @@ struct atomisp_css_params {
 	int  dvs_ver_coef_bytes;
 	int  dvs_ver_proj_bytes;
 	int  dvs_hor_proj_bytes;
-#else /* CSS20 */
-	struct sh_css_3a_output *s3a_output_buf;
-	/* DIS Coefficients */
-	short *dis_hor_coef_buf;
-	int    dis_hor_coef_bytes;
-	short *dis_ver_coef_buf;
-	int    dis_ver_coef_bytes;
-	/* DIS projections */
-	int *dis_ver_proj_buf;
-	int  dis_ver_proj_bytes;
-	int *dis_hor_proj_buf;
-	int  dis_hor_proj_bytes;
-
-	/* default configurations */
-	struct atomisp_css_dp_config   *default_dp_config;
-	struct atomisp_css_wb_config   *default_wb_config;
-	struct atomisp_css_cc_config   *default_cc_config;
-	struct atomisp_css_nr_config   *default_nr_config;
-	struct atomisp_css_ee_config   *default_ee_config;
-	struct atomisp_css_ob_config   *default_ob_config;
-	struct atomisp_css_de_config   *default_de_config;
-	struct atomisp_css_ce_config   *default_ce_config;
-	struct atomisp_css_gc_config   *default_gc_config;
-	struct atomisp_css_tnr_config  *default_tnr_config;
-	struct atomisp_css_3a_config   *default_3a_config;
-	struct atomisp_css_macc_table  *default_macc_table;
-	struct atomisp_css_ctc_table   *default_ctc_table;
-	struct atomisp_css_gamma_table *default_gamma_table;
-#endif /* CSS20 */
 
 	/* Flash */
 	int num_flash_frames;
@@ -280,9 +247,8 @@ struct atomisp_sub_device {
 
 	struct atomisp_css_params params;
 
-#ifdef CSS20
 	struct atomisp_stream_env stream_env[ATOMISP_INPUT_STREAM_NUM];
-#endif
+
 	struct v4l2_pix_format dvs_envelop;
 	unsigned int s3a_bufs_in_css[CSS_PIPE_ID_NUM];
 	unsigned int dis_bufs_in_css;

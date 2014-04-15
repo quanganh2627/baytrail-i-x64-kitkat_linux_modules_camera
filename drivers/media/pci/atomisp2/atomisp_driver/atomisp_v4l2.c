@@ -174,75 +174,42 @@ static int atomisp_save_iunit_reg(struct atomisp_device *isp)
 	pci_read_config_dword(dev, PCI_INTERRUPT_CTRL,
 			      &isp->saved_regs.interrupt_control);
 
-	if (IS_ISP24XX(isp)) {
-		pci_read_config_dword(dev, MRFLD_PCI_PMCS,
-				      &isp->saved_regs.pmcs);
-		/* Ensure read/write combining is enabled. */
-		pci_read_config_dword(dev, PCI_I_CONTROL,
-				&isp->saved_regs.i_control);
-		isp->saved_regs.i_control |=
-				MRFLD_PCI_I_CONTROL_ENABLE_READ_COMBINING |
-				MRFLD_PCI_I_CONTROL_ENABLE_WRITE_COMBINING;
-		pci_read_config_dword(dev, MRFLD_PCI_CSI_ACCESS_CTRL_VIOL,
-				      &isp->saved_regs.csi_access_viol);
-		pci_read_config_dword(dev, MRFLD_PCI_CSI_RCOMP_CONTROL,
-				      &isp->saved_regs.csi_rcomp_config);
-		/*
-		 * Hardware bugs require setting CSI_HS_OVR_CLK_GATE_ON_UPDATE.
-		 * ANN/CHV: RCOMP updates do not happen when using CSI2+ path
-		 * and sensor sending "continuous clock".
-		 * TNG/ANN/CHV: MIPI packets are lost if the HS entry sequence
-		 * is missed, and IUNIT can hang.
-		 * For both issues, setting this bit is a workaround.
-		 */
-		isp->saved_regs.csi_rcomp_config |=
-			MRFLD_PCI_CSI_HS_OVR_CLK_GATE_ON_UPDATE;
-		pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_TRIM_CONTROL,
-				      &isp->saved_regs.csi_afe_dly);
-		pci_read_config_dword(dev, MRFLD_PCI_CSI_CONTROL,
-				      &isp->saved_regs.csi_control);
-		if (isp->media_dev.hw_revision >=
-		    ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT)
-			isp->saved_regs.csi_control |=
-				MRFLD_PCI_CSI_CONTROL_PARPATHEN;
-		pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_RCOMP_CONTROL,
-				      &isp->saved_regs.csi_afe_rcomp_config);
-		pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_HS_CONTROL,
-				      &isp->saved_regs.csi_afe_hs_control);
-		pci_read_config_dword(dev, MRFLD_PCI_CSI_DEADLINE_CONTROL,
-				      &isp->saved_regs.csi_deadline_control);
-	} else {
-		pci_read_config_dword(dev, MFLD_PCI_PMCS,
-				      &isp->saved_regs.pmcs);
-
-		/* Ensure clock gating for ISPCLK, PERF and NOA monitoring. */
-		pci_read_config_dword(dev, MFLD_PCI_CG_DIS,
-				      &isp->saved_regs.cg_dis);
-		isp->saved_regs.cg_dis &= ~(MFLD_PCI_CG_DIS_DISABLED_ISPCLK |
-				MFLD_PCI_CG_DIS_DISABLED_PERF_MON |
-				MFLD_PCI_CG_DIS_DISABLED_NOA_MON);
-
-		/* Ensure read/write combining is enabled. */
-		pci_read_config_dword(dev, PCI_I_CONTROL,
-				&isp->saved_regs.i_control);
-		isp->saved_regs.i_control |=
-				MFLD_PCI_I_CONTROL_ENABLE_READ_COMBINING |
-				MFLD_PCI_I_CONTROL_ENABLE_WRITE_COMBINING;
-
-		isp->saved_regs.csi_rcomp_config = intel_mid_msgbus_read32(
-				MFLD_IUNITPHY_PORT, MFLD_CSI_RCOMP);
-		isp->saved_regs.csi_afe_dly = intel_mid_msgbus_read32(
-				MFLD_IUNITPHY_PORT, MFLD_CSI_AFE);
-
-		/* Ensure mipi1 and mipi4 configurations are enabled */
-		isp->saved_regs.csi_control = intel_mid_msgbus_read32(
-				MFLD_IUNITPHY_PORT, MFLD_CSI_CONTROL);
-		isp->saved_regs.csi_control &= ~(MFLD_CSI_CONTROL_DIS_MIPI4_IF |
-				MFLD_CSI_CONTROL_DIS_MIPI1_IF);
-		isp->saved_regs.csi_control |= MFLD_CSI_CONTROL_EN_MIPI4_LANE |
-				MFLD_CSI_CONTROL_EN_MIPI1_LANE;
-	}
-
+	pci_read_config_dword(dev, MRFLD_PCI_PMCS,
+			      &isp->saved_regs.pmcs);
+	/* Ensure read/write combining is enabled. */
+	pci_read_config_dword(dev, PCI_I_CONTROL,
+			&isp->saved_regs.i_control);
+	isp->saved_regs.i_control |=
+			MRFLD_PCI_I_CONTROL_ENABLE_READ_COMBINING |
+			MRFLD_PCI_I_CONTROL_ENABLE_WRITE_COMBINING;
+	pci_read_config_dword(dev, MRFLD_PCI_CSI_ACCESS_CTRL_VIOL,
+			      &isp->saved_regs.csi_access_viol);
+	pci_read_config_dword(dev, MRFLD_PCI_CSI_RCOMP_CONTROL,
+			      &isp->saved_regs.csi_rcomp_config);
+	/*
+	 * Hardware bugs require setting CSI_HS_OVR_CLK_GATE_ON_UPDATE.
+	 * ANN/CHV: RCOMP updates do not happen when using CSI2+ path
+	 * and sensor sending "continuous clock".
+	 * TNG/ANN/CHV: MIPI packets are lost if the HS entry sequence
+	 * is missed, and IUNIT can hang.
+	 * For both issues, setting this bit is a workaround.
+	 */
+	isp->saved_regs.csi_rcomp_config |=
+		MRFLD_PCI_CSI_HS_OVR_CLK_GATE_ON_UPDATE;
+	pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_TRIM_CONTROL,
+			      &isp->saved_regs.csi_afe_dly);
+	pci_read_config_dword(dev, MRFLD_PCI_CSI_CONTROL,
+			      &isp->saved_regs.csi_control);
+	if (isp->media_dev.hw_revision >=
+	    ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT)
+		isp->saved_regs.csi_control |=
+			MRFLD_PCI_CSI_CONTROL_PARPATHEN;
+	pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_RCOMP_CONTROL,
+			      &isp->saved_regs.csi_afe_rcomp_config);
+	pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_HS_CONTROL,
+			      &isp->saved_regs.csi_afe_hs_control);
+	pci_read_config_dword(dev, MRFLD_PCI_CSI_DEADLINE_CONTROL,
+			      &isp->saved_regs.csi_deadline_control);
 	return 0;
 }
 
@@ -264,46 +231,31 @@ static int atomisp_restore_iunit_reg(struct atomisp_device *isp)
 	pci_write_config_dword(dev, PCI_I_CONTROL,
 					isp->saved_regs.i_control);
 
-	if (IS_ISP24XX(isp)) {
-		pci_write_config_dword(dev, MRFLD_PCI_PMCS,
-						isp->saved_regs.pmcs);
-		pci_write_config_dword(dev, MRFLD_PCI_CSI_ACCESS_CTRL_VIOL,
-				      isp->saved_regs.csi_access_viol);
-		pci_write_config_dword(dev, MRFLD_PCI_CSI_RCOMP_CONTROL,
-				      isp->saved_regs.csi_rcomp_config);
-		pci_write_config_dword(dev, MRFLD_PCI_CSI_AFE_TRIM_CONTROL,
-				      isp->saved_regs.csi_afe_dly);
-		pci_write_config_dword(dev, MRFLD_PCI_CSI_CONTROL,
-				      isp->saved_regs.csi_control);
-		pci_write_config_dword(dev, MRFLD_PCI_CSI_AFE_RCOMP_CONTROL,
-				      isp->saved_regs.csi_afe_rcomp_config);
-		pci_write_config_dword(dev, MRFLD_PCI_CSI_AFE_HS_CONTROL,
-				      isp->saved_regs.csi_afe_hs_control);
-		pci_write_config_dword(dev, MRFLD_PCI_CSI_DEADLINE_CONTROL,
-				      isp->saved_regs.csi_deadline_control);
+	pci_write_config_dword(dev, MRFLD_PCI_PMCS,
+					isp->saved_regs.pmcs);
+	pci_write_config_dword(dev, MRFLD_PCI_CSI_ACCESS_CTRL_VIOL,
+			      isp->saved_regs.csi_access_viol);
+	pci_write_config_dword(dev, MRFLD_PCI_CSI_RCOMP_CONTROL,
+			      isp->saved_regs.csi_rcomp_config);
+	pci_write_config_dword(dev, MRFLD_PCI_CSI_AFE_TRIM_CONTROL,
+			      isp->saved_regs.csi_afe_dly);
+	pci_write_config_dword(dev, MRFLD_PCI_CSI_CONTROL,
+			      isp->saved_regs.csi_control);
+	pci_write_config_dword(dev, MRFLD_PCI_CSI_AFE_RCOMP_CONTROL,
+			      isp->saved_regs.csi_afe_rcomp_config);
+	pci_write_config_dword(dev, MRFLD_PCI_CSI_AFE_HS_CONTROL,
+			      isp->saved_regs.csi_afe_hs_control);
+	pci_write_config_dword(dev, MRFLD_PCI_CSI_DEADLINE_CONTROL,
+			      isp->saved_regs.csi_deadline_control);
 
-		/*
-		 * for MRFLD, Software/firmware needs to write a 1 to bit0
-		 * of the register at CSI_RECEIVER_SELECTION_REG to enable
-		 * SH CSI backend write 0 will enable Arasan CSI backend,
-		 * which has bugs(like sighting:4567697 and 4567699) and
-		 * will be removed in B0
-		 */
-		atomisp_store_uint32(MRFLD_CSI_RECEIVER_SELECTION_REG, 1);
-
-	} else {
-		pci_write_config_dword(dev, MFLD_PCI_PMCS,
-				       isp->saved_regs.pmcs);
-		pci_write_config_dword(dev, MFLD_PCI_CG_DIS,
-						isp->saved_regs.cg_dis);
-		intel_mid_msgbus_write32(MFLD_IUNITPHY_PORT, MFLD_CSI_RCOMP,
-				    isp->saved_regs.csi_rcomp_config);
-		intel_mid_msgbus_write32(MFLD_IUNITPHY_PORT, MFLD_CSI_AFE,
-				    isp->saved_regs.csi_afe_dly);
-		intel_mid_msgbus_write32(MFLD_IUNITPHY_PORT, MFLD_CSI_CONTROL,
-				    isp->saved_regs.csi_control);
-	}
-
+	/*
+	 * for MRFLD, Software/firmware needs to write a 1 to bit0
+	 * of the register at CSI_RECEIVER_SELECTION_REG to enable
+	 * SH CSI backend write 0 will enable Arasan CSI backend,
+	 * which has bugs(like sighting:4567697 and 4567699) and
+	 * will be removed in B0
+	 */
+	atomisp_store_uint32(MRFLD_CSI_RECEIVER_SELECTION_REG, 1);
 	return 0;
 }
 
@@ -452,11 +404,9 @@ static int atomisp_runtime_suspend(struct device *dev)
 		dev_get_drvdata(dev);
 	int ret;
 
-	if (IS_ISP24XX(isp)) {
-		ret = atomisp_mrfld_pre_power_down(isp);
-		if (ret)
-			return ret;
-	}
+	ret = atomisp_mrfld_pre_power_down(isp);
+	if (ret)
+		return ret;
 
 	/*Turn off the ISP d-phy*/
 	ret = atomisp_ospm_dphy_down(isp);
@@ -495,9 +445,7 @@ static int atomisp_runtime_resume(struct device *dev)
 	if (isp->saved_regs.pcicmdsts)
 		atomisp_restore_iunit_reg(isp);
 
-	if (IS_ISP24XX(isp))
-		atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
-
+	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
 	return 0;
 }
 
@@ -525,12 +473,9 @@ static int atomisp_suspend(struct device *dev)
 	}
 	spin_unlock_irqrestore(&isp->lock, flags);
 
-	/* Prepare for MRFLD IUNIT power down */
-	if (IS_ISP24XX(isp)) {
-		ret = atomisp_mrfld_pre_power_down(isp);
-		if (ret)
-			return ret;
-	}
+	ret = atomisp_mrfld_pre_power_down(isp);
+	if (ret)
+		return ret;
 
 	/*Turn off the ISP d-phy */
 	ret = atomisp_ospm_dphy_down(isp);
@@ -570,9 +515,7 @@ static int atomisp_resume(struct device *dev)
 	if (isp->saved_regs.pcicmdsts)
 		atomisp_restore_iunit_reg(isp);
 
-	if (IS_ISP24XX(isp))
-		atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
-
+	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
 	return 0;
 }
 #endif
@@ -796,10 +739,7 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 	if (!isp->inputs[0].camera)
 		dev_warn(isp->dev, "no camera attached or fail to detect\n");
 
-	if (IS_ISP24XX(isp))
-		return atomisp_csi_lane_config(isp);
-
-	return 0;
+	return atomisp_csi_lane_config(isp);
 }
 
 static void atomisp_unregister_entities(struct atomisp_device *isp)
@@ -1115,9 +1055,6 @@ static bool is_valid_device(struct pci_dev *dev,
 
 static struct pci_driver atomisp_pci_driver;
 
-/* Declared in hmm.c. */
-extern bool atomisp_hmm_is_2400;
-
 #define ATOM_ISP_PCI_BAR	0
 
 static int atomisp_pci_probe(struct pci_dev *dev,
@@ -1188,20 +1125,13 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	mutex_init(&isp->streamoff_mutex);
 	spin_lock_init(&isp->lock);
 
-#ifndef CSS20
-	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_15;
-#elif !defined(CSS21)
-	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_20;
-#else
 	isp->media_dev.driver_version = ATOMISP_CSS_VERSION_21;
-#endif
 	switch (id->device & ATOMISP_PCI_DEVICE_SOC_MASK) {
 	case ATOMISP_PCI_DEVICE_SOC_MRFLD:
 		isp->media_dev.hw_revision =
 			(ATOMISP_HW_REVISION_ISP2400
 			 << ATOMISP_HW_REVISION_SHIFT) |
 			ATOMISP_HW_STEPPING_B0;
-		atomisp_hmm_is_2400 = true;
 
 		switch (id->device) {
 			case ATOMISP_PCI_DEVICE_SOC_MRFLD_1179:
@@ -1220,7 +1150,6 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			(ATOMISP_HW_REVISION_ISP2400
 			 << ATOMISP_HW_REVISION_SHIFT) |
 			ATOMISP_HW_STEPPING_B0;
-		atomisp_hmm_is_2400 = true;
 		isp->dfs = &dfs_config_byt;
 		/*
 		 * for BYT/CHT we are put isp into D3cold to avoid pci registers access
@@ -1238,7 +1167,6 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 #endif
 			 << ATOMISP_HW_REVISION_SHIFT) |
 			ATOMISP_HW_STEPPING_A0;
-		atomisp_hmm_is_2400 = true;
 		isp->dfs = &dfs_config_merr;
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_CHT:
@@ -1250,17 +1178,12 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 #endif
 			 << ATOMISP_HW_REVISION_SHIFT) |
 			ATOMISP_HW_STEPPING_A0;
-		atomisp_hmm_is_2400 = true;
 		isp->dfs = &dfs_config_cht;
 		isp->pdev->d3cold_delay = 0;
 		break;
 	default:
-		/* Medfield and Clovertrail. */
-		isp->media_dev.hw_revision =
-			(ATOMISP_HW_REVISION_ISP2300
-			 << ATOMISP_HW_REVISION_SHIFT) |
-			(dev->revision < 0x09 ?
-			 ATOMISP_HW_STEPPING_A0 : ATOMISP_HW_STEPPING_B0);
+		dev_err(&dev->dev, "un-supported IUNIT device\n");
+		return -ENODEV;
 	}
 
 	isp->max_isr_latency = ATOMISP_MAX_ISR_LATENCY;
@@ -1311,16 +1234,14 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	pm_qos_add_request(&isp->pm_qos, PM_QOS_CPU_DMA_LATENCY,
 			   PM_QOS_DEFAULT_VALUE);
 
-	if (IS_ISP24XX(isp)) {
-		/*
-		 * for MRFLD, Software/firmware needs to write a 1 to bit 0 of
-		 * the register at CSI_RECEIVER_SELECTION_REG to enable SH CSI
-		 * backend write 0 will enable Arasan CSI backend, which has
-		 * bugs(like sighting:4567697 and 4567699) and will be removed
-		 * in B0
-		 */
-		atomisp_store_uint32(MRFLD_CSI_RECEIVER_SELECTION_REG, 1);
-	}
+	/*
+	 * for MRFLD, Software/firmware needs to write a 1 to bit 0 of
+	 * the register at CSI_RECEIVER_SELECTION_REG to enable SH CSI
+	 * backend write 0 will enable Arasan CSI backend, which has
+	 * bugs(like sighting:4567697 and 4567699) and will be removed
+	 * in B0
+	 */
+	atomisp_store_uint32(MRFLD_CSI_RECEIVER_SELECTION_REG, 1);
 
 	if ((id->device & ATOMISP_PCI_DEVICE_SOC_MASK) ==
 			ATOMISP_PCI_DEVICE_SOC_MRFLD) {
@@ -1372,11 +1293,6 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	if (err)
 		dev_err(&dev->dev, "Failed to register reserved memory pool.\n");
 
-/*
- * In css1.5, we still do hmm_init and load_firmware when open camera, this
- * is beacuse ISP timeout will happen if put it here.
- */
-#ifdef CSS20
 	/* Init ISP memory management */
 	hrt_isp_css_mm_init();
 
@@ -1386,18 +1302,15 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		dev_err(&dev->dev, "Failed to init css.\n");
 		goto css_init_fail;
 	}
-#endif /* CSS20 */
 
 	atomisp_drvfs_init(&atomisp_pci_driver, isp);
 
 	return 0;
 
-#ifdef CSS20
 css_init_fail:
 	hrt_isp_css_mm_clear();
 	hmm_pool_unregister(HMM_POOL_TYPE_RESERVED);
 	atomisp_acc_cleanup(isp);
-#endif /* CSS20 */
 enable_msi_fail:
 	destroy_workqueue(isp->wdt_work_queue);
 wdt_work_queue_fail:
@@ -1415,10 +1328,9 @@ static void atomisp_pci_remove(struct pci_dev *dev)
 	atomisp_drvfs_exit();
 
 	atomisp_acc_cleanup(isp);
-#ifdef CSS20
+
 	atomisp_css_unload_firmware(isp);
 	hrt_isp_css_mm_clear();
-#endif /* CSS20 */
 
 	pm_runtime_forbid(&dev->dev);
 	pm_runtime_get_noresume(&dev->dev);
@@ -1438,19 +1350,7 @@ static void atomisp_pci_remove(struct pci_dev *dev)
 }
 
 static DEFINE_PCI_DEVICE_TABLE(atomisp_pci_tbl) = {
-#if defined(ISP2300)
-	/* Medfield */
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0148)},
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x0149)},
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014A)},
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014B)},
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014C)},
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014D)},
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014E)},
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x014F)},
-	/* Clovertrail */
-	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x08D0)},
-#elif defined(ISP2400) || defined(ISP2400B0)
+#if defined(ISP2400) || defined(ISP2400B0)
 	/* Merrifield */
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1178)},
 	{PCI_DEVICE(PCI_VENDOR_ID_INTEL, 0x1179)},

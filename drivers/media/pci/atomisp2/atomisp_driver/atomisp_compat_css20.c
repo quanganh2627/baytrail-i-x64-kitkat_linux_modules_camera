@@ -39,13 +39,8 @@
 
 #include <asm/intel-mid.h>
 
-#ifdef CSS21
 #include "ia_css_debug.h"
 #include "ia_css_isp_param.h"
-#else /* CSS21 */
-#include "ia_css_accelerate.h"
-#include "sh_css_debug.h"
-#endif /* CSS21 */
 
 #include <linux/pm_runtime.h>
 
@@ -70,7 +65,6 @@ struct bayer_ds_factor {
 	unsigned int denominator;
 };
 
-#ifdef CSS21
 void atomisp_css_debug_dump_sp_sw_debug_info(void)
 {
 	ia_css_debug_dump_sp_sw_debug_info();
@@ -90,28 +84,6 @@ unsigned int atomisp_css_debug_get_dtrace_level(void)
 {
 	return ia_css_debug_trace_level;
 }
-
-#else /* CSS21 */
-void atomisp_css_debug_dump_sp_sw_debug_info(void)
-{
-	sh_css_dump_sp_sw_debug_info();
-}
-
-void atomisp_css_debug_dump_debug_info(const char *context)
-{
-	sh_css_dump_debug_info(context);
-}
-
-unsigned int atomisp_css_debug_get_dtrace_level(void)
-{
-	return sh_css_trace_level;
-}
-
-void atomisp_css_debug_set_dtrace_level(const unsigned int trace_level)
-{
-	sh_css_set_dtrace_level(trace_level);
-}
-#endif /* CSS21 */
 
 static ia_css_ptr atomisp_css2_mm_alloc(size_t bytes, uint32_t attr)
 {
@@ -328,12 +300,6 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 			 "pipe_config.output_info[0] w=%d, h=%d.\n",
 			 p_config->output_info[0].res.width,
 			 p_config->output_info[0].res.height);
-#ifndef CSS21
-		dev_dbg(isp->dev,
-			 "pipe_config.bin_out w=%d, h=%d.\n",
-			 p_config->bin_out_res.width,
-			 p_config->bin_out_res.height);
-#else
 		dev_dbg(isp->dev,
 			 "pipe_config.vf_pp_in_res w=%d, h=%d.\n",
 			 p_config->vf_pp_in_res.width,
@@ -342,7 +308,6 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 			 "pipe_config.capt_pp_in_res w=%d, h=%d.\n",
 			 p_config->capt_pp_in_res.width,
 			 p_config->capt_pp_in_res.height);
-#endif /* CSS21 */
 		dev_dbg(isp->dev,
 			 "pipe_config.output.padded w=%d.\n",
 			 p_config->output_info[0].padded_width);
@@ -380,13 +345,8 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 			 "pipe_config.default_capture_config.capture_mode=%d.\n",
 			 p_config->default_capture_config.mode);
 		dev_dbg(isp->dev,
-#ifndef CSS21
-			 "pipe_config.default_capture_config.enable_capture_pp=%d.\n",
-			 p_config->default_capture_config.enable_capture_pp);
-#else
 			 "pipe_config.enable_dz=%d.\n",
 			 p_config->enable_dz);
-#endif
 		dev_dbg(isp->dev,
 			 "pipe_config.default_capture_config.enable_xnr=%d.\n",
 			 p_config->default_capture_config.enable_xnr);
@@ -409,20 +369,10 @@ static void __dump_pipe_config(struct atomisp_sub_device *asd,
 			 pe_config->enable_reduced_pipe);
 		dev_dbg(isp->dev,
 			 "pipe_(extra_)config.enable_dz:%d.\n",
-#ifdef CSS21
-			 p_config
-#else
-			 pe_config
-#endif
-			 ->enable_dz);
+			 p_config->enable_dz);
 		dev_dbg(isp->dev,
 			 "pipe_extra_config.disable_vf_pp:%d.\n",
 			 pe_config->disable_vf_pp);
-#ifndef CSS21
-		dev_dbg(isp->dev,
-			 "pipe_extra_config.disable_capture_pp:%d.\n",
-			 pe_config->disable_capture_pp);
-#endif
 	}
 }
 
@@ -507,14 +457,12 @@ static void __dump_stream_config(struct atomisp_sub_device *asd,
 			s_config->continuous);
 	dev_dbg(isp->dev, "stream_config.channel_id=%d.\n",
 			s_config->channel_id);
-#ifdef CSS21
 	dev_dbg(isp->dev, "stream_config.init_num_cont_raw_buf=%d.\n",
 			s_config->init_num_cont_raw_buf);
 	dev_dbg(isp->dev, "stream_config.target_num_cont_raw_buf=%d.\n",
 			s_config->target_num_cont_raw_buf);
 	dev_dbg(isp->dev, "stream_config.left_padding=%d.\n",
 			s_config->left_padding);
-#endif
 	dev_dbg(isp->dev, "stream_config.sensor_binning_factor=%d.\n",
 			s_config->sensor_binning_factor);
 	dev_dbg(isp->dev, "stream_config.pixels_per_clock=%d.\n",
@@ -593,10 +541,8 @@ static int __create_stream(struct atomisp_sub_device *asd,
 	if (pipe_index == 0)
 		return 0;
 
-#ifdef CSS21
 	stream_env->stream_config.target_num_cont_raw_buf =
 		asd->continuous_raw_buffer_size->val;
-#endif /* CSS21 */
 	stream_env->stream_config.channel_id = stream_env->ch_id;
 
 	__dump_stream_config(asd, stream_env);
@@ -704,32 +650,22 @@ static void __apply_additional_pipe_config(
 		 * fail*/
 		if (stream_env->pipe_configs[pipe_id].
 			default_capture_config.mode != CSS_CAPTURE_MODE_RAW)
-			stream_env->pipe_configs[pipe_id]
-#ifndef CSS21
-			    .default_capture_config.enable_capture_pp = true;
-#else
-			    .enable_dz = true;
-#endif
+			stream_env->pipe_configs[pipe_id].enable_dz = true;
 		break;
 	case IA_CSS_PIPE_ID_VIDEO:
 		/* enable reduced pipe to have binary
 		 * video_dz_2_min selected*/
 		stream_env->pipe_extra_configs[pipe_id]
 		    .enable_reduced_pipe = true;
-#ifdef CSS21
 		stream_env->pipe_configs[pipe_id]
-#else
-		stream_env->pipe_extra_configs[pipe_id]
-#endif
 		    .enable_dz = false;
-#ifdef CSS20
+
 		if (asd->params.video_dis_en) {
 			stream_env->pipe_extra_configs[pipe_id]
 				.enable_dvs_6axis = true;
 			stream_env->pipe_configs[pipe_id]
 				.dvs_frame_delay = 2;
 		}
-#endif
 		break;
 	case IA_CSS_PIPE_ID_PREVIEW:
 	case IA_CSS_PIPE_ID_COPY:
@@ -1809,29 +1745,17 @@ void atomisp_css_enable_raw_binning(struct atomisp_sub_device *asd,
 
 	stream_env->pipe_extra_configs[pipe].enable_raw_binning = enable;
 	stream_env->update_pipe[pipe] = true;
-	if (enable) {
-#ifndef CSS21
-		stream_env->pipe_configs[pipe].bin_out_res.width =
-		    stream_env->stream_config.effective_res.width;
-		stream_env->pipe_configs[pipe].bin_out_res.height =
-		    stream_env->stream_config.effective_res.height;
-#endif /* CSS21 */
+	if (enable)
 		stream_env->pipe_configs[pipe].output_info[0].padded_width =
 		    stream_env->stream_config.effective_res.width;
-	}
 }
 
 void atomisp_css_enable_dz(struct atomisp_sub_device *asd, bool enable)
 {
 	int i;
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
-#ifdef CSS21
 		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
 			.pipe_configs[i].enable_dz = enable;
-#else
-		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-			.pipe_extra_configs[i].enable_dz = enable;
-#endif
 }
 
 void atomisp_css_capture_set_mode(struct atomisp_sub_device *asd,
@@ -1947,9 +1871,7 @@ void atomisp_css_enable_continuous(struct atomisp_sub_device *asd,
 
 	if (stream_env->stream_config.continuous != !!enable) {
 		stream_env->stream_config.continuous = !!enable;
-#ifdef CSS21
 		stream_env->stream_config.pack_raw_pixels = true;
-#endif
 		for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
 			stream_env->update_pipe[i] = true;
 	}
@@ -2166,12 +2088,10 @@ static enum ia_css_pipe_mode __pipe_id_to_pipe_mode(
 					enum ia_css_pipe_id pipe_id)
 {
 	switch (pipe_id) {
-#ifdef CSS21
 	case IA_CSS_PIPE_ID_COPY:
 		if (asd->copy_mode_format_conv)
 			return IA_CSS_PIPE_MODE_CAPTURE;
 		return IA_CSS_PIPE_MODE_COPY;
-#endif
 	case IA_CSS_PIPE_ID_PREVIEW:
 		return IA_CSS_PIPE_MODE_PREVIEW;
 	case IA_CSS_PIPE_ID_CAPTURE:
@@ -2218,45 +2138,6 @@ static void __configure_output(struct atomisp_sub_device *asd,
 		pipe_id, width, height, format);
 }
 
-/*
- * CSS2.1 and Old CSS2.0 has different parameters for pp input configuration.
- */
-#ifndef CSS21
-/*
- * For old CSS2.0, preview pipe and capture pipe all use bayer_ds_out_res to
- * configure YUV Downscaling input resolution
- */
-static void __configure_pp_input(struct atomisp_sub_device *asd,
-				 unsigned int width, unsigned int height,
-				 enum ia_css_pipe_id pipe_id)
-{
-	struct atomisp_device *isp = asd->isp;
-	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
-	if (width == 0 && height == 0)
-		return;
-
-	if (width * 9 / 10 <
-	    stream_env->pipe_configs[pipe_id].
-	    output_info[0].res.width ||
-	    height * 9 / 10 <
-	    stream_env->pipe_configs[pipe_id].
-	    output_info[0].res.height
-	   )
-		return;
-	stream_env->pipe_configs[pipe_id].mode =
-		__pipe_id_to_pipe_mode(asd, pipe_id);
-	stream_env->update_pipe[pipe_id] = true;
-
-	stream_env->pipe_extra_configs[pipe_id].enable_yuv_ds = true;
-	stream_env->pipe_configs[pipe_id].bayer_ds_out_res.width =
-	    stream_env->stream_config.effective_res.width;
-	stream_env->pipe_configs[pipe_id].bayer_ds_out_res.height =
-	    stream_env->stream_config.effective_res.height;
-	dev_dbg(isp->dev, "configuring pipe[%d]capture pp input w=%d.h=%d.\n",
-		pipe_id, width, height);
-}
-#else
 /*
  * For CSS2.1, capture pipe uses capture_pp_in_res to configure yuv
  * downscaling input resolution.
@@ -2502,7 +2383,6 @@ done:
 	dev_dbg(isp->dev, "configuring pipe[%d]video pp input w=%d.h=%d.\n",
 		pipe_id, width, height);
 }
-#endif
 
 static void __configure_vf_output(struct atomisp_sub_device *asd,
 				  unsigned int width, unsigned int height,
@@ -2775,7 +2655,6 @@ int atomisp_css_preview_configure_pp_input(
 {
 	struct atomisp_stream_env *stream_env =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
-#ifdef CSS21
 	__configure_preview_pp_input(asd, width, height,
 			IA_CSS_PIPE_ID_PREVIEW);
 
@@ -2783,17 +2662,6 @@ int atomisp_css_preview_configure_pp_input(
 					capt_pp_in_res.width)
 		__configure_capture_pp_input(asd,
 				     width, height, IA_CSS_PIPE_ID_CAPTURE);
-#else
-	if (stream_env->pipe_extra_configs[IA_CSS_PIPE_ID_PREVIEW].
-					enable_raw_binning == false)
-		__configure_pp_input(asd, width, height,
-					IA_CSS_PIPE_ID_PREVIEW);
-
-	if (width > stream_env->pipe_configs[IA_CSS_PIPE_ID_CAPTURE].
-					bayer_ds_out_res.width)
-		__configure_pp_input(asd,
-				     width, height, IA_CSS_PIPE_ID_CAPTURE);
-#endif
 	return 0;
 }
 
@@ -2801,11 +2669,7 @@ int atomisp_css_capture_configure_pp_input(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height)
 {
-#ifdef CSS21
 	__configure_capture_pp_input(asd, width, height, IA_CSS_PIPE_ID_CAPTURE);
-#else
-	__configure_pp_input(asd, width, height, IA_CSS_PIPE_ID_CAPTURE);
-#endif
 	return 0;
 }
 
@@ -2813,7 +2677,6 @@ int atomisp_css_video_configure_pp_input(
 				struct atomisp_sub_device *asd,
 				unsigned int width, unsigned int height)
 {
-#ifdef CSS21
 	struct atomisp_stream_env *stream_env =
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 
@@ -2824,7 +2687,6 @@ int atomisp_css_video_configure_pp_input(
 					capt_pp_in_res.width)
 		__configure_capture_pp_input(asd,
 				     width, height, IA_CSS_PIPE_ID_CAPTURE);
-#endif
 	return 0;
 }
 
@@ -3684,27 +3546,16 @@ int atomisp_css_wait_acc_finish(struct atomisp_sub_device *asd)
 /* Set the ACC binary arguments */
 int atomisp_css_set_acc_parameters(struct atomisp_acc_fw *acc_fw)
 {
-#ifndef CSS21
-	struct ia_css_data sec;
-#endif /* !CSS21 */
 	unsigned int mem;
 
 	for (mem = 0; mem < ATOMISP_ACC_NR_MEMORY; mem++) {
 		if (acc_fw->args[mem].length == 0)
 			continue;
 
-#ifndef CSS21
-		sec.address = acc_fw->args[mem].css_ptr;
-		sec.size = acc_fw->args[mem].length;
-		if (sh_css_acc_set_firmware_parameters(acc_fw->fw, mem, sec)
-			!= IA_CSS_SUCCESS)
-			return -EIO;
-#else /* !CSS21 */
 		ia_css_isp_param_set_css_mem_init(&acc_fw->fw->mem_initializers,
 						IA_CSS_PARAM_CLASS_PARAM, mem,
 						acc_fw->args[mem].css_ptr,
 						acc_fw->args[mem].length);
-#endif /* !CSS21 */
 	}
 
 	return 0;
@@ -3884,9 +3735,7 @@ int atomisp_css_load_acc_binary(struct atomisp_sub_device *asd,
 
 	pipe_config->acc_stages[index] = fw;
 	pipe_config->num_acc_stages = index + 1;
-#ifdef CSS21
 	pipe_config->acc_num_execs = 1;
-#endif
 
 	return 0;
 }
@@ -4044,23 +3893,18 @@ bool atomisp_css_valid_sof(struct atomisp_device *isp)
 
 int atomisp_css_debug_dump_isp_binary(void)
 {
-#ifdef CSS21
 	ia_css_debug_dump_isp_binary();
-#endif
 	return 0;
 }
 
 int atomisp_css_dump_sp_raw_copy_linecount(bool reduced)
 {
-#ifdef CSS21
 	sh_css_dump_sp_raw_copy_linecount(reduced);
-#endif
 	return 0;
 }
 
 int atomisp_css_dump_blob_infor(void)
 {
-#ifdef CSS21
 	struct ia_css_blob_descr *bd = sh_css_blob_info;
 	unsigned i, nm = sh_css_num_binaries;
 
@@ -4073,6 +3917,5 @@ int atomisp_css_dump_blob_infor(void)
 		dev_dbg(atomisp_dev, "Num%d binary id is %d, name is %s\n", i,
 			bd[i-1].header.info.isp.sp.id, bd[i-1].name);
 	}
-#endif
 	return 0;
 }

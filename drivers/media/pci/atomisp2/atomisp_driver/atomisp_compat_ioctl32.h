@@ -52,34 +52,20 @@ struct atomisp_dvs2_statistics32 {
 };
 
 struct atomisp_dis_statistics32 {
-#ifdef CSS20
 	struct atomisp_dvs2_statistics32 dvs2_stat;
 	uint32_t exp_id;
-#else /* CSS20 */
-	struct atomisp_grid_info grid_info;
-	compat_uptr_t vertical_projections;
-	compat_uptr_t horizontal_projections;
-#endif
 };
 
 struct atomisp_dis_coefficients32 {
-#ifdef CSS20
 	struct atomisp_dvs_grid_info grid_info;
 	struct atomisp_dvs2_coef_types32 hor_coefs;
 	struct atomisp_dvs2_coef_types32 ver_coefs;
-#else /* CSS20 */
-	struct atomisp_grid_info grid_info;
-	compat_uptr_t vertical_coefficients;
-	compat_uptr_t horizontal_coefficients;
-#endif /* CSS20 */
 };
 
 struct atomisp_3a_statistics32 {
 	struct atomisp_grid_info  grid_info;
 	compat_uptr_t data;
-#ifdef CSS20
 	compat_uptr_t rgby_data;
-#endif
 	uint32_t exp_id;
 };
 
@@ -93,9 +79,7 @@ struct atomisp_metadata32 {
 };
 
 struct atomisp_morph_table32 {
-#ifdef CSS20
 	unsigned int enabled;
-#endif
 	unsigned int height;
 	unsigned int width;	/* number of valid elements per line */
 	compat_uptr_t coordinates_x[ATOMISP_MORPH_TABLE_NUM_PLANES];
@@ -167,12 +151,7 @@ struct v4l2_private_int_data32 {
 };
 
 struct atomisp_shading_table32 {
-#ifdef CSS20
 	__u32 enable;
-#else
-	__u8 flags;
-	__u8 enable;
-#endif
 	__u32 sensor_width;
 	__u32 sensor_height;
 	__u32 width;
@@ -197,7 +176,6 @@ struct atomisp_acc_s_mapped_arg32 {
 	compat_ulong_t css_ptr;
 };
 
-#ifdef CSS20
 struct atomisp_parameters32 {
 	compat_uptr_t wb_config;  /* White Balance config */
 	compat_uptr_t cc_config;  /* Color Correction config */
@@ -241,27 +219,6 @@ struct atomisp_parameters32 {
 	compat_uptr_t capture_config;
 	compat_uptr_t anr_thres;
 };
-#else /* CSS20 */
-struct atomisp_parameters32 {
-	compat_uptr_t wb_config;
-	compat_uptr_t cc_config;
-	compat_uptr_t ob_config;
-	compat_uptr_t de_config;
-	compat_uptr_t ce_config;
-	compat_uptr_t dp_config;
-	compat_uptr_t nr_config;
-	compat_uptr_t ee_config;
-	compat_uptr_t tnr_config;
-	compat_uptr_t shading_table;
-	compat_uptr_t morph_table;
-	compat_uptr_t macc_config;
-	compat_uptr_t gamma_table;
-	compat_uptr_t ctc_table;
-	compat_uptr_t xnr_config;
-	compat_uptr_t gc_config;
-	compat_uptr_t a3a_config;
-};
-#endif /* CSS20 */
 
 struct atomisp_acc_fw_load_to_pipe32 {
 	__u32 flags;			/* Flags, see below for valid values */
