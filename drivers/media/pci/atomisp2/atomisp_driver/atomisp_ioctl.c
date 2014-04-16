@@ -1339,6 +1339,8 @@ static int atomisp_streamon(struct file *file, void *fh,
 	unsigned int sensor_start_stream;
 	int ret = 0;
 	unsigned long irqflags;
+	u8 sensor_name[] = "gc5004";
+	unsigned int isp_timeout_duration;
 #ifdef PUNIT_CAMERA_BUSY
 	u32 msg_ret;
 #endif
@@ -1466,10 +1468,21 @@ static int atomisp_streamon(struct file *file, void *fh,
 	atomic_set(&asd->sequence_temp, -1);
 	atomic_set(&isp->wdt_count, 0);
 	atomic_set(&isp->fast_reset, 0);
+
+	dev_info(isp->dev, ">>NAME<<: %s\n", isp->inputs[asd->input_curr].camera->name);
+
+	if (strncmp(isp->inputs[asd->input_curr].camera->name,sensor_name, sizeof(sensor_name)-1) == 0)
+		isp_timeout_duration = ATOMISP_ISP_TIMEOUT_DURATION / 2;
+	else
+		isp_timeout_duration = ATOMISP_ISP_TIMEOUT_DURATION;
+
+	dev_info(isp->dev, ">>SENSOR_NAME<<: %s, name size:%d, duration:%d\n",sensor_name, sizeof(sensor_name), isp_timeout_duration);
+
+
 	if (isp->sw_contex.file_input)
 		isp->wdt_duration = ATOMISP_ISP_FILE_TIMEOUT_DURATION;
 	else
-		isp->wdt_duration = ATOMISP_ISP_TIMEOUT_DURATION;
+		isp->wdt_duration = isp_timeout_duration;
 
 	isp->sw_contex.invalid_frame = false;
 	asd->params.dis_proj_data_valid = false;
