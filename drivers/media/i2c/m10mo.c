@@ -1164,6 +1164,9 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 		ctrl->handler, struct m10mo_device, ctrl_handler);
 	int ret;
 
+	if (!dev->power)
+		return 0;
+
 	switch (ctrl->id) {
 	case V4L2_CID_POWER_LINE_FREQUENCY:
 		ret = m10mo_set_flicker_freq(&dev->sd, ctrl->val);
