@@ -94,7 +94,7 @@
 #define HAS_RX_VERSION_2
 #define HAS_NO_INPUT_FORMATTER
 /*#define HAS_NO_PACKED_RAW_PIXELS*/
-#define HAS_NO_DVS_6AXIS_CONFIG_UPDATE
+/*#define HAS_NO_DVS_6AXIS_CONFIG_UPDATE*/
 
 /*
  * Semi global. "HRT" is accessible from SP, but
@@ -111,6 +111,8 @@
 /* The main bus connecting all devices */
 #define HRT_BUS_WIDTH		HIVE_ISP_CTRL_DATA_WIDTH
 #define HRT_BUS_BYTES		HIVE_ISP_CTRL_DATA_BYTES
+
+#define CSI2P_DISABLE_ISYS2401_ONLINE_MODE
 
 typedef uint32_t			hrt_bus_align_t;
 

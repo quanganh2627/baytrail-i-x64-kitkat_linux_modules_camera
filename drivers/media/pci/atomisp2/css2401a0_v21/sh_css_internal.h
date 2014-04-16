@@ -403,6 +403,7 @@ struct sh_css_sp_input_formatter_set {
 /* SP configuration information */
 struct sh_css_sp_config {
 	uint8_t			no_isp_sync; /* Signal host immediately after start */
+	uint8_t			enable_raw_pool_locking; /**< Enable Raw Buffer Locking for HALv3 Support */
 #if !defined(HAS_NO_INPUT_FORMATTER)
 	struct {
 		uint8_t					a_changed;
@@ -702,6 +703,7 @@ struct sh_css_config_on_frame_enqueue {
 #define  IA_CSS_NUM_ELEMS_HOST2SP_BUFFER_QUEUE    6
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE    3
 #define  IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE  6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE 6
 
 #if defined(HAS_SP_2400)
 #define  IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE    13
@@ -763,6 +765,7 @@ enum sh_css_queue_type {
 	sh_css_host2sp_event_queue,
 	sh_css_sp2host_event_queue,
 	sh_css_host2sp_tag_cmd_queue,
+	sh_css_host2sp_unlock_buff_msg_queue,
 };
 
 struct sh_css_event_irq_mask {
@@ -849,6 +852,12 @@ struct host_sp_queues {
 	 */
 	ia_css_circbuf_desc_t host2sp_tag_cmd_queue_desc;
 	ia_css_circbuf_elem_t host2sp_tag_cmd_queue_elems[IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE];
+
+	/*
+	 * The queue for the Unlock Raw Buffer messages
+	 */
+	ia_css_circbuf_desc_t host2sp_unlock_raw_buff_msg_queue_desc;
+	ia_css_circbuf_elem_t host2sp_unlock_raw_buff_msg_queue_elems[IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE];
 };
 
 #define SIZE_OF_QUEUES_ELEMS							\
@@ -857,12 +866,14 @@ struct host_sp_queues {
 	(SH_CSS_MAX_NUM_QUEUES * IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE) +	\
 	(IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE) +				\
 	(IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE) +				\
-	(IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE)))
+	(IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE) +				\
+	(IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE)))
 
 #define SIZE_OF_QUEUES_DESC										\
 	((SH_CSS_MAX_SP_THREADS * SH_CSS_MAX_NUM_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +	\
 	(SH_CSS_MAX_NUM_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +				\
-	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT)	+							\
+	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +							\
+	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +							\
 	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +							\
 	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT))
 

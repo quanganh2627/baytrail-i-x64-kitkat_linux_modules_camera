@@ -100,12 +100,10 @@ typedef struct s_isp_addresses {
     PVECTOR  g_macc_coef;
     PVECTOR  g_sdis_horicoef_tbl;
     PVECTOR  g_sdis_vertcoef_tbl; /* Can be vmem or dmem */
-    PVECTOR  vf_tmp;
     PVECTOR  uds_data_via_sp;
     PVECTOR  uds_ipxs_via_sp;
     PVECTOR  uds_ibuf_via_sp;
     PVECTOR  uds_obuf_via_sp;
-    PVECTOR  aa_buf;
     PVECTOR  raw_fir_buf;
     PVECTOR  raw_fir1_buf;
     PVECTOR  raw_fir2_buf;
@@ -114,8 +112,6 @@ typedef struct s_isp_addresses {
     unsigned uds_params;
     unsigned g_sdis_horiproj_tbl;
     unsigned g_sdis_vertproj_tbl;
-    unsigned vf_tmp;
-    unsigned aa_buf;
     unsigned raw_fir_buf;
     unsigned raw_fir1_buf;
     unsigned raw_fir2_buf;

@@ -113,7 +113,6 @@ typedef struct s_isp_addresses {
     PVECTOR  g_obrow_vmask;
     PVECTOR  g_sdis_horicoef_tbl;
     PVECTOR  g_sdis_vertcoef_tbl; /* Can be vmem or dmem */
-    PVECTOR  vf_tmp;
     PVECTOR  uds_data_via_sp;
     PVECTOR  uds_ipxs_via_sp;
     PVECTOR  uds_ibuf_via_sp;
@@ -127,14 +126,11 @@ typedef struct s_isp_addresses {
     PVECTOR  g_lin_lutdif_B;
     PVECTOR  g_lin_lutdif_GB;
     PVECTOR  g_xnr_lut;
-    PVECTOR  aa_buf;
   } vmem;
   struct {
     unsigned g_ispparm;
     unsigned g_sdis_horiproj_tbl;
     unsigned g_sdis_vertproj_tbl;
-    unsigned vf_tmp;
-    unsigned aa_buf;
   } sizes;
 } s_isp_addresses;
 

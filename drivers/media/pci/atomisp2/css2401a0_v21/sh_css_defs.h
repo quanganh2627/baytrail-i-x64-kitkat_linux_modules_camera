@@ -38,9 +38,11 @@
 
 #if defined(IS_ISP_2500_SYSTEM)
 #define SWITCH_GACS_TO_SP1	/* Enabling this macro switches the GACs to SP1 */
+#define TRACEBUF_SP1 /* For allocating and sending the trace buffer address from SP1 */
 
 #if !defined(ENABLE_SP1)
 #undef SWITCH_GACS_TO_SP1
+#undef TRACEBUF_SP1
 #endif
 
 #endif /*defined(IS_ISP_2500_SYSTEM)*/

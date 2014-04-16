@@ -74,6 +74,7 @@ static bool acquire_ib_buffer(
 	int32_t pixels_per_line,
 	int32_t lines_per_frame,
 	int32_t fmt_type,
+	bool online,
 	ib_buffer_t *buf);
 
 static void release_ib_buffer(
@@ -303,6 +304,7 @@ static bool create_input_system_channel(
 			metadata ? cfg->metadata.pixels_per_line : cfg->input_port_resolution.pixels_per_line,
 			metadata ? cfg->metadata.lines_per_frame : cfg->input_port_resolution.lines_per_frame,
 			metadata ? cfg->metadata.fmt_type : cfg->csi_port_attr.fmt_type,
+			cfg->online,
 			&(me->ib_buffer))) {
 		release_sid(me->stream2mmio_id, &(me->stream2mmio_sid_id));
 		return false;
@@ -575,6 +577,7 @@ static bool acquire_ib_buffer(
 	int32_t pixels_per_line,
 	int32_t lines_per_frame,
 	int32_t fmt_type,
+	bool online,
 	ib_buffer_t *buf)
 {
 	const int32_t bits_per_byte = 8;
@@ -589,7 +592,12 @@ static bool acquire_ib_buffer(
 					bytes_per_pixel);
 
 	buf->stride = CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
-	buf->lines = 2; /* ISYS2401 hardware can handle at most 4 lines */
+	if(online) {
+		buf->lines = 4; /* use double buffering for online usecases */
+	}
+	else {
+		buf->lines = 2; /* ISYS2401 hardware can handle at most 4 lines */
+	}
 
 	(void)(lines_per_frame);
 	return ia_css_isys_ibuf_rmgr_acquire(buf->stride * buf->lines, &buf->start_addr);

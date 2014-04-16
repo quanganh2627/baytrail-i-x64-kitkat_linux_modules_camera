@@ -31,6 +31,7 @@
 #define SP_SW_EVENT_ID_4	4	/* for the start stream cmd */
 #define SP_SW_EVENT_ID_5	5	/* for the stop stream cmd  */
 #define SP_SW_EVENT_ID_6	6	/* for the host2sp empty mipi buffers */
+#define SP_SW_EVENT_ID_7	7	/* HALv3 Support unlock a raw buffer cmd */
 
 #endif /* __SW_EVENT_GLOBAL_H_INCLUDED__ */
 
