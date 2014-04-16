@@ -427,6 +427,16 @@ static int __gc5004_update_exposure_timing(struct i2c_client *client, u16 exposu
     	u8 expo_coarse_h,expo_coarse_l;
 	u8 tmp;
 
+	if (!exposure) exposure = 4;
+	if (exposure < 4) exposure = 4;
+	if (exposure > 8191) exposure = 8191;
+	exposure = exposure / 4;
+	exposure = exposure * 4;
+	tmp = exposure % 4;
+	if (tmp > 2)	
+		exposure+=4;
+			
+
 	expo_coarse_h = (u8)(exposure >> 8);
 	expo_coarse_l = (u8)(exposure & 0xff);
 	ret = gc5004_write_reg(client, GC5004_8BIT, GC5004_REG_EXPO_COARSE, expo_coarse_h);
