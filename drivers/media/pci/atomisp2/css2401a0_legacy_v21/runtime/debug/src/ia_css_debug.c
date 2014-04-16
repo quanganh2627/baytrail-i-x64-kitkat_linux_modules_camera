@@ -2033,10 +2033,11 @@ void ia_css_debug_dump_debug_info(const char *context)
 	return;
 }
 
-/* this function is for debug use, it can make SP go to sleep
+/** this function is for debug use, it can make SP go to sleep
   state after each frame, then user can dump the stable SP dmem.
-  this function can be called after sh_css_start()
-  and before sh_css_init_buffer_queues() */
+  this function can be called after ia_css_start_sp()
+  and before sh_css_init_buffer_queues()
+*/
 void ia_css_debug_enable_sp_sleep_mode(enum ia_css_sp_sleep_mode mode)
 {
 	const struct ia_css_fw_info *fw;

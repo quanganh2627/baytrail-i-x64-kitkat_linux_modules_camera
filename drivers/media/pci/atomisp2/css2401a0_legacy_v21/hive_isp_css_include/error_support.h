@@ -29,7 +29,9 @@
  * "errno.h"
  */
 #define EINVAL  22
+#define EBADE   52
 #define ENODATA 61
+#define ENOTCONN 107
 #define ENOTSUP 252
 #define ENOBUFS 233
 

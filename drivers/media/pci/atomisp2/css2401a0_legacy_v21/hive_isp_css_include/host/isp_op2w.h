@@ -480,6 +480,19 @@ STORAGE_CLASS_ISP_OP2W_H tvector2w OP_2w_clipz(
 STORAGE_CLASS_ISP_OP2W_H tvector2w OP_2w_div(
     const tvector2w     _a,
     const tvector2w     _b);
+/** @brief Divide
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		_a / _b
+ *
+ * This function will perform halving division of
+ * the first argument by the second argument.
+ */
+STORAGE_CLASS_ISP_OP2W_H tvector1w OP_2w_divh(
+    const tvector2w     _a,
+    const tvector1w     _b);
 
 /** @brief Modulo
  *
