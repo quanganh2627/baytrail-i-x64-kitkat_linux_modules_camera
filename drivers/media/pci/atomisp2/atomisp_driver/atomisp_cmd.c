@@ -57,6 +57,7 @@
 #include "irq.h"
 
 #include "ia_css_types.h"
+#include "ia_css_stream.h"
 
 #include "hrt/bits.h"
 
@@ -2333,6 +2334,11 @@ static int __atomisp_apply_css_parameters(
 	if (arg->morph_table && asd->params.gdc_cac_en)
 		atomisp_css_set_morph_table(asd, css_param->morph_table);
 
+	if (arg->dvs2_coefs && asd->params.curr_grid_info.dvs_grid.enable)
+		atomisp_css_set_dvs2_coefs(asd, css_param->dvs2_coeff);
+
+	if (arg->dvs_6axis_config)
+		atomisp_css_set_dvs_6axis(asd, css_param->dvs_6axis);
 	/*
 	 * These configurations are on used by ISP1.x, not for ISP2.x,
 	 * so do not handle them. see comments of ia_css_isp_config.
@@ -2582,52 +2588,90 @@ set_lsc:
 	return 0;
 }
 
-#include "ia_css_stream.h"	/* FIXME */
-int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
-					  struct atomisp_dvs_6axis_config
-					  *user_6axis_config)
+static int __atomisp_css_cp_dvs2_coefs(struct atomisp_sub_device *asd,
+				struct ia_css_dvs2_coefficients *coefs,
+				struct atomisp_css_params *css_param)
+{
+	struct atomisp_css_dvs_grid_info *cur =
+	    &asd->params.curr_grid_info.dvs_grid;
+
+	if (!coefs)
+		return 0;
+
+	if (sizeof(*cur) != sizeof(coefs->grid) ||
+	    memcmp(&coefs->grid, cur, sizeof(*cur))) {
+		dev_err(asd->isp->dev, "dvs grid mis-match!\n");
+		/* If the grid info in the argument differs from the current
+		   grid info, we tell the caller to reset the grid size and
+		   try again. */
+		return -EAGAIN;
+	}
+
+	if (coefs->hor_coefs.odd_real == NULL ||
+	    coefs->hor_coefs.odd_imag == NULL ||
+	    coefs->hor_coefs.even_real == NULL ||
+	    coefs->hor_coefs.even_imag == NULL ||
+	    coefs->ver_coefs.odd_real == NULL ||
+	    coefs->ver_coefs.odd_imag == NULL ||
+	    coefs->ver_coefs.even_real == NULL ||
+	    coefs->ver_coefs.even_imag == NULL)
+		return -EINVAL;
+
+	if (!css_param->dvs2_coeff) {
+		/* DIS coefficients. */
+		css_param->dvs2_coeff = ia_css_dvs2_coefficients_allocate(
+					&asd->params.curr_grid_info.dvs_grid);
+		if (!css_param->dvs2_coeff)
+			return -ENOMEM;
+	}
+
+	if (copy_from_user(css_param->dvs2_coeff->hor_coefs.odd_real,
+	    coefs->hor_coefs.odd_real, asd->params.dvs_hor_coef_bytes) ||
+	    copy_from_user(css_param->dvs2_coeff->hor_coefs.odd_imag,
+	    coefs->hor_coefs.odd_imag, asd->params.dvs_hor_coef_bytes) ||
+	    copy_from_user(css_param->dvs2_coeff->hor_coefs.even_real,
+	    coefs->hor_coefs.even_real, asd->params.dvs_hor_coef_bytes) ||
+	    copy_from_user(css_param->dvs2_coeff->hor_coefs.even_imag,
+	    coefs->hor_coefs.even_imag, asd->params.dvs_hor_coef_bytes) ||
+	    copy_from_user(css_param->dvs2_coeff->ver_coefs.odd_real,
+	    coefs->ver_coefs.odd_real, asd->params.dvs_ver_coef_bytes) ||
+	    copy_from_user(css_param->dvs2_coeff->ver_coefs.odd_imag,
+	    coefs->ver_coefs.odd_imag, asd->params.dvs_ver_coef_bytes) ||
+	    copy_from_user(css_param->dvs2_coeff->ver_coefs.even_real,
+	    coefs->ver_coefs.even_real, asd->params.dvs_ver_coef_bytes) ||
+	    copy_from_user(css_param->dvs2_coeff->ver_coefs.even_imag,
+	    coefs->ver_coefs.even_imag, asd->params.dvs_ver_coef_bytes)) {
+		ia_css_dvs2_coefficients_free(css_param->dvs2_coeff);
+		css_param->dvs2_coeff = NULL;
+		return -EFAULT;
+	}
+
+	return 0;
+}
+
+int atomisp_cp_dvs_6axis_config(struct atomisp_sub_device *asd,
+			struct atomisp_dvs_6axis_config *user_6axis_config,
+			struct atomisp_css_params *css_param)
 {
 	struct atomisp_css_dvs_6axis_config *dvs_6axis_config;
 	struct atomisp_css_dvs_6axis_config *old_6axis_config;
-	struct ia_css_stream *stream = asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream;
-	struct ia_css_dvs_6axis_config *stream_dvs_config =
-	    stream->isp_params_configs->dvs_6axis_config;
+	struct ia_css_stream *stream =
+			asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream;
 	int ret = -EFAULT;
 
 	if (!user_6axis_config)
 		return 0;
 
-	if (!stream_dvs_config)
-		return -EAGAIN;
-
-	if (stream_dvs_config->width_y != user_6axis_config->width_y ||
-	    stream_dvs_config->height_y != user_6axis_config->height_y ||
-	    stream_dvs_config->width_uv != user_6axis_config->width_uv ||
-	    stream_dvs_config->height_uv != user_6axis_config->height_uv) {
-		dev_err(asd->isp->dev, "%s: mismatch 6axis config!", __func__);
-		dev_err(asd->isp->dev, "CSS expected:width_y:%d, height_y:%d, width_uv:%d, height_uv:%d.\n",
-			 stream_dvs_config->width_y,
-			 stream_dvs_config->height_y,
-			 stream_dvs_config->width_uv,
-			 stream_dvs_config->height_uv);
-		dev_err(asd->isp->dev, "User space:width_y:%d, height_y:%d, width_uv:%d, height_uv:%d.\n",
-			 user_6axis_config->width_y,
-			 user_6axis_config->height_y,
-			 user_6axis_config->width_uv,
-			 user_6axis_config->height_uv);
-		return -EINVAL;
-	}
-
 	/* check whether need to reallocate for 6 axis config */
-	old_6axis_config = asd->params.css_param.dvs_6axis;
+	old_6axis_config = css_param->dvs_6axis;
 	dvs_6axis_config = old_6axis_config;
 	if (old_6axis_config &&
 	    (old_6axis_config->width_y != user_6axis_config->width_y ||
 	     old_6axis_config->height_y != user_6axis_config->height_y ||
 	     old_6axis_config->width_uv != user_6axis_config->width_uv ||
 	     old_6axis_config->height_uv != user_6axis_config->height_uv)) {
-		ia_css_dvs2_6axis_config_free(asd->params.css_param.dvs_6axis);
-		asd->params.css_param.dvs_6axis = NULL;
+		ia_css_dvs2_6axis_config_free(css_param->dvs_6axis);
+		css_param->dvs_6axis = NULL;
 
 		dvs_6axis_config = ia_css_dvs2_6axis_config_allocate(stream);
 		if (!dvs_6axis_config)
@@ -2665,10 +2709,7 @@ int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
 			   sizeof(*user_6axis_config->ycoords_uv)))
 		goto error;
 
-	asd->params.css_param.dvs_6axis = dvs_6axis_config;
-	atomisp_css_set_dvs_6axis(asd, asd->params.css_param.dvs_6axis);
-	asd->params.css_update_params_needed = true;
-
+	css_param->dvs_6axis = dvs_6axis_config;
 	return 0;
 
 error:
@@ -2742,6 +2783,21 @@ int atomisp_set_parameters(struct atomisp_sub_device *asd,
 
 	ret = __atomisp_cp_morph_table(asd, arg->morph_table,
 				       &asd->params.css_param);
+		return ret;
+
+	ret = __atomisp_cp_morph_table(asd, arg->morph_table,
+					&asd->params.css_param);
+	if (ret)
+		return ret;
+
+	ret = __atomisp_css_cp_dvs2_coefs(asd,
+			(struct ia_css_dvs2_coefficients *)arg->dvs2_coefs,
+					  &asd->params.css_param);
+	if (ret)
+		return ret;
+
+	ret = atomisp_cp_dvs_6axis_config(asd, arg->dvs_6axis_config,
+					&asd->params.css_param);
 	if (ret)
 		return ret;
 

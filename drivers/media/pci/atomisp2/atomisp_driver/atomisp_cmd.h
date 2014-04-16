@@ -276,9 +276,9 @@ int atomisp_3a_config_param(struct atomisp_sub_device *asd, int flag,
 int atomisp_digital_zoom(struct atomisp_sub_device *asd, int flag,
 			 __s32 *value);
 
-int atomisp_set_dvs_6axis_config(struct atomisp_sub_device *asd,
-					  struct atomisp_dvs_6axis_config
-					  *user_6axis_config);
+int atomisp_cp_dvs_6axis_config(struct atomisp_sub_device *asd,
+			struct atomisp_dvs_6axis_config *user_6axis_config,
+			struct atomisp_css_params *css_param);
 
 int atomisp_compare_grid(struct atomisp_sub_device *asd,
 				struct atomisp_grid_info *atomgrid);

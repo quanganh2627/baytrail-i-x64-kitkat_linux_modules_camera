@@ -3047,6 +3047,13 @@ static int atomisp_compare_dvs_grid(struct atomisp_sub_device *asd,
 	return memcmp(atomgrid, cur, sizeof(*cur));
 }
 
+void  atomisp_css_set_dvs2_coefs(struct atomisp_sub_device *asd,
+			       struct ia_css_dvs2_coefficients *coefs)
+{
+	asd->params.config.dvs2_coefs = coefs;
+	asd->params.css_update_params_needed = true;
+}
+
 int atomisp_css_set_dis_coefs(struct atomisp_sub_device *asd,
 			  struct atomisp_dis_coefficients *coefs)
 {

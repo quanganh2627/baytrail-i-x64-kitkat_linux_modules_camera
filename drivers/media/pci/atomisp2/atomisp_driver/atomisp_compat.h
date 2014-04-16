@@ -464,6 +464,9 @@ void atomisp_css_set_3a_config(struct atomisp_sub_device *asd,
 void atomisp_css_video_set_dis_vector(struct atomisp_sub_device *asd,
 				struct atomisp_dis_vector *vector);
 
+void atomisp_css_set_dvs2_coefs(struct atomisp_sub_device *asd,
+				struct ia_css_dvs2_coefficients *coefs);
+
 int atomisp_css_set_dis_coefs(struct atomisp_sub_device *asd,
 			  struct atomisp_dis_coefficients *coefs);
 
