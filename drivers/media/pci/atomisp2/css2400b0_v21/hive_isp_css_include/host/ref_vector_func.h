@@ -64,6 +64,21 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_mul_realigning(
 	tvector1w a,
 	tvector1w b,
 	tscalar1w shift );
+/** @brief Coring
+ *
+ * @param[in] coring_vec   Amount of coring based on brightness level
+ * @param[in] filt_input   Vector of input pixels on which Coring is applied
+ * @param[in] m_CnrCoring0 Coring Level0
+ *
+ * @return                 vector of filtered pixels after coring is applied
+ *
+ * This function will perform adaptive coring based on brightness level to
+ * remove noise
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w coring(
+	tvector1w coring_vec,
+	tvector1w filt_input,
+	tscalar1w m_CnrCoring0 );
 
 /** @brief Normalised FIR with coefficients [3,4,1]
  *

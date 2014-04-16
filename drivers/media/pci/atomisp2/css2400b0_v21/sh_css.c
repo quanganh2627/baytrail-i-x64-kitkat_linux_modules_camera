@@ -3579,8 +3579,7 @@ static enum ia_css_err add_yuv_scaler_stage(
 	struct ia_css_frame *internal_out_frame,
 	struct ia_css_binary *yuv_scaler_binary,
 	struct ia_css_pipeline_stage *prev_stage,
-	struct ia_css_pipeline_stage **pre_vf_pp_stage,
-	bool is_output_stage)
+	struct ia_css_pipeline_stage **pre_vf_pp_stage)
 {
 	const struct ia_css_fw_info *last_fw;
 	enum ia_css_err err = IA_CSS_SUCCESS;
@@ -3603,12 +3602,6 @@ static enum ia_css_err add_yuv_scaler_stage(
 
 	last_fw = last_output_firmware(pipe->output_stage);
 	if (need_yuv_scaler(pipe)) {
-		if (is_output_stage) {
-			err = ia_css_frame_allocate_from_info(&vf_frame,
-					    &yuv_scaler_binary->vf_frame_info);
-			if (err != IA_CSS_SUCCESS)
-				return err;
-		}
 		if(last_fw)	{
 			ia_css_pipe_util_set_output_frames(out_frames, 0, NULL);
 			ia_css_pipe_get_generic_stage_desc(&stage_desc,
@@ -3637,6 +3630,9 @@ static enum ia_css_err add_yuv_scaler_stage(
 	} else {
 		*pre_vf_pp_stage = prev_stage;
 	}
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"add_yuv_scaler_stage() leave:\n");
 	return err;
 }
 
@@ -5383,7 +5379,11 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	pipe_out_info = &pipe->output_info[0];
 	pipe_vf_out_info = &pipe->vf_output_info[0];
 	online = pipe->stream->config.online;
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+	err = ia_css_util_check_input(&pipe->stream->config, false, false);
+#else
 	err = ia_css_util_check_input(&pipe->stream->config, !online, false);
+#endif
 	if (err != IA_CSS_SUCCESS)
 		return err;
 	/* cannot have online video and input_mode memory */
@@ -5432,6 +5432,8 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 		pipe->num_invalid_frames = 1;
 
 #if !defined(IS_ISP_2500_SYSTEM)    // skycam doesn't need the copy stage
+/* pqiao TODO: temp hack for samsung PO, should be removed after offline YUVPP is enabled */
+#if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* Copy */
 	if (!online && !continuous) {
 		/* TODO: what exactly needs doing, prepend the copy binary to
@@ -5443,6 +5445,9 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 		if (err != IA_CSS_SUCCESS)
 			return err;
 	}
+#else
+	(void)continuous;
+#endif
 #endif
 
 	/* Viewfinder post-processing */
@@ -5673,6 +5678,10 @@ enum ia_css_err sh_css_pipe_get_viewfinder_frame_info(
 	     pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_BAYER))
 		return IA_CSS_ERR_MODE_HAS_NO_VIEWFINDER;
 	/* offline video does not generate viewfinder output */
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+	/* pqiao TODO: temporary hack for samsung PO, should be removed after offline YUVPP is enabled */
+	*info = pipe->vf_output_info[idx];
+#else
 	if ( pipe->mode == IA_CSS_PIPE_ID_VIDEO &&
 	    !pipe->stream->config.online && !pipe->stream->config.continuous) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
@@ -5682,6 +5691,7 @@ enum ia_css_err sh_css_pipe_get_viewfinder_frame_info(
 	} else {
 		*info = pipe->vf_output_info[idx];
 	}
+#endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_pipe_get_viewfinder_frame_info() leave: \
@@ -6870,8 +6880,7 @@ create_host_yuvpp_pipeline(struct ia_css_pipe *pipe)
 			err = add_yuv_scaler_stage(pipe, me, tmp_in_frame, tmp_out_frame,
 						   NULL,
 						   &yuv_scaler_binary[i],
-						   post_stage, &post_stage,
-						   pipe->pipe_settings.yuvpp.is_output_stage[i]);
+						   post_stage, &post_stage);
 			if (err != IA_CSS_SUCCESS)
 				return err;
 			/* we use output port 1 as internal output port */
@@ -8216,6 +8225,12 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	/* take over stream config */
 	curr_stream->config = *stream_config;
 
+#if defined(USE_INPUT_SYSTEM_VERSION_2401) && defined(CSI2P_DISABLE_ISYS2401_ONLINE_MODE)
+	if (stream_config->mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR &&
+		stream_config->online)
+		curr_stream->config.online = false;
+#endif
+
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 	if (curr_stream->config.online) {
 		curr_stream->config.source.port.num_lanes = stream_config->source.port.num_lanes;
@@ -8232,6 +8247,10 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		curr_stream->config.target_num_cont_raw_buf = NUM_CONTINUOUS_FRAMES;
 	if (curr_stream->config.init_num_cont_raw_buf == 0)
 		curr_stream->config.init_num_cont_raw_buf = curr_stream->config.target_num_cont_raw_buf;
+
+	/* Enable locking & unlocking of buffers in RAW buffer pool */
+	if (curr_stream->config.ia_css_enable_raw_buffer_locking)
+		sh_css_sp_configure_enable_raw_pool_locking();
 
 	/* copy mode specific stuff */
 	switch (curr_stream->config.mode) {
@@ -9204,3 +9223,32 @@ static enum ia_css_err set_config_on_frame_enqueue(struct ia_css_frame_info *inf
 	return IA_CSS_SUCCESS;
 }
 #endif
+
+enum ia_css_err
+ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id)
+{
+	enum ia_css_err ret;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_unlock_raw_frame() enter:\n");
+
+	if (stream == NULL) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_unlock_raw_frame() leave: invalid argument\n");
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	}
+
+	/* Enqueue the Exposure ID */
+	ret = ia_css_bufq_enqueue_unlock_raw_buff_msg(exp_id);
+
+	if (ret != IA_CSS_SUCCESS) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_unlock_raw_frame() enqueue failed leave: return (%d)\n", ret);
+		return ret;
+	}
+	/* Send an event */
+	ret = ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_7, 0, 0, 0);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_unlock_raw_frame() leave: return (%d)\n", ret);
+	return ret;
+}

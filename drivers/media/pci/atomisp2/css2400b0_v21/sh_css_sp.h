@@ -194,6 +194,9 @@ void
 sh_css_sp_configure_prbs(int seed);
 
 void
+sh_css_sp_configure_enable_raw_pool_locking(void);
+
+void
 sh_css_sp_reset_global_vars(void);
 
 /**

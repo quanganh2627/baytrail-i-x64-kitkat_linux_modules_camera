@@ -709,6 +709,12 @@ sh_css_sp_configure_prbs(int seed)
 }
 #endif
 
+void
+sh_css_sp_configure_enable_raw_pool_locking(void)
+{
+	sh_css_sp_group.config.enable_raw_pool_locking = true;
+}
+
 static enum ia_css_err
 sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args)
 {

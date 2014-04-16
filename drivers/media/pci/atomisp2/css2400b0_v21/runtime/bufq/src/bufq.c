@@ -54,6 +54,9 @@ struct sh_css_queues {
 
 	/* Tagger command queue */
 	ia_css_queue_t host2sp_tag_cmd_queue_handle;
+
+	/* Unlock Raw Buffer Command Queue */
+	ia_css_queue_t host2sp_unlock_raw_buff_msg_queue_handle;
 };
 
 struct sh_css_queues  css_queues;
@@ -221,6 +224,9 @@ static ia_css_queue_t *bufq_get_qhandle(
 	case sh_css_host2sp_tag_cmd_queue:
 		q = &css_queues.host2sp_tag_cmd_queue_handle;
 		break;
+	case sh_css_host2sp_unlock_buff_msg_queue:
+		q = &css_queues.host2sp_unlock_raw_buff_msg_queue_handle;
+		break;
 	default:
 		break;
 	}
@@ -309,6 +315,15 @@ enum ia_css_err ia_css_bufq_init(void)
 		offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_elems);
 	/* Initialize the queue instance and obtain handle */
 	ia_css_queue_remote_init(&css_queues.host2sp_tag_cmd_queue_handle,
+		&remoteq);
+
+	/* Host2SP Unlock Raw Buffer message queue */
+	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
+		offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_desc);
+	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
+		offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_elems);
+	/* Initialize the queue instance and obtain handle */
+	ia_css_queue_remote_init(&css_queues.host2sp_unlock_raw_buff_msg_queue_handle,
 		&remoteq);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_bufq_init() leave:\n");
 
@@ -452,16 +467,37 @@ enum ia_css_err ia_css_bufq_enqueue_tag_cmd(
 			"ia_css_bufq_enqueue_tag_cmd() leaving: queue not available\n");
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
-	if (q != NULL) {
-		error = ia_css_queue_enqueue(q, item);
-		return_err = ia_css_convert_errno(error);
-	} else {
-		/* Error as the queue is not initialized */
-		return_err = IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
-	}
+	error = ia_css_queue_enqueue(q, item);
+	return_err = ia_css_convert_errno(error);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_bufq_enqueue_tag_cmd() leave: return_err = %d\n", return_err);
+
+	return return_err;
+}
+
+enum ia_css_err ia_css_bufq_enqueue_unlock_raw_buff_msg(
+	uint32_t exp_id)
+{
+	enum ia_css_err return_err;
+	int error = 0;
+	ia_css_queue_t *q;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_bufq_enqueue_unlock_raw_buff_msg() enter: exp_id=%u\n", exp_id);
+
+	q = bufq_get_qhandle(sh_css_host2sp_unlock_buff_msg_queue, -1, -1);
+	if (NULL == q) {
+		/* Error as the queue is not initialized */
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"ia_css_bufq_enqueue_unlock_raw_buff_msg() leaving: queue not available\n");
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
+	error = ia_css_queue_enqueue(q, exp_id);
+	return_err = ia_css_convert_errno(error);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_bufq_enqueue_unlock_raw_buff_msg() leave: return_err = %d\n", return_err);
 
 	return return_err;
 }

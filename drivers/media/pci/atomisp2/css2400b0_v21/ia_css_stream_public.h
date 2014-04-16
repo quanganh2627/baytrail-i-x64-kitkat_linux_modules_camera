@@ -98,6 +98,7 @@ struct ia_css_stream_config {
 			  /* -1 for default from binary.*/
 	struct ia_css_mipi_buffer_config mipi_buffer_config; /**< mipi buffer configuration */
 	struct ia_css_metadata_config	metadata_config;     /**< Metadata configuration. */
+	bool ia_css_enable_raw_buffer_locking; /**< Enable Raw Buffer Locking for HALv3 Support */
 };
 
 struct ia_css_stream;
@@ -515,5 +516,17 @@ ia_css_alloc_continuous_frame_remain(struct ia_css_stream *stream);
  */
 enum ia_css_err
 ia_css_update_continuous_frames(struct ia_css_stream *stream);
+
+/** @brief ia_css_unlock_raw_frame . unlock a raw frame (HALv3 Support)
+ * @param[in]	stream The stream.
+ * @param[in]   exp_id exposure id that uniquely identifies the locked Raw Frame Buffer
+ * @return      ia_css_err IA_CSS_SUCCESS or error code
+ *
+ * As part of HALv3 Feature requirement, SP locks raw buffer until the Application
+ * releases its reference to a raw buffer (which are managed by SP), this function allows
+ * application to explicitly unlock that buffer in SP.
+ */
+enum ia_css_err
+ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id);
 
 #endif /* __IA_CCS_STREAM_PUBLIC_H */

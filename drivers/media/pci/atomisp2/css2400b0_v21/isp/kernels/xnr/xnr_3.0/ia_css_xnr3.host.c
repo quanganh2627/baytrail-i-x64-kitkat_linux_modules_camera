@@ -68,6 +68,11 @@ compute_coring(double coring)
 	return (int)((coring * XNR_CORING_SCALE_FACTOR) + 0.5);
 }
 
+#ifndef MIN
+/*TEMP FIX FOR COMPILATION WARNINGS FOR MIN FUNCTION
+PROPER HEADER FILE WILL BE INCLUDED LATER*/
+#define MIN(X,Y) ((X) < (Y)? (X) : (Y))
+#endif
 
 void
 ia_css_xnr3_encode(

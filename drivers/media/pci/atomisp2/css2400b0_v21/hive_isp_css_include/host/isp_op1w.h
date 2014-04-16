@@ -588,6 +588,20 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_div(
     const tvector1w     _a,
     const tvector1w     _b);
 
+/** @brief Divide
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		_a / _b
+ *
+ * This function will perform fixed point division of
+ * the first argument by the second argument.
+ */
+STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qdiv(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
 /** @brief Modulo
  *
  * @param[in] _a	first argument
