@@ -67,4 +67,19 @@
 
 #endif
 
+#define verifexit(cond,error_tag)  \
+do {                               \
+	if (!(cond)){              \
+		errno = error_tag; \
+		goto EXIT;         \
+	}                          \
+} while(0)
+
+#define verifjmpexit(cond)         \
+do {                               \
+	if (!(cond)){              \
+		goto EXIT;         \
+	}                          \
+} while(0)
+
 #endif /* __ERROR_SUPPORT_H_INCLUDED__ */

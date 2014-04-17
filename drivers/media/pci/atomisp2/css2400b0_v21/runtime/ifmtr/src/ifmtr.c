@@ -54,8 +54,8 @@ unsigned int ia_css_ifmtr_lines_needed_for_bayer_order(
 		const struct ia_css_stream_config *config)
 {
 	assert(config != NULL);
-	if ((IA_CSS_BAYER_ORDER_BGGR == config->bayer_order)
-	    || (IA_CSS_BAYER_ORDER_GBRG == config->bayer_order))
+	if ((IA_CSS_BAYER_ORDER_BGGR == config->input_config.bayer_order)
+	    || (IA_CSS_BAYER_ORDER_GBRG == config->input_config.bayer_order))
 		return 1;
 
 	return 0;
@@ -65,8 +65,8 @@ unsigned int ia_css_ifmtr_columns_needed_for_bayer_order(
 		const struct ia_css_stream_config *config)
 {
 	assert(config != NULL);
-	if ((IA_CSS_BAYER_ORDER_RGGB == config->bayer_order)
-	    || (IA_CSS_BAYER_ORDER_GBRG == config->bayer_order))
+	if ((IA_CSS_BAYER_ORDER_RGGB == config->input_config.bayer_order)
+	    || (IA_CSS_BAYER_ORDER_GBRG == config->input_config.bayer_order))
 		return 1;
 
 	return 0;
@@ -495,7 +495,7 @@ static enum ia_css_err ifmtr_start_column(
 		unsigned int bin_in,
 		unsigned int *start_column)
 {
-	unsigned int in = config->input_res.width, start,
+	unsigned int in = config->input_config.input_res.width, start,
 	    for_bayer = ia_css_ifmtr_columns_needed_for_bayer_order(config);
 
 	if (bin_in + 2 * for_bayer > in)
@@ -521,7 +521,7 @@ static enum ia_css_err ifmtr_input_start_line(
 		unsigned int bin_in,
 		unsigned int *start_line)
 {
-	unsigned int in = config->input_res.height, start,
+	unsigned int in = config->input_config.input_res.height, start,
 	    for_bayer = ia_css_ifmtr_lines_needed_for_bayer_order(config);
 
 	if (bin_in + 2 * for_bayer > in)

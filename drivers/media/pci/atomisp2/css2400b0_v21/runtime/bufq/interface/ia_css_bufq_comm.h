@@ -24,19 +24,6 @@
 
 #include "system_global.h"
 
-/** Enumeration of buffer types. Buffers can be queued and de-queued
- *  to hand them over between IA and ISP.
- */
-/*
- * The first frames (with comment Dynamic) can be dynamic or static
- * The other frames (ref_in and below) can only be static
- * Static means that the data addres will not change during the life time
- * of the associated pipe. Dynamic means that the data address can
- * change with every (frame) iteration of the associated pipe
- *
- * s3a and dis are now also dynamic but (stil) handled seperately
- */
-
 #if 0
 enum sh_css_queue_id {
 	SH_CSS_INVALID_BUFFER_QUEUE_ID     = -1,
@@ -64,17 +51,19 @@ enum sh_css_queue_id {
 	SH_CSS_QUEUE_D_ID,
 	SH_CSS_QUEUE_E_ID,
 	SH_CSS_QUEUE_F_ID,
+	SH_CSS_QUEUE_G_ID,
 #if defined(HAS_NO_INPUT_SYSTEM) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* input frame queue for skycam */
-	SH_CSS_QUEUE_G_ID,
-	SH_CSS_QUEUE_H_ID, /* for metadata */
+	SH_CSS_QUEUE_H_ID,
+	SH_CSS_QUEUE_I_ID, /* for metadata */
 #endif
 	SH_CSS_MAX_NUM_QUEUES
 };
 
 #define SH_CSS_MAX_DYNAMIC_BUFFERS_PER_THREAD SH_CSS_MAX_NUM_QUEUES
-/* for now we staticaly assign queue 0 to parameter */
+/* for now we staticaly assign queue 0 & 1 to parameter sets */
 #define IA_CSS_PARAMETER_SET_QUEUE_ID SH_CSS_QUEUE_A_ID
+#define IA_CSS_PER_FRAME_PARAMETER_SET_QUEUE_ID SH_CSS_QUEUE_B_ID
 //#define SH_CSS_MAX_NUM_QUEUES SH_CSS_MAX_DYNAMIC_BUFFERS_PER_THREAD
 
 

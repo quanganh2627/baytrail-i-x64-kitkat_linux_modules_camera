@@ -51,6 +51,37 @@ struct ia_css_mipi_buffer_config {
 					  contiguously or not */
 };
 
+enum {
+	IA_CSS_STREAM_ISYS_STREAM_0 = 0,
+	IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX = IA_CSS_STREAM_ISYS_STREAM_0,
+	IA_CSS_STREAM_ISYS_STREAM_1,
+	IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH
+};
+
+/** This is input data configuration for one MIPI data type. We can have
+ *  multiple of this in one virtual channel.
+ */
+struct ia_css_stream_isys_stream_config {
+	struct ia_css_resolution  input_res; /**< Resolution of input data */
+	enum ia_css_stream_format format; /**< Format of input stream. This data
+					       format will be mapped to MIPI data
+					       type internally. */
+	int linked_isys_stream_id; /** default value is -1, other value means
+							current isys_stream shares the same buffer with
+							indicated isys_stream*/
+	bool valid; /**< indicate whether other fields have valid value */
+};
+
+struct ia_css_stream_input_config {
+	struct ia_css_resolution  input_res; /**< Resolution of input data */
+	struct ia_css_resolution  effective_res; /**< Resolution of input data */
+	enum ia_css_stream_format format; /**< Format of input stream. This data
+					       format will be mapped to MIPI data
+					       type internally. */
+	enum ia_css_bayer_order bayer_order; /**< Bayer order for RAW streams */
+};
+
+
 /** Input stream description. This describes how input will flow into the
  *  CSS. This is used to program the CSS hardware.
  */
@@ -65,12 +96,9 @@ struct ia_css_stream_config {
 						   will arrive. Use this field
 						   to specify virtual channel id.
 						   Valid values are: 0, 1, 2, 3 */
-	struct ia_css_resolution  input_res; /**< Resolution of input data */
-	struct ia_css_resolution  effective_res; /**< Resolution of input data */
-	enum ia_css_stream_format format; /**< Format of input stream. This data
-					       format will be mapped to MIPI data
-					       type internally. */
-	enum ia_css_bayer_order bayer_order; /**< Bayer order for RAW streams */
+	struct ia_css_stream_isys_stream_config isys_config[IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH];
+	struct ia_css_stream_input_config input_config;
+
 	unsigned int sensor_binning_factor; /**< Binning factor used by sensor
 						 to produce image data. This is
 						 used for shading correction. */
@@ -107,10 +135,6 @@ struct ia_css_stream;
  *  created.
  */
 struct ia_css_stream_info {
-	struct ia_css_resolution raw_info;
-	/**< Info about raw buffer resolution. Mainly for continuous capture */
-	struct ia_css_resolution effective_info;
-	/**< Info about effective input buffer resolution. */
 	struct ia_css_metadata_info metadata_info;
 	/**< Info about the metadata layout, this contains the stride. */
 };

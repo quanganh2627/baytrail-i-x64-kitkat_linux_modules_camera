@@ -160,15 +160,23 @@ static void map_buffer_type_to_queue_id(
 	assert(buf_type < IA_CSS_NUM_DYNAMIC_BUFFER_TYPE);
 	assert(buffer_type_to_queue_id_map[thread_id][buf_type] == SH_CSS_INVALID_QUEUE_ID);
 
-	//queue 0 is reserved for parameter because it doesn't depend on events
+	/* queue 0 is reserved for parameters because it doesn't depend on events */
 	if (buf_type == IA_CSS_BUFFER_TYPE_PARAMETER_SET) {
-		assert(queue_availability[thread_id][0] == true);
-		queue_availability[thread_id][0] = false;
+		assert(queue_availability[thread_id][IA_CSS_PARAMETER_SET_QUEUE_ID]);
+		queue_availability[thread_id][IA_CSS_PARAMETER_SET_QUEUE_ID] = false;
 		buffer_type_to_queue_id_map[thread_id][buf_type] = IA_CSS_PARAMETER_SET_QUEUE_ID;
 		return;
 	}
 
-	for (i = 1; i < SH_CSS_MAX_NUM_QUEUES; i++) {
+	/* queue 1 is reserved for per frame parameters because it doesn't depend on events */
+	if (buf_type == IA_CSS_BUFFER_TYPE_PER_FRAME_PARAMETER_SET) {
+		assert(queue_availability[thread_id][IA_CSS_PER_FRAME_PARAMETER_SET_QUEUE_ID]);
+		queue_availability[thread_id][IA_CSS_PER_FRAME_PARAMETER_SET_QUEUE_ID] = false;
+		buffer_type_to_queue_id_map[thread_id][buf_type] = IA_CSS_PER_FRAME_PARAMETER_SET_QUEUE_ID;
+		return;
+	}
+
+	for (i = SH_CSS_QUEUE_C_ID; i < SH_CSS_MAX_NUM_QUEUES; i++) {
 		if (queue_availability[thread_id][i] == true) {
 			queue_availability[thread_id][i] = false;
 			buffer_type_to_queue_id_map[thread_id][buf_type] = i;

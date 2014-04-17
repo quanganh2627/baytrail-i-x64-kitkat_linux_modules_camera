@@ -163,7 +163,7 @@ extern int ia_css_queue_get_free_space(
  */
 extern int ia_css_queue_peek(
 		ia_css_queue_t *qhandle,
-		uint32_t offset,
+		int32_t offset,
 		uint32_t *element);
 
 /** @brief Get the usable size for the queue

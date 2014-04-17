@@ -194,16 +194,16 @@ enum ia_css_err ia_css_util_check_input(
 	if (stream_config == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	if (stream_config->effective_res.width == 0 ||
-	    stream_config->effective_res.height == 0)
+	if (stream_config->input_config.effective_res.width == 0 ||
+	    stream_config->input_config.effective_res.height == 0)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	if (must_be_raw &&
-	    !ia_css_util_is_input_format_raw(stream_config->format))
+	    !ia_css_util_is_input_format_raw(stream_config->input_config.format))
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	if (must_be_yuv &&
-	    !ia_css_util_is_input_format_yuv(stream_config->format))
+	    !ia_css_util_is_input_format_yuv(stream_config->input_config.format))
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	return IA_CSS_SUCCESS;

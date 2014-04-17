@@ -105,6 +105,9 @@
 #define HRT_BUS_WIDTH		HIVE_ISP_CTRL_DATA_WIDTH
 #define HRT_BUS_BYTES		HIVE_ISP_CTRL_DATA_BYTES
 
+/* per-frame parameter handling support */
+#define SH_CSS_ENABLE_PER_FRAME_PARAMS
+
 typedef uint32_t			hrt_bus_align_t;
 
 /*

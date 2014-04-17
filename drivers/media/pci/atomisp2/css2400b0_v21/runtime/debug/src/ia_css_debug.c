@@ -125,8 +125,7 @@ static const char *format2str[] = {
 #define DPG_START "ia_css_debug_pipe_graph_dump_start "
 #define DPG_END   " ia_css_debug_pipe_graph_dump_end\n"
 
-#define ENABLE_LINE1_MAX_LENGHT1 (24)
-#define ENABLE_LINE2_MAX_LENGHT2 (22)
+#define ENABLE_LINE_MAX_LENGTH (25)
 
 static struct pipe_graph_class {
 	bool do_init;
@@ -179,22 +178,26 @@ static const char* stream_format2str[] = {
 };
 
 static const char *qi2str[] = {
-	/*[sh_css_frame_in]     =*/ "in",
-	/*[sh_css_frame_out]    =*/ "out",
-	/*[sh_css_frame_out_vf] =*/ "out_vf",
-	/*[sh_css_frame_s3a]    =*/ "s3a",
-	/*[sh_css_frame_dis]    =*/ "dis"
+	/*[SH_CSS_QUEUE_A_ID]     =*/ "queue_A",
+	/*[SH_CSS_QUEUE_B_ID]     =*/ "queue_B",
+	/*[SH_CSS_QUEUE_C_ID]     =*/ "queue_C",
+	/*[SH_CSS_QUEUE_D_ID]     =*/ "queue_D",
+	/*[SH_CSS_QUEUE_E_ID]     =*/ "queue_E",
+	/*[SH_CSS_QUEUE_F_ID]     =*/ "queue_F",
+	/*[SH_CSS_QUEUE_G_ID]     =*/ "queue_G",
+	/*[SH_CSS_QUEUE_H_ID]     =*/ "queue_H"
 };
 
 static const char *pi2str[] = {
 	/*[IA_CSS_PIPE_ID_PREVIEW]     =*/ "preview",
-	/*[IA_CSS_PIPE_ID_COPY]        =*/ "copy",
-	/*[IA_CSS_PIPE_ID_VIDEO]       =*/ "video",
+	/*[IA_CSS_PIPE_ID_COPY]          =*/ "copy",
+	/*[IA_CSS_PIPE_ID_VIDEO]         =*/ "video",
 	/*[IA_CSS_PIPE_ID_CAPTURE]     =*/ "capture",
-	/*[IA_CSS_PIPE_ID_ACC]         =*/ "accelerator"
+	/*[IA_CSS_PIPE_ID_YUVPP]        =*/ "yuvpp",
+	/*[IA_CSS_PIPE_ID_ACC]           =*/ "accelerator"
 };
 
-static char dot_id_input_bin[20];
+static char dot_id_input_bin[SH_CSS_MAX_BINARY_NAME+10];
 static char ring_buffer[200];
 
 void ia_css_debug_set_dtrace_level(const unsigned int trace_level)
@@ -2519,7 +2522,7 @@ void ia_css_debug_pipe_graph_dump_epilogue(void)
 
 		dtrace_dot(
 			"node [shape = doublecircle, "
-			"fixedsize=true, width=2]; \"input_system\" "
+			"fixedsize=true, width=2.5]; \"input_system\" "
 			"[label = \"Input system\"];");
 
 		dtrace_dot(
@@ -2529,7 +2532,7 @@ void ia_css_debug_pipe_graph_dump_epilogue(void)
 
 		dtrace_dot(
 			"node [shape = doublecircle, "
-			"fixedsize=true, width=2]; \"sensor\" "
+			"fixedsize=true, width=2.5]; \"sensor\" "
 			"[label = \"Sensor\"];");
 
 		dtrace_dot(
@@ -2559,9 +2562,8 @@ ia_css_debug_pipe_graph_dump_stage(
 	struct ia_css_pipeline_stage *stage,
 	enum ia_css_pipe_id id)
 {
-
-	char const *blob_name = "<unknow name>";
-	char const *bin_type = "<unknow type>";
+	char blob_name[SH_CSS_MAX_BINARY_NAME+10] = "<unknown type>";
+	char const *bin_type = "<unknown type>";
 	int i;
 
 	assert(stage != NULL);
@@ -2576,11 +2578,11 @@ ia_css_debug_pipe_graph_dump_stage(
 	if (stage->binary) {
 		bin_type = "binary";
 		if (stage->binary->info->blob)
-			blob_name = stage->binary->info->blob->name;
+			snprintf(blob_name, sizeof(blob_name), "%s_stage%d",
+				stage->binary->info->blob->name, stage->stage_num);
 	} else if (stage->firmware) {
 		bin_type = "firmware";
-		blob_name =
-		    (char const *)IA_CSS_EXT_ISP_PROG_NAME(stage->firmware);
+		strncpy(blob_name, IA_CSS_EXT_ISP_PROG_NAME(stage->firmware), sizeof(blob_name));
 	}
 
 	/* Guard in case of binaries that don't have any binary_info */
@@ -2632,15 +2634,15 @@ ia_css_debug_pipe_graph_dump_stage(
 						enable_info1, enable_info2);
 		{
 			int l, p;
-			char *ei=enable_info;
+			char *ei = enable_info;
 
-			l=strlen(ei);
+			l = strlen(ei);
 
 			/* Replace last ',' with \0 if present */
 			if (l && enable_info[l-1] == ',')
 				enable_info[--l] = '\0';
 
-			if (l<=ENABLE_LINE1_MAX_LENGHT1) {
+			if (l <= ENABLE_LINE_MAX_LENGTH) {
 				/* It fits on one line, copy string and init */
 				/* other helper strings with empty string */
 				strcpy_s(enable_info,
@@ -2648,19 +2650,19 @@ ia_css_debug_pipe_graph_dump_stage(
 					ei);
 			} else {
 				/* Too big for one line, find last comma */
-				p=ENABLE_LINE1_MAX_LENGHT1;
+				p = ENABLE_LINE_MAX_LENGTH;
 				while (ei[p] != ',')
 					p--;
 				/* Last comma found, copy till that comma */
 				strncpy_s(enable_info1,
 					sizeof(enable_info1),
 					ei, p);
-				enable_info1[p]='\0';
+				enable_info1[p] = '\0';
 
-				ei+=p+1;
-				l=strlen(ei);
+				ei += p+1;
+				l = strlen(ei);
 
-				if (l<=ENABLE_LINE2_MAX_LENGHT2) {
+				if (l <= ENABLE_LINE_MAX_LENGTH) {
 					/* The 2nd line fits */
 					/* we cannot use ei as argument because
 					 * it is not guarenteed dword aligned
@@ -2668,37 +2670,62 @@ ia_css_debug_pipe_graph_dump_stage(
 					strncpy_s(enable_info2,
 						sizeof(enable_info2),
 						ei, l);
-					enable_info2[l]='\0';
-					snprintf(enable_info, 200, "%s\\n%s",
+					enable_info2[l] = '\0';
+					snprintf(enable_info, sizeof(enable_info), "%s\\n%s",
 						enable_info1, enable_info2);
 
 				} else {
 					/* 2nd line is still too long */
-					p=ENABLE_LINE2_MAX_LENGHT2;
+					p = ENABLE_LINE_MAX_LENGTH;
 					while (ei[p] != ',')
 						p--;
 					strncpy_s(enable_info2,
 						sizeof(enable_info2),
 						ei, p);
-					enable_info2[p]='\0';
-					ei+=p+1;
-					strcpy_s(enable_info3,
-						sizeof(enable_info3), ei);
-					snprintf(enable_info, 200,
-						"%s\\n%s\\n%s",
-						enable_info1, enable_info2,
-						enable_info3);
+					enable_info2[p] = '\0';
+					ei += p+1;
+					l = strlen(ei);
+
+					if (l <= ENABLE_LINE_MAX_LENGTH) {
+						/* The 3rd line fits */
+						/* we cannot use ei as argument because
+						* it is not guarenteed dword aligned
+						*/
+						strcpy_s(enable_info3,
+							sizeof(enable_info3), ei);
+						enable_info3[l] = '\0';
+						snprintf(enable_info, sizeof(enable_info),
+							"%s\\n%s\\n%s",
+							enable_info1, enable_info2,
+							enable_info3);
+					} else {
+						/* 3rd line is still too long */
+						p = ENABLE_LINE_MAX_LENGTH;
+						while (ei[p] != ',')
+							p--;
+						strncpy_s(enable_info3,
+							sizeof(enable_info3),
+							ei, p);
+						enable_info3[p] = '\0';
+						ei += p+1;
+						strcpy_s(enable_info3,
+							sizeof(enable_info3), ei);
+						snprintf(enable_info, sizeof(enable_info),
+							"%s\\n%s\\n%s",
+							enable_info1, enable_info2,
+							enable_info3);
+					}
 				}
 			}
 		}
 
-		dtrace_dot("node [shape = circle, fixedsize=true, width=2, "
+		dtrace_dot("node [shape = circle, fixedsize=true, width=2.5, "
 			"label=\"%s\\n%s\\n\\n%s\"]; \"%s(pipe%d)\"",
 			bin_type, blob_name, enable_info, blob_name, id);
 
 	}
 	else {
-		dtrace_dot("node [shape = circle, fixedsize=true, width=2, "
+		dtrace_dot("node [shape = circle, fixedsize=true, width=2.5, "
 			"label=\"%s\\n%s\\n\"]; \"%s(pipe%d)\"",
 			bin_type, blob_name, blob_name, id);
 	}
@@ -2771,7 +2798,7 @@ ia_css_debug_pipe_graph_dump_sp_raw_copy(
 		pg_inst.do_init = false;
 	}
 
-	dtrace_dot("node [shape = circle, fixedsize=true, width=2, "
+	dtrace_dot("node [shape = circle, fixedsize=true, width=2.5, "
 		"label=\"%s\\n%s\"]; \"%s(pipe%d)\"",
 		"sp-binary", "sp_raw_copy", "sp_raw_copy", 1);
 
@@ -2799,11 +2826,11 @@ void
 ia_css_debug_pipe_graph_dump_stream_config(
 	const struct ia_css_stream_config *stream_config)
 {
-	pg_inst.width = stream_config->input_res.width;
-	pg_inst.height = stream_config->input_res.height;
-	pg_inst.eff_width = stream_config->effective_res.width;
-	pg_inst.eff_height = stream_config->effective_res.height;
-	pg_inst.stream_format = stream_config->format;
+	pg_inst.width = stream_config->input_config.input_res.width;
+	pg_inst.height = stream_config->input_config.input_res.height;
+	pg_inst.eff_width = stream_config->input_config.effective_res.width;
+	pg_inst.eff_height = stream_config->input_config.effective_res.height;
+	pg_inst.stream_format = stream_config->input_config.format;
 }
 
 void
@@ -2994,12 +3021,12 @@ ia_css_debug_dump_stream_config(
 	ia_css_debug_dump_stream_config_source(config);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "channel_id: %d\n",
 			config->channel_id);
-	ia_css_debug_dump_resolution(&config->input_res, "input_res");
-	ia_css_debug_dump_resolution(&config->effective_res, "effective_res");
+	ia_css_debug_dump_resolution(&config->input_config.input_res, "input_res");
+	ia_css_debug_dump_resolution(&config->input_config.effective_res, "effective_res");
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "format: %d\n",
-			config->format);
+			config->input_config.format);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "bayer_order: %d\n",
-			config->bayer_order);
+			config->input_config.bayer_order);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sensor_binning_factor: %d\n",
 			config->sensor_binning_factor);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "two_pixels_per_clock: %d\n",

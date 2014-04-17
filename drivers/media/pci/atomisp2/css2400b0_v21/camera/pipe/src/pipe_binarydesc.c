@@ -73,7 +73,7 @@ void ia_css_pipe_get_copy_binarydesc(
 	copy_descr->enable_fractional_ds = false;
 	copy_descr->dvs_env.width = 0;
 	copy_descr->dvs_env.height = 0;
-	copy_descr->stream_format = pipe->stream->config.format;
+	copy_descr->stream_format = pipe->stream->config.input_config.format;
 	copy_descr->in_info = in_info;
 	copy_descr->bds_out_info = NULL;
 	copy_descr->out_info[0] = out_info;
@@ -115,7 +115,7 @@ static void pipe_binarydesc_get_offline(
 	descr->enable_fractional_ds = false;
 	descr->dvs_env.width = 0;
 	descr->dvs_env.height = 0;
-	descr->stream_format = pipe->stream->config.format;
+	descr->stream_format = pipe->stream->config.input_config.format;
 	descr->in_info = in_info;
 	descr->bds_out_info = NULL;
 	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
@@ -229,10 +229,10 @@ enum ia_css_err ia_css_pipe_get_preview_binarydesc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "ia_css_pipe_get_preview_binarydesc() enter:\n");
 
-	in_info->res = pipe->stream->info.effective_info;
+	in_info->res = pipe->stream->config.input_config.effective_res;
 	in_info->padded_width = in_info->res.width;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
-	if (ia_css_util_is_input_format_yuv(pipe->stream->config.format))
+	if (ia_css_util_is_input_format_yuv(pipe->stream->config.input_config.format))
 		mode = IA_CSS_BINARY_MODE_COPY;
 	else
 		in_info->format = IA_CSS_FRAME_FORMAT_RAW;
@@ -248,7 +248,7 @@ enum ia_css_err ia_css_pipe_get_preview_binarydesc(
 		preview_descr->two_ppc =
 		    (pipe->stream->config.pixels_per_clock == 2);
 	}
-	preview_descr->stream_format = pipe->stream->config.format;
+	preview_descr->stream_format = pipe->stream->config.input_config.format;
 
 	/* TODO: Remove this when bds_out_info is available! */
 	*bds_out_info = *in_info;
@@ -342,9 +342,9 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "ia_css_pipe_get_video_binarydesc() enter:\n");
 
-	if (ia_css_util_is_input_format_yuv(pipe->stream->config.format))
+	if (ia_css_util_is_input_format_yuv(pipe->stream->config.input_config.format))
 		mode = IA_CSS_BINARY_MODE_COPY;
-	in_info->res = pipe->stream->info.effective_info;
+	in_info->res = pipe->stream->config.input_config.effective_res;
 	in_info->padded_width = in_info->res.width;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
@@ -536,10 +536,10 @@ void ia_css_pipe_get_primary_binarydesc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "ia_css_pipe_get_primary_binarydesc() enter:\n");
 
-	if (ia_css_util_is_input_format_yuv(pipe->stream->config.format))
+	if (ia_css_util_is_input_format_yuv(pipe->stream->config.input_config.format))
 		mode = IA_CSS_BINARY_MODE_COPY;
 
-	in_info->res = pipe->stream->info.effective_info;
+	in_info->res = pipe->stream->config.input_config.effective_res;
 	in_info->padded_width = in_info->res.width;
 
 #if !defined(HAS_NO_PACKED_RAW_PIXELS)
@@ -561,7 +561,7 @@ void ia_css_pipe_get_primary_binarydesc(
 		prim_descr->online = true;
 		prim_descr->two_ppc =
 		    (pipe->stream->config.pixels_per_clock == 2);
-		prim_descr->stream_format = pipe->stream->config.format;
+		prim_descr->stream_format = pipe->stream->config.input_config.format;
 	}
 	if (mode == IA_CSS_BINARY_MODE_PRIMARY) {
 		prim_descr->isp_pipe_version = pipe->config.isp_pipe_version;
@@ -684,7 +684,7 @@ void ia_css_pipe_get_pre_de_binarydesc(
 		pre_de_descr->online = true;
 		pre_de_descr->two_ppc =
 		    (pipe->stream->config.pixels_per_clock == 2);
-		pre_de_descr->stream_format = pipe->stream->config.format;
+		pre_de_descr->stream_format = pipe->stream->config.input_config.format;
 	}
 	pre_de_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }
@@ -717,7 +717,7 @@ void ia_css_pipe_get_pre_anr_binarydesc(
 		pre_anr_descr->online = true;
 		pre_anr_descr->two_ppc =
 		    (pipe->stream->config.pixels_per_clock == 2);
-		pre_anr_descr->stream_format = pipe->stream->config.format;
+		pre_anr_descr->stream_format = pipe->stream->config.input_config.format;
 	}
 	pre_anr_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }

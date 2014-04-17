@@ -31,7 +31,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatbile
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.1.1"
+#define CSS_API_VERSION_STRING	"2.1.2.0"
 
 /*
 Change log
@@ -57,6 +57,11 @@ v2.1.1.0, modified struct ia_css_pipe_config and struct ia_css_pipe_info and str
 V2.1.1.1
 - added api to lock/unlock of RAW Buffers to Support HALv3 Feature
 
+v2.1.1.2, modified struct ia_css_stream_config:
+ - to support multiple isys streams in one virtual channel, keep the old one for backward compatibility
+
+v2.1.2.0, modify ia_css_stream_config:
+ - add isys_config and input_config to support multiple isys stream within one virtual channel
 */
 
 #endif __CSS_API_VERSION_H

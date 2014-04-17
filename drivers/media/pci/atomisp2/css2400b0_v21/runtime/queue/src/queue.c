@@ -301,10 +301,10 @@ int ia_css_queue_get_used_space(
 
 int ia_css_queue_peek(
 		ia_css_queue_t *qhandle,
-		uint32_t offset,
+		int32_t offset,
 		uint32_t *element)
 {
-	uint32_t num_elems = 0;
+	int32_t num_elems = 0;
 	int error = 0;
 
 	if ((qhandle == NULL) || (element == NULL))

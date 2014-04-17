@@ -39,9 +39,6 @@ const struct ia_css_ob_config default_ob_config = {
 /* TODO: include ob.isp.h to get isp knowledge and
    add assert on platform restrictions */
 
-/* AREA_LENGTH_UNIT is dependent on NWAY, requires rewrite */
-#define AREA_LENGTH_UNIT (1<<12)
-
 void
 ia_css_ob_configure(
 	struct sh_css_isp_ob_stream_config *config,

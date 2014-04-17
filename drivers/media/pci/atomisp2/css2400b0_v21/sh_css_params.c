@@ -726,6 +726,29 @@ sh_css_params_write_to_ddr_internal(
 		struct sh_css_ddr_address_map *ddr_map,
 		struct sh_css_ddr_address_map_size *ddr_map_size);
 
+static struct ia_css_isp_parameters *
+sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
+	bool use_default_config);
+
+static enum ia_css_err
+sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
+		struct ia_css_isp_parameters *params,
+		const struct ia_css_isp_config *config);
+
+static enum ia_css_err
+sh_css_set_global_isp_config_on_pipe(
+	struct ia_css_stream *stream,
+	const struct ia_css_isp_config *config,
+	struct ia_css_pipe *pipe);
+
+#if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
+static enum ia_css_err
+sh_css_set_per_frame_isp_config_on_pipe(
+	struct ia_css_stream *stream,
+	const struct ia_css_isp_config *config,
+	struct ia_css_pipe *pipe);
+#endif
+
 #if !defined(IS_ISP_2500_SYSTEM)
 static void
 ia_css_set_dvs_coefficients(struct ia_css_isp_parameters *params,
@@ -1344,16 +1367,13 @@ sh_css_params_set_binning_factor(struct ia_css_stream *stream, unsigned int binn
 #if !defined(IS_ISP_2500_SYSTEM)
 static void
 sh_css_set_shading_table(struct ia_css_stream *stream,
+			 struct ia_css_isp_parameters *params,
 			 const struct ia_css_shading_table *table)
 {
-	struct ia_css_isp_parameters *params;
-
 	IA_CSS_ENTER_PRIVATE("");
 	if (table == NULL)
 		return;
 	assert(stream != NULL);
-
-	params = stream->isp_params_configs;
 
 	if (!table->enable)
 		table = NULL;
@@ -1365,7 +1385,8 @@ sh_css_set_shading_table(struct ia_css_stream *stream,
 		 * shading table for all pipes. Should replaced by a loop
 		 * and a pipe-specific call.
 		 */
-		sh_css_invalidate_shading_tables(stream);
+		if (!params->output_frame)
+			sh_css_invalidate_shading_tables(stream);
 	}
 
 	IA_CSS_LEAVE_PRIVATE("void");
@@ -2275,27 +2296,114 @@ ia_css_stream_set_isp_config_on_pipe(
 	const struct ia_css_isp_config *config,
 	struct ia_css_pipe *pipe)
 {
-	struct ia_css_isp_parameters *params;
-	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	if ((stream == NULL) || (config == NULL))
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	IA_CSS_ENTER("stream=%p, config=%p, pipe=%p", stream, config, pipe);
 
-	if ((stream == NULL) || (config == NULL)) {
-		err = IA_CSS_ERR_INVALID_ARGUMENTS;
-		goto ret;
+#if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
+	if (config->output_frame)
+		err = sh_css_set_per_frame_isp_config_on_pipe(stream, config, pipe);
+	else
+#endif
+		err = sh_css_set_global_isp_config_on_pipe(stream, config, pipe);
+
+	IA_CSS_LEAVE_ERR(err);
+	return err;
+}
+
+static enum ia_css_err
+sh_css_set_global_isp_config_on_pipe(
+	struct ia_css_stream *stream,
+	const struct ia_css_isp_config *config,
+	struct ia_css_pipe *pipe)
+{
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	IA_CSS_ENTER_PRIVATE("stream=%p, config=%p, pipe=%p", stream, config, pipe);
+
+	sh_css_init_isp_params_from_config(stream, stream->isp_params_configs, config);
+
+	/* Now commit all changes to the SP */
+	err = sh_css_param_update_isp_params(stream, stream->isp_params_configs, sh_css_sp_is_running(), pipe);
+
+	IA_CSS_LEAVE_ERR_PRIVATE(err);
+	return err;
+}
+
+#if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
+static enum ia_css_err
+sh_css_set_per_frame_isp_config_on_pipe(
+	struct ia_css_stream *stream,
+	const struct ia_css_isp_config *config,
+	struct ia_css_pipe *pipe)
+{
+	unsigned i;
+	bool per_frame_config_created = false;
+	enum ia_css_err err = IA_CSS_SUCCESS;
+	struct sh_css_ddr_address_map *ddr_ptrs;
+	struct sh_css_ddr_address_map_size *ddr_ptrs_size;
+	struct ia_css_isp_parameters *params;
+
+	IA_CSS_ENTER_PRIVATE("stream=%p, config=%p, pipe=%p", stream, config, pipe);
+
+	/* create per-frame ISP params object with default values
+	 * from stream->isp_params_configs if one doesn't already exist
+	*/
+	if (!stream->per_frame_isp_params_configs)
+	{
+		stream->per_frame_isp_params_configs = sh_css_create_and_init_isp_params(stream, false);
+		if (!stream->per_frame_isp_params_configs) {
+			IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_INTERNAL_ERROR);
+			return IA_CSS_ERR_INTERNAL_ERROR;
+		}
+		per_frame_config_created = true;
 	}
 
-	params = stream->isp_params_configs;
+	params = stream->per_frame_isp_params_configs;
 
+	/* update new ISP params object with the new config */
+	sh_css_init_isp_params_from_config(stream, params, config);
+
+	if (per_frame_config_created)
+	{
+		ddr_ptrs = &params->ddr_ptrs;
+		ddr_ptrs_size = &params->ddr_ptrs_size;
+		/* create per pipe reference to general ddr_ptrs */
+		for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
+			ref_sh_css_ddr_address_map(ddr_ptrs, &params->pipe_ddr_ptrs[i]);
+			params->pipe_ddr_ptrs_size[i] = *ddr_ptrs_size;
+		}
+	}
+
+	/* now commit to ddr */
+	err = sh_css_param_update_isp_params(stream, params, sh_css_sp_is_running(), pipe);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+
+	IA_CSS_LEAVE_ERR_PRIVATE(err);
+	return err;
+}
+#endif
+
+static enum ia_css_err
+sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
+		struct ia_css_isp_parameters *params,
+		const struct ia_css_isp_config *config)
+{
+	enum ia_css_err err;
+	IA_CSS_ENTER_PRIVATE("stream=%p, config=%p, params=%p", stream, config, params);
 #if !defined(IS_ISP_2500_SYSTEM)
-	err = IA_CSS_SUCCESS;
 	sh_css_set_nr_config(params, config->nr_config);
 	sh_css_set_ee_config(params, config->ee_config);
 	sh_css_set_baa_config(params, config->baa_config);
-	sh_css_set_dvs_6axis_config(params, config->dvs_6axis_config);
+	if (params->dvs_6axis_config)
+		sh_css_set_dvs_6axis_config(params, config->dvs_6axis_config);
 	sh_css_set_dz_config(params, config->dz_config);
 	sh_css_set_motion_vector(params, config->motion_vector);
-	sh_css_set_shading_table(stream, config->shading_table);
+	sh_css_set_shading_table(stream, params, config->shading_table);
 	sh_css_set_morph_table(params, config->morph_table);
 	sh_css_set_macc_table(params, config->macc_table);
 	sh_css_set_gamma_table(params, config->gamma_table);
@@ -2309,21 +2417,18 @@ ia_css_stream_set_isp_config_on_pipe(
 	params->isp_parameters_id = config->isp_config_id;
 
 	ia_css_set_param_exceptions(params);
+
+	err = IA_CSS_SUCCESS;
 	/*
 	   if (config->_config)
 	   ia_css_set_xnr_config(config->xnr_config);
 	*/
 #else /* defined(IS_ISP_2500_SYSTEM) */
+	(void)stream;
+	(void)params;
 	err = sh_css_set_config_product_specific(config);
-	if (err != IA_CSS_SUCCESS)
-		goto ret;
 #endif
-
-	/* Now commit all changes to the SP */
-	sh_css_param_update_isp_params(stream, sh_css_sp_is_running(), pipe);
-
-ret:
-	IA_CSS_LEAVE_ERR(err);
+	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
 }
 
@@ -2832,13 +2937,11 @@ enum ia_css_err
 ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
-	bool succ = true;
 	unsigned isp_pipe_version = 1;
 	unsigned i;
 	struct sh_css_ddr_address_map *ddr_ptrs;
 	struct sh_css_ddr_address_map_size *ddr_ptrs_size;
 	struct ia_css_isp_parameters *params;
-	size_t params_size;
 
 	assert(stream != NULL);
 
@@ -2854,18 +2957,72 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	    assert(isp_pipe_version == ia_css_pipe_get_isp_pipe_version(stream->pipes[i]));
 	}
 
-	stream->isp_params_configs = sh_css_malloc(sizeof(*stream->isp_params_configs));
+	/* done once */
+#if !defined(IS_ISP_2500_SYSTEM)
+	sh_css_params_reconfigure_gdc_lut();
+#endif
+
+	stream->per_frame_isp_params_configs = NULL;
+	stream->isp_params_configs = sh_css_create_and_init_isp_params(stream, true);
 	if (!stream->isp_params_configs) {
 		IA_CSS_ERROR("out of memory");
 		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-	} else {
-		memset(stream->isp_params_configs, 0, sizeof(*stream->isp_params_configs));
 	}
 
 	params = stream->isp_params_configs;
 	ddr_ptrs = &params->ddr_ptrs;
 	ddr_ptrs_size = &params->ddr_ptrs_size;
+
+#if defined(IS_ISP_2500_SYSTEM)
+	sh_css_set_default_product_specific();
+#endif
+
+	/* now commit to ddr */
+	err = sh_css_param_update_isp_params(stream, params, false, NULL);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+
+	/* create per pipe reference to general ddr_ptrs */
+	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
+		ref_sh_css_ddr_address_map(ddr_ptrs, &params->pipe_ddr_ptrs[i]);
+		params->pipe_ddr_ptrs_size[i] = *ddr_ptrs_size;
+	}
+
+	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
+
+	return IA_CSS_SUCCESS;
+}
+
+static struct ia_css_isp_parameters *
+sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
+	bool use_default_config)
+{
+	bool succ = true;
+	unsigned i, isp_pipe_version = 1;
+	struct sh_css_ddr_address_map *ddr_ptrs;
+	struct sh_css_ddr_address_map_size *ddr_ptrs_size;
+	struct ia_css_isp_parameters *stream_params;
+	size_t params_size;
+
+	struct ia_css_isp_parameters *params =
+				sh_css_malloc(sizeof(struct ia_css_isp_parameters));
+
+	if (!params)
+	{
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+		return NULL;
+	} else {
+		memset(params, 0, sizeof(struct ia_css_isp_parameters));
+	}
+
+	ddr_ptrs = &params->ddr_ptrs;
+	ddr_ptrs_size = &params->ddr_ptrs_size;
+	isp_pipe_version = ia_css_pipe_get_isp_pipe_version(stream->pipes[0]);
+	stream_params = stream->isp_params_configs;
+
+	if (!use_default_config && !stream_params)
+		return NULL;
 
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
 		memset(&params->pipe_ddr_ptrs[i], 0,
@@ -2883,116 +3040,181 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	params_size = sizeof(struct sh_css_isp_params);
 #endif
 	ddr_ptrs_size->isp_param = params_size;
-	ddr_ptrs->isp_param = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
-				mmgr_malloc(params_size));
+	ddr_ptrs->isp_param =
+				ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
+					mmgr_malloc(params_size));
 	succ &= (ddr_ptrs->isp_param != mmgr_NULL);
 
 #if defined(IS_ISP_2500_SYSTEM)
-	ddr_ptrs_size->acc_cluster_params_for_sp = sizeof(struct isp_acc_param);
-	ddr_ptrs->acc_cluster_params_for_sp = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
-				mmgr_malloc(sizeof(struct isp_acc_param)));
+	ddr_ptrs_size->acc_cluster_params_for_sp =
+				sizeof(struct isp_acc_param);
+	ddr_ptrs->acc_cluster_params_for_sp =
+				ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
+					mmgr_malloc(sizeof(struct isp_acc_param)));
 	succ &= (ddr_ptrs->acc_cluster_params_for_sp != mmgr_NULL);
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
 	ddr_ptrs_size->macc_tbl = sizeof(struct ia_css_macc_table);
-	ddr_ptrs->macc_tbl = ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
-				mmgr_malloc(sizeof(struct ia_css_macc_table)));
+	ddr_ptrs->macc_tbl =
+				ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
+					mmgr_malloc(sizeof(struct ia_css_macc_table)));
 	succ &= (ddr_ptrs->macc_tbl != mmgr_NULL);
 #endif
 
-#if !defined(IS_ISP_2500_SYSTEM)
-
-	sh_css_set_nr_config(params, &default_nr_config);
-	sh_css_set_ee_config(params, &default_ee_config);
-	if (isp_pipe_version == 1)
-		sh_css_set_macc_table(params, &default_macc_table);
-	else
-		sh_css_set_macc_table(params, &default_macc2_table);
-	sh_css_set_gamma_table(params, &default_gamma_table);
-	sh_css_set_ctc_table(params, &default_ctc_table);
-	sh_css_set_baa_config(params, &default_baa_config);
-	sh_css_set_dz_config(params, &default_dz_config);
-
-	ia_css_set_s3a_config(params, &default_3a_config);
-	ia_css_set_wb_config(params, &default_wb_config);
-	ia_css_set_csc_config(params, &default_cc_config);
-	ia_css_set_tnr_config(params, &default_tnr_config);
-	ia_css_set_ob_config(params, &default_ob_config);
-	ia_css_set_dp_config(params, &default_dp_config);
-	ia_css_set_de_config(params, &default_de_config);
-	ia_css_set_gc_config(params, &default_gc_config);
-	ia_css_set_anr_config(params, &default_anr_config);
-	ia_css_set_anr2_config(params, &default_anr_thres);
-	ia_css_set_ce_config(params, &default_ce_config);
-	ia_css_set_xnr_table_config(params, &default_xnr_table);
-	ia_css_set_ecd_config(params, &default_ecd_config);
-	ia_css_set_ynr_config(params, &default_ynr_config);
-	ia_css_set_fc_config(params, &default_fc_config);
-	ia_css_set_cnr_config(params, &default_cnr_config);
-	ia_css_set_macc_config(params, &default_macc_config);
-	ia_css_set_ctc_config(params, &default_ctc_config);
-	ia_css_set_aa_config(params, &default_aa_config);
-	ia_css_set_r_gamma_config(params, &default_r_gamma_table);
-	ia_css_set_g_gamma_config(params, &default_g_gamma_table);
-	ia_css_set_b_gamma_config(params, &default_b_gamma_table);
-	ia_css_set_yuv2rgb_config(params, &default_yuv2rgb_cc_config);
-	ia_css_set_rgb2yuv_config(params, &default_rgb2yuv_cc_config);
-	ia_css_set_xnr_config(params, &default_xnr_config);
-
-	ia_css_set_param_exceptions(params);
-
-	for (i = 0; i < N_GDC_ID; i++)
-		gdc_lut_store((gdc_ID_t)i, zoom_table);
-	params->fpn_config.data = NULL;
-	params->config_changed[IA_CSS_FPN_ID] = true;
-	params->fpn_config.enabled = 0;
-	params->morph_table = NULL;
-	params->morph_table_changed = true;
-	params->sc_table = NULL;
-	params->sc_table_changed = true;
-	params->motion_config = default_motion_config;
-	params->motion_config_changed = true;
-	params->dvs2_hor_coefs.odd_real = NULL;
-	params->dvs2_hor_coefs.odd_imag = NULL;
-	params->dvs2_hor_coefs.even_real = NULL;
-	params->dvs2_hor_coefs.even_imag = NULL;
-	params->dvs2_ver_coefs.odd_real = NULL;
-	params->dvs2_ver_coefs.odd_imag = NULL;
-	params->dvs2_ver_coefs.even_real = NULL;
-	params->dvs2_ver_coefs.even_imag = NULL;
-	params->dvs2_coef_table_changed = true;
-
-	params->dis_hor_coef_tbl = NULL;
-	params->dis_ver_coef_tbl = NULL;
-	params->dis_coef_table_changed = true;
-
-	/*Initialise and generate table later in star*/
-	params->dvs_6axis_config = NULL;
-	params->dvs_6axis_config_changed = true;
-#endif
-
-#if defined(IS_ISP_2500_SYSTEM)
-	sh_css_set_default_product_specific();
-#endif
-
 	if (!succ)
-		return IA_CSS_ERR_INTERNAL_ERROR;
-
-	/* now commit to ddr */
-	err = sh_css_param_update_isp_params(stream, false, NULL);
-	if (err != IA_CSS_SUCCESS)
-		return err;
-
-	/* create per pipe reference to general ddr_ptrs */
-	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
-		ref_sh_css_ddr_address_map(ddr_ptrs, &params->pipe_ddr_ptrs[i]);
-		params->pipe_ddr_ptrs_size[i] = *ddr_ptrs_size;
+	{
+		sh_css_free(params);
+		IA_CSS_LOG("sh_css_create_and_init_isp_params() leave !succ");
+		return NULL;
 	}
 
-	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
+#if !defined(IS_ISP_2500_SYSTEM)
+	if (use_default_config)
+	{
+		sh_css_set_nr_config(params, &default_nr_config);
+		sh_css_set_ee_config(params, &default_ee_config);
+		if (isp_pipe_version == 1)
+			sh_css_set_macc_table(params, &default_macc_table);
+		else
+			sh_css_set_macc_table(params, &default_macc2_table);
+		sh_css_set_gamma_table(params, &default_gamma_table);
+		sh_css_set_ctc_table(params, &default_ctc_table);
+		sh_css_set_baa_config(params, &default_baa_config);
+		sh_css_set_dz_config(params, &default_dz_config);
 
-	return IA_CSS_SUCCESS;
+		ia_css_set_s3a_config(params, &default_3a_config);
+		ia_css_set_wb_config(params, &default_wb_config);
+		ia_css_set_csc_config(params, &default_cc_config);
+		ia_css_set_tnr_config(params, &default_tnr_config);
+		ia_css_set_ob_config(params, &default_ob_config);
+		ia_css_set_dp_config(params, &default_dp_config);
+		ia_css_set_de_config(params, &default_de_config);
+		ia_css_set_gc_config(params, &default_gc_config);
+		ia_css_set_anr_config(params, &default_anr_config);
+		ia_css_set_anr2_config(params, &default_anr_thres);
+		ia_css_set_ce_config(params, &default_ce_config);
+		ia_css_set_xnr_table_config(params, &default_xnr_table);
+		ia_css_set_ecd_config(params, &default_ecd_config);
+		ia_css_set_ynr_config(params, &default_ynr_config);
+		ia_css_set_fc_config(params, &default_fc_config);
+		ia_css_set_cnr_config(params, &default_cnr_config);
+		ia_css_set_macc_config(params, &default_macc_config);
+		ia_css_set_ctc_config(params, &default_ctc_config);
+		ia_css_set_aa_config(params, &default_aa_config);
+		ia_css_set_r_gamma_config(params, &default_r_gamma_table);
+		ia_css_set_g_gamma_config(params, &default_g_gamma_table);
+		ia_css_set_b_gamma_config(params, &default_b_gamma_table);
+		ia_css_set_yuv2rgb_config(params, &default_yuv2rgb_cc_config);
+		ia_css_set_rgb2yuv_config(params, &default_rgb2yuv_cc_config);
+		ia_css_set_xnr_config(params, &default_xnr_config);
+
+		ia_css_set_param_exceptions(params);
+
+		/* gdc_lut_store is moved to ia_css_stream_isp_parameters_init() */
+
+		params->fpn_config.data = NULL;
+		params->config_changed[IA_CSS_FPN_ID] = true;
+		params->fpn_config.enabled = 0;
+
+		params->motion_config = default_motion_config;
+		params->motion_config_changed = true;
+
+		params->morph_table = NULL;
+		params->morph_table_changed = true;
+
+		params->sc_table = NULL;
+		params->sc_table_changed = true;
+
+		params->dvs_6axis_config = NULL;
+		params->dvs_6axis_config_changed = true;
+
+		params->dvs2_hor_coefs.odd_real = NULL;
+		params->dvs2_hor_coefs.odd_imag = NULL;
+		params->dvs2_hor_coefs.even_real = NULL;
+		params->dvs2_hor_coefs.even_imag = NULL;
+		params->dvs2_ver_coefs.odd_real = NULL;
+		params->dvs2_ver_coefs.odd_imag = NULL;
+		params->dvs2_ver_coefs.even_real = NULL;
+		params->dvs2_ver_coefs.even_imag = NULL;
+		params->dvs2_coef_table_changed = true;
+
+		params->dis_hor_coef_tbl = NULL;
+		params->dis_ver_coef_tbl = NULL;
+		params->dis_coef_table_changed = true;
+	}
+	else
+	{
+		sh_css_set_nr_config(params, &stream_params->nr_config);
+		sh_css_set_ee_config(params, &stream_params->ee_config);
+		if (isp_pipe_version == 1)
+			sh_css_set_macc_table(params, &stream_params->macc_table);
+		else
+			sh_css_set_macc_table(params, &stream_params->macc_table);
+		sh_css_set_gamma_table(params, &stream_params->gc_table);
+		sh_css_set_ctc_table(params, &stream_params->ctc_table);
+		sh_css_set_baa_config(params, &stream_params->raw_config);
+		sh_css_set_dz_config(params, &stream_params->dz_config);
+
+		ia_css_set_s3a_config(params, &stream_params->s3a_config);
+		ia_css_set_wb_config(params, &stream_params->wb_config);
+		ia_css_set_csc_config(params, &stream_params->cc_config);
+		ia_css_set_tnr_config(params, &stream_params->tnr_config);
+		ia_css_set_ob_config(params, &stream_params->ob_config);
+		ia_css_set_dp_config(params, &stream_params->dp_config);
+		ia_css_set_de_config(params, &stream_params->de_config);
+		ia_css_set_gc_config(params, &stream_params->gc_config);
+		ia_css_set_anr_config(params, &stream_params->anr_config);
+		ia_css_set_anr2_config(params, &stream_params->anr_thres);
+		ia_css_set_ce_config(params, &stream_params->ce_config);
+		ia_css_set_xnr_table_config(params, &stream_params->xnr_table);
+		ia_css_set_ecd_config(params, &stream_params->ecd_config);
+		ia_css_set_ynr_config(params, &stream_params->ynr_config);
+		ia_css_set_fc_config(params, &stream_params->fc_config);
+		ia_css_set_cnr_config(params, &stream_params->cnr_config);
+		ia_css_set_macc_config(params, &stream_params->macc_config);
+		ia_css_set_ctc_config(params, &stream_params->ctc_config);
+		ia_css_set_aa_config(params, &stream_params->aa_config);
+		ia_css_set_r_gamma_config(params, &stream_params->r_gamma_table);
+		ia_css_set_g_gamma_config(params, &stream_params->g_gamma_table);
+		ia_css_set_b_gamma_config(params, &stream_params->b_gamma_table);
+		ia_css_set_yuv2rgb_config(params, &stream_params->yuv2rgb_cc_config);
+		ia_css_set_rgb2yuv_config(params, &stream_params->rgb2yuv_cc_config);
+		ia_css_set_xnr_config(params, &stream_params->xnr_config);
+
+		ia_css_set_param_exceptions(params);
+
+		/* gdc_lut_store is moved to ia_css_stream_isp_parameters_init() */
+
+		params->fpn_config.data = stream_params->fpn_config.data;
+		params->config_changed[IA_CSS_FPN_ID] = stream_params->config_changed[IA_CSS_FPN_ID];
+		params->fpn_config.enabled = stream_params->fpn_config.enabled;
+
+		sh_css_set_motion_vector(params, &stream_params->motion_config);
+		sh_css_set_morph_table(params, stream_params->morph_table);
+		sh_css_set_shading_table(stream, params, stream_params->sc_table);
+		if (stream_params->dvs_6axis_config)
+			params->dvs_6axis_config = generate_dvs_6axis_table_from_config(stream_params->dvs_6axis_config);
+
+		params->dvs2_hor_coefs.odd_real = stream_params->dvs2_hor_coefs.odd_real;
+		params->dvs2_hor_coefs.odd_imag = stream_params->dvs2_hor_coefs.odd_imag;
+		params->dvs2_hor_coefs.even_real = stream_params->dvs2_hor_coefs.even_real;
+		params->dvs2_hor_coefs.even_imag = stream_params->dvs2_hor_coefs.even_imag;
+		params->dvs2_ver_coefs.odd_real = stream_params->dvs2_ver_coefs.odd_real;
+		params->dvs2_ver_coefs.odd_imag = stream_params->dvs2_ver_coefs.odd_imag;
+		params->dvs2_ver_coefs.even_real = stream_params->dvs2_ver_coefs.even_real;
+		params->dvs2_ver_coefs.even_imag = stream_params->dvs2_ver_coefs.even_imag;
+		params->dvs2_coef_table_changed = stream_params->dvs2_coef_table_changed;
+
+		params->dis_hor_coef_tbl = stream_params->dis_hor_coef_tbl;
+		params->dis_ver_coef_tbl = stream_params->dis_ver_coef_tbl;
+		params->dis_coef_table_changed = stream_params->dis_coef_table_changed;
+	}
+#else
+	(void)use_default_config;
+#endif
+
+	return params;
 }
 
 enum ia_css_err
@@ -3127,12 +3349,20 @@ ia_css_stream_isp_parameters_uninit(struct ia_css_stream *stream)
 {
 	int i;
 	struct ia_css_isp_parameters *params = stream->isp_params_configs;
+	struct ia_css_isp_parameters *per_frame_params =
+						stream->per_frame_isp_params_configs;
 
 	IA_CSS_ENTER_PRIVATE("void");
 	/* free existing ddr_ptr maps */
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
+	{
 		free_map(&params->pipe_ddr_ptrs[i]);
+		if (per_frame_params)
+			free_map(&per_frame_params->pipe_ddr_ptrs[i]);
+	}
 	free_map(&params->ddr_ptrs);
+	if (per_frame_params)
+		free_map(&per_frame_params->ddr_ptrs);
 
 #if !defined(IS_ISP_2500_SYSTEM)
 	if (params->fpn_config.data)
@@ -3142,8 +3372,13 @@ ia_css_stream_isp_parameters_uninit(struct ia_css_stream *stream)
 	/* Free up theDVS table memory blocks before recomputing new table */
 	if (params->dvs_6axis_config)
 		free_dvs_6axis_table(&(params->dvs_6axis_config));
+	if(per_frame_params && per_frame_params->dvs_6axis_config)
+		free_dvs_6axis_table(&(per_frame_params->dvs_6axis_config));
 
 	sh_css_free(params);
+	if (per_frame_params)
+		sh_css_free(per_frame_params);
+
 	IA_CSS_LEAVE_PRIVATE("void");
 }
 
@@ -3420,8 +3655,11 @@ sh_css_update_acc_cluster_params_to_ddr(hrt_vaddress ddr_ptr)
 
 void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 {
+	unsigned int i;
 	hrt_vaddress cpy;
-	enum sh_css_queue_id queue_id;
+	enum sh_css_queue_id param_queue_ids[3] = {	IA_CSS_PARAMETER_SET_QUEUE_ID,
+							IA_CSS_PER_FRAME_PARAMETER_SET_QUEUE_ID,
+							SH_CSS_INVALID_QUEUE_ID};
 
 	IA_CSS_ENTER_PRIVATE("void");
 
@@ -3431,26 +3669,20 @@ void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 		return ;
 	}
 
-#if 0
-		/* Get queue instance */
-		ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
-		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
-#else
-		/* use hard-coded value for backward compatibility, will enable above code later */
-		queue_id = IA_CSS_PARAMETER_SET_QUEUE_ID;
-#endif
-	/* clean-up old copy */
-	while (IA_CSS_SUCCESS == ia_css_bufq_dequeue_buffer(queue_id, (uint32_t *)&cpy)){
-		/* TMP: keep track of dequeued param set count
-		 */
-		g_param_buffer_dequeue_count++;
-		ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_2,
-			0,
-			queue_id,
-			0);
+	for (i = 0; SH_CSS_INVALID_QUEUE_ID != param_queue_ids[i]; i++) {
+		/* clean-up old copy */
+		while (IA_CSS_SUCCESS == ia_css_bufq_dequeue_buffer(param_queue_ids[i], (uint32_t *)&cpy)){
+			/* TMP: keep track of dequeued param set count
+			 */
+			g_param_buffer_dequeue_count++;
+			ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_2,
+				0,
+				param_queue_ids[i],
+				0);
 
-		IA_CSS_LOG("dequeued param set %x from %d, release ref", cpy, 0);
-		free_ia_css_isp_parameter_set_info(cpy);
+			IA_CSS_LOG("dequeued param set %x from %d, release ref", cpy, 0);
+			free_ia_css_isp_parameter_set_info(cpy);
+		}
 	}
 
 	IA_CSS_LEAVE_PRIVATE("void");
@@ -3492,24 +3724,23 @@ process_kernel_parameters(unsigned int pipe_id,
 #endif
 
 enum ia_css_err
-sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct ia_css_pipe *pipe_in)
+sh_css_param_update_isp_params(struct ia_css_stream *stream,
+	struct ia_css_isp_parameters *params,
+	bool commit,
+	struct ia_css_pipe *pipe_in)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	hrt_vaddress cpy;
 	int i;
 	unsigned int raw_bit_depth = 10;
 	unsigned int isp_pipe_version = 1;
-	struct ia_css_isp_parameters *params;
 	bool acc_cluster_params_changed = false;
 
 	(void)acc_cluster_params_changed;
 
 	assert(stream != NULL);
 
-	params = stream->isp_params_configs;
-
 	IA_CSS_ENTER_PRIVATE("pipe=%p, isp_parameters_id=%d", pipe_in, params->isp_parameters_id);
-
 	raw_bit_depth = ia_css_stream_input_format_bits_per_pixel(stream);
 	isp_pipe_version = ia_css_pipe_get_isp_pipe_version(stream->pipes[0]);
 	/* this code assuemes that all the pipes have the same pipeversion. */
@@ -3552,7 +3783,14 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream, bool commit, struct
 		pipe_num = ia_css_pipe_get_pipe_num(pipe);
 		ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
 
+#if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
+		ia_css_query_internal_queue_id(params->output_frame
+						? IA_CSS_BUFFER_TYPE_PER_FRAME_PARAMETER_SET
+						: IA_CSS_BUFFER_TYPE_PARAMETER_SET,
+						thread_id, &queue_id);
+#else
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_PARAMETER_SET, thread_id, &queue_id);
+#endif
 		if (!sh_css_sp_is_running()) {
 			/* SP is not running. The queues are not valid */
 			err = IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;

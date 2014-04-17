@@ -61,6 +61,9 @@
 struct ia_css_dvs_6axis_config *
 generate_dvs_6axis_table(const struct ia_css_resolution	*frame_res, const struct ia_css_resolution *dvs_offset);
 
+struct ia_css_dvs_6axis_config *
+generate_dvs_6axis_table_from_config(struct ia_css_dvs_6axis_config  *dvs_config_src);
+
 void
 free_dvs_6axis_table(struct ia_css_dvs_6axis_config  **dvs_6axis_config);
 

@@ -436,7 +436,7 @@ enum sh_css_stage_type {
 struct sh_css_sp_pipeline_terminal {
 	union {
 		/* Input System 2401 */
-		virtual_input_system_t		virtual_input_system;
+		virtual_input_system_stream_t		virtual_input_system_stream[IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH];
 	} context;
 
 	/*
@@ -446,13 +446,14 @@ struct sh_css_sp_pipeline_terminal {
 	 */
 	union {
 		/* Input System 2401 */
-		virtual_input_system_cfg_t	virtual_input_system_cfg;
+		virtual_input_system_stream_cfg_t	virtual_input_system_stream_cfg[IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH];
 	} ctrl;
 };
 
 struct sh_css_sp_pipeline_io {
 	struct sh_css_sp_pipeline_terminal	input;
-	struct sh_css_sp_pipeline_terminal	output;
+	/* pqiao: comment out temporarily to save dmem */
+	/*struct sh_css_sp_pipeline_terminal	output;*/
 };
 
 struct sh_css_sp_pipeline_io_status {
@@ -529,6 +530,9 @@ struct sh_css_sp_pipeline {
 		uint32_t        size;     /* Total size (in bytes) */
 		hrt_vaddress    cont_buf; /* Address of continuous buffer */
 	} metadata;
+#endif
+#if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
+	enum sh_css_queue_id	output_frame_queue_id;
 #endif
 	union {
 		struct {

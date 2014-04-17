@@ -29,7 +29,7 @@ unsigned int ia_css_pipe_util_pipe_input_format_bpp(
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
 
-	return ia_css_util_input_format_bpp(pipe->stream->config.format,
+	return ia_css_util_input_format_bpp(pipe->stream->config.input_config.format,
 			  pipe->stream->config.pixels_per_clock == 2);
 }
 
