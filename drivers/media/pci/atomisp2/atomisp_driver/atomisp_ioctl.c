@@ -1187,6 +1187,9 @@ static int atomisp_qbuf(struct file *file, void *fh, struct v4l2_buffer *buf)
 		buf->flags |= V4L2_BUF_FLAG_QUEUED;
 		buf->flags &= ~V4L2_BUF_FLAG_DONE;
 
+		dev_dbg(isp->dev, "queue userptr buffer %p with start address %p, ia_css_frame %p\n",
+		        pipe->capq.bufs[buf->index], (void *)buf->m.userptr,
+		        handle);
 	} else if (buf->memory == V4L2_MEMORY_MMAP) {
 		buf->flags |= V4L2_BUF_FLAG_MAPPED;
 		buf->flags |= V4L2_BUF_FLAG_QUEUED;
@@ -1203,10 +1206,15 @@ done:
 
 	/* TODO: do this better, not best way to queue to css */
 	if (asd->streaming == ATOMISP_DEVICE_STREAMING_ENABLED) {
-		atomisp_qbuffers_to_css(asd);
+		if (buf->memory == V4L2_MEMORY_USERPTR &&
+		    asd->per_frame_setting->val) {
+			atomisp_handle_parameter_and_buffer(pipe);
+		} else {
+			atomisp_qbuffers_to_css(asd);
 
-		if (!timer_pending(&isp->wdt) && atomisp_buffers_queued(asd))
-			mod_timer(&isp->wdt, jiffies + isp->wdt_duration);
+			if (!timer_pending(&isp->wdt) && atomisp_buffers_queued(asd))
+				mod_timer(&isp->wdt, jiffies + isp->wdt_duration);
+		}
 	}
 	mutex_unlock(&isp->mutex);
 
@@ -1320,6 +1328,7 @@ static int atomisp_dqbuf(struct file *file, void *fh, struct v4l2_buffer *buf)
 	 */
 	buf->reserved &= 0x0000ffff;
 	buf->reserved |= __get_frame_exp_id(pipe, buf) << 16;
+	buf->reserved2 = pipe->frame_config_id[buf->index];
 	mutex_unlock(&isp->mutex);
 
 	dev_dbg(isp->dev, "dqbuf buffer %d (%s)\n", buf->index, vdev->name);
@@ -1456,6 +1465,9 @@ static int atomisp_streamon(struct file *file, void *fh,
 				mutex_lock(&isp->mutex);
 			}
 
+			/* handle per_frame_setting parameter and buffers */
+			atomisp_handle_parameter_and_buffer(pipe);
+
 			/*
 			 * only ZSL/SDV capture request will be here, raise
 			 * the ISP freq to the highest possible to minimize
@@ -1521,6 +1533,9 @@ static int atomisp_streamon(struct file *file, void *fh,
 	isp->sw_contex.invalid_frame = false;
 	asd->params.dis_proj_data_valid = false;
 	asd->latest_preview_exp_id = 0;
+
+	/* handle per_frame_setting parameter and buffers */
+	atomisp_handle_parameter_and_buffer(pipe);
 
 	atomisp_qbuffers_to_css(asd);
 
@@ -1714,6 +1729,10 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 
 	spin_lock_irqsave(&pipe->irq_lock, flags);
 	list_for_each_entry_safe(vb, _vb, &pipe->activeq, queue) {
+		vb->state = VIDEOBUF_PREPARED;
+		list_del(&vb->queue);
+	}
+	list_for_each_entry_safe(vb, _vb, &pipe->buffers_waiting_for_param, queue) {
 		vb->state = VIDEOBUF_PREPARED;
 		list_del(&vb->queue);
 	}
@@ -2488,7 +2507,7 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 
 	case ATOMISP_IOC_S_PARAMETERS:
-		err = atomisp_set_parameters(asd, arg);
+		err = atomisp_set_parameters(vdev, arg);
 		break;
 
 	case ATOMISP_IOC_S_CONT_CAPTURE_CONFIG:

@@ -183,6 +183,8 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 		      enum atomisp_css_pipe_id pipe_id, bool in_reset);
 
 void atomisp_css_update_isp_params(struct atomisp_sub_device *asd);
+void atomisp_css_update_isp_params_on_pipe(struct atomisp_sub_device *asd,
+					struct ia_css_pipe *pipe);
 
 int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
 			     enum atomisp_input_stream_id stream_id,

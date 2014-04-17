@@ -273,9 +273,6 @@ static int hmm_get_mmu_base_addr(unsigned int *mmu_base_addr)
 static void atomisp_isp_parameters_clean_up(
 				struct atomisp_css_isp_config *config)
 {
-	if (config->morph_table)
-		ia_css_morph_table_free(config->morph_table);
-
 	/*
 	 * Set NULL to configs pointer to avoid they are set into isp again when
 	 * some configs are changed and need to be updated later.
@@ -1314,6 +1311,30 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 	atomisp_isp_parameters_clean_up(&asd->params.config);
 }
 
+
+void atomisp_css_update_isp_params_on_pipe(struct atomisp_sub_device *asd,
+					struct ia_css_pipe *pipe)
+{
+	enum ia_css_err ret;
+
+	if (!pipe) {
+		atomisp_css_update_isp_params(asd);
+		return;
+	}
+
+	dev_dbg(asd->isp->dev, "%s: apply parameter for ia_css_frame %p with isp_config_id %d on pipe %p.\n",
+	        __func__, asd->params.config.output_frame,
+	        asd->params.config.isp_config_id, pipe);
+
+	ret = ia_css_stream_set_isp_config_on_pipe(
+			asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
+			&asd->params.config, pipe);
+	if (ret != IA_CSS_SUCCESS)
+		dev_warn(asd->isp->dev, "%s: ia_css_stream_set_isp_config_on_pipe failed %d\n",
+		         __func__, ret);
+	atomisp_isp_parameters_clean_up(&asd->params.config);
+}
+
 int atomisp_css_queue_buffer(struct atomisp_sub_device *asd,
 			     enum atomisp_input_stream_id stream_id,
 			     enum atomisp_css_pipe_id pipe_id,
@@ -2112,6 +2133,8 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	}
 	asd->params.dis_proj_data_valid = false;
 	spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
+
+	atomisp_flush_params_queue(asd);
 
 	return 0;
 }
@@ -3986,4 +4009,16 @@ int atomisp_css_dump_blob_infor(void)
 			bd[i-1].header.info.isp.sp.id, bd[i-1].name);
 	}
 	return 0;
+}
+
+void atomisp_css_set_isp_config_id(struct atomisp_sub_device *asd,
+			uint32_t isp_config_id)
+{
+	asd->params.config.isp_config_id = isp_config_id;
+}
+
+void atomisp_css_set_isp_config_applied_frame(struct atomisp_sub_device *asd,
+			struct atomisp_css_frame *output_frame)
+{
+	asd->params.config.output_frame = output_frame;
 }

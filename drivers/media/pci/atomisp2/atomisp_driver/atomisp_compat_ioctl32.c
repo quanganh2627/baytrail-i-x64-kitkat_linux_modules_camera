@@ -656,6 +656,8 @@ static int get_atomisp_parameters32(struct atomisp_parameters *kp,
 		if (get_user((*dst), src))
 			return -EFAULT;
 	}
+	if (get_user(kp->isp_config_id, &up->isp_config_id))
+		return -EFAULT;
 
 	{
 		union {

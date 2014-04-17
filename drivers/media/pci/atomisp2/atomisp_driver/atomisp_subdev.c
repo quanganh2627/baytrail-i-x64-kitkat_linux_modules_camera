@@ -664,6 +664,7 @@ static void isp_subdev_init_params(struct atomisp_sub_device *asd)
 	INIT_LIST_HEAD(&asd->dis_stats_in_css);
 	spin_lock_init(&asd->dis_stats_lock);
 	INIT_LIST_HEAD(&asd->metadata);
+	INIT_LIST_HEAD(&asd->per_frame_params);
 }
 
 /*
@@ -801,6 +802,21 @@ static int s_ctrl(struct v4l2_ctrl *ctrl)
 	switch (ctrl->id) {
 	case V4L2_CID_RUN_MODE:
 		return __atomisp_update_run_mode(asd);
+	case V4L2_CID_PER_FRAME_SETTING:
+		if (asd->streaming != ATOMISP_DEVICE_STREAMING_DISABLED) {
+			dev_err(asd->isp->dev, "ISP is streaming, it is not supported to change the per_frame_setting mode\n");
+			return -EINVAL;
+		}
+
+		/*
+		 * flush the buffer queue parameter queue if HAL disables
+		 * the per_frame setting moode.
+		 */
+		if (!ctrl->val)
+			atomisp_flush_params_queue(asd);
+
+		/* FIXME, do we have to flush the buffer queue here ?*/
+		return 0;
 	}
 
 	return 0;
@@ -920,6 +936,27 @@ static const struct v4l2_ctrl_config ctrl_continuous_viewfinder = {
 	.def = 0,
 };
 
+/*
+ * Control for enabling per-frame parameter setting
+ *
+ * When enabled, camera HAL will set per-frame parameter with a specific output
+ * frame pointer in the parameter to indicate this parameter needs to apply on
+ * which frame. This feature can only be changed when ISP stops streaming.
+ *
+ * By setting this to disabled, the parameter will always be taken as global
+ * parameter and will apply to all frames and all pipelines of this subdev.
+ */
+static const struct v4l2_ctrl_config ctrl_per_frame_setting = {
+	.ops = &ctrl_ops,
+	.id = V4L2_CID_PER_FRAME_SETTING,
+	.type = V4L2_CTRL_TYPE_BOOLEAN,
+	.name = "Pre-frame parameter setting",
+	.min = 0,
+	.max = 1,
+	.step = 1,
+	.def = 0,
+};
+
 static void atomisp_init_subdev_pipe(struct atomisp_sub_device *asd,
 		struct atomisp_video_pipe *pipe, enum v4l2_buf_type buf_type)
 {
@@ -929,6 +966,7 @@ static void atomisp_init_subdev_pipe(struct atomisp_sub_device *asd,
 	spin_lock_init(&pipe->irq_lock);
 	INIT_LIST_HEAD(&pipe->activeq);
 	INIT_LIST_HEAD(&pipe->activeq_out);
+	INIT_LIST_HEAD(&pipe->buffers_waiting_for_param);
 }
 
 /*
@@ -1057,6 +1095,10 @@ static int isp_subdev_init_entities(struct atomisp_sub_device *asd)
 	asd->continuous_raw_buffer_size =
 			v4l2_ctrl_new_custom(&asd->ctrl_handler,
 					     &ctrl_continuous_raw_buffer_size,
+					     NULL);
+	asd->per_frame_setting =
+			v4l2_ctrl_new_custom(&asd->ctrl_handler,
+					     &ctrl_per_frame_setting,
 					     NULL);
 
 	/* Make controls visible on subdev as well. */

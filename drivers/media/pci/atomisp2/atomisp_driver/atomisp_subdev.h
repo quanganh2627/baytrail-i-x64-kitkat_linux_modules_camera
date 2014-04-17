@@ -74,6 +74,11 @@ struct atomisp_video_pipe {
 	struct videobuf_queue outq;
 	struct list_head activeq;
 	struct list_head activeq_out;
+	/*
+	 * the buffers waiting for per-frame parameters, this is only valid
+	 * in per-frame setting mode.
+	 */
+	struct list_head buffers_waiting_for_param;
 	unsigned int buffers_in_css;
 
 	/* irq_lock is used to protect video buffer state change operations and
@@ -87,6 +92,8 @@ struct atomisp_video_pipe {
 	uint32_t sh_fmt;
 
 	struct atomisp_sub_device *asd;
+
+	unsigned int frame_config_id[VIDEO_MAX_FRAME];
 };
 
 struct atomisp_pad_format {
@@ -149,8 +156,12 @@ struct atomisp_css_params {
 	struct ia_css_shading_table *shading_table;
 	struct ia_css_morph_table   *morph_table;
 
-	struct ia_css_frame	*output_frame;
-	uint32_t		isp_config_id;
+	/*
+	 * Used to store the user pointer address of the frame. driver needs to
+	 * translate to ia_css_frame * and then set to CSS.
+	 */
+	void		*output_frame;
+	uint32_t	isp_config_id;
 };
 
 struct atomisp_subdev_params {
@@ -217,6 +228,14 @@ struct atomisp_subdev_params {
 	bool css_update_params_needed;
 };
 
+struct atomisp_css_params_with_list {
+	/* parameters for CSS */
+	struct atomisp_css_params params;
+	/* userspace parameters, in order to know which parameters need to update */
+	struct atomisp_parameters us_params;
+	struct list_head list;
+};
+
 struct atomisp_sub_device {
 	struct v4l2_subdev subdev;
 	struct media_pad pads[ATOMISP_SUBDEV_PADS_NUM];
@@ -241,8 +260,11 @@ struct atomisp_sub_device {
 	struct v4l2_ctrl *continuous_mode;
 	struct v4l2_ctrl *continuous_raw_buffer_size;
 	struct v4l2_ctrl *continuous_viewfinder;
+	struct v4l2_ctrl *per_frame_setting;
 
 	struct atomisp_subdev_params params;
+	/* the link list to store per_frame params */
+	struct list_head per_frame_params;
 
 	struct atomisp_stream_env stream_env[ATOMISP_INPUT_STREAM_NUM];
 

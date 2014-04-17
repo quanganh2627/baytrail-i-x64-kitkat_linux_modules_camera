@@ -684,6 +684,19 @@ void atomisp_flush_bufs_and_wakeup(struct atomisp_sub_device *asd)
 	atomisp_flush_video_pipe(asd, &asd->video_out_video_capture);
 }
 
+/* clean out the parameters that did not apply */
+void atomisp_flush_params_queue(struct atomisp_sub_device *asd)
+{
+	struct atomisp_css_params_with_list *param;
+
+	while(!list_empty(&asd->per_frame_params)) {
+		param = list_entry(asd->per_frame_params.next,
+				struct atomisp_css_params_with_list, list);
+		list_del(&param->list);
+		atomisp_free_css_parameters(&param->params);
+		atomisp_kernel_free(param);
+	}
+}
 
 /* find atomisp_video_pipe with css pipe id, buffer type and atomisp run_mode */
 static struct atomisp_video_pipe *__atomisp_get_pipe(
@@ -863,6 +876,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			}
 			vb = atomisp_css_frame_to_vbuf(pipe, frame);
 			WARN_ON(!vb);
+			pipe->frame_config_id[vb->i] = frame->isp_config_id;
 			break;
 		case CSS_BUFFER_TYPE_OUTPUT_FRAME:
 			if (isp->sw_contex.invalid_frame) {
@@ -887,6 +901,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 				break;
 			}
 
+			pipe->frame_config_id[vb->i] = frame->isp_config_id;
 			if (asd->params.flash_state ==
 			    ATOMISP_FLASH_ONGOING) {
 				if (frame->flash_state
@@ -1337,8 +1352,10 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 			continue;
 		if (frame_done_found[asd->index] &&
 		    asd->params.css_update_params_needed) {
-			atomisp_css_update_isp_params(asd);
-			asd->params.css_update_params_needed = false;
+			if (!asd->per_frame_setting->val) {
+				atomisp_css_update_isp_params(asd);
+				asd->params.css_update_params_needed = false;
+			}
 			frame_done_found[asd->index] = false;
 		}
 		atomisp_setup_flash(asd);
@@ -1738,17 +1755,7 @@ int atomisp_gamma_correction(struct atomisp_sub_device *asd, int flag,
 
 void atomisp_free_internal_buffers(struct atomisp_sub_device *asd)
 {
-	if (asd->params.css_param.morph_table) {
-		atomisp_css_morph_table_free(
-				asd->params.css_param.morph_table);
-		asd->params.css_param.morph_table = NULL;
-	}
-
-	if (asd->params.css_param.shading_table) {
-		atomisp_css_shading_table_free(
-				asd->params.css_param.shading_table);
-		asd->params.css_param.shading_table = NULL;
-	}
+	atomisp_free_css_parameters(&asd->params.css_param);
 
 	if (asd->raw_output_frame) {
 		atomisp_css_frame_free(asd->raw_output_frame);
@@ -2246,14 +2253,11 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 	return 0;
 }
 
-static int __atomisp_apply_css_parameters(
+void atomisp_apply_css_parameters(
 				struct atomisp_sub_device *asd,
 				struct atomisp_parameters *arg,
 				struct atomisp_css_params *css_param)
 {
-	if (!arg || !asd || !css_param)
-		return -EINVAL;
-
 	if (arg->wb_config)
 		atomisp_css_set_wb_config(asd, &css_param->wb_config);
 
@@ -2339,6 +2343,8 @@ static int __atomisp_apply_css_parameters(
 
 	if (arg->dvs_6axis_config)
 		atomisp_css_set_dvs_6axis(asd, css_param->dvs_6axis);
+
+	atomisp_css_set_isp_config_id(asd, css_param->isp_config_id);
 	/*
 	 * These configurations are on used by ISP1.x, not for ISP2.x,
 	 * so do not handle them. see comments of ia_css_isp_config.
@@ -2350,7 +2356,6 @@ static int __atomisp_apply_css_parameters(
 	 * 6 ctc_table
 	 * 7 dvs_coefs
 	 */
-	return 0;
 }
 
 static int __atomisp_cp_general_isp_parameters(
@@ -2486,6 +2491,8 @@ static int __atomisp_cp_general_isp_parameters(
 				   sizeof(struct atomisp_css_anr_thres)))
 			return -EFAULT;
 
+	css_param->output_frame = arg->output_frame;
+	css_param->isp_config_id = arg->isp_config_id;
 	/*
 	 * These configurations are on used by ISP1.x, not for ISP2.x,
 	 * so do not handle them. see comments of ia_css_isp_config.
@@ -2763,60 +2770,197 @@ error:
 	return ret;
 }
 
+void atomisp_free_css_parameters(struct atomisp_css_params *css_param) {
+	if (css_param->dvs_6axis) {
+		ia_css_dvs2_6axis_config_free(css_param->dvs_6axis);
+		css_param->dvs_6axis = NULL;
+	}
+	if (css_param->dvs2_coeff) {
+		ia_css_dvs2_coefficients_free(css_param->dvs2_coeff);
+		css_param->dvs2_coeff = NULL;
+	}
+	if (css_param->shading_table) {
+		ia_css_shading_table_free(css_param->shading_table);
+		css_param->shading_table = NULL;
+	}
+	if (css_param->morph_table) {
+		ia_css_morph_table_free(css_param->morph_table);
+		css_param->morph_table = NULL;
+	}
+}
+
+/*
+ * Loop parameter queue list and buffer queue list to find out if matched items
+ * and then set parameter to CSS and enqueue buffer to CSS.
+ */
+void atomisp_handle_parameter_and_buffer(
+					struct atomisp_video_pipe *pipe)
+{
+	struct atomisp_sub_device *asd = pipe->asd;
+	struct atomisp_device *isp = asd->isp;
+	struct videobuf_buffer *vb = NULL, *vb_tmp;
+	struct atomisp_css_params_with_list *param = NULL, *param_tmp;
+	struct videobuf_vmalloc_memory *vm_mem;
+	struct ia_css_pipe *css_pipe = NULL;
+	unsigned long irqflags;
+	bool buffer_is_found = false;
+	bool need_to_enqueue_buffer = false;
+
+	if (!asd->per_frame_setting->val || atomisp_is_vf_pipe(pipe))
+		return;
+
+	/*
+	 * CSS/FW requires set parameter and enqueue buffer happen after ISP
+	 * is streamon.
+	 */
+	if (!asd->streaming == ATOMISP_DEVICE_STREAMING_ENABLED)
+		return;
+
+	if (list_empty (&asd->per_frame_params) ||
+	    list_empty(&pipe->buffers_waiting_for_param))
+		return;
+
+	list_for_each_entry_safe(param, param_tmp,
+			&asd->per_frame_params, list) {
+		list_for_each_entry_safe(vb, vb_tmp,
+				&pipe->buffers_waiting_for_param, queue) {
+			if ((unsigned long)param->params.output_frame
+				== vb->baddr) {
+				list_del(&param->list);
+				list_del(&vb->queue);
+				vm_mem = vb->priv;
+				buffer_is_found = true;
+				break;
+			}
+		}
+		if (buffer_is_found) {
+			/* update and apply the parameters */
+			atomisp_apply_css_parameters(asd,
+						&param->us_params,
+						&param->params);
+			atomisp_css_set_isp_config_applied_frame(asd,
+						vm_mem->vaddr);
+			if (pipe == &asd->video_out_capture) {
+				css_pipe =
+				  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+				  pipes[IA_CSS_PIPE_ID_CAPTURE];
+			} else if (pipe == &asd->video_out_preview) {
+				css_pipe =
+				  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+				  pipes[IA_CSS_PIPE_ID_PREVIEW];
+			} else if (pipe == &asd->video_out_video_capture) {
+				css_pipe =
+				  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+				  pipes[IA_CSS_PIPE_ID_VIDEO];
+			} else {
+				dev_warn(isp->dev, "%s: failed to find a proper CSS pipe\n",
+				         __func__);
+				css_pipe = NULL;
+			}
+			atomisp_css_update_isp_params_on_pipe(asd, css_pipe);
+			/* free the parameters */
+			atomisp_free_css_parameters(&param->params);
+			atomisp_kernel_free(param);
+
+			spin_lock_irqsave(&pipe->irq_lock, irqflags);
+			list_add_tail(&vb->queue, &pipe->activeq);
+			spin_unlock_irqrestore(&pipe->irq_lock, irqflags);
+
+			buffer_is_found = false;
+			need_to_enqueue_buffer = true;
+		}
+	}
+
+	if (need_to_enqueue_buffer) {
+		atomisp_qbuffers_to_css(asd);
+		if (!timer_pending(&isp->wdt) && atomisp_buffers_queued(asd))
+			mod_timer(&isp->wdt, jiffies + isp->wdt_duration);
+	}
+}
+
 /*
 * Function to configure ISP parameters
 */
-int atomisp_set_parameters(struct atomisp_sub_device *asd,
+int atomisp_set_parameters(struct video_device *vdev,
 			struct atomisp_parameters *arg)
 {
+	struct atomisp_video_pipe *pipe = atomisp_to_video_pipe(vdev);
+	struct atomisp_sub_device *asd = pipe->asd;
+	struct atomisp_css_params_with_list *param = NULL;
+	struct atomisp_css_params *css_param = &asd->params.css_param;
 	int ret;
 
-	ret = __atomisp_cp_general_isp_parameters(asd, arg,
-						  &asd->params.css_param);
-	if (ret)
-		return ret;
+	if (asd->per_frame_setting->val) {
+		if (!arg->output_frame) {
+			dev_err(asd->isp->dev, "%s: the parameters should have valid output_frame pointer\n",
+			        __func__);
+			return -EINVAL;
+		}
+		dev_dbg(asd->isp->dev, "%s: set parameter for userptr frame %p of %s\n",
+		        __func__, arg->output_frame, vdev->name);
 
-	ret = __atomisp_cp_lsc_table(asd, arg->shading_table,
-				     &asd->params.css_param);
-	if (ret)
-		return ret;
+		/*
+		 * if per-frame setting enabled, we allocate a new paramter
+		 * buffer to cache the parameters and only when frame buffers
+		 * are ready, the parameters will be set to CSS.
+		 */
+		param = atomisp_kernel_zalloc(sizeof(*param), true);
+		if (!param) {
+			dev_err(asd->isp->dev, "%s: failed to alloc params buffer\n",
+			        __func__);
+			return -ENOMEM;
+		}
+		memcpy(&param->us_params, arg, sizeof(*arg));
+		css_param = &param->params;
+	}
 
-	ret = __atomisp_cp_morph_table(asd, arg->morph_table,
-				       &asd->params.css_param);
-		return ret;
-
-	ret = __atomisp_cp_morph_table(asd, arg->morph_table,
-					&asd->params.css_param);
+	ret = __atomisp_cp_general_isp_parameters(asd, arg, css_param);
 	if (ret)
-		return ret;
+		goto apply_parameter_failed;
+
+	ret = __atomisp_cp_lsc_table(asd, arg->shading_table, css_param);
+	if (ret)
+		goto apply_parameter_failed;
+
+	ret = __atomisp_cp_morph_table(asd, arg->morph_table, css_param);
+	if (ret)
+		goto apply_parameter_failed;
 
 	ret = __atomisp_css_cp_dvs2_coefs(asd,
 			(struct ia_css_dvs2_coefficients *)arg->dvs2_coefs,
-					  &asd->params.css_param);
+			css_param);
 	if (ret)
-		return ret;
+		goto apply_parameter_failed;
 
 	ret = atomisp_cp_dvs_6axis_config(asd, arg->dvs_6axis_config,
-					&asd->params.css_param);
+					  css_param);
 	if (ret)
-		return ret;
+		goto apply_parameter_failed;
 
-	ret = __atomisp_apply_css_parameters(asd, arg, &asd->params.css_param);
-	if (ret)
-		return ret;
+	if (!asd->per_frame_setting->val) {
+		atomisp_apply_css_parameters(asd, arg, css_param);
+		/* indicate to CSS that we have parameters to be updated */
+		asd->params.css_update_params_needed = true;
 
-	/* indicate to CSS that we have parametes to be updated */
-	asd->params.css_update_params_needed = true;
-
-	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream
-		&& (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_state
-		    != CSS_STREAM_STARTED
-		|| asd->run_mode->val
-			== ATOMISP_RUN_MODE_STILL_CAPTURE)) {
-		atomisp_css_update_isp_params(asd);
-		asd->params.css_update_params_needed = false;
+		if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream
+			&& (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+				stream_state != CSS_STREAM_STARTED
+			    || asd->run_mode->val
+				== ATOMISP_RUN_MODE_STILL_CAPTURE)) {
+			atomisp_css_update_isp_params(asd);
+			asd->params.css_update_params_needed = false;
+		}
+	} else {
+		list_add_tail(&param->list, &asd->per_frame_params);
+		atomisp_handle_parameter_and_buffer(pipe);
 	}
+
 	return 0;
+
+apply_parameter_failed:
+	if (asd->per_frame_setting->val)
+		atomisp_kernel_free(css_param);
+	return ret;
 }
 
 /*
@@ -4642,4 +4786,18 @@ int atomisp_source_pad_to_stream_id(struct atomisp_sub_device *asd,
 	}
 
 	return stream_id;
+}
+
+bool atomisp_is_vf_pipe(struct atomisp_video_pipe *pipe)
+{
+	struct atomisp_sub_device *asd = pipe->asd;
+
+	if (pipe == &asd->video_out_vf)
+		return true;
+
+	if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
+	    pipe == &asd->video_out_preview)
+		return true;
+
+	return false;
 }

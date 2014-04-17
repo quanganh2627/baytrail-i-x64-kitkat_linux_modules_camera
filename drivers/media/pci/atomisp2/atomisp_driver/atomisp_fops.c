@@ -400,8 +400,14 @@ static void atomisp_buf_queue(struct videobuf_queue *vq,
 			      struct videobuf_buffer *vb)
 {
 	struct atomisp_video_pipe *pipe = vq->priv_data;
+	struct atomisp_sub_device *asd = pipe->asd;
 
-	list_add_tail(&vb->queue, &pipe->activeq);
+	/* per_frame setting only apply on USERPTR buffer and Main buffer */
+	if (vb->baddr && asd->per_frame_setting->val &&
+	    !atomisp_is_vf_pipe(pipe))
+		list_add_tail(&vb->queue, &pipe->buffers_waiting_for_param);
+	else
+		list_add_tail(&vb->queue, &pipe->activeq);
 	vb->state = VIDEOBUF_QUEUED;
 }
 
@@ -488,6 +494,7 @@ static int atomisp_init_pipe(struct atomisp_video_pipe *pipe)
 
 	INIT_LIST_HEAD(&pipe->activeq);
 	INIT_LIST_HEAD(&pipe->activeq_out);
+	INIT_LIST_HEAD(&pipe->buffers_waiting_for_param);
 
 	return 0;
 }

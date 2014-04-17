@@ -218,6 +218,36 @@ struct atomisp_parameters32 {
 	compat_uptr_t dvs2_coefs; /* DVS 2.0 coefficients */
 	compat_uptr_t capture_config;
 	compat_uptr_t anr_thres;
+
+	compat_uptr_t	lin_2500_config;       /* Skylake: Linearization config */
+	compat_uptr_t	obgrid_2500_config;    /* Skylake: OBGRID config */
+	compat_uptr_t	bnr_2500_config;       /* Skylake: bayer denoise config */
+	compat_uptr_t	shd_2500_config;       /* Skylake: shading config */
+	compat_uptr_t	dm_2500_config;        /* Skylake: demosaic config */
+	compat_uptr_t	rgbpp_2500_config;     /* Skylake: RGBPP config */
+	compat_uptr_t	yuvp1_2500_config;     /* Skylake: yuvp1 config */
+	compat_uptr_t	yuvp2_2500_config;     /* Skylake: yuvp2 config */
+	compat_uptr_t	tnr_2500_config;       /* Skylake: TNR config */
+	compat_uptr_t	dpc_2500_config;       /* Skylake: DPC config */
+	compat_uptr_t	awb_2500_config;       /* Skylake: auto white balance config */
+	compat_uptr_t	awb_fr_2500_config;    /* Skylake: auto white balance filter response config */
+	compat_uptr_t	anr_2500_config;       /* Skylake: ANR config */
+	compat_uptr_t	af_2500_config;        /* Skylake: auto focus config */
+	compat_uptr_t	ae_2500_config;        /* Skylake: auto exposure config */
+	compat_uptr_t	bds_2500_config;       /* Skylake: bayer downscaler config */
+	compat_uptr_t	dvs_2500_config;       /* Skylake: digital video stabilization config */
+	compat_uptr_t	res_mgr_2500_config;
+
+	/*
+	 * Output frame pointer the config is to be applied to (optional),
+	 * set to NULL to make this config is applied as global.
+	 */
+	compat_uptr_t	output_frame;
+	/*
+	 * Unique ID to track which config was actually applied to a particular
+	 * frame, driver will send this id back with output frame together.
+	 */
+	uint32_t	isp_config_id;
 };
 
 struct atomisp_acc_fw_load_to_pipe32 {

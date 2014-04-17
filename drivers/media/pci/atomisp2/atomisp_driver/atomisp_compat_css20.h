@@ -248,4 +248,10 @@ int atomisp_css_debug_dump_isp_binary(void);
 int atomisp_css_dump_sp_raw_copy_linecount(bool reduced);
 
 int atomisp_css_dump_blob_infor(void);
+
+void atomisp_css_set_isp_config_id(struct atomisp_sub_device *asd,
+			uint32_t isp_config_id);
+
+void atomisp_css_set_isp_config_applied_frame(struct atomisp_sub_device *asd,
+			struct atomisp_css_frame *output_frame);
 #endif

@@ -204,9 +204,8 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 			 struct atomisp_metadata *config);
 
-int atomisp_set_parameters(struct atomisp_sub_device *asd,
-		struct atomisp_parameters *arg);
-
+int atomisp_set_parameters(struct video_device *vdev,
+			struct atomisp_parameters *arg);
 /*
  * Function to set/get isp parameters to isp
  */
@@ -332,4 +331,15 @@ void atomisp_eof_event(struct atomisp_sub_device *asd, uint8_t exp_id);
 mipi_port_ID_t __get_mipi_port(struct atomisp_device *isp,
 				enum atomisp_camera_port port);
 
+bool atomisp_is_vf_pipe(struct atomisp_video_pipe *pipe);
+
+void atomisp_apply_css_parameters(
+				struct atomisp_sub_device *asd,
+				struct atomisp_parameters *arg,
+				struct atomisp_css_params *css_param);
+void atomisp_free_css_parameters(struct atomisp_css_params *css_param);
+
+void atomisp_handle_parameter_and_buffer(struct atomisp_video_pipe *pipe);
+
+void atomisp_flush_params_queue(struct atomisp_sub_device *asd);
 #endif /* __ATOMISP_CMD_H__ */
