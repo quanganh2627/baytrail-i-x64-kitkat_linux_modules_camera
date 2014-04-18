@@ -39,8 +39,6 @@
 
 #include "ov5693.h"
 
-static const uint32_t ov5693_embedded_effective_size = 28;
-
 /* i2c read/write stuff */
 static int ov5693_read_reg(struct i2c_client *client,
 			   u16 data_length, u16 reg, u16 *val)
@@ -909,10 +907,6 @@ static int ov5693_s_mbus_fmt(struct v4l2_subdev *sd,
 					&dev->ov5693_res[dev->fmt_idx]);
 	if (ret)
 		dev_err(&client->dev, "failed to get integration_factor\n");
-
-	ov5693_info->metadata_width = fmt->width * 10 / 8;
-	ov5693_info->metadata_height = 1;
-	ov5693_info->metadata_effective_width = &ov5693_embedded_effective_size;
 
 done:
 	mutex_unlock(&dev->input_lock);
