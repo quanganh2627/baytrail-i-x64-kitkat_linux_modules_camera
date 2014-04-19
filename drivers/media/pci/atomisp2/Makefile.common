@@ -53,6 +53,8 @@ atomisp-$(postfix)-objs := \
 		css/isp/kernels/vf/vf_1.0/ia_css_vf.host.o \
 		css/isp/kernels/crop/crop_1.0/ia_css_crop.host.o \
 		css/isp/kernels/qplane/qplane_2/ia_css_qplane.host.o \
+		css/isp/kernels/sdis/sdis_1.0/ia_css_sdis.host.o \
+		css/isp/kernels/sdis/sdis_2/ia_css_sdis2.host.o \
 		css/isp/kernels/copy_output/copy_output_1.0/ia_css_copy_output.host.o \
 		css/isp/kernels/iterator/iterator_1.0/ia_css_iterator.host.o \
 		css/runtime/binary/src/binary.o \
