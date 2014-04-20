@@ -200,6 +200,7 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define PARAM_MIPI_OUT_LANE_NUM		0x3e
 #define REG_OUTPUT_MIPI_4LANE		0x04
 
+
 /* Category 2_MONITOR mode */
 
 #define MONITOR_ZOOM		0x01
@@ -218,6 +219,11 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define CAP_NV12_MODE		0x0a
 #define START_DUAL_STATUS	0x1f
 #define START_DUAL_CAPTURE 	0x05
+
+#define ZSL_OUTOUT_SELECT_FMT	0x27
+#define ZSL_OUTOUT_FMT_NV12	0x00
+#define ZSL_OUTOUT_FMT_NV21	0x21
+
 
 
 /* Category 3_Auto Exposure */
@@ -356,6 +362,7 @@ enum M10MO_MODES {
 	M10MO_FLASH_WRITE_MODE,
 	M10MO_PARAM_SETTING_MODE,
 	M10MO_MONITOR_MODE,
+	M10MO_MONITOR_MODE_ZSL,
 	M10MO_SINGLE_CAPTURE_MODE
 };
 
