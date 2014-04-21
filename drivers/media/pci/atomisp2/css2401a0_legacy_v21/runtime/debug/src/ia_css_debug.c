@@ -1081,13 +1081,13 @@ void ia_css_debug_binary_print(const struct ia_css_binary *bi)
 	ia_css_debug_dtrace(2, "vf_downscale_log2 = %d\n",
 			    bi->vf_downscale_log2);
 	ia_css_debug_dtrace(2, "dis_deci_factor_log2 = %d\n",
-			    bi->dis_deci_factor_log2);
+			    bi->dis.deci_factor_log2);
 	ia_css_debug_dtrace(2, "dis hor coef num = %d\n",
-			    bi->dis_hor_coef_num_isp);
+			    bi->dis.coef.pad.width);
 	ia_css_debug_dtrace(2, "dis ver coef num = %d\n",
-			    bi->dis_ver_coef_num_isp);
+			    bi->dis.coef.pad.height);
 	ia_css_debug_dtrace(2, "dis hor proj num = %d\n",
-			    bi->dis_ver_proj_num_isp);
+			    bi->dis.proj.pad.height);
 	ia_css_debug_dtrace(2, "sctbl_width_per_color = %d\n",
 			    bi->sctbl_width_per_color);
 	ia_css_debug_dtrace(2, "s3atbl_width = %d\n", bi->s3atbl_width);

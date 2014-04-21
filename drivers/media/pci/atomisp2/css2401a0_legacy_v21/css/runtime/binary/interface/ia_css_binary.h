@@ -114,7 +114,6 @@ struct ia_css_binary {
 	struct ia_css_frame_info vf_frame_info;
 	int                      input_buf_vectors;
 	int                      deci_factor_log2;
-	int                      dis_deci_factor_log2;
 	int                      vf_downscale_log2;
 	int                      s3atbl_width;
 	int                      s3atbl_height;
@@ -126,18 +125,7 @@ struct ia_css_binary {
 	int                      sctbl_width_per_color;
 	int                      sctbl_aligned_width_per_color;
 	int                      sctbl_height;
-	int                      dis_hor_grid_num_3a;
-	int                      dis_ver_grid_num_3a;
-	int                      dis_hor_grid_num_isp;
-	int                      dis_ver_grid_num_isp;
-	int                      dis_hor_coef_num_3a;
-	int                      dis_ver_coef_num_3a;
-	int                      dis_hor_coef_num_isp;
-	int                      dis_ver_coef_num_isp;
-	int                      dis_hor_proj_num_3a;
-	int                      dis_ver_proj_num_3a;
-	int                      dis_hor_proj_num_isp;
-	int                      dis_ver_proj_num_isp;
+	struct ia_css_sdis_info	 dis;
 	struct ia_css_resolution dvs_envelope;
 	bool                     online;
 	unsigned int             uds_xc;
@@ -159,7 +147,6 @@ struct ia_css_binary {
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	0,	/* input_buf_vectors */ \
 	0,	/* deci_factor_log2 */ \
-	0,	/* dis_deci_factor_log2 */ \
 	0,	/* vf_downscale_log2 */ \
 	0,	/* s3atbl_width */ \
 	0,	/* s3atbl_height */ \
@@ -171,18 +158,7 @@ struct ia_css_binary {
 	0,	/* sctbl_width_per_color */ \
 	0,	/* sctbl_aligned_width_per_color */ \
 	0,	/* sctbl_height */ \
-	0,	/* dis_hor_grid_num_3a */ \
-	0,	/* dis_ver_grid_num_3a */ \
-	0,	/* dis_hor_grid_num_isp */ \
-	0,	/* dis_ver_grid_num_isp */ \
-	0,	/* dis_hor_coef_num_3a */ \
-	0,	/* dis_ver_coef_num_3a */ \
-	0,	/* dis_hor_coef_num_isp */ \
-	0,	/* dis_ver_coef_num_isp */ \
-	0,	/* dis_hor_proj_num_3a */ \
-	0,	/* dis_ver_proj_num_3a */ \
-	0,	/* dis_hor_proj_num_isp */ \
-	0,	/* dis_ver_proj_num_isp */ \
+	IA_CSS_DEFAULT_SDIS_INFO, /* dis */ \
 	{ 0, 0 },/* dvs_envelope_info */ \
 	false,	/* online */ \
 	0,	/* uds_xc */ \

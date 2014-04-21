@@ -1,4 +1,5 @@
-/* Release Version: irci_gerrit_20140417_0703 */
+/* Release Version: irci_master_20140419_1303 */
+/* Release Version: irci_master_20140419_1303 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -58,6 +59,8 @@
 #include "isp/kernels/ob/ob_1.0/ia_css_ob_types.h"
 #include "isp/kernels/s3a/s3a_1.0/ia_css_s3a_types.h"
 #include "isp/kernels/sc/sc_1.0/ia_css_sc_types.h"
+#include "isp/kernels/sdis/sdis_1.0/ia_css_sdis_types.h"
+#include "isp/kernels/sdis/sdis_2/ia_css_sdis2_types.h"
 #include "isp/kernels/tnr/tnr_1.0/ia_css_tnr_types.h"
 #include "isp/kernels/wb/wb_1.0/ia_css_wb_types.h"
 #include "isp/kernels/xnr/xnr_1.0/ia_css_xnr_types.h"
@@ -118,57 +121,6 @@ struct ia_css_isp_data {
 	uint32_t   address; /* ISP address */
 	uint32_t   size;    /* Disabled if 0 */
 };
-
-/** DVS statistics grid
- *
- *  ISP block: SDVS1 (DIS/DVS Support for DIS/DVS ver.1 (2-axes))
- *             SDVS2 (DVS Support for DVS ver.2 (6-axes))
- *  ISP1: SDVS1 is used.
- *  ISP2: SDVS2 is used.
- */
-struct ia_css_dvs_grid_info {
-	uint32_t enable;        /**< DVS statistics enabled.
-					0:disabled, 1:enabled */
-	uint32_t width;		/**< Width of DVS grid table.
-					(= Horizontal number of grid cells
-					in table, which cells have effective
-					statistics.)
-					For DVS1, this is equal to
-					 the number of vertical statistics. */
-	uint32_t aligned_width; /**< Stride of each grid line.
-					(= Horizontal number of grid cells
-					in table, which means
-					the allocated width.) */
-	uint32_t height;	/**< Height of DVS grid table.
-					(= Vertical number of grid cells
-					in table, which cells have effective
-					statistics.)
-					For DVS1, This is equal to
-					the number of horizontal statistics. */
-	uint32_t aligned_height;/**< Stride of each grid column.
-					(= Vertical number of grid cells
-					in table, which means
-					the allocated height.) */
-	uint32_t bqs_per_grid_cell; /**< Grid cell size in BQ(Bayer Quad) unit.
-					(1BQ means {Gr,R,B,Gb}(2x2 pixels).)
-					For DVS1, valid value is 64.
-					For DVS2, valid value is only 64,
-					currently. */
-	uint32_t num_hor_coefs;	/**< Number of horizontal coefficients. */
-	uint32_t num_ver_coefs;	/**< Number of vertical coefficients. */
-};
-
-#define DEFAULT_DVS_GRID_INFO \
-{ \
-	0,				/* enable */ \
-	0,				/* width */ \
-	0,				/* aligned_width */ \
-	0,				/* height */ \
-	0,				/* aligned_height */ \
-	0,				/* bqs_per_grid_cell */ \
-	0,				/* num_hor_coefs */ \
-	0,				/* num_ver_coefs */ \
-}
 
 /** structure that describes the 3A and DIS grids */
 struct ia_css_grid_info {
@@ -369,70 +321,6 @@ struct ia_css_isp_config {
 
 	struct ia_css_frame	*output_frame;	/**< Output frame the config is to be applied to (optional) */
 	uint32_t			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
-};
-
-/** DVS 1.0 Coefficients.
- *  This structure describes the coefficients that are needed for the dvs statistics.
- */
-
-struct ia_css_dvs_coefficients {
-	struct ia_css_dvs_grid_info grid;/**< grid info contains the dimensions of the dvs grid */
-	int16_t *hor_coefs;	/**< the pointer to int16_t[grid.num_hor_coefs * IA_CSS_DVS_NUM_COEF_TYPES]
-				     containing the horizontal coefficients */
-	int16_t *ver_coefs;	/**< the pointer to int16_t[grid.num_ver_coefs * IA_CSS_DVS_NUM_COEF_TYPES]
-				     containing the vertical coefficients */
-};
-
-/** DVS 1.0 Statistics.
- *  This structure describes the statistics that are generated using the provided coefficients.
- */
-
-struct ia_css_dvs_statistics {
-	struct ia_css_dvs_grid_info grid;/**< grid info contains the dimensions of the dvs grid */
-	int32_t *hor_proj;	/**< the pointer to int16_t[grid.height * IA_CSS_DVS_NUM_COEF_TYPES]
-				     containing the horizontal projections */
-	int32_t *ver_proj;	/**< the pointer to int16_t[grid.width * IA_CSS_DVS_NUM_COEF_TYPES]
-				     containing the vertical projections */
-};
-
-/** DVS 2.0 Coefficient types. This structure contains 4 pointers to
- *  arrays that contain the coeffients for each type.
- */
-struct ia_css_dvs2_coef_types {
-	int16_t *odd_real; /**< real part of the odd coefficients*/
-	int16_t *odd_imag; /**< imaginary part of the odd coefficients*/
-	int16_t *even_real;/**< real part of the even coefficients*/
-	int16_t *even_imag;/**< imaginary part of the even coefficients*/
-};
-
-/** DVS 2.0 Coefficients. This structure describes the coefficients that are needed for the dvs statistics.
- *  e.g. hor_coefs.odd_real is the pointer to int16_t[grid.num_hor_coefs] containing the horizontal odd real
- *  coefficients.
- */
-struct ia_css_dvs2_coefficients {
-	struct ia_css_dvs_grid_info grid;        /**< grid info contains the dimensions of the dvs grid */
-	struct ia_css_dvs2_coef_types hor_coefs; /**< struct with pointers that contain the horizontal coefficients */
-	struct ia_css_dvs2_coef_types ver_coefs; /**< struct with pointers that contain the vertical coefficients */
-};
-
-/** DVS 2.0 Statistic types. This structure contains 4 pointers to
- *  arrays that contain the statistics for each type.
- */
-struct ia_css_dvs2_stat_types {
-	int32_t *odd_real; /**< real part of the odd statistics*/
-	int32_t *odd_imag; /**< imaginary part of the odd statistics*/
-	int32_t *even_real;/**< real part of the even statistics*/
-	int32_t *even_imag;/**< imaginary part of the even statistics*/
-};
-
-/** DVS 2.0 Statistics. This structure describes the statistics that are generated using the provided coefficients.
- *  e.g. hor_prod.odd_real is the pointer to int16_t[grid.aligned_height][grid.aligned_width] containing
- *  the horizontal odd real statistics. Valid statistics data area is int16_t[0..grid.height-1][0..grid.width-1]
- */
-struct ia_css_dvs2_statistics {
-	struct ia_css_dvs_grid_info grid;       /**< grid info contains the dimensions of the dvs grid */
-	struct ia_css_dvs2_stat_types hor_prod; /**< struct with pointers that contain the horizontal statistics */
-	struct ia_css_dvs2_stat_types ver_prod; /**< struct with pointers that contain the vertical statistics */
 };
 
 #endif /* _IA_CSS_TYPES_H_ */

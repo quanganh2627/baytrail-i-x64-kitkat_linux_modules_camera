@@ -32,6 +32,7 @@
 #include "sh_css_defs.h"
 #include "sh_css_legacy.h"
 #include "vf/vf_1.0/ia_css_vf.host.h"
+#include "sdis/sdis_1.0/ia_css_sdis.host.h"
 
 #include "memory_access.h"
 
@@ -122,13 +123,13 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 	 * valid for DIS.
 	 */
 	dvs_info->enable            = binary->info->sp.enable.dis;
-	dvs_info->width             = binary->dis_hor_grid_num_3a;
-	dvs_info->height            = binary->dis_ver_grid_num_3a;
-	dvs_info->aligned_width     = binary->dis_hor_grid_num_isp;
-	dvs_info->aligned_height    = binary->dis_ver_grid_num_isp;
-	dvs_info->bqs_per_grid_cell = 1 << binary->dis_deci_factor_log2;
-	dvs_info->num_hor_coefs     = binary->dis_hor_coef_num_3a;
-	dvs_info->num_ver_coefs     = binary->dis_ver_coef_num_3a;
+	dvs_info->width             = binary->dis.grid.dim.width;
+	dvs_info->height            = binary->dis.grid.dim.height;
+	dvs_info->aligned_width     = binary->dis.grid.pad.width;
+	dvs_info->aligned_height    = binary->dis.grid.pad.height;
+	dvs_info->bqs_per_grid_cell = 1 << binary->dis.deci_factor_log2;
+	dvs_info->num_hor_coefs     = binary->dis.coef.dim.width;
+	dvs_info->num_ver_coefs     = binary->dis.coef.dim.height;
 
 #if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
 	/* 3A statistics grid */
@@ -604,65 +605,14 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		binary->sctbl_aligned_width_per_color = 0;
 		binary->sctbl_height                  = 0;
 	}
-	if (info->enable.dis) {
-		binary->dis_deci_factor_log2 = SH_CSS_DIS_DECI_FACTOR_LOG2;
-
-		binary->dis_hor_grid_num_3a  =
-			_ISP_SDIS_HOR_GRID_NUM_3A(sc_3a_dis_width,
-						  SH_CSS_DIS_DECI_FACTOR_LOG2);
-		binary->dis_ver_grid_num_3a  =
-			_ISP_SDIS_VER_GRID_NUM_3A(sc_3a_dis_height,
-						  SH_CSS_DIS_DECI_FACTOR_LOG2);
-		binary->dis_hor_grid_num_isp =
-			_ISP_SDIS_HOR_GRID_NUM_ISP(sc_3a_dis_padded_width,
-						SH_CSS_DIS_DECI_FACTOR_LOG2);
-		binary->dis_ver_grid_num_isp =
-			_ISP_SDIS_VER_GRID_NUM_ISP(sc_3a_dis_height,
-						SH_CSS_DIS_DECI_FACTOR_LOG2);
-
-		binary->dis_hor_coef_num_3a  =
-			_ISP_SDIS_HOR_COEF_NUM_3A(sc_3a_dis_width,
-						  SH_CSS_DIS_DECI_FACTOR_LOG2);
-		binary->dis_ver_coef_num_3a  =
-			_ISP_SDIS_VER_COEF_NUM_3A(sc_3a_dis_height,
-						  SH_CSS_DIS_DECI_FACTOR_LOG2);
-		binary->dis_hor_coef_num_isp =
-			_ISP_SDIS_HOR_COEF_NUM_ISP(sc_3a_dis_padded_width);
-		binary->dis_ver_coef_num_isp =
-			_ISP_SDIS_VER_COEF_NUM_ISP(sc_3a_dis_height);
-		binary->dis_hor_proj_num_3a  =
-			_ISP_SDIS_HOR_PROJ_NUM_3A(
+#ifndef IS_ISP_2500_SYSTEM     
+	ia_css_sdis_init_info(&binary->dis,
 				sc_3a_dis_width,
+				sc_3a_dis_padded_width,
 				sc_3a_dis_height,
-				SH_CSS_DIS_DECI_FACTOR_LOG2,
-				info->isp_pipe_version);
-		binary->dis_ver_proj_num_3a  =
-			_ISP_SDIS_VER_PROJ_NUM_3A(
-				sc_3a_dis_width,
-				sc_3a_dis_height,
-				SH_CSS_DIS_DECI_FACTOR_LOG2,
-				info->isp_pipe_version);
-		binary->dis_hor_proj_num_isp =
-			__ISP_SDIS_HOR_PROJ_NUM_ISP(sc_3a_dis_padded_width,
-				sc_3a_dis_height,
-				SH_CSS_DIS_DECI_FACTOR_LOG2,
-				info->isp_pipe_version);
-		binary->dis_ver_proj_num_isp =
-			__ISP_SDIS_VER_PROJ_NUM_ISP(sc_3a_dis_padded_width,
-				sc_3a_dis_height,
-				SH_CSS_DIS_DECI_FACTOR_LOG2,
-				info->isp_pipe_version);
-	} else {
-		binary->dis_deci_factor_log2 = 0;
-		binary->dis_hor_coef_num_3a  = 0;
-		binary->dis_ver_coef_num_3a  = 0;
-		binary->dis_hor_coef_num_isp = 0;
-		binary->dis_ver_coef_num_isp = 0;
-		binary->dis_hor_proj_num_3a  = 0;
-		binary->dis_ver_proj_num_3a  = 0;
-		binary->dis_hor_proj_num_isp = 0;
-		binary->dis_ver_proj_num_isp = 0;
-	}
+				info->isp_pipe_version,
+				info->enable.dis);
+#endif
 	if (info->left_cropping)
 		binary->left_padding = 2 * ISP_VEC_NELEMS - info->left_cropping;
 	else

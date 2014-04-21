@@ -40,9 +40,6 @@
 #ifdef __SP
 #include "product_specific.sp.h"
 #endif
-#ifdef __ISP
-#include "product_specific.isp.h"
-#endif
 #if !defined(__HOST)
 #include "dma_proxy.common.h"
 #endif
