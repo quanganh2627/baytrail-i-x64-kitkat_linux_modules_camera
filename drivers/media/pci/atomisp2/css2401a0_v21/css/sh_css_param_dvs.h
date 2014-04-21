@@ -23,6 +23,8 @@
 #define _SH_CSS_PARAMS_DVS_H_
 
 #include <ia_css_types.h>
+#include "ia_css_debug.h"
+#include "gdc_global.h" /* gdc_warp_param_mem_t */
 
 #define DVS_ENV_MIN_X (12)
 #define DVS_ENV_MIN_Y (12)

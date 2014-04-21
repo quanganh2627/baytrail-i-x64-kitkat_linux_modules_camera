@@ -24,6 +24,7 @@
 
 #include "ia_css_frame_public.h"
 #include "ia_css_binary.h"
+#include "sh_css_params.h"
 
 #include "ia_css_dvs_types.h"
 #include "ia_css_dvs_param.h"
@@ -37,5 +38,11 @@ void
 ia_css_dvs_configure(
 	const struct ia_css_binary     *binary,
 	const struct ia_css_frame_info *from);
+
+void
+store_dvs_6axis_config(
+	struct ia_css_isp_parameters *params,
+	const struct ia_css_binary *binary,
+	hrt_vaddress ddr_addr_y);
 
 #endif /* __IA_CSS_DVS_HOST_H */

@@ -143,6 +143,7 @@ ia_css_debug_vdtrace(unsigned int level, const char *fmt, va_list args)
 		sh_css_vprint(fmt, args);
 }
 
+#ifndef __SP
 STORAGE_CLASS_INLINE void
 ia_css_debug_dtrace(unsigned int level, const char *fmt, ...)
 {
@@ -152,6 +153,7 @@ ia_css_debug_dtrace(unsigned int level, const char *fmt, ...)
 	ia_css_debug_vdtrace(level, fmt, ap);
 	va_end(ap);
 }
+#endif
 
 /*! \brief Function to set the global dtrace verbosity level.
  * \param[in]	trace_level	Maximum level of the messages to be traced.

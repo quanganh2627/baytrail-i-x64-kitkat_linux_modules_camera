@@ -19,18 +19,29 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __IA_CSS_SDIS2_HOST_H
+#define __IA_CSS_SDIS2_HOST_H
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "ia_css_sdis2_types.h"
+#include "ia_css_binary.h"
+#include "ia_css_stream.h"
+#include "sh_css_params.h"
 
+void store_dvs2_coefficients(
+	struct ia_css_isp_parameters *params,
+	const struct ia_css_binary *binary,
+	hrt_vaddress ddr_addr_hor,
+	hrt_vaddress ddr_addr_ver);
 
-#define CSS_VERSION_STRING "VER:1.0; REL:20140419_16.6_1343; API:2.1.2.0; GIT:irci_20140419_0618__7bb122#7bb12291eea92e7c0427969c8ac8187ec2400d1b; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140314_2016; USER:viedifw; "
+void ia_css_get_isp_dvs2_coefficients(
+	struct ia_css_stream *stream,
+	short *hor_coefs_odd_real,
+	short *hor_coefs_odd_imag,
+	short *hor_coefs_even_real,
+	short *hor_coefs_even_imag,
+	short *ver_coefs_odd_real,
+	short *ver_coefs_odd_imag,
+	short *ver_coefs_even_real,
+	short *ver_coefs_even_imag);
 
-
-#endif
-
+#endif /* __IA_CSS_SDIS2_HOST_H */

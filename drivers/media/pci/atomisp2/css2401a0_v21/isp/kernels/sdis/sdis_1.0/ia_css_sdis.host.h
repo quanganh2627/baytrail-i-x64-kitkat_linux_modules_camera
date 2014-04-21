@@ -19,30 +19,36 @@
  *
  */
 
-#ifndef __IA_CSS_DVS_HOST_H
-#define __IA_CSS_DVS_HOST_H
+#ifndef __IA_CSS_SDIS_HOST_H
+#define __IA_CSS_SDIS_HOST_H
 
-#include "ia_css_frame_public.h"
+#include "ia_css_sdis_types.h"
 #include "ia_css_binary.h"
+#include "ia_css_stream.h"
 #include "sh_css_params.h"
 
-#include "ia_css_dvs_types.h"
-#include "ia_css_dvs_param.h"
-
-void
-ia_css_dvs_config(
-	struct sh_css_isp_dvs_isp_config      *to,
-	const struct ia_css_dvs_configuration *from);
-
-void
-ia_css_dvs_configure(
-	const struct ia_css_binary     *binary,
-	const struct ia_css_frame_info *from);
-
-void
-store_dvs_6axis_config(
-	struct ia_css_isp_parameters *params,
+void store_dis_coefficients(
+	const short *dis_hor_coef_tbl,
+	const short *dis_ver_coef_tbl,
 	const struct ia_css_binary *binary,
-	hrt_vaddress ddr_addr_y);
+	hrt_vaddress ddr_addr_hor,
+	hrt_vaddress ddr_addr_ver);
 
-#endif /* __IA_CSS_DVS_HOST_H */
+void ia_css_get_isp_dis_coefficients(
+	struct ia_css_stream *stream,
+	short *horizontal_coefficients,
+	short *vertical_coefficients);
+
+size_t sdis_hor_coef_tbl_bytes(const struct ia_css_binary *binary);
+size_t sdis_ver_coef_tbl_bytes(const struct ia_css_binary *binary);
+
+void
+ia_css_sdis_init_info(
+	struct ia_css_sdis_info *dis,
+	unsigned sc_3a_dis_width,
+	unsigned sc_3a_dis_padded_width,
+	unsigned sc_3a_dis_height,
+	unsigned isp_pipe_version,
+	unsigned enabled);
+
+#endif /* __IA_CSS_SDIS_HOST_H */
