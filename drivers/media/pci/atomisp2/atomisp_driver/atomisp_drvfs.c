@@ -39,6 +39,7 @@ struct _iunit_debug {
 	struct pci_driver	*drv;
 	struct atomisp_device	*isp;
 	unsigned int		dbglvl;
+	unsigned int		dbgfun;
 	unsigned int 		dbgopt;
 };
 
@@ -114,6 +115,33 @@ static ssize_t iunit_dbglvl_store(struct device_driver *drv, const char *buf,
 	return size;
 }
 
+static ssize_t iunit_dbgfun_show(struct device_driver *drv, char *buf)
+{
+	iunit_debug.dbgfun = atomisp_get_css_dbgfunc();
+	return sprintf(buf, "dbgfun opt:%u\n", iunit_debug.dbgfun);
+}
+
+static ssize_t iunit_dbgfun_store(struct device_driver *drv, const char *buf,
+				size_t size)
+{
+	unsigned int opt;
+	int ret;
+
+	if (kstrtouint(buf, 10, &opt)) {
+		dev_err(atomisp_dev, "%s setting %d value invalid\n",
+			__func__, opt);
+		return -EINVAL;
+	}
+
+	ret = atomisp_set_css_dbgfunc(iunit_debug.isp, opt);
+	if (ret)
+		return ret;
+
+	iunit_debug.dbgfun = opt;
+
+	return size;
+}
+
 static ssize_t iunit_dbgopt_show(struct device_driver *drv, char *buf)
 {
 	return sprintf(buf, "option:0x%x\n", iunit_debug.dbgopt);
@@ -142,6 +170,8 @@ static ssize_t iunit_dbgopt_store(struct device_driver *drv, const char *buf,
 static struct driver_attribute iunit_drvfs_attrs[] = {
 	__ATTR(dbglvl, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, iunit_dbglvl_show,
 		iunit_dbglvl_store),
+	__ATTR(dbgfun, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, iunit_dbgfun_show,
+		iunit_dbgfun_store),
 	__ATTR(dbgopt, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, iunit_dbgopt_show,
 		iunit_dbgopt_store),
 };

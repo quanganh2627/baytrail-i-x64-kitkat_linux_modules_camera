@@ -885,6 +885,24 @@ int atomisp_css_init(struct atomisp_device *isp)
 	return 0;
 }
 
+static inline int __set_css_print_env(struct atomisp_device *isp, int opt)
+{
+	int ret = 0;
+
+	if (0 == opt)
+		isp->css_env.isp_css_env.print_env.debug_print = NULL;
+	else if (1 == opt)
+		isp->css_env.isp_css_env.print_env.debug_print =
+			atomisp_css2_dbg_ftrace_print;
+	else if (2 == opt)
+		isp->css_env.isp_css_env.print_env.debug_print =
+			atomisp_css2_dbg_print;
+	else
+		ret = -EINVAL;
+
+	return ret;
+}
+
 int atomisp_css_load_firmware(struct atomisp_device *isp)
 {
 	enum ia_css_err err;
@@ -919,13 +937,7 @@ int atomisp_css_load_firmware(struct atomisp_device *isp)
 	isp->css_env.isp_css_env.hw_access_env.load = atomisp_css2_hw_load;
 	isp->css_env.isp_css_env.hw_access_env.store = atomisp_css2_hw_store;
 
-	if (0 == dbg_func)
-		isp->css_env.isp_css_env.print_env.debug_print = NULL;
-	else if (1 == dbg_func)
-		isp->css_env.isp_css_env.print_env.debug_print =
-			atomisp_css2_dbg_ftrace_print;
-	else if (2 == dbg_func)
-		isp->css_env.isp_css_env.print_env.debug_print = atomisp_css2_dbg_print;
+	__set_css_print_env(isp, dbg_func);
 
 	isp->css_env.isp_css_env.print_env.error_print = atomisp_css2_err_print;
 
@@ -4418,10 +4430,10 @@ int atomisp_css_dump_blob_infor(void)
 	if (bd == NULL)
 		return -EPERM;
 
-	for (i = 1; i < sh_css_num_binaries; i++) {
+	for (i = 1; i < sh_css_num_binaries; i++)
 		dev_dbg(atomisp_dev, "Num%d binary id is %d, name is %s\n", i,
 			bd[i-1].header.info.isp.sp.id, bd[i-1].name);
-	}
+
 	return 0;
 }
 
@@ -4435,4 +4447,20 @@ void atomisp_css_set_isp_config_applied_frame(struct atomisp_sub_device *asd,
 			struct atomisp_css_frame *output_frame)
 {
 	asd->params.config.output_frame = output_frame;
+}
+
+int atomisp_get_css_dbgfunc(void)
+{
+	return dbg_func;
+}
+
+int atomisp_set_css_dbgfunc(struct atomisp_device *isp, int opt)
+{
+	int ret;
+
+	ret = __set_css_print_env(isp, opt);
+	if (0 == ret)
+		dbg_func = opt;
+
+	return ret;
 }

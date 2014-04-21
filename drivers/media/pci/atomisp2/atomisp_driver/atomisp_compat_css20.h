@@ -270,4 +270,8 @@ void atomisp_css_set_isp_config_id(struct atomisp_sub_device *asd,
 
 void atomisp_css_set_isp_config_applied_frame(struct atomisp_sub_device *asd,
 			struct atomisp_css_frame *output_frame);
+
+int atomisp_get_css_dbgfunc(void);
+
+int atomisp_set_css_dbgfunc(struct atomisp_device *isp, int opt);
 #endif
