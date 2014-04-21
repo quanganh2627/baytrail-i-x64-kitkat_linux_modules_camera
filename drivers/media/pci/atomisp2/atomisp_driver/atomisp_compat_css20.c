@@ -867,6 +867,7 @@ int atomisp_css_init(struct atomisp_device *isp)
 		return -EINVAL;
 	}
 
+	isp->css_initialized = true;
 	dev_dbg(isp->dev, "sh_css_init success\n");
 
 	return 0;
@@ -943,11 +944,13 @@ void atomisp_css_uninit(struct atomisp_device *isp)
 		asd->params.css_update_params_needed = false;
 	}
 
+	isp->css_initialized = false;
 	ia_css_uninit();
 }
 
-void atomisp_css_suspend(void)
+void atomisp_css_suspend(struct atomisp_device *isp)
 {
+	isp->css_initialized = false;
 	ia_css_uninit();
 }
 
@@ -969,6 +972,7 @@ int atomisp_css_resume(struct atomisp_device *isp)
 		return -EINVAL;
 	}
 
+	isp->css_initialized = true;
 	return 0;
 }
 

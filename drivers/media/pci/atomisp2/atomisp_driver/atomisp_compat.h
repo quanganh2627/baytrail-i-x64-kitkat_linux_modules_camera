@@ -136,7 +136,7 @@ int atomisp_css_init(struct atomisp_device *isp);
 
 void atomisp_css_uninit(struct atomisp_device *isp);
 
-void atomisp_css_suspend(void);
+void atomisp_css_suspend(struct atomisp_device *isp);
 
 int atomisp_css_resume(struct atomisp_device *isp);
 

@@ -317,6 +317,8 @@ struct atomisp_device {
 
 	unsigned int mipi_frame_size;
 	const struct atomisp_dfs_config *dfs;
+
+	bool css_initialized;
 };
 
 #define v4l2_dev_to_atomisp_device(dev) \

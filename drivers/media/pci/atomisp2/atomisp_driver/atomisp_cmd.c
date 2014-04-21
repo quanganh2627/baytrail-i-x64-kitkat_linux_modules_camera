@@ -314,7 +314,7 @@ int atomisp_reset(struct atomisp_device *isp)
 	int ret = 0;
 
 	dev_dbg(isp->dev, "%s\n", __func__);
-	atomisp_css_suspend();
+	atomisp_css_suspend(isp);
 	ret = pm_runtime_put_sync(isp->dev);
 	if (ret < 0) {
 		dev_err(isp->dev, "can not disable ISP power\n");
@@ -498,7 +498,8 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 	int err;
 
 	spin_lock_irqsave(&isp->lock, flags);
-	if (isp->sw_contex.power_state != ATOM_ISP_POWER_UP) {
+	if (isp->sw_contex.power_state != ATOM_ISP_POWER_UP ||
+	    isp->css_initialized == false) {
 		spin_unlock_irqrestore(&isp->lock, flags);
 		return IRQ_HANDLED;
 	}
