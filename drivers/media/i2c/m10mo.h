@@ -369,6 +369,9 @@ enum M10MO_MODES {
 #define M10MO_MODE_PREVIEW_INDEX	0
 #define M10MO_MODE_CAPTURE_INDEX	1
 #define M10MO_MODE_VIDEO_INDEX		2
+
+#define M10MO_ZSL_JPEG_VIRTUAL_CHANNEL	1
+
 extern const struct m10mo_resolution *resolutions[][3];
 extern const ssize_t resolutions_sizes[][3];
 

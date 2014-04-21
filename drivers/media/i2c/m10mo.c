@@ -885,6 +885,9 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct atomisp_input_stream_info *stream_info =
+			(struct atomisp_input_stream_info*)fmt->reserved;
+	int ch_id = 0;
 	int ret;
 
 	mutex_lock(&dev->input_lock);
@@ -895,6 +898,17 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	dev->format.code = fmt->code;
 
+	/*
+	 * Currently preview means ZSL mode. So if the run mode is preview
+	 * or continuous, then binary data will come from channel 1.
+	 */
+	 if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
+			(dev->run_mode == CI_MODE_PREVIEW ||
+			 dev->run_mode == CI_MODE_CONTINUOUS))
+		ch_id = M10MO_ZSL_JPEG_VIRTUAL_CHANNEL;
+
+	stream_info->ch_id = ch_id;
+
 	/* This will be set during the next stream on call */
 	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
 	if (dev->fmt_idx == -1) {
@@ -902,10 +916,12 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 		goto out;
 	}
 
-out:
 	dev_info(&client->dev,
-		"%s index: %d width: %d, height: %d, code; 0x%x\n", __func__,
-		dev->fmt_idx, fmt->width, fmt->height, dev->format.code);
+		"%s index: %d width: %d, height: %d, code; 0x%x ch_id: %d\n",
+		__func__, dev->fmt_idx, fmt->width, fmt->height,
+		dev->format.code, ch_id);
+
+out:
 	mutex_unlock(&dev->input_lock);
 	return ret;
 }
@@ -1309,9 +1325,9 @@ static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int index;
-	dev->run_mode = param->parm.capture.capturemode;
 
 	mutex_lock(&dev->input_lock);
+	dev->run_mode = param->parm.capture.capturemode;
 	switch (dev->run_mode) {
 	case CI_MODE_VIDEO:
 		index = M10MO_MODE_VIDEO_INDEX;
