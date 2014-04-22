@@ -497,12 +497,19 @@ static int ov680_s_config(struct v4l2_subdev *sd, void *pdata)
 	msleep(200);
 	/* Detect for OV680 */
 	ret = ov680_i2c_read_reg(sd, REG_SC_00, &reg_val);
-	if (ret || (reg_val != 0x1E)) { /* defalut value of REG_SC_00*/
-		dev_err(&client->dev,
-			"reg SC_00 does no match with default value 0x1E. ret=%d sc_00=0x%04x\n",
-			ret, reg_val);
+	if (ret) {
+		dev_err(&client->dev, "ov680_i2c_read_reg fails: %d\n", ret);
 		goto fail_config;
 	}
+
+	if (reg_val != 0x1E) { /* default value of REG_SC_00*/
+		ret = -EINVAL;
+		dev_err(&client->dev,
+			"register value doesn't match: 0x1E != 0x%02x\n",
+			reg_val);
+		goto fail_config;
+	}
+
 	/* reg access test purpose */
 	ret = ov680_i2c_write_reg(sd, REG_SC_00, 0x03);
 	if (ret) {
@@ -512,12 +519,19 @@ static int ov680_s_config(struct v4l2_subdev *sd, void *pdata)
 
 	ret = ov680_i2c_read_reg(sd, REG_SC_00, &reg_val);
 
-	if (ret || (reg_val != 0x03)) { /* defalut value of REG_SC_00*/
-		dev_err(&client->dev,
-			"reg SC_00 is incorrect. ret=%d sc_00=0x%04x\n",
-			ret, reg_val);
+	if (ret) {
+		dev_err(&client->dev, "ov680_i2c_read_reg fails: %d\n", ret);
 		goto fail_config;
 	}
+
+	if (reg_val != 0x03) {
+		ret = -EINVAL;
+		dev_err(&client->dev,
+			"register value doesn't match: 0x03 != 0x%02x\n",
+			reg_val);
+		goto fail_config;
+	}
+
 	ov680_i2c_write_reg(sd, REG_SC_00, 0x1E); /* write back value */
 	dev_info(&client->dev, "OV680 Chip was detected with reg access ok\n");
 
@@ -1148,11 +1162,19 @@ static int ov680_probe(struct i2c_client *client,
 
 	/* Request firmware */
 	ret = request_firmware(&dev->fw, "ov680_fw.bin", &client->dev);
-	if (ret || !dev->fw) {
+	if (ret) {
 		dev_err(&client->dev,
 			"Requesting ov680_fw.bin failed, ret=%d.\n", ret);
 		goto out_free_dev;
 	}
+
+	if (!dev->fw) {
+		ret = -EINVAL;
+		dev_err(&client->dev,
+			"No firmware, ret=%d.\n", ret);
+		goto out_free_dev;
+	}
+
 	ov680_fw_header = (const struct ov680_firmware *)dev->fw->data;
 	ov680_fw_data_size = ov680_fw_header->cmd_count *
 				ov680_fw_header->cmd_size;
@@ -1222,7 +1244,6 @@ out_free:
 	v4l2_device_unregister_subdev(&dev->sd);
 	mutex_destroy(&dev->input_lock);
 out_free_dev:
-	kfree(dev);
 	return ret;
 }
 
