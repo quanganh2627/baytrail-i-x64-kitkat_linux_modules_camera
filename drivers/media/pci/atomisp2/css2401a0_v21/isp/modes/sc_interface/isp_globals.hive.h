@@ -62,7 +62,10 @@ typedef struct s_isp_globals {
 
   unsigned anr;
 
+  struct stripe_private_per_stripe_data down_scaled_stripe;
   struct stripe_private_per_stripe_data out_stripe;
+  struct stripe_private_per_stripe_data block_stripe;
+  unsigned half_overlap_vectors;
 } s_isp_globals;
 
 #ifdef ISP_DMEM
@@ -200,17 +203,6 @@ extern output_line_type SYNC_WITH (OUTPUT_BUF) MEM (VMEM) raw_output_buf;
 #endif
 
 /* DMA proxy buffer */
-#if !defined(__HOST)
-extern unsigned     NO_SYNC sh_dma_cmd_buffer_idx;
-extern unsigned     NO_SYNC sh_dma_cmd_buffer_cnt;
-extern unsigned     NO_SYNC sh_dma_cmd_buffer_need_ack;
-extern unsigned     NO_SYNC sh_dma_cmd_buffer_enabled;
-#if defined(__ISP) && defined(__HIVECC)
-extern sh_dma_cmd SYNC_WITH(DMA_PROXY_BUF) * NO_SYNC sh_dma_cmd_ptr;
-#else
-extern sh_dma_cmd *sh_dma_cmd_ptr;
-#endif
-#endif
 
 /* striped-ISP information */
 extern unsigned stripe_id;
