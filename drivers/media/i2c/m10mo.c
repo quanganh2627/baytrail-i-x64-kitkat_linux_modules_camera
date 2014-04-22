@@ -904,10 +904,14 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	 */
 	 if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
-			 dev->run_mode == CI_MODE_CONTINUOUS))
-		ch_id = M10MO_ZSL_JPEG_VIRTUAL_CHANNEL;
-
-	stream_info->ch_id = ch_id;
+			 dev->run_mode == CI_MODE_CONTINUOUS)) {
+		stream_info->ch_id = M10MO_ZSL_JPEG_VIRTUAL_CHANNEL;
+		stream_info->isys_configs = 1;
+		stream_info->isys_info[0].input_format =
+			ATOMISP_INPUT_FORMAT_USER_DEF3;
+		stream_info->isys_info[0].width = 0;
+		stream_info->isys_info[0].height = 0;
+	}
 
 	/* This will be set during the next stream on call */
 	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
