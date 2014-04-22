@@ -3719,13 +3719,12 @@ int get_frame_info_nop(struct atomisp_sub_device *asd,
  * which depend on input size, but are not automatically
  * handled in CSS when the input resolution is changed.
  */
-static int css_input_resolution_changed(struct atomisp_device *isp,
+static int css_input_resolution_changed(struct atomisp_sub_device *asd,
 		struct v4l2_mbus_framefmt *ffmt)
 {
-	struct atomisp_sub_device *asd = &isp->asd[0];
 	int ret = 0;
 
-	dev_dbg(isp->dev, "css_input_resolution_changed to %ux%u\n",
+	dev_dbg(asd->isp->dev, "css_input_resolution_changed to %ux%u\n",
 		ffmt->width, ffmt->height);
 
 	if (asd->continuous_mode->val) {
@@ -4177,7 +4176,7 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 				V4L2_SUBDEV_FORMAT_ACTIVE,
 				ATOMISP_SUBDEV_PAD_SINK, &ffmt);
 
-	return css_input_resolution_changed(isp, &ffmt);
+	return css_input_resolution_changed(asd, &ffmt);
 }
 
 int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)

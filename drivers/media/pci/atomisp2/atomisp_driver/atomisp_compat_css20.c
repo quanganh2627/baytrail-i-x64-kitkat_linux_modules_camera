@@ -3889,7 +3889,6 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 	struct atomisp_sub_device *asd = &isp->asd[0];
 
 	while (!atomisp_css_dequeue_event(&current_event)) {
-		atomisp_css_temp_pipe_to_pipe_id(asd, &current_event);
 
 		/* EOF Event does not have the css_pipe returned */
 		if (current_event.event.type == IA_CSS_EVENT_TYPE_PORT_EOF)
@@ -3904,6 +3903,7 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			return -EINVAL;
 		}
 
+		atomisp_css_temp_pipe_to_pipe_id(asd, &current_event);
 		switch (current_event.event.type) {
 		case CSS_EVENT_OUTPUT_FRAME_DONE:
 			frame_done_found[asd->index] = true;
