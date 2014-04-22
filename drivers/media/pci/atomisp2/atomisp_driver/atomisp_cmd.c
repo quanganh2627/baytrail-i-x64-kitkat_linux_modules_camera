@@ -3656,8 +3656,7 @@ mipi_port_ID_t __get_mipi_port(struct atomisp_device *isp,
 static inline void atomisp_set_sensor_mipi_to_isp(
 				struct atomisp_sub_device *asd,
 				enum atomisp_input_stream_id stream_id,
-				struct camera_mipi_info *mipi_info,
-				const struct atomisp_format_bridge *format)
+				struct camera_mipi_info *mipi_info)
 {
 	struct v4l2_control ctrl;
 	struct atomisp_device *isp = asd->isp;
@@ -3671,14 +3670,14 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 	/* Compatibility for sensors which provide no media bus code
 	 * in s_mbus_framefmt() nor support pad formats. */
 	if (mipi_info->input_format != -1) {
+		input_format = mipi_info->input_format;
 		atomisp_css_input_set_bayer_order(asd, stream_id,
 						mipi_info->raw_bayer_order);
 
-		input_format = mipi_info->input_format;
-		if (format->sh_fmt == CSS_FRAME_FORMAT_BINARY_8)
-			input_format = IA_CSS_STREAM_FORMAT_USER_DEF3;
-		dev_info(isp->dev, "%s Input format: %d\n",
-					__func__, input_format);
+		if (asd->stream_env[stream_id].isys_configs == 1) {
+			input_format =
+			asd->stream_env[stream_id].isys_info[0].input_format;
+		}
 
 		atomisp_css_input_set_format(asd, stream_id, input_format);
 		atomisp_css_isys_set_format(asd, stream_id, input_format,
@@ -3834,8 +3833,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			dev_err(isp->dev, "mipi_info is NULL\n");
 			return -EINVAL;
 		}
-		atomisp_set_sensor_mipi_to_isp(asd, stream_index, mipi_info,
-						format);
+		atomisp_set_sensor_mipi_to_isp(asd, stream_index, mipi_info);
 
 		if (format->sh_fmt == CSS_FRAME_FORMAT_RAW &&
 		     raw_output_format_match_input(
