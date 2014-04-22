@@ -841,12 +841,13 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	fmt->width = dev->curr_res_table[idx].width;
 	fmt->height = dev->curr_res_table[idx].height;
 
-	/* Check if the code asked is not supported by m10mo */
+	/* Check if the code asked is supported one. If not default to NV12. */
 	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
-		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16) {
+		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 && fmt->code != 0x8005) {
 		dev_info(&client->dev,
-			"%s code set to V4L2_MBUS_FMT_UYVY8_1X16 \n", __func__);
-		fmt->code = V4L2_MBUS_FMT_UYVY8_1X16;
+			"%s unsupported code: 0x%x. Set to NV12 \n",
+			__func__, fmt->code);
+		fmt->code = 0x8005;
 	}
 	return 0;
 }
@@ -898,6 +899,13 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	dev->format.code = fmt->code;
 
+	/* This will be set during the next stream on call */
+	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
+	if (dev->fmt_idx == -1) {
+		ret = -EINVAL;
+		goto out;
+	}
+
 	/*
 	 * Currently preview means ZSL mode. So if the run mode is preview
 	 * or continuous, then binary data will come from channel 1.
@@ -908,16 +916,24 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 		stream_info->ch_id = M10MO_ZSL_JPEG_VIRTUAL_CHANNEL;
 		stream_info->isys_configs = 1;
 		stream_info->isys_info[0].input_format =
-			ATOMISP_INPUT_FORMAT_USER_DEF3;
+			(u8)ATOMISP_INPUT_FORMAT_USER_DEF3;
 		stream_info->isys_info[0].width = 0;
 		stream_info->isys_info[0].height = 0;
-	}
-
-	/* This will be set during the next stream on call */
-	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
-	if (dev->fmt_idx == -1) {
-		ret = -EINVAL;
-		goto out;
+	}  else if (dev->format.code == 0x8005 &&
+			(dev->run_mode == CI_MODE_PREVIEW ||
+			 dev->run_mode == CI_MODE_CONTINUOUS)) {
+		stream_info->ch_id = M10MO_ZSL_NV12_VIRTUAL_CHANNEL;
+		stream_info->isys_configs = 2;
+		/* first stream */
+		stream_info->isys_info[0].input_format =
+			(u8)ATOMISP_INPUT_FORMAT_USER_DEF1;
+		stream_info->isys_info[0].width = (u16)fmt->width;
+		stream_info->isys_info[0].height = (u16)fmt->height;
+		/* Second stream */
+		stream_info->isys_info[1].input_format =
+			(u8)ATOMISP_INPUT_FORMAT_USER_DEF2;
+		stream_info->isys_info[1].width = (u16)fmt->width;
+		stream_info->isys_info[1].height = (u16)fmt->height / 2;
 	}
 
 	dev_info(&client->dev,
