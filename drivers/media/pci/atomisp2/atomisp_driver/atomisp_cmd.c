@@ -3843,7 +3843,7 @@ static void atomisp_check_copy_mode(struct atomisp_sub_device *asd,
 
 	dev_dbg(asd->isp->dev, "copy_mode: %d\n", asd->copy_mode);
 
-#if defined(CSS21) && defined(ISP2401_NEW_INPUT_SYSTEM)
+#if defined(ISP2401_NEW_INPUT_SYSTEM)
 	/*
 	 * In copy mode we can still make a format conversion if formats
 	 * doesn't match
