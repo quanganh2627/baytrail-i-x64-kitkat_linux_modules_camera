@@ -108,7 +108,9 @@
 #define ATOMISP_SC_TYPE_SIZE	2
 
 #define ATOMISP_ISP_TIMEOUT_DURATION		(2 * HZ)
+#define ATOMISP_EXT_ISP_TIMEOUT_DURATION        (6 * HZ)
 #define ATOMISP_ISP_FILE_TIMEOUT_DURATION	(60 * HZ)
+#define ATOMISP_WDT_KEEP_CURRENT_DELAY          0
 #define ATOMISP_ISP_MAX_TIMEOUT_COUNT	2
 #define ATOMISP_CSS_STOP_TIMEOUT_US	200000
 
@@ -307,7 +309,7 @@ struct atomisp_device {
 	struct timer_list wdt;
 	atomic_t wdt_count;
 	unsigned int wdt_duration;	/* in jiffies */
-	atomic_t fast_reset;
+	unsigned long wdt_expires;
 
 	spinlock_t lock; /* Just for streaming below */
 
@@ -327,5 +329,10 @@ extern struct device *atomisp_dev;
 extern void *atomisp_kernel_malloc(size_t bytes);
 
 extern void atomisp_kernel_free(void *ptr);
+
+#define atomisp_is_wdt_running(a) timer_pending(&(a)->wdt)
+extern void atomisp_wdt_refresh(struct atomisp_device *isp, unsigned int delay);
+extern void atomisp_wdt_start(struct atomisp_device *isp);
+extern void atomisp_wdt_stop(struct atomisp_device *isp, bool sync);
 
 #endif /* __ATOMISP_INTERNAL_H__ */

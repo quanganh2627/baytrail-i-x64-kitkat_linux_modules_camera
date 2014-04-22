@@ -716,8 +716,7 @@ static int atomisp_release(struct file *file)
 		return -EBADF;
 
 	mutex_lock(&isp->streamoff_mutex);
-	del_timer_sync(&isp->wdt);
-	cancel_work_sync(&isp->wdt_work);
+	atomisp_wdt_stop(isp, true);
 	mutex_lock(&isp->mutex);
 
 	pipe->users--;

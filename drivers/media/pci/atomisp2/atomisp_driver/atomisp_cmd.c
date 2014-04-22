@@ -1142,11 +1142,6 @@ void atomisp_wdt_work(struct work_struct *work)
 		return;
 	}
 
-	if (atomic_read(&isp->fast_reset)) {
-		atomisp_set_stop_timeout(0);
-		goto process_timeout;
-	}
-
 	dev_err(isp->dev, "timeout %d of %d\n",
 		atomic_read(&isp->wdt_count) + 1,
 		ATOMISP_ISP_MAX_TIMEOUT_COUNT);
@@ -1233,9 +1228,8 @@ void atomisp_wdt_work(struct work_struct *work)
 		mutex_unlock(&isp->mutex);
 		return;
 	}
-process_timeout:
+
 	__atomisp_css_recover(isp);
-	atomic_set(&isp->fast_reset, 0);
 	atomisp_set_stop_timeout(ATOMISP_CSS_STOP_TIMEOUT_US);
 	dev_err(isp->dev, "timeout recovery handling done\n");
 
@@ -1248,19 +1242,16 @@ void atomisp_css_flush(struct atomisp_device *isp)
 		return;
 
 	/* Disable wdt */
-	del_timer_sync(&isp->wdt);
-	cancel_work_sync(&isp->wdt_work);
+	atomisp_wdt_stop(isp, true);
 
 	/* Start recover */
 	__atomisp_css_recover(isp);
 
 	/* Restore wdt */
-	if (isp->sw_contex.file_input)
-		isp->wdt_duration = ATOMISP_ISP_FILE_TIMEOUT_DURATION;
-	else
-		isp->wdt_duration = ATOMISP_ISP_TIMEOUT_DURATION;
-
-	mod_timer(&isp->wdt, jiffies + isp->wdt_duration);
+	atomisp_wdt_refresh(isp,
+			    isp->sw_contex.file_input ?
+			    ATOMISP_ISP_FILE_TIMEOUT_DURATION :
+			    ATOMISP_ISP_TIMEOUT_DURATION);
 
 	dev_dbg(isp->dev, "atomisp css flush done\n");
 }
@@ -1270,6 +1261,48 @@ void atomisp_wdt(unsigned long isp_addr)
 	struct atomisp_device *isp = (struct atomisp_device *)isp_addr;
 
 	queue_work(isp->wdt_work_queue, &isp->wdt_work);
+}
+
+void atomisp_wdt_refresh(struct atomisp_device *isp, unsigned int delay)
+{
+	unsigned long next;
+
+	if (delay != ATOMISP_WDT_KEEP_CURRENT_DELAY)
+		isp->wdt_duration = delay;
+
+	next = jiffies + isp->wdt_duration;
+
+	/* Override next if it has been pushed beyon the "next" time */
+	if (atomisp_is_wdt_running(isp) && time_after(isp->wdt_expires, next))
+		next = isp->wdt_expires;
+
+	isp->wdt_expires = next;
+
+	if (atomisp_is_wdt_running(isp))
+		dev_dbg(isp->dev, "WDT will hit after %d ms\n",
+			((int)(next - jiffies) * 1000 / HZ));
+	else
+		dev_dbg(isp->dev, "WDT starts with %d ms period\n",
+			((int)(next - jiffies) * 1000 / HZ));
+
+	mod_timer(&isp->wdt, next);
+	atomic_set(&isp->wdt_count, 0);
+}
+
+void atomisp_wdt_stop(struct atomisp_device *isp, bool sync)
+{
+	dev_dbg(isp->dev, "WDT stop\n");
+	if (sync) {
+		del_timer_sync(&isp->wdt);
+		cancel_work_sync(&isp->wdt_work);
+	} else {
+		del_timer(&isp->wdt);
+	}
+}
+
+void atomisp_wdt_start(struct atomisp_device *isp)
+{
+	atomisp_wdt_refresh(isp, ATOMISP_ISP_TIMEOUT_DURATION);
 }
 
 void atomisp_setup_flash(struct atomisp_sub_device *asd)
@@ -1363,14 +1396,12 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 
 		/* If there are no buffers queued then
 		 * delete wdt timer. */
-		if (!atomisp_buffers_queued(asd)) {
-			del_timer(&isp->wdt);
-		} else if (reset_wdt_timer) {
+		if (!atomisp_buffers_queued(asd))
+			atomisp_wdt_stop(isp, false);
+		else if (reset_wdt_timer)
 			/* SOF irq should not reset wdt timer. */
-			mod_timer(&isp->wdt, jiffies +
-				  isp->wdt_duration);
-			atomic_set(&isp->wdt_count, 0);
-		}
+			atomisp_wdt_refresh(isp,
+					    ATOMISP_WDT_KEEP_CURRENT_DELAY);
 	}
 out:
 	mutex_unlock(&isp->mutex);
@@ -4005,6 +4036,8 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 		if (format->sh_fmt == CSS_FRAME_FORMAT_BINARY_8) {
 			copy_width = ATOMISP_WIDTH_CONFIG_FOR_JPEG;
 			copy_height = ATOMISP_MAX_HEIGHT_CONFIG_FOR_JPEG;
+			atomisp_wdt_refresh(isp,
+					    ATOMISP_EXT_ISP_TIMEOUT_DURATION);
 		 } else {
 			copy_width = pix->width;
 			copy_height = pix->height;

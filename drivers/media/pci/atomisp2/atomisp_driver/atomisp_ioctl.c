@@ -1212,8 +1212,8 @@ done:
 		} else {
 			atomisp_qbuffers_to_css(asd);
 
-			if (!timer_pending(&isp->wdt) && atomisp_buffers_queued(asd))
-				mod_timer(&isp->wdt, jiffies + isp->wdt_duration);
+			if (!atomisp_is_wdt_running(isp) && atomisp_buffers_queued(asd))
+				atomisp_wdt_start(isp);
 		}
 	}
 	mutex_unlock(&isp->mutex);
@@ -1401,6 +1401,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 	struct atomisp_device *isp = video_get_drvdata(vdev);
 	enum atomisp_css_pipe_id css_pipe_id;
 	unsigned int sensor_start_stream;
+	unsigned int wdt_duration = ATOMISP_ISP_TIMEOUT_DURATION;
 	int ret = 0;
 	unsigned long irqflags;
 
@@ -1523,12 +1524,8 @@ static int atomisp_streamon(struct file *file, void *fh,
 	atomic_set(&asd->sof_count, -1);
 	atomic_set(&asd->sequence, -1);
 	atomic_set(&asd->sequence_temp, -1);
-	atomic_set(&isp->wdt_count, 0);
-	atomic_set(&isp->fast_reset, 0);
 	if (isp->sw_contex.file_input)
-		isp->wdt_duration = ATOMISP_ISP_FILE_TIMEOUT_DURATION;
-	else
-		isp->wdt_duration = ATOMISP_ISP_TIMEOUT_DURATION;
+		wdt_duration = ATOMISP_ISP_FILE_TIMEOUT_DURATION;
 
 	isp->sw_contex.invalid_frame = false;
 	asd->params.dis_proj_data_valid = false;
@@ -1571,8 +1568,7 @@ start_sensor:
 	}
 
 	if (atomisp_buffers_queued(asd))
-		mod_timer(&isp->wdt, jiffies + isp->wdt_duration);
-
+		atomisp_wdt_refresh(isp, wdt_duration);
 out:
 	mutex_unlock(&isp->mutex);
 	return ret;
@@ -1660,8 +1656,7 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 		/* if other streams are running, should not disable watch dog */
 		mutex_unlock(&isp->mutex);
 		if (!atomisp_streaming_count(isp)) {
-			del_timer_sync(&isp->wdt);
-			cancel_work_sync(&isp->wdt_work);
+			atomisp_wdt_stop(isp, true);
 		}
 
 		/*
