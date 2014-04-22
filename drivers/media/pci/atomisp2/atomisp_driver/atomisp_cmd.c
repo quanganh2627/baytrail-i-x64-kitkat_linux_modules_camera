@@ -2080,6 +2080,8 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 				w_padding =
 				    roundup(input_config->effective_res.width, 128) -
 				    input_config->effective_res.width;
+				if (w_padding < 12)
+					w_padding = 12;
 				bq_res->gdc_shift_bq.width_bq = 4 / 2 +
 				    ((w_padding - 12) *
 				     pipe_cfg->bayer_ds_out_res.width /
