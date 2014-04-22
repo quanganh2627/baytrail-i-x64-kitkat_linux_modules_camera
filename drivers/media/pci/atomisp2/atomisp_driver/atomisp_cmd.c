@@ -3492,6 +3492,41 @@ int atomisp_get_fmt(struct video_device *vdev, struct v4l2_format *f)
 	return 0;
 }
 
+static void __atomisp_update_stream_env(struct atomisp_sub_device *asd,
+	uint16_t stream_index, struct atomisp_input_stream_info *stream_info)
+{
+	int i;
+
+#if defined(ISP2401_NEW_INPUT_SYSTEM)
+	/* assign virtual channel id return from sensor driver query */
+	asd->stream_env[stream_index].ch_id = stream_info->ch_id;
+#endif
+	asd->stream_env[stream_index].isys_configs = stream_info->isys_configs;
+	for (i = 0; i < stream_info->isys_configs; i++) {
+		asd->stream_env[stream_index].isys_info[i].input_format =
+			stream_info->isys_info[i].input_format;
+		asd->stream_env[stream_index].isys_info[i].width =
+			stream_info->isys_info[i].width;
+		asd->stream_env[stream_index].isys_info[i].height =
+			stream_info->isys_info[i].height;
+	}
+}
+
+static void __atomisp_init_stream_info(uint16_t stream_index,
+		struct atomisp_input_stream_info *stream_info)
+{
+	int i;
+
+	stream_info->enable = 1;
+	stream_info->stream = stream_index;
+	stream_info->ch_id = 0;
+	stream_info->isys_configs = 0;
+	for (i = 0; i < MAX_STREAMS_PER_CHANNEL; i++) {
+		stream_info->isys_info[i].input_format = 0;
+		stream_info->isys_info[i].width = 0;
+		stream_info->isys_info[i].height = 0;
+	}
+}
 
 /* This function looks up the closest available resolution. */
 int atomisp_try_fmt(struct video_device *vdev, struct v4l2_format *f,
@@ -3520,9 +3555,8 @@ int atomisp_try_fmt(struct video_device *vdev, struct v4l2_format *f,
 	snr_mbus_fmt.code = fmt->mbus_code;
 	snr_mbus_fmt.width = f->fmt.pix.width;
 	snr_mbus_fmt.height = f->fmt.pix.height;
-	stream_info->enable = 1;
-	stream_info->stream = stream_index;
-	stream_info->ch_id = 0;
+
+	__atomisp_init_stream_info(stream_index, stream_info);
 
 	dev_dbg(isp->dev, "try_mbus_fmt: asking for %ux%u\n",
 		snr_mbus_fmt.width, snr_mbus_fmt.height);
@@ -4117,9 +4151,7 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 		ffmt.width, ffmt.height, padding_w, padding_h,
 		dvs_env_w, dvs_env_h);
 
-	stream_info->enable = 1;
-	stream_info->stream = stream_index;
-	stream_info->ch_id = 0;
+	__atomisp_init_stream_info(stream_index, stream_info);
 
 	req_ffmt = ffmt;
 
@@ -4148,10 +4180,8 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 	if (ret)
 		return ret;
 
-#if defined(ISP2401_NEW_INPUT_SYSTEM)
-	/* assign virtual channel id return from sensor driver query */
-	asd->stream_env[stream_index].ch_id = stream_info->ch_id;
-#endif
+	__atomisp_update_stream_env(asd, stream_index, stream_info);
+
 	dev_dbg(isp->dev, "sensor width: %d, height: %d\n",
 		ffmt.width, ffmt.height);
 

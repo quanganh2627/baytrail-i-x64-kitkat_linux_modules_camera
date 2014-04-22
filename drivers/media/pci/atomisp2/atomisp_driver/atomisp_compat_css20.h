@@ -128,6 +128,8 @@ typedef struct ia_css_isp_3a_statistics atomisp_css_3a_data;
 struct atomisp_device;
 struct atomisp_sub_device;
 
+#define MAX_STREAMS_PER_CHANNEL	2
+
 /*
  * These are used to indicate the css stream state, corresponding
  * stream handling can be done via judging the different state.
@@ -137,6 +139,17 @@ enum atomisp_css_stream_state {
 	CSS_STREAM_CREATED,
 	CSS_STREAM_STARTED,
 	CSS_STREAM_STOPPED,
+};
+
+/*
+ *  Sensor of external ISP can send multiple steams with different mipi data
+ * type in the same virtual channel. This information needs to come from the
+ * sensor or external ISP
+ */
+struct atomisp_css_isys_config_info {
+	unsigned int input_format;
+	unsigned int width;
+	unsigned int height;
 };
 
 struct atomisp_stream_env {
@@ -153,6 +166,8 @@ struct atomisp_stream_env {
 	enum atomisp_css_stream_state acc_stream_state;
 	struct ia_css_stream_config acc_stream_config;
 	unsigned int ch_id; /* virtual channel ID */
+	unsigned int isys_configs;
+	struct atomisp_css_isys_config_info isys_info[MAX_STREAMS_PER_CHANNEL];
 };
 
 struct atomisp_css_env {
