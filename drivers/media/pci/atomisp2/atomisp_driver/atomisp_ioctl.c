@@ -1338,6 +1338,9 @@ static int atomisp_dqbuf(struct file *file, void *fh, struct v4l2_buffer *buf)
 
 enum atomisp_css_pipe_id atomisp_get_css_pipe_id(struct atomisp_sub_device *asd)
 {
+	if (ATOMISP_USE_YUVPP(asd))
+		return CSS_PIPE_ID_YUVPP;
+
 	if (asd->continuous_mode->val) {
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
 			return CSS_PIPE_ID_VIDEO;

@@ -722,6 +722,7 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 			return &asd->video_out_capture;
 		}
 	}
+
 	/* video is same in online as in continuouscapture mode */
 	if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_LOWLAT) {
 		/*
@@ -737,6 +738,49 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 		 * buffering.
 		 */
 		return &asd->video_out_video_capture;
+	} else if (css_pipe_id == CSS_PIPE_ID_YUVPP) {
+		/*
+		 * to SOC camera, yuvpp pipe is run for capture/video/SDV/ZSL.
+		 */
+		if (asd->continuous_mode->val) {
+			if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
+				/* SDV case */
+				switch (buf_type) {
+				case CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME:
+					return &asd->video_out_video_capture;
+				case CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME:
+					return &asd->video_out_preview;
+				case CSS_BUFFER_TYPE_OUTPUT_FRAME:
+					return &asd->video_out_capture;
+				default:
+					return &asd->video_out_vf;
+				}
+			} else if (asd->run_mode->val == ATOMISP_RUN_MODE_PREVIEW) {
+				/* ZSL case */
+				switch (buf_type) {
+				case CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME:
+					return &asd->video_out_preview;
+				case CSS_BUFFER_TYPE_OUTPUT_FRAME:
+					return &asd->video_out_capture;
+				default:
+					return &asd->video_out_vf;
+				}
+			}
+		} else if (buf_type == CSS_BUFFER_TYPE_OUTPUT_FRAME) {
+			switch(asd->run_mode->val) {
+			case ATOMISP_RUN_MODE_VIDEO:
+				return &asd->video_out_video_capture;
+			case ATOMISP_RUN_MODE_PREVIEW:
+				return &asd->video_out_preview;
+			default:
+				return &asd->video_out_capture;
+			}
+		} else if (buf_type == CSS_BUFFER_TYPE_VF_OUTPUT_FRAME) {
+			if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+				return &asd->video_out_preview;
+			else
+				return &asd->video_out_vf;
+		}
 	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
 		/* For online video or SDV video pipe. */
 		if (css_pipe_id == CSS_PIPE_ID_VIDEO ||
@@ -778,7 +822,9 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 	    buf_type != CSS_BUFFER_TYPE_3A_STATISTICS &&
 	    buf_type != CSS_BUFFER_TYPE_DIS_STATISTICS &&
 	    buf_type != CSS_BUFFER_TYPE_OUTPUT_FRAME &&
+	    buf_type != CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME &&
 	    buf_type != CSS_BUFFER_TYPE_RAW_OUTPUT_FRAME &&
+	    buf_type != CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME &&
 	    buf_type != CSS_BUFFER_TYPE_VF_OUTPUT_FRAME) {
 		dev_err(isp->dev, "%s, unsupported buffer type: %d\n",
 			__func__, buf_type);
@@ -845,6 +891,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			asd->dis_bufs_in_css--;
 			break;
 		case CSS_BUFFER_TYPE_VF_OUTPUT_FRAME:
+		case CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME:
 			if (isp->sw_contex.invalid_vf_frame) {
 				error = true;
 				isp->sw_contex.invalid_vf_frame = 0;
@@ -880,6 +927,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			pipe->frame_config_id[vb->i] = frame->isp_config_id;
 			break;
 		case CSS_BUFFER_TYPE_OUTPUT_FRAME:
+		case CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME:
 			if (isp->sw_contex.invalid_frame) {
 				error = true;
 				isp->sw_contex.invalid_frame = 0;
@@ -1016,9 +1064,16 @@ void atomisp_delayed_init_work(struct work_struct *work)
 	struct atomisp_sub_device *asd = container_of(work,
 			struct atomisp_sub_device,
 			delayed_init_work);
-	atomisp_css_allocate_continuous_frames(false, asd);
-	atomisp_css_update_continuous_frames(asd);
-	asd->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
+	/*
+	 * to SOC camera, use yuvpp pipe and no support continuous mode.
+	 */
+	if (ATOMISP_USE_YUVPP(asd)) {
+		asd->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
+	} else {
+		atomisp_css_allocate_continuous_frames(false, asd);
+		atomisp_css_update_continuous_frames(asd);
+		asd->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
+	}
 }
 
 static void __atomisp_css_recover(struct atomisp_device *isp)
@@ -4062,6 +4117,13 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			asd->run_mode->val = ATOMISP_RUN_MODE_STILL_CAPTURE;
 		}
 	}
+
+	/*
+	 * to SOC camera, use yuvpp pipe.
+	 */
+	if (ATOMISP_USE_YUVPP(asd))
+		pipe_id = CSS_PIPE_ID_YUVPP;
+
 	if (asd->copy_mode)
 		ret = atomisp_css_copy_configure_output(asd, stream_index,
 				pix->width, pix->height, format->sh_fmt);
