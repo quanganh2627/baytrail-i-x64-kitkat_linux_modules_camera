@@ -115,6 +115,7 @@ struct m10mo_device {
 	struct v4l2_ctrl_handler ctrl_handler;
 	int run_mode;
 	struct v4l2_ctrl *link_freq;
+	struct v4l2_ctrl *zsl_capture;
 	unsigned int num_lanes;
 	const struct m10mo_resolution *curr_res_table;
 	int entries_curr_table;

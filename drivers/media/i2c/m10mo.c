@@ -611,11 +611,14 @@ out:
 	return ret;
 }
 
-static int m10mo_set_zsl_capture(struct v4l2_subdev *sd)
+static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
+
+	/* TODO: Fix this. Currently we do not use this */
+	(void) sel_frame;
 
 	/* if not in ZSL monitor mode, cannot capture. Return error */
 	if (dev->mode != M10MO_MONITOR_MODE_ZSL) {
@@ -625,8 +628,8 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd)
 
 	/* Start Single Capture, JPEG encode & transfer start */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, 0x01);
-	if (ret)
-		dev_err(&client->dev, "ZSL capture failed %d\n", ret);
+	dev_dbg(&client->dev, "%s zsl capture trigger result: %d\n",
+			__func__, ret);
 	return ret;
 }
 
@@ -1147,9 +1150,6 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 	case CI_MODE_STILL_CAPTURE:
 		ret = m10mo_set_still_capture(sd);
 		break;
-	case CI_MODE_CONTINUOUS:
-		ret = m10mo_set_zsl_capture(sd);
-		break;
 	default:
 		ret = m10mo_set_zsl_monitor(sd);
 	}
@@ -1316,6 +1316,9 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_EXPOSURE_METERING:
 		ret = m10mo_set_metering(&dev->sd, ctrl->val);
 		break;
+	case V4L2_CID_START_ZSL_CAPTURE:
+		ret = m10mo_set_zsl_capture(&dev->sd, ctrl->val);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -1396,7 +1399,16 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.min = 0,
 		.max = 2,
 	},
-
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_START_ZSL_CAPTURE,
+		.name = "Start zsl capture",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 1,
+		.def = 1,
+		.max = 4,
+		.step = 1,
+	},
 };
 
 static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
@@ -1425,6 +1437,10 @@ static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
 
 	dev->link_freq = v4l2_ctrl_find(&dev->ctrl_handler, V4L2_CID_LINK_FREQ);
 	v4l2_ctrl_s_ctrl(dev->link_freq, V4L2_CID_LINK_FREQ);
+
+	dev->zsl_capture = v4l2_ctrl_find(&dev->ctrl_handler,
+					V4L2_CID_START_ZSL_CAPTURE);
+	v4l2_ctrl_s_ctrl(dev->zsl_capture, V4L2_CID_START_ZSL_CAPTURE);
 
 	return 0;
 }
