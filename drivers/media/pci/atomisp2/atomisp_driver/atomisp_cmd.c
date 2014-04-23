@@ -4760,6 +4760,22 @@ int atomisp_exif_makernote(struct atomisp_sub_device *asd,
 int atomisp_offline_capture_configure(struct atomisp_sub_device *asd,
 			      struct atomisp_cont_capture_conf *cvf_config)
 {
+	struct v4l2_ctrl *c;
+
+	/*
+	* In case of M10MO ZSL capture case, we need to issue a separate
+	* capture request to M10MO which will output captured jpeg image
+	*/
+	c = v4l2_ctrl_find(
+		asd->isp->inputs[asd->input_curr].camera->ctrl_handler,
+		V4L2_CID_START_ZSL_CAPTURE);
+	if (c) {
+		dev_dbg(asd->isp->dev, "%s trigger ZSL capture request\n",
+			__func__);
+		/* TODO: use the cvf_config */
+		return v4l2_ctrl_s_ctrl(c, 1);
+	}
+
 	asd->params.offline_parm = *cvf_config;
 
 	if (asd->params.offline_parm.num_captures) {
