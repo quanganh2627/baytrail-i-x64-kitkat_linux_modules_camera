@@ -3703,6 +3703,7 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 {
 	struct v4l2_control ctrl;
 	struct atomisp_device *isp = asd->isp;
+	const struct atomisp_in_fmt_conv *fc;
 	int mipi_freq = 0;
 	unsigned int input_format;
 
@@ -3738,6 +3739,10 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 
 		/* Input stream config is still needs configured */
 		/* TODO: Check if this is necessary */
+		fc = atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
+						mipi_info->input_format);
+		BUG_ON(!fc);
+		input_format = fc->css_stream_fmt;
 		atomisp_css_input_set_format(asd, stream_id, input_format);
 	}
 
