@@ -50,6 +50,7 @@ const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[] = {
 	{ V4L2_MBUS_FMT_UYVY8_1X16, 8, 8, ATOMISP_INPUT_FORMAT_YUV422_8, 0 },
 	{ V4L2_MBUS_FMT_YUYV8_1X16, 8, 8, ATOMISP_INPUT_FORMAT_YUV422_8, 0 },
 	{ V4L2_MBUS_FMT_JPEG_1X8, 8, 8, CSS_FRAME_FORMAT_BINARY_8, 0 },
+	{ 0x8005, 12, 12, CSS_FRAME_FORMAT_NV12, 0 },
 	{}
 };
 
