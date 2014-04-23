@@ -251,6 +251,36 @@ static int atomisp_get_css_buf_type(struct atomisp_sub_device *asd,
 		return CSS_BUFFER_TYPE_VF_OUTPUT_FRAME;
 }
 
+static int atomisp_qbuffers_to_css_for_all_pipes(struct atomisp_sub_device *asd)
+{
+	enum atomisp_css_buffer_type buf_type;
+	enum atomisp_css_pipe_id css_capture_pipe_id = CSS_PIPE_ID_COPY;
+	enum atomisp_css_pipe_id css_preview_pipe_id = CSS_PIPE_ID_COPY;
+	enum atomisp_input_stream_id input_stream_id;
+	struct atomisp_video_pipe *capture_pipe;
+	struct atomisp_video_pipe *preview_pipe;
+
+	capture_pipe = &asd->video_out_capture;
+	preview_pipe = &asd->video_out_preview;
+
+	buf_type = atomisp_get_css_buf_type(
+			asd, css_preview_pipe_id,
+			atomisp_subdev_source_pad(&preview_pipe->vdev));
+	input_stream_id = ATOMISP_INPUT_STREAM_PREVIEW;
+	atomisp_q_video_buffers_to_css(asd, preview_pipe,
+				       input_stream_id,
+				       buf_type, css_preview_pipe_id);
+
+	buf_type = atomisp_get_css_buf_type( asd, css_capture_pipe_id,
+			atomisp_subdev_source_pad(&capture_pipe->vdev));
+	input_stream_id = ATOMISP_INPUT_STREAM_GENERAL;
+	atomisp_q_video_buffers_to_css(asd, capture_pipe,
+					       input_stream_id,
+					       buf_type, css_capture_pipe_id);
+	return 0;
+}
+
+
 /* queue all available buffers to css */
 int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 {
@@ -265,6 +295,10 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 	struct atomisp_video_pipe *video_pipe = NULL;
 	bool raw_mode = atomisp_is_mbuscode_raw(
 			    asd->fmt[asd->capture_pad].fmt.code);
+
+	if (asd->isp->inputs[asd->input_curr].camera_caps->
+	    sensor[asd->sensor_curr].stream_num == 2)
+		return atomisp_qbuffers_to_css_for_all_pipes(asd);
 
 	if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
 		video_pipe = &asd->video_out_video_capture;
