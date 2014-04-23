@@ -451,6 +451,10 @@ static void __dump_stream_config(struct atomisp_sub_device *asd,
 			j,
 			s_config->isys_config[j].linked_isys_stream_id);
 
+		dev_dbg(isp->dev, "stream_configisys_config[%d].format=%d\n",
+			j,
+			s_config->isys_config[j].format);
+
 		dev_dbg(isp->dev, "stream_configisys_config[%d].valid=%d.\n",
 			j,
 			s_config->isys_config[j].valid);
