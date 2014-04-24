@@ -565,7 +565,8 @@ static enum ia_css_err pipeline_stage_create(
 				goto ERR;
 			stage->vf_frame_allocated = true;
 		}
-	} else if (vf_frame && binary && binary->vf_frame_info.res.width) {
+	} else if (vf_frame && binary && binary->vf_frame_info.res.width
+		&& !firmware) {
 		/* only mark as allocated if buffer pointer available */
 		if (vf_frame->data != mmgr_NULL)
 			stage->vf_frame_allocated = true;
