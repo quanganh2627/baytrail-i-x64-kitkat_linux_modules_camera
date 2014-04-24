@@ -7306,21 +7306,19 @@ append_firmware(struct ia_css_fw_info **l, struct ia_css_fw_info *firmware)
 	while (*l)
 		l = &(*l)->next;
 	*l = firmware;
-	firmware->next = NULL;
+	/*firmware->next = NULL;*//* when multiple acc extensions are loaded, 'next' can be not NULL */
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "append_firmware() leave:\n");
 }
 
 static void
 remove_firmware(struct ia_css_fw_info **l, struct ia_css_fw_info *firmware)
 {
+	assert(*l);
+	assert(firmware);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "remove_firmware() enter:\n");
-	while (*l && *l != firmware)
-		l = &(*l)->next;
-	if (!*l)
-		return;
-	*l = firmware->next;
-	firmware->next = NULL;
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "remove_firmware() leave:\n");
+	return; /* removing single and multiple firmware is handled in acc_unload_extension() */
 }
 
 #if !defined(C_RUN) && !defined(HRT_UNSCHED)
@@ -7352,9 +7350,14 @@ static enum ia_css_err
 acc_load_extension(struct ia_css_fw_info *firmware)
 {
 #if !defined(C_RUN) && !defined(HRT_UNSCHED)
-	enum ia_css_err err = upload_isp_code(firmware);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	enum ia_css_err err;
+	struct ia_css_fw_info *hd = firmware;
+	while (hd){
+		err = upload_isp_code(hd);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+		hd = hd->next;
+	}
 #endif
 
 	firmware->loaded = true;
@@ -7364,11 +7367,21 @@ acc_load_extension(struct ia_css_fw_info *firmware)
 static void
 acc_unload_extension(struct ia_css_fw_info *firmware)
 {
-	if (firmware->info.isp.xmem_addr) {
-		mmgr_free(firmware->info.isp.xmem_addr);
-		firmware->info.isp.xmem_addr = mmgr_NULL;
+	struct ia_css_fw_info *hd = firmware;
+	struct ia_css_fw_info *hdn = NULL;
+
+	/* unload and remove multiple firmwares */
+	while (hd){
+		hdn = (hd->next) ? &(*hd->next) : NULL;
+		if (hd->info.isp.xmem_addr) {
+			mmgr_free(hd->info.isp.xmem_addr);
+			hd->info.isp.xmem_addr = mmgr_NULL;
+		}
+		hd->isp_code = NULL;
+		hd->next = NULL;
+		hd = hdn;
 	}
-	firmware->isp_code = NULL;
+
 	firmware->loaded = false;
 }
 /* Load firmware for extension */

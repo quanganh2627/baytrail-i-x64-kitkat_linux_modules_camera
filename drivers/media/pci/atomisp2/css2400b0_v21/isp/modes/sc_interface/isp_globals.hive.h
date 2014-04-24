@@ -186,7 +186,7 @@ extern unsigned g_isp_do_zoom;
 extern volatile tmemvectoru input_buf[];
 #else
 typedef struct {
-  tmemvectoru  raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_LINE]; /* 2 bayer lines */
+  tmemvectoru  raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_STRIPE]; /* 2 bayer lines */
 } input_line_type;
 
 typedef struct {
