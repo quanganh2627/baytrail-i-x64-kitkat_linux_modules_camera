@@ -195,7 +195,7 @@
 
 #define DMA_DVS_ELEMS_B        (XMEM_WIDTH_BITS / 16)    // [elements] We will store 2 values on a 32-bit word
 #define DMA_DVS_BLOCK_WIDTH_B   CEIL_DIV(DMA_DVS_BLOCK_WIDTH_A * DMA_DVS_ELEMS_A, DMA_DVS_ELEMS_B)
-#define DMA_DVS_LINE_WIDTH_B    CEIL_DIV(VECTORS_PER_LINE * DMA_DVS_ELEMS_A, DMA_DVS_ELEMS_B)
+#define DMA_DVS_LINE_WIDTH_B    CEIL_DIV(ISP_INPUT_WIDTH_VECS * DMA_DVS_ELEMS_A, DMA_DVS_ELEMS_B)
 #define DMA_DVS_STRIDE_B       (DMA_DVS_LINE_WIDTH_B * HIVE_ISP_DDR_WORD_BYTES)
 #define DMA_DVS_CROPPING_B      0
 #define DMA_DVS_SUB_XFERS       NUM_REF_SUB_XFERS
@@ -226,7 +226,7 @@
  * ****************************************************************/
 /* isp side */
 
-#define DMA_RAW_BLOCK_WIDTH_A  		CEIL_MUL(INPUT_VECTORS_PER_CHUNK, 2)        // [vectors] vectors to write on every DMA transaction
+#define DMA_RAW_BLOCK_WIDTH_A  		VECTORS_PER_LINE        // [vectors] vectors to write on every DMA transaction
 #define MAX_DMA_RAW_BLOCK_WIDTH_A  	MAX_VECTORS_PER_INPUT_STRIPE        // [vectors] vectors to write on every DMA transaction
 #define DMA_RAW_ELEMS_A        		ISP_VEC_NELEMS  // [elements] elements per vector
 #define DMA_RAW_CROPPING_A     		0       // [elements] elements to skip on every line
