@@ -95,7 +95,7 @@
 #define REG_SC_93 (REG_SC_BASE + 0x93)
 
 #define REG_SC_03_GLOBAL_ENABLED 0x10
-#define REG_SC_66_GLOBAL_READY  (0x18)
+#define REG_SC_66_GLOBAL_READY   0x18
 
 #define REG_SCCB_SLAVE_03 (REG_SCCB_SLAVE_BASE + 0x03)
 
@@ -109,6 +109,13 @@
 
 #define REG_YUV_CROP1_08 (REG_YUV_CROP1_BASE + 0x08)
 #define REG_YUV_CROP1_0B (REG_YUV_CROP1_BASE + 0x0b)
+
+/* detect input sensor */
+#define OV680_MAX_INPUT_SENSOR_NUM 2
+#define OV680_SENSOR_0_ID 0x20
+#define OV680_SENSOR_1_ID 0x6c
+#define OV680_SENSOR_REG0_VAL 0x97
+#define OV680_SENSOR_REG1_VAL 0x28
 
 /* ov680 command set definition */
 #define OV680_CMD_CIR_REG REG_MC_17 /* command interrupt register */

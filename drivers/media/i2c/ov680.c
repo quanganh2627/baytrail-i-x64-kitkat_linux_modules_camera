@@ -255,7 +255,6 @@ static int ov680_write_reg_array(struct v4l2_subdev *sd,
 }
 #endif
 
-#ifdef ov680_DUMP_DEBUG
 static int ov680_read_sensor(struct v4l2_subdev *sd, int sid,
 			     u16 reg, u8 *data) {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -289,19 +288,46 @@ static int ov680_read_sensor(struct v4l2_subdev *sd, int sid,
 	return ret;
 }
 
+static int ov680_check_sensor_avail(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	u8 data[2];
+	int ret, i;
+	bool sensor_fail = false;
+	int sid[OV680_MAX_INPUT_SENSOR_NUM] = {
+		OV680_SENSOR_0_ID, OV680_SENSOR_1_ID
+	};
+
+	for (i = 0; i < OV680_MAX_INPUT_SENSOR_NUM; i++) {
+		ret = ov680_read_sensor(sd, sid[i], 0x0000, &data[0]);
+		ret = ov680_read_sensor(sd, sid[i], 0x0001, &data[1]);
+		if (ret || data[0] != OV680_SENSOR_REG0_VAL ||
+			data[1] != OV680_SENSOR_REG1_VAL) {
+			dev_err(&client->dev,
+				"Subdev OV680 sensor %d with id:0x%x detection failure.\n", i, sid[i]);
+			sensor_fail = true;
+		} else {
+			dev_info(&client->dev,
+				"Subdev OV680 sensor %d with id:0x%x detection Successful.\n", i, sid[i]);
+		}
+	}
+
+	return sensor_fail ? -1 : 0;
+}
+
+#ifdef ov680_DUMP_DEBUG
 static int ov680_dump_snr_regs(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 	u8 data;
 
-	/* sensor0 is 0x20, sensor 1 is 6c */
-	int sid = 0x20;
+	int sid = OV680_SENSOR_0_ID;
 	ret = ov680_read_sensor(sd, sid, 0x0000, &data); /* 0x97 */
 	ret = ov680_read_sensor(sd, sid, 0x0001, &data); /* 0x28 */
 	ret = ov680_read_sensor(sd, sid, 0x0100, &data);
 
-	sid = 0x6c;
+	sid = OV680_SENSOR_1_ID;
 	ret = ov680_read_sensor(sd, sid, 0x0000, &data); /* 0x97 */
 	ret = ov680_read_sensor(sd, sid, 0x0001, &data); /* 0x28 */
 
@@ -533,7 +559,19 @@ static int ov680_s_config(struct v4l2_subdev *sd, void *pdata)
 	}
 
 	ov680_i2c_write_reg(sd, REG_SC_00, 0x1E); /* write back value */
-	dev_info(&client->dev, "OV680 Chip was detected with reg access ok\n");
+	dev_info(&client->dev, "Subdev OV680 Chip was detected with reg access ok\n");
+
+	ret = ov680_load_firmware(sd);
+	if (ret) {
+		dev_err(&client->dev, "%s:ov680_load_firmware failed. ret=%d\n", __func__, ret);
+		goto fail_config;
+	}
+	/* detect the input sensor */
+	ret = ov680_check_sensor_avail(sd);
+	if (ret) {
+		dev_err(&client->dev, "detect sensors failed. ret=%d\n", ret);
+		goto fail_config;
+	}
 
 	mipi_info = v4l2_get_subdev_hostdata(sd);
 	if (!mipi_info) {
@@ -550,7 +588,7 @@ static int ov680_s_config(struct v4l2_subdev *sd, void *pdata)
 		dev_dbg(&client->dev, "ov680_s_config - bayer output\n");
 		dev->bayer_fmt = 1;
 		dev->mbus_pixelcode = V4L2_MBUS_FMT_SBGGR10_1X10;
-	 }
+	}
 
 	ret = __ov680_s_power(sd, 0, 0);
 	if (ret)
