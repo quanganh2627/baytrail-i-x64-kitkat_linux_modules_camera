@@ -330,7 +330,7 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x0303, 0x00}, /* pll1_divm = /(1 + 0) */
 	{OV8858_8BIT, 0x0304, 0x03}, /* pll1_div_mipi = /8 */
 	{OV8858_8BIT, 0x030B, 0x02}, /* pll2_pre_div = /2 */
-	{OV8858_8BIT, 0x030D, 0x4B}, /* pll2_r_divp = 75 */
+	{OV8858_8BIT, 0x030D, 0x4E}, /* pll2_r_divp = 78 */
 	{OV8858_8BIT, 0x030E, 0x00}, /* pll2_r_divs = /1 */
 	{OV8858_8BIT, 0x030F, 0x04}, /* pll2_r_divsp = /(1 + 4) */
 	/* pll2_pre_div0 = /1, pll2_r_divdac = /(1 + 1) */
@@ -538,8 +538,8 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x380B, 0x90}, /* v_output_size low */
 	{OV8858_8BIT, 0x380C, 0x07}, /* horizontal timing size high */
 	{OV8858_8BIT, 0x380D, 0x94}, /* horizontal timing size low */
-	{OV8858_8BIT, 0x380E, 0x0C}, /* vertical timing size high */
-	{OV8858_8BIT, 0x380F, 0x14}, /* vertical timing size low */
+	{OV8858_8BIT, 0x380E, 0x0A}, /* vertical timing size high */
+	{OV8858_8BIT, 0x380F, 0x0D}, /* vertical timing size low */
 	{OV8858_8BIT, 0x3810, 0x00}, /* h_win offset high */
 	{OV8858_8BIT, 0x3811, 0x04}, /* h_win offset low */
 	{OV8858_8BIT, 0x3812, 0x00}, /* v_win offset high */
@@ -600,7 +600,7 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x481F, 0x32}, /* clk_prepare_min = 0x32 */
 	{OV8858_8BIT, 0x4825, 0x3A}, /* lpx_p_min = 0x3A */
 	{OV8858_8BIT, 0x4826, 0x40}, /* hs_prepare_min = 0x40 */
-	{OV8858_8BIT, 0x4837, 0x16}, /* pclk_period = 0x16 */
+	{OV8858_8BIT, 0x4837, 0x14}, /* pclk_period = 0x14 */
 	{OV8858_8BIT, 0x4850, 0x10}, /* LANE SEL01 */
 	{OV8858_8BIT, 0x4851, 0x32}, /* LANE SEL02 */
 
@@ -722,9 +722,9 @@ static struct ov8858_resolution ov8858_res_preview[] = {
 		.skip_frames = 0,
 		.fps_options = {
 			{
-				.fps = 24,
+				.fps = 30,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 3092,
+				.lines_per_frame = 2573,
 			},
 			{
 			}
@@ -741,9 +741,9 @@ static struct ov8858_resolution ov8858_res_preview[] = {
 		.skip_frames = 0,
 		.fps_options = {
 			{
-				.fps = 24,
+				.fps = 30,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 3092,
+				.lines_per_frame = 2573,
 			},
 			{
 			}
@@ -763,9 +763,9 @@ static struct ov8858_resolution ov8858_res_still[] = {
 		 .skip_frames = 1,
 		 .fps_options =  {
 			{
-				.fps = 24,
+				.fps = 30,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 3092,
+				.lines_per_frame = 2573,
 			},
 			{
 			}
@@ -782,9 +782,9 @@ static struct ov8858_resolution ov8858_res_still[] = {
 		.skip_frames = 1,
 		.fps_options = {
 			{
-				.fps = 24,
+				.fps = 30,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 3092,
+				.lines_per_frame = 2573,
 			},
 			{
 			}
@@ -804,9 +804,9 @@ static struct ov8858_resolution ov8858_res_video[] = {
 		 .skip_frames = 1,
 		 .fps_options =  {
 			{
-				.fps = 24,
+				.fps = 30,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 3092,
+				.lines_per_frame = 2573,
 			},
 			{
 			}
@@ -823,9 +823,9 @@ static struct ov8858_resolution ov8858_res_video[] = {
 		.skip_frames = 1,
 		.fps_options = {
 			{
-				.fps = 24,
+				.fps = 30,
 				.pixels_per_line = 3880,
-				.lines_per_frame = 3092,
+				.lines_per_frame = 2573,
 			},
 			{
 			}
