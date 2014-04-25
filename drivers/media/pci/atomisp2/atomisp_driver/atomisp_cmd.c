@@ -4770,10 +4770,15 @@ int atomisp_offline_capture_configure(struct atomisp_sub_device *asd,
 		asd->isp->inputs[asd->input_curr].camera->ctrl_handler,
 		V4L2_CID_START_ZSL_CAPTURE);
 	if (c) {
+		int ret;
 		dev_dbg(asd->isp->dev, "%s trigger ZSL capture request\n",
 			__func__);
 		/* TODO: use the cvf_config */
-		return v4l2_ctrl_s_ctrl(c, 1);
+		ret = v4l2_ctrl_s_ctrl(c, 1);
+		if (ret)
+			return ret;
+
+		return v4l2_ctrl_s_ctrl(c, 0);
 	}
 
 	asd->params.offline_parm = *cvf_config;
