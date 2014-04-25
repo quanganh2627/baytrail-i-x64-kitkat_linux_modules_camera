@@ -71,13 +71,6 @@
 #define ENABLE_BAYER_OUTPUT     0
 #endif
 
-
-#if !defined(ENABLE_OBROW)
-#define ENABLE_OBROW          0
-#endif
-#if !defined(ENABLE_OBCOL)
-#define ENABLE_OBCOL          0
-#endif
 #if !defined(ENABLE_OBGRID)
 #define ENABLE_OBGRID         0
 #endif
