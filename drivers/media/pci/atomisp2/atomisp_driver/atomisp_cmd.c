@@ -739,7 +739,8 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 		return &asd->video_out_video_capture;
 	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
 		/* For online video or SDV video pipe. */
-		if (css_pipe_id == CSS_PIPE_ID_VIDEO) {
+		if (css_pipe_id == CSS_PIPE_ID_VIDEO ||
+		    css_pipe_id == CSS_PIPE_ID_COPY) {
 			if (buf_type == CSS_BUFFER_TYPE_OUTPUT_FRAME)
 				return &asd->video_out_video_capture;
 			return &asd->video_out_preview;
