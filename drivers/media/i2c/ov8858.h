@@ -665,7 +665,6 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x5E00, 0x00}, /* PRE CTRL00 = default */
 	{OV8858_8BIT, 0x5E01, 0x41}, /* PRE_CTRL01 = default */
 
-	{OV8858_8BIT, 0x0100, 0x01}, /* Streaming enable */
 	{OV8858_TOK_TERM, 0, 0}
 };
 
