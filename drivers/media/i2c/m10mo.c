@@ -350,6 +350,12 @@ static int m10mo_request_mode_change(struct v4l2_subdev *sd, u8 requested_mode)
 			dev_err(&client->dev,
 				"Unable to change to PARAM_SETTING_MODE\n");
 		break;
+	case M10MO_PARAMETER_MODE:
+		ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x01);
+		if (ret < 0)
+			dev_err(&client->dev,
+				"Unable to change to PARAMETER MODE\n");
+		break;
 	case M10MO_MONITOR_MODE_ZSL:
 	case M10MO_MONITOR_MODE:
 		ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
@@ -557,9 +563,32 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	if (dev->mode == M10MO_MONITOR_MODE_ZSL &&
 		val == dev->curr_res_table[dev->fmt_idx].command) {
 		dev_info(&client->dev,
-		"%s Already streaming with required size \n", __func__);
+			"%s Already streaming with required size\n", __func__);
 		return 0;
 	}
+
+	if (dev->mode != M10MO_PARAM_SETTING_MODE &&
+		dev->mode != M10MO_PARAMETER_MODE) {
+		/*
+		 * At this stage means we are already at ZSL. So switch to
+		 * param mode first and reset all the parameters.
+		 */
+		ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
+		if (ret)
+			goto out;
+
+		ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE,
+			M10MO_INIT_TIMEOUT);
+		if (ret < 0)
+			goto out;
+	}
+
+	/* Change the Monitor Size */
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
+			dev->curr_res_table[dev->fmt_idx].command);
+	if (ret)
+		goto out;
+
 
 	/* Set ZSL mode */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, INFINITY_CAPTURE_MODE,
@@ -567,11 +596,6 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
-	/*Change to Monitor Size */
-	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
-				dev->curr_res_table[dev->fmt_idx].command);
-	if (ret)
-		goto out;
 
 	/* Setting output to NV12 */
 	ret = m10mo_writeb(sd, CATEGORY_PARAM, ZSL_OUTOUT_SELECT_FMT,
@@ -705,6 +729,11 @@ static irqreturn_t m10mo_irq_thread(int irq, void *dev_id)
 	case M10MO_PARAM_SETTING_MODE:
 		if (int_factor & REG_INT_STATUS_MODE) {
 			dev->mode = M10MO_PARAM_SETTING_MODE;
+		}
+		break;
+	case M10MO_PARAMETER_MODE:
+		if (int_factor & REG_INT_STATUS_MODE) {
+			dev->mode = M10MO_PARAMETER_MODE;
 		}
 		break;
 	case M10MO_MONITOR_MODE:
