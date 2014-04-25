@@ -407,13 +407,6 @@ static int ov680_load_firmware(struct v4l2_subdev *sd)
 		return -EBUSY;
 	}
 
-	/* Setup side-by-side */
-	ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
-	if (ret) {
-		dev_err(&client->dev, "%s - sbs setup failed\n", __func__);
-		return ret;
-	}
-
 	dev_info(&client->dev, "firmware load successfully.\n");
 	return ret;
 }
@@ -440,6 +433,19 @@ static int __ov680_s_power(struct v4l2_subdev *sd, int on, int load_fw)
 	}
 
 	dev->power_on = on;
+	if (on) {
+		/* Load firmware after power on. */
+		ret = ov680_load_firmware(sd);
+		if (ret)
+			dev_err(&client->dev,
+				"ov680_load_firmware failed. ret=%d\n", ret);
+#ifdef OV680_DUMP_DEBUG
+		ov680_dump_rx_regs(sd);
+		ov680_dump_res_regs(sd);
+		ov680_dump_snr_regs(sd);
+#endif
+	}
+
 	return ret;
 }
 
@@ -836,23 +842,17 @@ static int ov680_s_stream(struct v4l2_subdev *sd, int enable)
 
 	mutex_lock(&dev->input_lock);
 	if (dev->power_on && enable) {
-		/* Load firmware after power on. */
-		ret = ov680_load_firmware(sd);
+		/* Config and start streaming */
+		ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
 		if (ret) {
-			dev_err(&client->dev,
-				"ov680_load_firmware failed. ret=%d\n", ret);
+			dev_err(&client->dev, "%s - Config and start failed\n", __func__);
 			dev->sys_activated = 0;
+		} else {
+			dev->sys_activated = 1;
 		}
-#ifdef OV680_DUMP_DEBUG
-		ov680_dump_rx_regs(sd);
-		ov680_dump_res_regs(sd);
-		ov680_dump_snr_regs(sd);
-#endif
-		dev->sys_activated = 1; /* fw loaded */
 	} else { /* stream off */
 		dev->sys_activated = 0; /* fw loaded */
 	}
-
 	mutex_unlock(&dev->input_lock);
 	return ret;
 }

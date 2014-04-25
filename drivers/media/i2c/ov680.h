@@ -254,12 +254,6 @@ static struct ov680_res_struct ov680_res_list[] = {
 };
 #define N_FW (ARRAY_SIZE(ov680_res_list))
 
-/* The instruction of delay */
-static struct ov680_reg const ov680_delay[] = {
-	{OV680_TOK_DELAY, 0x0, 0xFF},
-	{OV680_TOK_TERM, 0x0, 0x0}
-};
-
 /* ov680 init clock pll instructions */
 static struct ov680_reg const ov680_init_clock_pll[] = {
 	/*
@@ -360,10 +354,10 @@ static struct ov680_reg const ov680_720p_2s_embedded_line[] = {
 	{OV680_8BIT, 0x6b19, 0x05}, /* 2560x720p SBS */
 
 	/* sl 10 10 */
-	{OV680_TOK_DELAY, 0x0, 0x14},
+	{OV680_TOK_DELAY, 0x0, 0x0a},
 	{OV680_8BIT, 0x6b17, 0x80}, /* streaming */
 	/* sl 100 100 */
-	{OV680_TOK_DELAY, 0x0, 0xff},
+	{OV680_TOK_DELAY, 0x0, 0x64},
 
 	{OV680_8BIT, 0x6003, 0x11},
 
@@ -391,7 +385,7 @@ static struct ov680_reg const ov680_720p_2s_embedded_line[] = {
 	{OV680_8BIT, 0x6AF5, 0x00},
 	{OV680_8BIT, 0x6AF9, 0x37},
 	/* sl 100 100 */
-	{OV680_TOK_DELAY, 0x0, 0xff},
+	{OV680_TOK_DELAY, 0x0, 0x64},
 
 	{OV680_8BIT, 0x6AF1, 0x6c}, /* 4307=0x00 */
 	{OV680_8BIT, 0x6AF2, 0x43},
@@ -419,7 +413,7 @@ static struct ov680_reg const ov680_720p_2s_embedded_line[] = {
 	{OV680_8BIT, 0x6b03, 0x00},
 
 	/* sl 100 100 */
-	{OV680_TOK_DELAY, 0x0, 0xff},
+	{OV680_TOK_DELAY, 0x0, 0x64},
 	/* turn on Embedded , in},e bypass */
 	{OV680_8BIT, 0x6b48, 0x88},
 	{OV680_8BIT, 0x6b49, 0x88},
