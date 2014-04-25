@@ -1211,45 +1211,50 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 	 */
 	if (atomisp_streaming_count(isp)) {
 		dev_dbg(isp->dev, "skip start sp\n");
-		/*
-		 * FIXME! VIED BZ 1439:
-		 * ISP timeout in start second stream due to incorrect MIPI
-		 * Buffer size.
-		 *
-		 * This is due to MIPI buffers are allocated once and shared
-		 * by all streams. So if the first sensor start running, MIPI
-		 * buffer is allocated with size conrresponding to the sensor
-		 * output frame size; when start second sensor, whose output
-		 * resolution requires more MIPI buffers, the previous
-		 * allocated MIPI buffer could not fulfill the requirement and
-		 * hense get ISP timeout or other unexpected behavor.
-		 *
-		 * Workaround here is to reset ISP which will stop previous
-		 * running stream, re-allocate mipi buffer, and start again.
-		 */
-		if (__need_realloc_mipi_buffer(isp)) {
-			dev_warn(isp->dev, "Need to reallocate mipi buffer.\n");
-			/* destroy stream/pipe for this stream */
-			if (__destroy_streams(asd, true))
-				dev_warn(isp->dev, "destroy stream failed.\n");
-
-			if (__destroy_pipes(asd, true))
-				dev_warn(isp->dev, "destroy pipe failed.\n");
-
+		if (!IS_HWREVISION(isp, ATOMISP_HW_REVISION_ISP2401)) {
 			/*
-			 * reset running stream which will reset mipi buffer
+			 * FIXME! VIED BZ 1439:
+			 * ISP timeout in start second stream due to incorrect MIPI
+			 * Buffer size.
+			 *
+			 * Note that ISP2401 New Input System does not have
+			 * such issue.
+			 *
+			 * This is due to MIPI buffers are allocated once and shared
+			 * by all streams. So if the first sensor start running, MIPI
+			 * buffer is allocated with size conrresponding to the sensor
+			 * output frame size; when start second sensor, whose output
+			 * resolution requires more MIPI buffers, the previous
+			 * allocated MIPI buffer could not fulfill the requirement and
+			 * hense get ISP timeout or other unexpected behavor.
+			 *
+			 * Workaround here is to reset ISP which will stop previous
+			 * running stream, re-allocate mipi buffer, and start again.
 			 */
-			atomisp_css_flush(isp);
+			if (__need_realloc_mipi_buffer(isp)) {
+				dev_warn(isp->dev, "Need to reallocate mipi buffer.\n");
+				/* destroy stream/pipe for this stream */
+				if (__destroy_streams(asd, true))
+					dev_warn(isp->dev, "destroy stream failed.\n");
 
-			/* recreate stream/pipe for this stream */
-			if (__create_pipes(asd)) {
-				dev_err(isp->dev, "create pipe error.\n");
-				return -EINVAL;
-			}
-			if (__create_streams(asd)) {
-				dev_err(isp->dev, "create stream error.\n");
-				ret = -EINVAL;
-				goto stream_err;
+				if (__destroy_pipes(asd, true))
+					dev_warn(isp->dev, "destroy pipe failed.\n");
+
+				/*
+				 * reset running stream which will reset mipi buffer
+				 */
+				atomisp_css_flush(isp);
+
+				/* recreate stream/pipe for this stream */
+				if (__create_pipes(asd)) {
+					dev_err(isp->dev, "create pipe error.\n");
+					return -EINVAL;
+				}
+				if (__create_streams(asd)) {
+					dev_err(isp->dev, "create stream error.\n");
+					ret = -EINVAL;
+					goto stream_err;
+				}
 			}
 		}
 	} else if (ia_css_start_sp() != IA_CSS_SUCCESS) {
