@@ -1304,7 +1304,7 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct m10mo_device *dev = container_of(
 		ctrl->handler, struct m10mo_device, ctrl_handler);
-	int ret;
+	int ret = 0;
 
 	if (!dev->power)
 		return 0;
@@ -1317,7 +1317,8 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 		ret = m10mo_set_metering(&dev->sd, ctrl->val);
 		break;
 	case V4L2_CID_START_ZSL_CAPTURE:
-		ret = m10mo_set_zsl_capture(&dev->sd, ctrl->val);
+		if (ctrl->val)
+			ret = m10mo_set_zsl_capture(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -1404,7 +1405,7 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.id = V4L2_CID_START_ZSL_CAPTURE,
 		.name = "Start zsl capture",
 		.type = V4L2_CTRL_TYPE_INTEGER,
-		.min = 1,
+		.min = 0,
 		.def = 1,
 		.max = 4,
 		.step = 1,
