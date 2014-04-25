@@ -382,7 +382,10 @@ enum ia_css_err ia_css_bufq_dequeue_buffer(
 	int error = 0;
 	ia_css_queue_t *q;
 
-	if ((item == NULL) || (queue_id == SH_CSS_INVALID_QUEUE_ID))
+	if ((item == NULL) ||
+	    (queue_id <= SH_CSS_INVALID_QUEUE_ID) ||
+	    (queue_id >= SH_CSS_MAX_NUM_QUEUES)
+	   )
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,

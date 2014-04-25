@@ -1035,6 +1035,8 @@ sh_css_config_input_network(struct ia_css_stream *stream)
 	}
 
 	assert(pipe != NULL);
+	if (pipe == NULL)
+		return IA_CSS_ERR_INTERNAL_ERROR;
 
 	if (pipe->pipeline.stages != NULL)
 		if (pipe->pipeline.stages->binary != NULL)
