@@ -864,6 +864,27 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	if (!fmt)
 		return -EINVAL;
 
+	/* Check if the code asked is supported one. If not default to NV12. */
+	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
+		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 && fmt->code != 0x8005) {
+		dev_info(&client->dev,
+			"%s unsupported code: 0x%x. Set to NV12 \n",
+			__func__, fmt->code);
+		fmt->code = 0x8005;
+	}
+
+	/*
+	 * TODO: Fix handling capture resolutions
+	 * Only the maximum resolution is supported now. Need to refine the
+	 * logic when smaller resolutions are supported
+	 */
+	/* JPEG fmt has fixed width and height */
+	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
+		fmt->width = JPEG_CONFIG_WIDTH;
+		fmt->height = JPEG_CONFIG_HEIGHT;
+		return 0;
+	}
+
 	idx = nearest_resolution_index(sd, fmt->width, fmt->height);
 
 	/* Fall back to the last if not found */
@@ -873,14 +894,7 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	fmt->width = dev->curr_res_table[idx].width;
 	fmt->height = dev->curr_res_table[idx].height;
 
-	/* Check if the code asked is supported one. If not default to NV12. */
-	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
-		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 && fmt->code != 0x8005) {
-		dev_info(&client->dev,
-			"%s unsupported code: 0x%x. Set to NV12 \n",
-			__func__, fmt->code);
-		fmt->code = 0x8005;
-	}
+
 	return 0;
 }
 
@@ -920,7 +934,6 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct atomisp_input_stream_info *stream_info =
 			(struct atomisp_input_stream_info*)fmt->reserved;
-	int ch_id = 0;
 	int ret;
 
 	mutex_lock(&dev->input_lock);
@@ -931,18 +944,13 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	dev->format.code = fmt->code;
 
-	/* This will be set during the next stream on call */
-	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
-	if (dev->fmt_idx == -1) {
-		ret = -EINVAL;
-		goto out;
-	}
-
 	/*
-	 * Currently preview means ZSL mode. So if the run mode is preview
-	 * or continuous, then binary data will come from channel 1.
+	 * TODO: Fix this.
+	 * Currently only the default ZSL resolution(13M) is supported for
+	 * capture. This logic needs to be changed to support capture with
+	 * multiple resolutions
 	 */
-	 if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
+	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
 			 dev->run_mode == CI_MODE_CONTINUOUS)) {
 		stream_info->ch_id = M10MO_ZSL_JPEG_VIRTUAL_CHANNEL;
@@ -951,7 +959,22 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 			(u8)ATOMISP_INPUT_FORMAT_USER_DEF3;
 		stream_info->isys_info[0].width = 0;
 		stream_info->isys_info[0].height = 0;
-	}  else if (dev->format.code == 0x8005 &&
+		ret = 0;
+		goto out;
+	}
+
+	/*
+	 * TODO: Fix this
+	 * Currently with this logic we are handling only the preview
+	 * resolutions. We need to handle the capture resolution separately.
+	 */
+	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
+	if (dev->fmt_idx == -1) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (dev->format.code == 0x8005 &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
 			 dev->run_mode == CI_MODE_CONTINUOUS)) {
 		stream_info->ch_id = M10MO_ZSL_NV12_VIRTUAL_CHANNEL;
@@ -968,10 +991,9 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 		stream_info->isys_info[1].height = (u16)fmt->height / 2;
 	}
 
-	dev_info(&client->dev,
-		"%s index: %d width: %d, height: %d, code; 0x%x ch_id: %d\n",
-		__func__, dev->fmt_idx, fmt->width, fmt->height,
-		dev->format.code, ch_id);
+	dev_dbg(&client->dev,
+		"%s index: %d width: %d, height: %d, code; 0x%x\n", __func__,
+		 dev->fmt_idx, fmt->width, fmt->height, dev->format.code);
 
 out:
 	mutex_unlock(&dev->input_lock);

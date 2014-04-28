@@ -69,6 +69,10 @@
 #define CAPTURE_FORMAT_YUV422		0x00
 #define CAPTURE_FORMAT_JPEG8		0x01
 
+#define M10MO_PACKETS_SEND_UNIT		2048
+#define JPEG_CONFIG_WIDTH		M10MO_PACKETS_SEND_UNIT
+#define JPEG_CONFIG_HEIGHT		4102
+
 struct m10mo_spi {
 	int spi_enabled;
 	struct spi_device *spi_device;
