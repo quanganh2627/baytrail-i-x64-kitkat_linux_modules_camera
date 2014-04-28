@@ -54,7 +54,9 @@
 #include "ia_css_mipi.h"
 #include "ia_css_morph.h"
 
+#if !defined(IS_ISP_2500_SYSTEM)
 /* Include all kernel host interfaces for ISP1 */
+
 #include "anr/anr_1.0/ia_css_anr.host.h"
 #include "cnr/cnr_1.0/ia_css_cnr.host.h"
 #include "csc/csc_1.0/ia_css_csc.host.h"
@@ -78,6 +80,7 @@
 #include "xnr/xnr_1.0/ia_css_xnr.host.h"
 
 /* Include additional kernel host interfaces for ISP2 */
+
 #include "aa/aa_2/ia_css_aa2.host.h"
 #include "anr/anr_2/ia_css_anr2.host.h"
 #include "bh/bh_2/ia_css_bh.host.h"
@@ -87,7 +90,7 @@
 #include "gc/gc_2/ia_css_gc2.host.h"
 #include "sdis/sdis_2/ia_css_sdis2.host.h"
 #include "ynr/ynr_2/ia_css_ynr2.host.h"
-
+#endif
 #include "platform_support.h"
 
 #if defined(IS_ISP_2500_SYSTEM)
@@ -2122,6 +2125,11 @@ sh_css_set_per_frame_isp_config_on_pipe(
 
 	IA_CSS_ENTER_PRIVATE("stream=%p, config=%p, pipe=%p", stream, config, pipe);
 
+	if (!pipe) {
+		err = IA_CSS_ERR_INVALID_ARGUMENTS;
+		goto exit;
+	}
+
 	/* create per-frame ISP params object with default values
 	 * from stream->isp_params_configs if one doesn't already exist
 	*/
@@ -2153,9 +2161,8 @@ sh_css_set_per_frame_isp_config_on_pipe(
 
 	/* now commit to ddr */
 	err = sh_css_param_update_isp_params(stream, params, sh_css_sp_is_running(), pipe);
-	if (err != IA_CSS_SUCCESS)
-		return err;
 
+exit:
 	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
 }
@@ -2843,6 +2850,10 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 	}
 
 #if !defined(IS_ISP_2500_SYSTEM)
+
+	params->output_frame = NULL;
+	params->isp_parameters_id = 0;
+
 	if (use_default_config)
 	{
 		sh_css_set_nr_config(params, &default_nr_config);
