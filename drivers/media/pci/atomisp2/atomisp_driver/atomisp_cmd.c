@@ -3609,6 +3609,18 @@ int atomisp_try_fmt(struct video_device *vdev, struct v4l2_format *f,
 
 	f->fmt.pix.pixelformat = fmt->pixelformat;
 
+	/*
+	 * If the format is jpeg, then the width and height will not
+	 * satisfy the normal atomisp requirements and no need to check
+	 * the below conditions. So just assign to what is being returned from
+	 * the sensor driver.
+	 */
+	if (f->fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG) {
+		f->fmt.pix.width = snr_mbus_fmt.width;
+		f->fmt.pix.height = snr_mbus_fmt.height;
+		return 0;
+	}
+
 	if (snr_mbus_fmt.width < f->fmt.pix.width
 	    && snr_mbus_fmt.height < f->fmt.pix.height) {
 		f->fmt.pix.width = snr_mbus_fmt.width;
