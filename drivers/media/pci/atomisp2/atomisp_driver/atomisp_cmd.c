@@ -4031,28 +4031,14 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			asd->run_mode->val = ATOMISP_RUN_MODE_STILL_CAPTURE;
 		}
 	}
-	if (asd->copy_mode) {
-		unsigned int copy_width, copy_height;
-		if (format->sh_fmt == CSS_FRAME_FORMAT_BINARY_8) {
-			copy_width = ATOMISP_WIDTH_CONFIG_FOR_JPEG;
-			copy_height = ATOMISP_MAX_HEIGHT_CONFIG_FOR_JPEG;
-			atomisp_wdt_refresh(isp,
-					    ATOMISP_EXT_ISP_TIMEOUT_DURATION);
-		 } else {
-			copy_width = pix->width;
-			copy_height = pix->height;
-		}
-		dev_info(isp->dev, "copy_configure_output %ux%u, fmt %8.8x\n",
-			pix->width, pix->height, format->sh_fmt);
-
+	if (asd->copy_mode)
 		ret = atomisp_css_copy_configure_output(asd, stream_index,
-				copy_width, copy_height, format->sh_fmt);
-	} else {
+				pix->width, pix->height, format->sh_fmt);
+	else
 		ret = configure_output(asd, pix->width, pix->height,
 				       format->planar ? pix->bytesperline :
 				       pix->bytesperline * 8 / format->depth,
 				       format->sh_fmt);
-	}
 	if (ret) {
 		dev_err(isp->dev, "configure_output %ux%u, format %8.8x\n",
 			pix->width, pix->height, format->sh_fmt);
@@ -4242,14 +4228,6 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 		asd->params.video_dis_en = 0;
 	}
 
-	/*
-	 * If the format is JPEG, modify width and height only for ISP according
-	 * to how it expects. So set the input format resolution accordingly
-	 */
-	if (format->sh_fmt == CSS_FRAME_FORMAT_BINARY_8) {
-		ffmt.width = ATOMISP_WIDTH_CONFIG_FOR_JPEG;
-		ffmt.height = ATOMISP_MAX_HEIGHT_CONFIG_FOR_JPEG;
-	}
 	atomisp_subdev_set_ffmt(&asd->subdev, &fh,
 				V4L2_SUBDEV_FORMAT_ACTIVE,
 				ATOMISP_SUBDEV_PAD_SINK, &ffmt);
@@ -4578,13 +4556,6 @@ done:
 				     pipe->pix.height * 2);
 
 	pipe->capq.field = f->fmt.pix.field;
-
-	/* Set the maximum buffer size for the jpeg image capture */
-	if (format_bridge->sh_fmt == CSS_FRAME_FORMAT_BINARY_8) {
-		f->fmt.pix.sizeimage = ATOMISP_MAX_USERPTR_SIZE_FOR_JPEG;
-		dev_warn(isp->dev, "%s JPEG capture. Image size %d\n",
-				__func__, f->fmt.pix.sizeimage);
-	}
 
 	/*
 	 * If in video 480P case, no GFX throttle

@@ -125,27 +125,6 @@
 
 #define ATOMISP_CALC_CSS_PREV_OVERLAP(lines) \
 	((lines) * 38 / 100 & 0xfffffe)
-/*
- * TODO: Add interface for getting the send unit size from sensor.
- * Now we have hardcoded setup for m10mo sensor.
- */
-
-/* M10MO sends the jpeg in packets of size 2048 bytes each */
-#define ATOMISP_M10MO_JPEG_SEND_UNIT	2048
-
-/* Atomisp should configure width for jpeg based on the send unit size */
-#define ATOMISP_WIDTH_CONFIG_FOR_JPEG	ATOMISP_M10MO_JPEG_SEND_UNIT
-
-/* Maximum JPEG size is set as 5MB for 13MP. So 2048*2560 */
-#define ATOMISP_MAX_HEIGHT_CONFIG_FOR_JPEG	2560
-
-/*
- *  Maximum JPEG size notified to user pointer is 6MB. because a mismatch
- * in calculation of frame info
- */
-/* TODO: Fix this. */
-#define ATOMISP_MAX_USERPTR_SIZE_FOR_JPEG \
-	(ATOM_ISP_MAX_HEIGHT * ATOMISP_WIDTH_CONFIG_FOR_JPEG)
 
 /*
  * Define how fast CPU should be able to serve ISP interrupts.
