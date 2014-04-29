@@ -2576,6 +2576,25 @@ struct imx_resolution imx135_res_video[] = {
 		.mipi_freq = 451200,
 	},
 	{
+		.desc = "imx135_6m_cont_cap",
+		.regs = imx135_6m,
+		.width = 3280,
+		.height = 1852,
+		.fps_options = {
+			{ /* Binning Pixel clock: 360.96MHz */
+				.fps = 30,
+				.pixels_per_line = 4572,
+				.lines_per_frame = 2624,
+			},
+			{
+			}
+		},
+		.bin_factor_x = 0,
+		.bin_factor_y = 0,
+		.used = 0,
+		.mipi_freq = 451200,
+	},
+	{
 		.desc = "imx135_8m_cropped_video",
 		.regs = imx135_8m_cropped,
 		.width = 3280,
