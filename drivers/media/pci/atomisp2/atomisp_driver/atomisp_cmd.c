@@ -4336,6 +4336,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	const struct atomisp_format_bridge *format_bridge;
 	struct atomisp_css_frame_info output_info, raw_output_info;
 	struct v4l2_format snr_fmt = *f;
+	struct v4l2_format backup_fmt = *f, s_fmt = *f;
 	unsigned int dvs_env_w = 0, dvs_env_h = 0;
 	unsigned int padding_w = pad_w, padding_h = pad_h;
 	bool res_overflow = false, crop_needs_override = false;
@@ -4536,9 +4537,22 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	    isp_sink_fmt.width < (f->fmt.pix.width + padding_w + dvs_env_w) ||
 	     isp_sink_fmt.height < (f->fmt.pix.height + padding_h +
 				    dvs_env_h)) {
-		ret = atomisp_set_fmt_to_snr(vdev, f, f->fmt.pix.pixelformat,
-					     padding_w, padding_h,
-					     dvs_env_w, dvs_env_h);
+		/*
+		 * For jpeg format the sensor will return constant width and
+		 * height. Because we had alredy queried the try_mbus_fmt,
+		 * f->fmt.pix.width and f->fmt.pix.height has already been
+		 * changed to this fixed width and height. So we cannot select
+		 * the correct resolution. So use the original width and height
+		 * while set_mbus_fmt()
+		 */
+		s_fmt = *f;
+		if (f->fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG) {
+			s_fmt.fmt.pix.width = backup_fmt.fmt.pix.width;
+			s_fmt.fmt.pix.height = backup_fmt.fmt.pix.height;
+		}
+		ret = atomisp_set_fmt_to_snr(vdev, &s_fmt,
+					f->fmt.pix.pixelformat, padding_w,
+					padding_h, dvs_env_w, dvs_env_h);
 		if (ret)
 			return -EINVAL;
 
