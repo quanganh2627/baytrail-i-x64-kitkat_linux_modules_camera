@@ -451,28 +451,6 @@ static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 	return ret;
 }
 
-static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
-		       void *arg)
-{
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct atomisp_ext_isp_ctrl *m10mo_ctrl
-		= (struct atomisp_ext_isp_ctrl *)arg;
-
-	dev_info(&client->dev, "m10mo ioctl id 0x%x\n", m10mo_ctrl->id);
-	dev_info(&client->dev, "m10mo ioctl data 0x%x\n", m10mo_ctrl->data);
-
-	switch(m10mo_ctrl->id)
-	{
-	case EXT_ISP_ISO_CTRL:
-		dev_info(&client->dev, "m10mo ioctl ISO\n");
-		break;
-	default:
-		dev_err(&client->dev, "m10mo ioctl: Unsupported ID\n");
-	};
-
-	return 0;
-}
-
 static int power_up(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -676,6 +654,16 @@ out:
 	return ret;
 }
 
+static u32 __get_dual_capture_value(u8 capture_mode)
+{
+	switch(capture_mode) {
+	case M10MO_CAPTURE_MODE_ZSL_NORMAL:
+	case M10MO_CAPTURE_MODE_ZSL_HDR:
+	default:
+		return 0x01;
+	}
+}
+
 static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -683,6 +671,7 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 	const struct m10mo_resolution *capture_res =
 			resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
 	int ret;
+	u32 val;
 
 	/* TODO: Fix this. Currently we do not use this */
 	(void) sel_frame;
@@ -704,10 +693,46 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 	if (ret)
 		return ret;
 
+	val = __get_dual_capture_value(dev->capture_mode);
+
 	/* Start Single Capture, JPEG encode & transfer start */
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, 0x01);
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, val);
 	dev_dbg(&client->dev, "%s zsl capture trigger result: %d\n",
 			__func__, ret);
+	return ret;
+}
+
+static int m10mo_set_hdr_mode(struct v4l2_subdev *sd, unsigned int val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret;
+
+	switch(val) {
+	case STOP_HDR_MODE:
+		/* switch to normal capture. HDR MODE off */
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, REG_CAP_NV12_MODE,
+				NORMAL_CAPTURE);
+		if (!ret)
+			dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_NORMAL;
+		break;
+	case START_HDR_MODE:
+		/* switch to HDR mode */
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, REG_CAP_NV12_MODE,
+				HDR_CAPTURE);
+		if (!ret)
+			dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_HDR;
+		break;
+	case RESUME_PREVIEW_IN_HDR_MODE:
+		/* switch to HDR mode */
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
+				START_DUAL_CAPTURE, PREVIEW_IN_NV12_MODE);
+		if (!ret)
+			dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_HDR;
+		break;
+	default:
+		return -EINVAL;
+	}
+
 	return ret;
 }
 
@@ -1481,6 +1506,30 @@ static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 	dev->curr_res_table = resolutions[dev->fw_type][index];
 
 	mutex_unlock(&dev->input_lock);
+	return 0;
+}
+
+static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
+			void *arg)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct atomisp_ext_isp_ctrl *m10mo_ctrl
+		= (struct atomisp_ext_isp_ctrl *)arg;
+
+	dev_info(&client->dev, "m10mo ioctl id 0x%x\n", m10mo_ctrl->id);
+	dev_info(&client->dev, "m10mo ioctl data 0x%x\n", m10mo_ctrl->data);
+
+	switch(m10mo_ctrl->id)
+	{
+	case EXT_ISP_ISO_CTRL:
+		dev_info(&client->dev, "m10mo ioctl ISO\n");
+		break;
+	case EXT_ISP_HDR_CAPTURE_CTRL:
+		return m10mo_set_hdr_mode(sd, m10mo_ctrl->data);
+	default:
+		dev_err(&client->dev, "m10mo ioctl: Unsupported ID\n");
+	};
+
 	return 0;
 }
 

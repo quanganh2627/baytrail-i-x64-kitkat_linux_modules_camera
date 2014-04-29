@@ -111,6 +111,7 @@ struct m10mo_device {
 	u8 fps;
 	u8 requested_mode;
 	u8 mode;
+	u8 capture_mode;
 	int fmt_idx;
 	int capture_res_idx;
 	wait_queue_head_t irq_waitq;
@@ -127,6 +128,12 @@ struct m10mo_device {
 	int entries_curr_table;
 	int ref_clock;
 	int fw_type;
+};
+
+enum hdr_options{
+	STOP_HDR_MODE,
+	START_HDR_MODE,
+	RESUME_PREVIEW_IN_HDR_MODE
 };
 
 #define to_m10mo_sensor(x) container_of(x, struct m10mo_device, sd)
@@ -343,6 +350,13 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_FW_READ             0x57
 #define REG_CHECK_SUM_SIZE      0x5c
 
+/* Still capture modes for NV12 */
+#define REG_CAP_NV12_MODE	0x0a
+#define NORMAL_CAPTURE		0x00
+#define HDR_CAPTURE		0x02
+
+#define PREVIEW_IN_NV12_MODE	0x02
+
 #define REG_RAM_START_SRAM      0x01
 #define REG_RAM_START_SDRAM     0x02
 
@@ -373,6 +387,12 @@ enum M10MO_MODES {
 	M10MO_MONITOR_MODE,
 	M10MO_MONITOR_MODE_ZSL,
 	M10MO_SINGLE_CAPTURE_MODE
+};
+
+/* Internal modes of M10MO */
+enum M10MO_CAPTURE_MODES {
+	M10MO_CAPTURE_MODE_ZSL_NORMAL = 0,
+	M10MO_CAPTURE_MODE_ZSL_HDR,
 };
 
 #define M10MO_MODE_PREVIEW_INDEX	0
