@@ -47,8 +47,12 @@ struct csi_rx_backend_cfg_s {
 	csi_mipi_packet_type_t csi_mipi_packet_type;
 
 	struct {
+		bool     comp_enable;
 		uint32_t virtual_channel;
 		uint32_t data_type;
+		uint32_t comp_scheme;
+		uint32_t comp_predictor;
+		uint32_t comp_bit_idx;
 	} csi_mipi_cfg;
 };
 

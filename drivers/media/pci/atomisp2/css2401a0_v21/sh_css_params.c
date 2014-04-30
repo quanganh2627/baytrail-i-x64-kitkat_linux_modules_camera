@@ -2755,7 +2755,7 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	ddr_ptrs_size = &params->ddr_ptrs_size;
 
 #if defined(IS_ISP_2500_SYSTEM)
-	sh_css_set_default_product_specific();
+	sh_css_set_default_product_specific(stream);
 #endif
 
 	/* now commit to ddr */

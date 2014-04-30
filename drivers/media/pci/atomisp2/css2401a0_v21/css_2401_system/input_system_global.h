@@ -134,9 +134,12 @@ struct input_system_cfg_s {
 	int8_t linked_isys_stream_id;
 
 	struct {
+		bool	comp_enable;
 		int32_t	active_lanes;
 		int32_t	fmt_type;
 		int32_t	ch_id;
+		int32_t comp_predictor;
+		int32_t comp_scheme;
 	} csi_port_attr;
 
 	pixelgen_tpg_cfg_t	tpg_port_attr;
@@ -144,7 +147,8 @@ struct input_system_cfg_s {
 	pixelgen_prbs_cfg_t prbs_port_attr;
 
 	struct {
-		int32_t	bits_per_pixel;
+		int32_t data_fmt_type;
+		int32_t bits_per_pixel;
 		int32_t pixels_per_line;
 		int32_t lines_per_frame;
 	} input_port_resolution;

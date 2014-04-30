@@ -310,7 +310,7 @@ static bool create_input_system_channel(
 			metadata ? cfg->metadata.bits_per_pixel : cfg->input_port_resolution.bits_per_pixel,
 			metadata ? cfg->metadata.pixels_per_line : cfg->input_port_resolution.pixels_per_line,
 			metadata ? cfg->metadata.lines_per_frame : cfg->input_port_resolution.lines_per_frame,
-			metadata ? cfg->metadata.fmt_type : cfg->csi_port_attr.fmt_type,
+			metadata ? cfg->metadata.fmt_type : cfg->input_port_resolution.data_fmt_type,
 			cfg->online,
 			&(me->ib_buffer))) {
 		release_sid(me->stream2mmio_id, &(me->stream2mmio_sid_id));
@@ -592,7 +592,7 @@ static bool acquire_ib_buffer(
 		buf->lines = 4; /* use double buffering for online usecases */
 	}
 	else {
-		buf->lines = 2; /* ISYS2401 hardware can handle at most 4 lines */
+		buf->lines = 2;
 	}
 
 	(void)(lines_per_frame);
@@ -691,12 +691,20 @@ static bool calculate_be_cfg(
 			(void *)(&input_port->csi_rx.backend_lut_entry),
 		sizeof(csi_rx_backend_lut_entry_t));
 
-	cfg->csi_mipi_packet_type = metadata ?
-		get_csi_mipi_packet_type(isys_cfg->metadata.fmt_type) :
-		get_csi_mipi_packet_type(isys_cfg->csi_port_attr.fmt_type);
 	cfg->csi_mipi_cfg.virtual_channel = isys_cfg->csi_port_attr.ch_id;
-	cfg->csi_mipi_cfg.data_type = metadata ? isys_cfg->metadata.fmt_type :
-		isys_cfg->csi_port_attr.fmt_type;
+	if(metadata) {
+		cfg->csi_mipi_packet_type = get_csi_mipi_packet_type(isys_cfg->metadata.fmt_type);
+		cfg->csi_mipi_cfg.comp_enable = false;
+		cfg->csi_mipi_cfg.data_type = isys_cfg->metadata.fmt_type;
+	}
+	else {
+		cfg->csi_mipi_packet_type = get_csi_mipi_packet_type(isys_cfg->csi_port_attr.fmt_type);
+		cfg->csi_mipi_cfg.data_type = isys_cfg->csi_port_attr.fmt_type;
+		cfg->csi_mipi_cfg.comp_enable = isys_cfg->csi_port_attr.comp_enable;
+		cfg->csi_mipi_cfg.comp_scheme = isys_cfg->csi_port_attr.comp_scheme;
+		cfg->csi_mipi_cfg.comp_predictor = isys_cfg->csi_port_attr.comp_predictor;
+		cfg->csi_mipi_cfg.comp_bit_idx = cfg->csi_mipi_cfg.data_type - MIPI_FORMAT_CUSTOM0;
+	}
 
 	return true;
 }
@@ -769,7 +777,8 @@ static bool calculate_ibuf_ctrl_cfg(
 	} else if (isys_cfg->raw_packed) {
 		cfg->dest_buf_cfg.stride	= calculate_stride(bits_per_pixel,
 							isys_cfg->input_port_resolution.pixels_per_line,
-							isys_cfg->raw_packed, isys_cfg->csi_port_attr.fmt_type);
+							isys_cfg->raw_packed,
+							isys_cfg->input_port_resolution.data_fmt_type);
 	} else {
 		cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
 	}
@@ -835,10 +844,7 @@ static bool calculate_isys2401_dma_port_cfg(
 	} else {
 		bits_per_pixel = isys_cfg->input_port_resolution.bits_per_pixel;
 		pixels_per_line = isys_cfg->input_port_resolution.pixels_per_line;
-		/* TODO: For compressed input data, the ibuf stride calculation
-		 * should be based on raw10/12 format. To be updated when
-		 * support for compression is added. */
-		fmt_type = isys_cfg->csi_port_attr.fmt_type;
+		fmt_type = isys_cfg->input_port_resolution.data_fmt_type;
 	}
 
 	cfg->stride	= calculate_stride(bits_per_pixel, pixels_per_line, raw_packed, fmt_type);

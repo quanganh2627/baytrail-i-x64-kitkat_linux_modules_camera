@@ -541,25 +541,6 @@ sh_css_config_input_network(struct ia_css_stream *stream)
 	return IA_CSS_SUCCESS;
 }
 #elif !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
-static mipi_predictor_t sh_css_csi2_compression_type_2_mipi_predictor(enum ia_css_csi2_compression_type type)
-{
-	mipi_predictor_t predictor = MIPI_PREDICTOR_NONE;
-
-	switch (type) {
-	case IA_CSS_CSI2_COMPRESSION_TYPE_NONE:
-		predictor = MIPI_PREDICTOR_NONE;
-		break;
-	case IA_CSS_CSI2_COMPRESSION_TYPE_1:
-		predictor = MIPI_PREDICTOR_TYPE1;
-		break;
-	case IA_CSS_CSI2_COMPRESSION_TYPE_2:
-		predictor = MIPI_PREDICTOR_TYPE2;
-	default:
-		break;
-	}
-	return predictor;
-}
-
 static unsigned int sh_css_stream_format_2_bits_per_subpixel(
 		enum ia_css_stream_format format)
 {
@@ -900,8 +881,8 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_attr(
 
 		err = ia_css_isys_convert_stream_format_to_mipi_format(
 			stream_cfg->isys_config[isys_stream_idx].format,
-			sh_css_csi2_compression_type_2_mipi_predictor(stream_cfg->source.port.compression.type),
-				&fmt_type);
+			MIPI_PREDICTOR_NONE,
+			&fmt_type);
 		if (err != IA_CSS_SUCCESS)
 			rc = false;
 
@@ -911,13 +892,18 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_attr(
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 		isys_stream_descr->online = stream_cfg->online;
 #endif
+		err |= ia_css_isys_convert_compressed_format(
+				&stream_cfg->source.port.compression,
+				isys_stream_descr);
+		if (err != IA_CSS_SUCCESS)
+			rc = false;
 
 		/* metadata */
 		isys_stream_descr->metadata.enable = false;
 		if (stream_cfg->metadata_config.resolution.height > 0) {
 			err = ia_css_isys_convert_stream_format_to_mipi_format(
 				stream_cfg->metadata_config.data_type,
-				sh_css_csi2_compression_type_2_mipi_predictor(stream_cfg->source.port.compression.type),
+				MIPI_PREDICTOR_NONE,
 					&fmt_type);
 			if (err != IA_CSS_SUCCESS)
 				rc = false;
@@ -947,6 +933,8 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_resolution(
 	unsigned int bits_per_subpixel;
 	unsigned int max_subpixels_per_line;
 	unsigned int lines_per_frame;
+	unsigned int fmt_type;
+	enum ia_css_err err;
 
 	bits_per_subpixel =
 		sh_css_stream_format_2_bits_per_subpixel(stream_cfg->isys_config[isys_stream_idx].format);
@@ -961,11 +949,18 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_resolution(
 	lines_per_frame = stream_cfg->isys_config[isys_stream_idx].input_res.height;
 	if (lines_per_frame == 0)
 		return false;
+	err = ia_css_isys_convert_stream_format_to_mipi_format(
+				stream_cfg->input_config.format,
+				MIPI_PREDICTOR_NONE,
+				&fmt_type);
+	if (err != IA_CSS_SUCCESS)
+		return false;
 
 	/* HW needs subpixel info for their settings */
 	isys_stream_descr->input_port_resolution.bits_per_pixel = bits_per_subpixel;
 	isys_stream_descr->input_port_resolution.pixels_per_line = max_subpixels_per_line;
 	isys_stream_descr->input_port_resolution.lines_per_frame = lines_per_frame;
+	isys_stream_descr->input_port_resolution.data_fmt_type = fmt_type;
 
 	return true;
 }
@@ -5840,6 +5835,7 @@ static enum ia_css_err load_advanced_binaries(
 				 vf_info, *vf_pp_in_info, *pipe_out_info,
 				 *pipe_vf_out_info;
 	bool need_pp;
+	bool need_isp_copy = true;
 	enum ia_css_err err = IA_CSS_SUCCESS;
 
 	assert(pipe != NULL);
@@ -5935,13 +5931,16 @@ static enum ia_css_err load_advanced_binaries(
 	}
 
 	/* Copy */
-	err = load_copy_binary(pipe,
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* For CSI2+, only the direct sensor mode/online requires ISP copy */
+	need_isp_copy = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+#endif
+	if (need_isp_copy)
+		load_copy_binary(pipe,
 			       &pipe->pipe_settings.capture.copy_binary,
 			       &pipe->pipe_settings.capture.pre_isp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
 
-	return IA_CSS_SUCCESS;
+	return err;
 }
 
 static enum ia_css_err load_bayer_isp_binaries(
@@ -5980,6 +5979,7 @@ static enum ia_css_err load_low_light_binaries(
 				 vf_info, *pipe_vf_out_info, *pipe_out_info,
 				 *vf_pp_in_info;
 	bool need_pp;
+	bool need_isp_copy = true;
 	enum ia_css_err err = IA_CSS_SUCCESS;
 
 	assert(pipe != NULL);
@@ -6076,13 +6076,16 @@ static enum ia_css_err load_low_light_binaries(
 	}
 
 	/* Copy */
-	err = load_copy_binary(pipe,
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	/* For CSI2+, only the direct sensor mode/online requires ISP copy */
+	need_isp_copy = pipe->stream->config.mode == IA_CSS_INPUT_MODE_SENSOR;
+#endif
+	if (need_isp_copy)
+		err = load_copy_binary(pipe,
 			       &pipe->pipe_settings.capture.copy_binary,
 			       &pipe->pipe_settings.capture.pre_isp_binary);
-	if (err != IA_CSS_SUCCESS)
-		return err;
 
-	return IA_CSS_SUCCESS;
+	return err;
 }
 
 static bool copy_on_sp(struct ia_css_pipe *pipe)
