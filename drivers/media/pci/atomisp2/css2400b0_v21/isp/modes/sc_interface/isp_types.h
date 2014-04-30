@@ -131,8 +131,9 @@
 #define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AE_BNR_STRIPED   81
 #define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS         82
 #define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB            83
+#define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS_STRIPED 84
 
-#define SH_CSS_BINARY_NUM_IDS                             84
+#define SH_CSS_BINARY_NUM_IDS                             85
 
 
 

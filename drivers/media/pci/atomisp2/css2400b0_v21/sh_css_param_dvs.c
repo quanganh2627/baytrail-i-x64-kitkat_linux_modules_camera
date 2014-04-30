@@ -292,15 +292,21 @@ void copy_dvs_6axis_table(struct ia_css_dvs_6axis_config *dvs_config_dst,
 enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *host_stats,
 				   const struct ia_css_isp_skc_dvs_statistics *isp_stats)
 {
-	dvs_stat_private_dvs_stat_cfg_t	dvs_stat_cfg;
-	dvs_stat_private_motion_vec_t*	dvs_stat_mv_p = NULL;
-	unsigned char			set_idx, entry_idx, idx, i;
-	hrt_vaddress			dvs_stat_ddr_addr;
-	hrt_vaddress			dvs_stat_cfg_ddr_addr;
-	dvs_stat_private_raw_buffer_t*	raw_buffer_p =
-			(dvs_stat_private_raw_buffer_t*)isp_stats;
-	struct dvs_stat_mv_entry_public *p_host_entry;
-	struct dvs_stat_mv_private *p_isp_entry;
+	struct dvs_stat_private_dvs_stat_cfg	dvs_stat_cfg;
+	struct dvs_stat_stripe_data		stripe_data;
+	struct dvs_stat_private_motion_vec*	dvs_stat_mv_p = NULL;
+	unsigned char				set_idx, entry_idx, idx, i;
+	hrt_vaddress				dvs_stat_ddr_addr;
+	hrt_vaddress				dvs_stat_cfg_ddr_addr;
+	hrt_vaddress				dvs_stat_stripe_data_ddr_addr;
+	struct dvs_stat_private_raw_buffer*	raw_buffer_p =
+				(dvs_stat_private_raw_buffer_t*)isp_stats;
+	struct dvs_stat_mv_entry_public 	*p_host_entry;
+	struct dvs_stat_mv_private 		*p_isp_entry;
+	unsigned char				stripe_align_skip_idx;
+	unsigned char				stripe_grd_width_align;
+	unsigned short				stripe_x_update;
+	unsigned short				idx_update;
 
 	IA_CSS_ENTER_PRIVATE("host_stats=%p, isp_stats=%p", host_stats, isp_stats);
 
@@ -314,6 +320,7 @@ enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *
 
 	dvs_stat_ddr_addr = (hrt_vaddress) &raw_buffer_p->dvs_motion_vec;
 	dvs_stat_cfg_ddr_addr = (hrt_vaddress) &raw_buffer_p->dvs_stat_cfg;
+	dvs_stat_stripe_data_ddr_addr = (hrt_vaddress) &raw_buffer_p->dvs_stat_stripe_data;
 
 	mmgr_load(dvs_stat_ddr_addr,
 			(void*)dvs_stat_mv_p,
@@ -324,12 +331,30 @@ enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *
 			(void*)&(dvs_stat_cfg),
 			sizeof(dvs_stat_private_dvs_stat_cfg_t));
 
+	/* Load stripe data */
+	mmgr_load(dvs_stat_stripe_data_ddr_addr,
+			(void*)&(stripe_data),
+			sizeof(dvs_stat_stripe_data_t));
+
 	/* Translate between private and public configuration */
 	ia_css_dvs_stat_private_to_public_cfg(&host_stats->dvs_stat_cfg, &dvs_stat_cfg);
 
 	// Translate between private and public motion vectors
 	for(i = 0; i < IA_CSS_SKC_DVS_STAT_NUM_OF_LEVELS; i++) {
 
+		/* Stripping check - is debubbling needed */
+		stripe_grd_width_align =
+			host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_width;
+		stripe_align_skip_idx = stripe_grd_width_align;
+		if(host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_width !=
+			stripe_data.grid_width[0][i])
+		{
+			if(stripe_data.grid_width[0][i] % 2)
+			{
+				stripe_grd_width_align++;
+				stripe_align_skip_idx = stripe_data.grid_width[0][i];
+			}
+		}
 		for(set_idx = 0;
 		     set_idx < host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_height;
 		     set_idx++)
@@ -344,17 +369,28 @@ enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *
 				p_host_entry = host_stats->dvs_stat_mv_l2;
 				p_isp_entry = &dvs_stat_mv_p->dvs_mv_output_l2[set_idx].mv_entry[0];
 			}
-			for(entry_idx = 0;
-			     entry_idx < host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_width;
-			     entry_idx++)
+			stripe_x_update = 0;
+			idx_update = 0;
+			for(entry_idx = 0; entry_idx < stripe_grd_width_align; entry_idx++)
 			{
-				idx = set_idx * host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_width + entry_idx;
+				if(entry_idx == stripe_align_skip_idx)
+				{
+					idx_update = 1;
+					p_isp_entry++;
+					continue;
+				}
+				if(entry_idx >= stripe_data.grid_width[0][i])
+				{
+					stripe_x_update = stripe_data.stripe_offset;
+				}
+				idx = set_idx * host_stats->dvs_stat_cfg.grd_cfg[i].grd_cfg.grid_width +
+					entry_idx - idx_update;
 				p_host_entry[idx].vec_fe_x_pos =
-					p_isp_entry->part0.vec_fe_x_pos;
+					p_isp_entry->part0.vec_fe_x_pos + stripe_x_update;
 				p_host_entry[idx].vec_fe_y_pos =
 					p_isp_entry->part0.vec_fe_y_pos;
 				p_host_entry[idx].vec_fm_x_pos =
-					p_isp_entry->part1.vec_fm_x_pos;
+					p_isp_entry->part1.vec_fm_x_pos + stripe_x_update;
 				p_host_entry[idx].vec_fm_y_pos =
 					p_isp_entry->part1.vec_fm_y_pos;
 				p_host_entry[idx].harris_grade =
