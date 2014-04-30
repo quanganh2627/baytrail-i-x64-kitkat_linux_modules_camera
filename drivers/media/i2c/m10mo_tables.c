@@ -113,9 +113,34 @@ static const struct m10mo_resolution const m10mo_capture_modes_fw1[] = {
 		.command = 0x10,
 	},
 	{
+		.width = 1600,
+		.height = 1200,
+		.command = 0x17,
+	},
+	{
+		.width = 2048,
+		.height = 1152,
+		.command = 0x1a,
+	},
+	{
 		.width = 2048,
 		.height = 1536,
 		.command = 0x1b,
+	},
+	{
+		.width = 3264,
+		.height = 1836,
+		.command = 0x21,
+	},
+	{
+		.width = 3264,
+		.height = 2448,
+		.command = 0x25,
+	},
+	{
+		.width = 4128,
+		.height = 2322,
+		.command = 0x2b,
 	},
 	{
 		.width = 4128,
