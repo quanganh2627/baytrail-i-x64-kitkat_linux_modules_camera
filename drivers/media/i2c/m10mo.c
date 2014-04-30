@@ -890,6 +890,23 @@ static int get_resolution_index(const struct m10mo_resolution *tmp_res,
 	return -1;
 }
 
+static int __m10mo_try_mbus_fmt_jpeg(struct v4l2_subdev *sd,
+				 struct v4l2_mbus_framefmt *fmt)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	const struct m10mo_resolution * capt_res =
+			resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
+	int entries = resolutions_sizes[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
+	int idx;
+
+	/* First check if the give n resolutions are spported for capture */
+	idx = get_resolution_index(capt_res, entries, fmt->width, fmt->height);
+	if (idx == -1)
+		return -EINVAL;
+
+	return 0;
+}
+
 static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 				 struct v4l2_mbus_framefmt *fmt)
 {
@@ -909,17 +926,9 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 		fmt->code = 0x8005;
 	}
 
-	/*
-	 * TODO: Fix handling capture resolutions
-	 * Only the maximum resolution is supported now. Need to refine the
-	 * logic when smaller resolutions are supported
-	 */
 	/* JPEG fmt has fixed width and height */
-	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
-		fmt->width = JPEG_CONFIG_WIDTH;
-		fmt->height = JPEG_CONFIG_HEIGHT;
-		return 0;
-	}
+	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8)
+		return __m10mo_try_mbus_fmt_jpeg(sd, fmt);
 
 	idx = nearest_resolution_index(dev->curr_res_table,
 			dev->entries_curr_table, fmt->width, fmt->height);
@@ -930,7 +939,6 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 
 	fmt->width = dev->curr_res_table[idx].width;
 	fmt->height = dev->curr_res_table[idx].height;
-
 
 	return 0;
 }
@@ -943,6 +951,12 @@ static int m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 
 	mutex_lock(&dev->input_lock);
 	r = __m10mo_try_mbus_fmt(sd, fmt);
+
+	/* Irrespective of result, modify jpeg width and height to be fixed. */
+	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
+		fmt->width = JPEG_CONFIG_WIDTH;
+		fmt->height = JPEG_CONFIG_HEIGHT;
+	}
 	mutex_unlock(&dev->input_lock);
 
 	return r;
