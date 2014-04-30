@@ -47,9 +47,21 @@ static const struct m10mo_resolution const m10mo_preview_modes_fw1[] = {
 		.command = 0x17,
 	},
 	{
+		.width = 768,
+		.height = 576,
+		.command = 0x3E,
+		.vdis = true,
+	},
+	{
 		.width = 1280,
 		.height = 720,
 		.command = 0x21,
+	},
+	{
+		.width = 1536,
+		.height = 864,
+		.command = 0x3C,
+		.vdis = true,
 	},
 	{
 		.width = 1440,
@@ -57,9 +69,21 @@ static const struct m10mo_resolution const m10mo_preview_modes_fw1[] = {
 		.command = 0x37,
 	},
 	{
+		.width = 1728,
+		.height = 1296,
+		.command = 0x40,
+		.vdis = true,
+	},
+	{
 		.width = 1920,
 		.height = 1080,
 		.command = 0x28,
+	},
+	{
+		.width = 2304,
+		.height = 1296,
+		.command = 0x3B,
+		.vdis = true,
 	},
 };
 

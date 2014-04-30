@@ -587,10 +587,11 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	int ret, i, dual_status;
 	u32 val;
 
-	dev_info(&client->dev,"%s mode: %d Width: %d, height: %d, cmd: 0x%x\n",
+	dev_info(&client->dev,"%s mode: %d Width: %d, height: %d, cmd: 0x%x vdis: %d\n",
 		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
 		dev->curr_res_table[dev->fmt_idx].height,
-		dev->curr_res_table[dev->fmt_idx].command);
+		dev->curr_res_table[dev->fmt_idx].command,
+		(int)dev->curr_res_table[dev->fmt_idx].vdis);
 
 	/* Check if m10mo already streaming @ required resolution */
 	ret = m10mo_readb(sd, CATEGORY_PARAM,  PARAM_MON_SIZE, &val);
@@ -633,6 +634,9 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
+	/* vdis on/off */
+	m10mo_writeb(sd, CATEGORY_MONITOR, PARAM_VDIS,
+		     dev->curr_res_table[dev->fmt_idx].vdis ? 0x01 : 0x00);
 
 	/* Setting output to NV12 */
 	ret = m10mo_writeb(sd, CATEGORY_PARAM, ZSL_OUTOUT_SELECT_FMT,

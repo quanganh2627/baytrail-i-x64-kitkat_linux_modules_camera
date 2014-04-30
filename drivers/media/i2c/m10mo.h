@@ -95,6 +95,7 @@ struct m10mo_resolution {
 	u32 width;
 	u32 height;
 	u32 command;
+	bool vdis;
 };
 
 struct m10mo_device {
@@ -205,6 +206,7 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_OUTPUT_INTERFACE_MIPI	0x02
 #define PARAM_MIPI_OUT_LANE_NUM		0x3e
 #define REG_OUTPUT_MIPI_4LANE		0x04
+#define PARAM_VDIS				0x00
 
 
 /* Category 2_MONITOR mode */
