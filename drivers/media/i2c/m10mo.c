@@ -627,7 +627,6 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
-
 	/* Set ZSL mode */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, INFINITY_CAPTURE_MODE,
 				0x0F);
@@ -677,6 +676,8 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	const struct m10mo_resolution *capture_res =
+			resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
 	int ret;
 
 	/* TODO: Fix this. Currently we do not use this */
@@ -687,6 +688,17 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 		dev_dbg(&client->dev, "%s wrong mode.\n",__func__);
 		return -EINVAL;
 	}
+
+	dev_info(&client->dev,"%s mode: %d width: %d, height: %d, cmd: 0x%x\n",
+		__func__, dev->mode, capture_res[dev->capture_res_idx].width,
+		capture_res[dev->capture_res_idx].height,
+		capture_res[dev->capture_res_idx].command);
+
+	/* Change the singel capture size */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
+			capture_res[dev->capture_res_idx].command);
+	if (ret)
+		return ret;
 
 	/* Start Single Capture, JPEG encode & transfer start */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, 0x01);
@@ -855,7 +867,7 @@ static int distance(struct m10mo_resolution const *res, const u32 w,
 	return w_ratio + h_ratio;
 }
 
-static int nearest_resolution_index(const struct m10mo_resolution *tmp_res,
+static int nearest_resolution_index(const struct m10mo_resolution *res,
 			int entries, u32 w, u32 h)
 {
 	int min_dist = INT_MAX;
@@ -863,7 +875,7 @@ static int nearest_resolution_index(const struct m10mo_resolution *tmp_res,
 	int i, dist;
 
 	for (i = 0; i < entries; i++) {
-		dist = distance(&tmp_res[i], w, h);
+		dist = distance(&res[i], w, h);
 		if (dist == -1)
 			continue;
 		if (dist < min_dist) {
@@ -874,15 +886,15 @@ static int nearest_resolution_index(const struct m10mo_resolution *tmp_res,
 	return idx;
 }
 
-static int get_resolution_index(const struct m10mo_resolution *tmp_res,
+static int get_resolution_index(const struct m10mo_resolution *res,
 			int entries, int w, int h)
 {
 	int i;
 
 	for (i = 0; i < entries; i++) {
-		if (w != tmp_res[i].width)
+		if (w != res[i].width)
 			continue;
-		if (h != tmp_res[i].height)
+		if (h != res[i].height)
 			continue;
 		/* Found it */
 		return i;
@@ -995,38 +1007,33 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	dev->format.code = fmt->code;
 
-	/*
-	 * TODO: Fix this.
-	 * Currently only the default ZSL resolution(13M) is supported for
-	 * capture. This logic needs to be changed to support capture with
-	 * multiple resolutions
-	 */
+	/* Jpeg means still capture. So only look for that. */
+	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8)
+		dev->fmt_idx = get_resolution_index(
+		      resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX],
+		      resolutions_sizes[dev->fw_type][M10MO_MODE_CAPTURE_INDEX],
+		      fmt->width, fmt->height);
+	else
+		dev->fmt_idx = get_resolution_index(dev->curr_res_table,
+					dev->entries_curr_table,
+					fmt->width, fmt->height);
+
 	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
 			 dev->run_mode == CI_MODE_CONTINUOUS)) {
+		/* Save the index for selecting the capture resolution */
+		dev->capture_res_idx = dev->fmt_idx;
+		/* Make fixed width and height for jpeg */
+		fmt->width = JPEG_CONFIG_WIDTH;
+		fmt->height = JPEG_CONFIG_HEIGHT;
+		/* fill stream info */
 		stream_info->ch_id = M10MO_ZSL_JPEG_VIRTUAL_CHANNEL;
 		stream_info->isys_configs = 1;
 		stream_info->isys_info[0].input_format =
 			(u8)ATOMISP_INPUT_FORMAT_USER_DEF3;
 		stream_info->isys_info[0].width = 0;
 		stream_info->isys_info[0].height = 0;
-		ret = 0;
-		goto out;
-	}
-
-	/*
-	 * TODO: Fix this
-	 * Currently with this logic we are handling only the preview
-	 * resolutions. We need to handle the capture resolution separately.
-	 */
-	dev->fmt_idx = get_resolution_index(dev->curr_res_table,
-			dev->entries_curr_table, fmt->width, fmt->height);
-	if (dev->fmt_idx == -1) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	if (dev->format.code == 0x8005 &&
+	} else if (dev->format.code == 0x8005 &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
 			 dev->run_mode == CI_MODE_CONTINUOUS)) {
 		stream_info->ch_id = M10MO_ZSL_NV12_VIRTUAL_CHANNEL;

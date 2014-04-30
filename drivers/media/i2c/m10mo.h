@@ -111,6 +111,7 @@ struct m10mo_device {
 	u8 requested_mode;
 	u8 mode;
 	int fmt_idx;
+	int capture_res_idx;
 	wait_queue_head_t irq_waitq;
 	unsigned int bad_fw:1;
 	unsigned int isp_ready:1;
