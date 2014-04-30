@@ -21,6 +21,7 @@
 #include <asm/intel-mid.h>
 #include <asm/irq.h>
 #include <linux/atomisp_platform.h>
+#include <linux/atomisp.h>
 #include <media/m10mo_atomisp.h>
 #include <linux/delay.h>
 #include <linux/i2c.h>
@@ -448,6 +449,28 @@ static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 	mutex_unlock(&dev->input_lock);
 
 	return ret;
+}
+
+static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
+		       void *arg)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct atomisp_ext_isp_ctrl *m10mo_ctrl
+		= (struct atomisp_ext_isp_ctrl *)arg;
+
+	dev_info(&client->dev, "m10mo ioctl id 0x%x\n", m10mo_ctrl->id);
+	dev_info(&client->dev, "m10mo ioctl data 0x%x\n", m10mo_ctrl->data);
+
+	switch(m10mo_ctrl->id)
+	{
+	case EXT_ISP_ISO_CTRL:
+		dev_info(&client->dev, "m10mo ioctl ISO\n");
+		break;
+	default:
+		dev_err(&client->dev, "m10mo ioctl: Unsupported ID\n");
+	};
+
+	return 0;
 }
 
 static int power_up(struct v4l2_subdev *sd)
@@ -1511,6 +1534,7 @@ static const struct v4l2_subdev_core_ops m10mo_core_ops = {
 	.s_ctrl = v4l2_subdev_s_ctrl,
 	.s_power = m10mo_s_power,
 	.init	= m10mo_fw_start,
+	.ioctl  = m10mo_ioctl,
 };
 
 static const struct v4l2_subdev_pad_ops m10mo_pad_ops = {
