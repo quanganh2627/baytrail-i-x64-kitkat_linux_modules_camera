@@ -1048,6 +1048,7 @@ long atomisp_compat_ioctl32(struct file *file,
 	case ATOMISP_IOC_S_ISP_GAMMA_CORRECTION:
 	case ATOMISP_IOC_S_CONT_CAPTURE_CONFIG:
 	case ATOMISP_IOC_G_DVS2_BQ_RESOLUTIONS:
+	case ATOMISP_IOC_EXT_ISP_CTRL:
 	case ATOMISP_IOC_EXP_ID_UNLOCK:
 	case ATOMISP_IOC_EXP_ID_CAPTURE:
 		ret = native_ioctl(file, cmd, arg);
