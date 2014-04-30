@@ -855,17 +855,15 @@ static int distance(struct m10mo_resolution const *res, const u32 w,
 	return w_ratio + h_ratio;
 }
 
-static int nearest_resolution_index(struct v4l2_subdev *sd, u32 w, u32 h)
+static int nearest_resolution_index(const struct m10mo_resolution *tmp_res,
+			int entries, u32 w, u32 h)
 {
-	const struct m10mo_resolution *tmp_res = NULL;
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int min_dist = INT_MAX;
 	int idx = -1;
 	int i, dist;
 
-	for (i = 0; i < dev->entries_curr_table; i++) {
-		tmp_res = &dev->curr_res_table[i];
-		dist = distance(tmp_res, w, h);
+	for (i = 0; i < entries; i++) {
+		dist = distance(&tmp_res[i], w, h);
 		if (dist == -1)
 			continue;
 		if (dist < min_dist) {
@@ -876,15 +874,15 @@ static int nearest_resolution_index(struct v4l2_subdev *sd, u32 w, u32 h)
 	return idx;
 }
 
-static int get_resolution_index(struct v4l2_subdev *sd, int w, int h)
+static int get_resolution_index(const struct m10mo_resolution *tmp_res,
+			int entries, int w, int h)
 {
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int i;
 
-	for (i = 0; i < dev->entries_curr_table; i++) {
-		if (w != dev->curr_res_table[i].width)
+	for (i = 0; i < entries; i++) {
+		if (w != tmp_res[i].width)
 			continue;
-		if (h != dev->curr_res_table[i].height)
+		if (h != tmp_res[i].height)
 			continue;
 		/* Found it */
 		return i;
@@ -923,7 +921,8 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 		return 0;
 	}
 
-	idx = nearest_resolution_index(sd, fmt->width, fmt->height);
+	idx = nearest_resolution_index(dev->curr_res_table,
+			dev->entries_curr_table, fmt->width, fmt->height);
 
 	/* Fall back to the last if not found */
 	if (idx == -1)
@@ -1006,7 +1005,8 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	 * Currently with this logic we are handling only the preview
 	 * resolutions. We need to handle the capture resolution separately.
 	 */
-	dev->fmt_idx = get_resolution_index(sd, fmt->width, fmt->height);
+	dev->fmt_idx = get_resolution_index(dev->curr_res_table,
+			dev->entries_curr_table, fmt->width, fmt->height);
 	if (dev->fmt_idx == -1) {
 		ret = -EINVAL;
 		goto out;
