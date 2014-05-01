@@ -35,6 +35,10 @@
 #include "vf/vf_1.0/ia_css_vf.host.h"
 #endif
 #include "sdis/sdis_1.0/ia_css_sdis.host.h"
+#if defined(HAS_RES_MGR)
+#include <components/resolutions_mgr/src/host/resolutions_mgr.host.h>
+#endif
+
 #include "memory_access.h"
 
 #include "assert_support.h"
@@ -102,6 +106,12 @@ ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
 	internal_res->height = __ISP_INTERNAL_HEIGHT(isp_tmp_internal_height,
 		info->top_cropping,
 		binary_dvs_env.height);
+#if defined(HAS_RES_MGR)
+	/* note - resolutions mgr flow does not yet support left/top cropping
+	   regarding dvs envelope - it is included in the bds resolution already */
+	internal_res->height = res_mgr_host_get_bds_height();
+	internal_res->width = res_mgr_host_get_bds_width();
+#endif
 }
 
 void
@@ -326,7 +336,9 @@ binary_in_frame_padded_width(int in_frame_width,
 	/* in other cases, the left padding pixels are always 128 */
 	nr_of_left_paddings = 2*ISP_VEC_NELEMS;
 #endif
-
+#if defined(HAS_RES_MGR)
+	(void)dvs_env_width;
+#endif
 	if (need_scaling) {
 		/* In SDV use-case, we need to match left-padding of
 		 * primary and the video binary. */
@@ -337,8 +349,11 @@ binary_in_frame_padded_width(int in_frame_width,
 					2*ISP_VEC_NELEMS);
 		} else {
 			/* Different than before, we do left&right padding. */
+#if !defined(HAS_RES_MGR) /* dvs env is included already */
+			in_frame_width += dvs_env_width;
+#endif
 			rval =
-				CEIL_MUL(in_frame_width + dvs_env_width +
+				CEIL_MUL(in_frame_width +
 					(left_cropping ? nr_of_left_paddings : 0),
 					2*ISP_VEC_NELEMS);
 		}
@@ -441,10 +456,13 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		bits_per_pixel = in_info->raw_bit_depth;
 
 		/* input info */
-		binary->in_frame_info.res.width = in_info->res.width
-			+ info->left_cropping + dvs_env_width;
-		binary->in_frame_info.res.height = in_info->res.height
-			+ info->top_cropping + dvs_env_height;
+		binary->in_frame_info.res.width = in_info->res.width + info->left_cropping;
+		binary->in_frame_info.res.height = in_info->res.height + info->top_cropping;
+
+#if !defined(HAS_RES_MGR) /* dvs env is included already */
+		binary->in_frame_info.res.width += dvs_env_width;
+		binary->in_frame_info.res.height += dvs_env_height;
+#endif
 
 		binary->in_frame_info.padded_width =
 			binary_in_frame_padded_width(in_info->res.width,
