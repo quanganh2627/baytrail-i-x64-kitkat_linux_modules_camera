@@ -404,7 +404,7 @@ enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *
 		}
 	}
 
-	free(dvs_stat_mv_p);
+	sh_css_free(dvs_stat_mv_p);
 
 	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 	return IA_CSS_SUCCESS;
