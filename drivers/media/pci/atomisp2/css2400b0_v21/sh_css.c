@@ -20,7 +20,6 @@
  */
 
 /*! \file */
-//#include "stdio.h"
 #include "ia_css.h"
 #include "sh_css_hrt.h"		/* only for file 2 MIPI */
 #include "ia_css_buffer.h"
@@ -50,8 +49,6 @@
 #include "ia_css_pipe_util.h"
 #include "ia_css_pipe_binarydesc.h"
 #include "ia_css_pipe_stagedesc.h"
-//#include "ia_css_stream_manager.h"
-/* #include "ia_css_rmgr_gen.h" */
 
 #include "memory_access.h"
 #include "tag.h"
@@ -365,22 +362,6 @@ static enum ia_css_frame_format yuv422_copy_formats[] = {
 };
 
 #define array_length(array) (sizeof(array)/sizeof(array[0]))
-
-
-/* Retrieve the CSS version and try to retrieve the FW version too.
- */
-enum ia_css_err
-ia_css_get_version(char *version, int max_size)
-{
-	if (max_size <= (int)strlen(CSS_VERSION_STRING) + (int)strlen(sh_css_get_fw_version()) + 5)
-		return(IA_CSS_ERR_INVALID_ARGUMENTS);
-	assert(version != NULL);
-	strcpy(version, CSS_VERSION_STRING);
-	strcat(version, "FW:");
-	strcat(version, sh_css_get_fw_version());
-	strcat(version, "; ");
-	return(IA_CSS_SUCCESS);
-}
 
 
 /* Verify whether the selected output format is can be produced
@@ -2483,28 +2464,6 @@ sh_css_mmu_set_page_table_base_index(hrt_data base_index)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_mmu_set_page_table_base_index() leave: return_void\n");
 }
 
-void
-ia_css_mmu_invalidate_cache(void)
-{
-	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
-	unsigned int HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb;
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_mmu_invalidate_cache() enter\n");
-
-	/* if the SP is not running we should not access its dmem */
-	if (sh_css_sp_is_running())
-	{
-		HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb = fw->info.sp.invalidate_tlb;
-
-		(void)HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb; /* Suppres warnings in CRUN */
-
-		sp_dmem_store_uint32(SP0_ID,
-			(unsigned int)sp_address_of(ia_css_dmaproxy_sp_invalidate_tlb),
-			true);
-	}
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_mmu_invalidate_cache() leave\n");
-}
-
 #if defined(HAS_IRQ_MAP_VERSION_1) || defined(HAS_IRQ_MAP_VERSION_1_DEMO)
 enum ia_css_err ia_css_irq_translate(
 	unsigned int *irq_infos)
@@ -4100,6 +4059,26 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 			video_stage->args.delay_frames[i] =
 				pipe->pipe_settings.video.delay_frames[i];
 		}
+	}
+
+	/* Append Extension on Video out, if enabled */
+	if (!need_vf_pp && video_stage && pipe->config.acc_extension &&
+		 (pipe->config.acc_extension->info.isp.type == IA_CSS_ACC_OUTPUT))
+	{
+		struct ia_css_frame *out = video_stage->args.out_frame[0];
+		struct ia_css_frame *in = NULL;
+
+		err = ia_css_frame_allocate_from_info(&in, &(pipe->output_info[0]));
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
+		video_stage->args.out_frame[0] = in;
+
+		err = add_firmwares( me, video_binary, pipe->output_stage,
+					last_output_firmware(pipe->output_stage),
+					IA_CSS_BINARY_MODE_VIDEO,
+					in, out, NULL, &video_stage, NULL);
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
 	}
 
 	pipe->pipeline.acquire_isp_each_stage = false;

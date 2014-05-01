@@ -19,5 +19,22 @@
  *
  */
 
-/* This file will contain the code to implement the functions declared in ia_css_version.h
-   and associated helper functions */
+#include "ia_css_version.h"
+#include "ia_css_version_data.h"
+#include <assert_support.h>
+#include <string.h>
+#include "ia_css_err.h"
+#include "sh_css_firmware.h"
+
+enum ia_css_err
+ia_css_get_version(char *version, int max_size)
+{
+	if (max_size <= (int)strlen(CSS_VERSION_STRING) + (int)strlen(sh_css_get_fw_version()) + 5)
+		return(IA_CSS_ERR_INVALID_ARGUMENTS);
+	assert(version != NULL);
+	strcpy(version, CSS_VERSION_STRING);
+	strcat(version, "FW:");
+	strcat(version, sh_css_get_fw_version());
+	strcat(version, "; ");
+	return(IA_CSS_SUCCESS);
+}

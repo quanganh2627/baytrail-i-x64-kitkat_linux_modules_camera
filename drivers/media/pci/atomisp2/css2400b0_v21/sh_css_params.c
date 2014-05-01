@@ -1825,10 +1825,10 @@ ia_css_set_param_exceptions(struct ia_css_isp_parameters *params)
 	assert (params != NULL);
 
 	/* Copy also to DP. Should be done by the driver. */
-	params->dp_config.gr = params->dp_config.gr;
-	params->dp_config.r  = params->dp_config.r;
-	params->dp_config.b  = params->dp_config.b;
-	params->dp_config.gb = params->dp_config.gb;
+	params->dp_config.gr = params->wb_config.gr;
+	params->dp_config.r  = params->wb_config.r;
+	params->dp_config.b  = params->wb_config.b;
+	params->dp_config.gb = params->wb_config.gb;
 }
 #endif
 
