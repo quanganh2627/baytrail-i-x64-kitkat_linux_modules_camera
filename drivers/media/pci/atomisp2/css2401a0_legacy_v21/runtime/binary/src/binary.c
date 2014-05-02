@@ -624,7 +624,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		binary->sctbl_aligned_width_per_color = 0;
 		binary->sctbl_height                  = 0;
 	}
-#ifndef IS_ISP_2500_SYSTEM     
+#ifndef IS_ISP_2500_SYSTEM
 	ia_css_sdis_init_info(&binary->dis,
 				sc_3a_dis_width,
 				sc_3a_dis_padded_width,
@@ -926,14 +926,11 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				       descr->stream_config_left_padding,
 				       false);
 
-		if (err)
+		if (err != IA_CSS_SUCCESS)
 			break;
 		binary_init_metrics(&binary->metrics, &binary->info->sp);
 		break;
 	}
-	/* MW: In case we haven't found a binary and hence the binary_info
-	 * is uninitialised */
-	assert(xcandidate != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_binary_find() selected = %p, mode = %d ID = %d\n",

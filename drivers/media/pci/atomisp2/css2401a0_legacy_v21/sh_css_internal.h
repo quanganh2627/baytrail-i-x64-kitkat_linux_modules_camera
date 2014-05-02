@@ -81,7 +81,7 @@
 #if defined(IS_ISP_2500_SYSTEM)
 #define SH_CSS_MAX_SP_THREADS	2 /* (preview, capture), acceleration */
 #else
-#define SH_CSS_MAX_SP_THREADS	4 /* raw_copy, preview, capture, acceleration */
+#define SH_CSS_MAX_SP_THREADS	5 /* raw_copy, preview, capture, acceleration */
 #endif
 #endif
 
