@@ -41,7 +41,6 @@ void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
 #endif
 
 /** @brief Allocate mem for the LACE statistics on the ISP
- * @param[in]	none
  * @return	Pointer to the allocated LACE statistics
  *         buffer on the ISP
 */
