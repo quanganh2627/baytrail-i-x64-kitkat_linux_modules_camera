@@ -3288,7 +3288,8 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 	struct ia_css_frame_info prev_in_info,
 				 prev_bds_out_info,
 				 prev_out_info,
-				 prev_vf_info;
+				 prev_vf_info,
+				 prev_original_in_info;
 	struct ia_css_binary_descr preview_descr;
 	bool online;
 	enum ia_css_err err = IA_CSS_SUCCESS;
@@ -3355,8 +3356,14 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 		ia_css_frame_info_set_format(&prev_vf_info,
 					     IA_CSS_FRAME_FORMAT_YUV_LINE);
 
-	err = ia_css_pipe_get_preview_binarydesc(pipe, &preview_descr,
-		&prev_in_info, &prev_bds_out_info, &prev_out_info, &prev_vf_info);
+	err = ia_css_pipe_get_preview_binarydesc(
+			pipe,
+			&preview_descr,
+			&prev_original_in_info,
+			&prev_in_info,
+			&prev_bds_out_info,
+			&prev_out_info,
+			&prev_vf_info);
 	if (err != IA_CSS_SUCCESS)
 		return err;
 	err = ia_css_binary_find(&preview_descr,
@@ -3384,8 +3391,14 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 		ia_css_frame_info_set_format(&prev_vf_info,
 					     IA_CSS_FRAME_FORMAT_YUV_LINE);
 
-		err = ia_css_pipe_get_preview_binarydesc(pipe, &preview_descr,
-			&prev_in_info, &prev_bds_out_info, &prev_out_info, &prev_vf_info);
+		err = ia_css_pipe_get_preview_binarydesc(
+				pipe,
+				&preview_descr,
+				&prev_original_in_info,
+				&prev_in_info,
+				&prev_bds_out_info,
+				&prev_out_info,
+				&prev_vf_info);
 		if (err != IA_CSS_SUCCESS)
 			return err;
 		err = ia_css_binary_find(&preview_descr,

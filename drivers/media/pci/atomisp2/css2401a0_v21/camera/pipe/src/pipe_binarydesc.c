@@ -34,6 +34,7 @@ static void pipe_binarydesc_get_offline(
 	struct ia_css_pipe const * const pipe,
 	const int mode,
 	struct ia_css_binary_descr *descr,
+	struct ia_css_frame_info *original_in_info,
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *out_info[],
 	struct ia_css_frame_info *vf_info);
@@ -42,7 +43,6 @@ static void pipe_binarydesc_get_offline(
  * every stage is associated with a binary, it implicity helps stage
  * description. Apart from providing a binary description, this module also
  * populates the frame info's when required.*/
-
 void ia_css_pipe_get_copy_binarydesc(
 	struct ia_css_pipe const * const pipe,
 	struct ia_css_binary_descr *copy_descr,
@@ -91,6 +91,7 @@ static void pipe_binarydesc_get_offline(
 	struct ia_css_pipe const * const pipe,
 	const int mode,
 	struct ia_css_binary_descr *descr,
+	struct ia_css_frame_info *original_in_info,
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *out_info[],
 	struct ia_css_frame_info *vf_info)
@@ -116,6 +117,7 @@ static void pipe_binarydesc_get_offline(
 	descr->dvs_env.width = 0;
 	descr->dvs_env.height = 0;
 	descr->stream_format = pipe->stream->config.input_config.format;
+	descr->original_in_info = original_in_info;
 	descr->in_info = in_info;
 	descr->bds_out_info = NULL;
 	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
@@ -146,8 +148,17 @@ void ia_css_pipe_get_vfpp_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "vf_pp" needs
+	 *   the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_VF_PP,
-			       vf_pp_descr, in_info, out_infos, NULL);
+			       vf_pp_descr, NULL, in_info, out_infos, NULL);
+
 	vf_pp_descr->enable_fractional_ds = true;
 }
 
@@ -212,6 +223,7 @@ static enum ia_css_err binarydesc_calculate_bds_factor(
 enum ia_css_err ia_css_pipe_get_preview_binarydesc(
 	struct ia_css_pipe * const pipe,
 	struct ia_css_binary_descr *preview_descr,
+	struct ia_css_frame_info *original_in_info,
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *bds_out_info,
 	struct ia_css_frame_info *out_info,
@@ -229,20 +241,42 @@ enum ia_css_err ia_css_pipe_get_preview_binarydesc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "ia_css_pipe_get_preview_binarydesc() enter:\n");
 
+	/*
+	 * Set up the info of the input frame with
+	 * the original resolution
+	 */
+	original_in_info->res = pipe->stream->config.input_config.input_res;
+	original_in_info->padded_width = original_in_info->res.width;
+	original_in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+
+	/*
+	 * Set up the info of the input frame with
+	 * the ISP required resolution
+	 */
 	in_info->res = pipe->stream->config.input_config.effective_res;
 	in_info->padded_width = in_info->res.width;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
+
 	if (ia_css_util_is_input_format_yuv(pipe->stream->config.input_config.format))
 		mode = IA_CSS_BINARY_MODE_COPY;
-	else
+	else {
+		original_in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 		in_info->format = IA_CSS_FRAME_FORMAT_RAW;
+	}
 
 	out_infos[0] = out_info;
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Pass "preview" the valid input argument "original_in_info".
+	 */
 	pipe_binarydesc_get_offline(pipe, mode,
-			       preview_descr, in_info, out_infos, vf_info);
+			       preview_descr, original_in_info, in_info, out_infos, vf_info);
 	if (pipe->stream->config.online) {
 		preview_descr->online = pipe->stream->config.online;
 		preview_descr->two_ppc =
@@ -352,8 +386,17 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Pass "video" the valid input argument
+	 *   "original_in_info".
+	 */
 	pipe_binarydesc_get_offline(pipe, mode,
-	       video_descr, in_info, out_infos, vf_info);
+	       video_descr, NULL, in_info, out_infos, vf_info);
+
 	if (pipe->stream->config.online) {
 		video_descr->online = pipe->stream->config.online;
 		video_descr->two_ppc =
@@ -474,10 +517,19 @@ void ia_css_pipe_get_yuvscaler_binarydesc(
 	for (i = 2; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "yuv_scalar"
+	 *   needs the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe,
 			       IA_CSS_BINARY_MODE_CAPTURE_PP,
 			       yuv_scaler_descr,
-			       in_info, out_infos, vf_info);
+			       NULL, in_info, out_infos, vf_info);
+
 	yuv_scaler_descr->enable_fractional_ds = true;
 }
 
@@ -509,10 +561,19 @@ void ia_css_pipe_get_capturepp_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "capture_pp" needs
+	 *   the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe,
 			       IA_CSS_BINARY_MODE_CAPTURE_PP,
 			       capture_pp_descr,
-			       in_info, out_infos, vf_info);
+			       NULL, in_info, out_infos, vf_info);
+
 	capture_pp_descr->enable_fractional_ds = true;
 	capture_pp_descr->enable_xnr =
 		pipe->config.default_capture_config.enable_xnr;
@@ -554,8 +615,16 @@ void ia_css_pipe_get_primary_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Pass "prim" the valid input argument "original_in_info".
+	 */
 	pipe_binarydesc_get_offline(pipe, mode,
-			       prim_descr, in_info, out_infos, vf_info);
+			       prim_descr, NULL, in_info, out_infos, vf_info);
+
 	if (pipe->stream->config.online &&
 	    pipe->stream->config.mode != IA_CSS_INPUT_MODE_MEMORY) {
 		prim_descr->online = true;
@@ -592,8 +661,17 @@ void ia_css_pipe_get_pre_gdc_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "pre_de" needs
+	 *   the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_PRE_ISP,
-			       pre_gdc_descr, in_info, out_infos, NULL);
+			       pre_gdc_descr, NULL, in_info, out_infos, NULL);
+
 	pre_gdc_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }
 
@@ -618,8 +696,16 @@ void ia_css_pipe_get_gdc_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "gdc" needs
+	 *   the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_GDC,
-			       gdc_descr, in_info, out_infos, NULL);
+			       gdc_descr, NULL, in_info, out_infos, NULL);
 }
 
 void ia_css_pipe_get_post_gdc_binarydesc(
@@ -646,8 +732,17 @@ void ia_css_pipe_get_post_gdc_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "post_gdc" needs
+	 *   the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_POST_ISP,
-			       post_gdc_descr, in_info, out_infos, vf_info);
+			       post_gdc_descr, NULL, in_info, out_infos, vf_info);
+
 	post_gdc_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }
 
@@ -673,13 +768,29 @@ void ia_css_pipe_get_pre_de_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
 	if (pipe->config.isp_pipe_version == 1)
+		/*
+		 * zhengjie.lu@intel.com
+		 *
+		 * TODO
+		 * - Check with the ISP engineers to see whether "pre_de" needs
+		 *   the valid input argument "original_in_info" or not.
+		 */
 		pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_PRE_ISP,
-				       pre_de_descr, in_info, out_infos, NULL);
+				       pre_de_descr, NULL, in_info, out_infos, NULL);
 	else {
+		/*
+		 * zhengjie.lu@intel.com
+		 *
+		 * TODO
+		 * - Check with the ISP engineers to see whether "pre_de" needs
+		 *   the valid input argument "original_in_info" or not.
+		 */
 		pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_PRE_DE,
-				       pre_de_descr, in_info, out_infos, NULL);
+				       pre_de_descr, NULL, in_info, out_infos, NULL);
 	}
+
 	if (pipe->stream->config.online) {
 		pre_de_descr->online = true;
 		pre_de_descr->two_ppc =
@@ -711,8 +822,17 @@ void ia_css_pipe_get_pre_anr_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "pre_anr" needs
+	 *   the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_PRE_ISP,
-			       pre_anr_descr, in_info, out_infos, NULL);
+			       pre_anr_descr, NULL, in_info, out_infos, NULL);
+
 	if (pipe->stream->config.online) {
 		pre_anr_descr->online = true;
 		pre_anr_descr->two_ppc =
@@ -744,8 +864,17 @@ void ia_css_pipe_get_anr_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "anr" needs
+	 *   the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_ANR,
-			       anr_descr, in_info, out_infos, NULL);
+			       anr_descr, NULL, in_info, out_infos, NULL);
+
 	anr_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }
 
@@ -774,7 +903,16 @@ void ia_css_pipe_get_post_anr_binarydesc(
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
+
+	/*
+	 * zhengjie.lu@intel.com
+	 *
+	 * TODO
+	 * - Check with the ISP engineers to see whether "post_anr" needs
+	 *   the valid input argument "original_in_info" or not.
+	 */
 	pipe_binarydesc_get_offline(pipe, IA_CSS_BINARY_MODE_POST_ISP,
-			       post_anr_descr, in_info, out_infos, vf_info);
+			       post_anr_descr, NULL, in_info, out_infos, vf_info);
+
 	post_anr_descr->isp_pipe_version = pipe->config.isp_pipe_version;
 }

@@ -168,6 +168,7 @@ enum ia_css_err ia_css_get_skc_dvs_statistics(struct ia_css_skc_dvs_statistics *
 #endif
 
 /** @brief Copy DVS statistics from an ISP buffer to a host buffer.
+ * @param[in] type - DVS statistics type
  * @param[in] host_stats Host buffer
  * @param[in] isp_stats ISP buffer
  * @return None
@@ -308,14 +309,13 @@ void
 ia_css_isp_dvs_statistics_map_free(struct ia_css_isp_dvs_statistics_map *me);
 
 /** @brief Allocate memory for the SKC DVS statistics on the ISP
- * @param[in]	none
  * @return		Pointer to the allocated ACC DVS statistics buffer on the ISP
 */
 struct ia_css_isp_skc_dvs_statistics* ia_css_skc_dvs_statistics_allocate(void);
 
 /** @brief Allocate memory for the DVS statistics on the ISP
  * @param[in] type - DVS statistics type
- * params - grid parameters for DVS/DVS2 (not used
+ * @param[in] params - grid parameters for DVS/DVS2 (not used
  * for skc DVS)
  * @return Pointer to the allocated DVS statistics buffer
  * on the ISP
@@ -325,6 +325,7 @@ ia_css_dvs_statistics_allocate_isp(enum dvs_statistics_type type,
                                struct ia_css_dvs_grid_info *params);
 
 /** @brief Free the DVS statistics memory on the isp
+ * @param[in] type - DVS statistics type
  * @param[in] me - Pointer to the DVS statistics buffer on the
  * ISP.
  * @return None
