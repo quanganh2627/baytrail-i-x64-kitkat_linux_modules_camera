@@ -58,7 +58,7 @@
 
 #include "ia_css_types.h"
 #include "ia_css_stream.h"
-
+#include "error_support.h"
 #include "hrt/bits.h"
 
 /* We should never need to run the flash for more than 2 frames.
@@ -960,6 +960,20 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 						    exp_id);
 				}
 			}
+			/*
+			 * Only after enabled the raw buffer lock
+			 * and in continuous mode.
+			 * in preview/video pipe, each buffer will
+			 * be locked automatically, so record it here.
+			 */
+			if (((css_pipe_id == CSS_PIPE_ID_PREVIEW) ||
+				(css_pipe_id == CSS_PIPE_ID_VIDEO)) &&
+				asd->enable_raw_buffer_lock->val &&
+				asd->continuous_mode->val) {
+				atomisp_set_raw_buffer_bitmap(asd, frame->exp_id);
+				BUG_ON(frame->exp_id > ATOMISP_MAX_EXP_ID);
+			}
+
 			break;
 		default:
 			break;
@@ -4887,3 +4901,123 @@ bool atomisp_is_vf_pipe(struct atomisp_video_pipe *pipe)
 
 	return false;
 }
+
+static int __checking_exp_id(struct atomisp_sub_device *asd, int exp_id)
+{
+	struct atomisp_device *isp = asd->isp;
+
+	if (!asd->enable_raw_buffer_lock->val) {
+		dev_warn(isp->dev, "%s Raw Buffer Lock is disable.\n", __func__);
+		return -EINVAL;
+	}
+	if (asd->streaming != ATOMISP_DEVICE_STREAMING_ENABLED) {
+		dev_err(isp->dev, "%s streaming %d invalid exp_id %d.\n",
+		        __func__, exp_id, asd->streaming);
+		return -EINVAL;
+	}
+	if ((exp_id > ATOMISP_MAX_EXP_ID) || (exp_id <= 0) ) {
+		dev_err(isp->dev, "%s exp_id %d invalid.\n", __func__, exp_id);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+void atomisp_init_raw_buffer_bitmap(struct atomisp_sub_device *asd)
+{
+	unsigned long flags;
+	spin_lock_irqsave(&asd->raw_buffer_bitmap_lock, flags);
+	memset(asd->raw_buffer_bitmap, 0, sizeof(asd->raw_buffer_bitmap));
+	spin_unlock_irqrestore(&asd->raw_buffer_bitmap_lock, flags);
+}
+
+int atomisp_set_raw_buffer_bitmap(struct atomisp_sub_device *asd, int exp_id)
+{
+	int *bitmap, bit;
+	unsigned long flags;
+
+	if (__checking_exp_id(asd, exp_id))
+		return -EINVAL;
+
+	bitmap = asd->raw_buffer_bitmap + exp_id / 32;
+	bit = exp_id % 32;
+	spin_lock_irqsave(&asd->raw_buffer_bitmap_lock, flags);
+	(*bitmap) |= (1 << bit);
+	spin_unlock_irqrestore(&asd->raw_buffer_bitmap_lock, flags);
+	return 0;
+}
+
+static int __is_raw_buffer_locked(struct atomisp_sub_device *asd, int exp_id)
+{
+	int *bitmap, bit;
+	unsigned long flags;
+	int ret;
+
+	if (__checking_exp_id(asd, exp_id))
+		return -EINVAL;
+
+	bitmap = asd->raw_buffer_bitmap + exp_id / 32;
+	bit = exp_id % 32;
+	spin_lock_irqsave(&asd->raw_buffer_bitmap_lock, flags);
+	ret = ((*bitmap) & (1 << bit));
+	spin_unlock_irqrestore(&asd->raw_buffer_bitmap_lock, flags);
+	return !ret;
+}
+
+static int __clear_raw_buffer_bitmap(struct atomisp_sub_device *asd, int exp_id)
+{
+	int *bitmap, bit;
+	unsigned long flags;
+
+	if (__is_raw_buffer_locked(asd, exp_id))
+		return -EINVAL;
+
+	bitmap = asd->raw_buffer_bitmap + exp_id / 32;
+	bit = exp_id % 32;
+	spin_lock_irqsave(&asd->raw_buffer_bitmap_lock, flags);
+	(*bitmap) &= ~(1 << bit);
+	spin_unlock_irqrestore(&asd->raw_buffer_bitmap_lock, flags);
+	return 0;
+}
+
+int atomisp_exp_id_capture(struct atomisp_sub_device *asd, int *exp_id)
+{
+	struct atomisp_device *isp = asd->isp;
+	int value = *exp_id;
+	int ret;
+
+	ret = __is_raw_buffer_locked(asd, value);
+	if (ret) {
+		dev_err(isp->dev, "%s exp_id %d invalid %d.\n", __func__, value, ret);
+		return -EINVAL;
+	}
+
+	dev_dbg(isp->dev, "%s exp_id %d\n", __func__, value);
+	ret = atomisp_css_exp_id_capture(asd, value);
+	if (ret) {
+		dev_err(isp->dev, "%s exp_id %d failed.\n", __func__, value);
+		return -EIO;
+	}
+	return 0;
+}
+
+int atomisp_exp_id_unlock(struct atomisp_sub_device *asd, int *exp_id)
+{
+	struct atomisp_device *isp = asd->isp;
+	int value = *exp_id;
+	int ret;
+
+	ret = __clear_raw_buffer_bitmap(asd, value);
+	if (ret) {
+		dev_err(isp->dev, "%s exp_id %d invalid %d.\n", __func__, value, ret);
+		return -EINVAL;
+	}
+
+	dev_dbg(isp->dev, "%s exp_id %d\n", __func__, value);
+	ret = atomisp_css_exp_id_unlock(asd, value);
+	if (ret) {
+		dev_err(isp->dev, "%s exp_id %d failed.\n", __func__, value);
+		return -EIO;
+	}
+	return 0;
+}
+

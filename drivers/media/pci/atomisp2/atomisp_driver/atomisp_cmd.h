@@ -342,4 +342,15 @@ void atomisp_free_css_parameters(struct atomisp_css_params *css_param);
 void atomisp_handle_parameter_and_buffer(struct atomisp_video_pipe *pipe);
 
 void atomisp_flush_params_queue(struct atomisp_sub_device *asd);
+/*
+ * Function to do Raw Buffer related operation, after enable Lock Unlock Raw Buffer
+ */
+int atomisp_exp_id_unlock(struct atomisp_sub_device *asd, int *exp_id);
+int atomisp_exp_id_capture(struct atomisp_sub_device *asd, int *exp_id);
+
+/*
+ * Function to update Raw Buffer bitmap
+ */
+int atomisp_set_raw_buffer_bitmap(struct atomisp_sub_device *asd, int exp_id);
+void atomisp_init_raw_buffer_bitmap(struct atomisp_sub_device *asd);
 #endif /* __ATOMISP_CMD_H__ */

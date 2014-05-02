@@ -1475,13 +1475,20 @@ static int atomisp_streamon(struct file *file, void *fh,
 			 * the S2S latency.
 			 */
 			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX);
-			ret = atomisp_css_offline_capture_configure(asd,
-				asd->params.offline_parm.num_captures,
-				asd->params.offline_parm.skip_frames,
-				asd->params.offline_parm.offset);
-			if (ret) {
-				ret = -EINVAL;
-				goto out;
+			/*
+			 * When asd->enable_raw_buffer_lock->val is true,
+			 * An extra IOCTL is needed to call
+			 * atomisp_css_exp_id_capture and trigger real capture
+			 */
+			if (!asd->enable_raw_buffer_lock->val) {
+				ret = atomisp_css_offline_capture_configure(asd,
+					asd->params.offline_parm.num_captures,
+					asd->params.offline_parm.skip_frames,
+					asd->params.offline_parm.offset);
+				if (ret) {
+					ret = -EINVAL;
+					goto out;
+				}
 			}
 		}
 		atomisp_qbuffers_to_css(asd);
@@ -2510,6 +2517,12 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 	case ATOMISP_IOC_G_METADATA:
 		err = atomisp_get_metadata(asd, 0, arg);
+		break;
+	case ATOMISP_IOC_EXP_ID_UNLOCK:
+		err = atomisp_exp_id_unlock(asd, arg);
+		break;
+	case ATOMISP_IOC_EXP_ID_CAPTURE:
+		err = atomisp_exp_id_capture(asd, arg);
 		break;
 	default:
 		mutex_unlock(&isp->mutex);

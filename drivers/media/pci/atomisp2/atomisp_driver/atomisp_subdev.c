@@ -974,6 +974,24 @@ static const struct v4l2_ctrl_config ctrl_per_frame_setting = {
 	.def = 0,
 };
 
+/*
+ * Control for enabling Lock&Unlock Raw Buffer mechanism
+ *
+ * When enabled, Raw Buffer can be locked and unlocked.
+ * Application can hold the exp_id of Raw Buffer
+ * and unlock it when no longer needed.
+ * Note: Make sure set this configuration before creating stream.
+ */
+static const struct v4l2_ctrl_config ctrl_enable_raw_buffer_lock = {
+	.id = V4L2_CID_ENABLE_RAW_BUFFER_LOCK,
+	.type = V4L2_CTRL_TYPE_BOOLEAN,
+	.name = "Lock Unlock Raw Buffer",
+	.min = 0,
+	.max = 1,
+	.step = 1,
+	.def = 0,
+};
+
 static void atomisp_init_subdev_pipe(struct atomisp_sub_device *asd,
 		struct atomisp_video_pipe *pipe, enum v4l2_buf_type buf_type)
 {
@@ -1118,9 +1136,13 @@ static int isp_subdev_init_entities(struct atomisp_sub_device *asd)
 					     &ctrl_per_frame_setting,
 					     NULL);
 
+	asd->enable_raw_buffer_lock =
+			v4l2_ctrl_new_custom(&asd->ctrl_handler,
+					     &ctrl_enable_raw_buffer_lock,
+					     NULL);
 	/* Make controls visible on subdev as well. */
 	asd->subdev.ctrl_handler = &asd->ctrl_handler;
-
+	spin_lock_init(&asd->raw_buffer_bitmap_lock);
 	return asd->ctrl_handler.error;
 }
 

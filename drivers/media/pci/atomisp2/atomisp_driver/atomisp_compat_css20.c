@@ -568,6 +568,8 @@ static int __create_stream(struct atomisp_sub_device *asd,
 	stream_env->stream_config.target_num_cont_raw_buf =
 		asd->continuous_raw_buffer_size->val;
 	stream_env->stream_config.channel_id = stream_env->ch_id;
+	stream_env->stream_config.ia_css_enable_raw_buffer_locking =
+		asd->enable_raw_buffer_lock->val;
 
 	__dump_stream_config(asd, stream_env);
 	if (ia_css_stream_create(&stream_env->stream_config,
@@ -2216,6 +2218,9 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	/* if is called in atomisp_reset(), force destroy all pipes */
 	if (__destroy_pipes(asd, true))
 		dev_err(isp->dev, "destroy pipes failed.\n");
+
+	atomisp_init_raw_buffer_bitmap(asd);
+
 	/*
 	 * SP can not be stop if other streams are in use
 	 */
@@ -2916,6 +2921,32 @@ int atomisp_css_offline_capture_configure(struct atomisp_sub_device *asd,
 		num_captures, skip, offset);
 	if (ret != IA_CSS_SUCCESS)
 		return -EINVAL;
+
+	return 0;
+}
+
+int atomisp_css_exp_id_capture(struct atomisp_sub_device *asd, int exp_id)
+{
+	enum ia_css_err ret;
+
+	ret = ia_css_stream_capture_frame(
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
+		exp_id);
+	if (ret != IA_CSS_SUCCESS)
+		return -EIO;
+
+	return 0;
+}
+
+int atomisp_css_exp_id_unlock(struct atomisp_sub_device *asd, int exp_id)
+{
+	enum ia_css_err ret;
+
+	ret = ia_css_unlock_raw_frame(
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
+		exp_id);
+	if (ret != IA_CSS_SUCCESS)
+		return -EIO;
 
 	return 0;
 }

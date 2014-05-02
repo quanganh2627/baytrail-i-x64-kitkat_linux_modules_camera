@@ -447,6 +447,8 @@ int atomisp_css_video_configure_pp_input(
 
 int atomisp_css_offline_capture_configure(struct atomisp_sub_device *asd,
 			int num_captures, unsigned int skip, int offset);
+int atomisp_css_exp_id_capture(struct atomisp_sub_device *asd, int exp_id);
+int atomisp_css_exp_id_unlock(struct atomisp_sub_device *asd, int exp_id);
 
 int atomisp_css_capture_enable_xnr(struct atomisp_sub_device *asd,
 				   bool enable);

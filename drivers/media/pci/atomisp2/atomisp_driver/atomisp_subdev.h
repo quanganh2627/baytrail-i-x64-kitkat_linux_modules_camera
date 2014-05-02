@@ -32,6 +32,8 @@
 
 #include "ia_css.h"
 
+/* EXP_ID's ranger is 1 ~ 250 */
+#define ATOMISP_MAX_EXP_ID     (250)
 enum atomisp_subdev_input_entity {
 	ATOMISP_SUBDEV_INPUT_NONE,
 	ATOMISP_SUBDEV_INPUT_MEMORY,
@@ -262,6 +264,7 @@ struct atomisp_sub_device {
 	struct v4l2_ctrl *continuous_raw_buffer_size;
 	struct v4l2_ctrl *continuous_viewfinder;
 	struct v4l2_ctrl *per_frame_setting;
+	struct v4l2_ctrl *enable_raw_buffer_lock;
 
 	struct atomisp_subdev_params params;
 	/* the link list to store per_frame params */
@@ -317,6 +320,9 @@ struct atomisp_sub_device {
 
 	bool copy_mode; /* CSI2+ use copy mode */
 	bool copy_mode_format_conv; /* CSI2+ copy with format conversion */
+
+	int raw_buffer_bitmap[ATOMISP_MAX_EXP_ID/32 + 1]; /* Record each Raw Buffer lock status */
+	spinlock_t raw_buffer_bitmap_lock;
 };
 
 extern const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[];
