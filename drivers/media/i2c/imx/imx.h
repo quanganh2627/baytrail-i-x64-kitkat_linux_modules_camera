@@ -39,6 +39,7 @@
 #include "imx135.h"
 #include "imx134.h"
 #include "imx132.h"
+#include "imx208.h"
 
 #define IMX_MCLK		192
 
@@ -53,6 +54,7 @@
 #define IMX_MASK_5BIT	0x1F
 #define IMX_MASK_4BIT	0xF
 #define IMX_MASK_2BIT	0x3
+#define IMX_MASK_8BIT	0xFF
 #define IMX_MASK_11BIT	0x7FF
 #define IMX_INTG_BUF_COUNT		2
 
@@ -80,6 +82,9 @@
 #define IMX_HORIZONTAL_OUTPUT_SIZE_H 0x034c
 #define IMX_VERTICAL_OUTPUT_SIZE_H 0x034e
 
+/* Post Divider setting register for imx132 and imx208 */
+#define IMX132_208_VT_RGPLTD		0x30A4
+
 #define IMX_COARSE_INTEGRATION_TIME		0x0202
 #define IMX_TEST_PATTERN_MODE			0x0600
 #define IMX_IMG_ORIENTATION			0x0101
@@ -104,10 +109,12 @@
 #define IMX_NAME_135	"imx135"
 #define IMX_NAME_175	"imx175"
 #define IMX_NAME_132	"imx132"
+#define IMX_NAME_208	"imx208"
 #define IMX175_ID	0x0175
 #define IMX135_ID	0x0135
 #define IMX134_ID	0x0134
 #define IMX132_ID	0x0132
+#define IMX208_ID	0x0208
 
 /* Sensor id based on i2c_device_id table
  * (Fuji module can not be detected based on sensor registers) */
@@ -121,6 +128,7 @@
 #define IMX135_VICTORIABAY 0x136
 #define IMX132_SALTBAY 0x132
 #define IMX134_VALLEYVIEW 0x134
+#define IMX208_MOFD_PD2 0x208
 
 /* otp - specific settings */
 #define E2PROM_ADDR 0xa0
@@ -131,7 +139,7 @@
 #define E2PROM_LITEON_12P1BA869D_SIZE 544
 
 #define IMX_ID_DEFAULT	0x0000
-#define IMX132_175_CHIP_ID	0x0000
+#define IMX132_175_208_CHIP_ID	0x0000
 #define IMX134_135_CHIP_ID	0x0016
 
 #define IMX175_RES_WIDTH_MAX	3280
@@ -142,6 +150,8 @@
 #define IMX132_RES_HEIGHT_MAX	1096
 #define IMX134_RES_WIDTH_MAX	3280
 #define IMX134_RES_HEIGHT_MAX	2464
+#define IMX208_RES_WIDTH_MAX	1936
+#define IMX208_RES_HEIGHT_MAX	1096
 
 /* Defines for lens/VCM */
 #define IMX_FOCAL_LENGTH_NUM	369	/*3.69mm*/
@@ -220,6 +230,10 @@ struct max_res imx_max_res[] = {
 		.res_max_width = IMX134_RES_WIDTH_MAX,
 		.res_max_height = IMX134_RES_HEIGHT_MAX,
 	},
+	[IMX208_ID] = {
+		.res_max_width = IMX208_RES_WIDTH_MAX,
+		.res_max_height = IMX208_RES_HEIGHT_MAX,
+	},
 };
 
 struct imx_settings {
@@ -286,6 +300,15 @@ struct imx_settings imx_sets[] = {
 		.n_res_preview = ARRAY_SIZE(imx134_res_preview),
 		.n_res_still = ARRAY_SIZE(imx134_res_still),
 		.n_res_video = ARRAY_SIZE(imx134_res_video),
+	},
+	[IMX208_MOFD_PD2] = {
+		.init_settings = imx208_init_settings,
+		.res_preview = imx208_res_preview,
+		.res_still = imx208_res_still,
+		.res_video = imx208_res_video,
+		.n_res_preview = ARRAY_SIZE(imx208_res_preview),
+		.n_res_still = ARRAY_SIZE(imx208_res_still),
+		.n_res_video = ARRAY_SIZE(imx208_res_video),
 	},
 };
 
@@ -611,6 +634,10 @@ struct imx_otp imx_otps[] = {
 		.size = E2PROM_LITEON_12P1BA869D_SIZE,
 	},
 	[IMX132_SALTBAY] = {
+		.otp_read = dummy_otp_read,
+		.size = DEFAULT_OTP_SIZE,
+	},
+	[IMX208_MOFD_PD2] = {
 		.otp_read = dummy_otp_read,
 		.size = DEFAULT_OTP_SIZE,
 	},

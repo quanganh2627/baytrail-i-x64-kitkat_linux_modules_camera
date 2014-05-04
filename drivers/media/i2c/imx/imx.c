@@ -699,8 +699,8 @@ static int imx_get_intg_factor(struct i2c_client *client,
 		return ret;
 	vt_pix_clk_div = data[0] & IMX_MASK_5BIT;
 
-	if (dev->sensor_id == IMX132_ID)
-		ret = imx_read_reg(client, 1, IMX132_VT_RGPLTD, data);
+	if (dev->sensor_id == IMX132_ID || dev->sensor_id == IMX208_ID)
+		ret = imx_read_reg(client, 1, IMX132_208_VT_RGPLTD, data);
 	else
 		ret = imx_read_reg(client, 1, IMX_VT_SYS_CLK_DIV, data);
 	if (ret)
@@ -710,12 +710,20 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	if (ret)
 		return ret;
 	pre_pll_clk_div = data[0] & IMX_MASK_4BIT;
-	ret = imx_read_reg(client, 2,
-		(dev->sensor_id == IMX132_ID) ?
-		IMX132_PLL_MULTIPLIER : IMX_PLL_MULTIPLIER, data);
-	if (ret)
-		return ret;
-	pll_multiplier = data[0] & IMX_MASK_11BIT;
+
+	if (dev->sensor_id == IMX208_ID) {
+		ret = imx_read_reg(client, 1, IMX208_PLL_MULTIPLIER, data);
+		if (ret)
+			return ret;
+		pll_multiplier = data[0] & IMX_MASK_8BIT;
+	} else {
+		ret = imx_read_reg(client, 2,
+			(dev->sensor_id == IMX132_ID) ?
+			IMX132_PLL_MULTIPLIER : IMX_PLL_MULTIPLIER, data);
+		if (ret)
+			return ret;
+		pll_multiplier = data[0] & IMX_MASK_11BIT;
+	}
 
 	memset(data, 0, IMX_INTG_BUF_COUNT * sizeof(u16));
 	ret = imx_read_reg(client, 4, IMX_COARSE_INTG_TIME_MIN, data);
@@ -756,7 +764,7 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	buf->output_height = data[0];
 
 	memset(data, 0, IMX_INTG_BUF_COUNT * sizeof(u16));
-	if (dev->sensor_id == IMX132_ID)
+	if (dev->sensor_id == IMX132_ID || dev->sensor_id == IMX208_ID)
 		read_mode = 0;
 	else {
 		ret = imx_read_reg(client, 1, IMX_READ_MODE, data);
@@ -786,7 +794,7 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	buf->line_length_pck = dev->pixels_per_line;
 	buf->read_mode = read_mode;
 
-	if (dev->sensor_id == IMX132_ID) {
+	if (dev->sensor_id == IMX132_ID || dev->sensor_id == IMX208_ID) {
 		buf->binning_factor_x = 1;
 		buf->binning_factor_y = 1;
 	} else {
@@ -1558,11 +1566,11 @@ static int imx_detect(struct i2c_client *client, u16 *id, u8 *revision)
 		return -ENODEV;
 
 	/* check sensor chip ID	 */
-	if (imx_read_reg(client, IMX_16BIT, IMX132_175_CHIP_ID, id)) {
+	if (imx_read_reg(client, IMX_16BIT, IMX132_175_208_CHIP_ID, id)) {
 		v4l2_err(client, "sensor_id = 0x%x\n", *id);
 		return -ENODEV;
 	}
-	if (*id == IMX132_ID || *id == IMX175_ID)
+	if (*id == IMX132_ID || *id == IMX175_ID || *id == IMX208_ID)
 		goto found;
 
 	if (imx_read_reg(client, IMX_16BIT, IMX134_135_CHIP_ID, id)) {
@@ -1756,6 +1764,11 @@ static int __update_imx_device_settings(struct imx_device *dev, u16 sensor_id)
 	case IMX132_ID:
 		dev->mode_tables = &imx_sets[IMX132_SALTBAY];
 		dev->otp_driver = &imx_otps[IMX132_SALTBAY];
+		dev->vcm_driver = NULL;
+		return 0;
+	case IMX208_ID:
+		dev->mode_tables = &imx_sets[IMX208_MOFD_PD2];
+		dev->otp_driver = &imx_otps[IMX208_MOFD_PD2];
 		dev->vcm_driver = NULL;
 		return 0;
 	default:
@@ -2363,6 +2376,7 @@ static const struct i2c_device_id imx_ids[] = {
 	{IMX_NAME_135_FUJI, IMX135_FUJI_ID},
 	{IMX_NAME_134, IMX134_ID},
 	{IMX_NAME_132, IMX132_ID},
+	{IMX_NAME_208, IMX208_ID},
 	{}
 };
 
