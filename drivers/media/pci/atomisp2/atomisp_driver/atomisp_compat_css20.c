@@ -4046,8 +4046,13 @@ int atomisp_css_load_acc_extension(struct atomisp_sub_device *asd,
 					enum atomisp_css_pipe_id pipe_id,
 					unsigned int type)
 {
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.pipe_configs[pipe_id].acc_extension = fw;
+	struct atomisp_css_fw_info **hd;
+	hd = &(asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+			.pipe_configs[pipe_id].acc_extension);
+	while (*hd)
+		hd = &(*hd)->next;
+	*hd = fw;
+
 	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
 		.update_pipe[pipe_id] = true;
 	return 0;
@@ -4058,8 +4063,14 @@ void atomisp_css_unload_acc_extension(struct atomisp_sub_device *asd,
 					struct atomisp_css_fw_info *fw,
 					enum atomisp_css_pipe_id pipe_id)
 {
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
-		.pipe_configs[pipe_id].acc_extension = NULL;
+	struct atomisp_css_fw_info *hd, *hdn;
+	hd = (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+			.pipe_configs[pipe_id].acc_extension);
+	while (hd) {
+		hdn = (hd->next) ? &(*hd->next) : NULL;
+		hd->next = NULL;
+		hd = hdn;
+	}
 }
 
 int atomisp_css_create_acc_pipe(struct atomisp_sub_device *asd)
