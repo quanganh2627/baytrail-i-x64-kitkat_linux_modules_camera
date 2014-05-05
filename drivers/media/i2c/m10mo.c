@@ -657,6 +657,8 @@ out:
 static u32 __get_dual_capture_value(u8 capture_mode)
 {
 	switch(capture_mode) {
+	case M10MO_CAPTURE_MODE_ZSL_LLS:
+		return 0x08;
 	case M10MO_CAPTURE_MODE_ZSL_NORMAL:
 	case M10MO_CAPTURE_MODE_ZSL_HDR:
 	default:
@@ -699,6 +701,40 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, val);
 	dev_dbg(&client->dev, "%s zsl capture trigger result: %d\n",
 			__func__, ret);
+	return ret;
+}
+
+static int m10mo_set_lls_mode(struct v4l2_subdev *sd, unsigned int val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret;
+
+	switch(val) {
+	case STOP_LLS_MODE:
+		/* switch to normal capture. HDR MODE off */
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, REG_CAP_NV12_MODE,
+				NORMAL_CAPTURE);
+		if (!ret)
+			dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_NORMAL;
+		break;
+	case START_LLS_MODE:
+		/* switch to HDR mode */
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, REG_CAP_NV12_MODE,
+				LLS_CAPTURE);
+		if (!ret)
+			dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_LLS;
+		break;
+	case RESUME_PREVIEW_IN_LLS_MODE:
+		/* switch to HDR mode */
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
+				START_DUAL_CAPTURE, PREVIEW_IN_NV12_MODE);
+		if (!ret)
+			dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_LLS;
+		break;
+	default:
+		return -EINVAL;
+	}
+
 	return ret;
 }
 
@@ -1526,6 +1562,8 @@ static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 		break;
 	case EXT_ISP_HDR_CAPTURE_CTRL:
 		return m10mo_set_hdr_mode(sd, m10mo_ctrl->data);
+	case EXT_ISP_LLS_CAPTURE_CTRL:
+		return m10mo_set_lls_mode(sd, m10mo_ctrl->data);
 	default:
 		dev_err(&client->dev, "m10mo ioctl: Unsupported ID\n");
 	};

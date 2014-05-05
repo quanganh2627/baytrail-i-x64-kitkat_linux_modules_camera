@@ -141,6 +141,12 @@ enum hdr_options{
 	RESUME_PREVIEW_IN_HDR_MODE
 };
 
+enum lls_options{
+	STOP_LLS_MODE,
+	START_LLS_MODE,
+	RESUME_PREVIEW_IN_LLS_MODE
+};
+
 #define to_m10mo_sensor(x) container_of(x, struct m10mo_device, sd)
 
 int m10mo_memory_read(struct v4l2_subdev *sd, u16 len, u32 addr, u8 *val);
@@ -359,6 +365,7 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_CAP_NV12_MODE	0x0a
 #define NORMAL_CAPTURE		0x00
 #define HDR_CAPTURE		0x02
+#define LLS_CAPTURE		0x04
 
 #define PREVIEW_IN_NV12_MODE	0x02
 
@@ -398,6 +405,7 @@ enum M10MO_MODES {
 enum M10MO_CAPTURE_MODES {
 	M10MO_CAPTURE_MODE_ZSL_NORMAL = 0,
 	M10MO_CAPTURE_MODE_ZSL_HDR,
+	M10MO_CAPTURE_MODE_ZSL_LLS
 };
 
 #define M10MO_MODE_PREVIEW_INDEX	0
