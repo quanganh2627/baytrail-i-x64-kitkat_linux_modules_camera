@@ -52,10 +52,10 @@ struct fw_param{
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140502_0528) is a place holder
+/* The string STR(irci_master_20140504_2025) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char* release_version = STR(irci_master_20140502_0528);
+static const char* release_version = STR(irci_master_20140504_2025);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";
@@ -221,11 +221,15 @@ sh_css_load_firmware(const char *fw_data,
 
 	sh_css_num_binaries = file_header->binary_nr;
 	/* Only allocate memory for ISP blob info */
-	sh_css_blob_info = sh_css_malloc((sh_css_num_binaries - NUM_OF_SPS) *
-						sizeof(*sh_css_blob_info));
-
-	if (sh_css_blob_info == NULL)
-		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	if (sh_css_num_binaries > NUM_OF_SPS) {
+		sh_css_blob_info = sh_css_malloc(
+					(sh_css_num_binaries - NUM_OF_SPS) *
+					sizeof(*sh_css_blob_info));
+		if (sh_css_blob_info == NULL)
+			return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	} else {
+		sh_css_blob_info = NULL;
+	}
 
 	fw_minibuffer = sh_css_malloc(sh_css_num_binaries * sizeof(struct fw_param));
 	if (fw_minibuffer == NULL)

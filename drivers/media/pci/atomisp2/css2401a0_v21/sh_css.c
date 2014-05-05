@@ -88,10 +88,6 @@
 static int thread_alive;
 #endif /* WITH_PC_MONITORING */
 
-#define DVS_REF_TESTING 0
-#if DVS_REF_TESTING
-#include <stdio.h>
-#endif
 #include"ia_css_spctrl.h"
 #include "ia_css_version_data.h"
 #include "sh_css_struct.h"
@@ -4364,7 +4360,7 @@ preview_start(struct ia_css_pipe *pipe)
 		sh_css_sp_init_pipeline(&capture_pipe->pipeline,
 			IA_CSS_PIPE_ID_CAPTURE,
 			(uint8_t)ia_css_pipe_get_pipe_num(capture_pipe),
-			pipe->config.default_capture_config.enable_xnr,
+			capture_pipe->config.default_capture_config.enable_xnr,
 			capture_pipe->stream->config.pixels_per_clock == 2,
 			true, /* continuous */
 			false, /* offline */
@@ -5175,121 +5171,6 @@ sh_css_pipe_get_grid_info(struct ia_css_pipe *pipe,
 	return err;
 }
 
-/*
- * @GC: TEMPORARY CODE TO TEST DVS AGAINST THE REFERENCE
- * PLEASE DO NOT REMOVE IT!
- */
-#if DVS_REF_TESTING
-static enum ia_css_err alloc_frame_from_file(
-	struct ia_css_pipe *pipe,
-	int width,
-	int height)
-{
-	FILE *fp;
-	int len = 0, err;
-	int bytes_per_pixel;
-	const char *file = "../File_input/dvs_input2.yuv";
-	char *y_buf, *u_buf, *v_buf;
-	char *uv_buf;
-	int offset = 0;
-	int h, w;
-
-	hrt_vaddress out_base_addr;
-	hrt_vaddress out_y_addr;
-	hrt_vaddress out_uv_addr;
-
-	assert(pipe != NULL);
-
-	out_base_addr = pipe->pipe_settings.video.delay_frames[0]->data;
-	out_y_addr  = out_base_addr
-		+ pipe->pipe_settings.video.delay_frames[0]->planes.yuv.y.offset;
-	out_uv_addr = out_base_addr
-		+ pipe->pipe_settings.video.delay_frames[0]->planes.yuv.u.offset;
-
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "alloc_frame_from_file() enter:\n");
-
-
-	bytes_per_pixel = sizeof(char);
-
-	if (!file) {printf("Error: Input file for dvs is not specified\n"); return 1;}
-	fp = fopen(file, "rb");
-	if (!fp) {printf("Error: Input file for dvs is not found\n"); return 1;}
-
-	err = fseek(fp, 0, SEEK_END);
-	if (err) {
-		fclose(fp);
-		printf("Error: Fseek error\n");
-		return 1;
-	}
-	len = ftell(fp);
-
-	err = fseek(fp, 0, SEEK_SET);
-	if (err) {
-		fclose(fp);
-		printf("Error: Fseek error2\n");
-		return 1;
-	}
-
-	len = 2 * len / 3;
-	if (len != width * height * bytes_per_pixel) {
-		fclose(fp);
-		printf("Error: File size mismatches with the internal resolution\n");
-		return 1;
-	}
-
-	y_buf = (char *) malloc(len);
-	u_buf = (char *) malloc(len/4);
-	v_buf = (char *) malloc(len/4);
-	uv_buf= (char *) malloc(len/2);
-
-	fread(y_buf, 1, len, fp);
-	fread(u_buf, 1, len/4, fp);
-	fread(v_buf, 1, len/4, fp);
-
-	for (h=0; h<height/2; h++) {
-		for (w=0; w<width/2; w++) {
-			*(uv_buf + offset + w) = *(u_buf++);
-			*(uv_buf + offset + w + width/2) = *(v_buf++);
-			//printf("width: %d\n", width);
-			//printf("offset_u: %d\n", offset+w);
-			//printf("offset_v: %d\n", offset+w+width/2);
-		}
-		offset += width;
-	}
-
-	mmgr_store(out_y_addr, y_buf, len);
-	mmgr_store(out_uv_addr, uv_buf, len/2);
-
-	out_base_addr = pipe->pipe_settings.video.delay_frames[1]->data;
-	out_y_addr  = out_base_addr + pipe->pipe_settings.video.delay_frames[1]->planes.yuv.y.offset;
-	out_uv_addr = out_base_addr + pipe->pipe_settings.video.delay_frames[1]->planes.yuv.u.offset;
-	mmgr_store(out_y_addr, y_buf, len);
-	mmgr_store(out_uv_addr, uv_buf, len/2);
-
-	fclose(fp);
-
-	return IA_CSS_SUCCESS;
-}
-
-/* MW: Why do we not pass the pointer to the struct ? */
-static enum ia_css_err fill_ref_frame_for_dvs(
-	struct ia_css_pipe *pipe,
-	struct ia_css_frame_info ref_info)
-{
-	enum ia_css_err err = IA_CSS_SUCCESS;
-
-assert(pipe != NULL);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "fill_ref_frame_for_dvs() enter:\n");
-	/* Allocate tmp_frame which is used to store YUV420 input.
-	 * Read YUV420 input from the file to tmp_frame.
-	 * Convert from YUV420 to NV12 format */
-	err = alloc_frame_from_file(pipe, ref_info.res.width, ref_info.res.height);
-
-	return err;
-}
-#endif
-
 #define SH_CSS_TNR_BIT_DEPTH 8
 #if defined(IS_ISP_2500_SYSTEM)
 #define SH_CSS_REF_BIT_DEPTH 12   /* Skylake: reference frame is in 12 bit YUV domain */
@@ -5438,18 +5319,6 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 	}
 
 
-#if DVS_REF_TESTING
-	/* @GC: TEMPORARY CODE TO TEST DVS AGAINST THE REFERENCE
-	 * To test dvs-6axis:
-	 * 1. Enable this function call
-	 * 2. Set "reqs.ref_out_requests" to "0" in lineloop.hive.c
-	 */
-	err = fill_ref_frame_for_dvs(pipe, ref_info);
-	if (err != IA_CSS_SUCCESS)
-		return err;
-#endif
-
-
   if (pipe->pipe_settings.video.video_binary.info->sp.enable.block_output){
     tnr_info = pipe->pipe_settings.video.video_binary.out_frame_info[0];
   }
@@ -5558,7 +5427,7 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
 		sh_css_sp_init_pipeline(&capture_pipe->pipeline,
 			IA_CSS_PIPE_ID_CAPTURE,
 			(uint8_t)ia_css_pipe_get_pipe_num(capture_pipe),
-			pipe->config.default_capture_config.enable_xnr,
+			capture_pipe->config.default_capture_config.enable_xnr,
 			capture_pipe->stream->config.pixels_per_clock == 2,
 			true, /* continuous */
 			false, /* offline */

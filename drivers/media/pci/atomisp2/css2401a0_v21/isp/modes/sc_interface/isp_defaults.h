@@ -166,6 +166,14 @@
 #define ISP_VAMEM2_RESULTS_SIZE		0
 #endif
 
+#ifndef ISP_VAMEM3_PARAMETERS_SIZE
+#define ISP_VAMEM3_PARAMETERS_SIZE	0
+#endif
+
+#ifndef ISP_HMEM0_PARAMETERS_SIZE
+#define ISP_HMEM0_PARAMETERS_SIZE	0
+#endif
+
 #ifndef ISP_NUM_STRIPES
 #define ISP_NUM_STRIPES         1
 #endif

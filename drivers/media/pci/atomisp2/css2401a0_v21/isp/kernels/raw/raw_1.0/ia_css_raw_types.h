@@ -37,6 +37,7 @@ struct ia_css_raw_configuration {
 	bool two_ppc;
 	enum ia_css_stream_format stream_format;
 	bool deinterleaved;
+	uint8_t enable_left_padding;
 };
 
 #endif /* __IA_CSS_RAW_TYPES_H */

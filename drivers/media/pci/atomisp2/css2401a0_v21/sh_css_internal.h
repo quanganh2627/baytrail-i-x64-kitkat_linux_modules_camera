@@ -76,12 +76,12 @@
 
 
 #ifdef __DISABLE_UNUSED_THREAD__
-#define SH_CSS_MAX_SP_THREADS	1 /* preview */
+#define SH_CSS_MAX_SP_THREADS	1
 #else
 #if defined(IS_ISP_2500_SYSTEM)
-#define SH_CSS_MAX_SP_THREADS	2 /* (preview, capture), acceleration */
+#define SH_CSS_MAX_SP_THREADS	2
 #else
-#define SH_CSS_MAX_SP_THREADS	5 /* raw_copy, preview, capture, acceleration */
+#define SH_CSS_MAX_SP_THREADS	5
 #endif
 #endif
 
