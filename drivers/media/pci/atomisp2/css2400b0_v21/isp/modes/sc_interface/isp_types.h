@@ -134,7 +134,10 @@
 #define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB              84
 #define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS_STRIPED   85
 
-#define SH_CSS_BINARY_NUM_IDS                               86
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_TNR_STRIPED       86
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DVS_STRIPED       87
+
+#define SH_CSS_BINARY_NUM_IDS                               88
 
 
 

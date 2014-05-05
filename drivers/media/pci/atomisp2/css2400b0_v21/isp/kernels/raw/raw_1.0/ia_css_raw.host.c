@@ -123,6 +123,7 @@ ia_css_raw_config(
 #if (defined(USE_INPUT_SYSTEM_VERSION_2401) || defined(CONFIG_CSI2_PLUS))
 	to->start_column = in_info->crop_info.start_column;
 	to->start_line = in_info->crop_info.start_line;
+	to->enable_left_padding = from->enable_left_padding;
 #endif
 }
 
@@ -135,7 +136,8 @@ ia_css_raw_configure(
 	bool two_ppc,
 	bool deinterleaved)
 {
+	uint8_t enable_left_padding = (uint8_t)((binary->left_padding) ? 1 : 0);
 	const struct ia_css_raw_configuration config =
-		{ pipe, in_info, internal_info, two_ppc, binary->input_format, deinterleaved};
+		{ pipe, in_info, internal_info, two_ppc, binary->input_format, deinterleaved, enable_left_padding};
 	ia_css_configure_raw(binary, &config);
 }
