@@ -383,6 +383,22 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asr(
     const tvector1w     _a,
     const tvector1w     _b);
 
+/** @brief aritmetic shift right with rounding
+ *
+ * @param[in] _a	input
+ * @param[in] _b	shift amount
+ *
+ * @return		_a >> _b
+ *
+ * This function will shift _a with _b bits to the right.
+ * and depending on the rounding mode of the core
+ * it will round to nearest or to nearest even.
+ *
+ */
+STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asrrnd(
+    const tvector1w     _a,
+    const tvector1w     _b);
+
 /** @brief aritmetic shift left
  *
  * @param[in] _a	input
@@ -397,19 +413,17 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asl(
     const tvector1w     _a,
     const tvector1w     _b);
 
-/** @brief aritmetic shift right with rounding
+/** @brief saturating aritmetic shift left
  *
  * @param[in] _a	input
  * @param[in] _b	shift amount
  *
- * @return		_a >> _b
+ * @return		_a << _b
  *
- * This function will shift _a with _b bits to the right.
- * and depending on the rounding mode of the core
- * it will round to nearest or to nearest even.
+ * This function will shift _a with _b bits to the left.
  *
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asrrnd(
+STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_aslsat(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -427,20 +441,6 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lsl(
     const tvector1w     _a,
     const tvector1w     _b);
 
-/** @brief saturated logical shift left
- *
- * @param[in] _a	input
- * @param[in] _b	shift amount
- *
- * @return		_a << _b
- *
- * This function will shift _a with _b bits to the left.
- * It will insert zero's on the right, and clip the result.
- */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lslsat(
-    const tvector1w     _a,
-    const tvector1w     _b);
-
 /** @brief logical shift right
  *
  * @param[in] _a	input
@@ -454,24 +454,6 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lslsat(
 STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lsr(
     const tvector1w     _a,
     const tvector1w     _b);
-
-/** @brief logical shift right with rounding
- *
- * @param[in] _a	input
- * @param[in] _b	shift amount
- *
- * @return		_a >> _b
- *
- * This function will shift _a with _b bits to the right.
- * It will insert zero's on the left
- * and depending on the rounding mode of the core
- * it will round to nearest or to nearest even.
- *
- */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lsrrnd(
-    const tvector1w     _a,
-    const tvector1w     _b);
-
 
 /* Cast */
 
