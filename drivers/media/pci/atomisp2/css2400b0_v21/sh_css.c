@@ -889,6 +889,8 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_attr(
 				ia_css_util_input_format_bpp(stream_cfg->metadata_config.data_type, true);
 			isys_stream_descr->metadata.pixels_per_line = stream_cfg->metadata_config.resolution.width;
 			isys_stream_descr->metadata.lines_per_frame = stream_cfg->metadata_config.resolution.height;
+			isys_stream_descr->metadata.align_req_in_bytes =
+				ia_css_csi2_calculate_input_system_alignment(stream_cfg->metadata_config.data_type);
 			isys_stream_descr->metadata.enable = true;
 		}
 
@@ -910,34 +912,48 @@ static bool sh_css_translate_stream_cfg_to_input_system_input_port_resolution(
 	unsigned int bits_per_subpixel;
 	unsigned int max_subpixels_per_line;
 	unsigned int lines_per_frame;
-	unsigned int fmt_type;
-	enum ia_css_err err;
+	unsigned int align_req_in_bytes;
+	enum ia_css_stream_format fmt_type;
+
+	fmt_type = stream_cfg->isys_config[isys_stream_idx].format;
+	if ((stream_cfg->mode == IA_CSS_INPUT_MODE_SENSOR ||
+			stream_cfg->mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) &&
+		stream_cfg->source.port.compression.type != IA_CSS_CSI2_COMPRESSION_TYPE_NONE) {
+
+		if (stream_cfg->source.port.compression.uncompressed_bits_per_pixel ==
+			UNCOMPRESSED_BITS_PER_PIXEL_10) {
+				fmt_type = IA_CSS_STREAM_FORMAT_RAW_10;
+		}
+		else if (stream_cfg->source.port.compression.uncompressed_bits_per_pixel ==
+			UNCOMPRESSED_BITS_PER_PIXEL_12) {
+				fmt_type = IA_CSS_STREAM_FORMAT_RAW_12;
+		}
+		else
+			return false;
+	}
 
 	bits_per_subpixel =
-		sh_css_stream_format_2_bits_per_subpixel(stream_cfg->isys_config[isys_stream_idx].format);
+		sh_css_stream_format_2_bits_per_subpixel(fmt_type);
 	if (bits_per_subpixel == 0)
 		return false;
 
 	max_subpixels_per_line =
-		csi2_protocol_calculate_max_subpixels_per_line(stream_cfg->isys_config[isys_stream_idx].format, stream_cfg->isys_config[isys_stream_idx].input_res.width);
+		csi2_protocol_calculate_max_subpixels_per_line(fmt_type,
+			stream_cfg->isys_config[isys_stream_idx].input_res.width);
 	if (max_subpixels_per_line == 0)
 		return false;
 
 	lines_per_frame = stream_cfg->isys_config[isys_stream_idx].input_res.height;
 	if (lines_per_frame == 0)
 		return false;
-	err = ia_css_isys_convert_stream_format_to_mipi_format(
-				stream_cfg->input_config.format,
-				MIPI_PREDICTOR_NONE,
-				&fmt_type);
-	if (err != IA_CSS_SUCCESS)
-		return false;
+
+	align_req_in_bytes = ia_css_csi2_calculate_input_system_alignment(fmt_type);
 
 	/* HW needs subpixel info for their settings */
 	isys_stream_descr->input_port_resolution.bits_per_pixel = bits_per_subpixel;
 	isys_stream_descr->input_port_resolution.pixels_per_line = max_subpixels_per_line;
 	isys_stream_descr->input_port_resolution.lines_per_frame = lines_per_frame;
-	isys_stream_descr->input_port_resolution.data_fmt_type = fmt_type;
+	isys_stream_descr->input_port_resolution.align_req_in_bytes = align_req_in_bytes;
 
 	return true;
 }
