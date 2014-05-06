@@ -660,6 +660,7 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 		struct i2c_adapter *adapter =
 			i2c_get_adapter(subdevs->v4l2_subdev.i2c_adapter_id);
 		struct camera_sensor_platform_data *sensor_pdata;
+		int sensor_num, i;
 
 		if (adapter == NULL) {
 			dev_err(isp->dev,
@@ -695,6 +696,7 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 			isp->inputs[isp->input_cnt].type = subdevs->type;
 			isp->inputs[isp->input_cnt].port = subdevs->port;
 			isp->inputs[isp->input_cnt].camera = subdev;
+			isp->inputs[isp->input_cnt].sensor_index = 0;
 			/*
 			 * initialize the subdev frame size, then next we can
 			 * judge whether frame_size store effective value via
@@ -709,7 +711,15 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 			else
 				isp->inputs[isp->input_cnt].camera_caps =
 					atomisp_get_default_camera_caps();
+			sensor_num = isp->inputs[isp->input_cnt]
+				.camera_caps->sensor_num;
 			isp->input_cnt++;
+			for (i = 1; i < sensor_num; i++) {
+				isp->inputs[isp->input_cnt] =
+					isp->inputs[isp->input_cnt - 1];
+				isp->inputs[isp->input_cnt].sensor_index = i;
+				isp->input_cnt++;
+			}
 			break;
 		case CAMERA_MOTOR:
 			isp->motor = subdev;

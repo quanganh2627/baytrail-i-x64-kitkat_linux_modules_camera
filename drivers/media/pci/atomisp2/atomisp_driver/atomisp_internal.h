@@ -170,6 +170,7 @@ struct atomisp_input_subdev {
 	struct atomisp_sub_device *asd;
 
 	const struct atomisp_camera_caps *camera_caps;
+	int sensor_index;
 };
 
 enum atomisp_dfs_mode {
