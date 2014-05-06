@@ -280,6 +280,9 @@ static int power_up(struct v4l2_subdev *sd)
 	if (ret)
 		goto fail_clk;
 
+	/*MCLK to PWDN*/
+	usleep_range(1000, 1500);
+
 	/* gpio ctrl*/
 	ret = dev->platform_data->gpio_ctrl(sd, 1);
 	if (ret) {
