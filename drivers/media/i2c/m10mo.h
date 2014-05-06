@@ -319,20 +319,32 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 
 /* Category A_Lens Parameter */
 #define AF_MODE			0x01
-#define REG_AF_NORMAL		0x01
-#define REG_AF_MACRO		0x03
-#define REG_AF_POWEROFF		0x07
+#define AF_NORMAL		0x00
+#define AF_MACRO		0x01
+#define AF_TOUCH		0x02
+#define	AF_PREVIEW_CAF		0x03
+#define	AF_MOVIE_CAF		0x04
+#define	AF_FACE_CAF		0x05
+#define	AF_TOUCH_MACRO		0x06
+#define AF_TOUCH_CAF		0x07
 
-#define AF_START		0x02
-#define REG_AF_STOP		0x00
-#define REG_AF_EXE_AUTO		0x01
-#define REG_AF_EXE_CAF		0x02
+#define AF_EXECUTION		0x02
+#define AF_STOP			0x00
+#define AF_SEARCH		0x01
+#define AF_PAN_FOCUSING		0x02
 
-#define AF_RESULT		0x03
-#define REG_AF_FAIL		0x02
-#define REG_AF_SUCCESS		0x01
-#define REG_AF_IDLE		0x03
-#define REG_AF_BUSY		0x04
+#define AF_RESULT			0x03
+#define CAF_STATUS_RESTART_CHECK	0x01
+#define CAF_STATUS_FOCUSING		0x02
+#define CAF_STATUS_SUCCESS		0x03
+#define CAF_STATUS_FAIL			0x04
+#define AF_STATUS_INVALID		0x10
+#define AF_STATUS_FOCUSING		0x20
+#define AF_STATUS_SUCCESS		0x30
+#define AF_STATUS_FAIL			0x40
+#define AF_TOUCH_POSX			0X30
+#define AF_TOUCH_POSY			0X32
+
 
 /* Category B_CAPTURE Parameter */
 #define CAPP_YUVOUT_MAIN	0x00

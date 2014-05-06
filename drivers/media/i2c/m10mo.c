@@ -452,6 +452,189 @@ static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 	return ret;
 }
 
+static int m10mo_set_af_mode(struct v4l2_subdev *sd, unsigned int val)
+{
+	int ret;
+
+	switch (val) {
+	case EXT_ISP_FOCUS_MODE_NORMAL:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_NORMAL);
+		break;
+	case EXT_ISP_FOCUS_MODE_MACRO:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_MACRO);
+		break;
+	case EXT_ISP_FOCUS_MODE_TOUCH_AF:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_TOUCH);
+		break;
+	case EXT_ISP_FOCUS_MODE_PREVIEW_CAF:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_PREVIEW_CAF);
+		break;
+	case EXT_ISP_FOCUS_MODE_MOVIE_CAF:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_MOVIE_CAF);
+		break;
+	case EXT_ISP_FOCUS_MODE_FACE_CAF:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_FACE_CAF);
+		break;
+	case EXT_ISP_FOCUS_MODE_TOUCH_MACRO:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_TOUCH_MACRO);
+		break;
+	case EXT_ISP_FOCUS_MODE_TOUCH_CAF:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_TOUCH_CAF);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+static int m10mo_set_af_execution(struct v4l2_subdev *sd, s32 val)
+{
+	int ret;
+	switch (val) {
+	case EXT_ISP_FOCUS_STOP:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_EXECUTION, AF_STOP);
+		break;
+	case EXT_ISP_FOCUS_SEARCH:
+		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_EXECUTION, AF_SEARCH);
+		break;
+	case EXT_ISP_PAN_FOCUSING:
+		ret = m10mo_writeb(sd, CATEGORY_LENS,
+					AF_EXECUTION, AF_PAN_FOCUSING);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+static int m10mo_set_af_position_x(struct v4l2_subdev *sd, unsigned int x)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
+	/* Set X Position */
+	ret = m10mo_writew(sd, CATEGORY_LENS, AF_TOUCH_POSX, x);
+	if (ret)
+		dev_err(&client->dev, "AutoFocus position x failed %d\n", ret);
+
+	return ret;
+}
+
+static int m10mo_set_af_position_y(struct v4l2_subdev *sd, unsigned int y)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
+	/* Set Y Position */
+	ret = m10mo_writew(sd, CATEGORY_LENS, AF_TOUCH_POSY, y);
+	if (ret)
+		dev_err(&client->dev, "AutoFocus position y failed %d\n", ret);
+
+	return ret;
+}
+
+static int m10mo_get_caf_status(struct v4l2_subdev *sd, unsigned int *status)
+{
+	int ret;
+	u32 af_result;
+
+	ret = m10mo_read(sd, 1, CATEGORY_LENS, AF_RESULT, &af_result);
+	if (ret)
+		return ret;
+
+	switch (af_result) {
+	case CAF_STATUS_FOCUSING:
+		*status = EXT_ISP_CAF_STATUS_FOCUSING;
+		break;
+	case CAF_STATUS_SUCCESS:
+		*status = EXT_ISP_CAF_STATUS_SUCCESS;
+		break;
+	case CAF_STATUS_FAIL:
+		*status = EXT_ISP_CAF_STATUS_FAIL;
+		break;
+	case CAF_STATUS_RESTART_CHECK:
+		*status = EXT_ISP_CAF_RESTART_CHECK;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+static int m10mo_get_af_status(struct v4l2_subdev *sd, unsigned int *status)
+{
+	int ret;
+	u32 af_result;
+
+	ret = m10mo_read(sd, 1, CATEGORY_LENS, AF_RESULT, &af_result);
+	if (ret)
+		return ret;
+
+	switch (af_result) {
+	case AF_STATUS_INVALID:
+		*status = EXT_ISP_AF_STATUS_INVALID;
+		break;
+	case AF_STATUS_FOCUSING:
+		*status = EXT_ISP_AF_STATUS_FOCUSING;
+		break;
+	case AF_STATUS_SUCCESS:
+		*status = EXT_ISP_AF_STATUS_SUCCESS;
+		break;
+	case AF_STATUS_FAIL:
+		*status = EXT_ISP_AF_STATUS_FAIL;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+/* Adding this as requested by HAL. Can be removed if HAL is saving af mode */
+static int m10mo_get_af_mode(struct v4l2_subdev *sd, unsigned int *status)
+{
+	int ret;
+	u32 af_mode;
+
+	ret = m10mo_read(sd, 1, CATEGORY_LENS, AF_RESULT, &af_mode);
+	if (ret)
+		return ret;
+
+	switch (af_mode) {
+	case AF_NORMAL:
+		*status = EXT_ISP_FOCUS_MODE_NORMAL;
+		break;
+	case AF_MACRO:
+		*status = EXT_ISP_FOCUS_MODE_MACRO;
+		break;
+	case AF_TOUCH:
+		*status = EXT_ISP_FOCUS_MODE_TOUCH_AF;
+		break;
+	case AF_PREVIEW_CAF:
+		*status = EXT_ISP_FOCUS_MODE_PREVIEW_CAF;
+		break;
+	case AF_MOVIE_CAF:
+		*status = EXT_ISP_FOCUS_MODE_MOVIE_CAF;
+		break;
+	case AF_FACE_CAF:
+		*status = EXT_ISP_FOCUS_MODE_FACE_CAF;
+		break;
+	case AF_TOUCH_MACRO:
+		*status = EXT_ISP_FOCUS_MODE_TOUCH_MACRO;
+		break;
+	case AF_TOUCH_CAF:
+		*status = EXT_ISP_FOCUS_MODE_TOUCH_CAF;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
 static int power_up(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -1659,6 +1842,27 @@ static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 		break;
 	case EXT_ISP_LLS_CAPTURE_CTRL:
 		ret = m10mo_set_lls_mode(sd, m10mo_ctrl->data);
+		break;
+	case EXT_ISP_FOCUS_MODE_CTRL:
+		ret = m10mo_set_af_mode(sd, m10mo_ctrl->data);
+		break;
+	case EXT_ISP_FOCUS_EXECUTION_CTRL:
+		ret = m10mo_set_af_execution(sd, m10mo_ctrl->data);
+		break;
+	case EXT_ISP_TOUCH_POSX_CTRL:
+		ret = m10mo_set_af_position_x(sd, m10mo_ctrl->data);
+		break;
+	case EXT_ISP_TOUCH_POSY_CTRL:
+		ret = m10mo_set_af_position_y(sd, m10mo_ctrl->data);
+		break;
+	case EXT_ISP_CAF_STATUS_CTRL:
+		ret = m10mo_get_caf_status(sd, &m10mo_ctrl->data);
+		break;
+	case EXT_ISP_AF_STATUS_CTRL:
+		ret = m10mo_get_af_status(sd, &m10mo_ctrl->data);
+		break;
+	case EXT_ISP_GET_AF_MODE_CTRL:
+		ret = m10mo_get_af_mode(sd, &m10mo_ctrl->data);
 		break;
 	default:
 		ret = -EINVAL;
