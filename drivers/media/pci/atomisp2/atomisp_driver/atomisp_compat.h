@@ -318,10 +318,10 @@ void atomisp_css_input_set_mode(struct atomisp_sub_device *asd,
 				enum atomisp_css_input_mode mode);
 
 void atomisp_css_capture_enable_online(struct atomisp_sub_device *asd,
-							bool enable);
+				unsigned short stream_index, bool enable);
 
 void atomisp_css_preview_enable_online(struct atomisp_sub_device *asd,
-							bool enable);
+				unsigned short stream_index, bool enable);
 
 void atomisp_css_enable_continuous(struct atomisp_sub_device *asd,
 							bool enable);

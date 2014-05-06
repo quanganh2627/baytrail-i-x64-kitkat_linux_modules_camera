@@ -3832,9 +3832,10 @@ static int __enable_continuous_mode(struct atomisp_sub_device *asd,
 		!asd->continuous_viewfinder->val);
 	atomisp_css_capture_set_mode(asd, CSS_CAPTURE_MODE_PRIMARY);
 	/* in case of ANR, force capture pipe to offline mode */
-	atomisp_css_capture_enable_online(asd,
+	atomisp_css_capture_enable_online(asd, ATOMISP_INPUT_STREAM_GENERAL,
 			asd->params.low_light ? false : !enable);
-	atomisp_css_preview_enable_online(asd, !enable);
+	atomisp_css_preview_enable_online(asd, ATOMISP_INPUT_STREAM_GENERAL,
+			!enable);
 	atomisp_css_enable_continuous(asd, enable);
 	atomisp_css_enable_cont_capt(enable,
 				!asd->continuous_viewfinder->val);
@@ -4034,7 +4035,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 	/* ISP2401 new input system need to use copy pipe */
 	if (asd->copy_mode) {
 		pipe_id = CSS_PIPE_ID_COPY;
-		atomisp_css_capture_enable_online(asd, false);
+		atomisp_css_capture_enable_online(asd, stream_index, false);
 	} else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
 		/* video same in continuouscapture and online modes */
 		configure_output = atomisp_css_video_configure_output;
@@ -4066,7 +4067,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 				pipe_id = CSS_PIPE_ID_CAPTURE;
 
 				atomisp_update_capture_mode(asd);
-				atomisp_css_capture_enable_online(asd, false);
+				atomisp_css_capture_enable_online(asd, stream_index, false);
 			}
 		}
 	} else if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW) {
@@ -4091,7 +4092,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 
 		if (!asd->continuous_mode->val)
 			/* in case of ANR, force capture pipe to offline mode */
-			atomisp_css_capture_enable_online(asd,
+			atomisp_css_capture_enable_online(asd, stream_index,
 					asd->params.low_light ?
 					false : asd->params.online_process);
 

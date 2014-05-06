@@ -2056,10 +2056,10 @@ void atomisp_css_input_set_mode(struct atomisp_sub_device *asd,
 }
 
 void atomisp_css_capture_enable_online(struct atomisp_sub_device *asd,
-							bool enable)
+				unsigned short stream_index, bool enable)
 {
 	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+		&asd->stream_env[stream_index];
 
 	if (stream_env->stream_config.online == !!enable)
 		return;
@@ -2069,10 +2069,10 @@ void atomisp_css_capture_enable_online(struct atomisp_sub_device *asd,
 }
 
 void atomisp_css_preview_enable_online(struct atomisp_sub_device *asd,
-							bool enable)
+				unsigned short stream_index, bool enable)
 {
 	struct atomisp_stream_env *stream_env =
-		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+		&asd->stream_env[stream_index];
 	int i;
 
 	if (stream_env->stream_config.online != !!enable) {
