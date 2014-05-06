@@ -50,6 +50,8 @@ enum ia_css_err ia_css_isys_csi_rx_unregister_stream(
 enum ia_css_err ia_css_isys_convert_compressed_format(
 		struct ia_css_csi2_compression *comp,
 		struct input_system_cfg_s *cfg);
+unsigned int ia_css_csi2_calculate_input_system_alignment(
+	enum ia_css_stream_format fmt_type);
 #endif
 
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)
