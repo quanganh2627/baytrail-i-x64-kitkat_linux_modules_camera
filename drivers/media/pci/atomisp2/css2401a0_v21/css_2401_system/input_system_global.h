@@ -147,7 +147,7 @@ struct input_system_cfg_s {
 	pixelgen_prbs_cfg_t prbs_port_attr;
 
 	struct {
-		int32_t data_fmt_type;
+		int32_t align_req_in_bytes;
 		int32_t bits_per_pixel;
 		int32_t pixels_per_line;
 		int32_t lines_per_frame;
@@ -161,6 +161,7 @@ struct input_system_cfg_s {
 	struct {
 		bool    enable;
 		int32_t fmt_type;
+		int32_t align_req_in_bytes;
 		int32_t bits_per_pixel;
 		int32_t pixels_per_line;
 		int32_t lines_per_frame;

@@ -395,6 +395,42 @@ enum ia_css_err ia_css_isys_convert_compressed_format(
 	return err;
 }
 
+unsigned int ia_css_csi2_calculate_input_system_alignment(
+	enum ia_css_stream_format fmt_type)
+{
+	unsigned int memory_alignment_in_bytes = HIVE_ISP_DDR_WORD_BYTES;
+
+	switch(fmt_type) {
+	case IA_CSS_STREAM_FORMAT_RAW_6:
+	case IA_CSS_STREAM_FORMAT_RAW_7:
+	case IA_CSS_STREAM_FORMAT_RAW_8:
+	case IA_CSS_STREAM_FORMAT_RAW_10:
+	case IA_CSS_STREAM_FORMAT_RAW_12:
+	case IA_CSS_STREAM_FORMAT_RAW_14:
+		memory_alignment_in_bytes = 2 * ISP_VEC_NELEMS;
+		break;
+	case IA_CSS_STREAM_FORMAT_YUV420_8:
+	case IA_CSS_STREAM_FORMAT_YUV422_8:
+		/* Planar YUV formats need to have all planes aligned, this means
+		 * double the alignment for the Y plane if the horizontal decimation is 2. */
+		memory_alignment_in_bytes = 2 * HIVE_ISP_DDR_WORD_BYTES;
+		break;
+	case IA_CSS_STREAM_FORMAT_EMBEDDED:
+	case IA_CSS_STREAM_FORMAT_USER_DEF1:
+	case IA_CSS_STREAM_FORMAT_USER_DEF2:
+	case IA_CSS_STREAM_FORMAT_USER_DEF3:
+	case IA_CSS_STREAM_FORMAT_USER_DEF4:
+	case IA_CSS_STREAM_FORMAT_USER_DEF5:
+	case IA_CSS_STREAM_FORMAT_USER_DEF6:
+	case IA_CSS_STREAM_FORMAT_USER_DEF7:
+	case IA_CSS_STREAM_FORMAT_USER_DEF8:
+	default:
+		memory_alignment_in_bytes = HIVE_ISP_DDR_WORD_BYTES;
+		break;
+	}
+	return memory_alignment_in_bytes;
+}
+
 #endif
 
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)

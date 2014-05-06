@@ -74,7 +74,7 @@ static bool acquire_ib_buffer(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
 	int32_t lines_per_frame,
-	int32_t fmt_type,
+	int32_t align_in_bytes,
 	bool online,
 	ib_buffer_t *buf);
 
@@ -146,14 +146,11 @@ static bool calculate_isys2401_dma_port_cfg(
 static csi_mipi_packet_type_t get_csi_mipi_packet_type(
 	int32_t data_type);
 
-static int32_t calculate_input_system_alignment(
-	int32_t fmt_type);
-
 static int32_t calculate_stride(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
 	bool	raw_packed,
-	int32_t	fmt_type);
+	int32_t	align_in_bytes);
 
 /** end of Forwarded Declaration */
 
@@ -310,7 +307,7 @@ static bool create_input_system_channel(
 			metadata ? cfg->metadata.bits_per_pixel : cfg->input_port_resolution.bits_per_pixel,
 			metadata ? cfg->metadata.pixels_per_line : cfg->input_port_resolution.pixels_per_line,
 			metadata ? cfg->metadata.lines_per_frame : cfg->input_port_resolution.lines_per_frame,
-			metadata ? cfg->metadata.fmt_type : cfg->input_port_resolution.data_fmt_type,
+			metadata ? cfg->metadata.align_req_in_bytes : cfg->input_port_resolution.align_req_in_bytes,
 			cfg->online,
 			&(me->ib_buffer))) {
 		release_sid(me->stream2mmio_id, &(me->stream2mmio_sid_id));
@@ -532,42 +529,19 @@ static void release_sid(
 	ia_css_isys_stream2mmio_sid_rmgr_release(stream2mmio, sid);
 }
 
-/* See also: ia_css_frame_info_set_width() */
-static int32_t calculate_input_system_alignment(
-	int32_t	fmt_type)
-{
-	int32_t memory_alignment_in_bytes;
-
-	if (fmt_type <= MIPI_FORMAT_RAW14 && fmt_type >= MIPI_FORMAT_RAW6) {
-		memory_alignment_in_bytes = 2 * ISP_VEC_NELEMS;
-	} else {
-		/* Planar YUV formats need to have all planes aligned, this means
-		 * double the alignment for the Y plane if the horizontal decimation is 2. */
-		if (fmt_type == MIPI_FORMAT_YUV420_8 || fmt_type == MIPI_FORMAT_YUV422_8) {
-			memory_alignment_in_bytes = 2 * HIVE_ISP_DDR_WORD_BYTES;
-		} else {
-			memory_alignment_in_bytes = HIVE_ISP_DDR_WORD_BYTES;
-		}
-	}
-
-	return memory_alignment_in_bytes;
-}
-
 /* See also: ia_css_dma_configure_from_info() */
 static int32_t calculate_stride(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
 	bool	raw_packed,
-	int32_t fmt_type)
+	int32_t align_in_bytes)
 {
 	int32_t bytes_per_line;
 	int32_t pixels_per_word;
 	int32_t words_per_line;
 	int32_t pixels_per_line_padded;
-	int32_t memory_alignment_in_bytes;
 
-	memory_alignment_in_bytes = calculate_input_system_alignment(fmt_type);
-	pixels_per_line_padded = CEIL_MUL(pixels_per_line, memory_alignment_in_bytes);
+	pixels_per_line_padded = CEIL_MUL(pixels_per_line, align_in_bytes);
 
 	if (!raw_packed)
 		bits_per_pixel = CEIL_MUL(bits_per_pixel, 8);
@@ -583,11 +557,11 @@ static bool acquire_ib_buffer(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
 	int32_t lines_per_frame,
-	int32_t fmt_type,
+	int32_t align_in_bytes,
 	bool online,
 	ib_buffer_t *buf)
 {
-	buf->stride = calculate_stride(bits_per_pixel, pixels_per_line, false, fmt_type);
+	buf->stride = calculate_stride(bits_per_pixel, pixels_per_line, false, align_in_bytes);
 	if(online) {
 		buf->lines = 4; /* use double buffering for online usecases */
 	}
@@ -778,7 +752,7 @@ static bool calculate_ibuf_ctrl_cfg(
 		cfg->dest_buf_cfg.stride	= calculate_stride(bits_per_pixel,
 							isys_cfg->input_port_resolution.pixels_per_line,
 							isys_cfg->raw_packed,
-							isys_cfg->input_port_resolution.data_fmt_type);
+							isys_cfg->input_port_resolution.align_req_in_bytes);
 	} else {
 		cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
 	}
@@ -834,20 +808,20 @@ static bool calculate_isys2401_dma_port_cfg(
 {
 	int32_t bits_per_pixel;
 	int32_t pixels_per_line;
-	int32_t fmt_type;
+	int32_t align_req_in_bytes;
 
 	/* TODO: Move metadata away from isys_cfg to application layer */
 	if (metadata) {
 		bits_per_pixel = isys_cfg->metadata.bits_per_pixel;
 		pixels_per_line = isys_cfg->metadata.pixels_per_line;
-		fmt_type = isys_cfg->metadata.fmt_type;
+		align_req_in_bytes = isys_cfg->metadata.align_req_in_bytes;
 	} else {
 		bits_per_pixel = isys_cfg->input_port_resolution.bits_per_pixel;
 		pixels_per_line = isys_cfg->input_port_resolution.pixels_per_line;
-		fmt_type = isys_cfg->input_port_resolution.data_fmt_type;
+		align_req_in_bytes = isys_cfg->input_port_resolution.align_req_in_bytes;
 	}
 
-	cfg->stride	= calculate_stride(bits_per_pixel, pixels_per_line, raw_packed, fmt_type);
+	cfg->stride	= calculate_stride(bits_per_pixel, pixels_per_line, raw_packed, align_req_in_bytes);
 
 	if (!raw_packed) {
 		bits_per_pixel = CEIL_MUL(bits_per_pixel, 8);
