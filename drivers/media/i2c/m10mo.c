@@ -357,6 +357,7 @@ static int m10mo_request_mode_change(struct v4l2_subdev *sd, u8 requested_mode)
 			dev_err(&client->dev,
 				"Unable to change to PARAMETER MODE\n");
 		break;
+	case M10MO_MONITOR_MODE_PANORAMA:
 	case M10MO_MONITOR_MODE_ZSL:
 	case M10MO_MONITOR_MODE:
 		ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
@@ -558,6 +559,97 @@ static int __m10mo_s_power(struct v4l2_subdev *sd, int on, bool fw_update_mode)
 	return ret;
 }
 
+static int m10mo_set_panorama_monitor(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+	u32 val;
+
+	dev_info(&client->dev,
+		"%s mode: %d Width: %d, height: %d, cmd: 0x%x vdis: %d\n",
+		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
+		dev->curr_res_table[dev->fmt_idx].height,
+		dev->curr_res_table[dev->fmt_idx].command,
+		(int)dev->curr_res_table[dev->fmt_idx].vdis);
+
+	/* Check if m10mo already streaming @ required resolution */
+	ret = m10mo_readb(sd, CATEGORY_PARAM,  PARAM_MON_SIZE, &val);
+	if (ret)
+		goto out;
+
+	/* If mode is monitor mode and size same, do not configure again*/
+	if (dev->mode == M10MO_MONITOR_MODE_PANORAMA &&
+		val == dev->curr_res_table[dev->fmt_idx].command) {
+		dev_info(&client->dev,
+			"%s Already streaming with required size\n", __func__);
+		return 0;
+	}
+
+	if (dev->mode != M10MO_PARAM_SETTING_MODE &&
+		dev->mode != M10MO_PARAMETER_MODE) {
+		/* Already in panorma mode. So swith to parameter mode */
+		ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
+		if (ret)
+			goto out;
+
+		ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE,
+			M10MO_INIT_TIMEOUT);
+		if (ret < 0)
+			goto out;
+	}
+
+	/* Change the Monitor Size */
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
+			dev->curr_res_table[dev->fmt_idx].command);
+	if (ret)
+		goto out;
+
+	/* Set Panorama mode */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPTURE_MODE,
+			CAP_MODE_PANORAMA);
+	if (ret)
+		goto out;
+
+	/* Setting output to NV12/NV21. By default outputs NV21*/
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, OUTPUT_FMT_SELECT,
+			OUTPUT_FMT_SELECT_NV12NV21);
+	if (ret)
+		goto out;
+
+	/* Choose NV12 in this case*/
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT,
+			CHOOSE_NV12NV21_FMT_NV12);
+	if (ret)
+		goto out;
+
+	/* Enable metadata (the command sequence PDF-example) */
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, MON_METADATA_SUPPORT_CTRL,
+			MON_METADATA_SUPPORT_CTRL_EN);
+	if (ret)
+		goto out;
+
+	/* Enable interrupt signal */
+	ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+	if (ret)
+		goto out;
+
+	/* Go to Panorama Monitor mode */
+	ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE_PANORAMA);
+	if (ret)
+		goto out;
+
+	ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE_PANORAMA,
+				M10MO_INIT_TIMEOUT);
+	if (ret < 0)
+		goto out;
+
+	return 0;
+out:
+	dev_err(&client->dev, "m10mo_set_panorama_monitor failed %d\n", ret);
+	return ret;
+}
+
 static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -607,8 +699,8 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 		goto out;
 
 	/* Set ZSL mode */
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, INFINITY_CAPTURE_MODE,
-				0x0F);
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPTURE_MODE,
+				CAP_MODE_INFINITY_ZSL);
 	if (ret)
 		goto out;
 
@@ -616,9 +708,9 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	m10mo_writeb(sd, CATEGORY_MONITOR, PARAM_VDIS,
 		     dev->curr_res_table[dev->fmt_idx].vdis ? 0x01 : 0x00);
 
-	/* Setting output to NV12 */
-	ret = m10mo_writeb(sd, CATEGORY_PARAM, ZSL_OUTOUT_SELECT_FMT,
-				ZSL_OUTOUT_FMT_NV12);
+	/* By default outputs NV21. Choose NV12 */
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT,
+				CHOOSE_NV12NV21_FMT_NV12);
 	if (ret)
 		goto out;
 
@@ -859,6 +951,11 @@ static irqreturn_t m10mo_irq_thread(int irq, void *dev_id)
 	case M10MO_MONITOR_MODE_ZSL:
 		if (int_factor & REG_INT_STATUS_MODE) {
 			dev->mode = M10MO_MONITOR_MODE_ZSL;
+		}
+		break;
+	case M10MO_MONITOR_MODE_PANORAMA:
+		if (int_factor & REG_INT_STATUS_MODE) {
+			dev->mode = M10MO_MONITOR_MODE_PANORAMA;
 		}
 		break;
 	case M10MO_SINGLE_CAPTURE_MODE:
@@ -1326,7 +1423,11 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 		ret = m10mo_set_still_capture(sd);
 		break;
 	default:
-		ret = m10mo_set_zsl_monitor(sd);
+		/* TODO: Revisit this logic on switching to panorama */
+		if (dev->curr_res_table[dev->fmt_idx].command == 0x43)
+			ret = m10mo_set_panorama_monitor(sd);
+		else
+			ret = m10mo_set_zsl_monitor(sd);
 	}
 	return ret;
 }

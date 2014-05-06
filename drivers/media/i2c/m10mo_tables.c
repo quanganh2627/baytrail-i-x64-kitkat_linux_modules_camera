@@ -79,6 +79,17 @@ static const struct m10mo_resolution const m10mo_preview_modes_fw1[] = {
 		.height = 1080,
 		.command = 0x28,
 	},
+	/* TODO: Fix the panorama mode handling */
+	/*
+	 * This is a specific resolution setting for the panaroma mode. So
+	 * kept at this position intentionally so that this won't get selected
+	 * if none of the resolutions matched.
+	 */
+	{
+		.width = 3264,
+		.height = 1836,
+		.command = 0x43,
+	},
 	{
 		.width = 2304,
 		.height = 1296,

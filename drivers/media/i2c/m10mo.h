@@ -240,17 +240,29 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define ZSL_INTERVAL 		0x6f
 
 /*  ZSL MODE */
-#define INFINITY_CAPTURE_MODE	0x00
+#define CAPTURE_MODE		0x00
+#define CAP_MODE_INFINITY_ZSL	0x0f
+#define CAP_MODE_PANORAMA	0x00
+
 #define ZSL_TRANSFER_NO 	0x16
 #define CAP_NV12_MODE		0x0a
 #define START_DUAL_STATUS	0x1f
 #define START_DUAL_CAPTURE 	0x05
 
-#define ZSL_OUTOUT_SELECT_FMT	0x27
-#define ZSL_OUTOUT_FMT_NV12	0x00
-#define ZSL_OUTOUT_FMT_NV21	0x21
+/* Output format selection between YUV422 and NV12/NV21 */
+#define OUTPUT_FMT_SELECT	0x05
+#define OUTPUT_FMT_SELECT_YUV422	0x00
+#define OUTPUT_FMT_SELECT_NV12NV21	0x01
 
+/* Choose between NV12 and NV21 */
+#define CHOOSE_NV12NV21_FMT		0x27
+#define CHOOSE_NV12NV21_FMT_NV12	0x00
+#define CHOOSE_NV12NV21_FMT_NV21	0x01
 
+/* Enable/Disable metadata in monitor mode */
+#define MON_METADATA_SUPPORT_CTRL	0x06
+#define MON_METADATA_SUPPORT_CTRL_EN	0x01
+#define MON_METADATA_SUPPORT_CTRL_DIS	0x00
 
 /* Category 3_Auto Exposure */
 
@@ -398,6 +410,7 @@ enum M10MO_MODES {
 	M10MO_PARAMETER_MODE,
 	M10MO_MONITOR_MODE,
 	M10MO_MONITOR_MODE_ZSL,
+	M10MO_MONITOR_MODE_PANORAMA,
 	M10MO_SINGLE_CAPTURE_MODE
 };
 
