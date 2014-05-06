@@ -99,7 +99,9 @@ static int m10mo_read(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 *
 			*val = recv_data[1] << 24 | recv_data[2] << 16
 				| recv_data[3] << 8 | recv_data[4];
 	}
-	return 0;
+	dev_dbg(&client->dev, "Read reg. Category=0x%02X Reg=0x%02X Value=0x%X ret=%s\n",
+		category, reg, *val, (ret == 2) ? "OK" : "Error");
+	return (ret == 2) ? 0 : -EIO;
 }
 
 /**
@@ -158,6 +160,8 @@ static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 
 
 	ret = i2c_transfer(client->adapter, &msg, 1);
 
+	dev_dbg(&client->dev, "Write reg. Category=0x%02X Reg=0x%02X Value=0x%X ret=%s\n",
+		category, reg, val, (ret == 1) ? "OK" : "Error");
 	return ret == num_msg ? 0 : -EIO;
 }
 
@@ -198,6 +202,8 @@ int m10mo_memory_write(struct v4l2_subdev *sd, u8 cmd, u16 len, u32 addr, u8 *va
 	struct i2c_msg msg;
 	u8 *data = m10mo_dev->message_buffer;
 	int i, ret;
+
+	dev_dbg(&client->dev, "Write mem. cmd=0x%02X len=%d addr=0x%X\n", cmd, len, addr);
 
 	if (!client->adapter)
 		return -ENODEV;
@@ -305,6 +311,7 @@ int m10mo_memory_read(struct v4l2_subdev *sd, u16 len, u32 addr, u8 *val)
 
 	memcpy(val, recv_data + 3, len);
 
+	dev_dbg(&client->dev, "Read mem. len=%d addr=0x%X\n", len, addr);
 	return 0;
 }
 
