@@ -2599,7 +2599,7 @@ static void __configure_video_pp_input(struct atomisp_sub_device *asd,
 		&stream_config->input_config.effective_res;
 
 	const struct bayer_ds_factor bds_factors[] =
-		{{8, 1}, {4, 1}, {2, 1}, {3, 2}};
+		{{8, 1}, {6, 1}, {4, 1}, {3, 1}, {2, 1}, {3, 2}};
 	unsigned int i;
 
 	if (width == 0 && height == 0)
