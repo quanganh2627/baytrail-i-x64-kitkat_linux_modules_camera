@@ -456,6 +456,12 @@ static int __ov8858_init(struct v4l2_subdev *sd)
 
 	/* Sets the default FPS */
 	dev->fps_index = 0;
+
+	/* Set default exposure values (initially start values) */
+	dev->exposure = 256;
+	dev->gain = 16;
+	dev->digital_gain = 1024;
+
 	return ov8858_write_reg_array(client, ov8858_BasicSettings);
 }
 
