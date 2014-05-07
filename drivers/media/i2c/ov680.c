@@ -372,10 +372,29 @@ static int ov680_dump_rx_regs(struct v4l2_subdev *sd)
 }
 #endif
 
-static int ov680_load_firmware(struct v4l2_subdev *sd)
+static int ov680_write_firmware(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ov680_device *dev = to_ov680_device(sd);
+	int count, ret;
+	u16 len;
+	const struct ov680_firmware *ov680_fw_header =
+		(const struct ov680_firmware *)dev->fw->data;
+
+	count = ov680_fw_header->cmd_count;
+	len = count + sizeof(u16); /* 16-bit address + data */
+
+	ret = ov680_i2c_write(client, len, (u8 *)dev->ov680_fw);
+	if (ret) {
+		dev_err(&client->dev, "write failure\n");
+	}
+
+	return ret;
+}
+
+static int ov680_load_firmware(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 	u8 read_value;
 	unsigned int read_timeout = 500;
@@ -397,7 +416,7 @@ static int ov680_load_firmware(struct v4l2_subdev *sd)
 	}
 
 	/* Load FW */
-	ret = ov680_write_reg_array(sd, dev->ov680_fw);
+	ret = ov680_write_firmware(sd);
 	if (ret) {
 		dev_err(&client->dev, "%s - FW load failed\n", __func__);
 		return ret;
@@ -431,6 +450,19 @@ static int ov680_load_firmware(struct v4l2_subdev *sd)
 		dev_err(&client->dev,
 			"%s - status check timed out\n", __func__);
 		return -EBUSY;
+	}
+
+	ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
+	if (ret) {
+		dev_err(&client->dev, "%s - set embedded line failed\n", __func__);
+		return ret;
+	}
+
+	/* turn embedded line off */
+	ret = ov680_write_reg_array(sd, ov680_embedded_line_off);
+	if (ret) {
+		dev_err(&client->dev, "%s - turn embedded off failed\n", __func__);
+		return ret;
 	}
 
 	dev_info(&client->dev, "firmware load successfully.\n");
@@ -894,16 +926,19 @@ static int ov680_s_stream(struct v4l2_subdev *sd, int enable)
 
 	mutex_lock(&dev->input_lock);
 	if (dev->power_on && enable) {
-		/* Config and start streaming */
-		ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
+		/* start streaming */
+		ret = ov680_i2c_write_reg(sd, REG_SC_03, REG_SC_03_GLOBAL_ENABLED);
 		if (ret) {
-			dev_err(&client->dev, "%s - Config and start failed\n", __func__);
+			dev_err(&client->dev, "%s - stream on failed\n", __func__);
 			dev->sys_activated = 0;
 		} else {
 			dev->sys_activated = 1;
 		}
 	} else { /* stream off */
-		dev->sys_activated = 0; /* fw loaded */
+		ret = ov680_i2c_write_reg(sd, REG_SC_03, REG_SC_03_GLOBAL_DISABLED);
+		if (ret)
+			dev_err(&client->dev, "%s - stream off failed\n", __func__);
+		dev->sys_activated = 0;
 	}
 	mutex_unlock(&dev->input_lock);
 	return ret;
@@ -1215,7 +1250,8 @@ static int ov680_probe(struct i2c_client *client,
 
 	ov680_fw_header = (const struct ov680_firmware *)dev->fw->data;
 	ov680_fw_data_size = ov680_fw_header->cmd_count *
-				ov680_fw_header->cmd_size;
+				ov680_fw_header->cmd_size +
+				sizeof(u16);
 
 	/* Check firmware size: FW header size + FW data size */
 	if (dev->fw->size != (sizeof(*ov680_fw_header)+ov680_fw_data_size)) {
