@@ -34,13 +34,9 @@
 #define IMPLIES(a, b) (!(a) || (b))
 
 #if defined(_MSC_VER)
+/* MSC defines min and max in stdlib.h */
+#include <stdlib.h>
 
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-#ifndef max
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#endif
 #define clamp(a, min_val, max_val) min(max(a, min_val), max_val)
 #define bound(min_val, x, max_val) min(max(x, min_val), max_val)
 

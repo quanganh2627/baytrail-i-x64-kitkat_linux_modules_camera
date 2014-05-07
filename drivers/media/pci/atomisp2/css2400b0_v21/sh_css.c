@@ -257,6 +257,23 @@ static enum ia_css_err
 alloc_continuous_frames(
 	struct ia_css_pipe *pipe, bool init_time);
 
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+/**
+ * @brief Calculate the required MIPI buffer sizes.
+ * Based on the stream configuration, calculate the
+ * required MIPI buffer sizes (in DDR words).
+ *
+ * @param[in]	stream_cfg		Point to the target stream configuration
+ * @param[out]	size_mem_words	MIPI buffer size in DDR words.
+ *
+ * @return
+ */
+static enum ia_css_err
+calculate_mipi_buff_size(
+		struct ia_css_stream_config *stream_cfg,
+		unsigned int *size_mem_words);
+#endif
+
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 static enum ia_css_err
 allocate_mipi_frames(struct ia_css_pipe *pipe);
@@ -2980,6 +2997,105 @@ ia_css_alloc_continuous_frame_remain(struct ia_css_stream *stream)
 	return alloc_continuous_frames(stream->continuous_pipe, false);
 }
 
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+static enum ia_css_err
+calculate_mipi_buff_size(
+		struct ia_css_stream_config *stream_cfg,
+		unsigned int *size_mem_words)
+{
+	unsigned int width;
+	unsigned int height;
+	enum ia_css_stream_format format;
+	bool pack_raw_pixels;
+
+	unsigned int width_padded;
+	unsigned int bits_per_pixel = 0;
+
+	unsigned int even_line_bytes = 0;
+	unsigned int odd_line_bytes = 0;
+
+	unsigned int words_per_odd_line = 0;
+	unsigned int words_per_even_line = 0;
+
+	unsigned int mem_words_per_even_line = 0;
+	unsigned int mem_words_per_odd_line = 0;
+
+	unsigned int mem_words_per_buff_line = 0;
+	unsigned int mem_words_per_buff = 0;
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	/**
+	 * zhengjie.lu@intel.com
+	 *
+	 * NOTE
+	 * - In the struct "ia_css_stream_config", there
+	 *   are two members: "input_config" and "isys_config".
+	 *   Both of them provide the same information, e.g.
+	 *   input_res and format.
+	 *
+	 *   Question here is that: which one shall be used?
+	 */
+	width = stream_cfg->input_config.input_res.width;
+	height = stream_cfg->input_config.input_res.height;
+	format = stream_cfg->input_config.format;
+	pack_raw_pixels = stream_cfg->pack_raw_pixels;
+	/** end of NOTE */
+
+	/**
+	 * zhengjie.lu@intel.com
+	 *
+	 * NOTE
+	 * - The following code is derived from the
+	 *   existing code "ia_css_mipi_frame_calculate_size()".
+	 *
+	 *   Question here is: why adding "2 * ISP_VEC_NELEMS"
+	 *   to "width_padded", but not making "width_padded"
+	 *   aligned with "2 * ISP_VEC_NELEMS"?
+	 */
+	/* The changes will be reverted as soon as RAW
+	 * Buffers are deployed by the 2401 Input System
+	 * in the non-continuous use scenario.
+	 */
+	width_padded = width + (2 * ISP_VEC_NELEMS);
+	/** end of NOTE */
+
+	IA_CSS_ENTER("padded_width=%d, height=%d, format=%d\n",
+		     width_padded, height, format);
+
+	bits_per_pixel = sh_css_stream_format_2_bits_per_subpixel(format);
+	bits_per_pixel =
+		(format == IA_CSS_STREAM_FORMAT_RAW_10 && pack_raw_pixels) ? bits_per_pixel : 16;
+	if (bits_per_pixel == 0) {
+		return IA_CSS_ERR_INTERNAL_ERROR;
+	}
+
+	odd_line_bytes = (width_padded * bits_per_pixel + 7) >> 3; /* ceil ( bits per line / 8 ) */
+
+	/* Even lines for YUV420 formats are double in bits_per_pixel. */
+	if (format == IA_CSS_STREAM_FORMAT_YUV420_8
+		|| format == IA_CSS_STREAM_FORMAT_YUV420_10) {
+		even_line_bytes = (width_padded * 2 * bits_per_pixel + 7) >> 3; /* ceil ( bits per line / 8 ) */
+	} else {
+		even_line_bytes = odd_line_bytes;
+	}
+
+	words_per_odd_line	 = ((odd_line_bytes   + 3) >> 2 );		/* ceil(odd_line_bytes/4); word = 4 bytes */
+	words_per_even_line  = ((even_line_bytes  + 3) >> 2 );
+
+	mem_words_per_odd_line	 = ((words_per_odd_line + 7) >> 3);	/* ceil(words_per_odd_line/8); mem_word = 32 bytes, 8 words */
+	mem_words_per_even_line  = ((words_per_even_line + 7) >> 3);
+
+	mem_words_per_buff_line =
+		(mem_words_per_odd_line > mem_words_per_even_line) ? mem_words_per_odd_line : mem_words_per_even_line;
+	mem_words_per_buff = mem_words_per_buff_line * height;
+
+	*size_mem_words = mem_words_per_buff;
+
+	IA_CSS_LEAVE_ERR(err);
+	return err;
+}
+#endif
+
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 /* start of MIPI functions */
 static enum ia_css_err
@@ -3017,13 +3133,19 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 		return IA_CSS_SUCCESS; /* AM TODO: Check  */
 	}
 
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	err = calculate_mipi_buff_size(
+			&(pipe->stream->config),
+			&(my_css.size_mem_words));
+#endif
+
 	/* AM TODO: size_mem_words should come from stream struct. */
 	assert(my_css.size_mem_words != 0);
 	if (my_css.size_mem_words == 0) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			"allocate_mipi_frames(%p) exit: error: mipi frame size not specified.\n",
 			pipe);
-		return err;
+		return IA_CSS_ERR_INTERNAL_ERROR;
 	}
 
 	port = (unsigned int) pipe->stream->config.source.port.port;
@@ -3032,7 +3154,7 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			"allocate_mipi_frames(%p) exit: error: port is not correct (port=%d).\n",
 			pipe, port);
-		return err;
+		return IA_CSS_ERR_INTERNAL_ERROR;
 	}
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2)
@@ -3041,7 +3163,7 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			"allocate_mipi_frames(%p) exit: error: already allocated for this port (port=%d).\n",
 			pipe, port);
-		return err;
+		return IA_CSS_ERR_INTERNAL_ERROR;
 	}
 #else
 	/* 2401 system allows multiple streams to use same physical port. This is not
