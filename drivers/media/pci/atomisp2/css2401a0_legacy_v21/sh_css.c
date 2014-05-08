@@ -243,7 +243,7 @@ init_vf_frameinfo_defaults(struct ia_css_pipe *pipe,
 
 static enum ia_css_err
 init_in_frameinfo_memory_defaults(struct ia_css_pipe *pipe,
-	struct ia_css_frame *frame);
+	struct ia_css_frame *frame, enum ia_css_frame_format format);
 
 static enum ia_css_err
 init_out_frameinfo_defaults(struct ia_css_pipe *pipe,
@@ -375,7 +375,6 @@ static enum ia_css_frame_format yuv422_copy_formats[] = {
 };
 
 #define array_length(array) (sizeof(array)/sizeof(array[0]))
-
 
 /* Verify whether the selected output format is can be produced
  * by the copy binary given the stream format.
@@ -3734,7 +3733,6 @@ static enum ia_css_err add_yuv_scaler_stage(
 	struct ia_css_frame *out_frame,
 	struct ia_css_frame *internal_out_frame,
 	struct ia_css_binary *yuv_scaler_binary,
-	struct ia_css_pipeline_stage *prev_stage,
 	struct ia_css_pipeline_stage **pre_vf_pp_stage)
 {
 	const struct ia_css_fw_info *last_fw;
@@ -3748,7 +3746,6 @@ static enum ia_css_err add_yuv_scaler_stage(
 	assert(pipe != NULL);
 	assert(me != NULL);
 	assert(yuv_scaler_binary != NULL);
-	assert(prev_stage != NULL);
 	assert(pre_vf_pp_stage != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"add_yuv_scaler_stage() enter:\n");
@@ -3780,12 +3777,7 @@ static enum ia_css_err add_yuv_scaler_stage(
 			    in_frame, out_frame, vf_frame,
 			    NULL, pre_vf_pp_stage);
 	/* If a firmware produce vf_pp output, we set that as vf_pp input */
-	if (*pre_vf_pp_stage) {
-		(*pre_vf_pp_stage)->args.vf_downscale_log2 =
-		  yuv_scaler_binary->vf_downscale_log2;
-	} else {
-		*pre_vf_pp_stage = prev_stage;
-	}
+	(*pre_vf_pp_stage)->args.vf_downscale_log2 = yuv_scaler_binary->vf_downscale_log2;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"add_yuv_scaler_stage() leave:\n");
@@ -3999,9 +3991,11 @@ ia_css_get_crop_offsets (
 }
 #endif
 
+
+
 static enum ia_css_err
 init_in_frameinfo_memory_defaults(struct ia_css_pipe *pipe,
-	struct ia_css_frame *frame)
+	struct ia_css_frame *frame, enum ia_css_frame_format format)
 {
 	struct ia_css_frame *in_frame;
 	enum ia_css_err err = IA_CSS_SUCCESS;
@@ -4012,7 +4006,7 @@ init_in_frameinfo_memory_defaults(struct ia_css_pipe *pipe,
 
 	in_frame = frame;
 
-	in_frame->info.format = IA_CSS_FRAME_FORMAT_RAW;
+	in_frame->info.format = format;
 	in_frame->info.res.width = pipe->stream->config.input_config.input_res.width;
 	in_frame->info.res.height = pipe->stream->config.input_config.input_res.height;
 	in_frame->info.raw_bit_depth =
@@ -4109,7 +4103,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 
 	/* Construct in_frame info (only in case we have dynamic input */
 	if (need_in_frameinfo_memory) {
-		err = init_in_frameinfo_memory_defaults(pipe, in_frame);
+		err = init_in_frameinfo_memory_defaults(pipe, in_frame, IA_CSS_FRAME_FORMAT_RAW);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
 	} else {
@@ -4317,7 +4311,7 @@ create_host_preview_pipeline(struct ia_css_pipe *pipe)
 	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
 #endif
 	if (need_in_frameinfo_memory) {
-		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame);
+		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame, IA_CSS_FRAME_FORMAT_RAW);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
 
@@ -6481,12 +6475,15 @@ load_yuvpp_binaries(struct ia_css_pipe *pipe)
 	} else {
 		next_binary = NULL;
 	}
+
+#if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* ISP Copy */
 	err = load_copy_binary(pipe,
 			       &mycs->copy_binary,
 			       next_binary);
 	if (err != IA_CSS_SUCCESS)
 		goto ERR;
+#endif
 
 	/* Viewfinder post-processing */
 	if (need_scaler) {
@@ -6724,8 +6721,11 @@ create_host_yuvpp_pipeline(struct ia_css_pipe *pipe)
 	/* Construct in_frame info (only in case we have dynamic input */
 	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
 #endif
+	/* the input frame can come from:
+	 *  a) memory: connect yuvscaler to me->in_frame
+	 *  b) sensor, via copy binary: connect yuvscaler to copy binary later on */
 	if (need_in_frameinfo_memory) {
-		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame);
+		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame, IA_CSS_FRAME_FORMAT_NV12);
 		if (err != IA_CSS_SUCCESS)
 			return err;
 
@@ -6773,18 +6773,21 @@ create_host_yuvpp_pipeline(struct ia_css_pipe *pipe)
 			&post_stage);
 		if (err != IA_CSS_SUCCESS)
 			return err;
+
 		if (post_stage) {
 			/* if we use yuv scaler binary, vf output should be from there */
 			post_stage->args.copy_vf = !need_scaler;
 			/* for yuvpp pipe, it should always be enabled */
 			post_stage->args.copy_output = true;
+			/* connect output of copy binary to input of yuv scaler */
+			in_frame = post_stage->args.out_frame[0];
 		}
 	}
 
-	if (need_scaler && post_stage) {
+	if (need_scaler) {
 		struct ia_css_frame *tmp_out_frame = NULL;
 		struct ia_css_frame *tmp_vf_frame = NULL;
-		struct ia_css_frame *tmp_in_frame = post_stage->args.out_frame[0];
+		struct ia_css_frame *tmp_in_frame = in_frame;
 
 		for (i = 0, j = 0; i < num_stage; i++) {
 			assert(j < num_output_stage);
@@ -6799,7 +6802,7 @@ create_host_yuvpp_pipeline(struct ia_css_pipe *pipe)
 			err = add_yuv_scaler_stage(pipe, me, tmp_in_frame, tmp_out_frame,
 						   NULL,
 						   &yuv_scaler_binary[i],
-						   post_stage, &post_stage);
+						   &post_stage);
 			if (err != IA_CSS_SUCCESS)
 				return err;
 			/* we use output port 1 as internal output port */
@@ -6988,7 +6991,7 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 	need_in_frameinfo_memory = pipe->stream->config.mode == IA_CSS_INPUT_MODE_MEMORY;
 #endif
 	if (need_in_frameinfo_memory) {
-		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame);
+		err = init_in_frameinfo_memory_defaults(pipe, &me->in_frame, IA_CSS_FRAME_FORMAT_RAW);
 		if (err != IA_CSS_SUCCESS)
 			return err;
 
@@ -9084,6 +9087,8 @@ void ia_css_pipe_map_queue(struct ia_css_pipe *pipe, bool map)
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_METADATA, map);
 #endif
 	} else if (pipe->mode == IA_CSS_PIPE_ID_YUVPP) {
+		if (need_input_queue)
+			ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_INPUT_FRAME, map);
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_OUTPUT_FRAME, map);
 		ia_css_queue_map(thread_id, IA_CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME, map);
 		if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0])
