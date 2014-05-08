@@ -1014,40 +1014,6 @@ out:
 	return ret;
 }
 
-#define LARGEST_ALLOWED_RATIO_MISMATCH 500
-static int distance(struct m10mo_resolution const *res, const u32 w,
-				const u32 h)
-{
-	unsigned int w_ratio = ((res->width << 13) / w);
-	unsigned int h_ratio = ((res->height << 13) / h);
-	int match = abs(((w_ratio << 13) / h_ratio) - ((int)8192));
-
-	if ((w_ratio < 8192) || (h_ratio < 8192)
-		|| (match > LARGEST_ALLOWED_RATIO_MISMATCH))
-		return -1;
-
-	return w_ratio + h_ratio;
-}
-
-static int nearest_resolution_index(const struct m10mo_resolution *res,
-			int entries, u32 w, u32 h)
-{
-	int min_dist = INT_MAX;
-	int idx = -1;
-	int i, dist;
-
-	for (i = 0; i < entries; i++) {
-		dist = distance(&res[i], w, h);
-		if (dist == -1)
-			continue;
-		if (dist < min_dist) {
-			min_dist = dist;
-			idx = i;
-		}
-	}
-	return idx;
-}
-
 static int get_resolution_index(const struct m10mo_resolution *res,
 			int entries, int w, int h)
 {
@@ -1064,29 +1030,13 @@ static int get_resolution_index(const struct m10mo_resolution *res,
 	return -1;
 }
 
-static int __m10mo_try_mbus_fmt_jpeg(struct v4l2_subdev *sd,
-				 struct v4l2_mbus_framefmt *fmt)
-{
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	const struct m10mo_resolution * capt_res =
-			resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
-	int entries = resolutions_sizes[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
-	int idx;
-
-	/* First check if the give n resolutions are spported for capture */
-	idx = get_resolution_index(capt_res, entries, fmt->width, fmt->height);
-	if (idx == -1)
-		return -EINVAL;
-
-	return 0;
-}
-
 static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 				 struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int idx;
+	const struct m10mo_resolution * res;
+	int entries, idx;
 
 	if (!fmt)
 		return -EINVAL;
@@ -1101,39 +1051,47 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	}
 
 	/* JPEG fmt has fixed width and height */
-	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8)
-		return __m10mo_try_mbus_fmt_jpeg(sd, fmt);
+	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
+		res = resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
+		entries =
+		     resolutions_sizes[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
+	} else {
+		res = dev->curr_res_table;
+		entries = dev->entries_curr_table;
+	}
 
-	idx = nearest_resolution_index(dev->curr_res_table,
-			dev->entries_curr_table, fmt->width, fmt->height);
-
-	/* Fall back to the last if not found */
-	if (idx == -1)
-		idx = dev->entries_curr_table - 1;
-
-	fmt->width = dev->curr_res_table[idx].width;
-	fmt->height = dev->curr_res_table[idx].height;
-
-	return 0;
+	/* First check if the give n resolutions are spported for capture */
+	idx = get_resolution_index(res, entries, fmt->width, fmt->height);
+	return idx;
 }
 
 static int m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	int r;
+	int idx;
 
 	mutex_lock(&dev->input_lock);
-	r = __m10mo_try_mbus_fmt(sd, fmt);
+	idx = __m10mo_try_mbus_fmt(sd, fmt);
+	if (idx == -1) {
+		mutex_unlock(&dev->input_lock);
+		return idx;
+	}
 
-	/* Irrespective of result, modify jpeg width and height to be fixed. */
+	/*
+	 * If found a valid setting in the table, assign fixed width and height
+	 * for jpeg
+	 */
 	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
 		fmt->width = JPEG_CONFIG_WIDTH;
 		fmt->height = JPEG_CONFIG_HEIGHT;
+	} else {
+		fmt->width = dev->curr_res_table[idx].width;
+		fmt->height = dev->curr_res_table[idx].height;
 	}
-	mutex_unlock(&dev->input_lock);
 
-	return r;
+	mutex_unlock(&dev->input_lock);
+	return 0;
 }
 
 static int m10mo_get_mbus_fmt(struct v4l2_subdev *sd,
@@ -1159,26 +1117,18 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct atomisp_input_stream_info *stream_info =
 			(struct atomisp_input_stream_info*)fmt->reserved;
-	int ret;
+	int index;
 
 	mutex_lock(&dev->input_lock);
 
-	ret = __m10mo_try_mbus_fmt(sd, fmt);
-	if (ret)
-		goto out;
+	index = __m10mo_try_mbus_fmt(sd, fmt);
+	if (index == -1) {
+		mutex_unlock(&dev->input_lock);
+		return -EINVAL;
+	}
 
 	dev->format.code = fmt->code;
-
-	/* Jpeg means still capture. So only look for that. */
-	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8)
-		dev->fmt_idx = get_resolution_index(
-		      resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX],
-		      resolutions_sizes[dev->fw_type][M10MO_MODE_CAPTURE_INDEX],
-		      fmt->width, fmt->height);
-	else
-		dev->fmt_idx = get_resolution_index(dev->curr_res_table,
-					dev->entries_curr_table,
-					fmt->width, fmt->height);
+	dev->fmt_idx = index;
 
 	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
@@ -1215,10 +1165,8 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	dev_dbg(&client->dev,
 		"%s index: %d width: %d, height: %d, code; 0x%x\n", __func__,
 		 dev->fmt_idx, fmt->width, fmt->height, dev->format.code);
-
-out:
 	mutex_unlock(&dev->input_lock);
-	return ret;
+	return 0;
 }
 
 static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
