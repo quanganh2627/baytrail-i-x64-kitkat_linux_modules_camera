@@ -52,10 +52,10 @@ struct fw_param{
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140506_2114) is a place holder
+/* The string STR(irci_master_20140507_2308) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char* release_version = STR(irci_master_20140506_2114);
+static const char* release_version = STR(irci_master_20140507_2308);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";
@@ -268,6 +268,8 @@ sh_css_load_firmware(const char *fw_data,
 			if (i < NUM_OF_SPS)
 				return IA_CSS_ERR_INTERNAL_ERROR;
 			if (bi->type != ia_css_isp_firmware)
+				return IA_CSS_ERR_INTERNAL_ERROR;
+			if (sh_css_blob_info == NULL) /* cannot happen but KW does not see this */
 				return IA_CSS_ERR_INTERNAL_ERROR;
 			sh_css_blob_info[i-NUM_OF_SPS] = bd;
 		}
