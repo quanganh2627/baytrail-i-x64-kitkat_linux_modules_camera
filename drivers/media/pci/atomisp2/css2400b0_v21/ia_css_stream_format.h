@@ -84,6 +84,8 @@ enum ia_css_stream_format {
 	IA_CSS_STREAM_FORMAT_USER_DEF8,  /**< User defined 8-bit data type 8 */
 };
 
+#define	IA_CSS_STREAM_FORMAT_NUM	IA_CSS_STREAM_FORMAT_USER_DEF8
+
 unsigned int ia_css_util_input_format_bpp(
 	enum ia_css_stream_format format,
 	bool two_ppc);

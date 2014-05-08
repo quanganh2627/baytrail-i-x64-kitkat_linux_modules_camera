@@ -23,10 +23,10 @@
 #define __IA_CCS_PIPE_PUBLIC_H
 
 #include <type_support.h>
-#include "ia_css_types.h"
-#include "ia_css_frame_public.h"
-#include "ia_css_buffer.h"
-
+#include <ia_css_err.h>
+#include <ia_css_types.h>
+#include <ia_css_frame_public.h>
+#include <ia_css_buffer.h>
 
 enum {
 	IA_CSS_PIPE_OUTPUT_STAGE_0 = 0,
@@ -52,8 +52,6 @@ enum ia_css_pipe_mode {
 };
 /* Temporary define  */
 #define IA_CSS_PIPE_MODE_NUM (IA_CSS_PIPE_MODE_COPY + 1)
-
-struct ia_css_pipe;
 
 /**
  * Pipe configuration structure.

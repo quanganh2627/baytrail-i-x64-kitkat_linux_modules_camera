@@ -19,13 +19,15 @@
  *
  */
 
-#ifndef __ISP2600_CONFIG_H_INCLUDED__
-#define __ISP2600_CONFIG_H_INCLUDED__
+#ifndef __ISP_CONFIG_H_INCLUDED__
+#define __ISP_CONFIG_H_INCLUDED__
 
-#define NUM_BITS 16
-#define NUM_SLICE_ELEMS 8
-#define ROUNDMODE           ROUND_NEAREST_EVEN
+#ifdef ISP2600
+#include "isp2600_config.h"
+#elif defined(ISP2400)
+#include "isp2400_config.h"
+#else
+#error "Please define a core {ISP2400, ISP2600}"
+#endif
 
-#define HAS_div_unit
-
-#endif /* __ISP2600_CONFIG_H_INCLUDED__ */
+#endif /* __ISP_CONFIG_H_INCLUDED__ */
