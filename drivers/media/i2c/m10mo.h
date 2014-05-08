@@ -192,6 +192,7 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define SYSTEM_VER_HARDWARE	0x04
 #define SYSTEM_VER_PARAMETER	0x06
 #define SYSTEM_VER_AWB		0x08
+#define SYSTEM_MASTER_SENSOR	0x17
 
 #define SYSTEM_SYSMODE			0x0b
 /* SYSTEM mode status */

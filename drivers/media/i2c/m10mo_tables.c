@@ -98,6 +98,19 @@ static const struct m10mo_resolution const m10mo_preview_modes_fw1[] = {
 	},
 };
 
+static const struct m10mo_resolution const m10mo_preview_modes_fw2[] = {
+	{
+		.width = 1280,
+		.height = 720,
+		.command = 0x21,
+	},
+	{
+		.width = 1920,
+		.height = 1080,
+		.command = 0x28,
+	},
+};
+
 static const struct m10mo_resolution const m10mo_capture_modes_fw0[] = {
 	{
 		.width = 640,
@@ -184,6 +197,14 @@ static const struct m10mo_resolution const m10mo_capture_modes_fw1[] = {
 	},
 };
 
+static const struct m10mo_resolution const m10mo_capture_modes_fw2[] = {
+	{
+		.width = 1920,
+		.height = 1080,
+		.command = 0x28,
+	},
+};
+
 static const struct m10mo_resolution const m10mo_video_modes_fw0[] = {
 	{
 		.width = 1920,
@@ -200,13 +221,24 @@ static const struct m10mo_resolution const m10mo_video_modes_fw1[] = {
 	},
 };
 
+static const struct m10mo_resolution const m10mo_video_modes_fw2[] = {
+	{
+		.width = 1920,
+		.height = 1080,
+		.command = 0x28,
+	},
+};
+
 const struct m10mo_resolution *resolutions[][3] = {
 	{ m10mo_preview_modes_fw0,
 	  m10mo_capture_modes_fw0,
 	  m10mo_video_modes_fw0 } ,
 	{ m10mo_preview_modes_fw1,
 	  m10mo_capture_modes_fw1,
-	  m10mo_video_modes_fw1 }
+	  m10mo_video_modes_fw1 },
+	{ m10mo_preview_modes_fw2,
+	  m10mo_capture_modes_fw2,
+	  m10mo_video_modes_fw2 }
 };
 
 const ssize_t resolutions_sizes[][3] = {
@@ -215,5 +247,8 @@ const ssize_t resolutions_sizes[][3] = {
 	  ARRAY_SIZE(m10mo_video_modes_fw0) } ,
 	{ ARRAY_SIZE(m10mo_preview_modes_fw1),
 	  ARRAY_SIZE(m10mo_capture_modes_fw1),
-	  ARRAY_SIZE(m10mo_video_modes_fw1) }
+	  ARRAY_SIZE(m10mo_video_modes_fw1) } ,
+	{ ARRAY_SIZE(m10mo_preview_modes_fw2),
+	  ARRAY_SIZE(m10mo_capture_modes_fw2),
+	  ARRAY_SIZE(m10mo_video_modes_fw2) } ,
 };

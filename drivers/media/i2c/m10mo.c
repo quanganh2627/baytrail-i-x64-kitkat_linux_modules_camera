@@ -1295,9 +1295,12 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	if (!fmt)
 		return -EINVAL;
 
-	/* Check if the code asked is supported one. If not default to NV12. */
-	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
+	if (dev->fw_type == M10MO_FW_TYPE_2) {
+		/* Set mbus format to 0x8001(YUV420) */
+		fmt->code = 0x8001;
+	} else if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
 		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 && fmt->code != 0x8005) {
+		/* Check if the code asked is supported one. If not default to NV12. */
 		dev_info(&client->dev,
 			"%s unsupported code: 0x%x. Set to NV12 \n",
 			__func__, fmt->code);
@@ -1434,6 +1437,12 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 	fw_ids = dev->pdata->fw_ids;
 	if (!fw_ids)
 		return 0;
+
+	ret = dev->pdata->identify_fw();
+	if (ret != -1) {
+		dev->fw_type = ret;
+		return 0;
+	}
 
 	ret = m10mo_get_isp_fw_version_string(dev, buffer, sizeof(buffer));
 	if (ret)
@@ -1625,8 +1634,10 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 		ret = m10mo_set_still_capture(sd);
 		break;
 	default:
+		if (dev->fw_type == M10MO_FW_TYPE_2)
+			ret = m10mo_set_monitor_mode(sd);
 		/* TODO: Revisit this logic on switching to panorama */
-		if (dev->curr_res_table[dev->fmt_idx].command == 0x43)
+		else if (dev->curr_res_table[dev->fmt_idx].command == 0x43)
 			ret = m10mo_set_panorama_monitor(sd);
 		else
 			ret = m10mo_set_zsl_monitor(sd);
@@ -2042,6 +2053,21 @@ static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
 	return 0;
 }
 
+static int m10mo_s_routing(struct v4l2_subdev *sd, u32 input, u32 output, u32 config)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct atomisp_camera_caps *caps =
+		dev->pdata->common.get_camera_caps();
+
+	/* Select operating sensor. */
+	if (caps->sensor_num > 1) {
+		return m10mo_write(sd, 1, CATEGORY_SYSTEM,
+			SYSTEM_MASTER_SENSOR, !output);
+	}
+
+	return 0;
+}
+
 static const struct v4l2_subdev_video_ops m10mo_video_ops = {
 	.try_mbus_fmt = m10mo_try_mbus_fmt,
 	.s_mbus_fmt = m10mo_set_mbus_fmt,
@@ -2049,6 +2075,7 @@ static const struct v4l2_subdev_video_ops m10mo_video_ops = {
 	.s_stream = m10mo_s_stream,
 	.s_parm = m10mo_s_parm,
 	.enum_framesizes = m10mo_enum_framesizes,
+	.s_routing = m10mo_s_routing,
 };
 
 static const struct v4l2_subdev_core_ops m10mo_core_ops = {
