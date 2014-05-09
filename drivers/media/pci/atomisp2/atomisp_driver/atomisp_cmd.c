@@ -924,7 +924,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			}
 			vb = atomisp_css_frame_to_vbuf(pipe, frame);
 			WARN_ON(!vb);
-			pipe->frame_config_id[vb->i] = frame->isp_config_id;
+			if (vb)
+				pipe->frame_config_id[vb->i] = frame->isp_config_id;
 			break;
 		case CSS_BUFFER_TYPE_OUTPUT_FRAME:
 		case CSS_BUFFER_TYPE_SEC_OUTPUT_FRAME:
