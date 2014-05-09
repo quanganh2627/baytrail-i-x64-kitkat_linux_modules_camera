@@ -932,12 +932,15 @@ out:
 static u32 __get_dual_capture_value(u8 capture_mode)
 {
 	switch(capture_mode) {
+	case M10MO_CAPTURE_MODE_ZSL_BURST:
+		return DUAL_CAPTURE_BURST_CAPTURE_START;
 	case M10MO_CAPTURE_MODE_ZSL_LLS:
-		return 0x08;
+		return DUAL_CAPTURE_LLS_CAPTURE_START;
 	case M10MO_CAPTURE_MODE_ZSL_NORMAL:
+		return DUAL_CAPTURE_ZSL_CAPTURE_START;
 	case M10MO_CAPTURE_MODE_ZSL_HDR:
 	default:
-		return 0x01;
+		return DUAL_CAPTURE_SINGLE_CAPTURE_START;
 	}
 }
 
@@ -977,6 +980,40 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 	dev_dbg(&client->dev, "%s zsl capture trigger result: %d\n",
 			__func__, ret);
 	return ret;
+}
+
+static int m10mo_set_burst_mode(struct v4l2_subdev *sd, unsigned int val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret = 0;
+
+	switch(val) {
+	case EXT_ISP_BURST_CAPTURE_CTRL_START:
+		/* First check if already in ZSL monitor mode. If not start */
+		if (dev->mode != M10MO_MONITOR_MODE_ZSL) {
+			ret = m10mo_set_zsl_monitor(sd);
+			if (ret)
+				return ret;
+		}
+		/* set cap mode to burst so that ZSL cap can differentiate */
+		dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_BURST;
+		return m10mo_set_zsl_capture(sd, 1);
+	case EXT_ISP_BURST_CAPTURE_CTRL_STOP:
+		if (dev->capture_mode != M10MO_CAPTURE_MODE_ZSL_BURST)
+			return 0;
+		/* Stop the burst capture */
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
+			START_DUAL_CAPTURE, DUAL_CAPTURE_BURST_CAPTURE_STOP);
+		if (ret)
+			return ret;
+		/* captutre mode back to normal */
+		dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_NORMAL;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int m10mo_set_lls_mode(struct v4l2_subdev *sd, unsigned int val)
@@ -1863,6 +1900,9 @@ static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 		break;
 	case EXT_ISP_GET_AF_MODE_CTRL:
 		ret = m10mo_get_af_mode(sd, &m10mo_ctrl->data);
+		break;
+	case EXT_ISP_BURST_CAPTURE_CTRL:
+		ret = m10mo_set_burst_mode(sd, m10mo_ctrl->data);
 		break;
 	default:
 		ret = -EINVAL;
