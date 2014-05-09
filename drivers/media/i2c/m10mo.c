@@ -1639,27 +1639,34 @@ static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 			void *arg)
 {
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct atomisp_ext_isp_ctrl *m10mo_ctrl
 		= (struct atomisp_ext_isp_ctrl *)arg;
+	int ret = 0;
 
-	dev_info(&client->dev, "m10mo ioctl id 0x%x\n", m10mo_ctrl->id);
-	dev_info(&client->dev, "m10mo ioctl data 0x%x\n", m10mo_ctrl->data);
+	dev_info(&client->dev, "m10mo ioctl id 0x%x data 0x%x\n",
+			m10mo_ctrl->id, m10mo_ctrl->data);
 
+	mutex_lock(&dev->input_lock);
 	switch(m10mo_ctrl->id)
 	{
 	case EXT_ISP_ISO_CTRL:
 		dev_info(&client->dev, "m10mo ioctl ISO\n");
 		break;
 	case EXT_ISP_HDR_CAPTURE_CTRL:
-		return m10mo_set_hdr_mode(sd, m10mo_ctrl->data);
+		ret = m10mo_set_hdr_mode(sd, m10mo_ctrl->data);
+		break;
 	case EXT_ISP_LLS_CAPTURE_CTRL:
-		return m10mo_set_lls_mode(sd, m10mo_ctrl->data);
+		ret = m10mo_set_lls_mode(sd, m10mo_ctrl->data);
+		break;
 	default:
+		ret = -EINVAL;
 		dev_err(&client->dev, "m10mo ioctl: Unsupported ID\n");
 	};
 
-	return 0;
+	mutex_unlock(&dev->input_lock);
+	return ret;
 }
 
 static const struct v4l2_ctrl_config ctrls[] = {
