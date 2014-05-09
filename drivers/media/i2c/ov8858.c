@@ -304,8 +304,7 @@ static int __ov8858_update_frame_timing(struct v4l2_subdev *sd, int exposure,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
-	/* Increase the VTS to match exposure + 14 */
-	if (exposure > *vts - OV8858_INTEGRATION_TIME_MARGIN)
+	if (*vts < exposure + OV8858_INTEGRATION_TIME_MARGIN)
 		*vts = (u16) exposure + OV8858_INTEGRATION_TIME_MARGIN;
 
 	ret = ov8858_write_reg(client, OV8858_16BIT, OV8858_TIMING_HTS, *hts);
@@ -320,12 +319,11 @@ static int __ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int exp_val, ret;
 
-	/* Update frame timings. Exposure must be minimum <  vts-14 */
 	ret = __ov8858_update_frame_timing(sd, exposure, hts, vts);
 	if (ret)
 		return ret;
 
-	/* For OV8835, the low 4 bits are fraction bits and must be kept 0 */
+	/* For ov8858, the low 4 bits are fraction bits and must be kept 0 */
 	exp_val = exposure << 4;
 	ret = ov8858_write_reg(client, OV8858_8BIT,
 			       OV8858_LONG_EXPO+2, exp_val & 0xFF);
@@ -363,7 +361,7 @@ static int __ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
 	/* Shift left to have 7 LONG_GAIN fraction bits */
 	gain <<= 3;
 
-	return ov8858_write_reg(client, OV8858_16BIT, OV8858_AGC_ADJ,
+	return ov8858_write_reg(client, OV8858_16BIT, OV8858_LONG_GAIN,
 				gain & 0x07ff);
 }
 
