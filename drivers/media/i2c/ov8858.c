@@ -360,8 +360,11 @@ static int __ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
 			return ret;
 	}
 
-	/* set global gain */
-	return ov8858_write_reg(client, OV8858_8BIT, OV8858_AGC_ADJ, gain);
+	/* Shift left to have 7 LONG_GAIN fraction bits */
+	gain <<= 3;
+
+	return ov8858_write_reg(client, OV8858_16BIT, OV8858_AGC_ADJ,
+				gain & 0x07ff);
 }
 
 static int ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
