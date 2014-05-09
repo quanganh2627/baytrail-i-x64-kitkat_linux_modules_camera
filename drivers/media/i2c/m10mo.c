@@ -478,6 +478,12 @@ static int power_up(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
 
+	if (dev->pdata->common.power_ctrl) {
+		ret = dev->pdata->common.power_ctrl(sd, 1);
+		if (ret)
+			goto fail_power_ctrl;
+	}
+
 	if (dev->pdata->common.flisclk_ctrl) {
 		ret = dev->pdata->common.flisclk_ctrl(sd, 1);
 		if (ret)
@@ -495,6 +501,9 @@ fail_power_off:
 fail_clk_off:
 	if (dev->pdata->common.flisclk_ctrl)
 		ret = dev->pdata->common.flisclk_ctrl(sd, 0);
+fail_power_ctrl:
+	if (dev->pdata->common.power_ctrl)
+		ret = dev->pdata->common.power_ctrl(sd, 0);
 	return ret;
 }
 
@@ -506,13 +515,19 @@ static int power_down(struct v4l2_subdev *sd)
 
 	ret = dev->pdata->common.gpio_ctrl(sd, 0);
 	if (ret)
-		dev_err(&client->dev, "gpio failed");
+		dev_err(&client->dev, "gpio failed\n");
 
 	/* Even if the first one fails we still want to turn clock off */
 	if (dev->pdata->common.flisclk_ctrl) {
 		ret = dev->pdata->common.flisclk_ctrl(sd, 0);
 		if (ret)
-			dev_err(&client->dev, "stop clock failed");
+			dev_err(&client->dev, "stop clock failed\n");
+	}
+
+	if (dev->pdata->common.power_ctrl) {
+		ret = dev->pdata->common.power_ctrl(sd, 0);
+		if (ret)
+			dev_err(&client->dev, "power off fail\n");
 	}
 	return ret;
 }
