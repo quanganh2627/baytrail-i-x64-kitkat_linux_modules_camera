@@ -1571,7 +1571,7 @@ int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
 	 */
 	if (asd->params.curr_grid_info.s3a_grid.enable) {
 		if (asd->params.s3a_enabled_pipe != CSS_PIPE_ID_NUM)
-			dev_warn(isp->dev, "css pipe %d enabled s3a grid replaced by: %d.\n",
+			dev_dbg(isp->dev, "css pipe %d enabled s3a grid replaced by: %d.\n",
 					asd->params.s3a_enabled_pipe, pipe_id);
 		asd->params.s3a_enabled_pipe = pipe_id;
 	}
@@ -1584,7 +1584,7 @@ int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
 	    || asd->params.curr_grid_info.s3a_grid.width == 0
 	    || asd->params.curr_grid_info.s3a_grid.height == 0)
 	    && asd->params.metadata_width_size == md_width) {
-		dev_err(isp->dev,
+		dev_dbg(isp->dev,
 			"grid info change escape. memcmp=%d, s3a_user_stat=%d,"
 			"dvs_stat=%d, s3a.width=%d, s3a.height=%d, metadata width =%d\n",
 			!memcmp(&old_info, &asd->params.curr_grid_info,
