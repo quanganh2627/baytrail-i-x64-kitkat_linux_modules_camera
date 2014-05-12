@@ -3043,11 +3043,7 @@ int atomisp_set_parameters(struct video_device *vdev,
 		/* indicate to CSS that we have parameters to be updated */
 		asd->params.css_update_params_needed = true;
 
-		if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream
-			&& (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-				stream_state != CSS_STREAM_STARTED
-			    || asd->run_mode->val
-				== ATOMISP_RUN_MODE_STILL_CAPTURE)) {
+		if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream) {
 			atomisp_css_update_isp_params(asd);
 			asd->params.css_update_params_needed = false;
 		}
