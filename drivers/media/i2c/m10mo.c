@@ -611,15 +611,15 @@ static int m10mo_set_panorama_monitor(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
-	/* Setting output to NV12/NV21. By default outputs NV21*/
+	/* Setting output to NV12/NV21. */
 	ret = m10mo_writeb(sd, CATEGORY_PARAM, OUTPUT_FMT_SELECT,
 			OUTPUT_FMT_SELECT_NV12NV21);
 	if (ret)
 		goto out;
 
-	/* Choose NV12 in this case*/
+	/* Choose NV21 in this case*/
 	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT,
-			CHOOSE_NV12NV21_FMT_NV12);
+			CHOOSE_NV12NV21_FMT_NV21);
 	if (ret)
 		goto out;
 
