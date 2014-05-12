@@ -4493,3 +4493,9 @@ int atomisp_set_css_dbgfunc(struct atomisp_device *isp, int opt)
 
 	return ret;
 }
+void atomisp_en_dz_capt_pipe(struct atomisp_sub_device *asd, bool enable)
+{
+	ia_css_en_dz_capt_pipe(
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
+		enable);
+}

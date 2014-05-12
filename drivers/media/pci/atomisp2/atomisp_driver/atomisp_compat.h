@@ -622,4 +622,7 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 void atomisp_set_stop_timeout(unsigned int timeout);
 
 bool atomisp_css_valid_sof(struct atomisp_device *isp);
+
+void atomisp_en_dz_capt_pipe(struct atomisp_sub_device *asd, bool enable);
+
 #endif

@@ -5129,3 +5129,17 @@ int atomisp_exp_id_unlock(struct atomisp_sub_device *asd, int *exp_id)
 	return 0;
 }
 
+int atomisp_enable_dz_capt_pipe(struct atomisp_sub_device *asd,
+					   unsigned int *enable)
+{
+	bool value;
+
+	if (enable == NULL)
+		return -EINVAL;
+
+	value = *enable > 0 ? true : false;
+
+	atomisp_en_dz_capt_pipe(asd, value);
+
+	return 0;
+}

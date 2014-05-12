@@ -2584,6 +2584,9 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 	case ATOMISP_IOC_EXP_ID_CAPTURE:
 		err = atomisp_exp_id_capture(asd, arg);
 		break;
+	case ATOMISP_IOC_S_ENABLE_DZ_CAPT_PIPE:
+		err = atomisp_enable_dz_capt_pipe(asd, arg);
+		break;
 	default:
 		mutex_unlock(&isp->mutex);
 		return -EINVAL;

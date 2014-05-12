@@ -353,4 +353,11 @@ int atomisp_exp_id_capture(struct atomisp_sub_device *asd, int *exp_id);
  */
 int atomisp_set_raw_buffer_bitmap(struct atomisp_sub_device *asd, int exp_id);
 void atomisp_init_raw_buffer_bitmap(struct atomisp_sub_device *asd);
+
+/*
+ * Function to enable/disable zoom for capture pipe
+ */
+int atomisp_enable_dz_capt_pipe(struct atomisp_sub_device *asd,
+					   unsigned int *enable);
+
 #endif /* __ATOMISP_CMD_H__ */
