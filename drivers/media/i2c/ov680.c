@@ -452,12 +452,6 @@ static int ov680_load_firmware(struct v4l2_subdev *sd)
 		return -EBUSY;
 	}
 
-	ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
-	if (ret) {
-		dev_err(&client->dev, "%s - set embedded line failed\n", __func__);
-		return ret;
-	}
-
 	/* turn embedded line off */
 	ret = ov680_write_reg_array(sd, ov680_embedded_line_off);
 	if (ret) {
@@ -593,11 +587,6 @@ static int ov680_s_config(struct v4l2_subdev *sd, void *pdata)
 	ov680_i2c_write_reg(sd, REG_SC_00, 0x1E); /* write back value */
 	dev_info(&client->dev, "Subdev OV680 Chip was detected with reg access ok\n");
 
-	ret = ov680_load_firmware(sd);
-	if (ret) {
-		dev_err(&client->dev, "%s:ov680_load_firmware failed. ret=%d\n", __func__, ret);
-		goto fail_config;
-	}
 	/* detect the input sensor */
 	ret = ov680_check_sensor_avail(sd);
 	if (ret) {
