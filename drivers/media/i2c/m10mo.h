@@ -283,23 +283,22 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 
 /* Category 6_White Balance */
 
-#define AWB_LOCK		0x00
-#define REG_AWB_OFF		0x00
-#define REG_AWB_ON		0x01
-#define AWB_ADJUST_MODE 	0x01
 #define AWB_MODE		0x02
+
 #define REG_AWB_AUTO		0x01
-#define AWB_MANUAL		0x03
+#define REG_AWB_MANUAL		0x02
+
+#define AWB_PRESET		0x03
+
+#define REG_AWB_PROHIBITION	0x00
 #define REG_AWB_INCANDESCENT	0x01
-#define REG_AWB_FLUORESCENT_1	0x02
-#define REG_AWB_FLUORESCENT_2	0x03
+#define REG_AWB_FLUORESCENT_H	0x02
+#define REG_AWB_FLUORESCENT_L	0x03
 #define REG_AWB_DAYLIGHT	0x04
 #define REG_AWB_CLOUDY		0x05
 #define REG_AWB_SHADE		0x06
 #define REG_AWB_HORIZON		0x07
 #define REG_AWB_LEDLIGHT	0x09
-#define AWB_SPEED		0x04
-#define AWB_RANGE		0x05
 
 /* Category 7_EXIF */
 #define EXIF_INFO_EXPTIME_NU	0x00

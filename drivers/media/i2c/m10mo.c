@@ -1524,6 +1524,45 @@ static int m10mo_set_metering(struct v4l2_subdev *sd, s32 val)
 	return m10mo_writeb(sd, CATEGORY_AE, AE_MODE, metering);
 }
 
+static const unsigned short wb_lut[][2] = {
+	{ V4L2_WHITE_BALANCE_INCANDESCENT,  REG_AWB_INCANDESCENT },
+	{ V4L2_WHITE_BALANCE_FLUORESCENT,   REG_AWB_FLUORESCENT_L },
+	{ V4L2_WHITE_BALANCE_FLUORESCENT_H, REG_AWB_FLUORESCENT_H },
+	{ V4L2_WHITE_BALANCE_HORIZON,       REG_AWB_HORIZON },
+	{ V4L2_WHITE_BALANCE_DAYLIGHT,      REG_AWB_DAYLIGHT },
+	{ V4L2_WHITE_BALANCE_FLASH,         REG_AWB_LEDLIGHT },
+	{ V4L2_WHITE_BALANCE_CLOUDY,        REG_AWB_CLOUDY },
+	{ V4L2_WHITE_BALANCE_SHADE,         REG_AWB_SHADE },
+	{ V4L2_WHITE_BALANCE_AUTO,          REG_AWB_AUTO },
+};
+
+static int m10mo_set_white_balance(struct v4l2_subdev *sd, s32 val)
+{
+	int i, ret;
+	int awb = REG_AWB_MANUAL;
+
+	for (i = 0; i < ARRAY_SIZE(wb_lut); i++) {
+		if (val == wb_lut[i][0])
+			break;
+	}
+
+	if (i == ARRAY_SIZE(wb_lut))
+		return -EINVAL;
+
+	if (wb_lut[i][0] == V4L2_WHITE_BALANCE_AUTO)
+		awb = REG_AWB_AUTO;
+
+	ret = m10mo_writeb(sd, CATEGORY_WB,
+			   AWB_MODE, awb);
+	if (ret < 0)
+		return ret;
+
+	if (awb == REG_AWB_MANUAL)
+		ret = m10mo_writeb(sd, CATEGORY_WB,
+				   AWB_PRESET, wb_lut[i][1]);
+	return ret;
+}
+
 static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct m10mo_device *dev = container_of(
@@ -1543,6 +1582,9 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_START_ZSL_CAPTURE:
 		if (ctrl->val)
 			ret = m10mo_set_zsl_capture(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE:
+		ret = m10mo_set_white_balance(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -1658,6 +1700,16 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.min = 0,
 		.def = 1,
 		.max = 4,
+		.step = 1,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE,
+		.name = "White Balance, Auto & Preset",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = V4L2_WHITE_BALANCE_MANUAL,
+		.def = V4L2_WHITE_BALANCE_AUTO,
+		.max = V4L2_WHITE_BALANCE_SHADE,
 		.step = 1,
 	},
 };
