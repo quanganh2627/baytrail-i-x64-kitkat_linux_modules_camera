@@ -2291,8 +2291,10 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	asd->params.dis_proj_data_valid = false;
 	spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
 
-	atomisp_flush_params_queue(asd);
-
+	atomisp_flush_params_queue(&asd->video_out_capture);
+	atomisp_flush_params_queue(&asd->video_out_vf);
+	atomisp_flush_params_queue(&asd->video_out_preview);
+	atomisp_flush_params_queue(&asd->video_out_video_capture);
 	return 0;
 }
 

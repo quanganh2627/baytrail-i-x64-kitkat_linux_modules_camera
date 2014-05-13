@@ -1017,6 +1017,9 @@ int __atomisp_reqbufs(struct file *file, void *fh,
 		}
 		atomisp_videobuf_free_queue(&pipe->capq);
 		mutex_unlock(&pipe->capq.vb_lock);
+		/* clear request config id */
+		memset(pipe->frame_request_config_id,
+		       0, VIDEO_MAX_FRAME * sizeof(unsigned int));
 		return 0;
 	}
 
@@ -1203,10 +1206,6 @@ static int atomisp_qbuf(struct file *file, void *fh, struct v4l2_buffer *buf)
 		buf->flags &= ~V4L2_BUF_FLAG_MAPPED;
 		buf->flags |= V4L2_BUF_FLAG_QUEUED;
 		buf->flags &= ~V4L2_BUF_FLAG_DONE;
-
-		dev_dbg(isp->dev, "queue userptr buffer %p with start address %p, ia_css_frame %p\n",
-		        pipe->capq.bufs[buf->index], (void *)buf->m.userptr,
-		        handle);
 	} else if (buf->memory == V4L2_MEMORY_MMAP) {
 		buf->flags |= V4L2_BUF_FLAG_MAPPED;
 		buf->flags |= V4L2_BUF_FLAG_QUEUED;
@@ -1217,6 +1216,14 @@ done:
 	if (!((buf->flags & NOFLUSH_FLAGS) == NOFLUSH_FLAGS))
 		wbinvd();
 
+	if (!atomisp_is_vf_pipe(pipe) &&
+	    (buf->reserved2 & ATOMISP_BUFFER_HAS_PER_FRAME_SETTING))
+		/* this buffer will have a per-frame parameter */
+		pipe->frame_request_config_id[buf->index] = buf->reserved2 &
+					~ATOMISP_BUFFER_HAS_PER_FRAME_SETTING;
+	else
+		pipe->frame_request_config_id[buf->index] = 0;
+
 	mutex_unlock(&isp->mutex);
 	ret = videobuf_qbuf(&pipe->capq, buf);
 	mutex_lock(&isp->mutex);
@@ -1225,8 +1232,7 @@ done:
 
 	/* TODO: do this better, not best way to queue to css */
 	if (asd->streaming == ATOMISP_DEVICE_STREAMING_ENABLED) {
-		if (buf->memory == V4L2_MEMORY_USERPTR &&
-		    asd->per_frame_setting->val) {
+		if (!list_empty(&pipe->buffers_waiting_for_param)) {
 			atomisp_handle_parameter_and_buffer(pipe);
 		} else {
 			atomisp_qbuffers_to_css(asd);
@@ -1759,6 +1765,7 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 	list_for_each_entry_safe(vb, _vb, &pipe->buffers_waiting_for_param, queue) {
 		vb->state = VIDEOBUF_PREPARED;
 		list_del(&vb->queue);
+		pipe->frame_request_config_id[vb->i] = 0;
 	}
 	spin_unlock_irqrestore(&pipe->irq_lock, flags);
 

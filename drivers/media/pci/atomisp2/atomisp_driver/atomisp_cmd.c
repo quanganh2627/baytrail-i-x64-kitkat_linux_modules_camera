@@ -685,12 +685,12 @@ void atomisp_flush_bufs_and_wakeup(struct atomisp_sub_device *asd)
 }
 
 /* clean out the parameters that did not apply */
-void atomisp_flush_params_queue(struct atomisp_sub_device *asd)
+void atomisp_flush_params_queue(struct atomisp_video_pipe *pipe)
 {
 	struct atomisp_css_params_with_list *param;
 
-	while(!list_empty(&asd->per_frame_params)) {
-		param = list_entry(asd->per_frame_params.next,
+	while (!list_empty(&pipe->per_frame_params)) {
+		param = list_entry(pipe->per_frame_params.next,
 				struct atomisp_css_params_with_list, list);
 		list_del(&param->list);
 		atomisp_free_css_parameters(&param->params);
@@ -1456,10 +1456,8 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 			continue;
 		if (frame_done_found[asd->index] &&
 		    asd->params.css_update_params_needed) {
-			if (!asd->per_frame_setting->val) {
-				atomisp_css_update_isp_params(asd);
-				asd->params.css_update_params_needed = false;
-			}
+			atomisp_css_update_isp_params(asd);
+			asd->params.css_update_params_needed = false;
 			frame_done_found[asd->index] = false;
 		}
 		atomisp_setup_flash(asd);
@@ -2593,7 +2591,6 @@ static int __atomisp_cp_general_isp_parameters(
 				   sizeof(struct atomisp_css_anr_thres)))
 			return -EFAULT;
 
-	css_param->output_frame = arg->output_frame;
 	css_param->isp_config_id = arg->isp_config_id;
 	/*
 	 * These configurations are on used by ISP1.x, not for ISP2.x,
@@ -2892,23 +2889,24 @@ void atomisp_free_css_parameters(struct atomisp_css_params *css_param) {
 }
 
 /*
- * Loop parameter queue list and buffer queue list to find out if matched items
+ * Check parameter queue list and buffer queue list to find out if matched items
  * and then set parameter to CSS and enqueue buffer to CSS.
+ * Of course, if the buffer in buffer waiting list is not bound to a per-frame
+ * parameter, it will be enqueued into CSS as long as the per-frame setting
+ * buffers before it get enqueued.
  */
-void atomisp_handle_parameter_and_buffer(
-					struct atomisp_video_pipe *pipe)
+void atomisp_handle_parameter_and_buffer(struct atomisp_video_pipe *pipe)
 {
 	struct atomisp_sub_device *asd = pipe->asd;
 	struct atomisp_device *isp = asd->isp;
 	struct videobuf_buffer *vb = NULL, *vb_tmp;
 	struct atomisp_css_params_with_list *param = NULL, *param_tmp;
-	struct videobuf_vmalloc_memory *vm_mem;
+	struct videobuf_vmalloc_memory *vm_mem = NULL;
 	struct ia_css_pipe *css_pipe = NULL;
 	unsigned long irqflags;
-	bool buffer_is_found = false;
 	bool need_to_enqueue_buffer = false;
 
-	if (!asd->per_frame_setting->val || atomisp_is_vf_pipe(pipe))
+	if (atomisp_is_vf_pipe(pipe))
 		return;
 
 	/*
@@ -2918,57 +2916,74 @@ void atomisp_handle_parameter_and_buffer(
 	if (!asd->streaming == ATOMISP_DEVICE_STREAMING_ENABLED)
 		return;
 
-	if (list_empty (&asd->per_frame_params) ||
+	if (list_empty(&pipe->per_frame_params) ||
 	    list_empty(&pipe->buffers_waiting_for_param))
 		return;
 
-	list_for_each_entry_safe(param, param_tmp,
-			&asd->per_frame_params, list) {
-		list_for_each_entry_safe(vb, vb_tmp,
-				&pipe->buffers_waiting_for_param, queue) {
-			if ((unsigned long)param->params.output_frame
-				== vb->baddr) {
+	list_for_each_entry_safe(vb, vb_tmp,
+			&pipe->buffers_waiting_for_param, queue) {
+		if (pipe->frame_request_config_id[vb->i]) {
+			list_for_each_entry_safe(param, param_tmp,
+				&pipe->per_frame_params, list) {
+				if (pipe->frame_request_config_id[vb->i] !=
+				    param->params.isp_config_id)
+					continue;
+
 				list_del(&param->list);
 				list_del(&vb->queue);
+				/*
+				 * clear the request config id as the buffer
+				 * will be handled and enqueued into CSS soon
+				 */
+				pipe->frame_request_config_id[vb->i] = 0;
 				vm_mem = vb->priv;
-				buffer_is_found = true;
+				BUG_ON(!vm_mem);
 				break;
 			}
-		}
-		if (buffer_is_found) {
-			/* update and apply the parameters */
-			atomisp_apply_css_parameters(asd,
-						&param->us_params,
-						&param->params);
-			atomisp_css_set_isp_config_applied_frame(asd,
-						vm_mem->vaddr);
-			if (pipe == &asd->video_out_capture) {
-				css_pipe =
-				  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-				  pipes[IA_CSS_PIPE_ID_CAPTURE];
-			} else if (pipe == &asd->video_out_preview) {
-				css_pipe =
-				  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-				  pipes[IA_CSS_PIPE_ID_PREVIEW];
-			} else if (pipe == &asd->video_out_video_capture) {
-				css_pipe =
-				  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-				  pipes[IA_CSS_PIPE_ID_VIDEO];
-			} else {
-				dev_warn(isp->dev, "%s: failed to find a proper CSS pipe\n",
-				         __func__);
-				css_pipe = NULL;
-			}
-			atomisp_css_update_isp_params_on_pipe(asd, css_pipe);
-			/* free the parameters */
-			atomisp_free_css_parameters(&param->params);
-			atomisp_kernel_free(param);
 
+			if (vm_mem) {
+				/* update and apply the parameters */
+				atomisp_apply_css_parameters(asd,
+							&param->us_params,
+							&param->params);
+				atomisp_css_set_isp_config_applied_frame(asd,
+							vm_mem->vaddr);
+				if (pipe == &asd->video_out_capture) {
+					css_pipe =
+					  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+					  pipes[IA_CSS_PIPE_ID_CAPTURE];
+				} else if (pipe == &asd->video_out_preview) {
+					css_pipe =
+					  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+					  pipes[IA_CSS_PIPE_ID_PREVIEW];
+				} else if (pipe == &asd->video_out_video_capture) {
+					css_pipe =
+					  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+					  pipes[IA_CSS_PIPE_ID_VIDEO];
+				} else {
+					dev_warn(isp->dev, "%s: failed to find a proper CSS pipe\n",
+						 __func__);
+					css_pipe = NULL;
+				}
+				atomisp_css_update_isp_params_on_pipe(asd, css_pipe);
+				/* free the parameters */
+				atomisp_free_css_parameters(&param->params);
+				atomisp_kernel_free(param);
+
+				spin_lock_irqsave(&pipe->irq_lock, irqflags);
+				list_add_tail(&vb->queue, &pipe->activeq);
+				spin_unlock_irqrestore(&pipe->irq_lock, irqflags);
+				vm_mem = NULL;
+				need_to_enqueue_buffer = true;
+			} else {
+				/* The is the end, stop further loop */
+				break;
+			}
+		} else {
+			list_del(&vb->queue);
 			spin_lock_irqsave(&pipe->irq_lock, irqflags);
 			list_add_tail(&vb->queue, &pipe->activeq);
 			spin_unlock_irqrestore(&pipe->irq_lock, irqflags);
-
-			buffer_is_found = false;
 			need_to_enqueue_buffer = true;
 		}
 	}
@@ -2992,19 +3007,15 @@ int atomisp_set_parameters(struct video_device *vdev,
 	struct atomisp_css_params *css_param = &asd->params.css_param;
 	int ret;
 
-	if (asd->per_frame_setting->val) {
-		if (!arg->output_frame) {
-			dev_err(asd->isp->dev, "%s: the parameters should have valid output_frame pointer\n",
-			        __func__);
-			return -EINVAL;
-		}
-		dev_dbg(asd->isp->dev, "%s: set parameter for userptr frame %p of %s\n",
-		        __func__, arg->output_frame, vdev->name);
+	dev_dbg(asd->isp->dev, "%s: set parameter with isp_config_id %d of %s\n",
+		__func__, arg->isp_config_id, vdev->name);
 
+	if (arg->isp_config_id && !atomisp_is_vf_pipe(pipe)) {
 		/*
-		 * if per-frame setting enabled, we allocate a new paramter
+		 * Per-frame setting enabled, we allocate a new paramter
 		 * buffer to cache the parameters and only when frame buffers
 		 * are ready, the parameters will be set to CSS.
+		 * per-frame setting only works for the main output frame.
 		 */
 		param = atomisp_kernel_zalloc(sizeof(*param), true);
 		if (!param) {
@@ -3039,7 +3050,7 @@ int atomisp_set_parameters(struct video_device *vdev,
 	if (ret)
 		goto apply_parameter_failed;
 
-	if (!asd->per_frame_setting->val) {
+	if (!(arg->isp_config_id && !atomisp_is_vf_pipe(pipe))) {
 		atomisp_apply_css_parameters(asd, arg, css_param);
 		/* indicate to CSS that we have parameters to be updated */
 		asd->params.css_update_params_needed = true;
@@ -3049,14 +3060,14 @@ int atomisp_set_parameters(struct video_device *vdev,
 			asd->params.css_update_params_needed = false;
 		}
 	} else {
-		list_add_tail(&param->list, &asd->per_frame_params);
+		list_add_tail(&param->list, &pipe->per_frame_params);
 		atomisp_handle_parameter_and_buffer(pipe);
 	}
 
 	return 0;
 
 apply_parameter_failed:
-	if (asd->per_frame_setting->val)
+	if (css_param)
 		atomisp_kernel_free(css_param);
 	return ret;
 }

@@ -496,14 +496,24 @@ static void atomisp_buf_queue(struct videobuf_queue *vq,
 			      struct videobuf_buffer *vb)
 {
 	struct atomisp_video_pipe *pipe = vq->priv_data;
-	struct atomisp_sub_device *asd = pipe->asd;
 
-	/* per_frame setting only apply on USERPTR buffer and Main buffer */
-	if (vb->baddr && asd->per_frame_setting->val &&
-	    !atomisp_is_vf_pipe(pipe))
+	/*
+	 * when a frame buffer meets following conditions, it should be put into
+	 * the waiting list:
+	 * 1.  It is not a main output frame, and it has a per-frame parameter
+	 *     to go with it.
+	 * 2.  It is not a main output frame, and the waiting buffer list is not
+	 *     empty, to keep the FIFO sequence of frame buffer processing, it
+	 *     is put to waiting list until previous per-frame parameter buffers
+	 *     get enqueued.
+	 */
+	if (!atomisp_is_vf_pipe(pipe) &&
+	    (pipe->frame_request_config_id[vb->i] ||
+	     !list_empty(&pipe->buffers_waiting_for_param)))
 		list_add_tail(&vb->queue, &pipe->buffers_waiting_for_param);
 	else
 		list_add_tail(&vb->queue, &pipe->activeq);
+
 	vb->state = VIDEOBUF_QUEUED;
 }
 
@@ -591,6 +601,9 @@ static int atomisp_init_pipe(struct atomisp_video_pipe *pipe)
 	INIT_LIST_HEAD(&pipe->activeq);
 	INIT_LIST_HEAD(&pipe->activeq_out);
 	INIT_LIST_HEAD(&pipe->buffers_waiting_for_param);
+	INIT_LIST_HEAD(&pipe->per_frame_params);
+	memset(pipe->frame_request_config_id,
+	       0, VIDEO_MAX_FRAME * sizeof(unsigned int));
 
 	return 0;
 }

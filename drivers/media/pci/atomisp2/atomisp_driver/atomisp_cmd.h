@@ -341,7 +341,7 @@ void atomisp_free_css_parameters(struct atomisp_css_params *css_param);
 
 void atomisp_handle_parameter_and_buffer(struct atomisp_video_pipe *pipe);
 
-void atomisp_flush_params_queue(struct atomisp_sub_device *asd);
+void atomisp_flush_params_queue(struct atomisp_video_pipe *asd);
 /*
  * Function to do Raw Buffer related operation, after enable Lock Unlock Raw Buffer
  */

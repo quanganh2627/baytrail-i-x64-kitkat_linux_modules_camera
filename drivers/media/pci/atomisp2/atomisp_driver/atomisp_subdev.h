@@ -82,6 +82,9 @@ struct atomisp_video_pipe {
 	 * in per-frame setting mode.
 	 */
 	struct list_head buffers_waiting_for_param;
+	/* the link list to store per_frame parameters */
+	struct list_head per_frame_params;
+
 	unsigned int buffers_in_css;
 
 	/* irq_lock is used to protect video buffer state change operations and
@@ -96,7 +99,16 @@ struct atomisp_video_pipe {
 
 	struct atomisp_sub_device *asd;
 
+	/*
+	 * This frame_config_id is got from CSS when dequueues buffers from CSS,
+	 * it is used to indicate which parameter it has applied.
+	 */
 	unsigned int frame_config_id[VIDEO_MAX_FRAME];
+	/*
+	 * This config id is set when camera HAL enqueues buffer, it has a
+	 * non-zero value to indicate which parameter it needs to applu
+	 */
+	unsigned int frame_request_config_id[VIDEO_MAX_FRAME];
 };
 
 struct atomisp_pad_format {
@@ -263,12 +275,9 @@ struct atomisp_sub_device {
 	struct v4l2_ctrl *continuous_mode;
 	struct v4l2_ctrl *continuous_raw_buffer_size;
 	struct v4l2_ctrl *continuous_viewfinder;
-	struct v4l2_ctrl *per_frame_setting;
 	struct v4l2_ctrl *enable_raw_buffer_lock;
 
 	struct atomisp_subdev_params params;
-	/* the link list to store per_frame params */
-	struct list_head per_frame_params;
 
 	struct atomisp_stream_env stream_env[ATOMISP_INPUT_STREAM_NUM];
 
