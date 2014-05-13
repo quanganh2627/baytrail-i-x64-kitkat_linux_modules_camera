@@ -231,6 +231,8 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 /* Category 2_MONITOR mode */
 
 #define MONITOR_ZOOM		0x01
+#define ZOOM_POS_MIN		0x01
+#define ZOOM_POS_MAX		0x1f /* 31 */
 #define MONITOR_CFIXR		0x0a
 #define MONITOR_CFIXB		0x09
 #define MONITOR_COLOR_EFFECT	0x0b

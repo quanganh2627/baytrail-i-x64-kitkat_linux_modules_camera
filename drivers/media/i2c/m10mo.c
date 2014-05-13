@@ -1934,6 +1934,12 @@ static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 	case EXT_ISP_FLASH_MODE_CTRL:
 		ret = m10mo_set_flash_mode(sd, m10mo_ctrl->data);
 		break;
+	case EXT_ISP_ZOOM_CTRL:
+		m10mo_ctrl->data = clamp_t(unsigned int, m10mo_ctrl->data,
+						ZOOM_POS_MIN, ZOOM_POS_MAX);
+		ret = m10mo_writeb(sd, CATEGORY_MONITOR, MONITOR_ZOOM,
+						m10mo_ctrl->data);
+		break;
 	default:
 		ret = -EINVAL;
 		dev_err(&client->dev, "m10mo ioctl: Unsupported ID\n");
