@@ -2523,16 +2523,14 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 	case ATOMISP_IOC_EXT_ISP_CTRL:
 		mutex_unlock(&isp->mutex);
-		err = v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
-				      core, ioctl, cmd, arg);
-		break;
+		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
+					core, ioctl, cmd, arg);
 	case ATOMISP_IOC_EXP_ID_UNLOCK:
 		err = atomisp_exp_id_unlock(asd, arg);
 		break;
 	case ATOMISP_IOC_EXP_ID_CAPTURE:
 		err = atomisp_exp_id_capture(asd, arg);
 		break;
-
 	default:
 		mutex_unlock(&isp->mutex);
 		return -EINVAL;
