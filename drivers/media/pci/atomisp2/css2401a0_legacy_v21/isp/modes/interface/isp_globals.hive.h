@@ -107,6 +107,7 @@ typedef struct s_isp_addresses {
     PVECTOR  raw_fir_buf;
     PVECTOR  raw_fir1_buf;
     PVECTOR  raw_fir2_buf;
+	PVECTOR  g_xnr_lut;
   } vmem;
   struct {
     unsigned uds_params;

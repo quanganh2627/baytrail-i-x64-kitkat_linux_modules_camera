@@ -1,22 +1,25 @@
 /*
- * Support for Intel Camera Imaging ISP subsystem.
+ * INTEL CONFIDENTIAL
  *
- * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
+ * Copyright (C) 2010 - 2013 Intel Corporation.
+ * All Rights Reserved.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License version
- * 2 as published by the Free Software Foundation.
+ * The source code contained or described herein and all documents
+ * related to the source code ("Material") are owned by Intel Corporation
+ * or licensors. Title to the Material remains with Intel
+ * Corporation or its licensors. The Material contains trade
+ * secrets and proprietary and confidential information of Intel or its
+ * licensors. The Material is protected by worldwide copyright
+ * and trade secret laws and treaty provisions. No part of the Material may
+ * be used, copied, reproduced, modified, published, uploaded, posted,
+ * transmitted, distributed, or disclosed in any way without Intel's prior
+ * express written permission.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- *
+ * No License under any patent, copyright, trade secret or other intellectual
+ * property right is granted to or conferred upon you by disclosure or
+ * delivery of the Materials, either expressly, by implication, inducement,
+ * estoppel or otherwise. Any license under such intellectual property rights
+ * must be express and approved by Intel in writing.
  */
 
 #ifndef _isp_globals_hive_h_
@@ -43,7 +46,7 @@
 #if !defined(__HOST)
 #include "dma_proxy.common.h"
 #endif
-
+#include "uds/uds_1.0/ia_css_uds_param.h" /* sh_css_sp_uds_params */
 #include <components/resolutions_mgr/src/resolutions_mgr_private.h>
 
 /* Initialized by the SP: binary dependent */
@@ -84,7 +87,7 @@ typedef struct s_isp_globals {
 
 typedef struct s_isp_addresses {
   struct {
-    struct sh_css_isp_params        ISP_DMEM *g_ispparm;
+    struct sh_css_sp_uds_params     ISP_DMEM *uds_params;
     unsigned                        ISP_DMEM *isp_deci_log_factor;
     struct s_isp_frames             ISP_DMEM *isp_frames;
     struct s_isp_globals            ISP_DMEM *isp_globals;
@@ -92,6 +95,7 @@ typedef struct s_isp_addresses {
     struct s_output_dma_info        ISP_DMEM *output_dma_info;
     unsigned                        ISP_DMEM *vertical_upsampled;
     struct sh_css_ddr_address_map   ISP_DMEM *xmem_base;
+    struct ia_css_isp_3a_statistics ISP_DMEM *s3a_data;
     sh_dma_cmd*                     ISP_DMEM *sh_dma_cmd_ptr;
     unsigned                        ISP_DMEM *g_isp_do_zoom;
     struct isp_uds_config           ISP_DMEM *uds_config;
@@ -110,18 +114,25 @@ typedef struct s_isp_addresses {
   } dmem;
   struct {
     PVECTOR  input_buf;
+    PVECTOR  g_macc_coef;
     PVECTOR  g_sdis_horicoef_tbl;
     PVECTOR  g_sdis_vertcoef_tbl; /* Can be vmem or dmem */
     PVECTOR  uds_data_via_sp;
     PVECTOR  uds_ipxs_via_sp;
     PVECTOR  uds_ibuf_via_sp;
     PVECTOR  uds_obuf_via_sp;
-    PVECTOR  g_xnr_lut;
+    PVECTOR  raw_fir_buf;
+    PVECTOR  raw_fir1_buf;
+    PVECTOR  raw_fir2_buf;
+	PVECTOR  g_xnr_lut;
   } vmem;
   struct {
-    unsigned g_ispparm;
+    unsigned uds_params;
     unsigned g_sdis_horiproj_tbl;
     unsigned g_sdis_vertproj_tbl;
+    unsigned raw_fir_buf;
+    unsigned raw_fir1_buf;
+    unsigned raw_fir2_buf;
   } sizes;
 } s_isp_addresses;
 
@@ -156,6 +167,7 @@ extern unsigned isp_deci_log_factor;
 extern unsigned isp_online;
 
 extern struct sh_css_ddr_address_map xmem_base;
+extern struct ia_css_isp_3a_statistics s3a_data;
 extern struct s_isp_frames isp_frames;
 extern struct isp_uds_config uds_config;
 
@@ -163,7 +175,7 @@ extern struct isp_uds_config uds_config;
  * 		isp parameters
  *				1value per 32bit
  * *****************************************************************/
-extern NO_HOIST struct sh_css_isp_params g_ispparm;
+extern NO_HOIST struct sh_css_sp_uds_params uds_params[SH_CSS_MAX_STAGES];
 
 /* DMA settings for viewfinder image */
 

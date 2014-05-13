@@ -2781,8 +2781,9 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 	struct sh_css_ddr_address_map *ddr_ptrs;
 	struct sh_css_ddr_address_map_size *ddr_ptrs_size;
 	struct ia_css_isp_parameters *stream_params;
+#if !defined(IS_ISP_2500_SYSTEM)
 	size_t params_size;
-
+#endif
 	struct ia_css_isp_parameters *params =
 				sh_css_malloc(sizeof(struct ia_css_isp_parameters));
 
@@ -2814,14 +2815,12 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 
 #if !defined(IS_ISP_2500_SYSTEM)
 	params_size = sizeof(params->uds);
-#else
-	params_size = sizeof(struct sh_css_isp_params);
-#endif
 	ddr_ptrs_size->isp_param = params_size;
 	ddr_ptrs->isp_param =
 				ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
 					mmgr_malloc(params_size));
 	succ &= (ddr_ptrs->isp_param != mmgr_NULL);
+#endif
 
 #if defined(IS_ISP_2500_SYSTEM)
 	ddr_ptrs_size->acc_cluster_params_for_sp =
@@ -3233,9 +3232,6 @@ static void sh_css_update_isp_params_to_ddr(
 {
 #if !defined(IS_ISP_2500_SYSTEM)
 	size_t size = sizeof(params->uds);
-#else
-	size_t size = sizeof(struct sh_css_isp_params);
-#endif
 
 	IA_CSS_ENTER_PRIVATE("void");
 
@@ -3258,13 +3254,12 @@ static void sh_css_update_isp_params_to_ddr(
 		mmgr_clear(pad_ptr, padding_bytes);
 	}
 #endif
-#if !defined(IS_ISP_2500_SYSTEM)
 	mmgr_store(ddr_ptr, &(params->uds), size);
-#else
-	mmgr_store(ddr_ptr, &(params->isp_parameters), size);
-#endif
-
 	IA_CSS_LEAVE_PRIVATE("void");
+#else
+	(void)*params;
+	(void)ddr_ptr;
+#endif
 }
 
 static void sh_css_update_isp_mem_params_to_ddr(
@@ -3407,9 +3402,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 		assert(isp_pipe_version == ia_css_pipe_get_isp_pipe_version(stream->pipes[i]));
 	}
 
-#if !defined(IS_ISP_2500_SYSTEM)
-#else /* defined(IS_ISP_2500_SYSTEM) */
-	sh_css_process_product_specific(&params->isp_parameters,&params->isp_params_changed);
+#if defined(IS_ISP_2500_SYSTEM)
 	err = sh_css_process_acc_cluster_parameters(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed);
 	if (err != IA_CSS_SUCCESS) {
 		IA_CSS_LOG("sh_css_process_acc_cluster_parameters() returned INVALID KERNEL CONFIGURATION\n");
@@ -3638,7 +3631,7 @@ sh_css_params_write_to_ddr_internal(
 	(void)mem;
 	(void)stage_num;
 	/* pass call to product specific to handle copying of tables to DDR */
-	err = sh_css_params_to_ddr( binary, ddr_map, ddr_map_size, &params->isp_parameters );
+	err = sh_css_params_to_ddr( binary, ddr_map, ddr_map_size);
 	if (err != IA_CSS_SUCCESS)
 		return err;
 #endif

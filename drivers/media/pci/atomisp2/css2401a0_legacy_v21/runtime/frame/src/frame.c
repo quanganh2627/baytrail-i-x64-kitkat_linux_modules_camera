@@ -445,7 +445,10 @@ void ia_css_frame_info_set_width(struct ia_css_frame_info *info,
 	   all planes aligned, this means double the alignment for the
 	   Y plane if the horizontal decimation is 2. */
 	if (info->format == IA_CSS_FRAME_FORMAT_YUV420 ||
-	    info->format == IA_CSS_FRAME_FORMAT_YV12)
+	    info->format == IA_CSS_FRAME_FORMAT_YV12 ||
+	    info->format == IA_CSS_FRAME_FORMAT_NV12 ||
+	    info->format == IA_CSS_FRAME_FORMAT_NV21 ||
+	    info->format == IA_CSS_FRAME_FORMAT_BINARY_8)
 		info->padded_width =
 		    CEIL_MUL(align, 2 * HIVE_ISP_DDR_WORD_BYTES);
 	else if (info->format == IA_CSS_FRAME_FORMAT_YUV_LINE)
