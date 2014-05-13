@@ -1400,7 +1400,7 @@ static int gc5004_get_intg_factor(struct i2c_client *client,
 	if (ret)
 		return ret;
 	tmp += data[0];
-	buf->output_width = tmp;
+	buf->output_width = dev->curr_res_table[dev->fmt_idx].width;
 	buf->crop_horizontal_end = buf->crop_horizontal_start + tmp - 1;
 
 	tmp = 0;
@@ -1412,7 +1412,7 @@ static int gc5004_get_intg_factor(struct i2c_client *client,
 	if (ret)
 		return ret;
 	tmp += data[0];
-	buf->output_height = tmp;
+	buf->output_height = dev->curr_res_table[dev->fmt_idx].height;
 	buf->crop_vertical_end = tmp + buf->crop_vertical_start - 1;
 
 
