@@ -182,6 +182,7 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define CATEGORY_LENS		0x0a	/* AF Control */
 #define CATEGORY_CAPTURE_PARAM	0x0b	/* Still Picture parameter */
 #define CATEGORY_CAPTURE_CTRL	0x0c  /* Still picture control */
+#define CATEGORY_LEDFLASH	0x0d	/* Led Flash Category */
 #define CATEGORY_FLASHROM	0x0f	/* FlashROM-Writer Mode only */
 
 /* Category 0_SYSTEM mode */
@@ -372,6 +373,15 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define CAPC_SEL_FRAME_MAIN	0x06
 #define CAPC_TRANSFER_START	0x09
 #define REG_CAP_START_MAIN	0x01
+
+/* Category D LED Flash Control */
+#define FLASH_MODE              0xB6
+#define FLASH_MODE_OFF          0x00
+#define FLASH_MODE_ON           0X01
+#define FLASH_MODE_AUTO         0X02
+#define LED_TORCH               0x29
+#define LED_TORCH_OFF           0x00
+#define LED_TORCH_ON            0x01
 
 /* Category F_Flash */
 #define REG_FLASH_ADD           0x00

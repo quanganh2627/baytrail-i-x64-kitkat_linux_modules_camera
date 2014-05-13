@@ -635,6 +635,33 @@ static int m10mo_get_af_mode(struct v4l2_subdev *sd, unsigned int *status)
 	return ret;
 }
 
+static int m10mo_set_flash_mode(struct v4l2_subdev *sd, unsigned int val)
+{
+	unsigned int flash_mode;
+
+	switch (val) {
+	case EXT_ISP_FLASH_MODE_OFF:
+		flash_mode = FLASH_MODE_OFF;
+		break;
+	case EXT_ISP_FLASH_MODE_ON:
+		flash_mode = FLASH_MODE_ON;
+		break;
+	case EXT_ISP_FLASH_MODE_AUTO:
+		flash_mode = FLASH_MODE_AUTO;
+		break;
+	case EXT_ISP_LED_TORCH_OFF:
+		return m10mo_writeb(sd, CATEGORY_LEDFLASH, LED_TORCH,
+						LED_TORCH_OFF);
+	case EXT_ISP_LED_TORCH_ON:
+		return m10mo_writeb(sd, CATEGORY_LEDFLASH, LED_TORCH,
+						LED_TORCH_ON);
+	default:
+		return -EINVAL;
+	}
+
+	return m10mo_writeb(sd, CATEGORY_LEDFLASH, FLASH_MODE, flash_mode);
+}
+
 static int power_up(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -1903,6 +1930,9 @@ static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 		break;
 	case EXT_ISP_BURST_CAPTURE_CTRL:
 		ret = m10mo_set_burst_mode(sd, m10mo_ctrl->data);
+		break;
+	case EXT_ISP_FLASH_MODE_CTRL:
+		ret = m10mo_set_flash_mode(sd, m10mo_ctrl->data);
 		break;
 	default:
 		ret = -EINVAL;
