@@ -225,6 +225,8 @@ struct atomisp_parameters32 {
 	compat_uptr_t	shd_2500_config;       /* Skylake: shading config */
 	compat_uptr_t	dm_2500_config;        /* Skylake: demosaic config */
 	compat_uptr_t	rgbpp_2500_config;     /* Skylake: RGBPP config */
+	compat_uptr_t	dvs_stat_2500_config;  /* Skylake: DVS STAT config */
+	compat_uptr_t	lace_stat_2500_config; /* Skylake: LACE STAT config */
 	compat_uptr_t	yuvp1_2500_config;     /* Skylake: yuvp1 config */
 	compat_uptr_t	yuvp2_2500_config;     /* Skylake: yuvp2 config */
 	compat_uptr_t	tnr_2500_config;       /* Skylake: TNR config */
