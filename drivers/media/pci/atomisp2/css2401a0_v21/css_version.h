@@ -27,7 +27,7 @@
 #define __CSS_VERSION_H
 
 #define VER	1
-#define SUBVER	2
+#define SUBVER	3
 
 /*
 Changelog
@@ -116,6 +116,25 @@ VER 1.2, released 13/04/14:
 	Verion build data :
 		Merge "[Skycam | BUGFIX] GAC control operations loaded at frame level" 4e11164c6cb59c47676d9ef8acb3f11a9394b479 -> cherry pick unmerged : 4240/14 guy patch includes Nitsan added fixes problems found when start stop debug (I6e470944fdebb03ae27d31386f91cf199ea7872f)    ->cherry pick unmerged  Ia8462ef3e3d9c261912986cd84e2be35b191be3d dror timing patch
 
+VER 1.3, released 29/04/14:
+        - Version release for : Trunk release
+	Changes/Fixes:
+		Save/restore pipe pointers in suspend/resume – requested by driver team
+		remove obsolete obrow and obcol kernels
+		Enable y-ee-nr
+		norm failed with raw8 input fixed
+		Trace point enabled with SP1
+		remove SQRT_LUT from ANR api
+		vga OB test added and new configuration files
+		error reporting in ddr_encode functions +cleanup fixed
+		DPC minimal test ATE pipe update
+		fix input cropping + striping
+		Update release binary with fullset striped pipe
+		Unwanted/unused includes removed from code
+		Slimming the release package
+
+	Verion build data : based on ae79bab (tag: irci_master_20140429_0550, origin/master, origin/HEAD) Merge "[CSI2+] Disable offline capture in ACC pipe"
+	                    and  added cherry pick unmerged "Measurement code"  5073/3
 
 
 

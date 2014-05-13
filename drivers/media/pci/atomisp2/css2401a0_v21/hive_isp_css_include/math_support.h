@@ -51,6 +51,7 @@
 
 #ifndef SH_CSS_CEIL_INLINE
 #define MAX(a, b)	 	_MAX(a,b)
+#define MIN(a, b)	 	_MIN(a,b)
 #define CEIL_MUL(a, b)		_CEIL_MUL(a, b) 
 #define CEIL_DIV(a, b)   	_CEIL_DIV(a, b)
 #define CEIL_SHIFT(a, b) 	_CEIL_SHIFT(a, b)
@@ -60,6 +61,7 @@
 #else /* SH_CSS_CEIL_INLINE */
 
 #define MAX(a, b)	 	_max(a,b)
+#define MIN(a, b)	 	_min(a,b)
 #define CEIL_MUL(a, b)		_ceil_mul(a, b) 
 #define CEIL_DIV(a, b)   	_ceil_div(a, b)
 #define CEIL_SHIFT(a, b) 	_ceil_shift(a, b)
@@ -121,6 +123,7 @@ static __inline unsigned _ceil_mul2(unsigned a, unsigned b)
 
 #ifndef SH_CSS_CEIL_INLINE
 #define MAX(a, b)	 	_MAX(a,b)
+#define MIN(a, b)	 	_MIN(a,b)
 #define CEIL_MUL(a, b)		_CEIL_MUL(a, b) 
 #define CEIL_DIV(a, b)   	_CEIL_DIV(a, b)
 #define CEIL_SHIFT(a, b) 	_CEIL_SHIFT(a, b)
@@ -130,6 +133,7 @@ static __inline unsigned _ceil_mul2(unsigned a, unsigned b)
 #else /* SH_CSS_CEIL_INLINE */
 
 #define MAX(a, b)	 	_max(a,b)
+#define MIN(a, b)	 	_min(a,b)
 #define CEIL_MUL(a, b)		_ceil_mul(a, b) 
 #define CEIL_DIV(a, b)   	_ceil_div(a, b)
 #define CEIL_SHIFT(a, b) 	_ceil_shift(a, b)
@@ -186,6 +190,7 @@ static inline unsigned _ceil_mul2(unsigned a, unsigned b)
 
 #ifndef SH_CSS_CEIL_INLINE
 #define MAX(a, b)	 	_MAX(a,b)
+#define MIN(a, b)	 	_MIN(a,b)
 #define CEIL_MUL(a, b)		_CEIL_MUL(a, b) 
 #define CEIL_DIV(a, b)   	_CEIL_DIV(a, b)
 #define CEIL_SHIFT(a, b) 	_CEIL_SHIFT(a, b)
@@ -195,6 +200,7 @@ static inline unsigned _ceil_mul2(unsigned a, unsigned b)
 #else /* SH_CSS_CEIL_INLINE */
 
 #define MAX(a, b)	 	_max(a,b)
+#define MIN(a, b)	 	_min(a,b)
 #define CEIL_MUL(a, b)		_ceil_mul(a, b) 
 #define CEIL_DIV(a, b)   	_ceil_div(a, b)
 #define CEIL_SHIFT(a, b) 	_ceil_shift(a, b)
@@ -255,6 +261,7 @@ static inline unsigned _ceil_mul2(unsigned a, unsigned b)
 
 #ifndef SH_CSS_CEIL_INLINE
 #define MAX(a, b)	 	_MAX(a,b)
+#define MIN(a, b)	 	_MIN(a,b)
 #define CEIL_MUL(a, b)		_CEIL_MUL(a, b) 
 #define CEIL_DIV(a, b)   	_CEIL_DIV(a, b)
 #define CEIL_SHIFT(a, b) 	_CEIL_SHIFT(a, b)
@@ -264,6 +271,7 @@ static inline unsigned _ceil_mul2(unsigned a, unsigned b)
 #else /* SH_CSS_CEIL_INLINE */
 
 #define MAX(a, b)	 	_max(a,b)
+#define MIN(a, b)	 	_min(a,b)
 #define CEIL_MUL(a, b)		_ceil_mul(a, b) 
 #define CEIL_DIV(a, b)   	_ceil_div(a, b)
 #define CEIL_SHIFT(a, b) 	_ceil_shift(a, b)
@@ -351,6 +359,7 @@ static inline unsigned _ceil_mul2(unsigned a, unsigned b)
 #else /* SH_CSS_CEIL_INLINE */
 
 #define MAX(a, b)	 	_max(a,b)
+#define MIN(a, b)	 	_min(a,b)
 #define CEIL_MUL(a, b)		_ceil_mul(a, b) 
 #define CEIL_DIV(a, b)   	_ceil_div(a, b)
 #define CEIL_SHIFT(a, b) 	_ceil_shift(a, b)

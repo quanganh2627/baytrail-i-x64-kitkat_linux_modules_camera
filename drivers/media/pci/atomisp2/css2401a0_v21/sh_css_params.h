@@ -33,6 +33,7 @@ struct ia_css_isp_parameters;
 #include "sh_css_legacy.h"
 #if defined(IS_ISP_2500_SYSTEM)
 #include "product_specific.host.h"
+#include "components/include/components_types.host.h"
 #endif
 #include "sh_css_defs.h"	/* SH_CSS_MAX_STAGES */
 #include "ia_css_pipeline.h"
@@ -44,10 +45,6 @@ struct ia_css_isp_parameters;
 #include "ob/ob_1.0/ia_css_ob_param.h"
 #include "crop/crop_1.0/ia_css_crop_types.h"
 #include "uds/uds_1.0/ia_css_uds_param.h"
-
-#if defined(IS_ISP_2500_SYSTEM)
-#include "components/include/components_types.host.h"
-#endif
 
 /* Isp configurations per stream */
 struct sh_css_isp_param_configs {
@@ -61,10 +58,7 @@ struct ia_css_isp_parameters {
 	struct sh_css_sp_uds_params uds[SH_CSS_MAX_STAGES];
 #if !defined(IS_ISP_2500_SYSTEM)
 	struct sh_css_isp_param_configs stream_configs;
-#else
-	struct sh_css_isp_params    isp_parameters;
 #endif
-
 	struct ia_css_fpn_table     fpn_config;
 	struct ia_css_vector	    motion_config;
 	const struct ia_css_morph_table   *morph_table;
@@ -112,6 +106,7 @@ struct ia_css_isp_parameters {
 	struct ia_css_crop_config   crop_config;
 #if defined(IS_ISP_2500_SYSTEM)
 	struct ia_css_2500_lin_kernel_config  lin_2500_config;
+	struct ia_css_2500_tnr_kernel_config  tnr_2500_config;	
 #endif
 	bool isp_params_changed;
 	bool isp_mem_params_changed

@@ -22,7 +22,7 @@
 #ifndef __IA_CSS_COPY_OUTPUT_HOST_H
 #define __IA_CSS_COPY_OUTPUT_HOST_H
 
-#include "ia_css.h"
+#include "type_support.h"
 #include "ia_css_binary.h"
 
 #include "ia_css_copy_output_param.h"

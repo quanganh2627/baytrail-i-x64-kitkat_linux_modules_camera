@@ -237,10 +237,29 @@ STORAGE_CLASS_ISP_OP2W_H tvector2w OP_2w_mul(
  *
  * This function will calculate the product
  * of the input arguments and returns the MSB
- * aligned single precison result.
- * result = _a * _b >> NUM_BITS;
+ * aligned double precison result.
+ * result =((_a * _b) << 1) >> (2*NUM_BITS);
  */
 STORAGE_CLASS_ISP_OP2W_H tvector2w OP_2w_qmul(
+    const tvector2w     _a,
+    const tvector2w     _b);
+
+/** @brief fractional multiply with rounding
+ *
+ * @param[in] _a	first argument
+ * @param[in] _b	second argument
+ *
+ * @return		product of _a and _b
+ *
+ * This function will calculate the fixed point
+ * product of the input arguments
+ * and returns a double precison result.
+ * Depending on the rounding mode of the core
+ * it will round to nearest or to nearest even.
+ * result = ((_a * _b) << 1) >> (2*NUM_BITS);
+ */
+
+STORAGE_CLASS_ISP_OP2W_H tvector2w OP_2w_qrmul(
     const tvector2w     _a,
     const tvector2w     _b);
 
