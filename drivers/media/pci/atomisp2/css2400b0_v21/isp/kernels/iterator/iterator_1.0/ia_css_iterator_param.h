@@ -22,8 +22,8 @@
 #ifndef __IA_CSS_ITERATOR_PARAM_H
 #define __IA_CSS_ITERATOR_PARAM_H
 
-#include "type_support.h"
-#include "ia_css.h" /* ia_css_frame_info */
+#include "ia_css_types.h" /* ia_css_resolution */
+#include "ia_css_frame_public.h" /* ia_css_frame_info */
 #include "ia_css_frame_comm.h" /* ia_css_frame_sp_info */
 
 struct ia_css_iterator_configuration {

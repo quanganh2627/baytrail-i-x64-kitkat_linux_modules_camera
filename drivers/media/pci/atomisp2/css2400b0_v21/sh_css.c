@@ -4008,6 +4008,13 @@ init_in_frameinfo_memory_defaults(struct ia_css_pipe *pipe,
 	in_frame = frame;
 
 	in_frame->info.format = format;
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	if (format == IA_CSS_FRAME_FORMAT_RAW)
+		in_frame->info.format = (pipe->stream->config.pack_raw_pixels) ?
+					IA_CSS_FRAME_FORMAT_RAW_PACKED : IA_CSS_FRAME_FORMAT_RAW;
+#endif
+
 	in_frame->info.res.width = pipe->stream->config.input_config.input_res.width;
 	in_frame->info.res.height = pipe->stream->config.input_config.input_res.height;
 	in_frame->info.raw_bit_depth =

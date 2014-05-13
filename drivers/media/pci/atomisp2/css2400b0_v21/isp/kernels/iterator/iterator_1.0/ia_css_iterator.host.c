@@ -19,12 +19,12 @@
  *
  */
 
-#include "ia_css_frame.h"
-#include "ia_css.h"
-#include "ia_css_pipeline.h"
+#include "ia_css_iterator.host.h"
+#include "ia_css_frame_public.h"
+#include "ia_css_binary.h"
+#include "ia_css_err.h"
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
-#include "ia_css_iterator.host.h"
 
 void
 ia_css_iterator_config(

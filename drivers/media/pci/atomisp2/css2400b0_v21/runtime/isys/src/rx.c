@@ -411,11 +411,6 @@ unsigned int ia_css_csi2_calculate_input_system_alignment(
 		break;
 	case IA_CSS_STREAM_FORMAT_YUV420_8:
 	case IA_CSS_STREAM_FORMAT_YUV422_8:
-		/* Planar YUV formats need to have all planes aligned, this means
-		 * double the alignment for the Y plane if the horizontal decimation is 2. */
-		memory_alignment_in_bytes = 2 * HIVE_ISP_DDR_WORD_BYTES;
-		break;
-	case IA_CSS_STREAM_FORMAT_EMBEDDED:
 	case IA_CSS_STREAM_FORMAT_USER_DEF1:
 	case IA_CSS_STREAM_FORMAT_USER_DEF2:
 	case IA_CSS_STREAM_FORMAT_USER_DEF3:
@@ -424,6 +419,11 @@ unsigned int ia_css_csi2_calculate_input_system_alignment(
 	case IA_CSS_STREAM_FORMAT_USER_DEF6:
 	case IA_CSS_STREAM_FORMAT_USER_DEF7:
 	case IA_CSS_STREAM_FORMAT_USER_DEF8:
+		/* Planar YUV formats need to have all planes aligned, this means
+		 * double the alignment for the Y plane if the horizontal decimation is 2. */
+		memory_alignment_in_bytes = 2 * HIVE_ISP_DDR_WORD_BYTES;
+		break;
+	case IA_CSS_STREAM_FORMAT_EMBEDDED:
 	default:
 		memory_alignment_in_bytes = HIVE_ISP_DDR_WORD_BYTES;
 		break;

@@ -31,7 +31,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatbile
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.2.0"
+#define CSS_API_VERSION_STRING	"2.1.2.1"
 
 /*
 Change log
@@ -62,6 +62,10 @@ v2.1.1.2, modified struct ia_css_stream_config:
 
 v2.1.2.0, modify ia_css_stream_config:
  - add isys_config and input_config to support multiple isys stream within one virtual channel
+
+v2.1.2.1, add IA_CSS_STREAM_FORMAT_NUM
+ - add IA_CSS_STREAM_FORMAT_NUM definition to reflect the number of ia_css_stream_format enums
+
 */
 
 #endif __CSS_API_VERSION_H

@@ -19,7 +19,6 @@
  *
  */
 
-#include "ia_css.h"
 #include "ia_css_debug.h"
 #include "sw_event_global.h"		/* encode_sw_event */
 #include "sp.h"			/* cnd_sp_irq_enable() */

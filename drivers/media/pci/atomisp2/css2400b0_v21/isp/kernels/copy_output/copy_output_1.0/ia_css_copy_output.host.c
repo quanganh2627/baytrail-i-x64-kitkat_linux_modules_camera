@@ -19,11 +19,11 @@
  *
  */
 
-#include "ia_css_frame.h"
-#include "ia_css.h"
+#include "ia_css_copy_output.host.h"
+#include "ia_css_binary.h"
+#include "type_support.h"
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
-#include "ia_css_copy_output.host.h"
 #include "isp.h"
 
 void
