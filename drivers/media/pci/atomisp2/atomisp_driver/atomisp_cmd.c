@@ -4123,7 +4123,10 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 
 	if (asd->copy_mode)
 		ret = atomisp_css_copy_configure_output(asd, stream_index,
-				pix->width, pix->height, format->sh_fmt);
+				pix->width, pix->height,
+				format->planar ? pix->bytesperline :
+					pix->bytesperline * 8 / format->depth,
+				format->sh_fmt);
 	else
 		ret = configure_output(asd, pix->width, pix->height,
 				       format->planar ? pix->bytesperline :

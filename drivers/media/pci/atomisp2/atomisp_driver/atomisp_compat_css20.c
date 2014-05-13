@@ -2884,14 +2884,15 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 				unsigned int stream_index,
 				unsigned int width, unsigned int height,
+				unsigned int padded_width,
 				enum atomisp_css_frame_format format)
 {
 	asd->stream_env[stream_index].pipe_configs[IA_CSS_PIPE_ID_COPY].
 					default_capture_config.mode =
 					CSS_CAPTURE_MODE_RAW;
 
-	__configure_output(asd, stream_index, width, height, width, format,
-			   IA_CSS_PIPE_ID_COPY);
+	__configure_output(asd, stream_index, width, height, padded_width,
+			   format, IA_CSS_PIPE_ID_COPY);
 	return 0;
 }
 

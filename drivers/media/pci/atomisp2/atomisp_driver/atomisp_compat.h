@@ -376,6 +376,7 @@ void atomisp_css_disable_vf_pp(struct atomisp_sub_device *asd,
 int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 				unsigned int stream_index,
 				unsigned int width, unsigned int height,
+				unsigned int padded_width,
 				enum atomisp_css_frame_format format);
 
 int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
