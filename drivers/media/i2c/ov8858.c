@@ -613,10 +613,11 @@ static int ov8858_g_chip_ident(struct v4l2_subdev *sd,
 	return 0;
 }
 
-/* Return value of the specified register, first try getting it from
+/*
+ * Return value of the specified register, first try getting it from
  * the register list and if not found, get from the sensor via i2c.
  */
-static int ov8858_get_register(struct v4l2_subdev *sd, int reg,
+static int ov8858_get_register(struct v4l2_subdev *sd, int reg, int type,
 			       const struct ov8858_reg *reglist)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -625,16 +626,12 @@ static int ov8858_get_register(struct v4l2_subdev *sd, int reg,
 
 	/* Try if the values are in the register list */
 	for (next = reglist; next->type != OV8858_TOK_TERM; next++) {
-		if (next->type != OV8858_8BIT) {
-			dev_err(&client->dev, "register not 8-bit\n");
-			return -ENXIO;
-		}
 		if (next->sreg == reg)
 			return next->val;
 	}
 
 	/* If not, read from sensor */
-	if (ov8858_read_reg(client, OV8858_8BIT, reg, &val)) {
+	if (ov8858_read_reg(client, type, reg, &val)) {
 		dev_err(&client->dev, "failed to read register 0x%04X\n", reg);
 		return -EIO;
 	}
@@ -642,21 +639,16 @@ static int ov8858_get_register(struct v4l2_subdev *sd, int reg,
 	return val;
 }
 
-static int ov8858_get_register_16bit(struct v4l2_subdev *sd, int reg,
-				     const struct ov8858_reg *reglist,
-				     unsigned int *value)
+static inline int ov8858_get_register_16bit(struct v4l2_subdev *sd, int reg,
+					    const struct ov8858_reg *reglist)
 {
-	int high, low;
-	high = ov8858_get_register(sd, reg, reglist);
-	if (high < 0)
-		return high;
+	return ov8858_get_register(sd, reg, OV8858_16BIT, reglist);
+}
 
-	low = ov8858_get_register(sd, reg + 1, reglist);
-	if (low < 0)
-		return low;
-
-	*value = ((u8) high << 8) | (u8) low;
-	return 0;
+static inline int ov8858_get_register_8bit(struct v4l2_subdev *sd, int reg,
+					   const struct ov8858_reg *reglist)
+{
+	return ov8858_get_register(sd, reg, OV8858_8BIT, reglist);
 }
 
 static int __ov8858_get_pll1_values(struct v4l2_subdev *sd,
@@ -670,15 +662,14 @@ static int __ov8858_get_pll1_values(struct v4l2_subdev *sd,
 	unsigned int prediv_coef[] = {2, 3, 4, 5, 6, 8, 12, 16};
 	int ret;
 
-	ret = ov8858_get_register(sd, OV8858_PLL1_PREDIV0, reglist);
-
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL1_PREDIV0, reglist);
 	if (ret < 0)
 		return ret;
 
 	if (ret & OV8858_PLL1_PREDIV0_MASK)
 		*value /= 2;
 
-	ret = ov8858_get_register(sd, OV8858_PLL1_PREDIV, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL1_PREDIV, reglist);
 
 	if (ret < 0)
 		return ret;
@@ -686,20 +677,20 @@ static int __ov8858_get_pll1_values(struct v4l2_subdev *sd,
 	prediv_idx = ret & OV8858_PLL1_PREDIV_MASK;
 	*value = *value * 2 / prediv_coef[prediv_idx];
 
-	ret = ov8858_get_register_16bit(sd, OV8858_PLL1_MULTIPLIER, reglist,
-					&multiplier);
+	ret = ov8858_get_register_16bit(sd, OV8858_PLL1_MULTIPLIER, reglist);
 	if (ret < 0)
 		return ret;
 
+	multiplier = ret;
 	*value *= multiplier & OV8858_PLL1_MULTIPLIER_MASK;
-	ret = ov8858_get_register(sd, OV8858_PLL1_SYS_PRE_DIV, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL1_SYS_PRE_DIV, reglist);
 
 	if (ret < 0)
 		return ret;
 
 	sys_prediv = ret & OV8858_PLL1_SYS_PRE_DIV_MASK;
 	*value /= (sys_prediv + 3);
-	ret = ov8858_get_register(sd, OV8858_PLL1_SYS_DIVIDER, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL1_SYS_DIVIDER, reglist);
 
 	if (ret < 0)
 		return ret;
@@ -721,25 +712,25 @@ static int __ov8858_get_pll2a_values(struct v4l2_subdev *sd, int *value,
 	unsigned int prediv_coef[] = {2, 3, 4, 5, 6, 8, 12, 16};
 	int ret;
 
-	ret = ov8858_get_register(sd, OV8858_PLL2_PREDIV0, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL2_PREDIV0, reglist);
 	if (ret < 0)
 		return ret;
 
 	if (ret & OV8858_PLL2_PREDIV0_MASK)
 		*value /= 2;
 
-	ret = ov8858_get_register(sd, OV8858_PLL2_PREDIV, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL2_PREDIV, reglist);
 	if (ret < 0)
 		return ret;
 
 	prediv_idx = (ret & OV8858_PLL2_PREDIV_MASK);
 	*value = *value * 2 / prediv_coef[prediv_idx];
 
-	ret = ov8858_get_register_16bit(sd, OV8858_PLL2_MULTIPLIER, reglist,
-					&multiplier);
+	ret = ov8858_get_register_16bit(sd, OV8858_PLL2_MULTIPLIER, reglist);
 	if (ret < 0)
 		return ret;
 
+	multiplier = ret;
 	*value *= multiplier & OV8858_PLL2_MULTIPLIER_MASK;
 	dev_dbg(&client->dev, "%s: *value: %d\n", __func__, *value);
 
@@ -752,7 +743,7 @@ static int __ov8858_get_pll2b_values(struct v4l2_subdev *sd, int *value,
 	unsigned int dac_divider;
 	int ret;
 
-	ret = ov8858_get_register(sd, OV8858_PLL2_DAC_DIVIDER, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL2_DAC_DIVIDER, reglist);
 	if (ret < 0)
 		return ret;
 
@@ -772,14 +763,14 @@ static int __ov8858_get_pll2c_values(struct v4l2_subdev *sd, int *value,
 	unsigned int sys_divider_coef[] = {2, 3, 4, 5, 6, 7, 8, 10};
 	int ret;
 
-	ret = ov8858_get_register(sd, OV8858_PLL2_SYS_PRE_DIV, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL2_SYS_PRE_DIV, reglist);
 	if (ret < 0)
 		return ret;
 
 	sys_pre_div = (ret & OV8858_PLL2_SYS_PRE_DIV_MASK) + 1;
 	*value /= sys_pre_div;
 
-	ret = ov8858_get_register(sd, OV8858_PLL2_SYS_DIVIDER, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL2_SYS_DIVIDER, reglist);
 	if (ret < 0)
 		return ret;
 
@@ -811,14 +802,14 @@ static int ov8858_get_intg_factor(struct v4l2_subdev *sd,
 
 	memset(&info->data, 0, sizeof(info->data));
 
-	ret = ov8858_get_register(sd, OV8858_PLL_SCLKSEL1, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL_SCLKSEL1, reglist);
 	if (ret < 0)
 		return ret;
 
 	dev_dbg(d, "%s: OV8858_PLL_SCLKSEL1: 0x%02x\n", __func__, ret);
 	pll_sclksel1 = ret & OV8858_PLL_SCLKSEL1_MASK;
 
-	ret = ov8858_get_register(sd, OV8858_PLL_SCLKSEL2, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_PLL_SCLKSEL2, reglist);
 	if (ret < 0)
 		return ret;
 
@@ -845,7 +836,7 @@ static int ov8858_get_intg_factor(struct v4l2_subdev *sd,
 			return ret;
 	}
 
-	ret = ov8858_get_register(sd, OV8858_SRB_HOST_INPUT_DIS, reglist);
+	ret = ov8858_get_register_8bit(sd, OV8858_SRB_HOST_INPUT_DIS, reglist);
 	if (ret < 0)
 		return ret;
 
@@ -889,44 +880,57 @@ static int ov8858_get_intg_factor(struct v4l2_subdev *sd,
 	m->read_mode = res->bin_factor_x ?
 		OV8858_READ_MODE_BINNING_ON : OV8858_READ_MODE_BINNING_OFF;
 
-	ret = ov8858_get_register(sd, OV8858_H_INC_ODD, res->regs);
+	ret = ov8858_get_register_8bit(sd, OV8858_H_INC_ODD, res->regs);
 	if (ret < 0)
 		return ret;
 	m->binning_factor_x = (ret + 1) / 2;
 
-	ret = ov8858_get_register(sd, OV8858_V_INC_ODD, res->regs);
+	ret = ov8858_get_register_8bit(sd, OV8858_V_INC_ODD, res->regs);
 	if (ret < 0)
 		return ret;
 	m->binning_factor_y = (ret + 1) / 2;
 
 	/* Get the cropping and output resolution to ISP for this mode. */
 	ret =  ov8858_get_register_16bit(sd, OV8858_HORIZONTAL_START_H,
-		res->regs, &m->crop_horizontal_start);
-	if (ret)
+					 res->regs);
+	if (ret < 0)
 		return ret;
 
-	ret = ov8858_get_register_16bit(sd, OV8858_VERTICAL_START_H,
-		res->regs, &m->crop_vertical_start);
-	if (ret)
+	m->crop_horizontal_start = ret;
+
+	ret = ov8858_get_register_16bit(sd, OV8858_VERTICAL_START_H, res->regs);
+	if (ret < 0)
 		return ret;
 
-	ret = ov8858_get_register_16bit(sd, OV8858_HORIZONTAL_END_H,
-		res->regs, &m->crop_horizontal_end);
-	if (ret)
+	m->crop_vertical_start = ret;
+
+	ret = ov8858_get_register_16bit(sd, OV8858_HORIZONTAL_END_H, res->regs);
+	if (ret < 0)
 		return ret;
 
-	ret = ov8858_get_register_16bit(sd, OV8858_VERTICAL_END_H,
-		res->regs, &m->crop_vertical_end);
-	if (ret)
+	m->crop_horizontal_end = ret;
+
+	ret = ov8858_get_register_16bit(sd, OV8858_VERTICAL_END_H, res->regs);
+	if (ret < 0)
 		return ret;
+
+	m->crop_vertical_end = ret;
 
 	ret = ov8858_get_register_16bit(sd, OV8858_HORIZONTAL_OUTPUT_SIZE_H,
-		res->regs, &m->output_width);
-	if (ret)
+					res->regs);
+	if (ret < 0)
 		return ret;
 
-	return ov8858_get_register_16bit(sd, OV8858_VERTICAL_OUTPUT_SIZE_H,
-		res->regs, &m->output_height);
+	m->output_width = ret;
+
+	ret = ov8858_get_register_16bit(sd, OV8858_VERTICAL_OUTPUT_SIZE_H,
+					res->regs);
+	if (ret < 0)
+		return ret;
+
+	m->output_height = ret;
+
+	return 0;
 }
 
 /*
@@ -1458,40 +1462,39 @@ static int ov8858_g_ctrl(struct v4l2_ctrl *ctrl)
 	struct ov8858_device *dev = container_of(
 		ctrl->handler, struct ov8858_device, ctrl_handler);
 	int r_odd, r_even;
+	int i = dev->fmt_idx;
 
 	switch (ctrl->id) {
-	case V4L2_CID_FOCUS_STATUS: {
+	case V4L2_CID_FOCUS_STATUS:
 		if (dev->vcm_driver && dev->vcm_driver->q_focus_status)
-			return dev->vcm_driver->q_focus_status(
-						&dev->sd, &(ctrl->val));
-	}
+			return dev->vcm_driver->q_focus_status(&dev->sd,
+							       &(ctrl->val));
 	case V4L2_CID_BIN_FACTOR_HORZ:
-		r_odd = ov8858_get_register(&dev->sd, OV8858_H_INC_ODD,
-					dev->curr_res_table[dev->fmt_idx].regs);
+		r_odd = ov8858_get_register_8bit(&dev->sd, OV8858_H_INC_ODD,
+						 dev->curr_res_table[i].regs);
 		if (r_odd < 0)
 			return r_odd;
-		r_even = ov8858_get_register(&dev->sd, OV8858_H_INC_EVEN,
-					dev->curr_res_table[dev->fmt_idx].regs);
+		r_even = ov8858_get_register_8bit(&dev->sd, OV8858_H_INC_EVEN,
+						  dev->curr_res_table[i].regs);
 		if (r_even < 0)
 			return r_even;
 		ctrl->val = fls(r_odd + (r_even)) - 2;
 		return 0;
 
-	case V4L2_CID_BIN_FACTOR_VERT: {
-		r_odd = ov8858_get_register(&dev->sd, OV8858_V_INC_ODD,
-					dev->curr_res_table[dev->fmt_idx].regs);
+	case V4L2_CID_BIN_FACTOR_VERT:
+		r_odd = ov8858_get_register_8bit(&dev->sd, OV8858_V_INC_ODD,
+						 dev->curr_res_table[i].regs);
 		if (r_odd < 0)
 			return r_odd;
-		r_even = ov8858_get_register(&dev->sd, OV8858_V_INC_EVEN,
-					dev->curr_res_table[dev->fmt_idx].regs);
+		r_even = ov8858_get_register_8bit(&dev->sd, OV8858_V_INC_EVEN,
+						  dev->curr_res_table[i].regs);
 		if (r_even < 0)
 			return r_even;
 		ctrl->val = fls(r_odd + (r_even)) - 2;
 		return 0;
-	}
-	default: {
+
+	default:
 		return -EINVAL;
-	}
 	}
 
 	return 0;
