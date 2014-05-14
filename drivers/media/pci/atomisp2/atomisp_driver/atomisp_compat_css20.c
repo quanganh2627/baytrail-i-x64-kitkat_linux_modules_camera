@@ -1752,7 +1752,7 @@ int atomisp_css_isys_set_resolution(struct atomisp_sub_device *asd,
 	struct ia_css_stream_config *s_config =
 			&asd->stream_env[stream_id].stream_config;
 
-	if (isys_stream > IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH)
+	if (isys_stream >= IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH)
 		return -EINVAL;
 
 	s_config->isys_config[isys_stream].input_res.width = ffmt->width;
