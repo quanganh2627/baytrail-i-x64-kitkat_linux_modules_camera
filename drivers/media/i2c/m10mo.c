@@ -1833,6 +1833,30 @@ static int m10mo_set_white_balance(struct v4l2_subdev *sd, s32 val)
 	return ret;
 }
 
+static int m10mo_set_ev_bias(struct v4l2_subdev *sd, s32 val)
+{
+	/* 0x04 refers to 0.0EV value in m10mo HW */
+	/* val refers to EV units, where the */
+	/* value 1000 stands for +1EV */
+
+	int ev_bias = 0x04 + (val/M10MO_EV_STEP);
+	return m10mo_writeb(sd, CATEGORY_AE, AE_EV_BIAS, ev_bias);
+}
+
+static int m10mo_get_ev_bias(struct v4l2_subdev *sd, s32 *val)
+{
+	int ret;
+	u32 ev_bias;
+
+	ret = m10mo_readb(sd, CATEGORY_AE, AE_EV_BIAS, &ev_bias);
+	if (ret)
+		return ret;
+
+	*val = (ev_bias-4) * M10MO_EV_STEP;
+	return 0;
+}
+
+
 static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct m10mo_device *dev = container_of(
@@ -1856,6 +1880,9 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE:
 		ret = m10mo_set_white_balance(&dev->sd, ctrl->val);
 		break;
+	case V4L2_CID_EXPOSURE:
+		ret = m10mo_set_ev_bias(&dev->sd, ctrl->val);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -1865,14 +1892,21 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 
 static int m10mo_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
+	struct m10mo_device *dev = container_of(
+		ctrl->handler, struct m10mo_device, ctrl_handler);
+	int ret = 0;
+
 	switch (ctrl->id) {
 	case V4L2_CID_LINK_FREQ:
 		ctrl->val = M10MO_MIPI_FREQ;
 		break;
+	case V4L2_CID_EXPOSURE:
+		ret = m10mo_get_ev_bias(&dev->sd, &ctrl->val);
+		break;
 	default:
 		return -EINVAL;
 	}
-	return 0;
+	return ret;
 }
 
 static struct v4l2_ctrl_ops m10mo_ctrl_ops = {
@@ -2021,6 +2055,16 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.def = V4L2_WHITE_BALANCE_AUTO,
 		.max = V4L2_WHITE_BALANCE_SHADE,
 		.step = 1,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_EXPOSURE,
+		.name = "Exposure Bias",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = M10MO_MIN_EV,
+		.def = 0,
+		.max = M10MO_MAX_EV,
+		.step = M10MO_EV_STEP
 	},
 };
 

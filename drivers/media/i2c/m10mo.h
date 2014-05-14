@@ -43,8 +43,9 @@
 #define M10MO_BOOT_TIMEOUT		50
 #define POLL_NUM			5
 
-#define M10MO_MIN_EV -3
-#define M10MO_MAX_EV  3
+#define M10MO_MIN_EV -2000
+#define M10MO_MAX_EV  3000
+#define M10MO_EV_STEP 500
 #define M10MO_FLICKER_AUTO 		0x00
 #define M10MO_FLICKER_50HZ 		0x01
 #define M10MO_FLICKER_60HZ 		0x02
