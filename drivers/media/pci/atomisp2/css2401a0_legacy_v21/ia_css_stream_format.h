@@ -22,6 +22,8 @@
 #ifndef __IA_CSS_STREAM_FORMAT_H
 #define __IA_CSS_STREAM_FORMAT_H
 
+#include <type_support.h> /* bool */
+
 /** The ISP streaming input interface supports the following formats.
  *  These match the corresponding MIPI formats.
  */
