@@ -31,6 +31,7 @@ atomisp-$(postfix)-objs := \
 		css/sh_css.o \
 		css/sh_css_hrt.o \
 		css/sh_css_mmu.o \
+		css/sh_css_stream_format.o \
 		css/sh_css_params.o \
 		css/sh_css_sp.o \
 		css/sh_css_metrics.o \
