@@ -1200,7 +1200,9 @@ done:
 	if (!((buf->flags & NOFLUSH_FLAGS) == NOFLUSH_FLAGS))
 		wbinvd();
 
+	mutex_unlock(&isp->mutex);
 	ret = videobuf_qbuf(&pipe->capq, buf);
+	mutex_lock(&isp->mutex);
 	if (ret)
 		goto error;
 
