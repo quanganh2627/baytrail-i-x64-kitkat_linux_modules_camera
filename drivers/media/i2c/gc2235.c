@@ -49,6 +49,7 @@ static enum atomisp_bayer_order gc2235_bayer_order_mapping[] = {
 };
 
 u16 g_gain = 0, g_exposure = 0;
+u8 g_flip = 0x14;
 
 static int
 gc2235_read_reg(struct i2c_client *client, u8 len, u8 reg, u8 *val)
@@ -390,6 +391,7 @@ static int gc2235_init_common(struct v4l2_subdev *sd)
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x10, 0x58);
 
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x17, 0x14);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0x17, g_flip);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x18, 0x12);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x19, 0x0d);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x1a, 0x01);
@@ -690,30 +692,18 @@ static int gc2235_v_flip(struct v4l2_subdev *sd, s32 value)
 	int need_write = 0;
 	u8 val;
 
-	ret = gc2235_read_reg(client, GC2235_8BIT, GC2235_IMG_ORIENTATION, &val);
-	if (ret)
-		return ret;
+	val = g_flip;
 	dev_dbg(&client->dev, "@%s++ %d, 0x17:0x%x\n", __func__, value, val);
 	if (value) {
-		if (!(val & (1 << (GC2235_VFLIP_BIT-1)))) {
-			need_write = 1;
-			val |= GC2235_VFLIP_BIT;
-			}
-		} else {
-			if (val & (1 << (GC2235_VFLIP_BIT-1))) {
-				need_write = 1;
-				val &= ~GC2235_VFLIP_BIT;
-			}
-		}
-		if (need_write) {
-			dev_dbg(&client->dev, "@%s-- %d, 0x17:0x%x\n", __func__, value, val);
-			ret = gc2235_write_reg(client, GC2235_8BIT,
-				GC2235_IMG_ORIENTATION, val);
-		}
-
+		val |= GC2235_VFLIP_BIT;
+	} else {
+		val &= ~GC2235_VFLIP_BIT;
+	}
+	ret = gc2235_write_reg(client, GC2235_8BIT,
+		GC2235_IMG_ORIENTATION, val);
 	if (ret)
 		return ret;
-
+	g_flip = val;
 	gc2235_info = v4l2_get_subdev_hostdata(sd);
 	if (gc2235_info) {
 		val &= (GC2235_VFLIP_BIT|GC2235_HFLIP_BIT);
@@ -734,32 +724,19 @@ static int gc2235_h_flip(struct v4l2_subdev *sd, s32 value)
 	int need_write = 0;
 	u8 val;
 
-	ret = gc2235_read_reg(client, GC2235_8BIT, GC2235_IMG_ORIENTATION, &val);
-	if (ret)
-		return ret;
-
+	val = g_flip;
 	dev_dbg(&client->dev, "@%s++ %d, 0x17:0x%x\n", __func__, value, val);
 	if (value){
-		if (!(val & (1 << (GC2235_HFLIP_BIT-1)))) {
-			need_write = 1;
-			val |= GC2235_HFLIP_BIT;
-		}
+		val |= GC2235_HFLIP_BIT;
 	} else {
-		if (val & (1 << (GC2235_HFLIP_BIT-1))) {
-			need_write = 1;
-			val &= ~GC2235_HFLIP_BIT;
-		}
+		val &= ~GC2235_HFLIP_BIT;
 	}
-	if (need_write) {
-		dev_dbg(&client->dev, "@%s-- %d, 0x17:0x%x\n", __func__, value, val);
-		ret = gc2235_write_reg(client, GC2235_8BIT,
-			GC2235_IMG_ORIENTATION, val);
-	}
-
-
+	ret = gc2235_write_reg(client, GC2235_8BIT,
+		GC2235_IMG_ORIENTATION, val);
 	if (ret)
 		return ret;
 
+	g_flip = val;
 	gc2235_info = v4l2_get_subdev_hostdata(sd);
 	if (gc2235_info) {
 		val &= (GC2235_VFLIP_BIT|GC2235_HFLIP_BIT);
