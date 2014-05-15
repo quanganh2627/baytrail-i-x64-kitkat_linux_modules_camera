@@ -983,6 +983,13 @@ error_mipi_csi2:
 	return ret;
 }
 
+static void atomisp_uninitialize_modules(struct atomisp_device *isp)
+{
+	atomisp_tpg_cleanup(isp);
+	atomisp_file_input_cleanup(isp);
+	atomisp_mipi_csi2_cleanup(isp);
+}
+
 static const struct firmware *
 load_firmware(struct atomisp_device *isp)
 {
@@ -1276,14 +1283,14 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	err = atomisp_initialize_modules(isp);
 	if (err < 0) {
 		dev_err(&dev->dev, "atomisp_initialize_modules (%d)\n", err);
-		goto enable_msi_fail;
+		goto initialize_modules_fail;
 	}
 
 	err = atomisp_register_entities(isp);
 	if (err < 0) {
 		dev_err(&dev->dev, "atomisp_register_entities failed (%d)\n",
 			err);
-		goto enable_msi_fail;
+		goto register_entities_fail;
 	}
 	atomisp_acc_init(isp);
 
@@ -1295,8 +1302,10 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 
 	hmm_init_mem_stat(repool_pgnr, dypool_enable, dypool_pgnr);
 	err = hmm_pool_register(repool_pgnr, HMM_POOL_TYPE_RESERVED);
-	if (err)
+	if (err) {
 		dev_err(&dev->dev, "Failed to register reserved memory pool.\n");
+		goto hmm_pool_fail;
+	}
 
 	/* Init ISP memory management */
 	hrt_isp_css_mm_init();
@@ -1315,7 +1324,14 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 css_init_fail:
 	hrt_isp_css_mm_clear();
 	hmm_pool_unregister(HMM_POOL_TYPE_RESERVED);
+hmm_pool_fail:
 	atomisp_acc_cleanup(isp);
+	atomisp_unregister_entities(isp);
+register_entities_fail:
+	atomisp_uninitialize_modules(isp);
+initialize_modules_fail:
+	pm_qos_remove_request(&isp->pm_qos);
+	atomisp_msi_irq_uninit(isp, dev);
 enable_msi_fail:
 	destroy_workqueue(isp->wdt_work_queue);
 wdt_work_queue_fail:
