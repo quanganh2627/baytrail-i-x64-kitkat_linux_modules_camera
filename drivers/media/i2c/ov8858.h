@@ -549,8 +549,8 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x3813, 0x02}, /* v_win offset low */
 	{OV8858_8BIT, 0x3814, 0x01}, /* h_odd_inc */
 	{OV8858_8BIT, 0x3815, 0x01}, /* h_even_inc */
-	{OV8858_8BIT, 0x3820, 0x00}, /* format1 */
-	{OV8858_8BIT, 0x3821, 0x46}, /* format2 */
+	{OV8858_8BIT, 0x3820, 0x46}, /* format1 */
+	{OV8858_8BIT, 0x3821, 0x00}, /* format2 */
 	{OV8858_8BIT, 0x382A, 0x01}, /* v_odd_inc */
 	{OV8858_8BIT, 0x382B, 0x01}, /* v_even_inc */
 
