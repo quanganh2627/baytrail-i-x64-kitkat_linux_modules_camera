@@ -1892,6 +1892,60 @@ static int m10mo_get_ev_bias(struct v4l2_subdev *sd, s32 *val)
 }
 
 
+static const unsigned short iso_lut[][2] = {
+	{ 100,  REG_AE_ISOMODE_ISO100},
+	{ 200,  REG_AE_ISOMODE_ISO200},
+	{ 400,  REG_AE_ISOMODE_ISO400},
+	{ 800,  REG_AE_ISOMODE_ISO800},
+	{ 1600, REG_AE_ISOMODE_ISO1600},
+};
+
+static int m10mo_set_iso_sensitivity(struct v4l2_subdev *sd, s32 val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret, i;
+
+	for (i = 0; i < ARRAY_SIZE(iso_lut); i++) {
+		if (val == iso_lut[i][0])
+			break;
+	}
+
+	if (i == ARRAY_SIZE(iso_lut))
+		return -EINVAL;
+
+	if (dev->iso_mode == V4L2_ISO_SENSITIVITY_MANUAL) {
+		ret = m10mo_writeb(sd, CATEGORY_AE,
+				   AE_ISOMODE, iso_lut[i][1]);
+		if (ret < 0)
+			return ret;
+	}
+	dev->iso_sensitivity = iso_lut[i][1];
+
+	return 0;
+}
+
+static int m10mo_set_iso_mode(struct v4l2_subdev *sd, s32 val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret;
+
+	if (val == V4L2_ISO_SENSITIVITY_AUTO) {
+		ret = m10mo_writeb(sd, CATEGORY_AE,
+				   AE_ISOMODE, REG_AE_ISOMODE_AUTO);
+		if (ret < 0)
+			return ret;
+		dev->iso_mode = V4L2_ISO_SENSITIVITY_AUTO;
+	} else {
+		ret = m10mo_writeb(sd, CATEGORY_AE,
+				   AE_ISOMODE, dev->iso_sensitivity);
+		if (ret < 0)
+			return ret;
+		dev->iso_mode = V4L2_ISO_SENSITIVITY_MANUAL;
+	}
+
+	return 0;
+}
+
 static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct m10mo_device *dev = container_of(
@@ -1917,6 +1971,12 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_EXPOSURE:
 		ret = m10mo_set_ev_bias(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_ISO_SENSITIVITY:
+		ret = m10mo_set_iso_sensitivity(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_ISO_SENSITIVITY_AUTO:
+		ret = m10mo_set_iso_mode(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -2100,6 +2160,25 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.def = 0,
 		.max = M10MO_MAX_EV,
 		.step = M10MO_EV_STEP
+	},
+	{
+		.id = V4L2_CID_ISO_SENSITIVITY,
+		.name = "Iso",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 100,
+		.def = 100,
+		.max = 1600,
+		.step = 100,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_ISO_SENSITIVITY_AUTO,
+		.name = "Iso mode",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = V4L2_ISO_SENSITIVITY_MANUAL,
+		.def = V4L2_ISO_SENSITIVITY_AUTO,
+		.max = V4L2_ISO_SENSITIVITY_AUTO,
+		.step = 1,
 	},
 };
 
@@ -2416,6 +2495,8 @@ static int m10mo_probe(struct i2c_client *client,
 
 	dev->mode = M10MO_POWERED_OFF;
 	dev->requested_mode = M10MO_NO_MODE_REQUEST;
+	dev->iso_sensitivity =  REG_AE_ISOMODE_ISO100;
+	dev->iso_mode = V4L2_ISO_SENSITIVITY_AUTO;
 
 	mutex_init(&dev->input_lock);
 

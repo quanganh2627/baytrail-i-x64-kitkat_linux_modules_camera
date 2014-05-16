@@ -118,6 +118,8 @@ struct m10mo_device {
 	u8 requested_mode;
 	u8 mode;
 	u8 capture_mode;
+	short iso_mode;
+	short iso_sensitivity;
 	int fmt_idx;
 	int capture_res_idx;
 	wait_queue_head_t irq_waitq;
@@ -286,12 +288,19 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_AE_OFF		0x00
 #define AE_TARGET		0x02
 #define AE_SPEED		0x03
+#define AE_ISOMODE		0x05
 #define AE_FLICKER		0x06
 #define AE_FLICKER_AUTO		0x07
 #define AE_EV_BIAS		0x09
 #define AE_AUTO_BRACKET_EV1	0x20
 #define AE_AUTO_BRACKET_EV2	0x21
 
+#define REG_AE_ISOMODE_AUTO	0x00
+#define REG_AE_ISOMODE_ISO100	0x01
+#define REG_AE_ISOMODE_ISO200	0x02
+#define REG_AE_ISOMODE_ISO400	0x03
+#define REG_AE_ISOMODE_ISO800	0x04
+#define REG_AE_ISOMODE_ISO1600	0x05
 
 
 /* Category 6_White Balance */
