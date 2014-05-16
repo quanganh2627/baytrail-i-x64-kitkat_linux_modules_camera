@@ -37,7 +37,18 @@ config VIDEO_OV9724
          This is a Video4Linux2 sensor-level driver for the OVT
          OV9724 raw camera.
 
-         OVT is a 720P raw sensor.
+         OV9724 is a 720P raw sensor.
+
+         It currently only works with the atomisp driver.
+
+config VIDEO_OV5693
+       tristate "OVT ov5693 sensor support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the OVT
+         OV5693 raw camera.
+
+         OV5693 is a 5M raw sensor.
 
          It currently only works with the atomisp driver.
 
@@ -48,7 +59,7 @@ config VIDEO_OV2722
          This is a Video4Linux2 sensor-level driver for the OVT
          OV2722 raw camera.
 
-         OVT is a 2M raw sensor.
+         OV2722 is a 2M raw sensor.
 
          It currently only works with the atomisp driver.
 
