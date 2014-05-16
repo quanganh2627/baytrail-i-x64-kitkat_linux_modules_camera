@@ -1092,6 +1092,7 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 		atomisp_css_irq_enable(isp,
 				CSS_IRQ_INFO_CSS_RECEIVER_SOF, false);
 
+	BUG_ON(isp->num_of_streams > MAX_STREAM_NUM);
 
 	for (i = 0; i < isp->num_of_streams; i++) {
 		struct atomisp_sub_device *asd = &isp->asd[i];
@@ -1174,8 +1175,6 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 
 	for (i = 0; i < isp->num_of_streams; i++) {
 		struct atomisp_sub_device *asd;
-
-		BUG_ON(i >= MAX_STREAM_NUM);
 
 		asd = &isp->asd[i];
 
