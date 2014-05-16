@@ -246,6 +246,15 @@ static struct v4l2_queryctrl ci_v4l2_controls[] = {
 		.default_value = 0,
 	},
 	{
+		.id = V4L2_CID_ISO_SENSITIVITY_AUTO,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "iso mode",
+		.minimum = V4L2_ISO_SENSITIVITY_MANUAL,
+		.maximum = V4L2_ISO_SENSITIVITY_AUTO,
+		.step = 1,
+		.default_value = V4L2_ISO_SENSITIVITY_AUTO,
+	},
+	{
 		.id = V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE,
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.name = "white balance",
@@ -1855,6 +1864,7 @@ static int atomisp_g_ctrl(struct file *file, void *fh,
 	case V4L2_CID_EXPOSURE:
 	case V4L2_CID_SCENE_MODE:
 	case V4L2_CID_ISO_SENSITIVITY:
+	case V4L2_CID_ISO_SENSITIVITY_AUTO:
 	case V4L2_CID_EXPOSURE_METERING:
 	case V4L2_CID_CONTRAST:
 	case V4L2_CID_SATURATION:
@@ -1922,6 +1932,7 @@ static int atomisp_s_ctrl(struct file *file, void *fh,
 	case V4L2_CID_EXPOSURE:
 	case V4L2_CID_SCENE_MODE:
 	case V4L2_CID_ISO_SENSITIVITY:
+	case V4L2_CID_ISO_SENSITIVITY_AUTO:
 	case V4L2_CID_HFLIP:
 	case V4L2_CID_VFLIP:
 	case V4L2_CID_POWER_LINE_FREQUENCY:
