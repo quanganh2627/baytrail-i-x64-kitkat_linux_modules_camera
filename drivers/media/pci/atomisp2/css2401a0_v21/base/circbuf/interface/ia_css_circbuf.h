@@ -351,4 +351,15 @@ STORAGE_CLASS_EXTERN uint32_t ia_css_circbuf_peek(
 	ia_css_circbuf_t *cb,
 	int offset);
 
+/**
+ * @brief Get an element in Circular Buffer.
+ *
+ * @param cb	 The pointer to the circular buffer.
+ * @param offset Offset to the element.
+ *
+ * @return the elements value.
+ */
+STORAGE_CLASS_EXTERN uint32_t ia_css_circbuf_peek_from_start(
+	ia_css_circbuf_t *cb,
+	int offset);
 #endif /*_IA_CSS_CIRCBUF_H */

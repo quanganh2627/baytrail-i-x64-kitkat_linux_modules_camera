@@ -114,16 +114,15 @@ ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
 #endif
 }
 
+
 void
-ia_css_binary_grid_info(const struct ia_css_binary *binary,
-			struct ia_css_grid_info *info)
+ia_css_binary_dvs_grid_info(const struct ia_css_binary *binary,
+				struct ia_css_grid_info *info)
 {
-	struct ia_css_3a_grid_info *s3a_info;
 	struct ia_css_dvs_grid_info *dvs_info;
 
 	assert(binary != NULL);
 	assert(info != NULL);
-	s3a_info = &info->s3a_grid;
 	dvs_info = &info->dvs_grid;
 
 	info->isp_in_width = binary->internal_frame_info.res.width;
@@ -142,7 +141,34 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 	dvs_info->num_hor_coefs     = binary->dis.coef.dim.width;
 	dvs_info->num_ver_coefs     = binary->dis.coef.dim.height;
 
-#if !(defined(SYSTEM_css_skycam_a0t_system) || defined(SYSTEM_css_skycam_c0_system))
+#if defined(IS_ISP_2500_SYSTEM)
+	dvs_info->enable            = binary->info->sp.enable.dvs_stats;
+#endif
+
+#if defined(HAS_VAMEM_VERSION_2)
+	info->vamem_type = IA_CSS_VAMEM_TYPE_2;
+#elif defined(HAS_VAMEM_VERSION_1)
+	info->vamem_type = IA_CSS_VAMEM_TYPE_1;
+#else
+#error "Unknown VAMEM version"
+#endif
+}
+
+
+void
+ia_css_binary_3a_grid_info(const struct ia_css_binary *binary,
+			       struct ia_css_grid_info *info)
+{
+	struct ia_css_3a_grid_info *s3a_info;
+
+	assert(binary != NULL);
+	assert(info != NULL);
+	s3a_info = &info->s3a_grid;
+
+	info->isp_in_width = binary->internal_frame_info.res.width;
+	info->isp_in_height = binary->internal_frame_info.res.height;
+
+#if !defined(IS_ISP_2500_SYSTEM)
 	/* 3A statistics grid */
 	s3a_info->enable            = binary->info->sp.enable.s3a;
 	s3a_info->width             = binary->s3atbl_width;
@@ -158,13 +184,13 @@ ia_css_binary_grid_info(const struct ia_css_binary *binary,
 #else
 	s3a_info->has_histogram     = 0;
 #endif
-#else	//SYSTEM_css_skycam_a0t_system defined
+#else	/* IS_ISP_2500_SYSTEM defined */
 	s3a_info->ae_enable         = binary->info->sp.enable.ae;
 	s3a_info->af_enable         = binary->info->sp.enable.af;
 	s3a_info->awb_fr_enable     = binary->info->sp.enable.awb_fr_acc;
 	s3a_info->awb_enable        = binary->info->sp.enable.awb_acc;
 	s3a_info->elem_bit_depth    = SH_CSS_BAYER_BITS;
-	//todo grid config
+	/* todo grid config */
 #endif
 #if defined(HAS_VAMEM_VERSION_2)
 	info->vamem_type = IA_CSS_VAMEM_TYPE_2;

@@ -149,9 +149,6 @@ enum ia_css_err ia_css_util_check_vf_out_info(
 	err = ia_css_util_check_vf_info(vf_info);
 	if (err != IA_CSS_SUCCESS)
 		return err;
-	if (vf_info->res.width > out_info->res.width ||
-	    vf_info->res.height > out_info->res.height)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	return IA_CSS_SUCCESS;
 }
 

@@ -197,8 +197,12 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 		   struct ia_css_binary *binary);
 
 void
-ia_css_binary_grid_info(const struct ia_css_binary *binary,
-			struct ia_css_grid_info *info);
+ia_css_binary_3a_grid_info(const struct ia_css_binary *binary,
+			   struct ia_css_grid_info *info);
+
+void
+ia_css_binary_dvs_grid_info(const struct ia_css_binary *binary,
+			   struct ia_css_grid_info *info);
 
 unsigned
 ia_css_binary_max_vf_width(void);

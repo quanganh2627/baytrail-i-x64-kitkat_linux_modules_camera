@@ -93,6 +93,7 @@ extern enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	struct ia_css_binary_descr *video_descr,
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *bds_out_info,
+	struct ia_css_frame_info *out_info,
 	struct ia_css_frame_info *vf_info,
 	int stream_config_left_padding);
 

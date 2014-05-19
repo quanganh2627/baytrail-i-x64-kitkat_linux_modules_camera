@@ -835,12 +835,18 @@ ia_css_elems_bytes_from_info (const struct ia_css_frame_info *info)
 {
 	if (info->format == IA_CSS_FRAME_FORMAT_RGB565)
 		return 2; /* bytes per pixel */
-
-	if (info->raw_bit_depth)
-		return CEIL_DIV(info->raw_bit_depth,8);
-
-	if (info->format == IA_CSS_FRAME_FORMAT_RAW)
+	if (info->format == IA_CSS_FRAME_FORMAT_YUV420_16)
 		return 2; /* bytes per pixel */
+	if (info->format == IA_CSS_FRAME_FORMAT_YUV422_16)
+		return 2; /* bytes per pixel */
+
+	if (info->format == IA_CSS_FRAME_FORMAT_RAW
+		|| (info->format == IA_CSS_FRAME_FORMAT_RAW_PACKED)) {
+		if (info->raw_bit_depth)
+			return CEIL_DIV(info->raw_bit_depth,8);
+		else
+			return 2; /* bytes per pixel */
+	}
 	if (info->format == IA_CSS_FRAME_FORMAT_PLANAR_RGB888)
 		return 3; /* bytes per pixel */
 	if (info->format == IA_CSS_FRAME_FORMAT_RGBA888)
