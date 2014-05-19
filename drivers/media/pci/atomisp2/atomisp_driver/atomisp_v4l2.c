@@ -1230,14 +1230,6 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		goto enable_msi_fail;
 	}
 
-	err = devm_request_threaded_irq(&dev->dev, dev->irq,
-					atomisp_isr, atomisp_isr_thread,
-					IRQF_SHARED, "isp_irq", isp);
-	if (err) {
-		dev_err(&dev->dev, "Failed to request irq (%d)\n", err);
-		goto enable_msi_fail;
-	}
-
 	setup_timer(&isp->wdt, atomisp_wdt, (unsigned long)isp);
 
 	atomisp_msi_irq_init(isp, dev);
@@ -1310,6 +1302,14 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	/* Init ISP memory management */
 	hrt_isp_css_mm_init();
 
+	err = devm_request_threaded_irq(&dev->dev, dev->irq,
+					atomisp_isr, atomisp_isr_thread,
+					IRQF_SHARED, "isp_irq", isp);
+	if (err) {
+		dev_err(&dev->dev, "Failed to request irq (%d)\n", err);
+		goto request_irq_fail;
+	}
+
 	/* Load firmware into ISP memory */
 	err = atomisp_css_load_firmware(isp);
 	if (err) {
@@ -1322,6 +1322,8 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	return 0;
 
 css_init_fail:
+	devm_free_irq(&dev->dev, dev->irq, isp);
+request_irq_fail:
 	hrt_isp_css_mm_clear();
 	hmm_pool_unregister(HMM_POOL_TYPE_RESERVED);
 hmm_pool_fail:
