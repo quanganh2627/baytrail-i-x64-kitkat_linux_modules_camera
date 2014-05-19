@@ -133,12 +133,13 @@
 #define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS           83
 #define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB              84
 #define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS_STRIPED   85
-#define SH_CSS_BINARY_ID_IF_TO_TNR_NO_DPC_OB                86
+#define SH_CSS_BINARY_ID_SC_VIDEO_HIGH_RESOLUTION           86
 #define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_TNR_STRIPED       87
 #define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DVS_STRIPED       88
 #define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_ISP_EXITS           89
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_OBGRID_STRIPED    90
 
-#define SH_CSS_BINARY_NUM_IDS                               90
+#define SH_CSS_BINARY_NUM_IDS                               91
 
 #if defined(__ISP) || defined(__SP)
 struct isp_uds_config {

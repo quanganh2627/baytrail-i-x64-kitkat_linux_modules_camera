@@ -51,11 +51,11 @@ struct ia_css_isp_3a_statistics {
 	struct {
 		ia_css_ptr rgby_tbl;
 	} data_hmem;
-	uint32_t exp_id;
-	ia_css_ptr data_ptr; /* pointer to base of all data */
-	uint32_t   size; /* total size of all data */
+	uint32_t exp_id;     /**< exposure id, to match statistics to a frame */
+	ia_css_ptr data_ptr; /**< pointer to base of all data */
+	uint32_t   size;     /**< total size of all data */
 	uint32_t   dmem_size;
-	uint32_t   vmem_size; /* both lo and hi have this size */
+	uint32_t   vmem_size; /**< both lo and hi have this size */
 	uint32_t   hmem_size;
 };
 #define SIZE_OF_DMEM_STRUCT						\
@@ -77,21 +77,21 @@ struct ia_css_isp_3a_statistics {
 	 SIZE_OF_IA_CSS_PTR +						\
 	 4 * sizeof(uint32_t))
 
-/* Map with host-side pointers to ISP-format statistics.
+/** Map with host-side pointers to ISP-format statistics.
  * These pointers can either be copies of ISP data or memory mapped
  * ISP pointers.
- * All of the data behind these pointers is allocatd contiguously, the
+ * All of the data behind these pointers is allocated contiguously, the
  * allocated pointer is stored in the data_ptr field. The other fields
  * point into this one block of data.
  */
 struct ia_css_isp_3a_statistics_map {
-	void                    *data_ptr; /* Pointer to start of memory */
+	void                    *data_ptr; /**< Pointer to start of memory */
 	struct ia_css_3a_output *dmem_stats;
 	uint16_t                *vmem_stats_hi;
 	uint16_t                *vmem_stats_lo;
 	struct ia_css_bh_table  *hmem_stats;
-	uint32_t                 size; /* total size in bytes of data_ptr */
-	uint32_t                 data_allocated; /* indicate whether data_ptr
+	uint32_t                 size; /**< total size in bytes of data_ptr */
+	uint32_t                 data_allocated; /**< indicate whether data_ptr
 						    was allocated or not. */
 };
 

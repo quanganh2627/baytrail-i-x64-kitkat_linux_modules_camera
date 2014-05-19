@@ -820,13 +820,13 @@ struct host_sp_communication {
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
 	(N_CSI_PORTS * NUM_MIPI_FRAMES_PER_STREAM * SIZE_OF_HRT_VADDRESS) +			\
-	((3 + N_CSI_PORTS) * sizeof(uint32_t) ) +						\
+	((3 + N_CSI_PORTS) * sizeof(uint32_t)) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
 #else
 #define SIZE_OF_HOST_SP_COMMUNICATION_STRUCT				\
 	(sizeof(uint32_t) +						\
 	(NUM_CONTINUOUS_FRAMES * SIZE_OF_HRT_VADDRESS * 2) +		\
-	(3 * sizeof(uint32_t) ) +						\
+	(3 * sizeof(uint32_t)) +						\
 	(NR_OF_PIPELINES * SIZE_OF_SH_CSS_EVENT_IRQ_MASK_STRUCT))
 #endif
 
@@ -1018,7 +1018,7 @@ find_pipe_by_num(uint8_t pipe_num);
 
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 void
-ia_css_get_crop_offsets (
+ia_css_get_crop_offsets(
 		struct ia_css_pipe *pipe,
 		struct ia_css_frame_info *in_frame);
 #endif

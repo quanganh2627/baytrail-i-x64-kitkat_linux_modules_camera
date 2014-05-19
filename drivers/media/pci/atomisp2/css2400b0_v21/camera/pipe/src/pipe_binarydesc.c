@@ -361,6 +361,7 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	struct ia_css_binary_descr *video_descr,
 	struct ia_css_frame_info *in_info,
 	struct ia_css_frame_info *bds_out_info,
+	struct ia_css_frame_info *out_info,
 	struct ia_css_frame_info *vf_info,
 	int stream_config_left_padding)
 {
@@ -383,7 +384,7 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	in_info->padded_width = in_info->res.width;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
-	out_infos[0] = &pipe->output_info[0];
+	out_infos[0] = out_info;
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}
@@ -510,7 +511,6 @@ void ia_css_pipe_get_yuvscaler_binarydesc(
 			    "ia_css_pipe_get_yuvscaler_binarydesc() enter:\n");
 
 	in_info->padded_width = in_info->res.width;
-	in_info->format = IA_CSS_FRAME_FORMAT_YUV420;
 	in_info->raw_bit_depth = 0;
 	ia_css_frame_info_set_width(in_info, in_info->res.width, 0);
 	out_infos[0] = out_info;

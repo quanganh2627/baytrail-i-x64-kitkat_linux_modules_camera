@@ -106,7 +106,7 @@ struct ia_css_isp_parameters {
 	struct ia_css_crop_config   crop_config;
 #if defined(IS_ISP_2500_SYSTEM)
 	struct ia_css_2500_lin_kernel_config  lin_2500_config;
-	struct ia_css_2500_tnr_kernel_config  tnr_2500_config;	
+	struct ia_css_2500_tnr_kernel_config  tnr_2500_config;
 #endif
 	bool isp_params_changed;
 	bool isp_mem_params_changed

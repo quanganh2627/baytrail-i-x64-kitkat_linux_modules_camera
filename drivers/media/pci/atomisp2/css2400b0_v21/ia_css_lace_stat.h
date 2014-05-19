@@ -44,13 +44,13 @@ void ia_css_get_lace_statistics(struct ia_css_lace_statistics *host_stats,
  * @return	Pointer to the allocated LACE statistics
  *         buffer on the ISP
 */
-struct ia_css_isp_lace_statistics* ia_css_lace_statistics_allocate(void);
+struct ia_css_isp_lace_statistics *ia_css_lace_statistics_allocate(void);
 
 /** @brief Free the ACC LACE statistics memory on the isp
  * @param[in]	me Pointer to the LACE statistics buffer on the
  *       ISP.
  * @return		None
 */
-void ia_css_lace_statistics_free(struct ia_css_isp_lace_statistics* me);
+void ia_css_lace_statistics_free(struct ia_css_isp_lace_statistics *me);
 
 #endif /*  __IA_CSS_LACE_STAT_H */

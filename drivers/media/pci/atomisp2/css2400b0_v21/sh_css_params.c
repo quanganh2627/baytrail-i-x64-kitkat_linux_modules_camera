@@ -4672,3 +4672,30 @@ ia_css_dvs2_6axis_config_free(struct ia_css_dvs_6axis_config *dvs_6axis_config)
         sh_css_free(dvs_6axis_config);
     }
 }
+
+void
+ia_css_en_dz_capt_pipe(struct ia_css_stream *stream, bool enable)
+{
+	struct ia_css_pipe *pipe;
+	struct ia_css_pipeline *pipeline;
+	struct ia_css_pipeline_stage *stage;
+	enum ia_css_pipe_id pipe_id;
+	enum ia_css_err err;
+	int i;
+
+	if (stream == NULL)
+		return;
+
+	for (i = 0; i < stream->num_pipes; i++) {
+		pipe = stream->pipes[i];
+		pipeline = ia_css_pipe_get_pipeline(pipe);
+		pipe_id = pipeline->pipe_id;
+
+		if (pipe_id == IA_CSS_PIPE_ID_CAPTURE) {
+			err = ia_css_pipeline_get_stage(pipeline, IA_CSS_BINARY_MODE_CAPTURE_PP, &stage);
+			if (err == IA_CSS_SUCCESS)
+				stage->enable_zoom = enable;
+			break;
+		}
+	}
+}
