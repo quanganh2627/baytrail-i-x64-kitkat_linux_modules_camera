@@ -931,6 +931,11 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
+	/* Set shot mode to auto */
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, SHOT_MODE, SHOT_MODE_AUTO);
+	if (ret)
+		goto out;
+
 	/* Enable interrupt signal */
 	ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
 	if (ret)

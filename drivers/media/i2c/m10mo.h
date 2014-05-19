@@ -227,6 +227,7 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define PARAM_MIPI_OUT_LANE_NUM		0x3e
 #define REG_OUTPUT_MIPI_4LANE		0x04
 #define PARAM_VDIS				0x00
+#define SHOT_MODE				0x0e
 
 
 /* Category 2_MONITOR mode */
@@ -403,6 +404,11 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_SIO_MODE            0x4b
 #define REG_FW_READ             0x57
 #define REG_CHECK_SUM_SIZE      0x5c
+
+/* Shot modes (cat 0x01 byte 0x0e) */
+#define SHOT_MODE_NORMAL        0x00
+#define SHOT_MODE_AUTO          0x01
+#define SHOT_MODE_PANORAMA      0x07
 
 /* Still capture modes for NV12 */
 #define REG_CAP_NV12_MODE	0x0a
