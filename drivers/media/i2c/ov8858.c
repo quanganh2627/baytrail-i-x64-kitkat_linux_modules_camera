@@ -1133,6 +1133,12 @@ static int ov8858_s_mbus_fmt(struct v4l2_subdev *sd,
 
 	dev->pixels_per_line = res->fps_options[dev->fps_index].pixels_per_line;
 	dev->lines_per_frame = res->fps_options[dev->fps_index].lines_per_frame;
+
+	/* ov8858 only support RGB RAW10 output */
+	ov8858_info->metadata_width = res->width * 10 / 8;
+	ov8858_info->metadata_height = 2;
+	ov8858_info->metadata_format = ATOMISP_INPUT_FORMAT_EMBEDDED;
+
 	/* Set the initial exposure */
 	ret = __ov8858_set_exposure(sd, dev->exposure, dev->gain,
 				    dev->digital_gain, &dev->pixels_per_line,

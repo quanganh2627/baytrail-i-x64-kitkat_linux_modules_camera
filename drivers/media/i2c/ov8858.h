@@ -607,12 +607,14 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x4300, 0xFF}, /* clip_max[11:4] = 0xFFF */
 	{OV8858_8BIT, 0x4301, 0x00}, /* clip_min[11:4] = 0 */
 	{OV8858_8BIT, 0x4302, 0x0F}, /* clip_min/max[3:0] */
+	{OV8858_8BIT, 0x4307, 0x01}, /* Unknown */
 	{OV8858_8BIT, 0x4316, 0x00}, /* CTRL16 = default */
 	{OV8858_8BIT, 0x4503, 0x18}, /* Unknown */
 	{OV8858_8BIT, 0x4600, 0x01}, /* Unknown */
 	{OV8858_8BIT, 0x4601, 0x97}, /* Unknown */
 	/* wkup_dly = Mark1 wakeup delay/2^10 = 0x25 */
 	{OV8858_8BIT, 0x4808, 0x25},
+	{OV8858_8BIT, 0x4816, 0x52}, /* Embedded data type*/
 	{OV8858_8BIT, 0x481F, 0x32}, /* clk_prepare_min = 0x32 */
 	{OV8858_8BIT, 0x4825, 0x3A}, /* lpx_p_min = 0x3A */
 	{OV8858_8BIT, 0x4826, 0x40}, /* hs_prepare_min = 0x40 */
@@ -659,6 +661,7 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	 * Enable BLC's input flip_i signal = 0
 	 */
 	{OV8858_8BIT, 0x5003, 0x20},
+	{OV8858_8BIT, 0x5041, 0x1D}, /* ISP CTRL41 - embedded data=on */
 	{OV8858_8BIT, 0x5046, 0x12}, /* ISP CTRL46 = default */
 	/*
 	 * Tail enable = 1
@@ -681,6 +684,7 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x578F, 0x01}, /* DPC CTRL0F */
 	{OV8858_8BIT, 0x5790, 0x01}, /* DPC CTRL10 */
 	{OV8858_8BIT, 0x5901, 0x00}, /* VAP CTRL01 = default */
+	{OV8858_8BIT, 0x5A08, 0x00}, /* WINC CTRL08 = embedded data in 1st line*/
 	{OV8858_8BIT, 0x5B00, 0x02}, /* OTP CTRL00 */
 	{OV8858_8BIT, 0x5B01, 0x10}, /* OTP CTRL01 */
 	{OV8858_8BIT, 0x5B02, 0x03}, /* OTP CTRL02 */
