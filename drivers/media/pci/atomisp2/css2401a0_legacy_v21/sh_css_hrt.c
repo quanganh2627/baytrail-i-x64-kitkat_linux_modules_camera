@@ -63,7 +63,7 @@ bool sh_css_hrt_system_is_idle(void)
 	not_idle |= ((status & FIFO_CHANNEL_SP_VALID_MASK) != 0);
 
 #if defined(IS_ISP_2500_SYSTEM)
-	// checking status of 2nd SP
+	/* checking status of 2nd SP */
 	status = fifo_monitor_reg_load(FIFO_MONITOR0_ID,
 		HIVE_GP_REGS_SP2_STRMON_STAT_IDX);
 	not_idle |= ((status & FIFO_CHANNEL_SP_VALID_MASK) != 0);

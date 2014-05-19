@@ -137,7 +137,7 @@ sh_css_metrics_sample_pcs(void)
 
 #if MULTIPLE_PCS
 	int i;
-	unsigned int pc_tab[NOF_PCS] ;
+	unsigned int pc_tab[NOF_PCS];
 
 	for (i = 0; i < NOF_PCS; i++)
 		pc_tab[i] = 0;

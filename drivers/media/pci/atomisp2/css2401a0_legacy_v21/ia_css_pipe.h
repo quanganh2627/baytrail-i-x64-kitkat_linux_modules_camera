@@ -72,11 +72,14 @@ struct ia_css_video_settings {
 	struct ia_css_binary copy_binary;
 	struct ia_css_binary video_binary;
 	struct ia_css_binary vf_pp_binary;
+	struct ia_css_binary *yuv_scaler_binary;
 	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES];
 	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];
 	struct ia_css_frame *vf_pp_in_frame;
 	struct ia_css_pipe *copy_pipe;
 	struct ia_css_pipe *capture_pipe;
+	bool *is_output_stage;
+	unsigned int num_yuv_scaler;
 };
 
 #define IA_CSS_DEFAULT_VIDEO_SETTINGS \
@@ -84,11 +87,14 @@ struct ia_css_video_settings {
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* copy_binary */ \
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* video_binary */ \
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* vf_pp_binary */ \
+	NULL,				/* yuv_scaler_binary */ \
 	{ NULL },			/* delay_frames */ \
 	{ NULL },			/* tnr_frames */ \
 	NULL,				/* vf_pp_in_frame */ \
 	NULL,				/* copy_pipe */ \
 	NULL,				/* capture_pipe */ \
+	NULL,				/* is_output_stage */ \
+	0,				/* num_yuv_scaler */ \
 }
 
 struct ia_css_yuvpp_settings {
@@ -103,13 +109,13 @@ struct ia_css_yuvpp_settings {
 
 #define IA_CSS_DEFAULT_YUVPP_SETTINGS \
 { \
-	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* copy_binary */ \
-	NULL,							/* yuv_scaler_binary */ \
-	NULL,							/* vf_pp_binary */ \
-	NULL,							/* is_output_stage */ \
-	0,								/* num_yuv_scaler */ \
-	0,								/* num_vf_pp */ \
-	0,								/* num_output */ \
+	IA_CSS_BINARY_DEFAULT_SETTINGS,		/* copy_binary */ \
+	NULL,					/* yuv_scaler_binary */ \
+	NULL,					/* vf_pp_binary */ \
+	NULL,					/* is_output_stage */ \
+	0,					/* num_yuv_scaler */ \
+	0,					/* num_vf_pp */ \
+	0,					/* num_output */ \
 }
 
 struct ia_css_pipe {

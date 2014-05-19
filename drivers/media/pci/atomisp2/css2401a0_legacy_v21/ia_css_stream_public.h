@@ -553,4 +553,16 @@ ia_css_update_continuous_frames(struct ia_css_stream *stream);
 enum ia_css_err
 ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id);
 
+/** @brief ia_css_en_dz_capt_pipe . Enable/Disable digital zoom for capture pipe
+ * @param[in]   stream The stream.
+ * @param[in]   enable - true, disable - false
+ * @return      None
+ *
+ * Enables or disables digital zoom for capture pipe in provided stream, if capture pipe
+ * exists. This function sets enable_zoom flag in CAPTURE_PP stage of the capture pipe.
+ * In process_zoom_and_motion(), decision to enable or disable zoom for every stage depends
+ * on this flag.
+ */
+void
+ia_css_en_dz_capt_pipe(struct ia_css_stream *stream, bool enable);
 #endif /* __IA_CCS_STREAM_PUBLIC_H */

@@ -38,10 +38,10 @@
 /* command codes (1st byte) */
 typedef enum
 {
-	CMD_SET_ONE_MAJOR = 1,		// mask in one major. 2nd byte in the command is the major code
-	CMD_UNSET_ONE_MAJOR = 2,	// mask out one major. 2nd byte in the command is the major code
-	CMD_SET_ALL_MAJORS = 3,		// set the major print mask. the full mask is in the data DWORD
-	CMD_SET_VERBOSITY = 4		// set verbosity level
+	CMD_SET_ONE_MAJOR = 1,		/* mask in one major. 2nd byte in the command is the major code */
+	CMD_UNSET_ONE_MAJOR = 2,	/* mask out one major. 2nd byte in the command is the major code */
+	CMD_SET_ALL_MAJORS = 3,		/* set the major print mask. the full mask is in the data DWORD */
+	CMD_SET_VERBOSITY = 4		/* set verbosity level */
 } DBG_commands;
 
 /* command signature */

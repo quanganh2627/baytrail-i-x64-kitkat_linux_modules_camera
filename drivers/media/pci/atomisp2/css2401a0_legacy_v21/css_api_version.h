@@ -31,7 +31,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatbile
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.2.2"
+#define CSS_API_VERSION_STRING	"2.1.2.3"
 
 /*
 Change log
@@ -71,6 +71,8 @@ v2.1.2.2, modified enum ia_css_stream_format
    IA_CSS_STREAM_FORMAT_YUV420_16 (directly after IA_CSS_STREAM_FORMAT_YUV420_10)
    IA_CSS_STREAM_FORMAT_YUV422_16 (directly after IA_CSS_STREAM_FORMAT_YUV422_10)
 
+v2.1.2.3
+- added api to enable/disable digital zoom for capture pipe.
 */
 
 #endif __CSS_API_VERSION_H

@@ -195,7 +195,19 @@ uint32_t ia_css_circbuf_peek(ia_css_circbuf_t *cb, int offset)
 	return cb->elems[pos].val;
 }
 
+/**
+ * @brief Get the value of an element from the circular buffer.
+ * Refer to "ia_css_circbuf.h" for details.
+ */
+uint32_t ia_css_circbuf_peek_from_start(ia_css_circbuf_t *cb, int offset)
+{
+	int pos;
 
+	pos = ia_css_circbuf_get_pos_at_offset(cb, cb->desc->start, offset);
+
+	/* get the value at the position */
+	return cb->elems[pos].val;
+}
 /****************************************************************
  *
  * Inline functions.
