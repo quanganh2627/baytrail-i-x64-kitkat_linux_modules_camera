@@ -252,6 +252,7 @@ struct s5k6b2yx_device {
 	u16 digital_gain;
 	u16 pixels_per_line;
 	u16 lines_per_frame;
+	u16 flip;
 	u8 fps;
 	u8 res;
 	u8 type;
@@ -358,6 +359,10 @@ static struct s5k6b2yx_reg const s5k6b2yx_init_config[] = {
 	{ S5K6B2YX_8BIT, 0x0203, 0x88 }, /* TBD: Coarse_integration_time */
 	{ S5K6B2YX_8BIT, 0x0204, 0x00 },
 	{ S5K6B2YX_8BIT, 0x0205, 0x2a }, /* TBD: Analogue_gain_code_global */
+
+
+
+
 	{S5K6B2YX_TOK_TERM, 0, 0}
 };
 

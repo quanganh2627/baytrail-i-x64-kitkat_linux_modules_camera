@@ -774,6 +774,7 @@ static int s5k6b2yx_g_fnumber_range(struct v4l2_subdev *sd, s32 *val)
 static int s5k6b2yx_t_hflip(struct v4l2_subdev *sd, int value)
 {
 	struct i2c_client *c = v4l2_get_subdevdata(sd);
+	struct s5k6b2yx_device *dev = to_s5k6b2yx_sensor(sd);
 	int ret;
 	u16 val;
 
@@ -793,6 +794,8 @@ static int s5k6b2yx_t_hflip(struct v4l2_subdev *sd, int value)
 
 	ret = s5k6b2yx_write_reg_array(c, s5k6b2yx_param_update);
 
+	dev->flip = val;
+
 	return ret;
 }
 
@@ -800,6 +803,7 @@ static int s5k6b2yx_t_hflip(struct v4l2_subdev *sd, int value)
 static int s5k6b2yx_t_vflip(struct v4l2_subdev *sd, int value)
 {
 	struct i2c_client *c = v4l2_get_subdevdata(sd);
+	struct s5k6b2yx_device *dev = to_s5k6b2yx_sensor(sd);
 	int ret;
 	u16 val;
 
@@ -818,6 +822,9 @@ static int s5k6b2yx_t_vflip(struct v4l2_subdev *sd, int value)
 		return ret;
 
 	ret = s5k6b2yx_write_reg_array(c, s5k6b2yx_param_update);
+
+	dev->flip = val;
+
 	return ret;
 }
 
@@ -1206,16 +1213,69 @@ static int s5k6b2yx_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	return ret;
 }
 
-static int s5k6b2yx_s_stream(struct v4l2_subdev *sd, int enable)
+static int s5k6b2yx_recovery(struct v4l2_subdev *sd)
 {
 	int ret;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct s5k6b2yx_device *dev = to_s5k6b2yx_sensor(sd);
 
+	ret = __s5k6b2yx_s_power(sd, 0);
+	if (ret) {
+		dev_err(&client->dev, "power-down err.\n");
+		return ret;
+	}
+
+	ret = __s5k6b2yx_s_power(sd, 1);
+	if (ret) {
+		dev_err(&client->dev, "power-up err.\n");
+		return ret;
+	}
+
+	/* enable group hold */
+	ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_param_hold);
+	if (ret)
+		return ret;
+
+	ret = s5k6b2yx_write_reg(client, S5K6B2YX_8BIT, S5K6B2YX_IMG_ORIENTATION,
+								dev->flip);
+	if (ret)
+		return ret;
+
+	ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_res[dev->fmt_idx].regs);
+	if (ret)
+		return ret;
+
+	/* disable group hold */
+	ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_param_update);
+	if (ret)
+		return ret;
+
+	return ret;
+}
+
+
+static int s5k6b2yx_s_stream(struct v4l2_subdev *sd, int enable)
+{
+	int ret;
+	u16 id;
+	u8 rev;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct s5k6b2yx_device *dev = to_s5k6b2yx_sensor(sd);
+
 	mutex_lock(&dev->input_lock);
 	if (enable) {
+		ret = s5k6b2yx_detect(client, &id, &rev);
+		if (ret) {
+			ret = s5k6b2yx_recovery(sd);
+			if (ret) {
+				dev_err(&client->dev, "recovery err.\n");
+				mutex_unlock(&dev->input_lock);
+				return ret;
+			}
+		}
+
 		ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_streaming);
-		if (ret != 0) {
+		if (ret) {
 			mutex_unlock(&dev->input_lock);
 			return ret;
 		}
@@ -1395,7 +1455,7 @@ s5k6b2yx_g_frame_interval(struct v4l2_subdev *sd,
 {
 	struct s5k6b2yx_device *dev = to_s5k6b2yx_sensor(sd);
 	u16 lines_per_frame;
-	
+
 	/*
 	 * if no specific information to calculate the fps,
 	 * just used the value in sensor settings
@@ -1591,7 +1651,7 @@ static int s5k6b2yx_probe(struct i2c_client *client,
 	dev->format.code = V4L2_MBUS_FMT_SGRBG10_1X10;
 	dev->sd.entity.ops = &s5k6b2yx_entity_ops;
 	dev->sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV_SENSOR;
-
+	dev->flip = 0;
 	ret = media_entity_init(&dev->sd.entity, 1, &dev->pad, 0);
 	if (ret)
 		s5k6b2yx_remove(client);
