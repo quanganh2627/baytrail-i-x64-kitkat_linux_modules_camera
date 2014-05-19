@@ -1653,6 +1653,28 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 	return ret;
 }
 
+static int m10mo_recovery(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = 0;
+
+	/* still power off sensor in case power is cut off abnormally*/
+	ret = __m10mo_s_power(sd, 0, false);
+	if (ret) {
+		dev_err(&client->dev, "power-down err.\n");
+		return ret;
+	}
+	usleep_range(100, 200);
+
+	ret = __m10mo_s_power(sd, 1, false);
+	if (ret) {
+		dev_err(&client->dev, "power-up err.\n");
+		return ret;
+	}
+
+	return ret;
+}
+
 static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -1660,8 +1682,18 @@ static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 
 	/* TODO: Handle Stream OFF case */
 	mutex_lock(&dev->input_lock);
-	if (enable)
+	if (enable) {
 		ret = __m10mo_set_run_mode(sd);
+		if (ret) {
+			ret = m10mo_recovery(sd);
+			if (ret) {
+				mutex_unlock(&dev->input_lock);
+				return ret;
+			}
+
+			ret = __m10mo_set_run_mode(sd);
+		}
+	}
 	mutex_unlock(&dev->input_lock);
 	return ret;
 }
