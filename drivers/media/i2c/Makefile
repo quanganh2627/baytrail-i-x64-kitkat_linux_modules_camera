@@ -34,7 +34,7 @@ obj-$(CONFIG_VIDEO_DW9714)     += dw9714.o
 obj-$(CONFIG_VIDEO_S5K8AAY)    += s5k8aay.o
 CFLAGS_s5k8aay.o += -Werror
 
-obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o
+obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o ad5823.o
 CFLAGS_libmsrlisthelper.o += -Werror
 
 obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o
