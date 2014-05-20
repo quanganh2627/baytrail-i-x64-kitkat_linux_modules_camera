@@ -481,6 +481,40 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 		comp[pad]->width = r->width;
 		comp[pad]->height = r->height;
 
+		if (r->width == 0 || r->height == 0 ||
+			crop[ATOMISP_SUBDEV_PAD_SINK]->width == 0 ||
+			crop[ATOMISP_SUBDEV_PAD_SINK]->height == 0)
+			break;
+		/*
+		 * do cropping on sensor input if ratio of required resolution
+		 * is different with sensor output resolution ratio:
+		 *
+		 * ratio = width / height
+		 *
+		 * if ratio_output < ratio_sensor:
+		 * 	effect_width = sensor_height * out_width / out_height;
+		 * 	effect_height = sensor_height;
+		 * else
+		 * 	effect_width = sensor_width;
+		 * 	effect_height = sensor_width * out_height / out_width;
+		 *
+		 */
+		if (r->width * crop[ATOMISP_SUBDEV_PAD_SINK]->height <
+			crop[ATOMISP_SUBDEV_PAD_SINK]->width * r->height)
+			atomisp_css_input_set_effective_resolution(isp_sd,
+				stream_id,
+				rounddown(crop[ATOMISP_SUBDEV_PAD_SINK]->
+					height * r->width / r->height,
+					ATOM_ISP_STEP_WIDTH),
+				crop[ATOMISP_SUBDEV_PAD_SINK]->height);
+		else
+			atomisp_css_input_set_effective_resolution(isp_sd,
+				stream_id,
+				crop[ATOMISP_SUBDEV_PAD_SINK]->width,
+				rounddown(crop[ATOMISP_SUBDEV_PAD_SINK]->
+					width * r->height / r->width,
+					ATOM_ISP_STEP_WIDTH));
+
 		break;
 	}
 	case ATOMISP_SUBDEV_PAD_SOURCE_VF:
