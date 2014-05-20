@@ -37,7 +37,6 @@
 #include <media/v4l2-subdev.h>
 #include "imx175.h"
 #include "imx135.h"
-#include "imx135vb.h"
 #include "imx134.h"
 #include "imx132.h"
 
@@ -262,13 +261,13 @@ struct imx_settings imx_sets[] = {
 		.n_res_video = ARRAY_SIZE(imx135_res_video),
 	},
 	[IMX135_VICTORIABAY] = {
-		.init_settings = imx135vb_init_settings,
-		.res_preview = imx135vb_res_preview,
-		.res_still = imx135vb_res_still,
-		.res_video = imx135vb_res_video,
-		.n_res_preview = ARRAY_SIZE(imx135vb_res_preview),
-		.n_res_still = ARRAY_SIZE(imx135vb_res_still),
-		.n_res_video = ARRAY_SIZE(imx135vb_res_video),
+		.init_settings = imx135_init_settings,
+		.res_preview = imx135_res_preview,
+		.res_still = imx135_res_still,
+		.res_video = imx135_res_video,
+		.n_res_preview = ARRAY_SIZE(imx135_res_preview),
+		.n_res_still = ARRAY_SIZE(imx135_res_still),
+		.n_res_video = ARRAY_SIZE(imx135_res_video),
 	},
 	[IMX132_SALTBAY] = {
 		.init_settings = imx132_init_settings,
