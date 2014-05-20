@@ -1173,9 +1173,10 @@ static int s5k6b2yx_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
 	struct s5k6b2yx_control *ctrl = s5k6b2yx_find_control(qc->id);
 	struct s5k6b2yx_device *dev = to_s5k6b2yx_sensor(sd);
 
-	mutex_lock(&dev->input_lock);
 	if (ctrl == NULL)
 		return -EINVAL;
+
+	mutex_lock(&dev->input_lock);
 	*qc = ctrl->qc;
 	mutex_unlock(&dev->input_lock);
 
