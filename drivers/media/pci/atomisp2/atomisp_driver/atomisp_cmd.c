@@ -296,10 +296,10 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 done:
 	dev_dbg(isp->dev, "DFS target frequency=%d.\n", new_freq);
 
-	if (new_freq == isp->sw_contex.running_freq) {
-		dev_dbg(isp->dev, "ignoring DFS target freq.\n");
-		return 0;
-	}
+	if (new_freq == isp->sw_contex.running_freq)
+		dev_info(isp->dev, "Re-programming DFS frequency to %d\n",
+			 new_freq);
+
 	ret = write_target_freq_to_hw(isp, new_freq);
 	if (!ret)
 		isp->sw_contex.running_freq = new_freq;
