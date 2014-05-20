@@ -790,7 +790,8 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
 		/* For online video or SDV video pipe. */
 		if (css_pipe_id == CSS_PIPE_ID_VIDEO ||
-		    css_pipe_id == CSS_PIPE_ID_COPY) {
+		    css_pipe_id == CSS_PIPE_ID_COPY ||
+		    css_pipe_id == CSS_PIPE_ID_YUVPP) {
 			if (buf_type == CSS_BUFFER_TYPE_OUTPUT_FRAME)
 				return &asd->video_out_video_capture;
 			return &asd->video_out_preview;
@@ -798,7 +799,8 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 	} else if (asd->run_mode->val == ATOMISP_RUN_MODE_PREVIEW) {
 		/* For online preview or ZSL preview pipe. */
 		if (css_pipe_id == CSS_PIPE_ID_PREVIEW ||
-		    css_pipe_id == CSS_PIPE_ID_COPY)
+		    css_pipe_id == CSS_PIPE_ID_COPY ||
+		    css_pipe_id == CSS_PIPE_ID_YUVPP)
 			return &asd->video_out_preview;
 	}
 	/* For capture pipe. */
@@ -4411,17 +4413,9 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	pipe->sh_fmt = format_bridge->sh_fmt;
 	pipe->pix.pixelformat = f->fmt.pix.pixelformat;
 
-#if defined(ISP2401_NEW_INPUT_SYSTEM)
-	if (isp->inputs[asd->input_curr].camera_caps->sensor[asd->sensor_curr].
-			stream_num < 2 &&
-			(source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VF ||
-			 (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW
-		&& asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO))) {
-#else
 	if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VF ||
 	    (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW
 		&& asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)) {
-#endif
 		if (asd->fmt_auto->val) {
 			struct v4l2_rect *capture_comp;
 			struct v4l2_rect r = {0};
@@ -4457,7 +4451,52 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 			f->fmt.pix.height = r.height;
 		}
 
-		if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW) {
+		if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW &&
+		    asd->copy_mode) {
+			uint16_t video_index =
+				atomisp_source_pad_to_stream_id(asd,
+					ATOMISP_SUBDEV_PAD_SOURCE_VIDEO);
+
+			ret = atomisp_css_copy_get_output_frame_info(asd,
+				video_index, &output_info);
+			if (ret) {
+				dev_err(isp->dev,
+				      "copy_get_output_frame_info ret %i", ret);
+				return -EINVAL;
+			}
+			if (!asd->yuvpp_mode) {
+				/*
+				 * If viewfinder was configured into copy_mode,
+				 * we switch to using yuvpp pipe instead.
+				 */
+				asd->yuvpp_mode = true;
+				ret = atomisp_css_copy_configure_output(
+					asd, video_index, 0, 0, 0, 0);
+				if (ret) {
+					dev_err(isp->dev,
+						"failed to disable copy pipe");
+					return -EINVAL;
+				}
+				ret = atomisp_css_yuvpp_configure_output(
+					asd, video_index,
+					output_info.res.width,
+					output_info.res.height,
+					output_info.padded_width,
+					output_info.format);
+				if (ret) {
+					dev_err(isp->dev,
+						"failed to set up yuvpp pipe\n");
+					return -EINVAL;
+				}
+			}
+			atomisp_css_yuvpp_configure_viewfinder(asd, video_index,
+				f->fmt.pix.width, f->fmt.pix.height,
+				format_bridge->planar ? f->fmt.pix.bytesperline
+				: f->fmt.pix.bytesperline * 8
+				/ format_bridge->depth, format_bridge->sh_fmt);
+			atomisp_css_yuvpp_get_viewfinder_frame_info(
+				asd, video_index, &output_info);
+		} else if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW) {
 			atomisp_css_video_configure_viewfinder(asd,
 				f->fmt.pix.width, f->fmt.pix.height,
 				format_bridge->planar ? f->fmt.pix.bytesperline
@@ -4607,6 +4646,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	}
 
 	atomisp_check_copy_mode(asd, source_pad);
+	asd->yuvpp_mode = false;			/* Reset variable */
 
 	isp_sink_crop = *atomisp_subdev_get_rect(&asd->subdev, NULL,
 						 V4L2_SUBDEV_FORMAT_ACTIVE,

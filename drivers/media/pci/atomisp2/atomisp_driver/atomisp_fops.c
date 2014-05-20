@@ -378,7 +378,8 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 			    asd->fmt[asd->capture_pad].fmt.code);
 
 	if (asd->isp->inputs[asd->input_curr].camera_caps->
-	    sensor[asd->sensor_curr].stream_num == 2)
+	    sensor[asd->sensor_curr].stream_num == 2 &&
+	    !asd->yuvpp_mode)
 		return atomisp_qbuffers_to_css_for_all_pipes(asd);
 
 	if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER) {
@@ -423,6 +424,15 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 	}
 #endif
 
+	if (asd->yuvpp_mode) {
+		capture_pipe = &asd->video_out_capture;
+		video_pipe   = &asd->video_out_video_capture;
+		preview_pipe = &asd->video_out_preview;
+		css_capture_pipe_id = CSS_PIPE_ID_COPY;
+		css_video_pipe_id   = CSS_PIPE_ID_YUVPP;
+		css_preview_pipe_id = CSS_PIPE_ID_YUVPP;
+	}
+
 	if (capture_pipe) {
 		buf_type = atomisp_get_css_buf_type(
 			asd, css_capture_pipe_id,
@@ -463,7 +473,9 @@ int atomisp_qbuffers_to_css(struct atomisp_sub_device *asd)
 		buf_type = atomisp_get_css_buf_type(
 			asd, css_preview_pipe_id,
 			atomisp_subdev_source_pad(&preview_pipe->vdev));
-		if (asd->stream_env[ATOMISP_INPUT_STREAM_PREVIEW].stream)
+		if (css_preview_pipe_id == CSS_PIPE_ID_YUVPP)
+			input_stream_id = ATOMISP_INPUT_STREAM_VIDEO;
+		else if (asd->stream_env[ATOMISP_INPUT_STREAM_PREVIEW].stream)
 			input_stream_id = ATOMISP_INPUT_STREAM_PREVIEW;
 		else
 			input_stream_id = ATOMISP_INPUT_STREAM_GENERAL;
@@ -701,6 +713,7 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 
 	asd->mipi_frame_size = 0;
 	asd->copy_mode = false;
+	asd->yuvpp_mode = false;
 
 	asd->stream_prepared = false;
 

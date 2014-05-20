@@ -332,6 +332,7 @@ struct atomisp_sub_device {
 
 	bool copy_mode; /* CSI2+ use copy mode */
 	bool copy_mode_format_conv; /* CSI2+ copy with format conversion */
+	bool yuvpp_mode;	/* CSI2+ yuvpp pipe */
 
 	int raw_buffer_bitmap[ATOMISP_MAX_EXP_ID/32 + 1]; /* Record each Raw Buffer lock status */
 	spinlock_t raw_buffer_bitmap_lock;

@@ -757,7 +757,8 @@ static bool is_pipe_valid_to_current_run_mode(struct atomisp_sub_device *asd,
 				return false;
 		case ATOMISP_RUN_MODE_VIDEO:
 			if (!asd->continuous_mode->val) {
-				if (pipe_id == IA_CSS_PIPE_ID_VIDEO)
+				if (pipe_id == IA_CSS_PIPE_ID_VIDEO ||
+				    pipe_id == IA_CSS_PIPE_ID_YUVPP)
 					return true;
 				else
 					return false;
@@ -2853,23 +2854,30 @@ unsigned int atomisp_get_pipe_index(struct atomisp_sub_device *asd,
 	if (ATOMISP_USE_YUVPP(asd))
 		return IA_CSS_PIPE_ID_YUVPP;
 
-	if (asd->copy_mode)
-		return IA_CSS_PIPE_ID_COPY;
-
 	switch (source_pad) {
 	case ATOMISP_SUBDEV_PAD_SOURCE_VIDEO:
+		if (asd->yuvpp_mode)
+			return IA_CSS_PIPE_ID_YUVPP;
+		if (asd->copy_mode)
+			return IA_CSS_PIPE_ID_COPY;
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO
 		    || asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER)
 			return IA_CSS_PIPE_ID_VIDEO;
 		else
 			return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE:
+		if (asd->copy_mode)
+			return IA_CSS_PIPE_ID_COPY;
 		return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_VF:
 		if (!atomisp_is_mbuscode_raw(
 		    asd->fmt[asd->capture_pad].fmt.code))
 			return IA_CSS_PIPE_ID_CAPTURE;
 	case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
+		if (asd->yuvpp_mode)
+			return IA_CSS_PIPE_ID_YUVPP;
+		if (asd->copy_mode)
+			return IA_CSS_PIPE_ID_COPY;
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
 			return IA_CSS_PIPE_ID_VIDEO;
 		else
@@ -2887,7 +2895,9 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 {
 	struct ia_css_pipe_info info;
 	int pipe_index = atomisp_get_pipe_index(asd, source_pad);
-	int stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
+	int stream_index = (pipe_index == IA_CSS_PIPE_ID_YUVPP) ?
+			   ATOMISP_INPUT_STREAM_VIDEO :
+			   atomisp_source_pad_to_stream_id(asd, source_pad);
 
 	ia_css_pipe_get_info(asd->stream_env[stream_index]
 		.pipes[pipe_index], &info);
@@ -2911,7 +2921,8 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 		break;
 	case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
-		    pipe_index == IA_CSS_PIPE_ID_VIDEO)
+		    (pipe_index == IA_CSS_PIPE_ID_VIDEO ||
+		     pipe_index == IA_CSS_PIPE_ID_YUVPP))
 			if (ATOMISP_USE_YUVPP(asd) && asd->continuous_mode->val)
 				*frame_info = info.
 					vf_output_info[ATOMISP_CSS_OUTPUT_SECOND_INDEX];
@@ -2946,6 +2957,62 @@ int atomisp_css_copy_configure_output(struct atomisp_sub_device *asd,
 	__configure_output(asd, stream_index, width, height, padded_width,
 			   format, IA_CSS_PIPE_ID_COPY);
 	return 0;
+}
+
+int atomisp_css_yuvpp_configure_output(struct atomisp_sub_device *asd,
+				unsigned int stream_index,
+				unsigned int width, unsigned int height,
+				unsigned int padded_width,
+				enum atomisp_css_frame_format format)
+{
+	asd->stream_env[stream_index].pipe_configs[IA_CSS_PIPE_ID_YUVPP].
+					default_capture_config.mode =
+					CSS_CAPTURE_MODE_RAW;
+
+	__configure_output(asd, stream_index, width, height, padded_width,
+			   format, IA_CSS_PIPE_ID_YUVPP);
+	return 0;
+}
+
+int atomisp_css_yuvpp_configure_viewfinder(
+				struct atomisp_sub_device *asd,
+				unsigned int stream_index,
+				unsigned int width, unsigned int height,
+				unsigned int min_width,
+				enum atomisp_css_frame_format format)
+{
+	struct atomisp_stream_env *stream_env =
+		&asd->stream_env[stream_index];
+	enum ia_css_pipe_id pipe_id = IA_CSS_PIPE_ID_YUVPP;
+
+	stream_env->pipe_configs[pipe_id].mode =
+		__pipe_id_to_pipe_mode(asd, pipe_id);
+	stream_env->update_pipe[pipe_id] = true;
+
+	stream_env->pipe_configs[pipe_id].vf_output_info[0].res.width = width;
+	stream_env->pipe_configs[pipe_id].vf_output_info[0].res.height = height;
+	stream_env->pipe_configs[pipe_id].vf_output_info[0].format = format;
+	stream_env->pipe_configs[pipe_id].vf_output_info[0].padded_width =
+		min_width;
+	return 0;
+}
+
+int atomisp_css_yuvpp_get_output_frame_info(
+					struct atomisp_sub_device *asd,
+					unsigned int stream_index,
+					struct atomisp_css_frame_info *info)
+{
+	return __get_frame_info(asd, stream_index, info,
+			ATOMISP_CSS_OUTPUT_FRAME, IA_CSS_PIPE_ID_YUVPP);
+}
+
+int atomisp_css_yuvpp_get_viewfinder_frame_info(
+					struct atomisp_sub_device *asd,
+					unsigned int stream_index,
+					struct atomisp_css_frame_info *info)
+{
+	return __get_frame_info(asd, stream_index, info,
+			ATOMISP_CSS_VF_FRAME, IA_CSS_PIPE_ID_YUVPP);
 }
 
 int atomisp_css_preview_configure_output(struct atomisp_sub_device *asd,
