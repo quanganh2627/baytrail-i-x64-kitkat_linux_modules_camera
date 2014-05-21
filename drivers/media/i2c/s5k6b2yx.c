@@ -55,6 +55,11 @@ static const int s5k6b2yx_bayer_order_mapping[2][2] = {
 	{ atomisp_bayer_order_bggr, atomisp_bayer_order_gbrg }
 };
 
+static const int s5k6b2yx_raw_bayer_order[] = {
+	[CAM_SW_STBY] = ATOMISP_INPUT_FORMAT_RAW_10,
+	[CAM_VIS_STBY] = ATOMISP_INPUT_FORMAT_RAW_8,
+};
+
 static int s5k6b2yx_read_reg(struct i2c_client *client, u16 len,
 						u16 reg, u16 *val)
 {
@@ -291,14 +296,6 @@ static int s5k6b2yx_write_reg_array(struct i2c_client *client,
 
 static int __s5k6b2yx_init(struct v4l2_subdev *sd, u32 val)
 {
-	int ret;
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-
-	ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_init_config);
-	if (ret) {
-		dev_err(&client->dev, "%s err cause of i2c write fail!\n", __func__);
-		return ret;
-	}
 
 	/* restore settings */
 	s5k6b2yx_res = s5k6b2yx_res_preview;
@@ -344,12 +341,13 @@ static int power_up(struct v4l2_subdev *sd)
 		goto fail_power;
 
 	/* gpio ctrl */
-	ret = dev->platform_data->gpio_ctrl(sd, 1);
+	ret = dev->platform_data->gpio_ctrl(sd, CAM_SW_STBY);
 	if (ret) {
 		dev_err(&client->dev, "gpio failed\n");
 		goto fail_gpio;
 	}
 
+	dev->mode = CAM_SW_STBY;
 	/* flis clock control */
 	ret = dev->platform_data->flisclk_ctrl(sd, 1);
 	if (ret)
@@ -357,7 +355,7 @@ static int power_up(struct v4l2_subdev *sd)
 
 	return 0;
 fail_gpio:
-	dev->platform_data->gpio_ctrl(sd, 0);
+	dev->platform_data->gpio_ctrl(sd, CAM_HW_STBY);
 fail_clk:
 	dev->platform_data->flisclk_ctrl(sd, 0);
 fail_power:
@@ -383,10 +381,11 @@ static int power_down(struct v4l2_subdev *sd)
 		dev_err(&client->dev, "flisclk failed\n");
 
 	/* gpio ctrl */
-	ret = dev->platform_data->gpio_ctrl(sd, 0);
+	ret = dev->platform_data->gpio_ctrl(sd, CAM_HW_STBY);
 	if (ret)
 		dev_err(&client->dev, "gpio failed\n");
 
+	dev->mode = CAM_HW_STBY;
 	/* power control */
 	ret = dev->platform_data->power_ctrl(sd, 0);
 	if (ret)
@@ -627,10 +626,11 @@ static int s5k6b2yx_try_mbus_fmt(struct v4l2_subdev *sd,
 
 	mutex_lock(&dev->input_lock);
 
-	if ((fmt->width > S5K6B2YX_RES_WIDTH_MAX)
-		|| (fmt->height > S5K6B2YX_RES_HEIGHT_MAX)) {
+	if ((fmt->width > S5K6B2YX_RES_WIDTH_MAX) ||
+		(fmt->height > S5K6B2YX_RES_HEIGHT_MAX)) {
 		fmt->width = S5K6B2YX_RES_WIDTH_MAX;
 		fmt->height = S5K6B2YX_RES_HEIGHT_MAX;
+		fmt->code = V4L2_MBUS_FMT_SGRBG10_1X10;
 	} else {
 		idx = nearest_resolution_index(fmt->width, fmt->height);
 
@@ -645,9 +645,8 @@ static int s5k6b2yx_try_mbus_fmt(struct v4l2_subdev *sd,
 
 		fmt->width = s5k6b2yx_res[idx].width;
 		fmt->height = s5k6b2yx_res[idx].height;
+		fmt->code = s5k6b2yx_res[idx].code;
 	}
-
-	fmt->code = dev->format.code;
 
 	mutex_unlock(&dev->input_lock);
 	return 0;
@@ -686,6 +685,12 @@ static int s5k6b2yx_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	s5k6b2yx_def_reg = s5k6b2yx_res[dev->fmt_idx].regs;
 
+	if (s5k6b2yx_res[dev->fmt_idx].mode != dev->mode) {
+		dev->platform_data->gpio_ctrl(sd,
+			s5k6b2yx_res[dev->fmt_idx].mode);
+		dev->mode = s5k6b2yx_res[dev->fmt_idx].mode;
+	}
+	s5k6b2yx_info->input_format = s5k6b2yx_raw_bayer_order[dev->mode];
 	/* enable group hold */
 	ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_param_hold);
 	if (ret) {
@@ -711,6 +716,8 @@ static int s5k6b2yx_set_mbus_fmt(struct v4l2_subdev *sd,
 	dev->coarse_itg = 0;
 	dev->fine_itg = 0;
 	dev->gain = 0;
+	if (dev->mode == CAM_VIS_STBY)
+		goto out;
 
 	ret = s5k6b2yx_get_intg_factor(client, s5k6b2yx_info);
 	if (ret) {
@@ -730,6 +737,7 @@ static int s5k6b2yx_set_mbus_fmt(struct v4l2_subdev *sd,
 	s5k6b2yx_info->raw_bayer_order =
 				s5k6b2yx_bayer_order_mapping[vflip][hflip];
 
+out:
 	mutex_unlock(&dev->input_lock);
 	return 0;
 }
@@ -744,7 +752,7 @@ static int s5k6b2yx_g_mbus_fmt(struct v4l2_subdev *sd,
 
 	fmt->width = s5k6b2yx_res[dev->fmt_idx].width;
 	fmt->height = s5k6b2yx_res[dev->fmt_idx].height;
-	fmt->code = V4L2_MBUS_FMT_SGRBG10_1X10;
+	fmt->code = s5k6b2yx_res[dev->fmt_idx].code;
 
 	return 0;
 }
@@ -1232,6 +1240,12 @@ static int s5k6b2yx_recovery(struct v4l2_subdev *sd)
 		return ret;
 	}
 
+	if (s5k6b2yx_res[dev->fmt_idx].mode != dev->mode) {
+		dev->platform_data->gpio_ctrl(sd,
+			s5k6b2yx_res[dev->fmt_idx].mode);
+		dev->mode = s5k6b2yx_res[dev->fmt_idx].mode;
+	}
+
 	/* enable group hold */
 	ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_param_hold);
 	if (ret)
@@ -1274,8 +1288,10 @@ static int s5k6b2yx_s_stream(struct v4l2_subdev *sd, int enable)
 				return ret;
 			}
 		}
-
-		ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_streaming);
+		if (dev->mode == CAM_SW_STBY)
+			ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_streaming);
+		else
+			ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_vis_streaming);
 		if (ret) {
 			mutex_unlock(&dev->input_lock);
 			return ret;
@@ -1283,7 +1299,10 @@ static int s5k6b2yx_s_stream(struct v4l2_subdev *sd, int enable)
 
 		dev->streaming = 1;
 	} else {
-		ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_suspend);
+		if (dev->mode == CAM_SW_STBY)
+			ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_suspend);
+		else
+			ret = s5k6b2yx_write_reg_array(client, s5k6b2yx_vis_suspend);
 		if (ret != 0) {
 			mutex_unlock(&dev->input_lock);
 			return ret;
