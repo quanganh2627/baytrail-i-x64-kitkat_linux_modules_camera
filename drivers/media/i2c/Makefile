@@ -4,7 +4,7 @@
 
 obj-$(CONFIG_VIDEO_IMX)        += imx/
 obj-$(CONFIG_VIDEO_IMXVB)      += imx135VB/
-obj-$(CONFIG_VIDEO_OV5693)     += ov5693.o
+obj-$(CONFIG_VIDEO_OV5693)     += ov5693.o ad5823.o
 
 obj-$(CONFIG_VIDEO_MT9M114)    += mt9m114.o
 obj-$(CONFIG_VIDEO_MT9E013)    += mt9e013/
@@ -34,7 +34,7 @@ obj-$(CONFIG_VIDEO_DW9714)     += dw9714.o
 obj-$(CONFIG_VIDEO_S5K8AAY)    += s5k8aay.o
 CFLAGS_s5k8aay.o += -Werror
 
-obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o ad5823.o
+obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o 
 CFLAGS_libmsrlisthelper.o += -Werror
 
 obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o
