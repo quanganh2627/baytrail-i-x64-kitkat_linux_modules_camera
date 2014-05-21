@@ -2269,7 +2269,7 @@ leave:
 static ssize_t m10mo_flash_rom_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "flash\n");
+	return scnprintf(buf, PAGE_SIZE, "flash\n");
 }
 
 static ssize_t m10mo_flash_rom_store(struct device *dev,
@@ -2291,7 +2291,8 @@ static ssize_t m10mo_flash_spi_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
 	struct m10mo_device *m10mo_dev = dev_get_drvdata(dev);
-	return sprintf(buf, "%d\n", m10mo_get_spi_state(m10mo_dev));
+	return scnprintf(buf, PAGE_SIZE,
+			 "%d\n", m10mo_get_spi_state(m10mo_dev));
 }
 
 static ssize_t m10mo_flash_spi_store(struct device *dev,
@@ -2324,7 +2325,7 @@ static ssize_t m10mo_flash_checksum_show(struct device *dev,
 	if (ret)
 		return ret;
 
-	return sprintf(buf, "%04x\n", result);
+	return scnprintf(buf, PAGE_SIZE, "%04x\n", result);
 }
 static DEVICE_ATTR(isp_checksum, S_IRUGO, m10mo_flash_checksum_show, NULL);
 
@@ -2338,7 +2339,7 @@ static ssize_t m10mo_flash_version_show(struct device *dev,
 	if (ret)
 		return ret;
 
-	return sprintf(buf, "%s\n", buf);
+	return scnprintf(buf, PAGE_SIZE, "%s\n", buf);
 }
 static DEVICE_ATTR(isp_version, S_IRUGO, m10mo_flash_version_show, NULL);
 
@@ -2347,7 +2348,7 @@ static ssize_t m10mo_flash_dump_show(struct device *dev,
 {
 	struct m10mo_device *m10_dev = dev_get_drvdata(dev);
 	dump_fw(m10_dev);
-	return sprintf(buf, "done\n");
+	return scnprintf(buf, PAGE_SIZE, "done\n");
 }
 static DEVICE_ATTR(isp_fw_dump, S_IRUGO, m10mo_flash_dump_show, NULL);
 
