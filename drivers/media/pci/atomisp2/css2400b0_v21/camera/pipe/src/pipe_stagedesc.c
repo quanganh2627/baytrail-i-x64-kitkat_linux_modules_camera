@@ -32,7 +32,7 @@ void ia_css_pipe_get_generic_stage_desc(
 	struct ia_css_frame *vf_frame)
 {
 	unsigned int i;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,"ia_css_pipe_get_generic_stage_desc() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_pipe_get_generic_stage_desc() enter:\n");
 
 	stage_desc->binary = binary;
 	stage_desc->firmware = NULL;
@@ -58,7 +58,7 @@ void ia_css_pipe_get_firmwares_stage_desc(
 {
 	unsigned int i;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,"ia_css_pipe_get_firmwares_stage_desc() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_pipe_get_firmwares_stage_desc() enter:\n");
 	stage_desc->binary = binary;
 	stage_desc->firmware = fw;
 	stage_desc->sp_func = IA_CSS_PIPELINE_NO_FUNC;
@@ -79,7 +79,7 @@ void ia_css_pipe_get_acc_stage_desc(
 {
 	unsigned int i;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,"ia_css_pipe_get_acc_stage_desc() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_pipe_get_acc_stage_desc() enter:\n");
 	stage_desc->binary = binary;
 	stage_desc->firmware = fw;
 	stage_desc->sp_func = IA_CSS_PIPELINE_NO_FUNC;
@@ -101,7 +101,7 @@ void ia_css_pipe_get_sp_func_stage_desc(
 {
 	unsigned int i;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,"ia_css_pipe_get_sp_func_stage_desc() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_pipe_get_sp_func_stage_desc() enter:\n");
 	stage_desc->binary = NULL;
 	stage_desc->firmware = NULL;
 	stage_desc->sp_func = sp_func;

@@ -8278,8 +8278,7 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 	struct ia_css_metadata_info md_info;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_stream_create() enter, num_pipes=%d\n", num_pipes);
+	IA_CSS_ENTER("num_pipes=%d", num_pipes);
 	ia_css_debug_dump_stream_config(stream_config, num_pipes);
 
 	/* some checks */
@@ -8287,22 +8286,26 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		stream == NULL ||
 		pipes == NULL) {
 		err = IA_CSS_ERR_INVALID_ARGUMENTS;
-		goto ERR;
+		IA_CSS_LEAVE_ERR(err);
+		return err;
 	}
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2)
 	/* We don't support metadata for JPEG stream, since they both use str2mem */
 	if (stream_config->input_config.format == IA_CSS_STREAM_FORMAT_BINARY_8 &&
-	    stream_config->metadata_config.resolution.height > 0)
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	    stream_config->metadata_config.resolution.height > 0) {
+		err = IA_CSS_ERR_INVALID_ARGUMENTS;
+		IA_CSS_LEAVE_ERR(err);
+		return err;
+	}
 #endif
 
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 	if (stream_config->online && stream_config->pack_raw_pixels) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_stream_create() exit, online and pack raw is invalid on input system 2401\n");
+		IA_CSS_LOG("online and pack raw is invalid on input system 2401");
 		err = IA_CSS_ERR_INVALID_ARGUMENTS;
-		goto ERR;
+		IA_CSS_LEAVE_ERR(err);
+		return err;
 	}
 #endif
 
@@ -8316,25 +8319,28 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 #endif
 	{
 		if (my_css.size_mem_words == 0) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"ia_css_stream_create() exit, need to set mipi frame size\n");
+			IA_CSS_LOG("need to set mipi frame size");
 			assert(my_css.size_mem_words != 0);
 			err = IA_CSS_ERR_INTERNAL_ERROR;
-			goto ERR;
+			IA_CSS_LEAVE_ERR(err);
+			return err;
 		}
 	}
 #endif
 
 	/* Currently we only supported metadata up to a certain size. */
 	err = metadata_info_init(&stream_config->metadata_config, &md_info);
-	if (err != IA_CSS_SUCCESS)
-		goto ERR;
+	if (err != IA_CSS_SUCCESS) {
+		IA_CSS_LEAVE_ERR(err);
+		return err;
+	}
 
 	/* allocate the stream instance */
 	curr_stream = sh_css_malloc(sizeof(struct ia_css_stream));
 	if (curr_stream == NULL) {
 		err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-		goto ERR;
+		IA_CSS_LEAVE_ERR(err);
+		return err;
 	}
 	/* default all to 0 */
 	memset(curr_stream, 0, sizeof(struct ia_css_stream));
@@ -8344,9 +8350,12 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	curr_stream->num_pipes = num_pipes;
 	curr_stream->pipes = sh_css_malloc(num_pipes * sizeof(struct ia_css_pipe *));
 	if (curr_stream->pipes == NULL) {
+		curr_stream->num_pipes = 0;
 		sh_css_free(curr_stream);
+		curr_stream = NULL;
 		err = IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-		goto ERR;
+		IA_CSS_LEAVE_ERR(err);
+		return err;
 	}
 	/* store pipes */
 	spcopyonly = (num_pipes == 1) && (pipes[0]->config.mode == IA_CSS_PIPE_MODE_COPY);
@@ -8393,10 +8402,7 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		break;
 	case IA_CSS_INPUT_MODE_TPG:
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_stream_create tpg_configuration: "
-			"x_mask=%d, y_mask=%d, x_delta=%d, "
-			"y_delta=%d, xy_mask=%d\n",
+		IA_CSS_LOG("tpg_configuration: x_mask=%d, y_mask=%d, x_delta=%d, y_delta=%d, xy_mask=%d",
 			curr_stream->config.source.tpg.x_mask,
 			curr_stream->config.source.tpg.y_mask,
 			curr_stream->config.source.tpg.x_delta,
@@ -8413,21 +8419,21 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		break;
 	case IA_CSS_INPUT_MODE_PRBS:
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: mode prbs\n");
+		IA_CSS_LOG("mode prbs");
 		sh_css_sp_configure_prbs(curr_stream->config.source.prbs.seed);
 #endif
 		break;
 	case IA_CSS_INPUT_MODE_MEMORY:
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: mode memory\n");
+		IA_CSS_LOG("mode memory");
 		curr_stream->reconfigure_css_rx = false;
 		break;
 	default:
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: mode sensor/default\n");
+		IA_CSS_LOG("mode sensor/default");
 	}
 	err = ia_css_stream_isp_parameters_init(curr_stream);
 	if (err != IA_CSS_SUCCESS)
 		goto ERR;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: isp_params_configs: %p\n",curr_stream->isp_params_configs);
+	IA_CSS_LOG("isp_params_configs: %p", curr_stream->isp_params_configs);
 
 	if (num_pipes == 1 && pipes[0]->config.mode == IA_CSS_PIPE_MODE_ACC) {
 		*stream = curr_stream;
@@ -8442,11 +8448,10 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		sensor_binning_changed = false;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: sensor_binning=%d, changed=%d\n",
+	IA_CSS_LOG("sensor_binning=%d, changed=%d",
 		curr_stream->config.sensor_binning_factor, sensor_binning_changed);
 	/* loop over pipes */
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: num_pipes=%d\n",
-		num_pipes);
+	IA_CSS_LOG("num_pipes=%d", num_pipes);
 	curr_stream->cont_capt = false;
 	/* Temporary hack: we give the preview pipe a reference to the capture
 	 * pipe in continuous capture mode. */
@@ -8508,7 +8513,7 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		curr_pipe->stream = curr_stream;
 		/* take over effective info */
 
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_create: effective_res=%dx%d\n",
+		IA_CSS_LOG("effective_res=%dx%d",
 			curr_stream->config.input_config.effective_res.width,
 			curr_stream->config.input_config.effective_res.height);
 
@@ -8560,8 +8565,8 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	/* Map SP threads before doing anything. */
 	err = map_sp_threads(curr_stream, true);
 	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"ia_css_stream_create(): map_sp_threads: return_err=%d\n", err);
+		IA_CSS_LOG("map_sp_threads: return_err=%d", err);
+		goto ERR;
 	}
 
 	for (i = 0; i < num_pipes; i++) {
@@ -8572,8 +8577,7 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	/* Create host side pipeline objects without stages */
 	err = create_host_pipeline_structure(curr_stream);
 	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"ia_css_stream_create(): create_host_pipeline_structure: err=%d\n", err);
+		IA_CSS_LOG("create_host_pipeline_structure: return_err=%d", err);
 		goto ERR;
 	}
 
@@ -8589,7 +8593,7 @@ ERR:
 			if (my_css_save.stream_seeds[i].stream == NULL)
 			{
 				int j;
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_stream_create(): entered stream into loc=%d\n", i);
+				IA_CSS_LOG("entered stream into loc=%d", i);
 				my_css_save.stream_seeds[i].orig_stream = stream;
 				my_css_save.stream_seeds[i].stream = curr_stream;
 				my_css_save.stream_seeds[i].num_pipes = num_pipes;
@@ -8602,9 +8606,10 @@ ERR:
 				}
 				break;
 			}
+	} else {
+		ia_css_stream_destroy(curr_stream);
 	}
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_stream_create() leave, err=%d mode=%d\n",
-			err, my_css_save.mode);
+	IA_CSS_LEAVE("return_err=%d mode=%d", err, my_css_save.mode);
 	return err;
 }
 
@@ -8613,50 +8618,56 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 {
 	int i;
 	enum ia_css_err err = IA_CSS_SUCCESS;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_destroy: enter\n");
-	assert(stream != NULL);
 
-#if defined(USE_INPUT_SYSTEM_VERSION_2401)
-
-	for (i = 0; i < stream->num_pipes; i++) {
-		struct ia_css_pipe *entry = stream->pipes[i];
-		unsigned int sp_thread_id;
-		struct sh_css_sp_pipeline_terminal *sp_pipeline_input_terminal;
-
-		assert(entry != NULL);
-		if (entry != NULL) {
-			/* get the SP thread id */
-			if (ia_css_pipeline_get_sp_thread_id(
-					ia_css_pipe_get_pipe_num(entry), &sp_thread_id) != true)
-				return IA_CSS_ERR_INTERNAL_ERROR;
-			/* get the target input terminal */
-			sp_pipeline_input_terminal =
-					&(sh_css_sp_group.pipe_io[sp_thread_id].input);
-
-			for (i = 0; i < IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH; i++) {
-				ia_css_isys_stream_destroy(
-						&(sp_pipeline_input_terminal->context.virtual_input_system_stream[i]));
-			}
-		}
+	IA_CSS_ENTER("");
+	if (stream == NULL) {
+		err = IA_CSS_ERR_INVALID_ARGUMENTS;
+		IA_CSS_LEAVE("stream is NULL: return_err=%d", err);
+		return err;
 	}
-#endif
 
 	ia_css_stream_isp_parameters_uninit(stream);
 
+	if ((stream->last_pipe != NULL) &&
+		ia_css_pipeline_is_mapped(stream->last_pipe->pipe_num)) {
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
-	stream_unregister_with_csi_rx(stream);
-#endif
-	for (i = 0; i < stream->num_pipes; i++) {
-		struct ia_css_pipe *curr_pipe = stream->pipes[i];
-		assert(curr_pipe != NULL);
-		ia_css_pipe_map_queue(curr_pipe, false);
-	}
 
-	err = map_sp_threads(stream, false);
-	if (err != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"ia_css_stream_destroy(): map_sp_threads: return_err=%d\n", err);
-		return err;
+		for (i = 0; i < stream->num_pipes; i++) {
+			struct ia_css_pipe *entry = stream->pipes[i];
+			unsigned int sp_thread_id;
+			struct sh_css_sp_pipeline_terminal *sp_pipeline_input_terminal;
+
+			assert(entry != NULL);
+			if (entry != NULL) {
+				/* get the SP thread id */
+				if (ia_css_pipeline_get_sp_thread_id(
+					ia_css_pipe_get_pipe_num(entry), &sp_thread_id) != true)
+					return IA_CSS_ERR_INTERNAL_ERROR;
+				/* get the target input terminal */
+				sp_pipeline_input_terminal =
+					&(sh_css_sp_group.pipe_io[sp_thread_id].input);
+
+				for (i = 0; i < IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH; i++) {
+					ia_css_isys_stream_destroy(
+						&(sp_pipeline_input_terminal->context.virtual_input_system_stream[i]));
+				}
+			}
+		}
+
+		stream_unregister_with_csi_rx(stream);
+#endif
+
+		for (i = 0; i < stream->num_pipes; i++) {
+			struct ia_css_pipe *curr_pipe = stream->pipes[i];
+			assert(curr_pipe != NULL);
+			ia_css_pipe_map_queue(curr_pipe, false);
+		}
+
+		err = map_sp_threads(stream, false);
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE("map_sp_threads: return_err=%d", err);
+			return err;
+		}
 	}
 
 	/* remove references from pipes to stream */
@@ -8669,16 +8680,12 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 			/* check internal copy pipe */
 			if (entry->mode == IA_CSS_PIPE_ID_PREVIEW &&
 			    entry->pipe_settings.preview.copy_pipe) {
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-					"ia_css_stream_destroy: "
-					"clearing stream on internal preview copy pipe\n");
+				IA_CSS_LOG("clearing stream on internal preview copy pipe");
 				entry->pipe_settings.preview.copy_pipe->stream = NULL;
 			}
 			if (entry->mode == IA_CSS_PIPE_ID_VIDEO &&
 				entry->pipe_settings.video.copy_pipe) {
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-					"ia_css_stream_destroy: "
-					"clearing stream on internal video copy pipe\n");
+				IA_CSS_LOG("clearing stream on internal video copy pipe");
 				entry->pipe_settings.video.copy_pipe->stream = NULL;
 			}
 			sh_css_pipe_unload_binaries(entry);
@@ -8693,12 +8700,12 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 		for(i=0;i<MAX_ACTIVE_STREAMS;i++)
 			if (my_css_save.stream_seeds[i].stream == stream)
 			{
-				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,"ia_css_stream_destroy: took out stream %d", i);
+				IA_CSS_LOG("took out stream %d", i);
 				my_css_save.stream_seeds[i].stream = NULL;
 				break;
 			}
 	sh_css_free(stream);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stream_destroy: leave\n");
+	IA_CSS_LEAVE_ERR(err);
 
 	return err;
 }

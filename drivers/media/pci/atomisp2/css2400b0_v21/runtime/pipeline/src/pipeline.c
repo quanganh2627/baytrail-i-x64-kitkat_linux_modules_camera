@@ -402,6 +402,21 @@ struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void)
 }
 #endif
 
+bool ia_css_pipeline_is_mapped(unsigned int key)
+{
+	bool ret = false;
+
+	assert(key < IA_CSS_PIPELINE_NUM_MAX);
+	assert(key < IA_CSS_PIPE_ID_NUM);
+
+	IA_CSS_ENTER("key=%d", key);
+
+	ret = (bool)(pipeline_num_to_sp_thread_map[key] != (unsigned)PIPELINE_NUM_UNMAPPED);
+
+	IA_CSS_LEAVE("return=%d", ret);
+	return ret;
+}
+
 /*******************************************************
 *** Static functions
 ********************************************************/

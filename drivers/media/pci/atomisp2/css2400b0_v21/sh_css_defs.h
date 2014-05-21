@@ -187,8 +187,10 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 #define SH_CSS_MIN_SENSOR_HEIGHT          2
 
 #if defined(IS_ISP_2400_SYSTEM)
+/* MAX width and height set to the same to allow for rotated
+ * resolutions. */
 #define SH_CSS_MAX_VF_WIDTH               1920
-#define SH_CSS_MAX_VF_HEIGHT              1080
+#define SH_CSS_MAX_VF_HEIGHT              1920
 #else
 #define SH_CSS_MAX_VF_WIDTH               1280
 #define SH_CSS_MAX_VF_HEIGHT              960

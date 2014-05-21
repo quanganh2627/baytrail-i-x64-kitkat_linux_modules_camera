@@ -32,7 +32,7 @@
 /** @brief convert "errno" error code to "ia_css_err" error code
  *
  * @param[in]	"errno" error code
- * @return   	"ia_css_err" error code
+ * @return	"ia_css_err" error code
  *
  */
 enum ia_css_err ia_css_convert_errno(
