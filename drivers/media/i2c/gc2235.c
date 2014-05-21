@@ -358,8 +358,13 @@ static int gc2235_set_streaming(struct v4l2_subdev *sd)
 static int gc2235_init_common(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = -1;
 
-	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x80);
+       if (0 != (ret = gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x80))) {
+               dev_err(&client->dev, "%s:init common error", __func__);
+               return ret;
+       }
+
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x80);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x80);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf2, 0x00);
@@ -1214,8 +1219,7 @@ static int gc2235_s_config(struct v4l2_subdev *sd,
 	ret = __gc2235_s_power(sd, 1);
 	if (ret) {
 		v4l2_err(client, "gc2235 power-up err.\n");
-		mutex_unlock(&dev->input_lock);
-		return ret;
+		goto  fail_csi_cfg;
 	}
 
 	/* config & detect sensor */
