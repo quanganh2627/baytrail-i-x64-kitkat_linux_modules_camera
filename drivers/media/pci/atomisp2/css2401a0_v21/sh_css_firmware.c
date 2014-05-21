@@ -44,18 +44,18 @@ struct firmware_header {
 	struct ia_css_fw_info      binary_header;
 };
 
-struct fw_param{
-    const char* name;
-    const void* buffer;
+struct fw_param {
+	const char *name;
+	const void *buffer;
 };
 
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140520_1500) is a place holder
+/* The string STR(irci_master_20140521_1556) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char* release_version = STR(irci_master_20140520_1500);
+static const char *release_version = STR(irci_master_20140521_1556);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";
@@ -102,8 +102,8 @@ setup_sp(struct ia_css_fw_info *fw, const char *fw_data, struct ia_css_fw_info *
 	if (sh_css_sp_sp1_fw->blob.code == NULL)
 		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 
-	memcpy((void*)sh_css_sp_sp1_fw->blob.code, blob_data, fw->blob.size);
-	sh_css_sp_sp1_fw->blob.data = (char*)sh_css_sp_sp1_fw->blob.code + fw->blob.data_source;
+	memcpy((void *)sh_css_sp_sp1_fw->blob.code, blob_data, fw->blob.size);
+	sh_css_sp_sp1_fw->blob.data = (char *)sh_css_sp_sp1_fw->blob.code + fw->blob.data_source;
 	fw_minibuffer[sp_id].buffer = sh_css_sp_sp1_fw->blob.code;
 
 	return IA_CSS_SUCCESS;
@@ -141,28 +141,26 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 #endif
 	)
 	{
-		char* namebuffer;
+		char *namebuffer;
 		int namelength = (int)strlen(name);
 
-		namebuffer = (char*) sh_css_malloc(namelength+1);
+		namebuffer = (char *) sh_css_malloc(namelength+1);
 		if (namebuffer == NULL)
 			return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 
 		memcpy(namebuffer, name, namelength+1);
 
 		bd->name = fw_minibuffer[index].name = namebuffer;
-	}else
-	{
+	} else {
 		bd->name = name;
 	}
 
-	if (bi->type == ia_css_isp_firmware)
-	{
+	if (bi->type == ia_css_isp_firmware) {
 		size_t paramstruct_size = sizeof(struct ia_css_memory_offsets);
 		size_t configstruct_size = sizeof(struct ia_css_config_memory_offsets);
 		size_t statestruct_size = sizeof(struct ia_css_state_memory_offsets);
 
-		char* parambuf = (char*) sh_css_malloc(paramstruct_size + configstruct_size + statestruct_size);
+		char *parambuf = (char *) sh_css_malloc(paramstruct_size + configstruct_size + statestruct_size);
 		if (parambuf == NULL)
 			return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 
@@ -173,18 +171,19 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 		fw_minibuffer[index].buffer = parambuf;
 
 		/* copy ia_css_memory_offsets */
-		memcpy(parambuf, (void*)(fw + bi->blob.memory_offsets.offsets[IA_CSS_PARAM_CLASS_PARAM]), paramstruct_size);
+		memcpy(parambuf, (void *)(fw + bi->blob.memory_offsets.offsets[IA_CSS_PARAM_CLASS_PARAM]),
+			paramstruct_size);
 		bd->mem_offsets.array[IA_CSS_PARAM_CLASS_PARAM].ptr = parambuf;
 
 		/* copy ia_css_config_memory_offsets */
 		memcpy(parambuf + paramstruct_size,
-				(void*)(fw + bi->blob.memory_offsets.offsets[IA_CSS_PARAM_CLASS_CONFIG]),
+				(void *)(fw + bi->blob.memory_offsets.offsets[IA_CSS_PARAM_CLASS_CONFIG]),
 				configstruct_size);
 		bd->mem_offsets.array[IA_CSS_PARAM_CLASS_CONFIG].ptr = parambuf + paramstruct_size;
 
 		/* copy ia_css_state_memory_offsets */
 		memcpy(parambuf + paramstruct_size + configstruct_size,
-				(void*)(fw + bi->blob.memory_offsets.offsets[IA_CSS_PARAM_CLASS_STATE]),
+				(void *)(fw + bi->blob.memory_offsets.offsets[IA_CSS_PARAM_CLASS_STATE]),
 				statestruct_size);
 		bd->mem_offsets.array[IA_CSS_PARAM_CLASS_STATE].ptr = parambuf + paramstruct_size + configstruct_size;
 	}
@@ -199,7 +198,7 @@ sh_css_load_firmware(const char *fw_data,
 	struct ia_css_fw_info *binaries;
 	struct sh_css_fw_bi_file_h *file_header;
 
-	firmware_header = (struct firmware_header*)fw_data;
+	firmware_header = (struct firmware_header *)fw_data;
 	file_header = (struct sh_css_fw_bi_file_h *)&firmware_header->file_header;
 	binaries = (struct ia_css_fw_info *)&firmware_header->binary_header;
 	strcpy(FW_rel_ver_name, file_header->version);
@@ -241,7 +240,7 @@ sh_css_load_firmware(const char *fw_data,
 		struct ia_css_blob_descr bd;
 		enum ia_css_err err;
 
-		err = sh_css_load_blob_info (fw_data, bi, &bd, i);
+		err = sh_css_load_blob_info(fw_data, bi, &bd, i);
 
 		if (err != IA_CSS_SUCCESS)
 			return IA_CSS_ERR_INTERNAL_ERROR;
@@ -281,24 +280,18 @@ sh_css_load_firmware(const char *fw_data,
 void sh_css_unload_firmware(void)
 {
 
-    /* release firmware minibuffer */
-    if (fw_minibuffer)
-    {
-        unsigned int i = 0;
-        for (i = 0; i < sh_css_num_binaries; i++)
-        {
-            if (fw_minibuffer[i].name)
-            {
-                sh_css_free((void*)fw_minibuffer[i].name);
-            }
-            if (fw_minibuffer[i].buffer)
-            {
-                sh_css_free((void*)fw_minibuffer[i].buffer);
-            }
-        }
-        sh_css_free(fw_minibuffer);
-        fw_minibuffer = NULL;
-    }
+	/* release firmware minibuffer */
+	if (fw_minibuffer) {
+		unsigned int i = 0;
+		for (i = 0; i < sh_css_num_binaries; i++) {
+			if (fw_minibuffer[i].name)
+				sh_css_free((void *)fw_minibuffer[i].name);
+			if (fw_minibuffer[i].buffer)
+				sh_css_free((void *)fw_minibuffer[i].buffer);
+		}
+		sh_css_free(fw_minibuffer);
+		fw_minibuffer = NULL;
+	}
 
 	memset(&sh_css_sp_fw, 0, sizeof(sh_css_sp_fw));
 #if defined(ENABLE_SP1)

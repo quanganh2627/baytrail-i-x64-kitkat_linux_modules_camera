@@ -435,7 +435,7 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 			bds_out_info->res.width = pipe->config.bayer_ds_out_res.width;
 			bds_out_info->res.height = pipe->config.bayer_ds_out_res.height;
 			bds_out_info->padded_width = pipe->config.bayer_ds_out_res.width;
-/* the set of supported scaling factors seems to small for skylake			
+/* the set of supported scaling factors seems to small for skylake
 			err = calculate_bds_factor(in_info->res, bds_out_info->res,
 					&video_descr.required_bds_factor);
 			if (err != IA_CSS_SUCCESS)

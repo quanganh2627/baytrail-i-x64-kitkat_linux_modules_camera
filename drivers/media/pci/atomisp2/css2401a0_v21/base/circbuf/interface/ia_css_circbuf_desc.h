@@ -70,7 +70,7 @@ STORAGE_CLASS_INLINE bool ia_css_circbuf_desc_is_full(
  * @brief Initialize the circular buffer descriptor
  *
  * @param cb_desc	The pointer circular buffer descriptor
- * @param size 		The size of the circular buffer
+ * @param size		The size of the circular buffer
  */
 STORAGE_CLASS_INLINE void ia_css_circbuf_desc_init(
 	ia_css_circbuf_desc_t *cb_desc,
