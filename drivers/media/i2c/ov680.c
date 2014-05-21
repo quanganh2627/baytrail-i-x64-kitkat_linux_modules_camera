@@ -482,6 +482,23 @@ static int __ov680_s_power(struct v4l2_subdev *sd, int on, int load_fw)
 	int ret;
 
 	dev_info(&client->dev, "%s - on-%d.\n", __func__, on);
+
+	/* clock control */
+	/*
+	 * WA: If the app did not disable the clock before exit,
+	 * driver has to disable it firstly, or the clock cannot
+	 * be enabled any more after device enter sleep.
+	 */
+	if (dev->power_on && on)
+		dev->platform_data->flisclk_ctrl(sd, 0);
+
+	ret = dev->platform_data->flisclk_ctrl(sd, on);
+	if (ret) {
+		dev_err(&client->dev,
+			"%s - set clock error.\n", __func__);
+		return ret;
+	}
+
 	ret = dev->platform_data->power_ctrl(sd, on);
 	if (ret) {
 		dev_err(&client->dev,
