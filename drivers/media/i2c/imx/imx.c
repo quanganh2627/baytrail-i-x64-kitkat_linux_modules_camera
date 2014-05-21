@@ -1882,9 +1882,10 @@ static int
 imx_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
 	struct imx_device *dev = to_imx_sensor(sd);
-	dev->run_mode = param->parm.capture.capturemode;
 
 	mutex_lock(&dev->input_lock);
+	dev->run_mode = param->parm.capture.capturemode;
+
 	switch (dev->run_mode) {
 	case CI_MODE_VIDEO:
 		dev->curr_res_table = dev->mode_tables->res_video;
