@@ -249,4 +249,15 @@ struct sh_css_sp_pipeline_io_status *ia_css_pipeline_get_pipe_io_status(void);
  */
 void ia_css_pipeline_map(unsigned int pipe_num, bool map);
 
+/**
+ * @brief Checks whether the pipeline is mapped to SP threads
+ *
+ * @param[in]	Query key, typical use is pipe_num
+ *
+ * return
+ *	true, pipeline is mapped to SP threads
+ *	false, pipeline is not mapped to SP threads
+ */
+bool ia_css_pipeline_is_mapped(unsigned int key);
+
 #endif /*__IA_CSS_PIPELINE_H__*/

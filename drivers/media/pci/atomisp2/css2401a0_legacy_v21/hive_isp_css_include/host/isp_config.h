@@ -24,10 +24,12 @@
 
 #ifdef ISP2600
 #include "isp2600_config.h"
+#elif defined(ISP2500)
+#include "isp2500_config.h"
 #elif defined(ISP2400)
 #include "isp2400_config.h"
 #else
-#error "Please define a core {ISP2400, ISP2600}"
+#error "Please define a core {ISP2400, ISP2500, ISP2600}"
 #endif
 
 #endif /* __ISP_CONFIG_H_INCLUDED__ */

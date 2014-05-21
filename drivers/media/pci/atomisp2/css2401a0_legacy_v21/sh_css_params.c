@@ -3138,6 +3138,11 @@ ia_css_stream_isp_parameters_uninit(struct ia_css_stream *stream)
 						stream->per_frame_isp_params_configs;
 
 	IA_CSS_ENTER_PRIVATE("void");
+	if (params == NULL) {
+		IA_CSS_LEAVE_PRIVATE("isp_param_configs is NULL");
+		return;
+	}
+
 	/* free existing ddr_ptr maps */
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
 	{
