@@ -549,7 +549,11 @@ static int gc0339_init_common(struct v4l2_subdev *sd)
 	gc0339_write_reg(client, MISENSOR_8BIT,  0x79, 0x01);
 #endif
 	/*656x496*/
-	gc0339_write_reg(client, MISENSOR_8BIT, 0xfc, 0x10);
+	if (0 != (ret = gc0339_write_reg(client, MISENSOR_8BIT, 0xfc, 0x10))) {
+		dev_err(&client->dev, "%s:init common error", __func__);
+		return ret;
+	}
+
 	gc0339_write_reg(client, MISENSOR_8BIT, 0xfe, 0x00);
 	gc0339_write_reg(client, MISENSOR_8BIT, 0xf6, 0x07);
 	gc0339_write_reg(client, MISENSOR_8BIT, 0xf7, 0x01);
@@ -1379,7 +1383,7 @@ gc0339_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 	ret = gc0339_s_power(sd, 1);
 	if (ret) {
 		v4l2_err(client, "gc0339 power-up err");
-		return ret;
+		goto  fail_detect;
 	}
 
 	ret = dev->platform_data->csi_cfg(sd, 1);
