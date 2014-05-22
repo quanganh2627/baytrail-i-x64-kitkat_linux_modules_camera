@@ -1154,22 +1154,24 @@ static int m10mo_single_capture_process(struct v4l2_subdev *sd)
 	if (ret)
 		return ret;
 
-	/* Image format */
-	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8)
-		fmt = CAPTURE_FORMAT_JPEG8;
-	else
-		fmt = CAPTURE_FORMAT_YUV422;
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_YUVOUT_MAIN, fmt);
+	if (dev->fw_type != M10MO_FW_TYPE_2) {
+		/* Image format */
+		if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8)
+			fmt = CAPTURE_FORMAT_JPEG8;
+		else
+			fmt = CAPTURE_FORMAT_YUV422;
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_YUVOUT_MAIN, fmt);
 
-	if (ret)
-		return ret;
+		if (ret)
+			return ret;
 
-	/* Image size */
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
-			  dev->curr_res_table[dev->fmt_idx].command);
+		/* Image size */
+		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
+				  dev->curr_res_table[dev->fmt_idx].command);
 
-	if (ret)
-		return ret;
+		if (ret)
+			return ret;
+	}
 
 	/* Start image transfer */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
@@ -1300,6 +1302,8 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct atomisp_input_stream_info *stream_info =
+			(struct atomisp_input_stream_info *)fmt->reserved;
 	const struct m10mo_resolution * res;
 	int entries, idx;
 
@@ -1318,8 +1322,8 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 		fmt->code = 0x8005;
 	}
 
-	/* JPEG fmt has fixed width and height */
-	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
+	/* Select resolution table according to stream type. */
+	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE) {
 		res = resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
 		entries =
 		     resolutions_sizes[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
@@ -1337,6 +1341,8 @@ static int m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct atomisp_input_stream_info *stream_info =
+			(struct atomisp_input_stream_info *)fmt->reserved;
 	int idx;
 
 	mutex_lock(&dev->input_lock);
@@ -1346,16 +1352,19 @@ static int m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 		return idx;
 	}
 
-	/*
-	 * If found a valid setting in the table, assign fixed width and height
-	 * for jpeg
-	 */
-	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
-		fmt->width = JPEG_CONFIG_WIDTH;
-		fmt->height = JPEG_CONFIG_HEIGHT;
+	/* Assign format size according to stream type. */
+	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE) {
+		fmt->width = resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX][idx].width;
+		fmt->height = resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX][idx].height;
 	} else {
 		fmt->width = dev->curr_res_table[idx].width;
 		fmt->height = dev->curr_res_table[idx].height;
+	}
+
+	/* JPEG fmt has fixed width and height. */
+	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
+		fmt->width = JPEG_CONFIG_WIDTH;
+		fmt->height = JPEG_CONFIG_HEIGHT;
 	}
 
 	mutex_unlock(&dev->input_lock);
@@ -1397,12 +1406,22 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	dev->format.code = fmt->code;
 	dev->fmt_idx = index;
-
-	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
-			(dev->run_mode == CI_MODE_PREVIEW ||
-			 dev->run_mode == CI_MODE_CONTINUOUS)) {
+	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE) {
 		/* Save the index for selecting the capture resolution */
 		dev->capture_res_idx = dev->fmt_idx;
+	}
+
+	if (dev->fw_type == M10MO_FW_TYPE_2) {
+		/* For FW_TYPE_2, preview/video images are output from VC0
+		 * and capture images are output from VC1.
+		 */
+		if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE)
+			stream_info->ch_id = 1;
+		else
+			stream_info->ch_id = 0;
+	} else if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
+			(dev->run_mode == CI_MODE_PREVIEW ||
+			 dev->run_mode == CI_MODE_CONTINUOUS)) {
 		/* Make fixed width and height for jpeg */
 		fmt->width = JPEG_CONFIG_WIDTH;
 		fmt->height = JPEG_CONFIG_HEIGHT;
@@ -1620,6 +1639,18 @@ static int m10mo_set_still_capture(struct v4l2_subdev *sd)
 		dev->curr_res_table[dev->fmt_idx].height,
 		dev->curr_res_table[dev->fmt_idx].command);
 
+	if (dev->fw_type == M10MO_FW_TYPE_2) {
+		/* Setting before switching to capture mode */
+		ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
+			resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX][dev->capture_res_idx]
+			.command);
+		if (ret)
+			goto out;
+		ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_CTRL, CAPC_MODE, 0);/* Single Capture*/
+		if (ret)
+			goto out;
+	}
+
 	ret= m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x08);
 	if (ret)
 		goto out;
@@ -1645,13 +1676,19 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 		ret = m10mo_set_still_capture(sd);
 		break;
 	default:
-		if (dev->fw_type == M10MO_FW_TYPE_2)
-			ret = m10mo_set_monitor_mode(sd);
-		/* TODO: Revisit this logic on switching to panorama */
-		else if (dev->curr_res_table[dev->fmt_idx].command == 0x43)
-			ret = m10mo_set_panorama_monitor(sd);
-		else
-			ret = m10mo_set_zsl_monitor(sd);
+		if (dev->fw_type == M10MO_FW_TYPE_2) {
+			/* Start still capture if M10MO is already in monitor mode. */
+			if (dev->mode == M10MO_MONITOR_MODE)
+				ret = m10mo_set_still_capture(sd);
+			else
+				ret = m10mo_set_monitor_mode(sd);
+		} else {
+			/* TODO: Revisit this logic on switching to panorama */
+			if (dev->curr_res_table[dev->fmt_idx].command == 0x43)
+				ret = m10mo_set_panorama_monitor(sd);
+			else
+				ret = m10mo_set_zsl_monitor(sd);
+		}
 	}
 	return ret;
 }
@@ -1696,7 +1733,20 @@ static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 
 			ret = __m10mo_set_run_mode(sd);
 		}
+	} else {
+		if (dev->fw_type == M10MO_FW_TYPE_2 &&
+		    dev->mode == M10MO_SINGLE_CAPTURE_MODE) {
+			/* Exit capture mode and back to monitor mode */
+			ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+			if (ret)
+				goto out;
+			ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE);
+			if (ret)
+				goto out;
+			ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE, M10MO_INIT_TIMEOUT);
+		}
 	}
+out:
 	mutex_unlock(&dev->input_lock);
 	return ret;
 }
