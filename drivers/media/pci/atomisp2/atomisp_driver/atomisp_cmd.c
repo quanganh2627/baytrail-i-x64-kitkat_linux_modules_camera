@@ -4900,14 +4900,18 @@ int atomisp_offline_capture_configure(struct atomisp_sub_device *asd,
 	asd->params.offline_parm = *cvf_config;
 
 	if (asd->params.offline_parm.num_captures) {
-		if (asd->streaming == ATOMISP_DEVICE_STREAMING_DISABLED)
+		if (asd->streaming == ATOMISP_DEVICE_STREAMING_DISABLED) {
 			/* TODO: this can be removed once user-space
 			 *       has been updated to use control API */
 			asd->continuous_raw_buffer_size->val =
-				min_t(int, ATOMISP_CONT_RAW_FRAMES,
+				max_t(int,
+				      asd->continuous_raw_buffer_size->val,
 				      asd->params.offline_parm.
 				      num_captures + 3);
-
+			asd->continuous_raw_buffer_size->val =
+				min_t(int, ATOMISP_CONT_RAW_FRAMES,
+				      asd->continuous_raw_buffer_size->val);
+		}
 		asd->continuous_mode->val = true;
 	} else {
 		asd->continuous_mode->val = false;
