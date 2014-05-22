@@ -1471,7 +1471,8 @@ static int atomisp_streamon(struct file *file, void *fh,
 	if (ret)
 		goto out;
 
-	if (atomisp_subdev_streaming_count(asd) > sensor_start_stream) {
+	if ((atomisp_subdev_streaming_count(asd) > sensor_start_stream) &&
+	    (!isp->inputs[asd->input_curr].camera_caps->multi_stream_ctrl)) {
 		/* trigger still capture */
 		if (asd->continuous_mode->val &&
 		    atomisp_subdev_source_pad(vdev)
@@ -1637,16 +1638,20 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 	 * do only videobuf_streamoff for capture & vf pipes in
 	 * case of continuous capture
 	 */
-	if (asd->continuous_mode->val &&
+	if ((asd->continuous_mode->val ||
+	    isp->inputs[asd->input_curr].camera_caps->multi_stream_ctrl) &&
 	    atomisp_subdev_source_pad(vdev) !=
 		ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW &&
 	    atomisp_subdev_source_pad(vdev) !=
 		ATOMISP_SUBDEV_PAD_SOURCE_VIDEO) {
 
-		/* stop continuous still capture if needed */
-		if (atomisp_subdev_source_pad(vdev)
+		if (isp->inputs[asd->input_curr].camera_caps->multi_stream_ctrl) {
+			v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
+				video, s_stream, 0);
+		} else if (atomisp_subdev_source_pad(vdev)
 		    == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE &&
 		    asd->params.offline_parm.num_captures == -1) {
+			/* stop continuous still capture if needed */
 			atomisp_css_offline_capture_configure(asd, 0, 0, 0);
 			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO);
 		}
