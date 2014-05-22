@@ -98,4 +98,18 @@ typedef struct {
   tvector1w     v08 ;
 } s_1w_1x9_matrix;
 
+typedef struct {
+	tvector1w v00;
+	tvector1w v01;
+	tvector1w v02;
+	tvector1w v03;
+} s_1w_1x4_matrix;
+
+typedef struct {
+	tvector1w v00; tvector1w v01; tvector1w v02; tvector1w v03;
+	tvector1w v10; tvector1w v11; tvector1w v12; tvector1w v13;
+	tvector1w v20; tvector1w v21; tvector1w v22; tvector1w v23;
+	tvector1w v30; tvector1w v31; tvector1w v32; tvector1w v33;
+} s_1w_4x4_matrix;
+
 #endif /* __REF_VECTOR_FUNC_TYPES_H_INCLUDED__ */
