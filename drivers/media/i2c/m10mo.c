@@ -1482,12 +1482,12 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 		/* Set mbus format to 0x8001(YUV420) */
 		fmt->code = 0x8001;
 	} else if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
-		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 && fmt->code != 0x8005) {
+		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 && fmt->code != V4L2_MBUS_FMT_CUSTOM_NV12) {
 		/* Check if the code asked is supported one. If not default to NV12. */
 		dev_info(&client->dev,
-			"%s unsupported code: 0x%x. Set to NV12 \n",
+			"%s unsupported code: 0x%x. Set to NV12\n",
 			__func__, fmt->code);
-		fmt->code = 0x8005;
+		fmt->code = V4L2_MBUS_FMT_CUSTOM_NV12;
 	}
 
 	/* Select resolution table according to stream type. */
@@ -1600,7 +1600,7 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 			(u8)ATOMISP_INPUT_FORMAT_USER_DEF3;
 		stream_info->isys_info[0].width = 0;
 		stream_info->isys_info[0].height = 0;
-	} else if (dev->format.code == 0x8005 &&
+	} else if (dev->format.code == V4L2_MBUS_FMT_CUSTOM_NV12 &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
 			 dev->run_mode == CI_MODE_CONTINUOUS)) {
 		stream_info->ch_id = M10MO_ZSL_NV12_VIRTUAL_CHANNEL;
