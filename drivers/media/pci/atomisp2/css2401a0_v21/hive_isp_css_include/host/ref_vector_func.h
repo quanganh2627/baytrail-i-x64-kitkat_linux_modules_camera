@@ -327,5 +327,51 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x5m_box (
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x9m_box (
 	s_1w_1x9_matrix m);
 
+/** @brief Mean of 1x3 matrix
+ *
+ *  @param[in] m 1x3 matrix with pixels
+ *
+ *  @return mean of 1x3 matrix
+ *
+ * This function calculates the mean of 1x3 pixels,
+ * with a factor of 1/4.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x3m(
+	s_1w_1x3_matrix m);
+
+/** @brief Mean of 3x3 matrix
+ *
+ *  @param[in] m 3x3 matrix with pixels
+ *
+ *  @return mean of 3x3 matrix
+ *
+ * This function calculates the mean of 1x3 pixels,
+ * with a factor of 1/16.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean3x3m(
+	s_1w_3x3_matrix m);
+
+/** @brief Mean of 1x4 matrix
+ *
+ *  @param[in] m 1x4 matrix with pixels
+ *
+ *  @return mean of 1x4 matrix
+ *
+ * This function calculates the mean of 1x4 pixels
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x4m(
+	s_1w_1x4_matrix m);
+
+/** @brief Mean of 4x4 matrix
+ *
+ *  @param[in] m 4x4 matrix with pixels
+ *
+ *  @return mean of 4x4 matrix
+ *
+ * This function calculates the mean of 4x4 matrix with pixels
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean4x4m(
+	s_1w_4x4_matrix m);
+
 #endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/
 
