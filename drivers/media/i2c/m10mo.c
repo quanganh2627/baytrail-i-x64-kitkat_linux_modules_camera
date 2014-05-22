@@ -1090,6 +1090,7 @@ static u32 __get_dual_capture_value(u8 capture_mode)
 	 */
 	case M10MO_CAPTURE_MODE_ZSL_NORMAL:
 	case M10MO_CAPTURE_MODE_ZSL_HDR:
+	case M10MO_CAPTURE_MODE_ZSL_RAW:
 	default:
 		return DUAL_CAPTURE_SINGLE_CAPTURE_START;
 	}
@@ -1131,6 +1132,46 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, val);
 	dev_dbg(&client->dev, "%s zsl capture trigger result: %d\n",
 			__func__, ret);
+	return ret;
+}
+
+static int m10mo_set_zsl_raw_capture(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret, val;
+
+	/* Set capture mode - Infinity capture 3 */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPTURE_MODE,
+			       CAP_MODE_INFINITY_ZSL);
+	if (ret)
+	       return ret;
+
+	/* Enable interrupt signal */
+	ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+	if (ret)
+	return ret;
+
+	/* Go to ZSL Monitor mode */
+	ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE_ZSL);
+	if (ret)
+		return ret;
+
+	ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE_ZSL,
+			       M10MO_INIT_TIMEOUT);
+	if (ret < 0)
+		return ret;
+
+	/* switch to RAW capture mode */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, REG_CAP_NV12_MODE,
+				RAW_CAPTURE);
+	if (ret)
+		return ret;
+
+	val = __get_dual_capture_value(dev->capture_mode);
+
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, val);
+	dev_dbg(&client->dev, "%s raw capture triggered : %d\n", __func__, ret);
 	return ret;
 }
 
@@ -1478,9 +1519,10 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	if (dev->fw_type == M10MO_FW_TYPE_2) {
 		/* Set mbus format to 0x8001(YUV420) */
 		fmt->code = 0x8001;
-	} else if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
-		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 && fmt->code != V4L2_MBUS_FMT_CUSTOM_NV12) {
-		/* Check if the code asked is supported one. If not default to NV12. */
+	} else 	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
+		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 &&
+		fmt->code != V4L2_MBUS_FMT_CUSTOM_NV12 &&
+		fmt->code != V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
 		dev_info(&client->dev,
 			"%s unsupported code: 0x%x. Set to NV12\n",
 			__func__, fmt->code);
@@ -1490,7 +1532,7 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	/* In ZSL case, capture table needs to be handled separately */
 	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
-			 dev->run_mode == CI_MODE_CONTINUOUS)) {
+			dev->run_mode == CI_MODE_CONTINUOUS)) {
 		res = resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 		entries =
 		     resolutions_sizes[mode][M10MO_MODE_CAPTURE_INDEX];
@@ -1512,6 +1554,9 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 		if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
 			fmt->width = JPEG_CONFIG_WIDTH;
 			fmt->height = JPEG_CONFIG_HEIGHT;
+		} else if (fmt->code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
+			fmt->width = M10MO_RAW_CONFIG_WIDTH;
+			fmt->height = M10MO_RAW_CONFIG_HEIGHT;
 		} else {
 			fmt->width = res[idx].width;
 			fmt->height = res[idx].height;
@@ -1548,6 +1593,49 @@ static int m10mo_get_mbus_fmt(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int __m10mo_update_stream_info(struct v4l2_subdev *sd,
+					struct v4l2_mbus_framefmt *fmt)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct atomisp_input_stream_info *stream_info =
+			(struct atomisp_input_stream_info*)fmt->reserved;
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
+
+	/* TODO: Define a FW Type as well. Resolution could be reused */
+	switch (mode) {
+	case M10MO_RESOLUTION_MODE_0:
+		/* TODO: handle FW type cases here */
+		break;
+	case M10MO_RESOLUTION_MODE_1:
+		/* Raw Capture is a special case. Capture data comes like HDR */
+		if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8 ||
+			fmt->code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
+			/* fill stream info */
+			stream_info->ch_id = M10MO_ZSL_JPEG_VIRTUAL_CHANNEL;
+			stream_info->isys_configs = 1;
+			stream_info->isys_info[0].input_format =
+				(u8)ATOMISP_INPUT_FORMAT_USER_DEF3;
+			stream_info->isys_info[0].width = 0;
+			stream_info->isys_info[0].height = 0;
+		} else if (fmt->code == 0x8005) {
+			stream_info->ch_id = M10MO_ZSL_NV12_VIRTUAL_CHANNEL;
+			stream_info->isys_configs = 2;
+			/* first stream */
+			stream_info->isys_info[0].input_format =
+				(u8)ATOMISP_INPUT_FORMAT_USER_DEF1;
+			stream_info->isys_info[0].width = (u16)fmt->width;
+			stream_info->isys_info[0].height = (u16)fmt->height;
+			/* Second stream */
+			stream_info->isys_info[1].input_format =
+				(u8)ATOMISP_INPUT_FORMAT_USER_DEF2;
+			stream_info->isys_info[1].width = (u16)fmt->width;
+			stream_info->isys_info[1].height = (u16)fmt->height / 2;
+		}
+		break;
+	}
+	return 0;
+}
+
 static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 			      struct v4l2_mbus_framefmt *fmt)
 {
@@ -1555,6 +1643,7 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct atomisp_input_stream_info *stream_info =
 			(struct atomisp_input_stream_info*)fmt->reserved;
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 	int index;
 
 	mutex_lock(&dev->input_lock);
@@ -1580,39 +1669,45 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 			stream_info->ch_id = 1;
 		else
 			stream_info->ch_id = 0;
-	} else if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8 &&
-			(dev->run_mode == CI_MODE_PREVIEW ||
-			 dev->run_mode == CI_MODE_CONTINUOUS)) {
-		/* Make fixed width and height for jpeg */
-		fmt->width = JPEG_CONFIG_WIDTH;
-		fmt->height = JPEG_CONFIG_HEIGHT;
-		/* fill stream info */
-		stream_info->ch_id = M10MO_ZSL_JPEG_VIRTUAL_CHANNEL;
-		stream_info->isys_configs = 1;
-		stream_info->isys_info[0].input_format =
-			(u8)ATOMISP_INPUT_FORMAT_USER_DEF3;
-		stream_info->isys_info[0].width = 0;
-		stream_info->isys_info[0].height = 0;
-	} else if (dev->format.code == V4L2_MBUS_FMT_CUSTOM_NV12 &&
-			(dev->run_mode == CI_MODE_PREVIEW ||
-			 dev->run_mode == CI_MODE_CONTINUOUS)) {
-		stream_info->ch_id = M10MO_ZSL_NV12_VIRTUAL_CHANNEL;
-		stream_info->isys_configs = 2;
-		/* first stream */
-		stream_info->isys_info[0].input_format =
-			(u8)ATOMISP_INPUT_FORMAT_USER_DEF1;
-		stream_info->isys_info[0].width = (u16)fmt->width;
-		stream_info->isys_info[0].height = (u16)fmt->height;
-		/* Second stream */
-		stream_info->isys_info[1].input_format =
-			(u8)ATOMISP_INPUT_FORMAT_USER_DEF2;
-		stream_info->isys_info[1].width = (u16)fmt->width;
-		stream_info->isys_info[1].height = (u16)fmt->height / 2;
-	}
+	/*
+	 * In ZSL Capture cases, for capture an image the run mode is not
+	 * changed. So we need to maintain a separate cpature table index
+	 * to select the snapshot sizes.
+	 */
+	} else if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE &&
+	 		(dev->run_mode == CI_MODE_PREVIEW ||
+			 dev->run_mode == CI_MODE_CONTINUOUS))
+		dev->capture_res_idx = dev->fmt_idx;
 
 	dev_dbg(&client->dev,
-		"%s index: %d width: %d, height: %d, code; 0x%x\n", __func__,
-		 dev->fmt_idx, fmt->width, fmt->height, dev->format.code);
+		"%s index prev/cap: %d/%d width: %d, height: %d, code; 0x%x\n",
+		 __func__, dev->fmt_idx, dev->capture_res_idx, fmt->width,
+		 fmt->height, dev->format.code);
+
+	/* Make the fixed width and height for JPEG and RAW formats */
+	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8) {
+		fmt->width = JPEG_CONFIG_WIDTH;
+		fmt->height = JPEG_CONFIG_HEIGHT;
+	} else if (dev->format.code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
+		fmt->width = M10MO_RAW_CONFIG_WIDTH;
+		fmt->height = M10MO_RAW_CONFIG_HEIGHT;
+	}
+
+	/* Update the stream info. Atomisp uses this for configuring mipi */
+	__m10mo_update_stream_info(sd, fmt);
+
+	/*
+	 * Handle raw capture mode separately. Update the capture mode to RAW
+	 * capture now. So that the next streamon call will start RAW capture.
+	 */
+	if (mode == M10MO_RESOLUTION_MODE_1 &&
+	    dev->format.code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
+		dev_dbg(&client->dev, "%s RAW capture mode\n", __func__);
+		dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_RAW;
+		dev->capture_res_idx = dev->fmt_idx;
+		dev->fmt_idx = 0;
+	}
+
 	mutex_unlock(&dev->input_lock);
 	return 0;
 }
@@ -1895,6 +1990,21 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
+
+	/*
+	 * Handle RAW capture mode separately irrespective of the run mode
+	 * being configured. Start the RAW capture right away.
+	 */
+	if (dev->capture_mode == M10MO_CAPTURE_MODE_ZSL_RAW) {
+		/*
+		 * As RAW capture is done from a command line tool, we are not
+		 * restarting the preview after the RAW capture. So it is ok
+		 * to reset the RAW capture mode here because the next RAW
+		 * capture has to start from the Set format onwards.
+		 */
+		dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_NORMAL;
+		return m10mo_set_zsl_raw_capture(sd);
+	}
 
 	switch (dev->run_mode) {
 	case CI_MODE_VIDEO:
