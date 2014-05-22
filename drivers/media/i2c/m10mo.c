@@ -1465,7 +1465,7 @@ static int get_resolution_index(const struct m10mo_resolution *res,
 }
 
 static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
-				 struct v4l2_mbus_framefmt *fmt)
+			struct v4l2_mbus_framefmt *fmt, bool update_fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -1474,9 +1474,6 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	const struct m10mo_resolution * res;
 	int entries, idx;
 	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
-
-	if (!fmt)
-		return -EINVAL;
 
 	if (dev->fw_type == M10MO_FW_TYPE_2) {
 		/* Set mbus format to 0x8001(YUV420) */
@@ -1490,8 +1487,10 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 		fmt->code = V4L2_MBUS_FMT_CUSTOM_NV12;
 	}
 
-	/* Select resolution table according to stream type. */
-	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE) {
+	/* In ZSL case, capture table needs to be handled separately */
+	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE &&
+			(dev->run_mode == CI_MODE_PREVIEW ||
+			 dev->run_mode == CI_MODE_CONTINUOUS)) {
 		res = resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 		entries =
 		     resolutions_sizes[mode][M10MO_MODE_CAPTURE_INDEX];
@@ -1500,8 +1499,24 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 		entries = dev->entries_curr_table;
 	}
 
-	/* First check if the give n resolutions are spported for capture */
+	/* check if the given resolutions are spported */
 	idx = get_resolution_index(res, entries, fmt->width, fmt->height);
+	if (idx < 0) {
+		dev_err(&client->dev, "%s unsupported resolution: %dx%d \n",
+			__func__, fmt->width, fmt->height);
+		return -EINVAL;
+	}
+
+	/* If the caller wants to get updated fmt values based on the search */
+	if (update_fmt) {
+		if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
+			fmt->width = JPEG_CONFIG_WIDTH;
+			fmt->height = JPEG_CONFIG_HEIGHT;
+		} else {
+			fmt->width = res[idx].width;
+			fmt->height = res[idx].height;
+		}
+	}
 	return idx;
 }
 
@@ -1509,34 +1524,12 @@ static int m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	struct atomisp_input_stream_info *stream_info =
-			(struct atomisp_input_stream_info *)fmt->reserved;
 	int idx;
 
 	mutex_lock(&dev->input_lock);
-	idx = __m10mo_try_mbus_fmt(sd, fmt);
-	if (idx == -1) {
-		mutex_unlock(&dev->input_lock);
-		return idx;
-	}
-
-	/* Assign format size according to stream type. */
-	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE) {
-		fmt->width = resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX][idx].width;
-		fmt->height = resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX][idx].height;
-	} else {
-		fmt->width = dev->curr_res_table[idx].width;
-		fmt->height = dev->curr_res_table[idx].height;
-	}
-
-	/* JPEG fmt has fixed width and height. */
-	if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
-		fmt->width = JPEG_CONFIG_WIDTH;
-		fmt->height = JPEG_CONFIG_HEIGHT;
-	}
-
+	idx = __m10mo_try_mbus_fmt(sd, fmt, true);
 	mutex_unlock(&dev->input_lock);
-	return 0;
+	return idx >= 0 ? 0 : -EINVAL;
 }
 
 static int m10mo_get_mbus_fmt(struct v4l2_subdev *sd,
@@ -1566,8 +1559,8 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	mutex_lock(&dev->input_lock);
 
-	index = __m10mo_try_mbus_fmt(sd, fmt);
-	if (index == -1) {
+	index = __m10mo_try_mbus_fmt(sd, fmt, false);
+	if (index < 0) {
 		mutex_unlock(&dev->input_lock);
 		return -EINVAL;
 	}
