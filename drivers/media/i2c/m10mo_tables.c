@@ -100,9 +100,29 @@ static const struct m10mo_resolution const m10mo_preview_modes_fw1[] = {
 
 static const struct m10mo_resolution const m10mo_preview_modes_fw2[] = {
 	{
+		.width = 320,
+		.height = 240,
+		.command = 0x9,
+	},
+	{
+		.width = 640,
+		.height = 480,
+		.command = 0x17,
+	},
+	{
+		.width = 960,
+		.height = 720,
+		.command = 0x34,
+	},
+	{
 		.width = 1280,
 		.height = 720,
 		.command = 0x21,
+	},
+	{
+		.width = 1600,
+		.height = 1200,
+		.command = 0x26,
 	},
 	{
 		.width = 1920,
@@ -199,9 +219,19 @@ static const struct m10mo_resolution const m10mo_capture_modes_fw1[] = {
 
 static const struct m10mo_resolution const m10mo_capture_modes_fw2[] = {
 	{
+		.width = 640,
+		.height = 480,
+		.command = 0x9,
+	},
+	{
 		.width = 1920,
 		.height = 1080,
-		.command = 0x28,
+		.command = 0x19,
+	},
+	{
+		.width = 5248,
+		.height = 3936,
+		.command = 0x40,
 	},
 };
 
@@ -222,6 +252,21 @@ static const struct m10mo_resolution const m10mo_video_modes_fw1[] = {
 };
 
 static const struct m10mo_resolution const m10mo_video_modes_fw2[] = {
+	{
+		.width = 320,
+		.height = 240,
+		.command = 0x9,
+	},
+	{
+		.width = 640,
+		.height = 480,
+		.command = 0x17,
+	},
+	{
+		.width = 1280,
+		.height = 720,
+		.command = 0x21,
+	},
 	{
 		.width = 1920,
 		.height = 1080,
