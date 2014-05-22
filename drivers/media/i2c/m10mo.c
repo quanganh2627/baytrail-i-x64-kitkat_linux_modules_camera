@@ -755,6 +755,9 @@ static int __m10mo_s_power(struct v4l2_subdev *sd, int on, bool fw_update_mode)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
 
+	if (dev->power == on)
+		return 0;
+
 	if (on) {
 		dev->mode = M10MO_POWERING_ON;
 		m10mo_request_mode_change(sd, M10MO_FLASH_WRITE_MODE);
