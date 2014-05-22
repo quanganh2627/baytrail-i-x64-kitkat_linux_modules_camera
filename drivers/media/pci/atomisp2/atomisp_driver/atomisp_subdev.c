@@ -52,6 +52,8 @@ const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[] = {
 	{ V4L2_MBUS_FMT_JPEG_1X8, 8, 8, CSS_FRAME_FORMAT_BINARY_8, 0, IA_CSS_STREAM_FORMAT_BINARY_8 },
 	{ 0x8005, 12, 12, CSS_FRAME_FORMAT_NV12, 0, CSS_FRAME_FORMAT_NV12 },
 	{ 0x8001, 12, 12, ATOMISP_INPUT_FORMAT_YUV420_8_LEGACY, 0, IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY },
+	/* no valid V4L2 MBUS code for metadata format, so leave it 0. */
+	{ 0, 0, 0, ATOMISP_INPUT_FORMAT_EMBEDDED, 0, IA_CSS_STREAM_FORMAT_EMBEDDED },
 	{}
 };
 
@@ -79,13 +81,12 @@ enum v4l2_mbus_pixelcode atomisp_subdev_uncompressed_code(
 
 bool atomisp_subdev_is_compressed(enum v4l2_mbus_pixelcode code)
 {
-	const struct atomisp_in_fmt_conv *ic = atomisp_in_fmt_conv;
+	int i;
 
-	while (ic->code) {
-		if (code == ic->code)
-			return ic->bpp != ic->depth;
-		ic++;
-	}
+	for (i = 0; i < ARRAY_SIZE(atomisp_in_fmt_conv) - 1; i++)
+		if (code == atomisp_in_fmt_conv[i].code)
+			return atomisp_in_fmt_conv[i].bpp !=
+			       atomisp_in_fmt_conv[i].depth;
 
 	return false;
 }
@@ -93,13 +94,11 @@ bool atomisp_subdev_is_compressed(enum v4l2_mbus_pixelcode code)
 const struct atomisp_in_fmt_conv *atomisp_find_in_fmt_conv(
 	enum v4l2_mbus_pixelcode code)
 {
-	const struct atomisp_in_fmt_conv *ic = atomisp_in_fmt_conv;
+	int i;
 
-	while (ic->code) {
-		if (code == ic->code)
-			return ic;
-		ic++;
-	}
+	for (i = 0; i < ARRAY_SIZE(atomisp_in_fmt_conv) - 1; i++)
+		if (code == atomisp_in_fmt_conv[i].code)
+			return atomisp_in_fmt_conv + i;
 
 	return NULL;
 }
@@ -107,13 +106,11 @@ const struct atomisp_in_fmt_conv *atomisp_find_in_fmt_conv(
 const struct atomisp_in_fmt_conv *atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
 	enum atomisp_css_stream_format atomisp_in_fmt)
 {
-	const struct atomisp_in_fmt_conv *ic = atomisp_in_fmt_conv;
+	int i;
 
-	while (ic->code) {
-		if (ic->atomisp_in_fmt == atomisp_in_fmt)
-			return ic;
-		ic++;
-	}
+	for (i = 0; i < ARRAY_SIZE(atomisp_in_fmt_conv) - 1; i++)
+		if (atomisp_in_fmt_conv[i].atomisp_in_fmt == atomisp_in_fmt)
+			return atomisp_in_fmt_conv + i;
 
 	return NULL;
 }

@@ -3812,11 +3812,15 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 		atomisp_css_input_set_format(asd, stream_id, input_format);
 	}
 
+	fc = atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
+					mipi_info->metadata_format);
+	BUG_ON(!fc);
+	input_format = fc->css_stream_fmt;
 	atomisp_css_input_configure_port(asd,
 				__get_mipi_port(asd->isp, mipi_info->port),
 				mipi_info->num_lanes,
 				0xffff4, mipi_freq,
-				mipi_info->metadata_format,
+				input_format,
 				mipi_info->metadata_width,
 				mipi_info->metadata_height);
 }
