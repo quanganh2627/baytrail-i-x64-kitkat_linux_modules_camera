@@ -3694,12 +3694,13 @@ int atomisp_try_fmt(struct video_device *vdev, struct v4l2_format *f,
 	f->fmt.pix.pixelformat = fmt->pixelformat;
 
 	/*
-	 * If the format is jpeg, then the width and height will not
-	 * satisfy the normal atomisp requirements and no need to check
+	 * If the format is jpeg or custom RAW, then the width and height will
+	 * not satisfy the normal atomisp requirements and no need to check
 	 * the below conditions. So just assign to what is being returned from
 	 * the sensor driver.
 	 */
-	if (f->fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG) {
+	if (f->fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG ||
+	    f->fmt.pix.pixelformat == V4L2_PIX_FMT_CUSTOM_M10MO_RAW) {
 		f->fmt.pix.width = snr_mbus_fmt.width;
 		f->fmt.pix.height = snr_mbus_fmt.height;
 		return 0;
@@ -4561,15 +4562,17 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	     isp_sink_fmt.height < (f->fmt.pix.height + padding_h +
 				    dvs_env_h)) {
 		/*
-		 * For jpeg format the sensor will return constant width and
-		 * height. Because we had alredy queried the try_mbus_fmt,
-		 * f->fmt.pix.width and f->fmt.pix.height has already been
-		 * changed to this fixed width and height. So we cannot select
-		 * the correct resolution. So use the original width and height
-		 * while set_mbus_fmt()
+		 * For jpeg or custom raw format the sensor will return constant
+		 * width and height. Because we already had quried try_mbus_fmt,
+		 * f->fmt.pix.width and f->fmt.pix.height has been changed to
+		 * this fixed width and height. So we cannot select the correct
+		 * resolution with that information. So use the original width
+		 * and height while set_mbus_fmt() so actual resolutions are
+		 * being used in while set media bus format.
 		 */
 		s_fmt = *f;
-		if (f->fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG) {
+		if (f->fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG ||
+		    f->fmt.pix.pixelformat == V4L2_PIX_FMT_CUSTOM_M10MO_RAW) {
 			s_fmt.fmt.pix.width = backup_fmt.fmt.pix.width;
 			s_fmt.fmt.pix.height = backup_fmt.fmt.pix.height;
 		}
