@@ -980,27 +980,22 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
+	const struct m10mo_resolution *capture_res =
+			resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 	int ret, i, dual_status;
-	u32 val;
 
-	dev_info(&client->dev,"%s mode: %d Width: %d, height: %d, cmd: 0x%x vdis: %d\n",
+	dev_info(&client->dev,
+		"%s mode: %d width: %d, height: %d, cmd: 0x%x vdis: %d\n",
 		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
 		dev->curr_res_table[dev->fmt_idx].height,
 		dev->curr_res_table[dev->fmt_idx].command,
 		(int)dev->curr_res_table[dev->fmt_idx].vdis);
 
-	/* Check if m10mo already streaming @ required resolution */
-	ret = m10mo_readb(sd, CATEGORY_PARAM,  PARAM_MON_SIZE, &val);
-	if (ret)
-		goto out;
-
-	/* If mode is monitor mode and size same, do not configure again*/
-	if (dev->mode == M10MO_MONITOR_MODE_ZSL &&
-		val == dev->curr_res_table[dev->fmt_idx].command) {
-		dev_info(&client->dev,
-			"%s Already streaming with required size\n", __func__);
-		return 0;
-	}
+	dev_info(&client->dev, "%s capture width: %d, height: %d, cmd: 0x%x\n",
+		__func__, capture_res[dev->capture_res_idx].width,
+		capture_res[dev->capture_res_idx].height,
+		capture_res[dev->capture_res_idx].command);
 
 	if (dev->mode != M10MO_PARAM_SETTING_MODE &&
 		dev->mode != M10MO_PARAMETER_MODE) {
@@ -1018,15 +1013,21 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 			goto out;
 	}
 
+	/* Set ZSL mode */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPTURE_MODE,
+				CAP_MODE_INFINITY_ZSL);
+	if (ret)
+		goto out;
+
 	/* Change the Monitor Size */
 	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
 			dev->curr_res_table[dev->fmt_idx].command);
 	if (ret)
 		goto out;
 
-	/* Set ZSL mode */
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPTURE_MODE,
-				CAP_MODE_INFINITY_ZSL);
+	/* Change the capture size */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
+			capture_res[dev->capture_res_idx].command);
 	if (ret)
 		goto out;
 
@@ -1100,35 +1101,15 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
-	const struct m10mo_resolution *capture_res =
-			resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 	int ret;
 	u32 val;
 
 	/* TODO: Fix this. Currently we do not use this */
 	(void) sel_frame;
 
-	/* if not in ZSL monitor mode, cannot capture. Return error */
-	if (dev->mode != M10MO_MONITOR_MODE_ZSL) {
-		dev_dbg(&client->dev, "%s wrong mode.\n",__func__);
-		return -EINVAL;
-	}
-
-	dev_info(&client->dev,"%s mode: %d width: %d, height: %d, cmd: 0x%x\n",
-		__func__, dev->mode, capture_res[dev->capture_res_idx].width,
-		capture_res[dev->capture_res_idx].height,
-		capture_res[dev->capture_res_idx].command);
-
-	/* Change the singel capture size */
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
-			capture_res[dev->capture_res_idx].command);
-	if (ret)
-		return ret;
-
 	val = __get_dual_capture_value(dev->capture_mode);
 
-	/* Start Single Capture, JPEG encode & transfer start */
+	/* Start capture, JPEG encode & transfer start */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, val);
 	dev_dbg(&client->dev, "%s zsl capture trigger result: %d\n",
 			__func__, ret);
@@ -1137,20 +1118,18 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 
 static int m10mo_set_zsl_raw_capture(struct v4l2_subdev *sd)
 {
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int ret, val;
+	int ret;
 
 	/* Set capture mode - Infinity capture 3 */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPTURE_MODE,
-			       CAP_MODE_INFINITY_ZSL);
+						CAP_MODE_INFINITY_ZSL);
 	if (ret)
-	       return ret;
+		return ret;
 
 	/* Enable interrupt signal */
 	ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
 	if (ret)
-	return ret;
+		return ret;
 
 	/* Go to ZSL Monitor mode */
 	ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE_ZSL);
@@ -1158,21 +1137,18 @@ static int m10mo_set_zsl_raw_capture(struct v4l2_subdev *sd)
 		return ret;
 
 	ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE_ZSL,
-			       M10MO_INIT_TIMEOUT);
+						M10MO_INIT_TIMEOUT);
 	if (ret < 0)
 		return ret;
 
 	/* switch to RAW capture mode */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, REG_CAP_NV12_MODE,
-				RAW_CAPTURE);
+						RAW_CAPTURE);
 	if (ret)
 		return ret;
 
-	val = __get_dual_capture_value(dev->capture_mode);
-
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, val);
-	dev_dbg(&client->dev, "%s raw capture triggered : %d\n", __func__, ret);
-	return ret;
+	/* RAW mode is set. Now do a normal capture */
+	return m10mo_set_zsl_capture(sd, 1);
 }
 
 static int m10mo_set_burst_mode(struct v4l2_subdev *sd, unsigned int val)
