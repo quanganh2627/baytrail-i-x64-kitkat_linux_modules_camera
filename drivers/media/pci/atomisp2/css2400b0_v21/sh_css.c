@@ -2372,6 +2372,7 @@ ia_css_uninit(void)
 	sh_css_print("PC_MONITORING: %s() -- started\n", __func__);
 	print_pc_histogram();
 #endif
+
 	/* TODO: JB: implement decent check and handling of freeing mipi frames */
 	//assert(ref_count_mipi_allocation == 0); //mipi frames are not freed
 	/* cleanup generic data */
@@ -9187,8 +9188,17 @@ ia_css_stop_sp(void)
 {
 	unsigned int i;
 	unsigned long timeout;
+	enum ia_css_err err = IA_CSS_SUCCESS;
 
-	IA_CSS_ENTER("");
+	IA_CSS_ENTER("void");
+
+	if (!sh_css_sp_is_running()) {
+		err = IA_CSS_ERR_INVALID_ARGUMENTS;
+		IA_CSS_LEAVE("SP already stopped : return_err=%d", err);
+
+		/* Return an error - stop SP should not have been called by driver */
+		return err;
+	}
 
 	/* For now, stop whole SP */
 	sh_css_write_host2sp_command(host2sp_cmd_terminate);
@@ -9226,9 +9236,8 @@ ia_css_stop_sp(void)
 	ia_css_stop_sp1();
 #endif
 
-	IA_CSS_LEAVE("");
-
-	return IA_CSS_SUCCESS;
+	IA_CSS_LEAVE_ERR(err);
+	return err;
 }
 
 enum ia_css_err
