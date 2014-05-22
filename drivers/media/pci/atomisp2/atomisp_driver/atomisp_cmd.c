@@ -4011,7 +4011,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 
 		/* FIXME: proper format name for this one. See
 		   atomisp_output_fmts[] in atomisp_v4l2.c */
-		vf_ffmt.code = 0x8001;
+		vf_ffmt.code = V4L2_MBUS_FMT_CUSTOM_YUV420;
 
 		atomisp_subdev_set_selection(&asd->subdev, &fh,
 					     V4L2_SUBDEV_FORMAT_ACTIVE,
