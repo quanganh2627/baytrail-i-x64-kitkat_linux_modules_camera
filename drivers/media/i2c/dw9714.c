@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2012 Intel Corporation. All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License version
+ * 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA.
+ *
+ */
+
 #include <linux/bitops.h>
 #include <linux/device.h>
 #include <linux/delay.h>
@@ -33,7 +52,7 @@ static int dw9714_i2c_write(struct i2c_client *client, u16 data)
 	msg.addr = DW9714_VCM_ADDR;
 	msg.flags = 0;
 	msg.len = DW9714_16BIT;
-	msg.buf = (u8 *)&val;
+	msg.buf = (u8 *) & val;
 
 	ret = i2c_transfer(client->adapter, &msg, 1);
 
@@ -56,7 +75,6 @@ int dw9714_vcm_power_down(struct v4l2_subdev *sd)
 	return dw9714_dev.platform_data->power_ctrl(sd, 0);
 }
 
-
 int dw9714_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -64,6 +82,8 @@ int dw9714_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 	u8 mclk = vcm_step_mclk(dw9714_dev.vcm_settings.step_setting);
 	u8 s = vcm_step_s(dw9714_dev.vcm_settings.step_setting);
 
+	v4l2_info(client, "__9714_t_focus_vcm mode=%d, val=%d\n",
+		  dw9714_dev.vcm_mode, val);
 	/*
 	 * For different mode, VCM_PROTECTION_OFF/ON required by the
 	 * control procedure. For DW9714_DIRECT/DLC mode, slew value is
@@ -83,8 +103,7 @@ int dw9714_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 				return ret;
 			dw9714_dev.vcm_settings.update = false;
 		}
-		ret = dw9714_i2c_write(client,
-					vcm_val(val, VCM_DEFAULT_S));
+		ret = dw9714_i2c_write(client, vcm_val(val, VCM_DEFAULT_S));
 		break;
 	case DW9714_LSC:
 		if (dw9714_dev.vcm_settings.update) {
@@ -92,11 +111,12 @@ int dw9714_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 			if (ret)
 				return ret;
 			ret = dw9714_i2c_write(client,
-				vcm_dlc_mclk(DLC_DISABLE, mclk));
+					       vcm_dlc_mclk(DLC_DISABLE, mclk));
 			if (ret)
 				return ret;
 			ret = dw9714_i2c_write(client,
-				vcm_tsrc(dw9714_dev.vcm_settings.t_src));
+					       vcm_tsrc(dw9714_dev.vcm_settings.
+							t_src));
 			if (ret)
 				return ret;
 			ret = dw9714_i2c_write(client, VCM_PROTECTION_ON);
@@ -112,11 +132,12 @@ int dw9714_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 			if (ret)
 				return ret;
 			ret = dw9714_i2c_write(client,
-					vcm_dlc_mclk(DLC_ENABLE, mclk));
+					       vcm_dlc_mclk(DLC_ENABLE, mclk));
 			if (ret)
 				return ret;
 			ret = dw9714_i2c_write(client,
-				vcm_tsrc(dw9714_dev.vcm_settings.t_src));
+					       vcm_tsrc(dw9714_dev.vcm_settings.
+							t_src));
 			if (ret)
 				return ret;
 			ret = dw9714_i2c_write(client, VCM_PROTECTION_ON);
@@ -124,8 +145,7 @@ int dw9714_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 				return ret;
 			dw9714_dev.vcm_settings.update = false;
 		}
-		ret = dw9714_i2c_write(client,
-					vcm_val(val, VCM_DEFAULT_S));
+		ret = dw9714_i2c_write(client, vcm_val(val, VCM_DEFAULT_S));
 		break;
 	}
 	return ret;
@@ -137,6 +157,7 @@ int dw9714_t_focus_abs(struct v4l2_subdev *sd, s32 value)
 
 	value = min(value, DW9714_MAX_FOCUS_POS);
 	ret = dw9714_t_focus_vcm(sd, DW9714_MAX_FOCUS_POS - value);
+	//ret = dw9714_t_focus_vcm(sd, value);
 	if (ret == 0) {
 		dw9714_dev.number_of_steps = value - dw9714_dev.focus;
 		dw9714_dev.focus = value;
@@ -152,14 +173,14 @@ int dw9714_t_focus_rel(struct v4l2_subdev *sd, s32 value)
 	return dw9714_t_focus_abs(sd, dw9714_dev.focus + value);
 }
 
-int dw9714_q_focus_status(struct v4l2_subdev *sd, s32 *value)
+int dw9714_q_focus_status(struct v4l2_subdev *sd, s32 * value)
 {
 	u32 status = 0;
 	struct timespec temptime;
 	const struct timespec timedelay = {
 		0,
-		min_t(u32, abs(dw9714_dev.number_of_steps)*DELAY_PER_STEP_NS,
-			DELAY_MAX_PER_STEP_NS),
+		min_t(u32, abs(dw9714_dev.number_of_steps) * DELAY_PER_STEP_NS,
+		      DELAY_MAX_PER_STEP_NS),
 	};
 
 	ktime_get_ts(&temptime);
@@ -178,16 +199,16 @@ int dw9714_q_focus_status(struct v4l2_subdev *sd, s32 *value)
 	return 0;
 }
 
-int dw9714_q_focus_abs(struct v4l2_subdev *sd, s32 *value)
+int dw9714_q_focus_abs(struct v4l2_subdev *sd, s32 * value)
 {
 	s32 val;
 
 	dw9714_q_focus_status(sd, &val);
 
 	if (val & ATOMISP_FOCUS_STATUS_MOVING)
-		*value  = dw9714_dev.focus - dw9714_dev.number_of_steps;
+		*value = dw9714_dev.focus - dw9714_dev.number_of_steps;
 	else
-		*value  = dw9714_dev.focus ;
+		*value = dw9714_dev.focus;
 
 	return 0;
 }
@@ -211,11 +232,10 @@ int dw9714_t_vcm_timing(struct v4l2_subdev *sd, s32 value)
 int dw9714_vcm_init(struct v4l2_subdev *sd)
 {
 
-	/* set VCM to home position and vcm mode to direct*/
+	/* set VCM to home position and vcm mode to direct */
 	dw9714_dev.vcm_mode = DW9714_DIRECT;
 	dw9714_dev.vcm_settings.update = false;
 	dw9714_dev.platform_data = camera_get_af_platform_data();
 	return (NULL == dw9714_dev.platform_data) ? -ENODEV : 0;
 
 }
-
