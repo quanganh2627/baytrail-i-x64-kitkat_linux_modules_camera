@@ -108,6 +108,10 @@ struct ia_css_isp_parameters {
 	struct ia_css_2500_lin_kernel_config  lin_2500_config;
 	struct ia_css_2500_tnr_kernel_config  tnr_2500_config;
 #endif
+/* ------ deprecated(bz675) : from ------ */
+	struct ia_css_shading_settings shading_settings;
+/* ------ deprecated(bz675) : to ------ */
+
 	bool isp_params_changed;
 	bool isp_mem_params_changed
 		[IA_CSS_PIPE_ID_NUM][SH_CSS_MAX_STAGES][IA_CSS_NUM_MEMORIES];
@@ -119,6 +123,9 @@ struct ia_css_isp_parameters {
 	bool sc_table_changed;
 	bool anr_thres_changed;
 	bool dvs_6axis_config_changed;
+/* ------ deprecated(bz675) : from ------ */
+	bool shading_settings_changed;
+/* ------ deprecated(bz675) : to ------ */
 
 	bool config_changed[IA_CSS_NUM_PARAMETER_IDS];
 

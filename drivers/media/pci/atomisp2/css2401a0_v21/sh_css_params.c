@@ -683,6 +683,13 @@ static const struct ia_css_vector default_motion_config = {
 	0
 };
 
+/* ------ deprecated(bz675) : from ------ */
+static const struct ia_css_shading_settings default_shading_settings = {
+	1	/* enable shading table conversion in the css
+		(This matches the legacy way.) */
+};
+/* ------ deprecated(bz675) : to ------ */
+
 struct ia_css_isp_skc_dvs_statistics {
 	ia_css_ptr p_data;
 };
@@ -2192,6 +2199,9 @@ sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
 	sh_css_set_ctc_table(params, config->ctc_table);
 	ia_css_set_dvs_coefficients(params, config->dvs_coefs);
 	ia_css_set_dvs2_coefficients(params, config->dvs2_coefs);
+/* ------ deprecated(bz675) : from ------ */
+	sh_css_set_shading_settings(params, config->shading_settings);
+/* ------ deprecated(bz675) : to ------ */
 #endif
 
 	ia_css_set_configs(params, config);
@@ -2244,6 +2254,9 @@ ia_css_stream_get_isp_config(
 	sh_css_get_ctc_table(params, config->ctc_table);
 	sh_css_get_dz_config(params, config->dz_config);
 	sh_css_get_motion_vector(params, config->motion_vector);
+/* ------ deprecated(bz675) : from ------ */
+	sh_css_get_shading_settings(params, config->shading_settings);
+/* ------ deprecated(bz675) : to ------ */
 #endif
 
 	ia_css_get_configs(params, config);
@@ -2867,6 +2880,9 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 		sh_css_set_ctc_table(params, &default_ctc_table);
 		sh_css_set_baa_config(params, &default_baa_config);
 		sh_css_set_dz_config(params, &default_dz_config);
+/* ------ deprecated(bz675) : from ------ */
+		sh_css_set_shading_settings(params, &default_shading_settings);
+/* ------ deprecated(bz675) : to ------ */
 
 		ia_css_set_s3a_config(params, &default_3a_config);
 		ia_css_set_wb_config(params, &default_wb_config);
@@ -2940,6 +2956,9 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 		sh_css_set_ctc_table(params, &stream_params->ctc_table);
 		sh_css_set_baa_config(params, &stream_params->raw_config);
 		sh_css_set_dz_config(params, &stream_params->dz_config);
+/* ------ deprecated(bz675) : from ------ */
+		sh_css_set_shading_settings(params, &stream_params->shading_settings);
+/* ------ deprecated(bz675) : to ------ */
 
 		ia_css_set_s3a_config(params, &stream_params->s3a_config);
 		ia_css_set_wb_config(params, &stream_params->wb_config);
@@ -3164,6 +3183,18 @@ ia_css_stream_isp_parameters_uninit(struct ia_css_stream *stream)
 		free_dvs_6axis_table(&(params->dvs_6axis_config));
 	if (per_frame_params && per_frame_params->dvs_6axis_config)
 		free_dvs_6axis_table(&(per_frame_params->dvs_6axis_config));
+
+	/* Free up sc_config (temporal shading table) if it is allocated. */
+	if (params->sc_config) {
+		ia_css_shading_table_free(params->sc_config);
+		params->sc_config = NULL;
+	}
+	if (per_frame_params) {
+		if (per_frame_params->sc_config) {
+			ia_css_shading_table_free(per_frame_params->sc_config);
+			per_frame_params->sc_config = NULL;
+		}
+	}
 
 	sh_css_free(params);
 	if (per_frame_params)
@@ -3597,6 +3628,9 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 	params->dz_config_changed = false;
 	params->motion_config_changed = false;
 	params->dvs_6axis_config_changed = false;
+/* ------ deprecated(bz675) : from ------ */
+	params->shading_settings_changed = false;
+/* ------ deprecated(bz675) : to ------ */
 
 	memset(&params->config_changed[0], 0, sizeof(params->config_changed));
 
@@ -3641,8 +3675,10 @@ sh_css_params_write_to_ddr_internal(
 	(void)stage_num;
 	/* pass call to product specific to handle copying of tables to DDR */
 	err = sh_css_params_to_ddr(binary, ddr_map, ddr_map_size);
-	if (err != IA_CSS_SUCCESS)
+	if (err != IA_CSS_SUCCESS) {
+		IA_CSS_LEAVE_ERR_PRIVATE(err);
 		return err;
+	}
 #endif
 
 	stage_num = stage->stage_num;
@@ -3658,8 +3694,10 @@ sh_css_params_write_to_ddr_internal(
 			size,
 			params->isp_mem_params_changed[pipe_id][stage_num][mem],
 			&err);
-		if (err != IA_CSS_SUCCESS)
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE_ERR_PRIVATE(err);
 			return err;
+		}
 		if (params->isp_mem_params_changed[pipe_id][stage_num][mem] || buff_realloced) {
 			sh_css_update_isp_mem_params_to_ddr(binary,
 				ddr_map->isp_mem_param[stage_num][mem],
@@ -3674,8 +3712,10 @@ sh_css_params_write_to_ddr_internal(
 			(size_t)(FPNTBL_BYTES(binary)),
 			params->config_changed[IA_CSS_FPN_ID],
 			&err);
-		if (err != IA_CSS_SUCCESS)
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE_ERR_PRIVATE(err);
 			return err;
+		}
 		if (params->config_changed[IA_CSS_FPN_ID] || buff_realloced) {
 			if (params->fpn_config.enabled) {
 				store_fpntbl(params, ddr_map->fpn_tbl);
@@ -3694,30 +3734,82 @@ sh_css_params_write_to_ddr_internal(
 #endif
 		}
 	}
+
 	if (binary->info->sp.enable.sc) {
+		uint32_t enable_conv = params->
+			shading_settings.enable_shading_table_conversion;
+
 		buff_realloced = reallocate_buffer(&ddr_map->sc_tbl,
 			&ddr_map_size->sc_tbl,
 			(size_t)(SCTBL_BYTES(binary)),
 			params->sc_table_changed,
 			&err);
-		if (err != IA_CSS_SUCCESS)
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE_ERR_PRIVATE(err);
 			return err;
-		if (params->sc_table_changed || buff_realloced) {
-			/* shading table is full resolution, reduce */
-			prepare_shading_table(
-				(const struct ia_css_shading_table *)params->sc_table,
-				params->sensor_binning,
-				&params->sc_config,
-				binary);
-			if (params->sc_config == NULL) {
-				IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
-				return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
-			}
-			ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
-			ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
+		}
 
-			ia_css_shading_table_free(params->sc_config);
-			params->sc_config = NULL;
+		if (params->shading_settings_changed ||
+		    params->sc_table_changed || buff_realloced) {
+			if (enable_conv == 0) {
+				if (params->sc_table) {
+					/* store the shading table to ddr */
+					ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_table);
+
+					/* set sc_config to isp */
+					params->sc_config = (struct ia_css_shading_table *)params->sc_table;
+					ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
+					params->sc_config = NULL;
+				} else {
+					/* generate the identical shading table */
+					if (params->sc_config) {
+						ia_css_shading_table_free(params->sc_config);
+						params->sc_config = NULL;
+					}
+					sh_css_params_shading_id_table_generate(&params->sc_config, binary);
+					if (params->sc_config == NULL) {
+						IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+						return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+					}
+
+					/* store the shading table to ddr */
+					ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
+
+					/* set sc_config to isp */
+					ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
+
+					/* free the shading table */
+					ia_css_shading_table_free(params->sc_config);
+					params->sc_config = NULL;
+				}
+			} else { /* legacy */
+/* ------ deprecated(bz675) : from ------ */
+				/* shading table is full resolution, reduce */
+				if (params->sc_config) {
+					ia_css_shading_table_free(params->sc_config);
+					params->sc_config = NULL;
+				}
+				prepare_shading_table(
+					(const struct ia_css_shading_table *)params->sc_table,
+					params->sensor_binning,
+					&params->sc_config,
+					binary);
+				if (params->sc_config == NULL) {
+					IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+					return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+				}
+
+				/* store the shading table to ddr */
+				ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
+
+				/* set sc_config to isp */
+				ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
+
+				/* free the shading table */
+				ia_css_shading_table_free(params->sc_config);
+				params->sc_config = NULL;
+/* ------ deprecated(bz675) : to ------ */
+			}
 		}
 	}
 
@@ -3759,8 +3851,10 @@ sh_css_params_write_to_ddr_internal(
 				  ddr_map_size->macc_tbl,
 				  true,
 				  &err);
-		if (err != IA_CSS_SUCCESS)
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE_ERR_PRIVATE(err);
 			return err;
+		}
 		mmgr_store(ddr_map->macc_tbl,
 				     converted_macc_table.data,
 				     sizeof(converted_macc_table.data));
@@ -3777,8 +3871,10 @@ sh_css_params_write_to_ddr_internal(
 				(size_t)((DVS_6AXIS_BYTES(binary) / 2) * 3),
 				params->dvs_6axis_config_changed,
 				&err);
-		if (err != IA_CSS_SUCCESS)
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE_ERR_PRIVATE(err);
 			return err;
+		}
 		if (params->dvs_6axis_config_changed || buff_realloced) {
 			if (params->dvs_6axis_config == NULL) /* Generate default DVS unity table on start up*/
 			{
@@ -3806,15 +3902,19 @@ sh_css_params_write_to_ddr_internal(
 				  sdis_hor_coef_tbl_bytes(binary),
 				  params->dis_coef_table_changed,
 				  &err);
-		if (err != IA_CSS_SUCCESS)
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE_ERR_PRIVATE(err);
 			return err;
+		}
 		buff_realloced |= reallocate_buffer(&ddr_map->sdis_ver_coef,
 				  &ddr_map_size->sdis_ver_coef,
 				  sdis_ver_coef_tbl_bytes(binary),
 				  params->dis_coef_table_changed,
 				  &err);
-		if (err != IA_CSS_SUCCESS)
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE_ERR_PRIVATE(err);
 			return err;
+		}
 		if (binary->info->sp.isp_pipe_version == 2) {
 			if (params->dvs2_coef_table_changed || buff_realloced) {
 				store_dvs2_coefficients(params, binary,
@@ -3879,8 +3979,10 @@ sh_css_params_write_to_ddr_internal(
 						  (MORPH_PLANE_BYTES(binary)),
 						params->morph_table_changed,
 						&err);
-			if (err != IA_CSS_SUCCESS)
+			if (err != IA_CSS_SUCCESS) {
+				IA_CSS_LEAVE_ERR_PRIVATE(err);
 				return err;
+			}
 			buff_realloced |=
 					reallocate_buffer(virt_addr_tetra_y[i],
 						virt_size_tetra_y[i],
@@ -3888,8 +3990,10 @@ sh_css_params_write_to_ddr_internal(
 						  (MORPH_PLANE_BYTES(binary)),
 						params->morph_table_changed,
 						&err);
-			if (err != IA_CSS_SUCCESS)
+			if (err != IA_CSS_SUCCESS) {
+				IA_CSS_LEAVE_ERR_PRIVATE(err);
 				return err;
+			}
 		}
 		if (params->morph_table_changed || buff_realloced) {
 			const struct ia_css_morph_table *table = params->morph_table;
@@ -3903,8 +4007,10 @@ sh_css_params_write_to_ddr_internal(
 			if (table == NULL) {
 				err = sh_css_params_default_morph_table(&id_table,
 								  binary);
-				if (err != IA_CSS_SUCCESS)
+				if (err != IA_CSS_SUCCESS) {
+					IA_CSS_LEAVE_ERR_PRIVATE(err);
 					return err;
+				}
 				table = id_table;
 			}
 
@@ -3936,8 +4042,10 @@ sh_css_params_write_to_ddr_internal(
 			size,
 			params->isp_mem_params_changed[pipe_id][stage_num][mem],
 			&err);
-		if (err != IA_CSS_SUCCESS)
+		if (err != IA_CSS_SUCCESS) {
+			IA_CSS_LEAVE_ERR_PRIVATE(err);
 			return err;
+		}
 		if (params->isp_mem_params_changed[pipe_id][stage_num][mem] || buff_realloced) {
 			sh_css_update_isp_mem_params_to_ddr(binary,
 				ddr_map->isp_mem_param[stage_num][mem],
@@ -4001,47 +4109,61 @@ const struct ia_css_fpn_table *ia_css_get_fpn_table(struct ia_css_stream *stream
 struct ia_css_shading_table *ia_css_get_shading_table(struct ia_css_stream *stream)
 {
 #if !defined(IS_ISP_2500_SYSTEM)
-	struct ia_css_shading_table *sc_config = NULL;
-	struct ia_css_binary *binary = NULL;
+	struct ia_css_shading_table *table = NULL;
 	struct ia_css_isp_parameters *params;
-	int i;
 
 	IA_CSS_ENTER("void");
 
 	assert(stream != NULL);
 
 	params = stream->isp_params_configs;
+	if (!params)
+		return NULL;
 
-	for (i = 0; i < stream->num_pipes; i++) {
-		struct ia_css_pipe *pipe = stream->pipes[i];
-		struct ia_css_pipeline *pipeline;
-		struct ia_css_pipeline_stage *stage;
-		/* unsigned int thread_id; */
-
-		pipeline = ia_css_pipe_get_pipeline(pipe);
-		assert(pipeline != NULL);
-
-		for (stage = pipeline->stages; stage; stage = stage->next) {
-			if (stage && stage->binary) {
-				if (stage->binary->info->sp.enable.sc) {
-					binary = stage->binary;
-					break;
+	if (params->shading_settings.enable_shading_table_conversion == 0) {
+		if (params->sc_table) {
+			table = (struct ia_css_shading_table *)params->sc_table;
+		} else {
+			const struct ia_css_binary *binary
+				= ia_css_stream_get_shading_correction_binary(stream);
+			if (binary) {
+				/* generate the identical shading table */
+				if (params->sc_config) {
+					ia_css_shading_table_free(params->sc_config);
+					params->sc_config = NULL;
 				}
+				sh_css_params_shading_id_table_generate(&params->sc_config, binary);
+
+				table = params->sc_config;
+				/* The sc_config will be freed in the
+				 * ia_css_stream_isp_parameters_uninit function. */
 			}
 		}
-		if (binary)
-			break;
+	} else {
+/* ------ deprecated(bz675) : from ------ */
+		const struct ia_css_binary *binary
+			= ia_css_stream_get_shading_correction_binary(stream);
+		if (binary) {
+			if (params->sc_config) {
+				ia_css_shading_table_free(params->sc_config);
+				params->sc_config = NULL;
+			}
+			prepare_shading_table(
+				(const struct ia_css_shading_table *)params->sc_table,
+				params->sensor_binning,
+				&params->sc_config,
+				binary);
+
+			table = params->sc_config;
+			/* The sc_config will be freed in the
+			 * ia_css_stream_isp_parameters_uninit function. */
+		}
+/* ------ deprecated(bz675) : to ------ */
 	}
-	if (binary)
-		prepare_shading_table(
-			(const struct ia_css_shading_table *)params->sc_table,
-			params->sensor_binning,
-			&sc_config,
-			binary);
 
-	IA_CSS_LEAVE("sc_config=%p", sc_config);
+	IA_CSS_LEAVE("table=%p", table);
 
-	return sc_config;
+	return table;
 #endif
 	(void)(stream);
 	assert(false);

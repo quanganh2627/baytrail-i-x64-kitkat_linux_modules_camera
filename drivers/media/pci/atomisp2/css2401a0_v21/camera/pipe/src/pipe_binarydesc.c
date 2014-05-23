@@ -178,6 +178,29 @@ static struct sh_css_bds_factor bds_factors_list[] = {
 	{8, 1, SH_CSS_BDS_FACTOR_8_00}
 };
 
+enum ia_css_err sh_css_bds_factor_get_numerator_denominator(
+	unsigned int bds_factor,
+	unsigned int *bds_factor_numerator,
+	unsigned int *bds_factor_denominator)
+{
+	unsigned int i;
+	unsigned int bds_list_size = sizeof(bds_factors_list) /
+				sizeof(struct sh_css_bds_factor);
+
+	/* Loop over all bds factors until a match is found */
+	for (i = 0; i < bds_list_size; i++) {
+		if (bds_factors_list[i].bds_factor == bds_factor) {
+			*bds_factor_numerator = bds_factors_list[i].numerator;
+			*bds_factor_denominator = bds_factors_list[i].denominator;
+			return IA_CSS_SUCCESS;
+		}
+	}
+
+	/* Throw an error since bds_factor cannot be found
+	in bds_factors_list */
+	return IA_CSS_ERR_INVALID_ARGUMENTS;
+}
+
 static enum ia_css_err binarydesc_calculate_bds_factor(
 	struct ia_css_resolution input_res,
 	struct ia_css_resolution output_res,

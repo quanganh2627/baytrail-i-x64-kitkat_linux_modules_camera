@@ -37,4 +37,14 @@ ia_css_sc_dump(
 	const struct sh_css_isp_sc_params *sc,
 	unsigned level);
 
+/* ------ deprecated(bz675) : from ------ */
+void
+sh_css_get_shading_settings(const struct ia_css_isp_parameters *params,
+			struct ia_css_shading_settings *settings);
+
+void
+sh_css_set_shading_settings(struct ia_css_isp_parameters *params,
+			const struct ia_css_shading_settings *settings);
+/* ------ deprecated(bz675) : to ------ */
+
 #endif /* __IA_CSS_SC_HOST_H */

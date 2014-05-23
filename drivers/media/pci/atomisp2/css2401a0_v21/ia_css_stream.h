@@ -50,6 +50,15 @@ struct ia_css_stream {
 	bool						   started;
 };
 
+/** @brief Get a binary in the stream, which binary has the shading correction.
+ *
+ * @param[in] stream: The stream.
+ * @return	The binary which has the shading correction.
+ *
+ */
+struct ia_css_binary *
+ia_css_stream_get_shading_correction_binary(const struct ia_css_stream *stream);
+
 struct ia_css_binary *
 ia_css_stream_get_dvs_binary(const struct ia_css_stream *stream);
 
@@ -74,6 +83,12 @@ sh_css_invalidate_params(struct ia_css_stream *stream);
 const struct ia_css_fpn_table *
 ia_css_get_fpn_table(struct ia_css_stream *stream);
 
+/** @brief Get a pointer to the shading table.
+ *
+ * @param[in] stream: The stream.
+ * @return	The pointer to the shading table.
+ *
+ */
 struct ia_css_shading_table *
 ia_css_get_shading_table(struct ia_css_stream *stream);
 
