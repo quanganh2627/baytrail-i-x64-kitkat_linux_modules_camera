@@ -139,6 +139,8 @@ struct m10mo_device {
 	int entries_curr_table;
 	int ref_clock;
 	unsigned int fw_type;
+	int fw_addr_id;
+	u8 shot_mode;
 };
 
 enum hdr_options{
@@ -233,14 +235,14 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_OUTPUT_INTERFACE_MIPI	0x02
 #define PARAM_MIPI_OUT_LANE_NUM		0x3e
 #define REG_OUTPUT_MIPI_4LANE		0x04
-#define PARAM_VDIS				0x00
-#define SHOT_MODE				0x0e
+
+#define PARAM_VDIS			0x00
+#define SHOT_MODE			0x0e
 #define MONITOR_TYPE			0x6e
 
 #define MONITOR_PREVIEW		0
 #define MONITOR_BURST		1
 #define MONITOR_VIDEO		3
-
 
 /* Category 2_MONITOR mode */
 
@@ -454,9 +456,18 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_CHECK_SUM_SIZE      0x5c
 
 /* Shot modes (cat 0x01 byte 0x0e) */
-#define SHOT_MODE_NORMAL        0x00
-#define SHOT_MODE_AUTO          0x01
-#define SHOT_MODE_PANORAMA      0x07
+#define SHOT_MODE_AUTO			0x01
+#define SHOT_MODE_BEAUTY_FACE		0X02
+#define SHOT_MODE_BEST_PHOTO		0X03
+#define SHOT_MODE_DRAMA			0X04
+#define SHOT_MODE_BEST_FACE		0X05
+#define SHOT_MODE_ERASER		0X06
+#define SHOT_MODE_PANORAMA		0x07
+#define SHOT_MODE_RICH_TONE_HDR		0X09
+#define SHOT_MODE_NIGHT			0X0A
+#define SHOT_MODE_SOUND_SHOT            0X0B
+#define SHOT_MODE_ANIMATED_PHOTO	0X0F
+#define SHOT_MODE_SPORTS		0X11
 
 /* Still capture modes for NV12 */
 #define REG_CAP_NV12_MODE	0x0a

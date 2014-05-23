@@ -950,6 +950,11 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
+	/* Set shot mode */
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, SHOT_MODE, dev->shot_mode);
+	if (ret)
+		goto out;
+
 	/* vdis on/off */
 	m10mo_writeb(sd, CATEGORY_MONITOR, PARAM_VDIS,
 		     dev->curr_res_table[dev->fmt_idx].vdis ? 0x01 : 0x00);
@@ -957,11 +962,6 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	/* By default outputs NV21. Choose NV12 */
 	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT,
 				CHOOSE_NV12NV21_FMT_NV12);
-	if (ret)
-		goto out;
-
-	/* Set shot mode to auto */
-	ret = m10mo_writeb(sd, CATEGORY_PARAM, SHOT_MODE, SHOT_MODE_AUTO);
 	if (ret)
 		goto out;
 
@@ -1161,6 +1161,54 @@ static int m10mo_set_hdr_mode(struct v4l2_subdev *sd, unsigned int val)
 	}
 
 	return ret;
+}
+
+static int m10mo_set_shot_mode(struct v4l2_subdev *sd, unsigned int val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+
+	switch (val) {
+	case EXT_ISP_SHOT_MODE_AUTO:
+		dev->shot_mode = SHOT_MODE_AUTO;
+		break;
+	case EXT_ISP_SHOT_MODE_BEAUTY_FACE:
+		dev->shot_mode = SHOT_MODE_BEAUTY_FACE;
+		break;
+	case EXT_ISP_SHOT_MODE_BEST_PHOTO:
+		dev->shot_mode = SHOT_MODE_BEST_PHOTO;
+		break;
+	case EXT_ISP_SHOT_MODE_DRAMA:
+		dev->shot_mode = SHOT_MODE_DRAMA;
+		break;
+	case EXT_ISP_SHOT_MODE_BEST_FACE:
+		dev->shot_mode = SHOT_MODE_BEST_FACE;
+		break;
+	case EXT_ISP_SHOT_MODE_ERASER:
+		dev->shot_mode = SHOT_MODE_ERASER;
+		break;
+	case EXT_ISP_SHOT_MODE_PANORAMA:
+		dev->shot_mode = SHOT_MODE_PANORAMA;
+		break;
+	case EXT_ISP_SHOT_MODE_RICH_TONE_HDR:
+		dev->shot_mode = SHOT_MODE_RICH_TONE_HDR;
+		break;
+	case EXT_ISP_SHOT_MODE_NIGHT:
+		dev->shot_mode = SHOT_MODE_NIGHT;
+		break;
+	case EXT_ISP_SHOT_MODE_SOUND_SHOT:
+		dev->shot_mode = SHOT_MODE_SOUND_SHOT;
+		break;
+	case EXT_ISP_SHOT_MODE_ANIMATED_PHOTO:
+		dev->shot_mode = SHOT_MODE_ANIMATED_PHOTO;
+		break;
+	case EXT_ISP_SHOT_MODE_SPORTS:
+		dev->shot_mode = SHOT_MODE_SPORTS;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int m10mo_s_power(struct v4l2_subdev *sd, int on)
@@ -2398,6 +2446,9 @@ static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 		ret = m10mo_writeb(sd, CATEGORY_MONITOR, MONITOR_ZOOM,
 						m10mo_ctrl->data);
 		break;
+	case EXT_ISP_CID_SHOT_MODE:
+		ret = m10mo_set_shot_mode(sd, m10mo_ctrl->data);
+		break;
 	default:
 		ret = -EINVAL;
 		dev_err(&client->dev, "m10mo ioctl: Unsupported ID\n");
@@ -2871,6 +2922,7 @@ static int m10mo_probe(struct i2c_client *client,
 	dev->sd.entity.ops = &m10mo_entity_ops;
 	dev->sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV_SENSOR;
 	dev->format.code = V4L2_MBUS_FMT_UYVY8_1X16;
+	dev->shot_mode = SHOT_MODE_AUTO;
 
 	ret = media_entity_init(&dev->sd.entity, 1, &dev->pad, 0);
 	if (ret)
