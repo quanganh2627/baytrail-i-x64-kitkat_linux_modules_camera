@@ -1531,8 +1531,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 	ret = __m10mo_s_power(sd, 1, true);
 	if (ret) {
 		dev_err(&client->dev, "power-up err.\n");
-		mutex_unlock(&dev->input_lock);
-		return ret;
+		goto free_irq;
 	}
 
 	if (dev->pdata->common.csi_cfg) {
@@ -1558,16 +1557,19 @@ static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 	m10mo_identify_fw_type(sd);
 
 	ret = __m10mo_s_power(sd, 0, true);
-	mutex_unlock(&dev->input_lock);
 	if (ret) {
 		dev_err(&client->dev, "power-down err.\n");
-		return ret;
+		goto free_irq;
 	}
 
+	mutex_unlock(&dev->input_lock);
 	return 0;
 
 fail:
 	__m10mo_s_power(sd, 0, true);
+free_irq:
+	free_irq(client->irq, sd);
+
 	mutex_unlock(&dev->input_lock);
 	dev_err(&client->dev, "External ISP power-gating failed\n");
 	return ret;
