@@ -2106,6 +2106,20 @@ void atomisp_css_preview_enable_online(struct atomisp_sub_device *asd,
 	}
 }
 
+void atomisp_css_video_enable_online(struct atomisp_sub_device *asd,
+							bool enable)
+{
+	struct atomisp_stream_env *stream_env =
+		&asd->stream_env[ATOMISP_INPUT_STREAM_VIDEO];
+	int i;
+
+	if (stream_env->stream_config.online != enable) {
+		stream_env->stream_config.online = enable;
+		for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++)
+			stream_env->update_pipe[i] = true;
+	}
+}
+
 void atomisp_css_enable_continuous(struct atomisp_sub_device *asd,
 							bool enable)
 {

@@ -324,6 +324,9 @@ void atomisp_css_capture_enable_online(struct atomisp_sub_device *asd,
 void atomisp_css_preview_enable_online(struct atomisp_sub_device *asd,
 				unsigned short stream_index, bool enable);
 
+void atomisp_css_video_enable_online(struct atomisp_sub_device *asd,
+							bool enable);
+
 void atomisp_css_enable_continuous(struct atomisp_sub_device *asd,
 							bool enable);
 

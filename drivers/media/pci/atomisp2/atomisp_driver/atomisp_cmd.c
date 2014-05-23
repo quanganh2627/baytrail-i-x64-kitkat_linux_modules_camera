@@ -4488,6 +4488,9 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 						"failed to set up yuvpp pipe\n");
 					return -EINVAL;
 				}
+				atomisp_css_video_enable_online(asd, false);
+				atomisp_css_preview_enable_online(asd,
+					ATOMISP_INPUT_STREAM_GENERAL, false);
 			}
 			atomisp_css_yuvpp_configure_viewfinder(asd, video_index,
 				f->fmt.pix.width, f->fmt.pix.height,
