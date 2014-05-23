@@ -31,6 +31,8 @@
 
 #define ATOMISP_CSS2_PIPE_MAX	2
 #define ATOMISP_CSS2_NUM_OFFLINE_INIT_CONTINUOUS_FRAMES     3
+#define ATOMISP_CSS2_NUM_OFFLINE_INIT_CONTINUOUS_FRAMES_LOCK_EN     4
+#define ATOMISP_CSS2_NUM_DVS_FRAME_DELAY     2
 
 #define atomisp_css_pipe_id ia_css_pipe_id
 #define atomisp_css_pipeline	ia_css_pipe

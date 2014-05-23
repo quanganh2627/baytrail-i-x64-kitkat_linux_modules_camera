@@ -692,7 +692,8 @@ static void __apply_additional_pipe_config(
 			stream_env->pipe_extra_configs[pipe_id]
 				.enable_dvs_6axis = true;
 			stream_env->pipe_configs[pipe_id]
-				.dvs_frame_delay = 2;
+				.dvs_frame_delay =
+					ATOMISP_CSS2_NUM_DVS_FRAME_DELAY;
 		}
 		break;
 	case IA_CSS_PIPE_ID_PREVIEW:
@@ -2314,9 +2315,26 @@ int atomisp_css_continuous_set_num_raw_frames(
 					struct atomisp_sub_device *asd,
 					int num_frames)
 {
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+	if (asd->enable_raw_buffer_lock->val) {
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
 		.stream_config.init_num_cont_raw_buf =
-		ATOMISP_CSS2_NUM_OFFLINE_INIT_CONTINUOUS_FRAMES;
+			ATOMISP_CSS2_NUM_OFFLINE_INIT_CONTINUOUS_FRAMES_LOCK_EN;
+		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
+		    asd->params.video_dis_en)
+			asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+			.stream_config.init_num_cont_raw_buf +=
+				ATOMISP_CSS2_NUM_DVS_FRAME_DELAY;
+	} else {
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+		.stream_config.init_num_cont_raw_buf =
+			ATOMISP_CSS2_NUM_OFFLINE_INIT_CONTINUOUS_FRAMES;
+	}
+
+	if (asd->params.video_dis_en)
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+			.stream_config.init_num_cont_raw_buf +=
+				ATOMISP_CSS2_NUM_DVS_FRAME_DELAY;
+
 	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
 		.stream_config.target_num_cont_raw_buf = num_frames;
 	return 0;

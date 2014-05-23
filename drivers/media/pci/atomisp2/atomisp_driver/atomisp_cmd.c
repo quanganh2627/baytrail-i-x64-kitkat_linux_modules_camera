@@ -4905,13 +4905,27 @@ int atomisp_offline_capture_configure(struct atomisp_sub_device *asd,
 
 	if (asd->params.offline_parm.num_captures) {
 		if (asd->streaming == ATOMISP_DEVICE_STREAMING_DISABLED) {
+			unsigned int init_raw_num;
+
+			if (asd->enable_raw_buffer_lock->val) {
+				init_raw_num =
+					ATOMISP_CSS2_NUM_OFFLINE_INIT_CONTINUOUS_FRAMES_LOCK_EN;
+				if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
+				    asd->params.video_dis_en)
+					init_raw_num +=
+					    ATOMISP_CSS2_NUM_DVS_FRAME_DELAY;
+			} else {
+				init_raw_num =
+					ATOMISP_CSS2_NUM_OFFLINE_INIT_CONTINUOUS_FRAMES;
+			}
+
 			/* TODO: this can be removed once user-space
 			 *       has been updated to use control API */
 			asd->continuous_raw_buffer_size->val =
 				max_t(int,
 				      asd->continuous_raw_buffer_size->val,
 				      asd->params.offline_parm.
-				      num_captures + 3);
+				      num_captures + init_raw_num);
 			asd->continuous_raw_buffer_size->val =
 				min_t(int, ATOMISP_CONT_RAW_FRAMES,
 				      asd->continuous_raw_buffer_size->val);
