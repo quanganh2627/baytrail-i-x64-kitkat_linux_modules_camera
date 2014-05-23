@@ -2129,6 +2129,118 @@ static int m10mo_set_iso_mode(struct v4l2_subdev *sd, s32 val)
 	return 0;
 }
 
+static const unsigned short ce_lut[][2] = {
+	{ V4L2_COLORFX_NONE,     COLOR_EFFECT_NONE},
+	{ V4L2_COLORFX_NEGATIVE, COLOR_EFFECT_NEGATIVE},
+	{ V4L2_COLORFX_WARM,     COLOR_EFFECT_WARM},
+	{ V4L2_COLORFX_COLD,     COLOR_EFFECT_COLD},
+	{ V4L2_COLORFX_WASHED,   COLOR_EFFECT_WASHED},
+};
+
+static const unsigned short cbcr_lut[][3] = {
+	{ V4L2_COLORFX_SEPIA,   COLOR_CFIXB_SEPIA,   COLOR_CFIXR_SEPIA},
+	{ V4L2_COLORFX_BW,      COLOR_CFIXB_BW,      COLOR_CFIXR_BW},
+	{ V4L2_COLORFX_RED,     COLOR_CFIXB_RED,     COLOR_CFIXR_RED},
+	{ V4L2_COLORFX_GREEN,   COLOR_CFIXB_GREEN,   COLOR_CFIXR_GREEN},
+	{ V4L2_COLORFX_BLUE,    COLOR_CFIXB_BLUE,    COLOR_CFIXR_BLUE},
+	{ V4L2_COLORFX_PINK ,   COLOR_CFIXB_PINK,    COLOR_CFIXR_PINK},
+	{ V4L2_COLORFX_YELLOW,  COLOR_CFIXB_YELLOW,  COLOR_CFIXR_YELLOW},
+	{ V4L2_COLORFX_PURPLE,  COLOR_CFIXB_PURPLE,  COLOR_CFIXR_PURPLE},
+	{ V4L2_COLORFX_ANTIQUE, COLOR_CFIXB_ANTIQUE, COLOR_CFIXR_ANTIQUE},
+};
+
+static int m10mo_set_cb_cr(struct v4l2_subdev *sd, u8 cfixb, u8 cfixr)
+{
+	int ret;
+
+	ret = m10mo_writeb(sd, CATEGORY_MONITOR,
+			   MONITOR_CFIXB, cfixb);
+	if (ret)
+		return ret;
+
+	ret = m10mo_writeb(sd, CATEGORY_MONITOR,
+			   MONITOR_CFIXR, cfixr);
+	if (ret)
+		return ret;
+
+	ret = m10mo_writeb(sd, CATEGORY_MONITOR,
+			   MONITOR_COLOR_EFFECT, COLOR_EFFECT_ON);
+	return ret;
+}
+
+static int m10mo_set_color_effect(struct v4l2_subdev *sd, s32 val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+
+	int i, ret;
+
+	switch (val) {
+	case V4L2_COLORFX_NONE:
+	case V4L2_COLORFX_NEGATIVE:
+	case V4L2_COLORFX_WARM:
+	case V4L2_COLORFX_COLD:
+	case V4L2_COLORFX_WASHED:
+		for (i = 0; i < ARRAY_SIZE(ce_lut); i++) {
+			if (val == ce_lut[i][0])
+				break;
+		}
+
+		if (i == ARRAY_SIZE(ce_lut))
+			return -EINVAL;
+
+		ret = m10mo_writeb(sd, CATEGORY_MONITOR,
+				   MONITOR_COLOR_EFFECT, ce_lut[i][1]);
+		break;
+	case V4L2_COLORFX_SEPIA:
+	case V4L2_COLORFX_BW:
+	case V4L2_COLORFX_ANTIQUE:
+	case V4L2_COLORFX_RED:
+	case V4L2_COLORFX_GREEN:
+	case V4L2_COLORFX_BLUE:
+	case V4L2_COLORFX_PINK:
+	case V4L2_COLORFX_YELLOW:
+	case V4L2_COLORFX_PURPLE:
+		for (i = 0; i < ARRAY_SIZE(cbcr_lut); i++) {
+			if (val == cbcr_lut[i][0])
+				break;
+		}
+
+		if (i == ARRAY_SIZE(cbcr_lut))
+			return -EINVAL;
+
+		ret = m10mo_set_cb_cr(sd, cbcr_lut[i][1], cbcr_lut[i][2]);
+		break;
+	case V4L2_COLORFX_SET_CBCR:
+		ret = m10mo_set_cb_cr(sd, dev->colorfx_cb, dev->colorfx_cr);
+		break;
+	default:
+		ret = -EINVAL;
+	};
+
+	return ret;
+}
+
+static int m10mo_set_color_effect_cbcr(struct v4l2_subdev *sd, s32 val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret;
+	u8 cr, cb;
+
+	cr = val & 0xff;
+	cb = (val >> 8) & 0xff;
+
+	if (dev->colorfx->cur.val == V4L2_COLORFX_SET_CBCR) {
+		ret = m10mo_set_cb_cr(sd, cb, cr);
+		if (ret)
+			return ret;
+	}
+
+	dev->colorfx_cr = cr;
+	dev->colorfx_cb = cb;
+
+	return 0;
+}
+
 static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct m10mo_device *dev = container_of(
@@ -2160,6 +2272,12 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_ISO_SENSITIVITY_AUTO:
 		ret = m10mo_set_iso_mode(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_COLORFX:
+		ret = m10mo_set_color_effect(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_COLORFX_CBCR:
+		ret = m10mo_set_color_effect_cbcr(&dev->sd, ctrl->val);
 		break;
 	case V4L2_CID_TEST_PATTERN:
 		if (dev->fw_type == M10MO_FW_TYPE_2)
@@ -2370,6 +2488,26 @@ static const struct v4l2_ctrl_config ctrls[] = {
 	},
 	{
 		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_COLORFX,
+		.name = "Image Color Effect",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = V4L2_COLORFX_NONE,
+		.def = V4L2_COLORFX_NONE,
+		.max = V4L2_COLORFX_PURPLE,
+		.step = 1,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_COLORFX_CBCR,
+		.name = "Image Color Effect CbCr",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 0xffff,
+		.step = 1,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
 		.id = V4L2_CID_TEST_PATTERN,
 		.name = "Test Pattern (Color Bar)",
 		.type = V4L2_CTRL_TYPE_INTEGER,
@@ -2411,6 +2549,8 @@ static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
 					V4L2_CID_START_ZSL_CAPTURE);
 	v4l2_ctrl_s_ctrl(dev->zsl_capture, V4L2_CID_START_ZSL_CAPTURE);
 
+	dev->colorfx = v4l2_ctrl_find(&dev->ctrl_handler,
+				      V4L2_CID_COLORFX);
 	return 0;
 }
 

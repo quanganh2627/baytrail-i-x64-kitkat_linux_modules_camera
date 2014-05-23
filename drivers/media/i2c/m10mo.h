@@ -120,6 +120,8 @@ struct m10mo_device {
 	u8 capture_mode;
 	short iso_mode;
 	short iso_sensitivity;
+	u8 colorfx_cr;
+	u8 colorfx_cb;
 	int fmt_idx;
 	int capture_res_idx;
 	wait_queue_head_t irq_waitq;
@@ -131,6 +133,7 @@ struct m10mo_device {
 	int run_mode;
 	struct v4l2_ctrl *link_freq;
 	struct v4l2_ctrl *zsl_capture;
+	struct v4l2_ctrl *colorfx;
 	unsigned int num_lanes;
 	const struct m10mo_resolution *curr_res_table;
 	int entries_curr_table;
@@ -252,6 +255,32 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_ZSL_MONITOR 	0x01
 #define ZSL_MODE		0x6e
 #define ZSL_INTERVAL 		0x6f
+
+#define COLOR_EFFECT_NONE	0x00
+#define COLOR_EFFECT_ON		0x01
+#define COLOR_EFFECT_NEGATIVE	0x02
+#define COLOR_EFFECT_WARM	0x04
+#define COLOR_EFFECT_COLD	0x05
+#define COLOR_EFFECT_WASHED	0x06
+
+#define COLOR_CFIXB_SEPIA	0xd8
+#define COLOR_CFIXR_SEPIA	0x18
+#define COLOR_CFIXB_BW		0x00
+#define COLOR_CFIXR_BW		0x00
+#define COLOR_CFIXB_RED		0x00
+#define COLOR_CFIXR_RED		0x6b
+#define COLOR_CFIXB_GREEN	0xe0
+#define COLOR_CFIXR_GREEN	0xe0
+#define COLOR_CFIXB_BLUE	0x40
+#define COLOR_CFIXR_BLUE	0x00
+#define COLOR_CFIXB_PINK	0x20
+#define COLOR_CFIXR_PINK	0x40
+#define COLOR_CFIXB_YELLOW	0x80
+#define COLOR_CFIXR_YELLOW	0x00
+#define COLOR_CFIXB_PURPLE	0x50
+#define COLOR_CFIXR_PURPLE	0x20
+#define COLOR_CFIXB_ANTIQUE	0xd0
+#define COLOR_CFIXR_ANTIQUE	0x30
 
 /*  ZSL MODE */
 #define CAPTURE_MODE		0x00
