@@ -31,7 +31,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatbile
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.2.3"
+#define CSS_API_VERSION_STRING	"2.1.2.4"
 
 /*
 Change log
@@ -73,6 +73,9 @@ v2.1.2.2, modified enum ia_css_stream_format
 
 v2.1.2.3
 - added api to enable/disable digital zoom for capture pipe.
+
+v2.1.2.4, change CSS API to generate the shading table which should be directly sent to ISP:
+ - keep the old CSS API (which uses the conversion of the shading table in CSS) for backward compatibility
 */
 
 #endif __CSS_API_VERSION_H

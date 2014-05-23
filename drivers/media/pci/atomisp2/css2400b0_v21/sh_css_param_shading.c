@@ -195,9 +195,10 @@ crop_and_interpolate(unsigned int cropped_width,
 	}
 }
 
-static void
-generate_id_shading_table(struct ia_css_shading_table **target_table,
-			  const struct ia_css_binary *binary)
+void
+sh_css_params_shading_id_table_generate(
+	struct ia_css_shading_table **target_table,
+	const struct ia_css_binary *binary)
 {
 	/* initialize table with ones, shift becomes zero */
 	unsigned int i, j, table_width, table_height;
@@ -241,7 +242,7 @@ prepare_shading_table(const struct ia_css_shading_table *in_table,
 	assert(binary != NULL);
 
 	if (!in_table) {
-		generate_id_shading_table(target_table, binary);
+		sh_css_params_shading_id_table_generate(target_table, binary);
 		return;
 	}
 

@@ -58,6 +58,22 @@ extern void ia_css_pipe_get_vfpp_binarydesc(
 		struct ia_css_frame_info *in_info,
 		struct ia_css_frame_info *out_info);
 
+/** @brief Get numerator and denominator of bayer downscaling factor.
+ *
+ * @param[in] bds_factor: The bayer downscaling factor.
+ *		(= The bds_factor member in the sh_css_bds_factor structure.)
+ * @param[out] bds_factor_numerator: The numerator of the bayer downscaling factor.
+ *		(= The numerator member in the sh_css_bds_factor structure.)
+ * @param[out] bds_factor_denominator: The denominator of the bayer downscaling factor.
+ *		(= The denominator member in the sh_css_bds_factor structure.)
+ * @return	IA_CSS_SUCCESS or error code upon error.
+ *
+ */
+extern enum ia_css_err sh_css_bds_factor_get_numerator_denominator(
+	unsigned int bds_factor,
+	unsigned int *bds_factor_numerator,
+	unsigned int *bds_factor_denominator);
+
 /** @brief Get a binary descriptor for preview stage.
  *
  * @param[in] pipe

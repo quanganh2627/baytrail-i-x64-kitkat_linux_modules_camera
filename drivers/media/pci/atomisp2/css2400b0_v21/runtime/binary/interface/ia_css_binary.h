@@ -196,6 +196,25 @@ enum ia_css_err
 ia_css_binary_find(struct ia_css_binary_descr *descr,
 		   struct ia_css_binary *binary);
 
+/** @brief Get the shading information of the specified shading correction type.
+ *
+ * @param[in] binary: The isp binary which has the shading correction.
+ * @param[in] type: The shading correction type.
+ * @param[in] required_bds_factor: The bayer downscaling factor required in the pipe.
+ * @param[in] stream_config: The stream configuration.
+ * @param[out] info: The shading information.
+ *		The driver needs to get this information to generate
+ *		the shading table directly required in the isp.
+ * @return	IA_CSS_SUCCESS or error code upon error.
+ *
+ */
+enum ia_css_err
+ia_css_binary_get_shading_info(const struct ia_css_binary *binary,
+			enum ia_css_shading_correction_type type,
+			unsigned int required_bds_factor,
+			const struct ia_css_stream_config *stream_config,
+			struct ia_css_shading_info *info);
+
 void
 ia_css_binary_3a_grid_info(const struct ia_css_binary *binary,
 			   struct ia_css_grid_info *info);
