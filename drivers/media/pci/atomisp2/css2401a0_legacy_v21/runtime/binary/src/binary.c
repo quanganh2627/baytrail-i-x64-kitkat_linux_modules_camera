@@ -20,6 +20,7 @@
  */
 
 #include <gdc_device.h>	/* HR_GDC_N */
+#include "isp.h"	/* ISP_VEC_NELEMS */
 
 #include "ia_css_binary.h"
 #include "ia_css.h"
@@ -35,6 +36,7 @@
 #include "vf/vf_1.0/ia_css_vf.host.h"
 #endif
 #include "sdis/sdis_1.0/ia_css_sdis.host.h"
+#include "camera/pipe/interface/ia_css_pipe_binarydesc.h"
 #if defined(HAS_RES_MGR)
 #include <components/resolutions_mgr/src/host/resolutions_mgr.host.h>
 #endif
@@ -114,6 +116,212 @@ ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
 #endif
 }
 
+/* Computation results of the origin coordinate of bayer on the shading table. */
+struct sh_css_shading_table_bayer_origin_compute_results {
+	uint32_t bayer_scale_hor_ratio_in;	/* Horizontal ratio (in) of bayer scaling. */
+	uint32_t bayer_scale_hor_ratio_out;	/* Horizontal ratio (out) of bayer scaling. */
+	uint32_t bayer_scale_ver_ratio_in;	/* Vertical ratio (in) of bayer scaling. */
+	uint32_t bayer_scale_ver_ratio_out;	/* Vertical ratio (out) of bayer scaling. */
+	uint32_t sc_bayer_origin_x_bqs_on_shading_table; /* X coordinate (in bqs) of bayer origin on shading table. */
+	uint32_t sc_bayer_origin_y_bqs_on_shading_table; /* Y coordinate (in bqs) of bayer origin on shading table. */
+};
+
+/* Compute the origin coordinate of bayer (= real sensor data area)
+   on the shading table, which bayer is inputted to shading correction. */
+static enum ia_css_err
+ia_css_binary_compute_shading_table_bayer_origin(
+	const struct ia_css_binary *binary,				/* [in] */
+	unsigned int required_bds_factor,				/* [in] */
+	const struct ia_css_stream_config *stream_config,		/* [in] */
+	struct sh_css_shading_table_bayer_origin_compute_results *res)	/* [out] */
+{
+	enum ia_css_err err;
+
+	/* Numerator and denominator of the fixed bayer downscaling factor.
+	(numerator >= denominator) */
+	unsigned int bds_num, bds_den;
+
+	/* Horizontal/Vertical ratio of bayer scaling
+	between input area and output area. */
+	unsigned int bs_hor_ratio_in;
+	unsigned int bs_hor_ratio_out;
+	unsigned int bs_ver_ratio_in;
+	unsigned int bs_ver_ratio_out;
+
+	/* Left padding set by InputFormatter. */
+	unsigned int left_padding_bqs;			/* in bqs */
+
+	/* Flag for the NEED_BDS_FACTOR_2_00 macro defined in isp kernels. */
+	unsigned int need_bds_factor_2_00;
+
+	/* Left padding adjusted inside the isp. */
+	unsigned int left_padding_adjusted_bqs;		/* in bqs */
+
+	/* Bad pixels caused by filters.
+	NxN-filter (before/after bayer scaling) moves the image position
+	to right/bottom directions by a few pixels.
+	It causes bad pixels at left/top sides,
+	and effective bayer size decreases. */
+	unsigned int bad_bqs_on_left_before_bs;	/* in bqs */
+	unsigned int bad_bqs_on_left_after_bs;	/* in bqs */
+	unsigned int bad_bqs_on_top_before_bs;	/* in bqs */
+	unsigned int bad_bqs_on_top_after_bs;	/* in bqs */
+
+	/* Get the numerator and denominator of bayer downscaling factor. */
+	err = sh_css_bds_factor_get_numerator_denominator
+		(required_bds_factor, &bds_num, &bds_den);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+
+	/* Set the horizontal/vertical ratio of bayer scaling
+	between input area and output area. */
+	bs_hor_ratio_in  = bds_num;
+	bs_hor_ratio_out = bds_den;
+	bs_ver_ratio_in  = bds_num;
+	bs_ver_ratio_out = bds_den;
+
+	/* Set the left padding set by InputFormatter. (ifmtr.c) */
+	if (stream_config->left_padding == -1)
+		left_padding_bqs = _ISP_BQS(binary->left_padding);
+	else
+		left_padding_bqs = (unsigned int)((int)ISP_VEC_NELEMS
+			- _ISP_BQS(stream_config->left_padding));
+
+	/* Set the left padding adjusted inside the isp.
+	When bds_factor 2.00 is needed, some padding is added to left_padding
+	inside the isp, before bayer downscaling. (raw.isp.c)
+	(Hopefully, left_crop/left_padding/top_crop should be defined in css
+	appropriately, depending on bds_factor.)
+	*/
+	need_bds_factor_2_00 = ((binary->info->sp.supported_bds_factors &
+		(PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_2_00) |
+		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_2_50) |
+		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_3_00) |
+		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_4_00) |
+		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_4_50) |
+		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_5_00) |
+		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_6_00) |
+		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_8_00))) != 0);
+
+	if (need_bds_factor_2_00 && binary->info->sp.left_cropping > 0)
+		left_padding_adjusted_bqs = left_padding_bqs + ISP_VEC_NELEMS;
+	else
+		left_padding_adjusted_bqs = left_padding_bqs;
+
+	/* Currently, the bad pixel caused by filters before bayer scaling
+	is NOT considered, because the bad pixel is subtle.
+	When some large filter is used in the future,
+	we need to consider the bad pixel.
+
+	Currently, when bds_factor isn't 1.00, 3x3 anti-alias filter is applied
+	to each color plane(Gr/R/B/Gb) before bayer downscaling.
+	This filter moves each color plane to right/bottom directions
+	by 1 pixel at the most, depending on downscaling factor.
+	*/
+	bad_bqs_on_left_before_bs = 0;
+	bad_bqs_on_top_before_bs = 0;
+
+	/* Currently, the bad pixel caused by filters after bayer scaling
+	is NOT considered, because the bad pixel is subtle.
+	When some large filter is used in the future,
+	we need to consider the bad pixel.
+
+	Currently, when DPC&BNR is processed between bayer scaling and
+	shading correction, DPC&BNR moves each color plane to
+	right/bottom directions by 1 pixel.
+	*/
+	bad_bqs_on_left_after_bs = 0;
+	bad_bqs_on_top_after_bs = 0;
+
+	/* Calculate the origin of bayer (real sensor data area)
+	located on the shading table during the shading correction. */
+	res->sc_bayer_origin_x_bqs_on_shading_table
+		= ((left_padding_adjusted_bqs + bad_bqs_on_left_before_bs)
+		* bs_hor_ratio_out + bs_hor_ratio_in/2) / bs_hor_ratio_in
+		+ bad_bqs_on_left_after_bs;
+			/* "+ bs_hor_ratio_in/2": rounding for division by bs_hor_ratio_in */
+	res->sc_bayer_origin_y_bqs_on_shading_table
+		= (bad_bqs_on_top_before_bs
+		* bs_ver_ratio_out + bs_ver_ratio_in/2) / bs_ver_ratio_in
+		+ bad_bqs_on_top_after_bs;
+			/* "+ bs_ver_ratio_in/2": rounding for division by bs_ver_ratio_in */
+
+	res->bayer_scale_hor_ratio_in  = (uint32_t)bs_hor_ratio_in;
+	res->bayer_scale_hor_ratio_out = (uint32_t)bs_hor_ratio_out;
+	res->bayer_scale_ver_ratio_in  = (uint32_t)bs_ver_ratio_in;
+	res->bayer_scale_ver_ratio_out = (uint32_t)bs_ver_ratio_out;
+
+	return err;
+}
+
+/* Get the shading information of Shading Correction Type 1. */
+static enum ia_css_err
+ia_css_binary_get_shading_info_type_1(const struct ia_css_binary *binary,	/* [in] */
+			unsigned int required_bds_factor,			/* [in] */
+			const struct ia_css_stream_config *stream_config,	/* [in] */
+			struct ia_css_shading_info *info)			/* [out] */
+{
+	enum ia_css_err err;
+	struct sh_css_shading_table_bayer_origin_compute_results res;
+
+	assert(binary != NULL);
+	assert(info != NULL);
+
+	info->type = IA_CSS_SHADING_CORRECTION_TYPE_1;
+
+	info->info.type_1.enable	    = binary->info->sp.enable.sc;
+	info->info.type_1.num_hor_grids	    = binary->sctbl_width_per_color;
+	info->info.type_1.num_ver_grids	    = binary->sctbl_height;
+	info->info.type_1.bqs_per_grid_cell = (1 << binary->deci_factor_log2);
+
+	/* Initialize by default values. */
+	info->info.type_1.bayer_scale_hor_ratio_in	= 1;
+	info->info.type_1.bayer_scale_hor_ratio_out	= 1;
+	info->info.type_1.bayer_scale_ver_ratio_in	= 1;
+	info->info.type_1.bayer_scale_ver_ratio_out	= 1;
+	info->info.type_1.sc_bayer_origin_x_bqs_on_shading_table = 0;
+	info->info.type_1.sc_bayer_origin_y_bqs_on_shading_table = 0;
+
+	err = ia_css_binary_compute_shading_table_bayer_origin(
+		binary,
+		required_bds_factor,
+		stream_config,
+		&res);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+
+	info->info.type_1.bayer_scale_hor_ratio_in	= res.bayer_scale_hor_ratio_in;
+	info->info.type_1.bayer_scale_hor_ratio_out	= res.bayer_scale_hor_ratio_out;
+	info->info.type_1.bayer_scale_ver_ratio_in	= res.bayer_scale_ver_ratio_in;
+	info->info.type_1.bayer_scale_ver_ratio_out	= res.bayer_scale_ver_ratio_out;
+	info->info.type_1.sc_bayer_origin_x_bqs_on_shading_table = res.sc_bayer_origin_x_bqs_on_shading_table;
+	info->info.type_1.sc_bayer_origin_y_bqs_on_shading_table = res.sc_bayer_origin_y_bqs_on_shading_table;
+
+	return err;
+}
+
+enum ia_css_err
+ia_css_binary_get_shading_info(const struct ia_css_binary *binary,			/* [in] */
+				enum ia_css_shading_correction_type type,		/* [in] */
+				unsigned int required_bds_factor,			/* [in] */
+				const struct ia_css_stream_config *stream_config,	/* [in] */
+				struct ia_css_shading_info *info)			/* [out] */
+{
+	enum ia_css_err err;
+
+	assert(binary != NULL);
+	assert(info != NULL);
+
+	if (type == IA_CSS_SHADING_CORRECTION_TYPE_1)
+		err = ia_css_binary_get_shading_info_type_1(binary, required_bds_factor, stream_config, info);
+
+	/* Other function calls can be added here when other shading correction types will be added in the future. */
+
+	else
+		return IA_CSS_ERR_NOT_SUPPORTED;
+
+	return err;
+}
 
 void
 ia_css_binary_dvs_grid_info(const struct ia_css_binary *binary,

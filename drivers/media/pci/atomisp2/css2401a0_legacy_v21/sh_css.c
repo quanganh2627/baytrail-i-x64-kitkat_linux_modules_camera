@@ -348,6 +348,8 @@ ia_css_binary_is_3a(const struct ia_css_binary *s3a_binary);
 static bool
 ia_css_binary_is_dvs(const struct ia_css_binary *dvs_binary);
 
+static struct ia_css_binary *ia_css_pipe_get_shading_correction_binary(const struct ia_css_pipe *pipe);
+
 static struct ia_css_binary *
 ia_css_pipe_get_binary(const struct ia_css_pipe *pipe);
 
@@ -4205,7 +4207,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 			goto ERR;
 	}
 
-	if (need_yuv_pp) {
+	if (need_yuv_pp && video_stage) {
 		struct ia_css_frame *tmp_in_frame = video_stage->args.out_frame[0];
 		struct ia_css_frame *tmp_out_frame = NULL;
 
@@ -5288,6 +5290,40 @@ static enum ia_css_err sh_css_pipe_configure_output(
 				padded_width);
 	}
 	return IA_CSS_SUCCESS;
+}
+
+static enum ia_css_err
+sh_css_pipe_get_shading_info(struct ia_css_pipe *pipe,
+			     struct ia_css_shading_info *info)
+{
+	enum ia_css_err err = IA_CSS_SUCCESS;
+	struct ia_css_binary *binary = NULL;
+
+	assert(pipe != NULL);
+	assert(info != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"sh_css_pipe_get_shading_info() enter:\n");
+
+	binary = ia_css_pipe_get_shading_correction_binary(pipe);
+
+	if (binary) {
+		err = ia_css_binary_get_shading_info(binary,
+			IA_CSS_SHADING_CORRECTION_TYPE_1,
+			pipe->required_bds_factor,
+			(const struct ia_css_stream_config *)&pipe->stream->config,
+			info);
+		/* Other function calls can be added here when other shading correction types will be added
+		 * in the future.
+		 */
+	} else {
+		/* When the pipe does not have a binary which has the shading
+		 * correction, this function does not need to fill the shading
+		 * information. It is not a error case, and then
+		 * this function should return IA_CSS_SUCCESS.
+		 */
+		memset(info, 0, sizeof(*info));
+	}
+	return err;
 }
 
 static enum ia_css_err
@@ -8546,6 +8582,10 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 				goto ERR;
 		}
 		if (!spcopyonly){
+			err = sh_css_pipe_get_shading_info(curr_pipe,
+						&pipe_info->shading_info);
+			if (err != IA_CSS_SUCCESS)
+				goto ERR;
 			err = sh_css_pipe_get_grid_info(curr_pipe,
 						&pipe_info->grid_info);
 			if (err != IA_CSS_SUCCESS)
@@ -8913,6 +8953,25 @@ ia_css_stream_get_two_pixels_per_clock(const struct ia_css_stream *stream)
 }
 
 struct ia_css_binary *
+ia_css_stream_get_shading_correction_binary(const struct ia_css_stream *stream)
+{
+	struct ia_css_pipe *pipe;
+
+	assert(stream != NULL);
+
+	pipe = stream->pipes[0];
+
+	if (stream->num_pipes == 2) {
+		assert(stream->pipes[1] != NULL);
+		if (stream->pipes[1]->config.mode == IA_CSS_PIPE_MODE_VIDEO ||
+		    stream->pipes[1]->config.mode == IA_CSS_PIPE_MODE_PREVIEW)
+			pipe = stream->pipes[1];
+	}
+
+	return ia_css_pipe_get_shading_correction_binary(pipe);
+}
+
+struct ia_css_binary *
 ia_css_stream_get_dvs_binary(const struct ia_css_stream *stream)
 {
 	int i;
@@ -8979,6 +9038,42 @@ ia_css_stream_set_output_padded_width(struct ia_css_stream *stream, unsigned int
 	return err;
 }
 
+static struct ia_css_binary *
+ia_css_pipe_get_shading_correction_binary(const struct ia_css_pipe *pipe)
+{
+	struct ia_css_binary *binary = NULL;
+
+	assert(pipe != NULL);
+
+	switch (pipe->config.mode) {
+	case IA_CSS_PIPE_MODE_PREVIEW:
+		binary = (struct ia_css_binary *)&pipe->pipe_settings.preview.preview_binary;
+		break;
+	case IA_CSS_PIPE_MODE_VIDEO:
+		binary = (struct ia_css_binary *)&pipe->pipe_settings.video.video_binary;
+		break;
+	case IA_CSS_PIPE_MODE_CAPTURE:
+		if (pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_PRIMARY)
+			binary = (struct ia_css_binary *)&pipe->pipe_settings.capture.primary_binary;
+		else if (pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_BAYER)
+			binary = (struct ia_css_binary *)&pipe->pipe_settings.capture.pre_isp_binary;
+		else if (pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_ADVANCED ||
+			 pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_LOW_LIGHT) {
+			if (pipe->config.isp_pipe_version == 1)
+				binary = (struct ia_css_binary *)&pipe->pipe_settings.capture.pre_isp_binary;
+			else if (pipe->config.isp_pipe_version == 2)
+				binary = (struct ia_css_binary *)&pipe->pipe_settings.capture.post_isp_binary;
+		}
+		break;
+	default:
+		break;
+	}
+
+	if (binary && binary->info->sp.enable.sc)
+		return binary;
+
+	return NULL;
+}
 
 static struct ia_css_binary *
 ia_css_pipe_get_binary(const struct ia_css_pipe *pipe)
@@ -8996,12 +9091,17 @@ ia_css_pipe_get_binary(const struct ia_css_pipe *pipe)
 			break;
 		case IA_CSS_PIPE_MODE_CAPTURE:
 			if (pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_PRIMARY)
-				binary = (struct ia_css_binary*)&pipe->pipe_settings.capture.primary_binary;
+				binary = (struct ia_css_binary *)&pipe->pipe_settings.capture.primary_binary;
+			else if (pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_BAYER)
+				binary = (struct ia_css_binary *)&pipe->pipe_settings.capture.pre_isp_binary;
 			else if (pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_ADVANCED ||
-				 pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_LOW_LIGHT ||
-				 pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_BAYER) {
-			binary
-				= (struct ia_css_binary*)&pipe->pipe_settings.capture.pre_isp_binary;
+				 pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_LOW_LIGHT) {
+				if (pipe->config.isp_pipe_version == 1)
+					binary = (struct ia_css_binary *)&pipe->pipe_settings.capture.pre_isp_binary;
+				else if (pipe->config.isp_pipe_version == 2)
+					binary = (struct ia_css_binary *)&pipe->pipe_settings.capture.post_isp_binary;
+				else
+					assert(0);
 			}
 			break;
 		default:
