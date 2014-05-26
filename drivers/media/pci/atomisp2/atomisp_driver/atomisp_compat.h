@@ -493,6 +493,9 @@ bool atomisp_css_isp_has_started(void);
 
 void atomisp_css_request_flash(struct atomisp_sub_device *asd);
 
+void atomisp_css_set_output_config(struct atomisp_sub_device *asd,
+			struct atomisp_css_output_config *output_config);
+
 void atomisp_css_set_wb_config(struct atomisp_sub_device *asd,
 			struct atomisp_css_wb_config *wb_config);
 

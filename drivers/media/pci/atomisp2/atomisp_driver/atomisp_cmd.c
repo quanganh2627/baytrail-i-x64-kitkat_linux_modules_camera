@@ -1734,6 +1734,32 @@ int atomisp_xnr(struct atomisp_sub_device *asd, int flag,
 	return 0;
 }
 
+int atomisp_h_flip(struct atomisp_sub_device *asd, int flag,
+	       int *enable)
+{
+	if (flag == 0) {
+		*enable = asd->params.output_config.enable_hflip;
+	} else {
+		asd->params.output_config.enable_hflip = *enable;
+		atomisp_css_set_output_config(asd, &asd->params.output_config);
+		asd->params.css_update_params_needed = true;
+	}
+	return 0;
+}
+
+int atomisp_v_flip(struct atomisp_sub_device *asd, int flag,
+	       int *enable)
+{
+	if (flag == 0) {
+		*enable = asd->params.output_config.enable_vflip;
+	} else {
+		asd->params.output_config.enable_vflip = *enable;
+		atomisp_css_set_output_config(asd, &asd->params.output_config);
+		asd->params.css_update_params_needed = true;
+	}
+	return 0;
+}
+
 /*
  * Function to configure bayer noise reduction
  */

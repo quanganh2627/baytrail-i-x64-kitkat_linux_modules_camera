@@ -707,6 +707,9 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->params.offline_parm.num_captures = 1;
 	asd->params.offline_parm.skip_frames = 0;
 	asd->params.offline_parm.offset = 0;
+	/*The  ISP Vflip and Hflip default value  are 0.*/
+	asd->params.output_config.enable_vflip = 0;
+	asd->params.output_config.enable_hflip = 0;
 	asd->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
 	/* Add for channel */
 	asd->input_curr = 0;

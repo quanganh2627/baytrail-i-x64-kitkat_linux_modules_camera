@@ -1347,7 +1347,6 @@ void atomisp_css_update_isp_params(struct atomisp_sub_device *asd)
 				__func__);
 		return;
 	}
-
 	ia_css_stream_set_isp_config(
 			asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
 			&asd->params.config);
@@ -3345,6 +3344,12 @@ void atomisp_css_request_flash(struct atomisp_sub_device *asd)
 {
 	ia_css_stream_request_flash(
 		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream);
+}
+
+void atomisp_css_set_output_config(struct atomisp_sub_device *asd,
+			struct atomisp_css_output_config *output_config)
+{
+	asd->params.config.output_config = output_config;
 }
 
 void atomisp_css_set_wb_config(struct atomisp_sub_device *asd,
