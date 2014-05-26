@@ -1509,7 +1509,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 
 	init_waitqueue_head(&dev->irq_waitq);
 
-	dev->fw_type = M10MO_FW_TYPE_0;
+	dev->fw_type = dev->pdata->def_fw_type;
 	dev->ref_clock = dev->pdata->ref_clock_rate;
 
 	if (dev->pdata->common.platform_init) {

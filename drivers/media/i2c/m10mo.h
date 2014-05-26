@@ -135,7 +135,7 @@ struct m10mo_device {
 	const struct m10mo_resolution *curr_res_table;
 	int entries_curr_table;
 	int ref_clock;
-	int fw_type;
+	unsigned int fw_type;
 };
 
 enum hdr_options{
