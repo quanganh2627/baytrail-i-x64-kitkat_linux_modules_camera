@@ -943,9 +943,10 @@ static int m10mo_set_panorama_monitor(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
-	/* Choose NV21 in this case*/
-	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT,
-			CHOOSE_NV12NV21_FMT_NV21);
+	/* Select either NV12 or NV21 based on the format set from user space */
+	val = dev->format.code == V4L2_MBUS_FMT_CUSTOM_NV21 ?
+		CHOOSE_NV12NV21_FMT_NV21 : CHOOSE_NV12NV21_FMT_NV12;
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT, val);
 	if (ret)
 		goto out;
 
@@ -984,6 +985,7 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	const struct m10mo_resolution *capture_res =
 			resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 	int ret, i, dual_status;
+	u32 fmt;
 
 	dev_info(&client->dev,
 		"%s mode: %d width: %d, height: %d, cmd: 0x%x vdis: %d\n",
@@ -1040,9 +1042,10 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	m10mo_writeb(sd, CATEGORY_MONITOR, PARAM_VDIS,
 		     dev->curr_res_table[dev->fmt_idx].vdis ? 0x01 : 0x00);
 
-	/* By default outputs NV21. Choose NV12 */
-	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT,
-				CHOOSE_NV12NV21_FMT_NV12);
+	/* Select either NV12 or NV21 based on the format set from user space */
+	fmt = dev->format.code == V4L2_MBUS_FMT_CUSTOM_NV21 ?
+		CHOOSE_NV12NV21_FMT_NV21 : CHOOSE_NV12NV21_FMT_NV12;
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT, fmt);
 	if (ret)
 		goto out;
 
@@ -1498,6 +1501,7 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	} else 	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
 		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 &&
 		fmt->code != V4L2_MBUS_FMT_CUSTOM_NV12 &&
+		fmt->code != V4L2_MBUS_FMT_CUSTOM_NV21 &&
 		fmt->code != V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
 		dev_info(&client->dev,
 			"%s unsupported code: 0x%x. Set to NV12\n",
@@ -1593,7 +1597,8 @@ static int __m10mo_update_stream_info(struct v4l2_subdev *sd,
 				(u8)ATOMISP_INPUT_FORMAT_USER_DEF3;
 			stream_info->isys_info[0].width = 0;
 			stream_info->isys_info[0].height = 0;
-		} else if (fmt->code == 0x8005) {
+		} else if (fmt->code == V4L2_MBUS_FMT_CUSTOM_NV12 ||
+			   fmt->code == V4L2_MBUS_FMT_CUSTOM_NV21) {
 			stream_info->ch_id = M10MO_ZSL_NV12_VIRTUAL_CHANNEL;
 			stream_info->isys_configs = 2;
 			/* first stream */
