@@ -763,19 +763,29 @@ static int __m10mo_s_power(struct v4l2_subdev *sd, int on, bool fw_update_mode)
 		m10mo_request_mode_change(sd, M10MO_FLASH_WRITE_MODE);
 
 		ret = power_up(sd);
-		if (!ret) {
-			dev->power = 1;
-			ret = __m10mo_bootrom_mode_start(sd);
+		if (ret)
+			return ret;
+		dev->power = 1;
+
+		ret = __m10mo_bootrom_mode_start(sd);
+		if (ret)
+			goto startup_failure;
+
+		if (!fw_update_mode) {
+			ret = __m10mo_fw_start(sd);
 			if (ret)
-				return ret;
-			if (!fw_update_mode)
-				ret = __m10mo_fw_start(sd);
+				goto startup_failure;
 		}
 	} else {
 		ret = power_down(sd);
 		dev->power = 0;
 	}
 
+	return ret;
+
+startup_failure:
+	power_down(sd);
+	dev->power = 0;
 	return ret;
 }
 
