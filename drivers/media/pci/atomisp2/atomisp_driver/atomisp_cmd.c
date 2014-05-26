@@ -1545,6 +1545,9 @@ v4l2_fmt_to_sh_fmt(u32 fmt)
 		return CSS_FRAME_FORMAT_RGBA888;
 	case V4L2_PIX_FMT_RGB565:
 		return CSS_FRAME_FORMAT_RGB565;
+	case V4L2_PIX_FMT_JPEG:
+	case V4L2_PIX_FMT_CUSTOM_M10MO_RAW:
+		return CSS_FRAME_FORMAT_BINARY_8;
 	case V4L2_PIX_FMT_SBGGR16:
 	case V4L2_PIX_FMT_SBGGR10:
 	case V4L2_PIX_FMT_SGBRG10:
@@ -1624,6 +1627,8 @@ static u32 get_pixel_depth(u32 pixelformat)
 		return 24;
 	case V4L2_PIX_FMT_RGB32:
 		return 32;
+	case V4L2_PIX_FMT_JPEG:
+	case V4L2_PIX_FMT_CUSTOM_M10MO_RAW:
 	case V4L2_PIX_FMT_SBGGR8:
 	case V4L2_PIX_FMT_SGBRG8:
 	case V4L2_PIX_FMT_SGRBG8:
