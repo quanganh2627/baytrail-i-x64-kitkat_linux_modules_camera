@@ -145,6 +145,7 @@ extern void ia_css_pipe_get_capturepp_binarydesc(
 	struct ia_css_pipe * const pipe,
 	struct ia_css_binary_descr *capture_pp_descr,
 	struct ia_css_frame_info *in_info,
+	struct ia_css_frame_info *out_info,
 	struct ia_css_frame_info *vf_info);
 
 /** @brief Get a binary descriptor for primary capture.

@@ -158,7 +158,7 @@ struct ia_css_pipe_info {
  * This function will load the default pipe configuration:
 @code
 	struct ia_css_pipe_config def_config = {
-		IA_CSS_PIPE_MODE_PREVIEW,  //mode
+		IA_CSS_PIPE_MODE_PREVIEW,  // mode
 		1,      // isp_pipe_version
 		{0, 0}, // bayer_ds_out_res
 		{0, 0}, // capt_pp_in_res

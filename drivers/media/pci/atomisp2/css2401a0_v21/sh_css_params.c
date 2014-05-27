@@ -3265,12 +3265,11 @@ static void write_morph_plane(
 	IA_CSS_LEAVE_PRIVATE("void");
 }
 #endif
-
+#if !defined(IS_ISP_2500_SYSTEM)
 static void sh_css_update_isp_params_to_ddr(
 	struct ia_css_isp_parameters *params,
 	hrt_vaddress ddr_ptr)
 {
-#if !defined(IS_ISP_2500_SYSTEM)
 	size_t size = sizeof(params->uds);
 
 	IA_CSS_ENTER_PRIVATE("void");
@@ -3296,11 +3295,8 @@ static void sh_css_update_isp_params_to_ddr(
 #endif
 	mmgr_store(ddr_ptr, &(params->uds), size);
 	IA_CSS_LEAVE_PRIVATE("void");
-#else
-	(void)*params;
-	(void)ddr_ptr;
-#endif
 }
+#endif
 
 static void sh_css_update_isp_mem_params_to_ddr(
 	const struct ia_css_binary *binary,
@@ -3540,7 +3536,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 				[pipeline->pipe_id][stage->stage_num][mem] = false;
 			}
 		} /* for */
-
+#if !defined(IS_ISP_2500_SYSTEM)
 		/* update isp_params to pipe specific copies */
 		if (params->isp_params_changed) {
 			reallocate_buffer(&cur_map->isp_param,
@@ -3552,6 +3548,8 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 				break;
 			sh_css_update_isp_params_to_ddr(params, cur_map->isp_param);
 		}
+#endif
+
 #if defined(IS_ISP_2500_SYSTEM)
 		if (acc_cluster_params_changed || params->isp_params_changed)
 		{
@@ -3593,6 +3591,12 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 
 		if (IA_CSS_SUCCESS != ia_css_bufq_enqueue_buffer(thread_id, queue_id, (uint32_t)cpy)) {
 			free_ia_css_isp_parameter_set_info(cpy);
+#if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
+			IA_CSS_LOG("pfp: FAILED to add config id %d for OF %d to q %d on thread %d",
+				isp_params_info.isp_parameters_id,
+				isp_params_info.output_frame_ptr,
+				queue_id, thread_id);
+#endif
 		}
 		else {
 			/* TMP: check discrepancy between nr of enqueued
@@ -3614,6 +3618,12 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 					(uint8_t)thread_id,
 					(uint8_t)queue_id,
 					0);
+#if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
+			IA_CSS_LOG("pfp: added config id %d for OF %d to q %d on thread %d",
+				isp_params_info.isp_parameters_id,
+				isp_params_info.output_frame_ptr,
+				queue_id, thread_id);
+#endif
 		}
 		/* clean-up old copy */
 		ia_css_dequeue_param_buffers(/*pipe_num*/);

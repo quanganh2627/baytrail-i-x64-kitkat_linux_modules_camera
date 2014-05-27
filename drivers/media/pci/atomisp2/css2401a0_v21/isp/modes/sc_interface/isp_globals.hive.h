@@ -40,42 +40,36 @@
 
 #include "isp_types.h"
 #include <sh_css_internal.h>
-#ifdef __SP
-#include "product_specific.sp.h"
-#endif
+
 #if !defined(__HOST)
 #include "dma_proxy.common.h"
 #endif
+#include "input_buf.isp.h"
 #include "uds/uds_1.0/ia_css_uds_param.h" /* sh_css_sp_uds_params */
+
+#if defined(HAS_RES_MGR)
 #include <components/resolutions_mgr/src/resolutions_mgr_private.h>
+#endif
 
 /* Initialized by the SP: binary dependent */
 /* Some of these globals are used inside dma transfer/configure commands.
    Therefore, their load will get a sync attribute. NO_SYNC prevents that.
 */
 typedef struct s_isp_globals {
-  /* Work around to get the skycam resource manager to work.
-   * This belongs in isp_dmem_configurations.iterator.internal_info.
-   */
-  unsigned internal_width;
-
   /* DMA settings for output image */
   unsigned dma_output_block_width_a;
   unsigned dma_output_block_width_b;
-
-  unsigned anr;
-
-  struct stripe_private_per_stripe_data down_scaled_stripe;
-  struct stripe_private_per_stripe_data out_stripe;
-  struct stripe_private_per_stripe_data block_stripe;
-  unsigned half_overlap_vectors;
-} s_isp_globals;
-
-#ifdef ISP_DMEM
-#undef ISP_DMEM
+#if defined(HAS_RES_MGR)
+  /* Work around to get the skycam resolution manager to work.
+   * This belongs in isp_dmem_configurations.iterator.internal_info.
+   */
+  struct s_res_mgr_isp_globals res_mgr;
 #endif
 
+} s_isp_globals;
+
 #ifdef __SP
+#undef ISP_DMEM
 #define ISP_DMEM MEM(SP_XMEM)
 #define PVECTOR short MEM(SP_XMEM) *
 #else
@@ -84,6 +78,7 @@ typedef struct s_isp_globals {
 #define PVECTOR tmemvectoru MEM(VMEM) *
 #endif
 
+typedef void *pipeline_param_h;
 
 typedef struct s_isp_addresses {
   struct {
@@ -171,8 +166,7 @@ extern struct s_isp_frames isp_frames;
 extern struct isp_uds_config uds_config;
 
 /* *****************************************************************
- * 		isp parameters
- *				1value per 32bit
+ * 		uds parameters
  * *****************************************************************/
 extern NO_HOIST struct sh_css_sp_uds_params uds_params[SH_CSS_MAX_STAGES];
 
@@ -181,28 +175,26 @@ extern NO_HOIST struct sh_css_sp_uds_params uds_params[SH_CSS_MAX_STAGES];
 #define isp_do_zoom (ENABLE_DVS_ENVELOPE ? 1 : g_isp_do_zoom)
 extern unsigned g_isp_do_zoom;
 
-#define INPUT_BUF_LINES 2
-
-#if !defined(__ISP)
-/* Treat as flat for the outside world */
-extern volatile tmemvectoru input_buf[];
-#else
-typedef struct {
-  tmemvectoru  raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_STRIPE]; /* 2 bayer lines */
-} input_line_type;
+#if MODE != IA_CSS_BINARY_MODE_COPY
 
 typedef struct {
-  tmemvectoru raw[INPUT_BUF_HEIGHT][2][MAX_VECTORS_PER_INPUT_STRIPE]; /* 2 bayer lines */
+  tmemvectoru raw[INPUT_BUF_HEIGHT][RAW_BUF_LINES][RAW_BUF_STRIDE]; /* 2 bayer lines */
 } raw_line_type;
 
+#if ENABLE_CONTINUOUS
+#define OUTPUT_BUF_LINES 4
+#else
+#define OUTPUT_BUF_LINES 2
+#endif
+
 typedef struct {
-  tmemvectoru raw[OUTPUT_BUF_HEIGHT][2][MAX_VECTORS_PER_LINE]; /* 2 bayer lines */
+  tmemvectoru raw[OUTPUT_BUF_HEIGHT][OUTPUT_BUF_LINES][MAX_VECTORS_PER_LINE]; /* 2 bayer lines */
 } output_line_type;
 
 extern input_line_type SYNC_WITH (INPUT_BUF) MEM (VMEM) input_buf;
 extern output_line_type SYNC_WITH (OUTPUT_BUF) MEM (VMEM) raw_output_buf;
 
-#endif
+#endif /* MODE != IA_CSS_BINARY_MODE_COPY */
 
 /* DMA proxy buffer */
 

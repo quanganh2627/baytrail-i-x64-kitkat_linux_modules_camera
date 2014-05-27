@@ -334,7 +334,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w fir1x9m_box (
  *  @return mean of 1x3 matrix
  *
  * This function calculates the mean of 1x3 pixels,
- * with a factor of 1/4.
+ * with a factor of 4/3.
 */
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x3m(
 	s_1w_1x3_matrix m);
@@ -345,8 +345,8 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x3m(
  *
  *  @return mean of 3x3 matrix
  *
- * This function calculates the mean of 1x3 pixels,
- * with a factor of 1/16.
+ * This function calculates the mean of 3x3 pixels,
+ * with a factor of 16/9.
 */
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean3x3m(
 	s_1w_3x3_matrix m);
@@ -373,5 +373,29 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x4m(
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean4x4m(
 	s_1w_4x4_matrix m);
 
+/** @brief Mean of 2x3 matrix
+ *
+ *  @param[in] m 2x3 matrix with pixels
+ *
+ *  @return mean of 2x3 matrix
+ *
+ * This function calculates the mean of 2x3 matrix with pixels
+ * with a factor of 8/6.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean2x3m(
+	s_1w_2x3_matrix m);
+
+
+/** @brief Mean of 1x6 matrix
+ *
+ *  @param[in] m 1x6 matrix with pixels
+ *
+ *  @return mean of 1x6 matrix
+ *
+ * This function calculates the mean of 1x6 matrix with pixels
+ * with a factor of 8/6.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x6m(
+	s_1w_1x6_matrix m);
 #endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/
 

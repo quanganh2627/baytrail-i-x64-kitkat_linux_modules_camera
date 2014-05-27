@@ -34,8 +34,7 @@ ia_css_mmu_invalidate_cache(void)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_mmu_invalidate_cache() enter\n");
 
 	/* if the SP is not running we should not access its dmem */
-	if (sh_css_sp_is_running())
-	{
+	if (sh_css_sp_is_running()) {
 		HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb = fw->info.sp.invalidate_tlb;
 
 		(void)HIVE_ADDR_ia_css_dmaproxy_sp_invalidate_tlb; /* Suppres warnings in CRUN */
@@ -44,5 +43,5 @@ ia_css_mmu_invalidate_cache(void)
 			(unsigned int)sp_address_of(ia_css_dmaproxy_sp_invalidate_tlb),
 			true);
 	}
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_mmu_invalidate_cache() leave\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_mmu_invalidate_cache() leave\n");
 }

@@ -40,12 +40,16 @@
 
 #include "isp_types.h"
 #include <sh_css_internal.h>
+
 #if !defined(__HOST)
 #include "dma_proxy.common.h"
 #endif
 #include "input_buf.isp.h"
-
 #include "uds/uds_1.0/ia_css_uds_param.h" /* sh_css_sp_uds_params */
+
+#if defined(HAS_RES_MGR)
+#include <components/resolutions_mgr/src/resolutions_mgr_private.h>
+#endif
 
 /* Initialized by the SP: binary dependent */
 /* Some of these globals are used inside dma transfer/configure commands.
@@ -55,13 +59,21 @@ typedef struct s_isp_globals {
   /* DMA settings for output image */
   unsigned dma_output_block_width_a;
   unsigned dma_output_block_width_b;
+#if defined(HAS_RES_MGR)
+  /* Work around to get the skycam resolution manager to work.
+   * This belongs in isp_dmem_configurations.iterator.internal_info.
+   */
+  struct s_res_mgr_isp_globals res_mgr;
+#endif
 
 } s_isp_globals;
 
 #ifdef __SP
+#undef ISP_DMEM
 #define ISP_DMEM MEM(SP_XMEM)
 #define PVECTOR short MEM(SP_XMEM) *
 #else
+#undef ISP_DMEM
 #define ISP_DMEM
 #define PVECTOR tmemvectoru MEM(VMEM) *
 #endif
@@ -163,7 +175,6 @@ extern NO_HOIST struct sh_css_sp_uds_params uds_params[SH_CSS_MAX_STAGES];
 #define isp_do_zoom (ENABLE_DVS_ENVELOPE ? 1 : g_isp_do_zoom)
 extern unsigned g_isp_do_zoom;
 
-#if defined(__ISP)
 #if MODE != IA_CSS_BINARY_MODE_COPY
 
 typedef struct {
@@ -184,7 +195,6 @@ extern input_line_type SYNC_WITH (INPUT_BUF) MEM (VMEM) input_buf;
 extern output_line_type SYNC_WITH (OUTPUT_BUF) MEM (VMEM) raw_output_buf;
 
 #endif /* MODE != IA_CSS_BINARY_MODE_COPY */
-#endif /* __ISP */
 
 /* DMA proxy buffer */
 

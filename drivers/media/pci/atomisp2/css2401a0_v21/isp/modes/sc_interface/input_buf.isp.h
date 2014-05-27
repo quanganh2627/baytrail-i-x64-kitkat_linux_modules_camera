@@ -32,18 +32,14 @@
 #define ENABLE_CONTINUOUS 0
 #endif
 
+/* In continuous mode, the input buffer must be a fixed size for all binaries
+ * and at a fixed address since it will be used by the SP. */
 #define EXTRA_INPUT_VECTORS	2 /* For left padding */
 #define MAX_VECTORS_PER_INPUT_LINE_CONT (CEIL_DIV(SH_CSS_MAX_SENSOR_WIDTH, ISP_NWAY) + EXTRA_INPUT_VECTORS)
 
 /* The input buffer should be on a fixed address in vmem, for continuous capture */
 #define INPUT_BUF_ADDR 0x0
-
-#if !defined(__ISP)
-
-/* Treat as flat for the outside world */
-//extern volatile tmemvectoru input_buf[];
-
-#elif !defined(MODE) || MODE != IA_CSS_BINARY_MODE_COPY
+#if (defined(__ISP) && (!defined(MODE) || MODE != IA_CSS_BINARY_MODE_COPY))
 
 #if ENABLE_CONTINUOUS
 typedef struct {
@@ -57,8 +53,6 @@ typedef struct {
 } input_line_type;
 #endif /* ENABLE_CONTINUOUS */
 
-#endif /* ISP */
-
-
+#endif /*MODE*/
 
 #endif /* _INPUT_BUF_ISP_H_ */
