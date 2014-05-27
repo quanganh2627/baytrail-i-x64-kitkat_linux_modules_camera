@@ -61,7 +61,8 @@ struct sh_css {
 	hrt_data                       page_table_base_index;
 	unsigned int                   size_mem_words;
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
-	unsigned int                   mipi_sizes_for_check[N_CSI_PORTS][IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES_PER_PORT];
+	unsigned int                   mipi_sizes_for_check[N_CSI_PORTS]
+						[IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES_PER_PORT];
 #endif
 	bool                           contiguous;
 	enum ia_css_irq_type           irq_type;

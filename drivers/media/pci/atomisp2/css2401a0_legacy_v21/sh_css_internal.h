@@ -52,6 +52,10 @@
 #include "ia_css_metadata.h"
 #include "runtime/bufq/interface/ia_css_bufq.h"
 
+#if defined(IS_ISP_2500_SYSTEM)
+#include "product_specific_skycam/sw/product_specific_internal.h"
+#endif
+
 /* TODO: Move to a more suitable place when sp pipeline design is done. */
 #define IA_CSS_NUM_CB_SEM_READ_RESOURCE	2
 #define IA_CSS_NUM_CB_SEM_WRITE_RESOURCE	1
@@ -145,7 +149,8 @@
  *     an expression containing an array declaration with negative size,
  *     usually resulting in a compilation error
  * - condition==false:
- *     (void) 1; // C statement with no effect
+ *     (void) 1;
+ *   the latter being a C statement with no effect
  *
  * example:
  *  COMPILATION_ERROR_IF( sizeof(struct host_sp_queues) != SIZE_OF_HOST_SP_QUEUES_STRUCT);
@@ -287,7 +292,8 @@ struct sh_css_ddr_address_map_compound {
 
 #if !defined(IS_ISP_2500_SYSTEM)
 struct ia_css_isp_parameter_set_info {
-	struct sh_css_ddr_address_map  mem_map;/**< pointers to Parameters in ISP format IMPT: this should be first member of this struct */
+	struct sh_css_ddr_address_map  mem_map;/**< pointers to Parameters in ISP format IMPT:
+						    This should be first member of this struct */
 	uint32_t                       isp_parameters_id;/**< Unique ID to track which config was actually applied to a particular frame */
 	ia_css_ptr                     output_frame_ptr;/**< Output frame to which this config has to be applied (optional) */
 };
@@ -419,17 +425,17 @@ struct sh_css_sp_config {
 #endif
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
 	sync_generator_cfg_t	sync_gen;
-	tpg_cfg_t				tpg;
-	prbs_cfg_t				prbs;
-	input_system_cfg_t		input_circuit;
-	uint8_t					input_circuit_cfg_changed;
-	uint32_t				mipi_sizes_for_check[N_CSI_PORTS][IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES_PER_PORT];
+	tpg_cfg_t		tpg;
+	prbs_cfg_t		prbs;
+	input_system_cfg_t	input_circuit;
+	uint8_t			input_circuit_cfg_changed;
+	uint32_t		mipi_sizes_for_check[N_CSI_PORTS][IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES_PER_PORT];
 #endif
 };
 
 enum sh_css_stage_type {
-  SH_CSS_SP_STAGE_TYPE  = 0,
-  SH_CSS_ISP_STAGE_TYPE = 1
+	SH_CSS_SP_STAGE_TYPE  = 0,
+	SH_CSS_ISP_STAGE_TYPE = 1
 };
 #define SH_CSS_NUM_STAGE_TYPES 2
 
@@ -441,7 +447,7 @@ enum sh_css_stage_type {
 struct sh_css_sp_pipeline_terminal {
 	union {
 		/* Input System 2401 */
-		virtual_input_system_stream_t		virtual_input_system_stream[IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH];
+		virtual_input_system_stream_t virtual_input_system_stream[IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH];
 	} context;
 
 	/*
@@ -451,7 +457,7 @@ struct sh_css_sp_pipeline_terminal {
 	 */
 	union {
 		/* Input System 2401 */
-		virtual_input_system_stream_cfg_t	virtual_input_system_stream_cfg[IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH];
+		virtual_input_system_stream_cfg_t virtual_input_system_stream_cfg[IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH];
 	} ctrl;
 };
 
@@ -484,10 +490,12 @@ enum sh_css_port_type {
 #define SH_CSS_PORT_FLD(pd) ((pd) ? SH_CSS_PORT_FLD_WIDTH_IN_BITS : 0)
 #define SH_CSS_PIPE_PORT_CONFIG_ON(p, pd, pt) ((p) |= (SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)))
 #define SH_CSS_PIPE_PORT_CONFIG_OFF(p, pd, pt) ((p) &= ~(SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)))
-#define SH_CSS_PIPE_PORT_CONFIG_SET(p, pd, pt, val) ((val) ? SH_CSS_PIPE_PORT_CONFIG_ON(p, pd, pt):SH_CSS_PIPE_PORT_CONFIG_OFF(p, pd, pt))
+#define SH_CSS_PIPE_PORT_CONFIG_SET(p, pd, pt, val) ((val) ? \
+		SH_CSS_PIPE_PORT_CONFIG_ON(p, pd, pt) : SH_CSS_PIPE_PORT_CONFIG_OFF(p, pd, pt))
 #define SH_CSS_PIPE_PORT_CONFIG_GET(p, pd, pt) ((p) & (SH_CSS_PORT_TYPE_BIT_FLD(pt) << SH_CSS_PORT_FLD(pd)))
-#define SH_CSS_PIPE_PORT_CONFIG_IS_CONTINUOUS(p)  (!(SH_CSS_PIPE_PORT_CONFIG_GET(p, SH_CSS_PORT_INPUT, SH_CSS_HOST_TYPE) && \
-					       SH_CSS_PIPE_PORT_CONFIG_GET(p, SH_CSS_PORT_OUTPUT, SH_CSS_HOST_TYPE)))
+#define SH_CSS_PIPE_PORT_CONFIG_IS_CONTINUOUS(p) \
+	(!(SH_CSS_PIPE_PORT_CONFIG_GET(p, SH_CSS_PORT_INPUT, SH_CSS_HOST_TYPE) && \
+	   SH_CSS_PIPE_PORT_CONFIG_GET(p, SH_CSS_PORT_OUTPUT, SH_CSS_HOST_TYPE)))
 
 #define IA_CSS_ACQUIRE_ISP_POS	31
 
@@ -735,7 +743,8 @@ struct sh_css_hmm_buffer {
 			hrt_vaddress	frame_data;
 			uint32_t	flashed;
 			uint32_t	exp_id;
-			uint32_t	isp_parameters_id; /**< Unique ID to track which config was actually applied to a particular frame */
+			uint32_t	isp_parameters_id; /**< Unique ID to track which config was
+								actually applied to a particular frame */
 #if CONFIG_ON_FRAME_ENQUEUE()
 			struct sh_css_config_on_frame_enqueue config_on_frame_enqueue;
 #endif
@@ -871,7 +880,7 @@ struct host_sp_queues {
 
 #define SIZE_OF_QUEUES_ELEMS							\
 	(SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT *				\
-	((SH_CSS_MAX_SP_THREADS * SH_CSS_MAX_NUM_QUEUES * IA_CSS_NUM_ELEMS_HOST2SP_BUFFER_QUEUE)	+		\
+	((SH_CSS_MAX_SP_THREADS * SH_CSS_MAX_NUM_QUEUES * IA_CSS_NUM_ELEMS_HOST2SP_BUFFER_QUEUE) + \
 	(SH_CSS_MAX_NUM_QUEUES * IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE) +	\
 	(IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE) +				\
 	(IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE) +				\
@@ -955,10 +964,12 @@ sh_css_capture_enable_bayer_downscaling(bool enable);
 void
 sh_css_binary_print(const struct ia_css_binary *binary);
 
+/* aligned argument of sh_css_frame_info_set_width can be used for an extra alignment requirement.
+  When 0, no extra alignment is done. */
 void
 sh_css_frame_info_set_width(struct ia_css_frame_info *info,
 			    unsigned int width,
-			    unsigned int aligned); /* this can be used for an extra alignemt requirement. when 0, no extra alignment is done. */
+			    unsigned int aligned);
 
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
 

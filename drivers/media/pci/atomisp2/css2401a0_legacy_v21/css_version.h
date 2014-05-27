@@ -56,9 +56,9 @@ VER 0.7, released 17/02/14:
 		1st striping pipe in smoketest - if_striped
 
 VER 0.8, released 24/02/14:
-        - Version release mainly for validation IGK and SVOS run  (patch 1667)
+	- Version release mainly for validation IGK and SVOS run  (patch 1667)
 
-        Changes/Fixes:
+	Changes/Fixes:
 		added missing file to css_skycam_a0t_system.proj.mk
 		Updated reset function in mini_vid.c
 		added prepare function to mini_vid.c
@@ -72,27 +72,27 @@ VER 0.9, released 09/03/14:
 
 
 VER 1.0, released 19/03/14:
-        - Version release for : striping
+	- Version release for : striping
 
-        Changes/Fixes:
-                added striping
-                BZ #1717 fix - raw8 input support
+	Changes/Fixes:
+		added striping
+		BZ #1717 fix - raw8 input support
 
 
 VER 1.1, released 03/04/14:
-        - Version release for : sp1 disable and stop start WA
+	- Version release for : sp1 disable and stop start WA
 
-        Changes/Fixes:
-                SP1 Implementation Enable\Disable  - set to Disable
-                Stop Start WA
-                Fix config change logic (set changed to true after setting to default) found in stop start debugging
-                Code fixes for the win driver integration
+	Changes/Fixes:
+		SP1 Implementation Enable\Disable  - set to Disable
+		Stop Start WA
+		Fix config change logic (set changed to true after setting to default) found in stop start debugging
+		Code fixes for the win driver integration
 
 
 VER 1.2, released 13/04/14:
-        - Version release for : Trunk release
+	- Version release for : Trunk release
 
-        Changes/Fixes:
+	Changes/Fixes:
 		Stop start bug fix : shading problem fixed issue of char array accessing by int pointer and aligned the buffers for dma access.
 		SP1 Enable\Disable  ( set to Disable in release )
 		Input Feeder cropping calculation fix
@@ -117,7 +117,7 @@ VER 1.2, released 13/04/14:
 		Merge "[Skycam | BUGFIX] GAC control operations loaded at frame level" 4e11164c6cb59c47676d9ef8acb3f11a9394b479 -> cherry pick unmerged : 4240/14 guy patch includes Nitsan added fixes problems found when start stop debug (I6e470944fdebb03ae27d31386f91cf199ea7872f)    ->cherry pick unmerged  Ia8462ef3e3d9c261912986cd84e2be35b191be3d dror timing patch
 
 VER 1.3, released 29/04/14:
-        - Version release for : Trunk release
+	- Version release for : Trunk release
 	Changes/Fixes:
 		Save/restore pipe pointers in suspend/resume – requested by driver team
 		remove obsolete obrow and obcol kernels
@@ -134,7 +134,7 @@ VER 1.3, released 29/04/14:
 		Slimming the release package
 
 	Verion build data : based on ae79bab (tag: irci_master_20140429_0550, origin/master, origin/HEAD) Merge "[CSI2+] Disable offline capture in ACC pipe"
-	                    and  added cherry pick unmerged "Measurement code"  5073/3
+			    and  added cherry pick unmerged "Measurement code"  5073/3
 
 
 

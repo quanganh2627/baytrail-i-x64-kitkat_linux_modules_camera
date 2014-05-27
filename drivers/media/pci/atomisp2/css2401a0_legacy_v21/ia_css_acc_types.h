@@ -347,7 +347,7 @@ struct ia_css_acc_fw;
 
 /** Structure describing the SP binary of a stand-alone accelerator.
  */
- struct ia_css_acc_sp {
+struct ia_css_acc_sp {
 	void (*init)(struct ia_css_acc_fw *);	/**< init for crun */
 	uint32_t sp_prog_name_offset;		/**< program name offset wrt hdr in bytes */
 	uint32_t sp_blob_offset;		/**< blob offset wrt hdr in bytes */

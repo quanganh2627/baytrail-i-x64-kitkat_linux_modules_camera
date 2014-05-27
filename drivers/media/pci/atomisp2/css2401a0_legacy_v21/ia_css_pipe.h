@@ -55,6 +55,9 @@ struct ia_css_capture_settings {
 	struct ia_css_binary post_isp_binary;
 	struct ia_css_binary capture_pp_binary;
 	struct ia_css_binary vf_pp_binary;
+	struct ia_css_binary *yuv_scaler_binary;
+	bool *is_output_stage;
+	unsigned int num_yuv_scaler;
 };
 
 #define IA_CSS_DEFAULT_CAPTURE_SETTINGS \
@@ -66,6 +69,9 @@ struct ia_css_capture_settings {
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* post_isp_binary */\
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* capture_pp_binary */\
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* vf_pp_binary */\
+	NULL,				/* yuv_scaler_binary */ \
+	NULL,				/* is_output_stage */ \
+	0,				/* num_yuv_scaler */ \
 }
 
 struct ia_css_video_settings {
