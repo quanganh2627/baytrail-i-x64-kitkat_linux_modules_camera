@@ -248,14 +248,15 @@ ia_css_stream_unload(struct ia_css_stream *stream);
  *
  * This function will return the stream format.
  */
- enum ia_css_stream_format
+enum ia_css_stream_format
 ia_css_stream_get_format(const struct ia_css_stream *stream);
 
 /** @brief Check if the stream is configured for 2 pixels per clock
  * @param[in]	stream The stream.
  * @return	boolean flag
  *
- * This function will check if the stream is configured for 2 pixels per clock and return the correspondent boolean flag.
+ * This function will check if the stream is configured for 2 pixels per clock and
+ * return the correspondent boolean flag.
  */
 bool
 ia_css_stream_get_two_pixels_per_clock(const struct ia_css_stream *stream);

@@ -292,6 +292,10 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 #define _ISP_LOG_VECTOR_STEP(mode) \
 	((mode) == IA_CSS_BINARY_MODE_CAPTURE_PP ? 2 : 1)
 
+/* It is preferred to have not more than 2x scaling at one step
+ * in GDC (assumption is for capture_pp and yuv_scale stages) */
+#define MAX_PREFERRED_YUV_DS_PER_STEP	2
+
 /* Rules for computing the internal width. This is extremely complicated
  * and definitely needs to be commented and explained. */
 #define _ISP_LEFT_CROP_EXTRA(left_crop) ((left_crop) > 0 ? 2*ISP_VEC_NELEMS : 0)

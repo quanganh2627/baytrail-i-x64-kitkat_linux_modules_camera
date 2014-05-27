@@ -33,10 +33,13 @@
 #define DVS_BLOCKDIM_Y_LUMA (64)   /* Y block height*/
 #define DVS_BLOCKDIM_Y_CHROMA (32) /* UV height block size is half the Y block height*/
 
-#define DVS_NUM_BLOCKS_X(X)    (CEIL_MUL(CEIL_DIV((X), DVS_BLOCKDIM_X), 2))      /* horizontal 64x64 blocks round up to DVS_BLOCKDIM_X, make even */
-#define DVS_NUM_BLOCKS_Y(X)             (CEIL_DIV((X), DVS_BLOCKDIM_Y_LUMA))     /* vertical   64x64 blocks round up to DVS_BLOCKDIM_Y */
-#define DVS_NUM_BLOCKS_X_CHROMA(X)      (CEIL_DIV((X), DVS_BLOCKDIM_X))
-#define DVS_NUM_BLOCKS_Y_CHROMA(X)      (CEIL_DIV((X), DVS_BLOCKDIM_Y_CHROMA))
+/* horizontal 64x64 blocks round up to DVS_BLOCKDIM_X, make even */
+#define DVS_NUM_BLOCKS_X(X)		(CEIL_MUL(CEIL_DIV((X), DVS_BLOCKDIM_X), 2))
+
+/* vertical   64x64 blocks round up to DVS_BLOCKDIM_Y */
+#define DVS_NUM_BLOCKS_Y(X)		(CEIL_DIV((X), DVS_BLOCKDIM_Y_LUMA))
+#define DVS_NUM_BLOCKS_X_CHROMA(X)	(CEIL_DIV((X), DVS_BLOCKDIM_X))
+#define DVS_NUM_BLOCKS_Y_CHROMA(X)	(CEIL_DIV((X), DVS_BLOCKDIM_Y_CHROMA))
 
 
 #define DVS_TABLE_IN_BLOCKDIM_X_LUMA(X)	(DVS_NUM_BLOCKS_X(X) + 1)  /* N blocks have N + 1 set of coords */
@@ -57,8 +60,8 @@
 /* currently we only support two output with the same resolution, output 0 is th default one. */
 #define DVS_6AXIS_BYTES(binary) \
 	(DVS_6AXIS_COORDS_ELEMS \
-     *  DVS_NUM_BLOCKS_X((binary)->out_frame_info[0].res.width) \
-     *  DVS_NUM_BLOCKS_Y((binary)->out_frame_info[0].res.height))
+	* DVS_NUM_BLOCKS_X((binary)->out_frame_info[0].res.width) \
+	* DVS_NUM_BLOCKS_Y((binary)->out_frame_info[0].res.height))
 
 struct ia_css_dvs_6axis_config *
 generate_dvs_6axis_table(const struct ia_css_resolution	*frame_res, const struct ia_css_resolution *dvs_offset);

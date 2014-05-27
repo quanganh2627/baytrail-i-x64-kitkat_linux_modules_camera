@@ -561,6 +561,7 @@ void ia_css_pipe_get_capturepp_binarydesc(
 	struct ia_css_pipe * const pipe,
 	struct ia_css_binary_descr *capture_pp_descr,
 	struct ia_css_frame_info *in_info,
+	struct ia_css_frame_info *out_info,
 	struct ia_css_frame_info *vf_info)
 {
 	unsigned int i;
@@ -572,16 +573,18 @@ void ia_css_pipe_get_capturepp_binarydesc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "ia_css_pipe_get_capturepp_binarydesc() enter:\n");
 
+
 	/* the in_info is only used for resolution to enable
 	   bayer down scaling. */
 	if (pipe->out_yuv_ds_input_info.res.width)
 		*in_info = pipe->out_yuv_ds_input_info;
 	else
-		*in_info = pipe->output_info[0];
+		*in_info = *out_info;
 	in_info->format = IA_CSS_FRAME_FORMAT_YUV420;
 	in_info->raw_bit_depth = 0;
 	ia_css_frame_info_set_width(in_info, in_info->res.width, 0);
-	out_infos[0] = &pipe->output_info[0];
+
+	out_infos[0] = out_info;
 	for (i = 1; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
 		out_infos[i] = NULL;
 	}

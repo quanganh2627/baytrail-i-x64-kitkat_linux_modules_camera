@@ -27,7 +27,6 @@
 
 #include "dma.h"	/* N_DMA_CHANNEL_ID */
 
-#include "ia_css.h"
 #include "ia_css_buffer.h"
 #include "ia_css_binary.h"
 #include "sh_css_hrt.h"

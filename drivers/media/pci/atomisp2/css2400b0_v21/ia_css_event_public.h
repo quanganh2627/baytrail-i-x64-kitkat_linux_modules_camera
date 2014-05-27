@@ -48,7 +48,8 @@ enum ia_css_event_type {
 	IA_CSS_EVENT_TYPE_METADATA_DONE		= 1 << 9, /**< Metadata ready. */
 	IA_CSS_EVENT_TYPE_LACE_STATISTICS_DONE	= 1 << 10, /**< Indication that LACE statistics are available. */
 	/* NOTE: Add new enums before IA_CSS_EVENT_TYPE_PORT_EOF MUST, see comment below */
-	IA_CSS_EVENT_TYPE_PORT_EOF		= 1 << 11, /**< End Of Frame event, sent when in buffered sensor mode. This enum MUST be last */
+	IA_CSS_EVENT_TYPE_PORT_EOF		= 1 << 11, /**< End Of Frame event, sent when in buffered sensor mode.
+								This enum MUST be last */
 };
 
 #define IA_CSS_EVENT_TYPE_NONE 0
@@ -56,7 +57,8 @@ enum ia_css_event_type {
  * For this reason IA_CSS_EVENT_TYPE_PORT_EOF must be last in the enum above.
  * we create it by sbutracting 1 from IA_CSS_EVENT_TYPE_PORT_EOF
  * alternate implementation could be or-ing of all the events.
- * (IA_CSS_EVENT_TYPE_OUTPUT_FRAME_DONE | IA_CSS_EVENT_TYPE_VF_OUTPUT_FRAME_DONE | ... | IA_CSS_EVENT_TYPE_INPUT_FRAME_DONE)
+ * (IA_CSS_EVENT_TYPE_OUTPUT_FRAME_DONE | IA_CSS_EVENT_TYPE_VF_OUTPUT_FRAME_DONE | ... |
+ *  IA_CSS_EVENT_TYPE_INPUT_FRAME_DONE)
  */
 #define IA_CSS_EVENT_TYPE_ALL  (IA_CSS_EVENT_TYPE_PORT_EOF - 1)
 
