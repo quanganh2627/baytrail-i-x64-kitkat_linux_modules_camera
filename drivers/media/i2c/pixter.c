@@ -477,7 +477,8 @@ static u32 pixter_try_mbus_fmt_locked(struct v4l2_subdev *sd,
 		(struct atomisp_input_stream_info*)fmt->reserved;
 	struct pixter_setting *settings = dev->settings;
 	struct pixter_vc_setting *vc_setting = dev->vc_setting;
-	u32 vc, i, j, idx;
+	u32 vc, i, j;
+	s32 idx = -1, max_idx = -1;
 	s64 w0, h0, mismatch, distance;
 	s64 w1 = fmt->width;
 	s64 h1 = fmt->height;
@@ -489,9 +490,10 @@ static u32 pixter_try_mbus_fmt_locked(struct v4l2_subdev *sd,
 		vc = 0;
 	else
 		vc = stream_info->stream;
-	for (i = 0, idx = dev->setting_num - 1; i < dev->setting_num; i++) {
+	for (i = 0; i < dev->setting_num; i++) {
 		if (dev->setting_en[i] == 0)
 			continue;
+		max_idx = i;
 		for (j = 0; j < 4; j++) {
 			if (!vc_setting[j].width)
 				continue;
@@ -515,6 +517,17 @@ static u32 pixter_try_mbus_fmt_locked(struct v4l2_subdev *sd,
 			min_distance = distance;
 			idx = i;
 		}
+	}
+	if (idx < 0 && max_idx < 0) {
+		idx = dev->setting_num - 1;
+		dev_warn(&client->dev, "All settings disabled, using: %dx%d\n",
+				settings[idx].vc[vc].width,
+				settings[idx].vc[vc].height);
+	} else if (idx < 0) {
+		idx = max_idx;
+		dev_warn(&client->dev, "using max enabled resolution: %dx%d\n",
+				settings[idx].vc[vc].width,
+				settings[idx].vc[vc].height);
 	}
 	fmt->width = settings[idx].vc[vc].width;
 	fmt->height = settings[idx].vc[vc].height;
