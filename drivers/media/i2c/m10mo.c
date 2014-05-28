@@ -1653,7 +1653,8 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	/* In ZSL case, capture table needs to be handled separately */
 	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE &&
 			(dev->run_mode == CI_MODE_PREVIEW ||
-			dev->run_mode == CI_MODE_CONTINUOUS)) {
+			 dev->run_mode == CI_MODE_VIDEO ||
+			 dev->run_mode == CI_MODE_CONTINUOUS)) {
 		res = resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 		entries =
 		     resolutions_sizes[mode][M10MO_MODE_CAPTURE_INDEX];
@@ -1803,6 +1804,7 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	 */
 	} else if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE &&
 	 		(dev->run_mode == CI_MODE_PREVIEW ||
+			 dev->run_mode == CI_MODE_VIDEO ||
 			 dev->run_mode == CI_MODE_CONTINUOUS))
 		dev->capture_res_idx = dev->fmt_idx;
 
@@ -2147,10 +2149,6 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 	}
 
 	switch (dev->run_mode) {
-	case CI_MODE_VIDEO:
-		/* TODO: Differentiate the video mode */
-		ret = m10mo_set_monitor_mode(sd);
-		break;
 	case CI_MODE_STILL_CAPTURE:
 		ret = m10mo_set_still_capture(sd);
 		break;
@@ -2742,9 +2740,6 @@ static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 	mutex_lock(&dev->input_lock);
 	dev->run_mode = param->parm.capture.capturemode;
 	switch (dev->run_mode) {
-	case CI_MODE_VIDEO:
-		index = M10MO_MODE_VIDEO_INDEX;
-		break;
 	case CI_MODE_STILL_CAPTURE:
 		index = M10MO_MODE_CAPTURE_INDEX;
 		break;
