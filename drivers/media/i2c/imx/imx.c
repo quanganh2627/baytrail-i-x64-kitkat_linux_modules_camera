@@ -501,6 +501,9 @@ static int __imx_init(struct v4l2_subdev *sd, u32 val)
 	if (dev->sensor_id == IMX_ID_DEFAULT)
 		return 0;
 
+	/* The default is no flip at sensor initialization */
+	dev->h_flip->cur.val = 0;
+	dev->v_flip->cur.val = 0;
 	/* Sets the default FPS */
 	dev->fps_index = 0;
 	dev->curr_res_table = dev->mode_tables->res_preview;
@@ -2135,6 +2138,18 @@ static const struct v4l2_subdev_sensor_ops imx_sensor_ops = {
 
 static int imx_set_ctrl(struct v4l2_ctrl *ctrl)
 {
+	struct imx_device *dev = container_of(ctrl->handler, struct imx_device,
+			ctrl_handler);
+	struct i2c_client *client = v4l2_get_subdevdata(&dev->sd);
+
+	switch (ctrl->id) {
+	case V4L2_CID_HFLIP:
+		dev_dbg(&client->dev, "%s: CID_HFLIP:%d.\n", __func__, ctrl->val);
+		return imx_h_flip(&dev->sd, ctrl->val);
+	case V4L2_CID_VFLIP:
+		dev_dbg(&client->dev, "%s: CID_VFLIP:%d.\n", __func__, ctrl->val);
+		return imx_v_flip(&dev->sd, ctrl->val);
+	}
 	return 0;
 }
 
@@ -2270,9 +2285,16 @@ static int __imx_init_ctrl_handler(struct imx_device *dev)
 	dev->link_freq = v4l2_ctrl_new_custom(&dev->ctrl_handler,
 					      &v4l2_ctrl_link_freq,
 					      NULL);
+	dev->h_flip = v4l2_ctrl_new_std(&dev->ctrl_handler,
+					  &imx_ctrl_ops,
+					  V4L2_CID_HFLIP, 0, 1, 1, 0);
+	dev->v_flip = v4l2_ctrl_new_std(&dev->ctrl_handler,
+					  &imx_ctrl_ops,
+					  V4L2_CID_VFLIP, 0, 1, 1, 0);
 
 	if (dev->ctrl_handler.error || dev->pixel_rate == NULL
 		|| dev->h_blank == NULL || dev->v_blank == NULL
+		|| dev->h_flip == NULL || dev->v_flip == NULL
 		|| dev->link_freq == NULL) {
 		return dev->ctrl_handler.error;
 	}

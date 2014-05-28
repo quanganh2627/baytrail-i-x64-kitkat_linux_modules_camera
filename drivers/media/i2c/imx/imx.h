@@ -445,6 +445,8 @@ struct imx_device {
 	struct v4l2_ctrl *h_blank;
 	struct v4l2_ctrl *v_blank;
 	struct v4l2_ctrl *link_freq;
+	struct v4l2_ctrl *h_flip;
+	struct v4l2_ctrl *v_flip;
 };
 
 #define to_imx_sensor(x) container_of(x, struct imx_device, sd)
