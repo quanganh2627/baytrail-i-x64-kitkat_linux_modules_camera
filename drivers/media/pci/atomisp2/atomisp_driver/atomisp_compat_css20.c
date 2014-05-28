@@ -1747,11 +1747,11 @@ void atomisp_css_temp_pipe_to_pipe_id(struct atomisp_sub_device *asd,
 	 * copy pipe.
 	 * VIED BZ: 1463
 	 */
-	if (asd && asd->copy_mode)
-		ia_css_temp_pipe_to_pipe_id(NULL, &current_event->pipe);
-	else
-		ia_css_temp_pipe_to_pipe_id(current_event->event.pipe,
-				&current_event->pipe);
+	ia_css_temp_pipe_to_pipe_id(current_event->event.pipe,
+				    &current_event->pipe);
+	if (asd && asd->copy_mode &&
+	    current_event->pipe == IA_CSS_PIPE_ID_CAPTURE)
+		current_event->pipe = IA_CSS_PIPE_ID_COPY;
 }
 
 int atomisp_css_isys_set_resolution(struct atomisp_sub_device *asd,
