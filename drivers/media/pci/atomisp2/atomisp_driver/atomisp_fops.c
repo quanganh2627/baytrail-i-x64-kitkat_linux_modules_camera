@@ -741,7 +741,8 @@ static int atomisp_open(struct file *file)
 	/* Init ISP */
 	if (atomisp_css_init(isp)) {
 		ret = -EINVAL;
-		goto error;
+		/* Need to clean up CSS init if it fails. */
+		goto css_error;
 	}
 
 	atomisp_dev_init_struct(isp);
@@ -749,7 +750,7 @@ static int atomisp_open(struct file *file)
 	ret = v4l2_subdev_call(isp->flash, core, s_power, 1);
 	if (ret < 0 && ret != -ENODEV && ret != -ENOIOCTLCMD) {
 		dev_err(isp->dev, "Failed to power-on flash\n");
-		goto error;
+		goto css_error;
 	}
 
 init_subdev:
@@ -763,6 +764,8 @@ done:
 	mutex_unlock(&isp->mutex);
 	return 0;
 
+css_error:
+	atomisp_css_uninit(isp);
 error:
 	hmm_pool_unregister(HMM_POOL_TYPE_DYNAMIC);
 	pm_runtime_put(vdev->v4l2_dev->dev);
