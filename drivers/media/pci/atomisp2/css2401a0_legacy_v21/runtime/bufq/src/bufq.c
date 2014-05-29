@@ -29,7 +29,7 @@
 #include "ia_css_debug.h"		/* ia_css_debug_dtrace*/
 #include "sh_css_internal.h"		/* sh_css_queue_type */
 #include "sp_local.h"			/* sp_address_of */
-#include "ia_css_util.h" 		/* ia_css_convert_errno()*/
+#include "ia_css_util.h"		/* ia_css_convert_errno()*/
 #include "sh_css_firmware.h"		/* sh_css_sp_fw*/
 
 
@@ -94,15 +94,13 @@ void ia_css_queue_map_init(void)
 	unsigned int i, j;
 
 	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++) {
-		for (j = 0; j < SH_CSS_MAX_NUM_QUEUES; j++) {
+		for (j = 0; j < SH_CSS_MAX_NUM_QUEUES; j++)
 			queue_availability[i][j] = true;
-		}
 	}
 
 	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++) {
-		for (j = 0; j < IA_CSS_NUM_DYNAMIC_BUFFER_TYPE; j++) {
+		for (j = 0; j < IA_CSS_NUM_DYNAMIC_BUFFER_TYPE; j++)
 			buffer_type_to_queue_id_map[i][j] = SH_CSS_INVALID_QUEUE_ID;
-		}
 	}
 }
 
@@ -117,11 +115,10 @@ void ia_css_queue_map(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_queue_map() enter: buf_type=%d, thread_id=%d\n", buf_type, thread_id);
 
-	if(map) {
+	if (map)
 		map_buffer_type_to_queue_id(thread_id, buf_type);
-	} else {
+	else
 		unmap_buffer_type_to_queue_id(thread_id, buf_type);
-	}
 }
 
 /**

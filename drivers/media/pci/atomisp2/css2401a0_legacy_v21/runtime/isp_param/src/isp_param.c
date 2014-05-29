@@ -96,7 +96,8 @@ ia_css_init_memory_interface(
 	for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
 		memset(isp_mem_if->params[pclass], 0, sizeof(isp_mem_if->params[pclass]));
 		for (mem = 0; mem < IA_CSS_NUM_MEMORIES; mem++) {
-			if (!mem_params->params[pclass][mem].address) continue;
+			if (!mem_params->params[pclass][mem].address)
+				continue;
 			isp_mem_if->params[pclass][mem].size = mem_params->params[pclass][mem].size;
 			if (pclass != IA_CSS_PARAM_CLASS_PARAM)
 				isp_mem_if->params[pclass][mem].address = css_params->params[pclass][mem].address;
@@ -186,7 +187,8 @@ ia_css_isp_param_copy_isp_mem_if_to_ddr(
 		char	    *host_mem_ptr = host->params[pclass][mem].address;
 		if (size != ddr->params[pclass][mem].size)
 			return IA_CSS_ERR_INTERNAL_ERROR;
-		if (!size) continue;
+		if (!size)
+			continue;
 		mmgr_store(ddr_mem_ptr, host_mem_ptr, size);
 	}
 	return IA_CSS_SUCCESS;
@@ -200,7 +202,8 @@ ia_css_isp_param_enable_pipeline(
 	   input parameter is a disable bit*/
 	short dmem_offset = 0;
 
-	if (mem_params->params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM0].size == 0) return;
+	if (mem_params->params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM0].size == 0)
+		return;
 
 	*(uint32_t *)&mem_params->params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM0].address[dmem_offset] = 0x0;
 }

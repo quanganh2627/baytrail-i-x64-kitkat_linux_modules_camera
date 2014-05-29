@@ -42,11 +42,11 @@ static void frame_init_single_plane(struct ia_css_frame *frame,
 	unsigned int bytes_per_pixel);
 
 static void frame_init_raw_single_plane(
-       struct ia_css_frame *frame,
-       struct ia_css_frame_plane *plane,
-       unsigned int height,
-       unsigned int subpixels_per_line,
-       unsigned int bits_per_pixel);
+	struct ia_css_frame *frame,
+	struct ia_css_frame_plane *plane,
+	unsigned int height,
+	unsigned int subpixels_per_line,
+	unsigned int bits_per_pixel);
 
 static void frame_init_mipi_plane(struct ia_css_frame *frame,
 	struct ia_css_frame_plane *plane,
@@ -88,7 +88,7 @@ static struct ia_css_frame *frame_create(unsigned int width,
 	bool valid);
 
 static unsigned
-ia_css_elems_bytes_from_info (
+ia_css_elems_bytes_from_info(
 	const struct ia_css_frame_info *info);
 
 /**************************************************************************
@@ -97,7 +97,7 @@ ia_css_elems_bytes_from_info (
 
 void ia_css_frame_zero(struct ia_css_frame *frame)
 {
-	assert(frame != NULL); 
+	assert(frame != NULL);
 	mmgr_clear(frame->data, frame->data_bytes);
 }
 
@@ -588,7 +588,7 @@ ia_css_dma_configure_from_info(
 	config->elems  = elems_b;
 	config->width  = info->res.width;
 	config->crop   = 0;
-	assert (config->width <= info->padded_width);
+	assert(config->width <= info->padded_width);
 }
 
 /**************************************************************************
@@ -628,11 +628,11 @@ static void frame_init_single_plane(struct ia_css_frame *frame,
 }
 
 static void frame_init_raw_single_plane(
-       struct ia_css_frame *frame,
-       struct ia_css_frame_plane *plane,
-       unsigned int height,
-       unsigned int subpixels_per_line,
-       unsigned int bits_per_pixel)
+	struct ia_css_frame *frame,
+	struct ia_css_frame_plane *plane,
+	unsigned int height,
+	unsigned int subpixels_per_line,
+	unsigned int bits_per_pixel)
 {
 	unsigned int stride;
 	assert(frame != NULL);
@@ -831,7 +831,7 @@ static struct ia_css_frame *frame_create(unsigned int width,
 }
 
 static unsigned
-ia_css_elems_bytes_from_info (const struct ia_css_frame_info *info)
+ia_css_elems_bytes_from_info(const struct ia_css_frame_info *info)
 {
 	if (info->format == IA_CSS_FRAME_FORMAT_RGB565)
 		return 2; /* bytes per pixel */

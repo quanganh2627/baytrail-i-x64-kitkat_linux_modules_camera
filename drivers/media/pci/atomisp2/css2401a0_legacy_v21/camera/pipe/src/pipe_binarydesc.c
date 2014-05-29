@@ -401,8 +401,6 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "ia_css_pipe_get_video_binarydesc() enter:\n");
 
-	if (ia_css_util_is_input_format_yuv(pipe->stream->config.input_config.format))
-		mode = IA_CSS_BINARY_MODE_COPY;
 	in_info->res = pipe->stream->config.input_config.effective_res;
 	in_info->padded_width = in_info->res.width;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
