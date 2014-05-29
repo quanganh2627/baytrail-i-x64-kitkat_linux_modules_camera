@@ -107,11 +107,10 @@ static unsigned inputfifo_wrap_marker(
 STORAGE_CLASS_INLINE void
 _sh_css_fifo_snd(unsigned token)
 {
-	while (!can_event_send_token(STR2MIPI_EVENT_ID)) {
+	while (!can_event_send_token(STR2MIPI_EVENT_ID))
 		hrt_sleep();
-	}
 	event_send_token(STR2MIPI_EVENT_ID, token);
-    return;
+	return;
 }
 
 static void inputfifo_send_data_a(

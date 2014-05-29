@@ -35,10 +35,10 @@
 enum ia_css_param_class {
 	IA_CSS_PARAM_CLASS_PARAM  = 0,	/* Late binding parameters, like 3A */
 	IA_CSS_PARAM_CLASS_CONFIG = 1,	/* Pipe config time parameters, like resolution */
-	IA_CSS_PARAM_CLASS_STATE  = 2,    // State parameters, like tnr buffer index
-	/* Not yet implemented
-	IA_CSS_PARAM_CLASS_FRAME	  = 3,    // Frame time parameters, like output buffer
-	*/
+	IA_CSS_PARAM_CLASS_STATE  = 2,  /* State parameters, like tnr buffer index */
+#if 0 /* Not yet implemented */
+	IA_CSS_PARAM_CLASS_FRAME  = 3,  /* Frame time parameters, like output buffer */
+#endif
 };
 #define IA_CSS_NUM_PARAM_CLASSES (IA_CSS_PARAM_CLASS_STATE + 1)
 

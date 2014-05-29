@@ -94,15 +94,13 @@ enum ia_css_err ia_css_spctrl_load_fw(sp_ID_t sp_id,
 #ifdef HRT_CSIM
 	/* Secondary SP is named as SP2 in SDK, however we are using secondary
 	   SP as SP1 in the HSS and secondary SP Firmware */
-	if(sp_id == SP0_ID)
-	{
+	if (sp_id == SP0_ID) {
 		hrt_cell_set_icache_base_address(SP, spctrl_cofig_info[sp_id].code_addr);
 		hrt_cell_invalidate_icache(SP);
 		hrt_cell_load_program(SP, spctrl_cofig_info[sp_id].program_name);
 	}
 #if defined(ENABLE_SP1)
-	else
-	{
+	else {
 		hrt_cell_set_icache_base_address(SP2, spctrl_cofig_info[sp_id].code_addr);
 		hrt_cell_invalidate_icache(SP2);
 		hrt_cell_load_program(SP2, spctrl_cofig_info[sp_id].program_name);
@@ -140,7 +138,7 @@ enum ia_css_err ia_css_spctrl_start(sp_ID_t sp_id)
 #endif /* #if defined(ENABLE_SP1) */
 	if ((sp_id >= N_SP_ID) || ((sp_id < N_SP_ID) && (!spctrl_loaded[sp_id])))
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
-if(sp_id == SP0_ID)
+if (sp_id == SP0_ID)
 	HIVE_ADDR_sp_start_isp_entry = spctrl_cofig_info[sp_id].sp_entry;
 #if defined(ENABLE_SP1)
 else
@@ -153,7 +151,7 @@ else
 		&spctrl_cofig_info[sp_id].dmem_config,
 		sizeof(spctrl_cofig_info[sp_id].dmem_config));
 #endif
-	if(sp_id == SP0_ID)
+	if (sp_id == SP0_ID)
 		hrt_cell_start_function(SP, sp_start_isp);
 #if defined(ENABLE_SP1)
 	else
@@ -200,7 +198,7 @@ ia_css_spctrl_sp_sw_state ia_css_spctrl_get_state(sp_ID_t sp_id)
 
 	HIVE_ADDR_sp_sw_state = spctrl_cofig_info[sp_id].spctrl_state_dmem_addr;
 	(void)HIVE_ADDR_sp_sw_state; /* Suppres warnings in CRUN */
-	if(sp_id == SP0_ID)
+	if (sp_id == SP0_ID)
 		state = sp_dmem_load_uint32(sp_id, (unsigned)sp_address_of(sp_sw_state));
 #if defined(ENABLE_SP1)
 	else

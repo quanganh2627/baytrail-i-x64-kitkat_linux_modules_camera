@@ -471,13 +471,12 @@ static void ifmtr_set_if_blocking_mode(
 	assert(N_INPUT_FORMATTER_ID <= (sizeof(block) / sizeof(block[0])));
 
 #if !defined(IS_ISP_2400_SYSTEM)
-#error "ifmtr_set_if_blocking_mode: ISP_SYSTEM must be one of \
-	{IS_ISP_2400_SYSTEM}"
+#error "ifmtr_set_if_blocking_mode: ISP_SYSTEM must be one of {IS_ISP_2400_SYSTEM}"
 #endif
 
 	block[INPUT_FORMATTER0_ID] = (bool)config_a->block_no_reqs;
 	if (NULL != config_b)
-	  block[INPUT_FORMATTER1_ID] = (bool)config_b->block_no_reqs;
+		block[INPUT_FORMATTER1_ID] = (bool)config_b->block_no_reqs;
 
 	/* TODO: next could cause issues when streams are started after
 	 * eachother. */

@@ -351,8 +351,8 @@ enum ia_css_err ia_css_isys_convert_compressed_format(
 				110 12-8-12
 			1 bit indicate predictor
 		*/
-		if(comp->uncompressed_bits_per_pixel == UNCOMPRESSED_BITS_PER_PIXEL_10) {
-			switch(comp->compressed_bits_per_pixel) {
+		if (comp->uncompressed_bits_per_pixel == UNCOMPRESSED_BITS_PER_PIXEL_10) {
+			switch (comp->compressed_bits_per_pixel) {
 			case COMPRESSED_BITS_PER_PIXEL_6:
 				cfg->csi_port_attr.comp_scheme = MIPI_COMPRESSOR_10_6_10;
 				break;
@@ -365,9 +365,8 @@ enum ia_css_err ia_css_isys_convert_compressed_format(
 			default:
 				err = IA_CSS_ERR_INVALID_ARGUMENTS;
 			}
-		}
-		else if(comp->uncompressed_bits_per_pixel == UNCOMPRESSED_BITS_PER_PIXEL_12) {
-			switch(comp->compressed_bits_per_pixel) {
+		} else if (comp->uncompressed_bits_per_pixel == UNCOMPRESSED_BITS_PER_PIXEL_12) {
+			switch (comp->compressed_bits_per_pixel) {
 			case COMPRESSED_BITS_PER_PIXEL_6:
 				cfg->csi_port_attr.comp_scheme = MIPI_COMPRESSOR_12_6_12;
 				break;
@@ -380,16 +379,12 @@ enum ia_css_err ia_css_isys_convert_compressed_format(
 			default:
 				err = IA_CSS_ERR_INVALID_ARGUMENTS;
 			}
-		}
-		else {
+		} else
 			err = IA_CSS_ERR_INVALID_ARGUMENTS;
-		}
 		cfg->csi_port_attr.comp_predictor = sh_css_csi2_compression_type_2_mipi_predictor(comp->type);
 		cfg->csi_port_attr.comp_enable = true;
-	}
-	else { /* No compression */
+	} else /* No compression */
 		cfg->csi_port_attr.comp_enable = false;
-	}
 	return err;
 }
 
@@ -398,7 +393,7 @@ unsigned int ia_css_csi2_calculate_input_system_alignment(
 {
 	unsigned int memory_alignment_in_bytes = HIVE_ISP_DDR_WORD_BYTES;
 
-	switch(fmt_type) {
+	switch (fmt_type) {
 	case IA_CSS_STREAM_FORMAT_RAW_6:
 	case IA_CSS_STREAM_FORMAT_RAW_7:
 	case IA_CSS_STREAM_FORMAT_RAW_8:

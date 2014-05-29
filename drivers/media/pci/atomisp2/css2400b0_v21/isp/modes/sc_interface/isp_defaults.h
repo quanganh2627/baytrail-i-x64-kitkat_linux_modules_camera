@@ -66,6 +66,10 @@
 #define ENABLE_RAW		0
 #endif
 
+#if !defined(ENABLE_INPUT_YUV)
+#define ENABLE_INPUT_YUV	0
+#endif
+
 #if !defined(ENABLE_DVS_6AXIS)
 #define ENABLE_DVS_6AXIS	0
 #endif

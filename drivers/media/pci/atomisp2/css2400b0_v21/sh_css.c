@@ -3520,7 +3520,6 @@ init_in_frameinfo_memory_defaults(struct ia_css_pipe *pipe,
 	enum sh_css_queue_id queue_id;
 
 	assert(frame != NULL);
-
 	in_frame = frame;
 
 	in_frame->info.format = format;
@@ -3529,6 +3528,34 @@ init_in_frameinfo_memory_defaults(struct ia_css_pipe *pipe,
 	if (format == IA_CSS_FRAME_FORMAT_RAW)
 		in_frame->info.format = (pipe->stream->config.pack_raw_pixels) ?
 					IA_CSS_FRAME_FORMAT_RAW_PACKED : IA_CSS_FRAME_FORMAT_RAW;
+#endif
+
+#if defined(IS_ISP_2500_SYSTEM)
+	/* default 2500 mapping from stream format to frame format */
+	switch (pipe->stream->config.input_config.format){
+
+	case IA_CSS_STREAM_FORMAT_YUV420_8:
+		in_frame->info.format = IA_CSS_FRAME_FORMAT_YUV420;
+		break;
+
+	case IA_CSS_STREAM_FORMAT_YUV420_10:
+	case IA_CSS_STREAM_FORMAT_YUV420_16:
+		in_frame->info.format = IA_CSS_FRAME_FORMAT_YUV420_16;
+		break;
+
+	case IA_CSS_STREAM_FORMAT_YUV422_8:
+		in_frame->info.format = IA_CSS_FRAME_FORMAT_YUV422;
+		break;
+
+	case IA_CSS_STREAM_FORMAT_YUV422_10:
+	case IA_CSS_STREAM_FORMAT_YUV422_16:
+		in_frame->info.format = IA_CSS_FRAME_FORMAT_YUV422_16;
+		break;
+
+	default:
+		in_frame->info.format = IA_CSS_FRAME_FORMAT_RAW;
+		break;
+	}
 #endif
 
 	in_frame->info.res.width = pipe->stream->config.input_config.input_res.width;
@@ -3754,7 +3781,7 @@ static enum ia_css_err create_host_video_pipeline(struct ia_css_pipe *pipe)
 			goto ERR;
 	}
 
-	if (need_yuv_pp && video_stage) {
+	if (need_yuv_pp && video_stage && post_stage) {
 		struct ia_css_frame *tmp_in_frame = video_stage->args.out_frame[0];
 		struct ia_css_frame *tmp_out_frame = NULL;
 
@@ -4956,11 +4983,12 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 
 	assert(pipe_out_info != NULL);
 
-#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+	/*
+	 * There is no explicit input format requirement for raw or yuv
+	 * What matters is that there is a binary that supports the stream format.
+	 * This is checked in the binary_find(), so no need to check it here
+	 */
 	err = ia_css_util_check_input(&pipe->stream->config, false, false);
-#else
-	err = ia_css_util_check_input(&pipe->stream->config, !online, false);
-#endif
 	if (err != IA_CSS_SUCCESS)
 		return err;
 	/* cannot have online video and input_mode memory */
@@ -7058,8 +7086,7 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 		}
 	}
 
-	if (mode != IA_CSS_CAPTURE_MODE_RAW &&
-		mode != IA_CSS_CAPTURE_MODE_BAYER) {
+	if (mode != IA_CSS_CAPTURE_MODE_RAW && mode != IA_CSS_CAPTURE_MODE_BAYER && post_stage) {
 		err = add_vf_pp_stage(pipe, vf_frame, vf_pp_binary,
 				      post_stage, &vf_pp_stage);
 		if (err != IA_CSS_SUCCESS)
