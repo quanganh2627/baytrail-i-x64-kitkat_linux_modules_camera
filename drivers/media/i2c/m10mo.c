@@ -1034,9 +1034,11 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 		goto out;
 
 	/* Set shot mode */
-	ret = m10mo_writeb(sd, CATEGORY_PARAM, SHOT_MODE, dev->shot_mode);
-	if (ret)
-		goto out;
+	if (dev->fw_type != M10MO_FW_TYPE_1) {
+		ret = m10mo_writeb(sd, CATEGORY_PARAM, SHOT_MODE, dev->shot_mode);
+		if (ret)
+			goto out;
+	}
 
 	/* vdis on/off */
 	m10mo_writeb(sd, CATEGORY_MONITOR, PARAM_VDIS,
