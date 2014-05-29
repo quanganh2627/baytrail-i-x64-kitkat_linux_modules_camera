@@ -190,7 +190,8 @@ static int isp_subdev_subscribe_event(struct v4l2_subdev *sd,
 	if (sub->type != V4L2_EVENT_FRAME_SYNC &&
 	    sub->type != V4L2_EVENT_FRAME_END &&
 	    sub->type != V4L2_EVENT_ATOMISP_3A_STATS_READY &&
-	    sub->type != V4L2_EVENT_ATOMISP_METADATA_READY)
+	    sub->type != V4L2_EVENT_ATOMISP_METADATA_READY &&
+	    sub->type != V4L2_EVENT_ATOMISP_RAW_BUFFERS_ALLOC_DONE)
 		return -EINVAL;
 
 	if (sub->type == V4L2_EVENT_FRAME_SYNC &&

@@ -1071,8 +1071,13 @@ void atomisp_delayed_init_work(struct work_struct *work)
 	if (ATOMISP_USE_YUVPP(asd)) {
 		asd->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
 	} else {
+		struct v4l2_event event = {0};
+
 		atomisp_css_allocate_continuous_frames(false, asd);
 		atomisp_css_update_continuous_frames(asd);
+
+		event.type = V4L2_EVENT_ATOMISP_RAW_BUFFERS_ALLOC_DONE;
+		v4l2_event_queue(asd->subdev.devnode, &event);
 		asd->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
 	}
 }
