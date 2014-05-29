@@ -24,25 +24,6 @@
 
 #include "system_global.h"
 
-#if 0
-enum sh_css_queue_id {
-	SH_CSS_INVALID_BUFFER_QUEUE_ID     = -1,
-	SH_CSS_INPUT_BUFFER_QUEUE_ID       = 0,
-	SH_CSS_OUTPUT_BUFFER_QUEUE_ID      = 1,
-	SH_CSS_VF_OUTPUT_BUFFER_QUEUE_ID   = 2,
-	SH_CSS_S3A_BUFFER_QUEUE_ID         = 3,
-	SH_CSS_DIS_BUFFER_QUEUE_ID         = 4,
-	SH_CSS_PARAM_BUFFER_QUEUE_ID       = 5,
-	SH_CSS_TAG_CMD_QUEUE_ID            = 6,
-#if !defined (SH_CSS_ENABLE_METADATA)
-	SH_CSS_NUM_BUFFER_QUEUE_ID         = SH_CSS_TAG_CMD_QUEUE_ID,
-#else
-	SH_CSS_METADATA_BUFFER_QUEUE_ID    = 7,
-	SH_CSS_NUM_BUFFER_QUEUE_ID         = SH_CSS_METADATA_BUFFER_QUEUE_ID,
-#endif
-};
-#endif
-
 enum sh_css_queue_id {
 	SH_CSS_INVALID_QUEUE_ID     = -1,
 	SH_CSS_QUEUE_A_ID = 0,
@@ -64,8 +45,5 @@ enum sh_css_queue_id {
 /* for now we staticaly assign queue 0 & 1 to parameter sets */
 #define IA_CSS_PARAMETER_SET_QUEUE_ID SH_CSS_QUEUE_A_ID
 #define IA_CSS_PER_FRAME_PARAMETER_SET_QUEUE_ID SH_CSS_QUEUE_B_ID
-//#define SH_CSS_MAX_NUM_QUEUES SH_CSS_MAX_DYNAMIC_BUFFERS_PER_THREAD
-
-
 
 #endif

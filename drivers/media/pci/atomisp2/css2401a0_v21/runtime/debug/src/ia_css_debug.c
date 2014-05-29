@@ -126,24 +126,24 @@ static struct pipe_graph_class {
 	enum ia_css_stream_format stream_format;
 } pg_inst = {true, 0, 0, 0, 0, N_IA_CSS_STREAM_FORMAT};
 
-static const char *qi2str[] = {
-	/*[SH_CSS_QUEUE_A_ID]     =*/ "queue_A",
-	/*[SH_CSS_QUEUE_B_ID]     =*/ "queue_B",
-	/*[SH_CSS_QUEUE_C_ID]     =*/ "queue_C",
-	/*[SH_CSS_QUEUE_D_ID]     =*/ "queue_D",
-	/*[SH_CSS_QUEUE_E_ID]     =*/ "queue_E",
-	/*[SH_CSS_QUEUE_F_ID]     =*/ "queue_F",
-	/*[SH_CSS_QUEUE_G_ID]     =*/ "queue_G",
-	/*[SH_CSS_QUEUE_H_ID]     =*/ "queue_H"
+static const char * const queue_id_to_str[] = {
+	/* [SH_CSS_QUEUE_A_ID]     =*/ "queue_A",
+	/* [SH_CSS_QUEUE_B_ID]     =*/ "queue_B",
+	/* [SH_CSS_QUEUE_C_ID]     =*/ "queue_C",
+	/* [SH_CSS_QUEUE_D_ID]     =*/ "queue_D",
+	/* [SH_CSS_QUEUE_E_ID]     =*/ "queue_E",
+	/* [SH_CSS_QUEUE_F_ID]     =*/ "queue_F",
+	/* [SH_CSS_QUEUE_G_ID]     =*/ "queue_G",
+	/* [SH_CSS_QUEUE_H_ID]     =*/ "queue_H"
 };
 
-static const char *pi2str[] = {
-	/*[IA_CSS_PIPE_ID_PREVIEW]     =*/ "preview",
-	/*[IA_CSS_PIPE_ID_COPY]          =*/ "copy",
-	/*[IA_CSS_PIPE_ID_VIDEO]         =*/ "video",
-	/*[IA_CSS_PIPE_ID_CAPTURE]     =*/ "capture",
-	/*[IA_CSS_PIPE_ID_YUVPP]        =*/ "yuvpp",
-	/*[IA_CSS_PIPE_ID_ACC]           =*/ "accelerator"
+static const char * const pipe_id_to_str[] = {
+	/* [IA_CSS_PIPE_ID_PREVIEW]   =*/ "preview",
+	/* [IA_CSS_PIPE_ID_COPY]      =*/ "copy",
+	/* [IA_CSS_PIPE_ID_VIDEO]     =*/ "video",
+	/* [IA_CSS_PIPE_ID_CAPTURE]   =*/ "capture",
+	/* [IA_CSS_PIPE_ID_YUVPP]     =*/ "yuvpp",
+	/* [IA_CSS_PIPE_ID_ACC]       =*/ "accelerator"
 };
 
 static char dot_id_input_bin[SH_CSS_MAX_BINARY_NAME+10];
@@ -157,46 +157,84 @@ void ia_css_debug_set_dtrace_level(const unsigned int trace_level)
 static const char *debug_stream_format2str(const enum ia_css_stream_format stream_format)
 {
 	switch (stream_format) {
-
-	case IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY: return "yuv420-8-legacy";
-	case IA_CSS_STREAM_FORMAT_YUV420_8:        return "yuv420-8";
-	case IA_CSS_STREAM_FORMAT_YUV420_10:       return "yuv420-10";
-	case IA_CSS_STREAM_FORMAT_YUV420_16:       return "yuv420-16";
-	case IA_CSS_STREAM_FORMAT_YUV422_8:        return "yuv422-8";
-	case IA_CSS_STREAM_FORMAT_YUV422_10:       return "yuv422-10";
-	case IA_CSS_STREAM_FORMAT_YUV422_16:       return "yuv422-16";
-	case IA_CSS_STREAM_FORMAT_RGB_444:         return "rgb444";
-	case IA_CSS_STREAM_FORMAT_RGB_555:         return "rgb555";
-	case IA_CSS_STREAM_FORMAT_RGB_565:         return "rgb565";
-	case IA_CSS_STREAM_FORMAT_RGB_666:         return "rgb666";
-	case IA_CSS_STREAM_FORMAT_RGB_888:         return "rgb888";
-	case IA_CSS_STREAM_FORMAT_RAW_6:           return "raw6";
-	case IA_CSS_STREAM_FORMAT_RAW_7:           return "raw7";
-	case IA_CSS_STREAM_FORMAT_RAW_8:           return "raw8";
-	case IA_CSS_STREAM_FORMAT_RAW_10:          return "raw10";
-	case IA_CSS_STREAM_FORMAT_RAW_12:          return "raw12";
-	case IA_CSS_STREAM_FORMAT_RAW_14:          return "raw14";
-	case IA_CSS_STREAM_FORMAT_RAW_16:          return "raw16";
-	case IA_CSS_STREAM_FORMAT_BINARY_8:        return "binary8";
-	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT1:  return "generic-short1";
-	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT2:  return "generic-short2";
-	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT3:  return "generic-short3";
-	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT4:  return "generic-short4";
-	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT5:  return "generic-short5";
-	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT6:  return "generic-short6";
-	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT7:  return "generic-short7";
-	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT8:  return "generic-short8";
-	case IA_CSS_STREAM_FORMAT_YUV420_8_SHIFT:  return "yuv420-8-shift";
-	case IA_CSS_STREAM_FORMAT_YUV420_10_SHIFT: return "yuv420-10-shift";
-	case IA_CSS_STREAM_FORMAT_EMBEDDED:        return "embedded-8";
-	case IA_CSS_STREAM_FORMAT_USER_DEF1:       return "user-def-8-type-1";
-	case IA_CSS_STREAM_FORMAT_USER_DEF2:       return "user-def-8-type-2";
-	case IA_CSS_STREAM_FORMAT_USER_DEF3:       return "user-def-8-type-3";
-	case IA_CSS_STREAM_FORMAT_USER_DEF4:       return "user-def-8-type-4";
-	case IA_CSS_STREAM_FORMAT_USER_DEF5:       return "user-def-8-type-5";
-	case IA_CSS_STREAM_FORMAT_USER_DEF6:       return "user-def-8-type-6";
-	case IA_CSS_STREAM_FORMAT_USER_DEF7:       return "user-def-8-type-7";
-	case IA_CSS_STREAM_FORMAT_USER_DEF8:       return "user-def-8-type-8";
+	case IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY:
+		return "yuv420-8-legacy";
+	case IA_CSS_STREAM_FORMAT_YUV420_8:
+		return "yuv420-8";
+	case IA_CSS_STREAM_FORMAT_YUV420_10:
+		return "yuv420-10";
+	case IA_CSS_STREAM_FORMAT_YUV420_16:
+		return "yuv420-16";
+	case IA_CSS_STREAM_FORMAT_YUV422_8:
+		return "yuv422-8";
+	case IA_CSS_STREAM_FORMAT_YUV422_10:
+		return "yuv422-10";
+	case IA_CSS_STREAM_FORMAT_YUV422_16:
+		return "yuv422-16";
+	case IA_CSS_STREAM_FORMAT_RGB_444:
+		return "rgb444";
+	case IA_CSS_STREAM_FORMAT_RGB_555:
+		return "rgb555";
+	case IA_CSS_STREAM_FORMAT_RGB_565:
+		return "rgb565";
+	case IA_CSS_STREAM_FORMAT_RGB_666:
+		return "rgb666";
+	case IA_CSS_STREAM_FORMAT_RGB_888:
+		return "rgb888";
+	case IA_CSS_STREAM_FORMAT_RAW_6:
+		return "raw6";
+	case IA_CSS_STREAM_FORMAT_RAW_7:
+		return "raw7";
+	case IA_CSS_STREAM_FORMAT_RAW_8:
+		return "raw8";
+	case IA_CSS_STREAM_FORMAT_RAW_10:
+		return "raw10";
+	case IA_CSS_STREAM_FORMAT_RAW_12:
+		return "raw12";
+	case IA_CSS_STREAM_FORMAT_RAW_14:
+		return "raw14";
+	case IA_CSS_STREAM_FORMAT_RAW_16:
+		return "raw16";
+	case IA_CSS_STREAM_FORMAT_BINARY_8:
+		return "binary8";
+	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT1:
+		return "generic-short1";
+	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT2:
+		return "generic-short2";
+	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT3:
+		return "generic-short3";
+	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT4:
+		return "generic-short4";
+	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT5:
+		return "generic-short5";
+	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT6:
+		return "generic-short6";
+	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT7:
+		return "generic-short7";
+	case IA_CSS_STREAM_FORMAT_GENERIC_SHORT8:
+		return "generic-short8";
+	case IA_CSS_STREAM_FORMAT_YUV420_8_SHIFT:
+		return "yuv420-8-shift";
+	case IA_CSS_STREAM_FORMAT_YUV420_10_SHIFT:
+		return "yuv420-10-shift";
+	case IA_CSS_STREAM_FORMAT_EMBEDDED:
+		return "embedded-8";
+	case IA_CSS_STREAM_FORMAT_USER_DEF1:
+		return "user-def-8-type-1";
+	case IA_CSS_STREAM_FORMAT_USER_DEF2:
+		return "user-def-8-type-2";
+	case IA_CSS_STREAM_FORMAT_USER_DEF3:
+		return "user-def-8-type-3";
+	case IA_CSS_STREAM_FORMAT_USER_DEF4:
+		return "user-def-8-type-4";
+	case IA_CSS_STREAM_FORMAT_USER_DEF5:
+		return "user-def-8-type-5";
+	case IA_CSS_STREAM_FORMAT_USER_DEF6:
+		return "user-def-8-type-6";
+	case IA_CSS_STREAM_FORMAT_USER_DEF7:
+		return "user-def-8-type-7";
+	case IA_CSS_STREAM_FORMAT_USER_DEF8:
+		return "user-def-8-type-8";
 
 	default:
 		assert(!"Unknown stream format");
@@ -208,32 +246,58 @@ static const char *debug_frame_format2str(const enum ia_css_frame_format frame_f
 {
 	switch (frame_format) {
 
-	case IA_CSS_FRAME_FORMAT_NV11:                     return "NV11";
-	case IA_CSS_FRAME_FORMAT_NV12:                     return "NV12";
-	case IA_CSS_FRAME_FORMAT_NV16:                     return "NV16";
-	case IA_CSS_FRAME_FORMAT_NV21:                     return "NV21";
-	case IA_CSS_FRAME_FORMAT_NV61:                     return "NV61";
-	case IA_CSS_FRAME_FORMAT_YV12:                     return "YV12";
-	case IA_CSS_FRAME_FORMAT_YV16:                     return "YV16";
-	case IA_CSS_FRAME_FORMAT_YUV420:                   return "YUV420";
-	case IA_CSS_FRAME_FORMAT_YUV420_16:                return "YUV420_16";
-	case IA_CSS_FRAME_FORMAT_YUV422:                   return "YUV422";
-	case IA_CSS_FRAME_FORMAT_YUV422_16:                return "YUV422_16";
-	case IA_CSS_FRAME_FORMAT_UYVY:                     return "UYVY";
-	case IA_CSS_FRAME_FORMAT_YUYV:                     return "YUYV";
-	case IA_CSS_FRAME_FORMAT_YUV444:                   return "YUV444";
-	case IA_CSS_FRAME_FORMAT_YUV_LINE:                 return "YUV_LINE";
-	case IA_CSS_FRAME_FORMAT_RAW:                      return "RAW";
-	case IA_CSS_FRAME_FORMAT_RGB565:                   return "RGB565";
-	case IA_CSS_FRAME_FORMAT_PLANAR_RGB888:            return "PLANAR_RGB888";
-	case IA_CSS_FRAME_FORMAT_RGBA888:                  return "RGBA888";
-	case IA_CSS_FRAME_FORMAT_QPLANE6:                  return "QPLANE6";
-	case IA_CSS_FRAME_FORMAT_BINARY_8:                 return "BINARY_8";
-	case IA_CSS_FRAME_FORMAT_MIPI:                     return "MIPI";
-	case IA_CSS_FRAME_FORMAT_RAW_PACKED:               return "RAW_PACKED";
-	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:        return "CSI_MIPI_YUV420_8";
-	case IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8: return "CSI_MIPI_LEGACY_YUV420_8";
-	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10:       return "CSI_MIPI_YUV420_10";
+	case IA_CSS_FRAME_FORMAT_NV11:
+		return "NV11";
+	case IA_CSS_FRAME_FORMAT_NV12:
+		return "NV12";
+	case IA_CSS_FRAME_FORMAT_NV16:
+		return "NV16";
+	case IA_CSS_FRAME_FORMAT_NV21:
+		return "NV21";
+	case IA_CSS_FRAME_FORMAT_NV61:
+		return "NV61";
+	case IA_CSS_FRAME_FORMAT_YV12:
+		return "YV12";
+	case IA_CSS_FRAME_FORMAT_YV16:
+		return "YV16";
+	case IA_CSS_FRAME_FORMAT_YUV420:
+		return "YUV420";
+	case IA_CSS_FRAME_FORMAT_YUV420_16:
+		return "YUV420_16";
+	case IA_CSS_FRAME_FORMAT_YUV422:
+		return "YUV422";
+	case IA_CSS_FRAME_FORMAT_YUV422_16:
+		return "YUV422_16";
+	case IA_CSS_FRAME_FORMAT_UYVY:
+		return "UYVY";
+	case IA_CSS_FRAME_FORMAT_YUYV:
+		return "YUYV";
+	case IA_CSS_FRAME_FORMAT_YUV444:
+		return "YUV444";
+	case IA_CSS_FRAME_FORMAT_YUV_LINE:
+		return "YUV_LINE";
+	case IA_CSS_FRAME_FORMAT_RAW:
+		return "RAW";
+	case IA_CSS_FRAME_FORMAT_RGB565:
+		return "RGB565";
+	case IA_CSS_FRAME_FORMAT_PLANAR_RGB888:
+		return "PLANAR_RGB888";
+	case IA_CSS_FRAME_FORMAT_RGBA888:
+		return "RGBA888";
+	case IA_CSS_FRAME_FORMAT_QPLANE6:
+		return "QPLANE6";
+	case IA_CSS_FRAME_FORMAT_BINARY_8:
+		return "BINARY_8";
+	case IA_CSS_FRAME_FORMAT_MIPI:
+		return "MIPI";
+	case IA_CSS_FRAME_FORMAT_RAW_PACKED:
+		return "RAW_PACKED";
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
+		return "CSI_MIPI_YUV420_8";
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8:
+		return "CSI_MIPI_LEGACY_YUV420_8";
+	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10:
+		return "CSI_MIPI_YUV420_10";
 
 	default:
 		assert(!"Unknown frame format");
@@ -295,8 +359,7 @@ void ia_css_debug_dump_isp_state(void)
 #endif
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "[2] dma_FIFO stalled",
 				    stall.fifo2);
-#if defined(HAS_ISP_2400_MAMOIADA) || defined(HAS_ISP_2401_MAMOIADA) || \
-    defined(IS_ISP_2500_SYSTEM)
+#if defined(HAS_ISP_2400_MAMOIADA) || defined(HAS_ISP_2401_MAMOIADA) || defined(IS_ISP_2500_SYSTEM)
 
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "[3] gdc0_FIFO stalled",
 				    stall.fifo3);
@@ -309,8 +372,7 @@ void ia_css_debug_dump_isp_state(void)
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "[6] sp_FIFO stalled",
 				    stall.fifo6);
 #else
-#error "ia_css_debug: ISP cell must be \
-	one of {2400_MAMOIADA,, 2401_MAMOIADA, 2500_SKYCAM}"
+#error "ia_css_debug: ISP cell must be one of {2400_MAMOIADA,, 2401_MAMOIADA, 2500_SKYCAM}"
 #endif
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n",
 				    "status & control stalled",
@@ -374,8 +436,7 @@ void ia_css_debug_dump_sp_state(void)
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "irq FIFO stalled",
 				    stall.fifoa);
 #else
-#error "ia_css_debug: SP cell must be \
-	one of {SP2400, SP2500}"
+#error "ia_css_debug: SP cell must be one of {SP2400, SP2500}"
 #endif
 		ia_css_debug_dtrace(2, "\t%-32s: %d\n", "dmem stalled",
 				    stall.dmem);
@@ -1420,7 +1481,7 @@ void ia_css_debug_print_sp_debug_state(const struct sh_css_sp_debug_state
  *
  * Adjust this to your trace case!
  */
-	static char const *id2filename[8] = {
+	static char const * const id2filename[8] = {
 		"param_buffer.sp.c | tagger.sp.c | pipe_data.sp.c",
 		"isp_init.sp.c",
 		"sp_raw_copy.hive.c",
@@ -2100,11 +2161,10 @@ void ia_css_debug_wake_up_sp(void)
 
 #if !defined(IS_ISP_2500_SYSTEM)
 #define FIND_DMEM_PARAMS_TYPE(stream, kernel, type) \
-  (struct HRTCAT(HRTCAT(sh_css_isp_,type),_params) *) \
-  findf_dmem_params(stream, offsetof(struct ia_css_memory_offsets, dmem.kernel))
+	(struct HRTCAT(HRTCAT(sh_css_isp_, type), _params) *) \
+	findf_dmem_params(stream, offsetof(struct ia_css_memory_offsets, dmem.kernel))
 
-#define FIND_DMEM_PARAMS(stream, kernel) \
-  FIND_DMEM_PARAMS_TYPE(stream, kernel, kernel)
+#define FIND_DMEM_PARAMS(stream, kernel) FIND_DMEM_PARAMS_TYPE(stream, kernel, kernel)
 
 /* Find a stage that support the kernel and return the parameters for that kernel */
 static char *
@@ -2117,11 +2177,13 @@ findf_dmem_params(struct ia_css_stream *stream, short idx)
 		struct ia_css_pipeline_stage *stage;
 		for (stage = pipeline->stages; stage; stage = stage->next) {
 			struct ia_css_binary *binary = stage->binary;
-			short *offsets = (short*)&binary->info->mem_offsets.offsets.param->dmem;
+			short *offsets = (short *)&binary->info->mem_offsets.offsets.param->dmem;
 			short dmem_offset = offsets[idx];
 			const struct ia_css_host_data *isp_data =
-				ia_css_isp_param_get_mem_init(&binary->mem_params, IA_CSS_PARAM_CLASS_PARAM, IA_CSS_ISP_DMEM0);
-			if (dmem_offset < 0) continue;
+				ia_css_isp_param_get_mem_init(&binary->mem_params,
+							IA_CSS_PARAM_CLASS_PARAM, IA_CSS_ISP_DMEM0);
+			if (dmem_offset < 0)
+				continue;
 			return &isp_data->address[dmem_offset];
 		}
 	}
@@ -2238,7 +2300,7 @@ void ia_css_debug_dump_isp_binary(void)
 	unsigned int HIVE_ADDR_pipeline_sp_curr_binary_id;
 	uint32_t curr_binary_id;
 	static uint32_t prev_binary_id = 0xFFFFFFFF;
-	static uint32_t sample_count = 0;
+	static uint32_t sample_count;
 
 	fw = &sh_css_sp_fw;
 	HIVE_ADDR_pipeline_sp_curr_binary_id = fw->info.sp.curr_binary_id;
@@ -2253,14 +2315,14 @@ void ia_css_debug_dump_isp_binary(void)
 	/* do the handling */
 	sample_count++;
 	if (prev_binary_id != curr_binary_id) {
-	    ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
-				"sh_css_dump_isp_binary() "
-				"pipe_id=%d, binary_id=%d, sample_count=%d\n",
-				(curr_binary_id >> 16),
-				(curr_binary_id & 0x0ffff),
-				sample_count);
-	    sample_count = 0;
-	    prev_binary_id = curr_binary_id;
+		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
+				    "sh_css_dump_isp_binary() "
+				    "pipe_id=%d, binary_id=%d, sample_count=%d\n",
+				    (curr_binary_id >> 16),
+				    (curr_binary_id & 0x0ffff),
+				    sample_count);
+		sample_count = 0;
+		prev_binary_id = curr_binary_id;
 	}
 }
 
@@ -2270,13 +2332,12 @@ void ia_css_debug_dump_perf_counters(void)
 	const struct ia_css_fw_info *fw;
 	int i;
 	unsigned int HIVE_ADDR_ia_css_isys_sp_error_cnt;
-	int32_t ia_css_sp_input_system_error_cnt[N_MIPI_PORT_ID + 1]; // 3 Capture Units and 1 Acquire Unit.
+	int32_t ia_css_sp_input_system_error_cnt[N_MIPI_PORT_ID + 1]; /* 3 Capture Units and 1 Acquire Unit. */
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "Input System Error Counters:\n");
 
 	fw = &sh_css_sp_fw;
-	HIVE_ADDR_ia_css_isys_sp_error_cnt =
-	    fw->info.sp.perf_counter_input_system_error;
+	HIVE_ADDR_ia_css_isys_sp_error_cnt = fw->info.sp.perf_counter_input_system_error;
 
 	(void)HIVE_ADDR_ia_css_isys_sp_error_cnt;
 
@@ -2286,7 +2347,7 @@ void ia_css_debug_dump_perf_counters(void)
 		     sizeof(ia_css_sp_input_system_error_cnt));
 
 	for (i = 0; i < N_MIPI_PORT_ID + 1; i++) {
-	    ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "\tport[%d] = %d\n",
+		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "\tport[%d] = %d\n",
 				i, ia_css_sp_input_system_error_cnt[i]);
 	}
 #endif
@@ -2419,7 +2480,7 @@ void sh_css_dump_thread_wait_info(void)
 		(unsigned int)sp_address_of(sp_thread_wait),
 		     &sp_thread_wait,
 		     sizeof(sp_thread_wait));
-	for (i=0; i < 5; i++) {
+	for (i = 0; i < 5; i++) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
 			"\twait[%d] = 0x%X\n",
 			i, sp_thread_wait[i]);
@@ -2445,7 +2506,7 @@ void sh_css_dump_pipe_stage_info(void)
 		(unsigned int)sp_address_of(sp_pipe_stage),
 		     &sp_pipe_stage,
 		     sizeof(sp_pipe_stage));
-	for (i=0; i < 5; i++) {
+	for (i = 0; i < 5; i++) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
 			"\tstage[%d] = %d\n",
 			i, sp_pipe_stage[i]);
@@ -2471,7 +2532,7 @@ void sh_css_dump_pipe_stripe_info(void)
 		(unsigned int)sp_address_of(sp_pipe_stripe),
 		     &sp_pipe_stripe,
 		     sizeof(sp_pipe_stripe));
-	for (i=0; i < 5; i++) {
+	for (i = 0; i < 5; i++) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
 			"\tstripe[%d] = %d\n",
 			i, sp_pipe_stripe[i]);
@@ -2494,8 +2555,8 @@ ia_css_debug_pipe_graph_dump_frame(
 		snprintf(bufinfo, sizeof(bufinfo), "Internal");
 	} else {
 		snprintf(bufinfo, sizeof(bufinfo), "Queue: %s %s",
-			pi2str[id],
-			qi2str[frame->dynamic_data_index]);
+			pipe_id_to_str[id],
+			queue_id_to_str[frame->dynamic_data_index]);
 	}
 	dtrace_dot(
 		"node [shape = box, "
@@ -2509,7 +2570,7 @@ ia_css_debug_pipe_graph_dump_frame(
 		frame->info.raw_bit_depth,
 		bufinfo);
 
-	if (in_frame){
+	if (in_frame) {
 		dtrace_dot(
 			"\"0x%08lx\"->\"%s(pipe%d)\" "
 			"[label = %s_frame];",
@@ -2528,8 +2589,8 @@ ia_css_debug_pipe_graph_dump_frame(
 void
 ia_css_debug_pipe_graph_dump_prologue(void)
 {
-	dtrace_dot("digraph sh_css_pipe_graph {" );
-	dtrace_dot("rankdir=LR;" );
+	dtrace_dot("digraph sh_css_pipe_graph {");
+	dtrace_dot("rankdir=LR;");
 
 	dtrace_dot("fontsize=9;");
 	dtrace_dot("label = \"\\nEnable options: rp=reduced pipe, vfve=vf_veceven, "
@@ -2627,12 +2688,12 @@ ia_css_debug_pipe_graph_dump_stage(
 		char enable_info2[100];
 		char enable_info3[100];
 		char enable_info[200];
-		struct ia_css_binary_info* bi = stage->binary_info;
+		struct ia_css_binary_info *bi = stage->binary_info;
 
 		/* Split it in 2 function-calls to keep the amount of
 		 * parameters per call "reasonable"
 		 */
-		snprintf( enable_info1, sizeof(enable_info1),
+		snprintf(enable_info1, sizeof(enable_info1),
 			"%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 			bi->enable.reduced_pipe ?	"rp," : "",
 			bi->enable.vf_veceven ?		"vfve," : "",
@@ -2650,7 +2711,7 @@ ia_css_debug_pipe_graph_dump_stage(
 			bi->enable.sc ?			"sc," : ""
 			);
 
-		snprintf( enable_info2, sizeof(enable_info2),
+		snprintf(enable_info2, sizeof(enable_info2),
 			"%s%s%s%s%s%s%s%s%s%s%s",
 			bi->enable.macc ?		"macc," : "",
 			bi->enable.output ?		"outp," : "",

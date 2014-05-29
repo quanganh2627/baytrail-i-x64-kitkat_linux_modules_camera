@@ -562,12 +562,10 @@ static bool acquire_ib_buffer(
 	ib_buffer_t *buf)
 {
 	buf->stride = calculate_stride(bits_per_pixel, pixels_per_line, false, align_in_bytes);
-	if(online) {
+	if (online)
 		buf->lines = 4; /* use double buffering for online usecases */
-	}
-	else {
+	else
 		buf->lines = 2;
-	}
 
 	(void)(lines_per_frame);
 	return ia_css_isys_ibuf_rmgr_acquire(buf->stride * buf->lines, &buf->start_addr);
@@ -666,7 +664,7 @@ static bool calculate_be_cfg(
 		sizeof(csi_rx_backend_lut_entry_t));
 
 	cfg->csi_mipi_cfg.virtual_channel = isys_cfg->csi_port_attr.ch_id;
-	if(metadata) {
+	if (metadata) {
 		cfg->csi_mipi_packet_type = get_csi_mipi_packet_type(isys_cfg->metadata.fmt_type);
 		cfg->csi_mipi_cfg.comp_enable = false;
 		cfg->csi_mipi_cfg.data_type = isys_cfg->metadata.fmt_type;
@@ -823,9 +821,8 @@ static bool calculate_isys2401_dma_port_cfg(
 
 	cfg->stride	= calculate_stride(bits_per_pixel, pixels_per_line, raw_packed, align_req_in_bytes);
 
-	if (!raw_packed) {
+	if (!raw_packed)
 		bits_per_pixel = CEIL_MUL(bits_per_pixel, 8);
-	}
 
 	cfg->elements	= HIVE_ISP_DDR_WORD_BITS / bits_per_pixel;
 	cfg->cropping	= 0;

@@ -94,11 +94,10 @@ void ia_css_pipeline_map(unsigned int pipe_num, bool map)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_pipeline_map() enter: pipe_num=%d\n", pipe_num);
 
-	if(map) {
+	if (map)
 		pipeline_map_num_to_sp_thread(pipe_num);
-	} else {
+	else
 		pipeline_unmap_num_to_sp_thread(pipe_num);
-	}
 }
 
 /** @brief destroy a pipeline
@@ -143,10 +142,9 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 #endif
 				);
 	ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
-	if (!sh_css_sp_is_running())
-	{
+	if (!sh_css_sp_is_running()) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_pipeline_start() error,leaving  \n");
+		"ia_css_pipeline_start() error,leaving\n");
 		/* queues are invalid*/
 		return;
 	}
@@ -203,7 +201,7 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 	if (!sh_css_sp_is_running())
 	{
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_pipeline_request_stop() leaving \n");	
+		"ia_css_pipeline_request_stop() leaving\n");
 		/* queues are invalid */
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
@@ -658,56 +656,57 @@ ia_css_pipeline_configure_inout_port(struct ia_css_pipeline *me, bool continuous
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"ia_css_pipeline_configure_inout_port() enter: pipe_id(%d) continuous(%d)\n",
 			me->pipe_id, continuous);
-	switch(me->pipe_id) {
+	switch (me->pipe_id) {
 		case IA_CSS_PIPE_ID_PREVIEW:
 		case IA_CSS_PIPE_ID_VIDEO:
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_INPUT,
-						   (uint8_t)(continuous ? SH_CSS_COPYSINK_TYPE : SH_CSS_HOST_TYPE),1);
+						   (uint8_t)(continuous ? SH_CSS_COPYSINK_TYPE : SH_CSS_HOST_TYPE), 1);
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_OUTPUT,
-						   (uint8_t)SH_CSS_HOST_TYPE,1);
+						   (uint8_t)SH_CSS_HOST_TYPE, 1);
 			break;
 		case IA_CSS_PIPE_ID_COPY: /*Copy pipe ports configured to "offline" mode*/
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_INPUT,
-						   (uint8_t)SH_CSS_HOST_TYPE,1);
+						   (uint8_t)SH_CSS_HOST_TYPE, 1);
 			if (continuous) {
 				SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_OUTPUT,
-						   (uint8_t)SH_CSS_COPYSINK_TYPE,1);
+						   (uint8_t)SH_CSS_COPYSINK_TYPE, 1);
 				SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_OUTPUT,
-						   (uint8_t)SH_CSS_TAGGERSINK_TYPE,1);
+						   (uint8_t)SH_CSS_TAGGERSINK_TYPE, 1);
 			} else {
 				SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_OUTPUT,
-						   (uint8_t)SH_CSS_HOST_TYPE,1);
+						   (uint8_t)SH_CSS_HOST_TYPE, 1);
 			}
 			break;
 		case IA_CSS_PIPE_ID_CAPTURE:
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_INPUT,
-						   (uint8_t)(continuous ? SH_CSS_TAGGERSINK_TYPE : SH_CSS_HOST_TYPE),1);
+						   (uint8_t)(continuous ? SH_CSS_TAGGERSINK_TYPE : SH_CSS_HOST_TYPE),
+						   1);
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_OUTPUT,
-						   (uint8_t)SH_CSS_HOST_TYPE,1);
+						   (uint8_t)SH_CSS_HOST_TYPE, 1);
 			break;
 		case IA_CSS_PIPE_ID_YUVPP:
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_INPUT,
-						   (uint8_t)(SH_CSS_HOST_TYPE),1);
+						   (uint8_t)(SH_CSS_HOST_TYPE), 1);
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_OUTPUT,
-						   (uint8_t)SH_CSS_HOST_TYPE,1);
+						   (uint8_t)SH_CSS_HOST_TYPE, 1);
 			break;
 		case IA_CSS_PIPE_ID_ACC:
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_INPUT,
-						   (uint8_t)SH_CSS_HOST_TYPE,1);
+						   (uint8_t)SH_CSS_HOST_TYPE, 1);
 			SH_CSS_PIPE_PORT_CONFIG_SET(me->inout_port_config,
 						   (uint8_t)SH_CSS_PORT_OUTPUT,
-						   (uint8_t)SH_CSS_HOST_TYPE,1);
+						   (uint8_t)SH_CSS_HOST_TYPE, 1);
 			break;
 		default:
 			break;

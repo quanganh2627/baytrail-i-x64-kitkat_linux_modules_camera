@@ -96,9 +96,9 @@ struct ia_css_binary_descr {
 	struct ia_css_resolution dvs_env;
 	enum ia_css_stream_format stream_format;
 	struct ia_css_frame_info *original_in_info;	/* the info of the input-frame with the
-												   original resolution. */
-	struct ia_css_frame_info *in_info;			/* the info of the input-frame with the
-												   ISP required resolution. */
+							   original resolution. */
+	struct ia_css_frame_info *in_info;		/* the info of the input-frame with the
+							   ISP required resolution. */
 	struct ia_css_frame_info *bds_out_info;
 	struct ia_css_frame_info *out_info[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_frame_info *vf_info;
@@ -146,7 +146,7 @@ struct ia_css_binary {
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	{IA_CSS_BINARY_DEFAULT_FRAME_INFO}, \
-	{ 0,0 },/* effective_in_frame_res */ \
+	{ 0, 0},/* effective_in_frame_res */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	0,	/* input_buf_vectors */ \
 	0,	/* deci_factor_log2 */ \
@@ -162,7 +162,7 @@ struct ia_css_binary {
 	0,	/* sctbl_aligned_width_per_color */ \
 	0,	/* sctbl_height */ \
 	IA_CSS_DEFAULT_SDIS_INFO, /* dis */ \
-	{ 0, 0 },/* dvs_envelope_info */ \
+	{ 0, 0},/* dvs_envelope_info */ \
 	false,	/* online */ \
 	0,	/* uds_xc */ \
 	0,	/* uds_yc */ \

@@ -41,17 +41,9 @@
 #define INPUT_BUF_ADDR 0x0
 #if (defined(__ISP) && (!defined(MODE) || MODE != IA_CSS_BINARY_MODE_COPY))
 
-#if ENABLE_CONTINUOUS
-typedef struct {
-  tmemvectoru  raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_LINE_CONT]; /* 2 bayer lines */
-  /* Two more lines for SP raw copy efficiency */
-  tmemvectoru _raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_LINE_CONT]; /* 2 bayer lines */
-} input_line_type;
-#else
 typedef struct {
   tmemvectoru  raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_LINE]; /* 2 bayer lines */
 } input_line_type;
-#endif /* ENABLE_CONTINUOUS */
 
 #endif /*MODE*/
 

@@ -22,7 +22,7 @@
 #ifndef __ISYS_DMA_RMGR_H_INCLUDED__
 #define __ISYS_DMA_RMGR_H_INCLUDED__
 
-typedef struct isys_dma_rsrc_s 	isys_dma_rsrc_t;
+typedef struct isys_dma_rsrc_s	isys_dma_rsrc_t;
 struct isys_dma_rsrc_s {
 	uint32_t active_table;
 	uint16_t num_active;

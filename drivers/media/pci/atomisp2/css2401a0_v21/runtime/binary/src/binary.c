@@ -51,8 +51,8 @@ static struct ia_css_binary_xinfo
 
 static void
 ia_css_binary_dvs_env(const struct ia_css_binary_info *info,
-                      const struct ia_css_resolution *dvs_env,
-                      struct ia_css_resolution *binary_dvs_env)
+		      const struct ia_css_resolution *dvs_env,
+		      struct ia_css_resolution *binary_dvs_env)
 {
 	if (info->enable.dvs_envelope) {
 		assert(dvs_env != NULL);
@@ -63,11 +63,11 @@ ia_css_binary_dvs_env(const struct ia_css_binary_info *info,
 
 static void
 ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
-                           const struct ia_css_frame_info *bds_out_info,
-                           const struct ia_css_frame_info *out_info,
-                           const struct ia_css_resolution *dvs_env,
-                           const struct ia_css_binary_info *info,
-                           struct ia_css_resolution *internal_res)
+			   const struct ia_css_frame_info *bds_out_info,
+			   const struct ia_css_frame_info *out_info,
+			   const struct ia_css_resolution *dvs_env,
+			   const struct ia_css_binary_info *info,
+			   struct ia_css_resolution *internal_res)
 {
 	unsigned int isp_tmp_internal_width = 0,
 		     isp_tmp_internal_height = 0;
@@ -454,7 +454,7 @@ static bool
 supports_bds_factor(uint32_t supported_factors,
 		       uint32_t bds_factor)
 {
-  return ((supported_factors & PACK_BDS_FACTOR(bds_factor)) != 0);
+	return ((supported_factors & PACK_BDS_FACTOR(bds_factor)) != 0);
 }
 
 static enum ia_css_err
@@ -673,7 +673,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 	internal_res.width = 0;
 	internal_res.height = 0;
 	ia_css_binary_internal_res(in_info, bds_out_info, bin_out_info, dvs_env,
-			 	   info, &internal_res);
+				   info, &internal_res);
 	isp_internal_width = internal_res.width;
 	isp_internal_height = internal_res.height;
 
@@ -888,7 +888,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 	const struct ia_css_frame_info *req_in_info,
 				       *req_bds_out_info,
 				       *req_out_info[IA_CSS_BINARY_MAX_OUTPUT_PORTS],
-					   *req_bin_out_info = NULL,
+				       *req_bin_out_info = NULL,
 				       *req_vf_info;
 
 	struct ia_css_binary_xinfo *xcandidate;
@@ -904,13 +904,11 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 	unsigned int i;
 
 	assert(descr != NULL);
-/* MW: used after an error check, may accept NULL, but doubtfull */
+	/* MW: used after an error check, may accept NULL, but doubtfull */
 	assert(binary != NULL);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_binary_find() enter: "
-		"descr=%p, (mode=%d), "
-		"binary=%p\n",
+		"ia_css_binary_find() enter: descr=%p, (mode=%d), binary=%p\n",
 		descr, descr->mode,
 		binary);
 
@@ -1182,7 +1180,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 unsigned
 ia_css_binary_max_vf_width(void)
 {
-  return binary_infos[IA_CSS_BINARY_MODE_VF_PP]->sp.max_output_width;
+	return binary_infos[IA_CSS_BINARY_MODE_VF_PP]->sp.max_output_width;
 }
 
 void
@@ -1199,13 +1197,13 @@ ia_css_binary_get_isp_binaries(struct ia_css_binary_xinfo **binaries,
 {
 	assert(binaries != NULL);
 
-	if(num_isp_binaries)
+	if (num_isp_binaries)
 		*num_isp_binaries = 0;
 
 	*binaries = all_binaries;
-	if(all_binaries && num_isp_binaries) {
+	if (all_binaries && num_isp_binaries) {
 		/* -1 to account for sp binary which is not stored in all_binaries */
-		if(sh_css_num_binaries > 0)
+		if (sh_css_num_binaries > 0)
 			*num_isp_binaries = sh_css_num_binaries - 1;
 	}
 }

@@ -85,8 +85,8 @@
 #define UDS_BLI_INTERP_ENVELOPE       1
 #define UDS_BCI_INTERP_ENVELOPE       3
 #define UDS_MAX_ZOOM_FAC              64
-/* Make it always one FPGA vector. 
-   Four FPGA vectors are required and 
+/* Make it always one FPGA vector.
+   Four FPGA vectors are required and
    four of them fit in one ASIC vector.*/
 #define UDS_MAX_CHUNKS                16
 
@@ -107,7 +107,7 @@
 #define UDS_DATA_VMEM_IN_DIMY               14   //error in param transmit
 
 /* ************
- * lookup table 
+ * lookup table
  * ************/
 #define CTC_LUT_VALSU                   simd_is7_valsu
 #define CTC_LUT_OFFSET                  0
@@ -226,9 +226,10 @@
 
 /****** DMA buffer properties */
 
-#define RAW_BUF_LINES    2
+#define RAW_BUF_LINES   2
+#define RAW_BUF_STRIDE (MAX_VECTORS_PER_INPUT_STRIPE)
 
-#define RAW_BUF_STRIDE \
-	(MAX_VECTORS_PER_INPUT_STRIPE)
+#define INPUT_YUV_YBUF_LINES   2
+#define INPUT_YUV_YBUF_STRIDE (MAX_VECTORS_PER_INPUT_STRIPE)
 
 #endif /* _COMMON_ISP_CONST_H_ */
