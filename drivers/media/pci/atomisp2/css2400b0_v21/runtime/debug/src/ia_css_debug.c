@@ -653,7 +653,7 @@ void ia_css_debug_dump_if_state(void)
 	input_formatter_state_t state;
 	input_formatter_get_state(INPUT_FORMATTER0_ID, &state);
 	debug_print_if_state(&state);
-	ia_css_debug_dump_pif_isp_fifo_state();
+//	ia_css_debug_dump_pif_isp_fifo_state();
 	return;
 }
 #endif
@@ -1674,6 +1674,8 @@ void ia_css_debug_dump_rx_state(void)
 	if (infos & IA_CSS_RX_IRQ_INFO_ERR_LINE_SYNC)
 		ia_css_debug_dtrace(2, "\tline sync error\n");
 
+	return ;
+
 #if defined(HAS_INPUT_FORMATTER_VERSION_2) && !defined(HAS_NO_INPUT_FORMATTER)
 	receiver_get_state(RX0_ID, &state);
 	debug_print_rx_state(&state);
@@ -1968,11 +1970,17 @@ void ia_css_debug_dump_isys_state(void)
 }
 #endif
 
+extern int dbg_level;
+
 void ia_css_debug_dump_debug_info(const char *context)
 {
+	int old_dbg_level;
 	if (context == NULL)
 		context = "No Context provided";
-
+	
+	old_dbg_level = dbg_level;
+	dbg_level = 6;
+	
 	ia_css_debug_dtrace(2, "CSS Debug Info dump [Context = %s]\n", context);
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
 	ia_css_debug_dump_rx_state();
@@ -1980,22 +1988,22 @@ void ia_css_debug_dump_debug_info(const char *context)
 #if !defined(HAS_NO_INPUT_FORMATTER) && defined(USE_INPUT_SYSTEM_VERSION_2)
 	ia_css_debug_dump_if_state();
 #endif
-	ia_css_debug_dump_isp_state();
-	ia_css_debug_dump_isp_sp_fifo_state();
-	ia_css_debug_dump_isp_gdc_fifo_state();
-	ia_css_debug_dump_sp_state();
-	ia_css_debug_dump_perf_counters();
+//	ia_css_debug_dump_isp_state();
+//	ia_css_debug_dump_isp_sp_fifo_state();
+//	ia_css_debug_dump_isp_gdc_fifo_state();
+//	ia_css_debug_dump_sp_state();
+//	ia_css_debug_dump_perf_counters();
 
 #ifdef HAS_WATCHDOG_SP_THREAD_DEBUG
-	sh_css_dump_thread_wait_info();
-	sh_css_dump_pipe_stage_info();
-	sh_css_dump_pipe_stripe_info();
+//	sh_css_dump_thread_wait_info();
+//	sh_css_dump_pipe_stage_info();
+//	sh_css_dump_pipe_stripe_info();
 #endif
-	ia_css_debug_dump_dma_isp_fifo_state();
-	ia_css_debug_dump_dma_sp_fifo_state();
-	ia_css_debug_dump_dma_state();
+//	ia_css_debug_dump_dma_isp_fifo_state();
+//	ia_css_debug_dump_dma_sp_fifo_state();
+//	ia_css_debug_dump_dma_state();
 #if defined(USE_INPUT_SYSTEM_VERSION_2)
-	ia_css_debug_dump_isys_state();
+//	ia_css_debug_dump_isys_state();
 
 	{
 		irq_controller_state_t state;
@@ -2024,6 +2032,7 @@ void ia_css_debug_dump_debug_info(const char *context)
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2401)
 	ia_css_debug_dump_isys_state();
 #endif
+	dbg_level = old_dbg_level;
 	return;
 }
 
