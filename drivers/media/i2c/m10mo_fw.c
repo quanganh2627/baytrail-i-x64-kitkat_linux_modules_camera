@@ -155,6 +155,18 @@ static int m10mo_wait_operation_complete(struct v4l2_subdev *sd, u8 reg,
 	return 0;
 }
 
+int m10mo_update_pll_setting(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *m10mo_dev = to_m10mo_sensor(sd);
+	int err;
+
+	err = m10mo_writel(sd, CATEGORY_FLASHROM,
+			   REG_PLL_VALUES,
+			   m10mo_get_pll_cfg(m10mo_dev->ref_clock));
+
+	return err;
+}
+
 static int m10mo_to_fw_access_mode(struct m10mo_device *m10mo_dev)
 {
 	struct v4l2_subdev *sd = &m10mo_dev->sd;

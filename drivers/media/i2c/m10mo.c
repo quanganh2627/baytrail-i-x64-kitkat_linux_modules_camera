@@ -501,6 +501,13 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
+	/*
+	 * Correct the pll value before fw start
+	 */
+	ret = m10mo_update_pll_setting(sd);
+	if (ret < 0)
+		return ret;
+
 	ret = m10mo_setup_flash_controller(sd);
 	if (ret < 0)
 		return ret;
@@ -1851,13 +1858,14 @@ static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 	u16 result = M10MO_INVALID_CHECKSUM;
+	int id = 0;
 
 	mutex_lock(&dev->input_lock);
 
 	init_waitqueue_head(&dev->irq_waitq);
 
-	dev->fw_type = ((M10MO_RESOLUTION_MODE_0 & M10MO_MASK) | (M10MO_AF_MODE_0 << 16));
-	dev->ref_clock = dev->pdata->ref_clock_rate;
+	dev->fw_type = dev->pdata->def_fw_type;
+	dev->ref_clock = dev->pdata->ref_clock_rate[id];
 
 	if (dev->pdata->common.platform_init) {
 		ret = dev->pdata->common.platform_init(client);
@@ -1902,6 +1910,13 @@ static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 	 * FW can be updated later.
 	 */
 	m10mo_identify_fw_type(sd);
+
+	/*
+	 * Only after identify_fw_type the correct dev->fw_type
+	 * can be got, so here update the ref_clock
+	 */
+	id = M10MO_GET_CLOCK_RATE_MODE(dev->fw_type);
+	dev->ref_clock = dev->pdata->ref_clock_rate[id];
 
 	ret = __m10mo_s_power(sd, 0, true);
 	if (ret) {

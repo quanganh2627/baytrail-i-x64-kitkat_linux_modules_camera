@@ -123,6 +123,7 @@
 #define M10MO_RAW_CONFIG_HEIGHT \
 			(M10MO_MAX_RAW_SIZE / M10MO_PACKETS_SEND_UNIT)
 
+#define M10MO_GET_CLOCK_RATE_MODE(arg)	((arg >> M10MO_CLOCK_RATE_MODE_OFFSET) & M10MO_MASK)
 #define M10MO_GET_MIPI_FREQ_MODE(arg)	((arg >> M10MO_MIPI_FREQ_MODE_OFFSET) & M10MO_MASK)
 #define M10MO_GET_FOCUS_MODE(arg)		((arg >> M10MO_AF_MODE_OFFSET) & M10MO_MASK)
 #define M10MO_GET_RESOLUTION_MODE(arg)	((arg >> M10MO_RESOLUTION_MODE_OFFSET) & M10MO_MASK)
@@ -236,6 +237,7 @@ int m10mo_program_device(struct m10mo_device *m10mo_dev);
 int m10mo_get_spi_state(struct m10mo_device *m10mo_dev);
 int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 
+int m10mo_update_pll_setting(struct v4l2_subdev *sd);
 /* Below contents are based on the M10MO_categoryParameter-a1.xls */
 
 /* Category register */
