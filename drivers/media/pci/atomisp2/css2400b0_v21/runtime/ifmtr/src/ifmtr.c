@@ -25,6 +25,7 @@
 #include "assert_support.h"
 #include "sh_css_sp.h"
 #include "isp/modes/interface/input_buf.isp.h"
+#include "ia_css_util.h"
 
 /************************************************************
  * Static functions declarations
@@ -54,6 +55,10 @@ unsigned int ia_css_ifmtr_lines_needed_for_bayer_order(
 		const struct ia_css_stream_config *config)
 {
 	assert(config != NULL);
+
+	if (ia_css_util_is_input_format_yuv(config->format))
+		return 0;
+
 	if ((IA_CSS_BAYER_ORDER_BGGR == config->bayer_order)
 	    || (IA_CSS_BAYER_ORDER_GBRG == config->bayer_order))
 		return 1;
@@ -65,6 +70,10 @@ unsigned int ia_css_ifmtr_columns_needed_for_bayer_order(
 		const struct ia_css_stream_config *config)
 {
 	assert(config != NULL);
+
+	if (ia_css_util_is_input_format_yuv(config->format))
+		return 0;
+
 	if ((IA_CSS_BAYER_ORDER_RGGB == config->bayer_order)
 	    || (IA_CSS_BAYER_ORDER_GBRG == config->bayer_order))
 		return 1;
