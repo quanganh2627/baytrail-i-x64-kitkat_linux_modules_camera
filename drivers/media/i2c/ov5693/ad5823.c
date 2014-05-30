@@ -123,9 +123,11 @@ int ad5823_t_focus_vcm(struct v4l2_subdev *sd, u16 val)
 	int ret = -EINVAL;
 	u8 vcm_code;
 
+	/*
 	ret = ad5823_i2c_read(client, AD5823_REG_VCM_CODE_MSB, &vcm_code);
 	if (ret)
 		return ret;
+	*/
 
 	/* set reg VCM_CODE_MSB Bit[1:0] */
 	vcm_code = (vcm_code & VCM_CODE_MSB_MASK) | ((val >> 8) & ~VCM_CODE_MSB_MASK);

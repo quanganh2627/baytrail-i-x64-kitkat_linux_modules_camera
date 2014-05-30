@@ -40,6 +40,15 @@ config VIDEO_GC2235
 
          It currently only works with the atomisp driver.
 
+config VIDEO_GC0339
+       tristate "GALAXYCORE gc0339 sensor support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the GALAXYCORE
+         GC0339 raw camera.
+
+         gc0339 is a 0.3M raw sensor.
+
 config VIDEO_OV8830
        tristate "Omnivision ov8830 sensor support"
        depends on I2C && VIDEO_V4L2 && VIDEO_ATOMISP
