@@ -3786,6 +3786,8 @@ static int atomisp_set_fmt_to_snr(struct video_device *vdev,
 	return css_input_resolution_changed(isp, &ffmt);
 }
 
+extern int atomisp_csi_lane_config(struct atomisp_device * isp);
+
 int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 {
 	struct atomisp_device *isp = video_get_drvdata(vdev);
@@ -3980,6 +3982,7 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 		if (ret)
 			return -EINVAL;
 
+		atomisp_csi_lane_config(isp);
 		crop_needs_override = true;
 	}
 
