@@ -2582,43 +2582,43 @@ static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 	mutex_lock(&dev->input_lock);
 	switch(m10mo_ctrl->id)
 	{
-	case EXT_ISP_ISO_CTRL:
+	case EXT_ISP_CID_ISO:
 		dev_info(&client->dev, "m10mo ioctl ISO\n");
 		break;
-	case EXT_ISP_HDR_CAPTURE_CTRL:
+	case EXT_ISP_CID_CAPTURE_HDR:
 		ret = m10mo_set_hdr_mode(sd, m10mo_ctrl->data);
 		break;
-	case EXT_ISP_LLS_CAPTURE_CTRL:
+	case EXT_ISP_CID_CAPTURE_LLS:
 		ret = m10mo_set_lls_mode(sd, m10mo_ctrl->data);
 		break;
-	case EXT_ISP_FOCUS_MODE_CTRL:
+	case EXT_ISP_CID_FOCUS_MODE:
 		ret = m10mo_set_af_mode(sd, m10mo_ctrl->data);
 		break;
-	case EXT_ISP_FOCUS_EXECUTION_CTRL:
+	case EXT_ISP_CID_FOCUS_EXECUTION:
 		ret = m10mo_set_af_execution(sd, m10mo_ctrl->data);
 		break;
-	case EXT_ISP_TOUCH_POSX_CTRL:
+	case EXT_ISP_CID_TOUCH_POSX:
 		ret = m10mo_set_af_position_x(sd, m10mo_ctrl->data);
 		break;
-	case EXT_ISP_TOUCH_POSY_CTRL:
+	case EXT_ISP_CID_TOUCH_POSY:
 		ret = m10mo_set_af_position_y(sd, m10mo_ctrl->data);
 		break;
-	case EXT_ISP_CAF_STATUS_CTRL:
+	case EXT_ISP_CID_CAF_STATUS:
 		ret = m10mo_get_caf_status(sd, &m10mo_ctrl->data);
 		break;
-	case EXT_ISP_AF_STATUS_CTRL:
+	case EXT_ISP_CID_AF_STATUS:
 		ret = m10mo_get_af_status(sd, &m10mo_ctrl->data);
 		break;
-	case EXT_ISP_GET_AF_MODE_CTRL:
+	case EXT_ISP_CID_GET_AF_MODE:
 		ret = m10mo_get_af_mode(sd, &m10mo_ctrl->data);
 		break;
-	case EXT_ISP_BURST_CAPTURE_CTRL:
+	case EXT_ISP_CID_CAPTURE_BURST:
 		ret = m10mo_set_burst_mode(sd, m10mo_ctrl->data);
 		break;
-	case EXT_ISP_FLASH_MODE_CTRL:
+	case EXT_ISP_CID_FLASH_MODE:
 		ret = m10mo_set_flash_mode(sd, m10mo_ctrl->data);
 		break;
-	case EXT_ISP_ZOOM_CTRL:
+	case EXT_ISP_CID_ZOOM:
 		m10mo_ctrl->data = clamp_t(unsigned int, m10mo_ctrl->data,
 						ZOOM_POS_MIN, ZOOM_POS_MAX);
 		ret = m10mo_writeb(sd, CATEGORY_MONITOR, MONITOR_ZOOM,
