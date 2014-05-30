@@ -1468,6 +1468,46 @@ static unsigned int atomisp_sensor_start_stream(struct atomisp_sub_device *asd)
 		return 1;
 }
 
+static int __stream_on_master_slave_sensor(struct atomisp_device *isp)
+{
+	unsigned int master[ATOM_ISP_MAX_INPUTS], stream_on[ATOM_ISP_MAX_INPUTS];
+	int i, k = 0, j = 0, ret = 0;
+
+	for (i = 0; i < isp->num_of_streams; i++) {
+		int sensor_index = isp->asd[i].input_curr;
+		if (isp->inputs[sensor_index].camera_caps->sensor[isp->asd[i].sensor_curr].is_slave) {
+			ret = v4l2_subdev_call(isp->inputs[sensor_index].camera,
+					       video, s_stream, 1);
+			if (ret) {
+				dev_err(isp->dev, "depth mode sensor %s stream-on failed.\n",
+						isp->inputs[sensor_index].camera->name);
+				goto failed;
+			}
+			stream_on[k++] = sensor_index;
+		} else {
+			master[j++] = sensor_index;
+		}
+	}
+	for (j -= 1; j >= 0; j--) {
+		ret = v4l2_subdev_call(isp->inputs[master[j]].camera,
+				       video, s_stream, 1);
+		if (ret) {
+			dev_err(isp->dev, "depth mode sensor %s stream-on failed.\n",
+				isp->inputs[master[j]].camera->name);
+			goto failed;
+		}
+		stream_on[k++] = master[j];
+	}
+
+	return 0;
+
+failed:
+		atomisp_reset(isp);
+		for (k -= 1; k >= 0; k--)
+			v4l2_subdev_call(isp->inputs[k].camera,
+					 video, s_stream, 0);
+		return -EINVAL;
+}
 /*
  * This ioctl start the capture during streaming I/O.
  */
@@ -1646,6 +1686,19 @@ start_sensor:
 			dev_dbg(isp->dev, "dfs failed!\n");
 	}
 
+	if (asd->depth_mode->val && atomisp_streaming_count(isp) ==
+			ATOMISP_DEPTH_SENSOR_STREAMON_COUNT) {
+		ret = __stream_on_master_slave_sensor(isp);
+		if (ret) {
+			dev_err(isp->dev, "master slave sensor stream on failed!\n");
+			goto out;
+		}
+		goto wdt_start;
+	} else if (asd->depth_mode->val && (atomisp_streaming_count(isp) <
+		   ATOMISP_DEPTH_SENSOR_STREAMON_COUNT)) {
+		goto out;
+	}
+
 	/* stream on the sensor */
 	ret = v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 			       video, s_stream, 1);
@@ -1654,7 +1707,7 @@ start_sensor:
 		ret = -EINVAL;
 		goto out;
 	}
-
+wdt_start:
 	if (atomisp_buffers_queued(asd))
 		atomisp_wdt_refresh(isp, wdt_duration);
 out:
