@@ -186,6 +186,7 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define CATEGORY_CAPTURE_PARAM	0x0b	/* Still Picture parameter */
 #define CATEGORY_CAPTURE_CTRL	0x0c  /* Still picture control */
 #define CATEGORY_LEDFLASH	0x0d	/* Led Flash Category */
+#define CATEGORY_TEST		0x0d	/* Test category for FW_TYPE_2 */
 #define CATEGORY_FLASHROM	0x0f	/* FlashROM-Writer Mode only */
 
 /* Category 0_SYSTEM mode */
@@ -396,6 +397,9 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define LED_TORCH               0x29
 #define LED_TORCH_OFF           0x00
 #define LED_TORCH_ON            0x01
+
+/* Category D Test */
+#define TEST_PATTERN_SENSOR	0x1d
 
 /* Category F_Flash */
 #define REG_FLASH_ADD           0x00

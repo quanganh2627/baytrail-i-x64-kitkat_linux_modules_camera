@@ -2043,6 +2043,11 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_ISO_SENSITIVITY_AUTO:
 		ret = m10mo_set_iso_mode(&dev->sd, ctrl->val);
 		break;
+	case V4L2_CID_TEST_PATTERN:
+		if (dev->fw_type == M10MO_FW_TYPE_2)
+			ret = m10mo_write(&dev->sd, 1, CATEGORY_TEST,
+				TEST_PATTERN_SENSOR, ctrl->val ? 2 : 0);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -2244,6 +2249,16 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.def = V4L2_ISO_SENSITIVITY_AUTO,
 		.max = V4L2_ISO_SENSITIVITY_AUTO,
 		.step = 1,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_TEST_PATTERN,
+		.name = "Test Pattern (Color Bar)",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.def = 0,
+		.max = 1,
+		.step = 1
 	},
 };
 
