@@ -2990,8 +2990,8 @@ void atomisp_handle_parameter_and_buffer(struct atomisp_video_pipe *pipe)
 
 	if (need_to_enqueue_buffer) {
 		atomisp_qbuffers_to_css(asd);
-		if (!timer_pending(&isp->wdt) && atomisp_buffers_queued(asd))
-			mod_timer(&isp->wdt, jiffies + isp->wdt_duration);
+		if (!atomisp_is_wdt_running(isp) && atomisp_buffers_queued(asd))
+			atomisp_wdt_start(isp);
 	}
 }
 
