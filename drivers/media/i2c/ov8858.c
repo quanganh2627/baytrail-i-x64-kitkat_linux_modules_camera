@@ -25,22 +25,23 @@
 #include <media/v4l2-device.h>
 #include "ov8858.h"
 
-static int
-ov8858_read_reg(struct i2c_client *client, u16 len, u16 reg, u16 *val)
+static int ov8858_read_reg(struct i2c_client *client, u16 len, u16 reg,
+			   u16 *val)
 {
 	struct i2c_msg msg[2];
 	u16 data[OV8858_SHORT_MAX];
-	int err, i;
-	dev_dbg(&client->dev, "%s: len = %d, reg = 0x%04x, val = 0x%04x\n",
-		__func__, len, reg, *val);
+	int err;
+
+	dev_dbg(&client->dev, "%s: len = %d, reg = 0x%04x\n",
+		__func__, len, reg);
 
 	if (!client->adapter) {
 		dev_err(&client->dev, "%s error, no adapter\n", __func__);
 		return -ENODEV;
 	}
 
-	/* @len should be even when > 1 */
-	if (len > OV8858_BYTE_MAX) {
+	/* read only 8 and 16 bit values */
+	if (len < OV8858_8BIT || len > OV8858_16BIT) {
 		dev_err(&client->dev, "%s error, invalid data length\n",
 			__func__);
 		return -EINVAL;
@@ -61,7 +62,7 @@ ov8858_read_reg(struct i2c_client *client, u16 len, u16 reg, u16 *val)
 	msg[1].flags = I2C_M_RD;
 	msg[1].buf = (u8 *)data;
 
-	err = i2c_transfer(client->adapter, msg, 2);
+	err = i2c_transfer(client->adapter, msg, ARRAY_SIZE(msg));
 	if (err != 2) {
 		if (err >= 0)
 			err = -EIO;
@@ -69,13 +70,12 @@ ov8858_read_reg(struct i2c_client *client, u16 len, u16 reg, u16 *val)
 	}
 
 	/* high byte comes first */
-	if (len == OV8858_8BIT) {
+	if (len == OV8858_8BIT)
 		*val = (u8)data[0];
-	} else {
-		/* 16-bit access is default when len > 1 */
-		for (i = 0; i < (len >> 1); i++)
-			val[i] = be16_to_cpu(data[i]);
-	}
+	else
+		*val = be16_to_cpu(data[0]);
+
+	dev_dbg(&client->dev, "%s: val = 0x%04x\n", __func__, *val);
 
 	return 0;
 
