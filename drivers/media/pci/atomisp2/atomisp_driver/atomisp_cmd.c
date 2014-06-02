@@ -219,7 +219,9 @@ static int write_target_freq_to_hw(struct atomisp_device *isp,
 
 	return 0;
 }
-int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
+int atomisp_freq_scaling(struct atomisp_device *isp,
+			 enum atomisp_dfs_mode mode,
+			 bool force)
 {
 	/* FIXME! Only use subdev[0] status yet */
 	struct atomisp_sub_device *asd = &isp->asd[0];
@@ -296,9 +298,10 @@ int atomisp_freq_scaling(struct atomisp_device *isp, enum atomisp_dfs_mode mode)
 done:
 	dev_dbg(isp->dev, "DFS target frequency=%d.\n", new_freq);
 
-	if (new_freq == isp->sw_contex.running_freq)
-		dev_info(isp->dev, "Re-programming DFS frequency to %d\n",
-			 new_freq);
+	if ((new_freq == isp->sw_contex.running_freq) && !force)
+		return 0;
+
+	dev_info(isp->dev, "Programming DFS frequency to %d\n", new_freq);
 
 	ret = write_target_freq_to_hw(isp, new_freq);
 	if (!ret)
@@ -1166,10 +1169,10 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 		atomisp_css_irq_enable(isp, CSS_IRQ_INFO_CSS_RECEIVER_SOF,
 				atomisp_css_valid_sof(isp));
 
-		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
+		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO, true) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	} else {
-		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
+		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX, true) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	}
 

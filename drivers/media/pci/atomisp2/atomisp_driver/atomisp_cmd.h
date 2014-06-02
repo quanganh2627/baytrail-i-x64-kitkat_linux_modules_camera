@@ -312,7 +312,8 @@ int  atomisp_flash_enable(struct atomisp_sub_device *asd,
 			  int num_frames);
 
 int atomisp_freq_scaling(struct atomisp_device *vdev,
-			 enum atomisp_dfs_mode mode);
+			 enum atomisp_dfs_mode mode,
+			 bool force);
 
 void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 		      enum atomisp_css_buffer_type buf_type,

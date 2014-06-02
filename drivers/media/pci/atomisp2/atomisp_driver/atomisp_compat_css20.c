@@ -4187,7 +4187,7 @@ int atomisp_css_start_acc_pipe(struct atomisp_sub_device *asd)
 	init_completion(&isp->acc.acc_done);
 	isp->acc.pipeline = stream_env->pipes[IA_CSS_PIPE_ID_ACC];
 
-	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX);
+	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX, false);
 
 	if (ia_css_start_sp() != IA_CSS_SUCCESS) {
 		dev_err(isp->dev, "start sp error.\n");
@@ -4250,7 +4250,7 @@ void atomisp_css_destroy_acc_pipe(struct atomisp_sub_device *asd)
 	kfree(asd->isp->acc.acc_stages);
 	asd->isp->acc.acc_stages = NULL;
 
-	atomisp_freq_scaling(asd->isp, ATOMISP_DFS_MODE_LOW);
+	atomisp_freq_scaling(asd->isp, ATOMISP_DFS_MODE_LOW, false);
 }
 
 int atomisp_css_load_acc_binary(struct atomisp_sub_device *asd,

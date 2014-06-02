@@ -321,7 +321,7 @@ done:
 	pci_write_config_dword(dev, PCI_INTERRUPT_CTRL, irq);
 
 	atomisp_msi_irq_uninit(isp, dev);
-	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
+	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW, true);
 	spin_unlock_irqrestore(&isp->lock, flags);
 
 	return 0;
@@ -366,7 +366,7 @@ static int atomisp_runtime_resume(struct device *dev)
 	if (isp->saved_regs.pcicmdsts)
 		atomisp_restore_iunit_reg(isp);
 
-	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
+	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW, true);
 	return 0;
 }
 
@@ -428,7 +428,7 @@ static int atomisp_resume(struct device *dev)
 	if (isp->saved_regs.pcicmdsts)
 		atomisp_restore_iunit_reg(isp);
 
-	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW);
+	atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW, true);
 	return 0;
 }
 #endif

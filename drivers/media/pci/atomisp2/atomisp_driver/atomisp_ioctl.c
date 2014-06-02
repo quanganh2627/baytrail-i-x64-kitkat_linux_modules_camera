@@ -1521,7 +1521,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 			 * the ISP freq to the highest possible to minimize
 			 * the S2S latency.
 			 */
-			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX);
+			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX, false);
 			/*
 			 * When asd->enable_raw_buffer_lock->val is true,
 			 * An extra IOCTL is needed to call
@@ -1606,10 +1606,10 @@ start_sensor:
 				atomisp_css_valid_sof(isp));
 		atomisp_csi2_configure(asd);
 
-		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO) < 0)
+		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO, false) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	} else {
-		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX) < 0)
+		if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_MAX, false) < 0)
 			dev_dbg(isp->dev, "dfs failed!\n");
 	}
 
@@ -1671,7 +1671,7 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 		    asd->params.offline_parm.num_captures == -1) {
 			/* stop continuous still capture if needed */
 			atomisp_css_offline_capture_configure(asd, 0, 0, 0);
-			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO);
+			atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_AUTO, false);
 		}
 		/*
 		 * Currently there is no way to flush buffers queued to css.
@@ -1812,7 +1812,7 @@ stopsensor:
 		return 0;
 	}
 
-	if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW))
+	if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW, false))
 		dev_warn(isp->dev, "DFS failed.\n");
 	/*
 	 * ISP work around, need to reset isp
