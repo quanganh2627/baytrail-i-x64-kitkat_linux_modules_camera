@@ -1819,7 +1819,6 @@ static int imx_s_config(struct v4l2_subdev *sd,
 		mutex_unlock(&dev->input_lock);
 		return ret;
 	}
-	msleep(20);
 
 	ret = dev->platform_data->csi_cfg(sd, 1);
 	if (ret)
