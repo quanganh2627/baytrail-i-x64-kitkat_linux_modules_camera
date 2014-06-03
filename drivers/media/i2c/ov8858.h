@@ -134,7 +134,7 @@
 #define OV8858_MAX_VTS_VALUE			0xFFFF
 #define OV8858_MAX_EXPOSURE_VALUE \
 		(OV8858_MAX_VTS_VALUE - OV8858_INTEGRATION_TIME_MARGIN)
-#define OV8858_MAX_GAIN_VALUE			0xFF
+#define OV8858_MAX_GAIN_VALUE			0x07FF
 
 #define OV8858_MAX_FOCUS_POS			1023
 
@@ -328,8 +328,8 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x0103, 0x01}, /* software_reset */
 	{OV8858_8BIT, 0x0100, 0x00}, /* software_standby */
 	/* PLL settings */
-	{OV8858_8BIT, 0x0300, 0x02}, /* pll1_pre_div = /2 */
-	{OV8858_8BIT, 0x0302, 0x50}, /* pll1_multiplier = 80 */
+	{OV8858_8BIT, 0x0300, 0x05}, /* pll1_pre_div = /4 */
+	{OV8858_8BIT, 0x0302, 0xAF}, /* pll1_multiplier = 175 */
 	{OV8858_8BIT, 0x0303, 0x00}, /* pll1_divm = /(1 + 0) */
 	{OV8858_8BIT, 0x0304, 0x03}, /* pll1_div_mipi = /8 */
 	{OV8858_8BIT, 0x030B, 0x02}, /* pll2_pre_div = /2 */
@@ -340,14 +340,69 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x0312, 0x01},
 	{OV8858_8BIT, 0x031E, 0x0C}, /* pll1_no_lat = 1, mipi_bitsel_man = 0 */
 
-	/* PAD SEL2, VSYNC out value = 0 */
-	{OV8858_8BIT, 0x300D, 0x00},
 	/* PAD OEN2, VSYNC out enable=0x80, disable=0x00 */
 	{OV8858_8BIT, 0x3002, 0x80},
-	/* PAD OUT2, VSYNC out select = 0 */
-	{OV8858_8BIT, 0x3010, 0x00},
 	/* PAD OUT2, VSYNC pulse direction low-to-high = 1 */
 	{OV8858_8BIT, 0x3007, 0x01},
+	/* PAD SEL2, VSYNC out value = 0 */
+	{OV8858_8BIT, 0x300D, 0x00},
+	/* PAD OUT2, VSYNC out select = 0 */
+	{OV8858_8BIT, 0x3010, 0x00},
+
+	/* Npump clock div = /2, Ppump clock div = /4 */
+	{OV8858_8BIT, 0x3015, 0x01},
+	/*
+	 * mipi_lane_mode = 1+3, mipi_lvds_sel = 1 = MIPI enable,
+	 * r_phy_pd_mipi_man = 0, lane_dis_option = 0
+	 */
+	{OV8858_8BIT, 0x3018, 0x72},
+	/* Clock switch output = normal, pclk_div = /1 */
+	{OV8858_8BIT, 0x3020, 0x93},
+	/*
+	 * lvds_mode_o = 0, clock lane disable when pd_mipi = 0,
+	 * pd_mipi enable when rst_sync = 1
+	 */
+	{OV8858_8BIT, 0x3022, 0x01},
+	{OV8858_8BIT, 0x3031, 0x0A}, /* mipi_bit_sel = 10 */
+	{OV8858_8BIT, 0x3034, 0x00}, /* Unknown */
+	/* sclk_div = /1, sclk_pre_div = /1, chip debug = 1 */
+	{OV8858_8BIT, 0x3106, 0x01},
+
+	{OV8858_8BIT, 0x3305, 0xF1}, /* Unknown */
+	{OV8858_8BIT, 0x3307, 0x04}, /* Unknown */
+	{OV8858_8BIT, 0x3308, 0x00}, /* Unknown */
+	{OV8858_8BIT, 0x3309, 0x28}, /* Unknown */
+	{OV8858_8BIT, 0x330A, 0x00}, /* Unknown */
+	{OV8858_8BIT, 0x330B, 0x20}, /* Unknown */
+	{OV8858_8BIT, 0x330C, 0x00}, /* Unknown */
+	{OV8858_8BIT, 0x330D, 0x00}, /* Unknown */
+	{OV8858_8BIT, 0x330E, 0x00}, /* Unknown */
+	{OV8858_8BIT, 0x330F, 0x40}, /* Unknown */
+
+	{OV8858_8BIT, 0x3500, 0x00}, /* long exposure = 0x9A20 */
+	{OV8858_8BIT, 0x3501, 0x9A}, /* long exposure = 0x9A20 */
+	{OV8858_8BIT, 0x3502, 0x20}, /* long exposure = 0x9A20 */
+	/*
+	 * Digital fraction gain delay option = Delay 1 frame,
+	 * Gain change delay option = Delay 1 frame,
+	 * Gain delay option = Delay 1 frame,
+	 * Gain manual as sensor gain = Input gain as real gain format,
+	 * Exposure delay option (must be 0 = Delay 1 frame,
+	 * Exposure change delay option (must be 0) = Delay 1 frame
+	 */
+	{OV8858_8BIT, 0x3503, 0x00},
+	{OV8858_8BIT, 0x3505, 0x80}, /* gain conversation option */
+	/*
+	 * [10:7] are integer gain, [6:0] are fraction gain. For example:
+	 * 0x80 is 1x gain, 0x100 is 2x gain, 0x1C0 is 3.5x gain
+	 */
+	{OV8858_8BIT, 0x3508, 0x02}, /* long gain = 0x0200 */
+	{OV8858_8BIT, 0x3509, 0x00}, /* long gain = 0x0200 */
+	{OV8858_8BIT, 0x350C, 0x00}, /* short gain = 0x0080 */
+	{OV8858_8BIT, 0x350D, 0x80}, /* short gain = 0x0080 */
+	{OV8858_8BIT, 0x3510, 0x00}, /* short exposure = 0x000200 */
+	{OV8858_8BIT, 0x3511, 0x02}, /* short exposure = 0x000200 */
+	{OV8858_8BIT, 0x3512, 0x00}, /* short exposure = 0x000200 */
 
 	{OV8858_8BIT, 0x3600, 0x00}, /* Unknown */
 	{OV8858_8BIT, 0x3601, 0x00}, /* Unknown */
@@ -389,53 +444,6 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x3645, 0x13}, /* Unknown */
 	{OV8858_8BIT, 0x3646, 0x83}, /* Unknown */
 	{OV8858_8BIT, 0x364A, 0x07}, /* Unknown */
-
-	/* Npump clock div = /2, Ppump clock div = /4 */
-	{OV8858_8BIT, 0x3015, 0x01},
-	/* mipi_lane_mode = 1+3, mipi_lvds_sel = 1 = MIPI enable,
-	 * r_phy_pd_mipi_man = 0, lane_dis_option = 0 */
-	{OV8858_8BIT, 0x3018, 0x72},
-	/*Clock switch output = normal, pclk_div = /1 */
-	{OV8858_8BIT, 0x3020, 0x93},
-	/* lvds_mode_o = 0, clock lane disable when pd_mipi = 0,
-	 * pd_mipi enable when rst_sync = 1 */
-	{OV8858_8BIT, 0x3022, 0x01},
-	{OV8858_8BIT, 0x3031, 0x0A}, /* mipi_bit_sel = 10 */
-	{OV8858_8BIT, 0x3034, 0x00}, /* Unknown */
-	/* sclk_div = /1, sclk_pre_div = /1, chip debug = 1 */
-	{OV8858_8BIT, 0x3106, 0x01},
-
-	{OV8858_8BIT, 0x3305, 0xF1}, /* Unknown */
-	{OV8858_8BIT, 0x3307, 0x04}, /* Unknown */
-	{OV8858_8BIT, 0x3308, 0x28}, /* Unknown */
-	{OV8858_8BIT, 0x3309, 0x00}, /* Unknown */
-	{OV8858_8BIT, 0x330A, 0x20}, /* Unknown */
-	{OV8858_8BIT, 0x330B, 0x00}, /* Unknown */
-	{OV8858_8BIT, 0x330C, 0x00}, /* Unknown */
-	{OV8858_8BIT, 0x330D, 0x00}, /* Unknown */
-	{OV8858_8BIT, 0x330E, 0x40}, /* Unknown */
-	{OV8858_8BIT, 0x330F, 0x04}, /* Unknown */
-
-	{OV8858_8BIT, 0x3500, 0x00}, /* long exposure = 0x9A20 */
-	{OV8858_8BIT, 0x3501, 0x9A}, /* long exposure = 0x9A20 */
-	{OV8858_8BIT, 0x3502, 0x20}, /* long exposure = 0x9A20 */
-	/* Digital fraction gain delay option = Delay 1 frame,
-	 * Gain change delay option = Delay 1 frame,
-	 * Gain delay option = Delay 1 frame,
-	 * Gain manual as sensor gain = Input gain as real gain format,
-	 * Exposure delay option (must be 0 = Delay 1 frame,
-	 * Exposure change delay option (must be 0) = Delay 1 frame */
-	{OV8858_8BIT, 0x3503, 0x00},
-	{OV8858_8BIT, 0x3505, 0x80}, /* gain conversation option */
-	/* [10:7] are integer gain, [6:0] are fraction gain. For example:
-	 * 0x80 is 1x gain, 0x100 is 2x gain, 0x1C0 is 3.5x gain */
-	{OV8858_8BIT, 0x3508, 0x02}, /* long gain = 0x0200 */
-	{OV8858_8BIT, 0x3509, 0x00}, /* long gain = 0x0200 */
-	{OV8858_8BIT, 0x350C, 0x00}, /* short gain = 0x0080 */
-	{OV8858_8BIT, 0x350D, 0x80}, /* short gain = 0x0080 */
-	{OV8858_8BIT, 0x3510, 0x00}, /* short exposure = 0x000200 */
-	{OV8858_8BIT, 0x3511, 0x02}, /* short exposure = 0x000200 */
-	{OV8858_8BIT, 0x3512, 0x00}, /* short exposure = 0x000200 */
 
 	{OV8858_8BIT, 0x3700, 0x30}, /* Unknown */
 	{OV8858_8BIT, 0x3701, 0x18}, /* Unknown */
@@ -621,39 +629,47 @@ static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x4D04, 0xFF}, /* TPM_CTRL_REG */
 	{OV8858_8BIT, 0x4D05, 0xFF}, /* TPM_CTRL_REG */
 
-	/* Lens correction (LENC) function enable = 0
+	/*
+	 * Lens correction (LENC) function enable = 0
 	 * Slave sensor AWB Gain function enable = 1
 	 * Slave sensor AWB Statistics function enable = 1
 	 * Master sensor AWB Gain function enable = 1
 	 * Master sensor AWB Statistics function enable = 1
 	 * Black DPC function enable = 1
-	 * White DPC function enable =1 */
+	 * White DPC function enable =1
+	 */
 	{OV8858_8BIT, 0x5000, 0x7E},
 	{OV8858_8BIT, 0x5001, 0x01}, /* BLC function enable = 1 */
-	/* Horizontal scale function enable = 0
+	/*
+	 * Horizontal scale function enable = 0
 	 * WBMATCH bypass mode = Select slave sensor's gain
 	 * WBMATCH function enable = 0
 	 * Master MWB gain support RGBC = 0
 	 * OTP_DPC function enable = 1
 	 * Manual mode of VarioPixel function enable = 0
 	 * Manual enable of VarioPixel function enable = 0
-	 * Use VSYNC to latch ISP modules's function enable signals = 0 */
+	 * Use VSYNC to latch ISP modules's function enable signals = 0
+	 */
 	{OV8858_8BIT, 0x5002, 0x08},
-	/* Bypass all ISP modules after BLC module = 0
+	/*
+	 * Bypass all ISP modules after BLC module = 0
 	 * DPC_DBC buffer control enable = 1
 	 * WBMATCH VSYNC selection = Select master sensor's VSYNC fall
 	 * Select master AWB gain to embed line = AWB gain before manual mode
-	 * Enable BLC's input flip_i signal = 0 */
+	 * Enable BLC's input flip_i signal = 0
+	 */
 	{OV8858_8BIT, 0x5003, 0x20},
 	{OV8858_8BIT, 0x5046, 0x12}, /* ISP CTRL46 = default */
-	/* Tail enable = 1
+	/*
+	 * Tail enable = 1
 	 * Saturate cross cluster enable = 1
 	 * Remove cross cluster enable = 1
 	 * Enable to remove connected defect pixels in same channel = 1
 	 * Enable to remove connected defect pixels in different channel = 1
 	 * Smooth enable, use average G for recovery = 1
 	 * Black/white sensor mode enable = 0
-	 * Manual mode enable = 0 */
+	 * Manual mode enable = 0
+	 */
 	{OV8858_8BIT, 0x5780, 0xFC},
 	{OV8858_8BIT, 0x5784, 0x0C}, /* DPC CTRL04 */
 	{OV8858_8BIT, 0x5787, 0x40}, /* DPC CTRL07 */
