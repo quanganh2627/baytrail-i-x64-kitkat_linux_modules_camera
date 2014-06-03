@@ -2636,15 +2636,21 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 	return ret;
 }
 
+static const u32 m10mo_mipi_freq[] = {
+	M10MO_MIPI_FREQ_0,
+	M10MO_MIPI_FREQ_1,
+};
+
 static int m10mo_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct m10mo_device *dev = container_of(
 		ctrl->handler, struct m10mo_device, ctrl_handler);
 	int ret = 0;
+	int id = M10MO_GET_MIPI_FREQ_MODE(dev->fw_type);
 
 	switch (ctrl->id) {
 	case V4L2_CID_LINK_FREQ:
-		ctrl->val = M10MO_MIPI_FREQ;
+		ctrl->val = m10mo_mipi_freq[id];
 		break;
 	case V4L2_CID_EXPOSURE:
 		ret = m10mo_get_ev_bias(&dev->sd, &ctrl->val);
