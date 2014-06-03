@@ -1625,8 +1625,9 @@ start_sensor:
 	ret = v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 			       video, s_stream, 1);
 	if (ret) {
-		atomisp_reset(isp);
+		asd->streaming = ATOMISP_DEVICE_STREAMING_DISABLED;
 		ret = -EINVAL;
+		goto out;
 	}
 
 	if (atomisp_buffers_queued(asd))
