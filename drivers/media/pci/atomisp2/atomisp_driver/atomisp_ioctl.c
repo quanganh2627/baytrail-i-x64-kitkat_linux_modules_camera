@@ -282,6 +282,15 @@ static struct v4l2_queryctrl ci_v4l2_controls[] = {
 		.step = 1,
 		.default_value = 0,
 	},
+	{
+		.id = V4L2_CID_TEST_PATTERN,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test Pattern",
+		.minimum = 0,
+		.maximum = 1,
+		.step = 1,
+		.default_value = 0,
+	},
 };
 static const u32 ctrls_num = ARRAY_SIZE(ci_v4l2_controls);
 
@@ -1953,6 +1962,7 @@ static int atomisp_s_ctrl(struct file *file, void *fh,
 	case V4L2_CID_SATURATION:
 	case V4L2_CID_SHARPNESS:
 	case V4L2_CID_3A_LOCK:
+	case V4L2_CID_TEST_PATTERN:
 		mutex_unlock(&isp->mutex);
 		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 				       core, s_ctrl, control);
