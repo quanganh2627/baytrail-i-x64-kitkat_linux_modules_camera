@@ -406,6 +406,57 @@ static int m10mo_request_mode_change(struct v4l2_subdev *sd, u8 requested_mode)
 	return ret;
 }
 
+static int is_m10mo_in_monitor_mode(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+
+	if (dev->mode == M10MO_MONITOR_MODE_PANORAMA ||
+	    dev->mode == M10MO_MONITOR_MODE_ZSL ||
+	    dev->mode == M10MO_MONITOR_MODE)
+		return 1;
+
+	return 0;
+}
+
+static int m10mo_set_monitor_parameters(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
+	int ret;
+
+	dev_info(&client->dev,
+		 "%s: af_mode: 0x%x exe_mode: 0x%x posx: 0x%x, posy: 0x%x\n",
+		 __func__, dev->monitor_params.af_mode,
+		 dev->monitor_params.exe_mode,
+		 dev->monitor_params.af_touch_posx,
+		 dev->monitor_params.af_touch_posy);
+
+	ret = m10mo_writeb(sd, CATEGORY_LENS,
+			   m10m0_af_parameters[id].af_mode,
+			   dev->monitor_params.af_mode);
+	if (ret)
+		return ret;
+
+	ret = m10mo_writew(sd, CATEGORY_LENS,
+			   m10m0_af_parameters[id].af_touch_posx,
+			   dev->monitor_params.af_touch_posx);
+	if (ret)
+		return ret;
+
+	ret = m10mo_writew(sd, CATEGORY_LENS,
+			   m10m0_af_parameters[id].af_touch_posy,
+			   dev->monitor_params.af_touch_posy);
+	if (ret)
+		return ret;
+
+	ret = m10mo_writeb(sd, CATEGORY_LENS,
+			   m10m0_af_parameters[id].af_execution,
+			   dev->monitor_params.exe_mode);
+	return ret;
+}
+
 static int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -421,6 +472,9 @@ static int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout)
 		dev_err(&client->dev, "m10mo_wait_mode_change timed out");
 		return -ETIMEDOUT;
 	}
+
+	if (is_m10mo_in_monitor_mode(sd))
+		ret = m10mo_set_monitor_parameters(sd);
 
 	return ret;
 }
@@ -484,85 +538,109 @@ static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 
 static int m10mo_set_af_mode(struct v4l2_subdev *sd, unsigned int val)
 {
-	int ret;
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
-	u8 af_mode;
+	int ret = 0;
 
 	switch (val) {
 	case EXT_ISP_FOCUS_MODE_NORMAL:
-		af_mode = m10m0_af_parameters[id].af_normal;
+		dev->monitor_params.af_mode = m10m0_af_parameters[id].af_normal;
 		break;
 	case EXT_ISP_FOCUS_MODE_MACRO:
-		af_mode = m10m0_af_parameters[id].af_macro;
+		dev->monitor_params.af_mode = m10m0_af_parameters[id].af_macro;
 		break;
 	case EXT_ISP_FOCUS_MODE_TOUCH_AF:
-		af_mode = m10m0_af_parameters[id].af_touch;
+		dev->monitor_params.af_mode = m10m0_af_parameters[id].af_touch;
 		break;
 	case EXT_ISP_FOCUS_MODE_PREVIEW_CAF:
-		af_mode = m10m0_af_parameters[id].af_preview_caf;
+		dev->monitor_params.af_mode = m10m0_af_parameters[id].af_preview_caf;
 		break;
 	case EXT_ISP_FOCUS_MODE_MOVIE_CAF:
-		af_mode = m10m0_af_parameters[id].af_movie_caf;
+		dev->monitor_params.af_mode = m10m0_af_parameters[id].af_movie_caf;
 		break;
 	case EXT_ISP_FOCUS_MODE_FACE_CAF:
-		af_mode = m10m0_af_parameters[id].af_face_caf;
+		dev->monitor_params.af_mode = m10m0_af_parameters[id].af_face_caf;
 		break;
 	case EXT_ISP_FOCUS_MODE_TOUCH_MACRO:
-		af_mode = m10m0_af_parameters[id].af_touch_macro;
+		dev->monitor_params.af_mode = m10m0_af_parameters[id].af_touch_macro;
 		break;
 	case EXT_ISP_FOCUS_MODE_TOUCH_CAF:
-		af_mode = m10m0_af_parameters[id].af_touch_caf;
+		dev->monitor_params.af_mode = m10m0_af_parameters[id].af_touch_caf;
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	ret = m10mo_writeb(sd, CATEGORY_LENS,
-			m10m0_af_parameters[id].af_mode,
-			af_mode);
+	if (is_m10mo_in_monitor_mode(sd)) {
 
+		dev_info(&client->dev, "%s: In monitor mode, set AF mode to %d",
+			 __func__, dev->monitor_params.af_mode);
+
+		/* We are in monitor mode already, */
+		/* af_mode can be applied immediately */
+		ret = m10mo_writeb(sd, CATEGORY_LENS,
+				   m10m0_af_parameters[id].af_mode,
+				   dev->monitor_params.af_mode);
+	}
 	return ret;
 }
 
 static int m10mo_set_af_execution(struct v4l2_subdev *sd, s32 val)
 {
-	int ret;
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
-	u8 exe_mode;
+	int ret = 0;
 
 	switch (val) {
 	case EXT_ISP_FOCUS_STOP:
-		exe_mode = m10m0_af_parameters[id].af_stop;
+		dev->monitor_params.exe_mode = m10m0_af_parameters[id].af_stop;
 		break;
 	case EXT_ISP_FOCUS_SEARCH:
-		exe_mode = m10m0_af_parameters[id].af_search;
+		dev->monitor_params.exe_mode = m10m0_af_parameters[id].af_search;
 		break;
 	case EXT_ISP_PAN_FOCUSING:
-		exe_mode = m10m0_af_parameters[id].af_pan_focusing;
+		dev->monitor_params.exe_mode = m10m0_af_parameters[id].af_pan_focusing;
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	ret = m10mo_writeb(sd, CATEGORY_LENS,
-			m10m0_af_parameters[id].af_execution,
-			exe_mode);
+	if (is_m10mo_in_monitor_mode(sd)) {
 
+		dev_info(&client->dev, "%s: In monitor mode, set AF exe_mode to %d",
+			 __func__, dev->monitor_params.exe_mode);
+
+		/* We are in monitor mode already, */
+		/* exe_mode can be applied immediately */
+		ret = m10mo_writeb(sd, CATEGORY_LENS,
+				   m10m0_af_parameters[id].af_execution,
+				   dev->monitor_params.exe_mode);
+	}
 	return ret;
 }
 
 static int m10mo_set_af_position_x(struct v4l2_subdev *sd, unsigned int x)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int ret;
+	int ret = 0;
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
 
-	/* Set X Position */
-	ret = m10mo_writew(sd, CATEGORY_LENS,
-			m10m0_af_parameters[id].af_touch_posx, x);
+	dev->monitor_params.af_touch_posx = x;
+
+	if (is_m10mo_in_monitor_mode(sd)) {
+		dev_info(&client->dev,
+			 "%s: In monitor mode, set AF touch X pos to 0x%x",
+			 __func__, dev->monitor_params.af_touch_posx);
+
+		/* Set X Position */
+		ret = m10mo_writew(sd, CATEGORY_LENS,
+				   m10m0_af_parameters[id].af_touch_posx,
+				   dev->monitor_params.af_touch_posx);
+	}
+
 	if (ret)
 		dev_err(&client->dev, "AutoFocus position x failed %d\n", ret);
 
@@ -572,13 +650,23 @@ static int m10mo_set_af_position_x(struct v4l2_subdev *sd, unsigned int x)
 static int m10mo_set_af_position_y(struct v4l2_subdev *sd, unsigned int y)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int ret;
+	int ret = 0;
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
 
-	/* Set Y Position */
-	ret = m10mo_writew(sd, CATEGORY_LENS,
-			m10m0_af_parameters[id].af_touch_posy, y);
+	dev->monitor_params.af_touch_posy = y;
+
+	if (is_m10mo_in_monitor_mode(sd)) {
+		dev_info(&client->dev,
+			 "%s: In monitor mode, set AF touch Y pos to 0x%x",
+			 __func__, dev->monitor_params.af_touch_posy);
+
+		/* Set Y Position */
+		ret = m10mo_writew(sd, CATEGORY_LENS,
+				   m10m0_af_parameters[id].af_touch_posy,
+				   dev->monitor_params.af_touch_posy);
+	}
+
 	if (ret)
 		dev_err(&client->dev, "AutoFocus position y failed %d\n", ret);
 
@@ -3077,6 +3165,8 @@ static int m10mo_probe(struct i2c_client *client,
 	dev->requested_mode = M10MO_NO_MODE_REQUEST;
 	dev->iso_sensitivity =  REG_AE_ISOMODE_ISO100;
 	dev->iso_mode = V4L2_ISO_SENSITIVITY_AUTO;
+	dev->monitor_params.af_mode = AF_NORMAL;
+	dev->monitor_params.exe_mode = AF_STOP;
 
 	mutex_init(&dev->input_lock);
 

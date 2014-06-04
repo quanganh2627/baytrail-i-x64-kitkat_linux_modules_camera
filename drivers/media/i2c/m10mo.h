@@ -117,6 +117,13 @@ struct m10mo_resolution {
 	bool vdis;
 };
 
+struct m10mo_monitor_params {
+	u8 af_mode;
+	u8 exe_mode;
+	unsigned int af_touch_posx;
+	unsigned int af_touch_posy;
+};
+
 struct m10mo_device {
 	struct v4l2_subdev sd;
 	struct media_pad pad;
@@ -124,6 +131,7 @@ struct m10mo_device {
 	struct m10mo_platform_data *pdata;
 	struct mutex input_lock; /* serialize sensor's ioctl */
 	struct m10mo_spi *spi;
+	struct m10mo_monitor_params monitor_params;
 	u8 message_buffer[256]; /* Real buffer size TBD */
 	int res_type;
 	int power;
