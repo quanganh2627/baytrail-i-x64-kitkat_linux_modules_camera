@@ -19,10 +19,11 @@
  *
  */
 
-#ifndef __IA_CSS_SDIS_PARAM_H
-#define __IA_CSS_SDIS_PARAM_H
+#ifndef __IA_CSS_SDIS_PARAM_COMMON_H
+#define __IA_CSS_SDIS_PARAM_COMMON_H
 
-#include "sdis.isp.h"
 
-#endif /* __IA_CSS_SDIS_PARAM_H */
+#include "sdis/common/ia_css_sdis_common.host.h"
+
+#endif /* __IA_CSS_SDIS_PARAM_COMMON_H */
 

@@ -39,7 +39,15 @@
  * Struct type specification
  */
 
+
+#define MAX_CONFIG_POINTS 5
+#define INPUT_OFFSET_FACTOR 10
+#define INPUT_SCALE_FACTOR 10
+#define OUTPUT_SCALE_FACTOR 10
+#define SLOPE_A_RESOLUTION 10
+
 typedef unsigned short tscalar1w_3bit;
+typedef short tscalar1w_5bit_signed;
 typedef unsigned short tscalar1w_5bit;
 typedef unsigned short tvector_5bit;
 typedef unsigned short tvector_4bit;
@@ -125,5 +133,12 @@ typedef struct {
 	tvector1w v04;
 	tvector1w v05;
 } s_1w_1x6_matrix;
+
+typedef struct {
+	tvector1w x_cord[MAX_CONFIG_POINTS];
+	tvector1w slope[MAX_CONFIG_POINTS-1];
+	tvector1w y_offset[MAX_CONFIG_POINTS-1];
+} ref_config_points;
+
 
 #endif /* __REF_VECTOR_FUNC_TYPES_H_INCLUDED__ */

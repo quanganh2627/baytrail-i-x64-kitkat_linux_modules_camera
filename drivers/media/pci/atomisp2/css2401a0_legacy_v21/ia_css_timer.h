@@ -19,10 +19,21 @@
  *
  */
 
-#ifndef __IA_CSS_SDIS_PARAM_H
-#define __IA_CSS_SDIS_PARAM_H
+#ifndef __IA_CSS_TIMER_H__
+#define __IA_CSS_TIMER_H__
 
-#include "sdis.isp.h"
+/*
+ * Timer interface definitions
+ */
 
-#endif /* __IA_CSS_SDIS_PARAM_H */
+#include <type_support.h>		/* for uint32_t */
 
+/* timer reading definition */
+typedef uint32_t clock_value_t;
+
+/* code measurement common struct */
+struct ia_css_time_meas {
+	clock_value_t	start_timer_value, end_timer_value;	/* measured time in ticks */
+};
+
+#endif  /* __IA_CSS_TIMER_H__ */

@@ -1273,23 +1273,6 @@ sh_css_set_per_frame_isp_config_on_pipe(
 	struct ia_css_pipe *pipe);
 #endif
 
-#if !defined(IS_ISP_2500_SYSTEM)
-static void
-ia_css_set_dvs_coefficients(struct ia_css_isp_parameters *params,
-				const struct ia_css_dvs_coefficients *coefs)
-{
-	if (coefs == NULL)
-		return;
-	assert(params != NULL);
-
-	IA_CSS_ENTER_PRIVATE("hcoef=%p, vcoef=%p", coefs->hor_coefs, coefs->ver_coefs);
-	params->dis_hor_coef_tbl = coefs->hor_coefs;
-	params->dis_ver_coef_tbl = coefs->ver_coefs;
-	params->dis_coef_table_changed = true;
-	IA_CSS_LEAVE_PRIVATE("void");
-}
-#endif
-
 enum ia_css_err
 ia_css_get_dvs_statistics(struct ia_css_dvs_statistics           *host_stats,
 			  const struct ia_css_isp_dvs_statistics *isp_stats)
@@ -1356,36 +1339,6 @@ ia_css_translate_dvs_statistics(
 
 	IA_CSS_LEAVE("void");
 }
-
-#if !defined(IS_ISP_2500_SYSTEM)
-static void
-ia_css_set_dvs2_coefficients(struct ia_css_isp_parameters *params,
-				const struct ia_css_dvs2_coefficients *coefs)
-{
-	if (coefs == NULL)
-		return;
-	assert(params != NULL);
-
-	IA_CSS_ENTER_PRIVATE("hor_coefs.odd_real=%p, hor_coefs.odd_imag=%p, "
-		     "hor_coefs.even_real=%p, hor_coefs.even_imag=%p, "
-		     "ver_coefs.odd_real=%p, ver_coefs.odd_imag=%p, "
-		     "ver_coefs.even_real=%p, ver_coefs.even_imag=%p",
-		     coefs->hor_coefs.odd_real,
-		     coefs->hor_coefs.odd_imag,
-		     coefs->hor_coefs.even_real,
-		     coefs->hor_coefs.even_imag,
-		     coefs->ver_coefs.odd_real,
-		     coefs->ver_coefs.odd_imag,
-		     coefs->ver_coefs.even_real,
-		     coefs->ver_coefs.even_imag);
-
-	params->dvs2_hor_coefs = coefs->hor_coefs;
-	params->dvs2_ver_coefs = coefs->ver_coefs;
-
-	params->dvs2_coef_table_changed = true;
-	IA_CSS_LEAVE_PRIVATE("void");
-}
-#endif
 
 enum ia_css_err
 ia_css_get_dvs2_statistics(struct ia_css_dvs2_statistics           *host_stats,
@@ -2728,8 +2681,6 @@ sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
 	sh_css_set_macc_table(params, config->macc_table);
 	sh_css_set_gamma_table(params, config->gamma_table);
 	sh_css_set_ctc_table(params, config->ctc_table);
-	ia_css_set_dvs_coefficients(params, config->dvs_coefs);
-	ia_css_set_dvs2_coefficients(params, config->dvs2_coefs);
 /* ------ deprecated(bz675) : from ------ */
 	sh_css_set_shading_settings(params, config->shading_settings);
 /* ------ deprecated(bz675) : to ------ */
@@ -3387,13 +3338,6 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 	succ &= (ddr_ptrs->macc_tbl != mmgr_NULL);
 #endif
 
-	if (!succ)
-	{
-		sh_css_free(params);
-		IA_CSS_LOG("sh_css_create_and_init_isp_params() leave !succ");
-		return NULL;
-	}
-
 #if !defined(IS_ISP_2500_SYSTEM)
 
 	params->output_frame = NULL;
@@ -3401,6 +3345,7 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 
 	if (use_default_config)
 	{
+
 		sh_css_set_nr_config(params, &default_nr_config);
 		sh_css_set_ee_config(params, &default_ee_config);
 		if (isp_pipe_version == 1)
@@ -3440,11 +3385,11 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 		ia_css_set_yuv2rgb_config(params, &default_yuv2rgb_cc_config);
 		ia_css_set_rgb2yuv_config(params, &default_rgb2yuv_cc_config);
 		ia_css_set_xnr_config(params, &default_xnr_config);
-
+		ia_css_set_sdis_config(params, &default_sdis_config);
+		ia_css_set_sdis2_config(params, &default_sdis2_config);
 		ia_css_set_param_exceptions(params);
 
 		/* gdc_lut_store is moved to ia_css_stream_isp_parameters_init() */
-
 		params->fpn_config.data = NULL;
 		params->config_changed[IA_CSS_FPN_ID] = true;
 		params->fpn_config.enabled = 0;
@@ -3458,21 +3403,14 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 		params->sc_table = NULL;
 		params->sc_table_changed = true;
 
+
 		params->dvs_6axis_config = NULL;
 		params->dvs_6axis_config_changed = true;
 
-		params->dvs2_hor_coefs.odd_real = NULL;
-		params->dvs2_hor_coefs.odd_imag = NULL;
-		params->dvs2_hor_coefs.even_real = NULL;
-		params->dvs2_hor_coefs.even_imag = NULL;
-		params->dvs2_ver_coefs.odd_real = NULL;
-		params->dvs2_ver_coefs.odd_imag = NULL;
-		params->dvs2_ver_coefs.even_real = NULL;
-		params->dvs2_ver_coefs.even_imag = NULL;
+		ia_css_sdis2_clear_coefficients(&params->dvs2_coefs);
 		params->dvs2_coef_table_changed = true;
 
-		params->dis_hor_coef_tbl = NULL;
-		params->dis_ver_coef_tbl = NULL;
+		ia_css_sdis_clear_coefficients(&params->dvs_coefs);
 		params->dis_coef_table_changed = true;
 	}
 	else
@@ -3531,19 +3469,8 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 		if (stream_params->dvs_6axis_config)
 			params->dvs_6axis_config = generate_dvs_6axis_table_from_config(stream_params->dvs_6axis_config);
 
-		params->dvs2_hor_coefs.odd_real = stream_params->dvs2_hor_coefs.odd_real;
-		params->dvs2_hor_coefs.odd_imag = stream_params->dvs2_hor_coefs.odd_imag;
-		params->dvs2_hor_coefs.even_real = stream_params->dvs2_hor_coefs.even_real;
-		params->dvs2_hor_coefs.even_imag = stream_params->dvs2_hor_coefs.even_imag;
-		params->dvs2_ver_coefs.odd_real = stream_params->dvs2_ver_coefs.odd_real;
-		params->dvs2_ver_coefs.odd_imag = stream_params->dvs2_ver_coefs.odd_imag;
-		params->dvs2_ver_coefs.even_real = stream_params->dvs2_ver_coefs.even_real;
-		params->dvs2_ver_coefs.even_imag = stream_params->dvs2_ver_coefs.even_imag;
-		params->dvs2_coef_table_changed = stream_params->dvs2_coef_table_changed;
-
-		params->dis_hor_coef_tbl = stream_params->dis_hor_coef_tbl;
-		params->dis_ver_coef_tbl = stream_params->dis_ver_coef_tbl;
-		params->dis_coef_table_changed = stream_params->dis_coef_table_changed;
+		ia_css_set_sdis_config(params, &stream_params->dvs_coefs);
+		ia_css_set_sdis2_config(params, &stream_params->dvs2_coefs);
 	}
 #else
 	(void)use_default_config;
@@ -4124,7 +4051,8 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 		/* enqueue the set to sp */
 		IA_CSS_LOG("queue param set %x to %d", cpy, thread_id);
 
-		if (IA_CSS_SUCCESS != ia_css_bufq_enqueue_buffer(thread_id, queue_id, (uint32_t)cpy)) {
+		err = ia_css_bufq_enqueue_buffer(thread_id, queue_id, (uint32_t)cpy);
+		if (IA_CSS_SUCCESS != err) {
 			free_ia_css_isp_parameter_set_info(cpy);
 #if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
 			IA_CSS_LOG("pfp: FAILED to add config id %d for OF %d to q %d on thread %d",
@@ -4132,6 +4060,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 				isp_params_info.output_frame_ptr,
 				queue_id, thread_id);
 #endif
+			break;
 		}
 		else {
 			/* TMP: check discrepancy between nr of enqueued
@@ -4444,7 +4373,7 @@ sh_css_params_write_to_ddr_internal(
 	if (binary->info->sp.enable.dis) {
 		buff_realloced = reallocate_buffer(&ddr_map->sdis_hor_coef,
 				  &ddr_map_size->sdis_hor_coef,
-				  sdis_hor_coef_tbl_bytes(binary),
+				  ia_css_sdis_hor_coef_tbl_bytes(binary),
 				  params->dis_coef_table_changed,
 				  &err);
 		if (err != IA_CSS_SUCCESS) {
@@ -4453,7 +4382,7 @@ sh_css_params_write_to_ddr_internal(
 		}
 		buff_realloced |= reallocate_buffer(&ddr_map->sdis_ver_coef,
 				  &ddr_map_size->sdis_ver_coef,
-				  sdis_ver_coef_tbl_bytes(binary),
+				  ia_css_sdis_ver_coef_tbl_bytes(binary),
 				  params->dis_coef_table_changed,
 				  &err);
 		if (err != IA_CSS_SUCCESS) {
@@ -4462,16 +4391,19 @@ sh_css_params_write_to_ddr_internal(
 		}
 		if (binary->info->sp.isp_pipe_version == 2) {
 			if (params->dvs2_coef_table_changed || buff_realloced) {
-				store_dvs2_coefficients(params, binary,
-					ddr_map->sdis_hor_coef, ddr_map->sdis_ver_coef);
+				ia_css_sdis2_store_coefficients(
+					&params->dvs2_coefs,
+					binary,
+					ddr_map->sdis_hor_coef,
+					ddr_map->sdis_ver_coef);
 			}
 		} else {
 			if (params->dis_coef_table_changed || buff_realloced) {
-				store_dis_coefficients(
-					params->dis_hor_coef_tbl,
-					params->dis_ver_coef_tbl,
+				ia_css_sdis_store_coefficients(
+					&params->dvs_coefs,
 					binary,
-					ddr_map->sdis_hor_coef, ddr_map->sdis_ver_coef);
+					ddr_map->sdis_hor_coef,
+					ddr_map->sdis_ver_coef);
 			}
 		}
 	}

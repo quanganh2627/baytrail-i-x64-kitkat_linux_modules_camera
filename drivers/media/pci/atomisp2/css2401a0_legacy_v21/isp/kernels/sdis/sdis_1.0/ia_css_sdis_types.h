@@ -22,21 +22,9 @@
 #ifndef __IA_CSS_SDIS_TYPES_H
 #define __IA_CSS_SDIS_TYPES_H
 
+#ifndef PIPE_GENERATION
 #include "isp/kernels/sdis/common/ia_css_sdis_common_types.h"
-
-/* Some binaries put the vertical coefficients in DMEM instead
-   of VMEM to save VMEM. */
-#define _SDIS_VER_COEF_TBL_USE_DMEM(mode, enable_sdis, enable_ds, isp_pipe_version) \
-	(mode == IA_CSS_BINARY_MODE_VIDEO \
-	&& enable_sdis && enable_ds != 2 && isp_pipe_version == 1)
-#define SDIS_VER_COEF_TBL__IN_DMEM(b) \
-	_SDIS_VER_COEF_TBL_USE_DMEM((b)->info->sp.mode, (b)->info->sp.enable.dis, (b)->info->sp.enable.ds, (b)->info->sp.isp_pipe_version)
-
-#define SH_CSS_DIS_VER_NUM_COEF_TYPES(b) \
-  (((b)->info->sp.isp_pipe_version == 2) ? IA_CSS_DVS2_NUM_COEF_TYPES : \
-	(SDIS_VER_COEF_TBL__IN_DMEM(b) ? \
-		IA_CSS_DVS_COEF_TYPES_ON_DMEM : \
-		IA_CSS_DVS_NUM_COEF_TYPES))
+#endif
 
 /** DVS 1.0 Coefficients.
  *  This structure describes the coefficients that are needed for the dvs statistics.

@@ -362,4 +362,25 @@ STORAGE_CLASS_EXTERN uint32_t ia_css_circbuf_peek(
 STORAGE_CLASS_EXTERN uint32_t ia_css_circbuf_peek_from_start(
 	ia_css_circbuf_t *cb,
 	int offset);
+
+/**
+ * @brief Increase Size of a Circular Buffer.
+ * Use 'CAUTION' before using this function, This was added to
+ * support / fix issue with increasing size for tagger only
+ *
+ * @param cb The pointer to the circular buffer.
+ * @param sz_delta delta increase for new size
+ * @param elems (optional) pointers to new additional elements
+ *		cb element array size will not be increased dynamically,
+ * 		but new elements should be added at the end to existing
+ * 		cb element array which if of max_size >= new size
+ *
+ * @return	true on succesfully increasing the size
+ * 			false on failure
+ */
+STORAGE_CLASS_EXTERN bool ia_css_circbuf_increase_size(
+		ia_css_circbuf_t *cb,
+		unsigned int sz_delta,
+		ia_css_circbuf_elem_t *elems);
+
 #endif /*_IA_CSS_CIRCBUF_H */

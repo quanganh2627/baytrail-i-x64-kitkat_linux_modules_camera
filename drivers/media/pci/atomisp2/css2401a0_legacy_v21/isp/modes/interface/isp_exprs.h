@@ -268,27 +268,8 @@
 #define UDS_DMACH_STRIDE_B_IN_Y           (( ISP_INTERNAL_WIDTH   /BITS8_ELEMENTS_PER_XMEM_ADDR)*HIVE_ISP_DDR_WORD_BYTES)
 #define UDS_DMACH_STRIDE_B_IN_C           (((ISP_INTERNAL_WIDTH/2)/BITS8_ELEMENTS_PER_XMEM_ADDR)*HIVE_ISP_DDR_WORD_BYTES)
 
-
-/**** SDIS defs ********/
-#define _ISP_SDIS_HOR_PROJ_NUM_ISP \
-  __ISP_SDIS_HOR_PROJ_NUM_ISP(ISP_INTERNAL_WIDTH, \
-                              ISP_INTERNAL_HEIGHT, \
-                              SH_CSS_DIS_DECI_FACTOR_LOG2, ISP_PIPE_VERSION)
-#define _ISP_SDIS_VER_PROJ_NUM_ISP \
-  __ISP_SDIS_VER_PROJ_NUM_ISP(ISP_INTERNAL_WIDTH, \
-                              ISP_INTERNAL_HEIGHT, \
-                              SH_CSS_DIS_DECI_FACTOR_LOG2, ISP_PIPE_VERSION)
-#define _ISP_SDIS_HOR_COEF_NUM_VECS \
-  __ISP_SDIS_HOR_COEF_NUM_VECS(ISP_INTERNAL_WIDTH)
-#define _ISP_SDIS_VER_COEF_NUM_VECS \
-  __ISP_SDIS_VER_COEF_NUM_VECS(ISP_INTERNAL_HEIGHT)
-
-/* Use dmem to store sdis vertical coefficients */
-#define SDIS_VER_COEF_TBL_USE_DMEM \
-	_SDIS_VER_COEF_TBL_USE_DMEM(MODE, ENABLE_SDIS, ENABLE_DS, ISP_PIPE_VERSION)
-
 #else /* defined(__ISP) || defined(INIT_VARS) */
-  
+
 #define ISP_INTERNAL_WIDTH         isp_internal_width
 #define ISP_INTERNAL_HEIGHT        isp_internal_height
 

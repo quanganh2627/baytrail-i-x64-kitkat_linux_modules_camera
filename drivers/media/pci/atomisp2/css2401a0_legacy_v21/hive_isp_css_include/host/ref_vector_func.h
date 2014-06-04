@@ -64,6 +64,58 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_mul_realigning(
 	tvector1w a,
 	tvector1w b,
 	tscalar1w shift );
+
+/** @brief Config Unit Input Processing
+ *
+ * @param[in] a 	    input
+ * @param[in] input_scale   input scaling factor
+ * @param[in] input_offset  input offset factor
+ *
+ * @return		    scaled & offset added input	clamped to MAXVALUE
+ *
+ * As part of input processing for piecewise linear estimation config unit,
+ * this function will perform scaling followed by adding offset and
+ * then clamping to the MAX InputValue
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_input_scaling_offset_clamping(
+	tvector1w a,
+	tscalar1w_5bit_signed input_scale,
+	tscalar1w_5bit_signed input_offset);
+
+/** @brief Config Unit Output Processing
+ *
+ * @param[in] a 	     output
+ * @param[in] output_scale   output scaling factor
+ *
+ * @return		     scaled & clamped output value
+ *
+ * As part of output processing for piecewise linear estimation config unit,
+ * This function will perform scaling and then clamping to output
+ * MAX value.
+ */
+
+
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_output_scaling_clamping(
+	tvector1w a,
+	tscalar1w_5bit_signed output_scale);
+
+/** @brief Config Unit Piecewiselinear estimation
+ *
+ * @param[in] a 	           input
+ * @param[in] test_config_points   config parameter structure
+ *
+ * @return		     	   piecewise linear estimated output
+ *
+ * Given a set of N points {(x1,y1),()x2,y2), ....,(xn,yn)}, to find
+ * the functional value at an arbitrary point around the input set,
+ * this function will perform input processing followed by piecewise
+ * linear estimation and then output processing to yield the final value.
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_piecewise_estimation(
+	tvector1w a,
+	ref_config_points test_config_points);
+
+
 /** @brief Coring
  *
  * @param[in] coring_vec   Amount of coring based on brightness level
@@ -75,6 +127,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_mul_realigning(
  * This function will perform adaptive coring based on brightness level to
  * remove noise
  */
+
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w coring(
 	tvector1w coring_vec,
 	tvector1w filt_input,

@@ -47,6 +47,9 @@
 #define HOST_ADDRESS(x) (unsigned long)(x)
 
 #elif defined(__KERNEL__)
+
+#define CHAR_BIT (8)
+
 #include <linux/types.h>
 #include <linux/limits.h>
 #include <linux/errno.h>

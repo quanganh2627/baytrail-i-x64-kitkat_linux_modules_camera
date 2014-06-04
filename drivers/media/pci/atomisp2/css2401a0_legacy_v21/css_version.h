@@ -27,7 +27,7 @@
 #define __CSS_VERSION_H
 
 #define VER	1
-#define SUBVER	3
+#define SUBVER	4
 
 /*
 Changelog
@@ -135,6 +135,24 @@ VER 1.3, released 29/04/14:
 
 	Verion build data : based on ae79bab (tag: irci_master_20140429_0550, origin/master, origin/HEAD) Merge "[CSI2+] Disable offline capture in ACC pipe"
 			    and  added cherry pick unmerged "Measurement code"  5073/3
+
+
+VER 1.4, released 01/06/14 :
+	-Version release for : Trunk release
+		Changes/Fixes :
+		Added dvs/tnr to operational pipe
+		BZ 2817 fix : Sky Cam CSS Host code 18_1.3 memory leak
+		relax limits of supported resolutions in bins
+		BZ 1426 fix :  Extend config for lin kerneltest
+		fix bds default tables script and table
+		Align to new SDK fixes
+		Fixes for Driver compilation
+		YUV downscale kernel bug fix
+		BDS reapply assertion SF calc and lut select
+		center crop in dvs
+
+	Verion build data :
+		irci_master_20140601_0200 no other manual patches
 
 
 
