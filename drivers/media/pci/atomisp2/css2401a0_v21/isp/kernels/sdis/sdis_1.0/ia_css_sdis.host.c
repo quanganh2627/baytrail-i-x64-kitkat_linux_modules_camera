@@ -22,16 +22,38 @@
 #include "memory_access.h"
 #include "assert_support.h"
 #include "ia_css_debug.h"
-#include "ia_css_sdis_param.h"
+#include "ia_css_sdis_types.h"
+#include "sdis/common/ia_css_sdis_common.host.h"
 #include "ia_css_sdis.host.h"
+
+const struct ia_css_dvs_coefficients default_sdis_config = {
+	.grid = { 0, 0, 0, 0, 0, 0, 0, 0 },
+	.hor_coefs = NULL,
+	.ver_coefs = NULL
+};
+
+void ia_css_sdis_encode (
+	struct sh_css_isp_sdis_dmem_params   *to,
+	const struct ia_css_dvs_coefficients *from)
+{
+	(void)to;
+	(void)from;
+}
+
+void ia_css_sdis_vmem_encode (
+	struct sh_css_isp_sdis_vmem_params   *to,
+	const struct ia_css_dvs_coefficients *from)
+{
+	(void)to;
+	(void)from;
+}
 
 /* Store the DIS coefficients from the 3A library to DDR where the ISP
    will read them from. The ISP works on a grid that can be larger than
    that of the 3a library. If that is the case, we padd the difference
    with zeroes. */
-void store_dis_coefficients(
-	const short *dis_hor_coef_tbl,
-	const short *dis_ver_coef_tbl,
+void ia_css_sdis_store_coefficients(
+	const struct ia_css_dvs_coefficients *dvs_coefs,
 	const struct ia_css_binary *binary,
 	hrt_vaddress ddr_addr_hor,
 	hrt_vaddress ddr_addr_ver)
@@ -42,9 +64,9 @@ void store_dis_coefficients(
 		     hor_padding, ver_padding;
 	int i;
 	const short *hor_ptr_3a,
-		*ver_ptr_3a;
+		    *ver_ptr_3a;
 	hrt_vaddress hor_ptr_isp = ddr_addr_hor,
-		ver_ptr_isp = ddr_addr_ver;
+		     ver_ptr_isp = ddr_addr_ver;
 
 	IA_CSS_ENTER_PRIVATE("void");
 
@@ -58,11 +80,11 @@ void store_dis_coefficients(
 	ver_num_3a  = dis->coef.dim.height,
 	hor_padding = hor_num_isp - hor_num_3a,
 	ver_padding = ver_num_isp - ver_num_3a;
-	hor_ptr_3a = dis_hor_coef_tbl,
-	ver_ptr_3a = dis_ver_coef_tbl;
+	hor_ptr_3a = dvs_coefs->hor_coefs,
+	ver_ptr_3a = dvs_coefs->ver_coefs;
 
 	for (i = 0; i < IA_CSS_DVS_NUM_COEF_TYPES; i++) {
-		if (dis_hor_coef_tbl != NULL) {
+		if (dvs_coefs->hor_coefs != NULL) {
 			mmgr_store(hor_ptr_isp,
 				hor_ptr_3a, hor_num_3a * sizeof(*hor_ptr_3a));
 			hor_ptr_3a  += hor_num_3a;
@@ -75,7 +97,7 @@ void store_dis_coefficients(
 		hor_ptr_isp += hor_padding * sizeof(short);
 	}
 	for (i = 0; i < SH_CSS_DIS_VER_NUM_COEF_TYPES(binary); i++) {
-		if (dis_ver_coef_tbl != NULL) {
+		if (dvs_coefs->ver_coefs != NULL) {
 			mmgr_store(ver_ptr_isp,
 				ver_ptr_3a, ver_num_3a * sizeof(*ver_ptr_3a));
 			ver_ptr_3a  += ver_num_3a;
@@ -137,7 +159,8 @@ void ia_css_get_isp_dis_coefficients(
 }
 
 size_t
-sdis_hor_coef_tbl_bytes(const struct ia_css_binary *binary)
+ia_css_sdis_hor_coef_tbl_bytes(
+	const struct ia_css_binary *binary)
 {
 	if (binary->info->sp.isp_pipe_version == 1)
 		return sizeof(short) * IA_CSS_DVS_NUM_COEF_TYPES  * binary->dis.coef.pad.width;
@@ -146,7 +169,8 @@ sdis_hor_coef_tbl_bytes(const struct ia_css_binary *binary)
 }
 
 size_t
-sdis_ver_coef_tbl_bytes(const struct ia_css_binary *binary)
+ia_css_sdis_ver_coef_tbl_bytes(
+	const struct ia_css_binary *binary)
 {
 	return sizeof(short) * SH_CSS_DIS_VER_NUM_COEF_TYPES(binary) * binary->dis.coef.pad.height;
 }
@@ -215,4 +239,16 @@ ia_css_sdis_init_info(
 				isp_pipe_version);
 }
 
+void ia_css_sdis_clear_coefficients(
+	struct ia_css_dvs_coefficients *dvs_coefs)
+{
+	dvs_coefs->hor_coefs = NULL;
+	dvs_coefs->ver_coefs = NULL;
+}
 
+void ia_css_sdis_debug_dtrace(
+	const struct ia_css_dvs_coefficients *config, unsigned level)
+{
+	(void)config;
+	(void)level;
+}

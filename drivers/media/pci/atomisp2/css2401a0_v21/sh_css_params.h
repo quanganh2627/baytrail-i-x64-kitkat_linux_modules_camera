@@ -111,6 +111,8 @@ struct ia_css_isp_parameters {
 /* ------ deprecated(bz675) : from ------ */
 	struct ia_css_shading_settings shading_settings;
 /* ------ deprecated(bz675) : to ------ */
+	struct ia_css_dvs_coefficients  dvs_coefs;
+	struct ia_css_dvs2_coefficients dvs2_coefs;
 
 	bool isp_params_changed;
 	bool isp_mem_params_changed
@@ -131,10 +133,6 @@ struct ia_css_isp_parameters {
 
 	unsigned int sensor_binning;
 	/* local buffers, used to re-order the 3a statistics in vmem-format */
-	const short *dis_hor_coef_tbl;
-	const short *dis_ver_coef_tbl;
-	struct ia_css_dvs2_coef_types dvs2_hor_coefs;
-	struct ia_css_dvs2_coef_types dvs2_ver_coefs;
 	struct sh_css_ddr_address_map pipe_ddr_ptrs[IA_CSS_PIPE_ID_NUM];
 	struct sh_css_ddr_address_map_size pipe_ddr_ptrs_size[IA_CSS_PIPE_ID_NUM];
 	struct sh_css_ddr_address_map ddr_ptrs;

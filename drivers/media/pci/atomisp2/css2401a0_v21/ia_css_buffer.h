@@ -24,6 +24,7 @@
 
 #include <type_support.h>
 #include "ia_css_types.h"
+#include "ia_css_timer.h"
 
 /** Enumeration of buffer types. Buffers can be queued and de-queued
  *  to hand them over between IA and ISP.
@@ -73,6 +74,7 @@ struct ia_css_buffer {
 		struct ia_css_metadata           *metadata;    /**< Sensor metadata. */
 	} data; /**< Buffer data pointer. */
 	uint64_t driver_cookie; /**< cookie for the driver */
+	struct ia_css_time_meas timing_data; /**< timing data (readings from the timer) */
 };
 
 /** @brief Dequeue param buffers from sp2host_queue

@@ -19,10 +19,10 @@
  *
  */
 
-#ifndef __IA_CSS_SDIS_PARAM_H
-#define __IA_CSS_SDIS_PARAM_H
+#ifndef __IA_CSS_SDIS2_PARAM_H
+#define __IA_CSS_SDIS2_PARAM_H
 
 #include "sdis.isp.h"
 
-#endif /* __IA_CSS_SDIS_PARAM_H */
+#endif /* __IA_CSS_SDIS2_PARAM_H */
 

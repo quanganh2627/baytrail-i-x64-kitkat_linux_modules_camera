@@ -22,7 +22,9 @@
 #ifndef __IA_CSS_SDIS2_TYPES_H
 #define __IA_CSS_SDIS2_TYPES_H
 
+#ifndef PIPE_GENERATION
 #include "isp/kernels/sdis/common/ia_css_sdis_common_types.h"
+#endif
 
 /** DVS 2.0 Coefficient types. This structure contains 4 pointers to
  *  arrays that contain the coeffients for each type.

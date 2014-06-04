@@ -24,6 +24,28 @@
 #include "ia_css_debug.h"
 #include "ia_css_sdis2.host.h"
 
+const struct ia_css_dvs2_coefficients default_sdis2_config = {
+	.grid = { 0, 0, 0, 0, 0, 0, 0, 0 },
+	.hor_coefs = { NULL, NULL, NULL, NULL },
+	.ver_coefs = { NULL, NULL, NULL, NULL },
+};
+
+void ia_css_sdis2_encode (
+	struct sh_css_isp_sdis_dmem_params    *to,
+	const struct ia_css_dvs2_coefficients *from)
+{
+	(void)to;
+	(void)from;
+}
+
+void ia_css_sdis2_vmem_encode (
+	struct sh_css_isp_sdis_vmem_params    *to,
+	const struct ia_css_dvs2_coefficients *from)
+{
+	(void)to;
+	(void)from;
+}
+
 static void storedvs2_coef(const short *ptr_3a, hrt_vaddress ptr_isp, unsigned num_3a, unsigned padding)
 {
 	if (ptr_3a != NULL) {
@@ -36,8 +58,8 @@ static void storedvs2_coef(const short *ptr_3a, hrt_vaddress ptr_isp, unsigned n
 
 }
 
-void store_dvs2_coefficients(
-	struct ia_css_isp_parameters *params,
+void ia_css_sdis2_store_coefficients(
+	const struct ia_css_dvs2_coefficients *dvs2_coefs,
 	const struct ia_css_binary *binary,
 	hrt_vaddress ddr_addr_hor,
 	hrt_vaddress ddr_addr_ver)
@@ -63,21 +85,21 @@ void store_dvs2_coefficients(
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "store_dvs2_coefficients() enter:\n");
 
-	storedvs2_coef(params->dvs2_hor_coefs.odd_real, hor_ptr_isp, hor_num_3a, hor_padding);
+	storedvs2_coef(dvs2_coefs->hor_coefs.odd_real, hor_ptr_isp, hor_num_3a, hor_padding);
 	hor_ptr_isp += hor_num_isp * sizeof(short);
-	storedvs2_coef(params->dvs2_hor_coefs.odd_imag, hor_ptr_isp, hor_num_3a, hor_padding);
+	storedvs2_coef(dvs2_coefs->hor_coefs.odd_imag, hor_ptr_isp, hor_num_3a, hor_padding);
 	hor_ptr_isp += hor_num_isp * sizeof(short);
-	storedvs2_coef(params->dvs2_hor_coefs.even_real, hor_ptr_isp, hor_num_3a, hor_padding);
+	storedvs2_coef(dvs2_coefs->hor_coefs.even_real, hor_ptr_isp, hor_num_3a, hor_padding);
 	hor_ptr_isp += hor_num_isp * sizeof(short);
-	storedvs2_coef(params->dvs2_hor_coefs.even_imag, hor_ptr_isp, hor_num_3a, hor_padding);
+	storedvs2_coef(dvs2_coefs->hor_coefs.even_imag, hor_ptr_isp, hor_num_3a, hor_padding);
 
-	storedvs2_coef(params->dvs2_ver_coefs.odd_real, ver_ptr_isp, ver_num_3a, ver_padding);
+	storedvs2_coef(dvs2_coefs->ver_coefs.odd_real, ver_ptr_isp, ver_num_3a, ver_padding);
 	ver_ptr_isp += ver_num_isp * sizeof(short);
-	storedvs2_coef(params->dvs2_ver_coefs.odd_imag, ver_ptr_isp, ver_num_3a, ver_padding);
+	storedvs2_coef(dvs2_coefs->ver_coefs.odd_imag, ver_ptr_isp, ver_num_3a, ver_padding);
 	ver_ptr_isp += ver_num_isp * sizeof(short);
-	storedvs2_coef(params->dvs2_ver_coefs.even_real, ver_ptr_isp, ver_num_3a, ver_padding);
+	storedvs2_coef(dvs2_coefs->ver_coefs.even_real, ver_ptr_isp, ver_num_3a, ver_padding);
 	ver_ptr_isp += ver_num_isp * sizeof(short);
-	storedvs2_coef(params->dvs2_ver_coefs.even_imag, ver_ptr_isp, ver_num_3a, ver_padding);
+	storedvs2_coef(dvs2_coefs->ver_coefs.even_imag, ver_ptr_isp, ver_num_3a, ver_padding);
 
 	IA_CSS_LEAVE_PRIVATE("void");
 }
@@ -143,4 +165,25 @@ void ia_css_get_isp_dvs2_coefficients(
 	mmgr_load(ver_ptr_isp, ver_coefs_even_imag, ver_num_3a * sizeof(short));
 
 	IA_CSS_LEAVE("void");
+}
+
+
+void ia_css_sdis2_clear_coefficients(
+	struct ia_css_dvs2_coefficients *dvs2_coefs)
+{
+	dvs2_coefs->hor_coefs.odd_real = NULL;
+	dvs2_coefs->hor_coefs.odd_imag = NULL;
+	dvs2_coefs->hor_coefs.even_real = NULL;
+	dvs2_coefs->hor_coefs.even_imag = NULL;
+	dvs2_coefs->ver_coefs.odd_real = NULL;
+	dvs2_coefs->ver_coefs.odd_imag = NULL;
+	dvs2_coefs->ver_coefs.even_real = NULL;
+	dvs2_coefs->ver_coefs.even_imag = NULL;
+}
+
+void ia_css_sdis2_debug_dtrace(
+	const struct ia_css_dvs2_coefficients *config, unsigned level)
+{
+	(void)config;
+	(void)level;
 }

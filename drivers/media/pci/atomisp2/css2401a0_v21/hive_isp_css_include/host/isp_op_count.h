@@ -128,7 +128,7 @@ bbb_func_reset_count(void);
 
 void
 bbb_func_print_totals(
-	FILE* fp, 
+	FILE  * fp,
 	unsigned non_zero_only);
 
 #endif
