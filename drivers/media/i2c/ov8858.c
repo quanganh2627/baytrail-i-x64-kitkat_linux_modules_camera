@@ -376,9 +376,6 @@ static int __ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
 			return ret;
 	}
 
-	/* Shift left to have 7 LONG_GAIN fraction bits */
-	gain <<= 3;
-
 	return ov8858_write_reg(client, OV8858_16BIT, OV8858_LONG_GAIN,
 				gain & 0x07ff);
 }
