@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140529_1500 */
+/* Release Version: irci_master_20140604_0213 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -51,6 +51,7 @@
 #include "ia_css_mmu.h"
 #include "ia_css_morph.h"
 #include "ia_css_shading.h"
+#include "ia_css_timer.h"
 
 /*
    Please do not add code to this file. Public functionality is to be

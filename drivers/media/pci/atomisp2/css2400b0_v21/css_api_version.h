@@ -31,7 +31,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatbile
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.2.4"
+#define CSS_API_VERSION_STRING	"2.1.2.5"
 
 /*
 Change log
@@ -76,6 +76,10 @@ v2.1.2.3
 
 v2.1.2.4, change CSS API to generate the shading table which should be directly sent to ISP:
  - keep the old CSS API (which uses the conversion of the shading table in CSS) for backward compatibility
+
+v2.1.2.5
+- Added SP frame time measurement (in ticks) and result is sent on a new member
+  in ia_css_buffer.h.
 */
 
 #endif __CSS_API_VERSION_H

@@ -51,9 +51,10 @@
 #include "ia_css_lace_stat.h"
 #include "ia_css_metadata.h"
 #include "runtime/bufq/interface/ia_css_bufq.h"
+#include "ia_css_timer.h"
 
 #if defined(IS_ISP_2500_SYSTEM)
-#include "product_specific_skycam/sw/product_specific_internal.h"
+#include "product_specific_internal.h"
 #endif
 
 /* TODO: Move to a more suitable place when sp pipeline design is done. */
@@ -138,30 +139,6 @@
 #define CALC_ALIGNMENT_MEMBER(x, y)	(CEIL_MUL(x, y) - x)
 #define SIZE_OF_HRT_VADDRESS		sizeof(hive_uint32)
 #define SIZE_OF_IA_CSS_PTR		sizeof(uint32_t)
-
-/**
- * The following macro can help to test the size of a struct at compile
- * time rather than at run-time. It does not work for all compilers; see
- * below.
- *
- * Depending on the value of 'condition', the following macro is expanded to:
- * - condition==true:
- *     an expression containing an array declaration with negative size,
- *     usually resulting in a compilation error
- * - condition==false:
- *     (void) 1;
- *   the latter being a C statement with no effect
- *
- * example:
- *  COMPILATION_ERROR_IF( sizeof(struct host_sp_queues) != SIZE_OF_HOST_SP_QUEUES_STRUCT);
- *
- * verify that the macro indeed triggers a compilation error with your compiler:
- *  COMPILATION_ERROR_IF( sizeof(struct host_sp_queues) != (sizeof(struct host_sp_queues)+1) );
- *
- * Not all compilers will trigger an error with this macro; use a search engine to search for
- * BUILD_BUG_ON to find other methods.
- */
-#define COMPILATION_ERROR_IF(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 /* Number of SP's */
 #if defined(ENABLE_SP1)
@@ -757,6 +734,7 @@ struct sh_css_hmm_buffer {
 	 */
 	CSS_ALIGN(uint64_t cookie_ptr, 8);
 	CSS_ALIGN(uint64_t kernel_ptr, 8);
+	CSS_ALIGN(struct ia_css_time_meas timing_data, 8);
 };
 #define SIZE_OF_FRAME_STRUCT						\
 	(SIZE_OF_HRT_VADDRESS +						\
@@ -774,7 +752,8 @@ struct sh_css_hmm_buffer {
 	(SIZE_OF_PAYLOAD_UNION +					\
 	CALC_ALIGNMENT_MEMBER(SIZE_OF_PAYLOAD_UNION, 8) +		\
 	sizeof(uint64_t) +						\
-	sizeof(uint64_t))
+	sizeof(uint64_t) +						\
+	(sizeof(struct ia_css_time_meas)))
 
 enum sh_css_queue_type {
 	sh_css_invalid_queue_type = -1,
@@ -1007,6 +986,9 @@ sh_css_invalidate_shading_tables(struct ia_css_stream *stream);
 #if defined(IS_ISP_2500_SYSTEM)
 void
 ia_css_pipe_get_bds_resolution(const struct ia_css_pipe *pipe, struct ia_css_resolution *res);
+
+void
+ia_css_pipe_get_bds_aligned_resolution(const struct ia_css_pipe *pipe, struct ia_css_resolution *res);
 
 void
 ia_css_pipe_get_dvs_envelope(const struct ia_css_pipe *pipe, struct ia_css_resolution *res);

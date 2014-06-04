@@ -27,8 +27,22 @@
 #include "ia_css_stream.h"
 #include "sh_css_params.h"
 
-void store_dvs2_coefficients(
-	struct ia_css_isp_parameters *params,
+extern const struct ia_css_dvs2_coefficients default_sdis2_config;
+
+/* Opaque here, since size is binary dependent. */
+struct sh_css_isp_sdis_dmem_params;
+struct sh_css_isp_sdis_vmem_params;
+
+void ia_css_sdis2_encode (
+	struct sh_css_isp_sdis_dmem_params    *to,
+	const struct ia_css_dvs2_coefficients *from);
+
+void ia_css_sdis2_vmem_encode (
+	struct sh_css_isp_sdis_vmem_params    *to,
+	const struct ia_css_dvs2_coefficients *from);
+
+void ia_css_sdis2_store_coefficients(
+	const struct ia_css_dvs2_coefficients *dvs2_coefs,
 	const struct ia_css_binary *binary,
 	hrt_vaddress ddr_addr_hor,
 	hrt_vaddress ddr_addr_ver);
@@ -43,5 +57,11 @@ void ia_css_get_isp_dvs2_coefficients(
 	short *ver_coefs_odd_imag,
 	short *ver_coefs_even_real,
 	short *ver_coefs_even_imag);
+
+void ia_css_sdis2_clear_coefficients(
+	struct ia_css_dvs2_coefficients *dvs2_coefs);
+
+void ia_css_sdis2_debug_dtrace(
+	const struct ia_css_dvs2_coefficients *config, unsigned level);
 
 #endif /* __IA_CSS_SDIS2_HOST_H */
