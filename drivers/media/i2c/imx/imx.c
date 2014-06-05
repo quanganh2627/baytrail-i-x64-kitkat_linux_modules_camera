@@ -504,10 +504,24 @@ out:
 	return 0;
 }
 
+static int imx_get_lanes(struct v4l2_subdev *sd)
+{
+	struct camera_mipi_info *imx_info = v4l2_get_subdev_hostdata(sd);
+
+	if (!imx_info)
+		return -ENOSYS;
+	if (imx_info->num_lanes < 1 || imx_info->num_lanes > 4 ||
+	    imx_info->num_lanes == 3)
+		return -EINVAL;
+
+	return imx_info->num_lanes;
+}
+
 static int __imx_init(struct v4l2_subdev *sd, u32 val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct imx_device *dev = to_imx_sensor(sd);
+	int lanes = imx_get_lanes(sd);
 	int ret;
 
 	if (dev->sensor_id == IMX_ID_DEFAULT)
@@ -525,22 +539,15 @@ static int __imx_init(struct v4l2_subdev *sd, u32 val)
 	if (ret)
 		return ret;
 
-	if (dev->sensor_id == IMX132_ID) {
-		static const unsigned int IMX132_DEFAULT_LANES = 1;
-		struct camera_mipi_info *imx_info =
-						v4l2_get_subdev_hostdata(sd);
+	if (dev->sensor_id == IMX132_ID && lanes > 0) {
 		static const u8 imx132_rglanesel[] = {
 			IMX132_RGLANESEL_1LANE,		/* 1 lane */
 			IMX132_RGLANESEL_2LANES,	/* 2 lanes */
 			IMX132_RGLANESEL_1LANE,		/* undefined */
 			IMX132_RGLANESEL_4LANES,	/* 4 lanes */
 		};
-		unsigned int lanes = (imx_info ? imx_info->num_lanes
-						: IMX132_DEFAULT_LANES) - 1;
-		if (lanes >= ARRAY_SIZE(imx132_rglanesel))
-			lanes = IMX132_DEFAULT_LANES - 1;
 		ret = imx_write_reg(client, IMX_8BIT,
-				    IMX132_RGLANESEL, imx132_rglanesel[lanes]);
+				IMX132_RGLANESEL, imx132_rglanesel[lanes - 1]);
 	}
 
 	return ret;
@@ -689,6 +696,7 @@ static int imx_get_intg_factor(struct i2c_client *client,
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct imx_device *dev = to_imx_sensor(sd);
+	int lanes = imx_get_lanes(sd);
 	u32 vt_pix_clk_div;
 	u32 vt_sys_clk_div;
 	u32 pre_pll_clk_div;
@@ -797,6 +805,8 @@ static int imx_get_intg_factor(struct i2c_client *client,
 
 	vt_pix_clk_freq_mhz = 2 * ext_clk_freq_hz / div;
 	vt_pix_clk_freq_mhz *= pll_multiplier;
+	if (dev->sensor_id == IMX132_ID && lanes > 0)
+		vt_pix_clk_freq_mhz *= lanes;
 
 	dev->vt_pix_clk_freq_mhz = vt_pix_clk_freq_mhz;
 
@@ -1461,6 +1471,7 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	struct camera_mipi_info *imx_info = NULL;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	const struct imx_resolution *res;
+	int lanes = imx_get_lanes(sd);
 	int ret;
 	u16 data, val;
 
@@ -1490,6 +1501,19 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	ret = imx_write_reg_array(client, dev->regs);
 	if (ret)
 		goto out;
+
+	if (dev->sensor_id == IMX132_ID && lanes > 0) {
+		static const u8 imx132_rgpltd[] = {
+			2,		/* 1 lane:  /1 */
+			0,		/* 2 lanes: /2 */
+			0,		/* undefined   */
+			1,		/* 4 lanes: /4 */
+		};
+		ret = imx_write_reg(client, IMX_8BIT, IMX132_208_VT_RGPLTD,
+				    imx132_rgpltd[lanes - 1]);
+		if (ret)
+			goto out;
+	}
 
 	dev->pixels_per_line = res->fps_options[dev->fps_index].pixels_per_line;
 	dev->lines_per_frame = res->fps_options[dev->fps_index].lines_per_frame;
