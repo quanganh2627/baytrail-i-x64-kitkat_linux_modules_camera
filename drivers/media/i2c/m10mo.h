@@ -238,6 +238,12 @@ int m10mo_get_spi_state(struct m10mo_device *m10mo_dev);
 int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 
 int m10mo_update_pll_setting(struct v4l2_subdev *sd);
+int m10mo_dump_string_log1(struct v4l2_subdev *sd);
+int m10mo_dump_string_log2_1(struct v4l2_subdev *sd);
+int m10mo_dump_string_log2_2(struct v4l2_subdev *sd);
+int m10mo_dump_string_log2_3(struct v4l2_subdev *sd);
+int m10mo_dump_string_log3(struct v4l2_subdev *sd);
+
 /* Below contents are based on the M10MO_categoryParameter-a1.xls */
 
 /* Category register */
@@ -250,7 +256,7 @@ int m10mo_update_pll_setting(struct v4l2_subdev *sd);
 #define CATEGORY_LENS		0x0a	/* AF Control */
 #define CATEGORY_CAPTURE_PARAM	0x0b	/* Still Picture parameter */
 #define CATEGORY_CAPTURE_CTRL	0x0c  /* Still picture control */
-#define CATEGORY_LEDFLASH	0x0d	/* Led Flash Category */
+#define CATEGORY_LOGLEDFLASH	0x0d	/*Log Led Flash Category */
 #define CATEGORY_TEST		0x0d	/* Test category for FW_TYPE_2 */
 #define CATEGORY_FLASHROM	0x0f	/* FlashROM-Writer Mode only */
 
@@ -493,6 +499,36 @@ int m10mo_update_pll_setting(struct v4l2_subdev *sd);
 #define LED_TORCH               0x29
 #define LED_TORCH_OFF           0x00
 #define LED_TORCH_ON            0x01
+#define LOG_ADD_SHOW		0x06
+#define LOG_ADD_SHOW_INIT_VALUE	0x00
+#define LOG_STR_LEN		0x07
+#define LOG_STR_ADD3		0x08
+#define LOG_STR_ADD2		0x09
+#define LOG_STR_ADD1		0x0A
+#define LOG_STR_ADD0		0x0B
+#define LOG_SEL1		0x0C
+#define LOG_SEL0		0x0D
+#define LOG_ACT		0x0E
+#define LOG_ACT_ENABLE		0x01
+#define LOG_ACT_DISABLE	0x02
+#define LOG_ACT_OUTPUT_STR	0x03
+#define LOG_ACT_CLEAR		0x04
+#define LOG_MODE		0x0F
+#define LOG_STANDARD_MODE	0x00
+#define LOG_ANALYZE_MODE0	0x01
+#define LOG_ANALYZE_MODE1	0x02
+#define LOG_ANALYZE_MODE2	0x03
+#define LOG_TRACE_MODE		0x04
+#define LOG_DATA_LEN1		0x14
+#define LOG_DATA_LEN0		0x15
+
+#define I2C_MEM_READ_SIZE	128
+#define MAX_LOG_STR_LEN	0xFF
+#define MIN_LOG_STR_LEN	0x00
+#define MAX_LOG_STR_LEN_LOG2	0xFFFF
+#define MIN_LOG_STR_LEN_LOG2	0x0000
+#define MAX_MEM_DUMP_NUM	10000
+#define MAX_MEM_DUMP_NUM_LOG3	20000
 
 /* Category D Test */
 #define TEST_PATTERN_SENSOR	0x1d

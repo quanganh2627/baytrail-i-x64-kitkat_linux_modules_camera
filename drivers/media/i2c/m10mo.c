@@ -469,7 +469,7 @@ static int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout)
 	if (ret > 0) {
 		return 0;
 	} else if (ret == 0) {
-		dev_err(&client->dev, "m10mo_wait_mode_change timed out");
+		dev_err(&client->dev, "m10mo_wait_mode_change timed out\n");
 		return -ETIMEDOUT;
 	}
 
@@ -491,7 +491,7 @@ static int m10mo_detect(struct v4l2_subdev *sd)
 	if (!ret)
 		ret = m10mo_read(sd, 1, CATEGORY_SYSTEM, SYSTEM_PROJECT_CODE,
 				&ver->project);
-	dev_info(&client->dev, "Customer/Project[0x%x/0x%x]", dev->ver.customer,
+	dev_info(&client->dev, "Customer/Project[0x%x/0x%x]\n", dev->ver.customer,
 				dev->ver.project);
 	return 0;
 }
@@ -519,7 +519,7 @@ static int __m10mo_fw_start(struct v4l2_subdev *sd)
 	ret = m10mo_wait_mode_change(sd, M10MO_PARAM_SETTING_MODE,
 				     M10MO_INIT_TIMEOUT);
 	if (ret < 0) {
-		dev_err(&client->dev, "Initialization timeout");
+		dev_err(&client->dev, "Initialization timeout\n");
 		return ret;
 	}
 
@@ -855,16 +855,16 @@ static int m10mo_set_flash_mode(struct v4l2_subdev *sd, unsigned int val)
 		flash_mode = FLASH_MODE_AUTO;
 		break;
 	case EXT_ISP_LED_TORCH_OFF:
-		return m10mo_writeb(sd, CATEGORY_LEDFLASH, LED_TORCH,
+		return m10mo_writeb(sd, CATEGORY_LOGLEDFLASH, LED_TORCH,
 						LED_TORCH_OFF);
 	case EXT_ISP_LED_TORCH_ON:
-		return m10mo_writeb(sd, CATEGORY_LEDFLASH, LED_TORCH,
+		return m10mo_writeb(sd, CATEGORY_LOGLEDFLASH, LED_TORCH,
 						LED_TORCH_ON);
 	default:
 		return -EINVAL;
 	}
 
-	return m10mo_writeb(sd, CATEGORY_LEDFLASH, FLASH_MODE, flash_mode);
+	return m10mo_writeb(sd, CATEGORY_LOGLEDFLASH, FLASH_MODE, flash_mode);
 }
 
 static int power_up(struct v4l2_subdev *sd)
@@ -3182,12 +3182,147 @@ static ssize_t m10mo_flash_dump_show(struct device *dev,
 }
 static DEVICE_ATTR(isp_fw_dump, S_IRUGO, m10mo_flash_dump_show, NULL);
 
+static int m10mo_ispd1(struct m10mo_device *dev)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(&dev->sd);
+	struct v4l2_subdev *sd = &dev->sd;
+	int ret = 0;
+
+	mutex_lock(&dev->input_lock);
+
+	dev_info(&client->dev, "ispd1 start\n");
+	ret = m10mo_dump_string_log1(sd);
+	if (ret < 0)
+		dev_err(&client->dev, "isp log 1 error\n");
+
+	dev_info(&client->dev, "ispd1 finished\n");
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static int m10mo_ispd2(struct m10mo_device *dev)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(&dev->sd);
+	struct v4l2_subdev *sd = &dev->sd;
+	int ret = 0;
+
+	mutex_lock(&dev->input_lock);
+
+	dev_info(&client->dev, "ispd2 start\n");
+
+	ret = m10mo_dump_string_log2_1(sd);
+	if (ret != 0)
+		dev_err(&client->dev, "m10mo_dump_string_log2_1 error\n");
+
+	dev_info(&client->dev, "log2_1 finished\n");
+
+	ret = m10mo_dump_string_log2_2(sd);
+	if (ret != 0)
+		dev_err(&client->dev, "m10mo_dump_string_log2_2 error\n");
+
+	dev_info(&client->dev, "ispd2_2 finish\n");
+
+	ret = m10mo_dump_string_log2_3(sd);
+	if (ret != 0)
+		dev_err(&client->dev, "m10mo_dump_string_log2_3 error\n");
+
+	dev_info(&client->dev, "ispd2_3 finish\n");
+
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static int m10mo_ispd3(struct m10mo_device *dev)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(&dev->sd);
+	struct v4l2_subdev *sd = &dev->sd;
+	int ret = 0;
+
+	mutex_lock(&dev->input_lock);
+
+	/**ISP RESET**/
+	ret = dev->pdata->common.gpio_ctrl(sd, 0);
+
+	msleep(10);
+
+	/**ISP RESET**/
+	ret = dev->pdata->common.gpio_ctrl(sd, 1);
+
+	msleep(50);
+
+	dev_info(&client->dev, "ispd3 start\n");
+
+	ret = m10mo_dump_string_log2_1(sd);
+	if (ret != 0)
+		dev_err(&client->dev, "m10mo_dump_string_log2_1 error\n");
+
+	dev_info(&client->dev, "log2_1 finished\n");
+
+	ret = m10mo_dump_string_log2_2(sd);
+	if (ret != 0)
+		dev_err(&client->dev, "m10mo_dump_string_log2_2 error\n");
+
+	dev_info(&client->dev, "ispd2_2 finish\n");
+
+	ret = m10mo_dump_string_log2_3(sd);
+	if (ret != 0)
+		dev_err(&client->dev, "m10mo_dump_string_log2_3 error\n");
+
+	dev_info(&client->dev, "ispd2_3 finish\n");
+
+	dev_info(&client->dev, "ispd3 finished\n");
+
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static int m10mo_ispd4(struct m10mo_device *dev)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(&dev->sd);
+	struct v4l2_subdev *sd = &dev->sd;
+	int ret = 0;
+
+	mutex_lock(&dev->input_lock);
+
+	dev_info(&client->dev, "ispd4 start\n");
+	ret = m10mo_dump_string_log3(sd);
+	if (ret < 0)
+		dev_err(&client->dev, "isp log 4 error\n");
+
+	dev_info(&client->dev, "ispd4 finished\n");
+	mutex_unlock(&dev->input_lock);
+	return ret;
+}
+
+static ssize_t m10mo_isp_log_store(struct device *dev,
+		struct device_attribute *attr,
+		const char *buf, size_t len)
+{
+	struct m10mo_device *m10mo_dev = dev_get_drvdata(dev);
+
+	if (!strncmp(buf, "1", 1))
+		m10mo_ispd1(m10mo_dev);
+	else if (!strncmp(buf, "4", 1))
+		m10mo_ispd4(m10mo_dev);
+	else if (!strncmp(buf, "2", 1))
+		m10mo_ispd2(m10mo_dev);
+	else if (!strncmp(buf, "3", 1))
+		m10mo_ispd3(m10mo_dev);
+	else
+		m10mo_ispd4(m10mo_dev);
+
+	return len;
+}
+
+static DEVICE_ATTR(isp_log, S_IRUGO | S_IWUSR, NULL, m10mo_isp_log_store);
+
 static struct attribute *sysfs_attrs_ctrl[] = {
 	&dev_attr_isp_flashfw.attr,
 	&dev_attr_isp_checksum.attr,
 	&dev_attr_isp_fw_dump.attr,
 	&dev_attr_isp_spi.attr,
 	&dev_attr_isp_version.attr,
+	&dev_attr_isp_log.attr,
 	NULL
 };
 
