@@ -291,12 +291,15 @@ static int atomisp_qbuffers_to_css_for_all_pipes(struct atomisp_sub_device *asd)
 	enum atomisp_css_buffer_type buf_type;
 	enum atomisp_css_pipe_id css_capture_pipe_id = CSS_PIPE_ID_COPY;
 	enum atomisp_css_pipe_id css_preview_pipe_id = CSS_PIPE_ID_COPY;
+	enum atomisp_css_pipe_id css_video_pipe_id = CSS_PIPE_ID_COPY;
 	enum atomisp_input_stream_id input_stream_id;
 	struct atomisp_video_pipe *capture_pipe;
 	struct atomisp_video_pipe *preview_pipe;
+	struct atomisp_video_pipe *video_pipe;
 
 	capture_pipe = &asd->video_out_capture;
 	preview_pipe = &asd->video_out_preview;
+	video_pipe = &asd->video_out_video_capture;
 
 	buf_type = atomisp_get_css_buf_type(
 			asd, css_preview_pipe_id,
@@ -312,6 +315,13 @@ static int atomisp_qbuffers_to_css_for_all_pipes(struct atomisp_sub_device *asd)
 	atomisp_q_video_buffers_to_css(asd, capture_pipe,
 					       input_stream_id,
 					       buf_type, css_capture_pipe_id);
+
+	buf_type = atomisp_get_css_buf_type(asd, css_video_pipe_id,
+			atomisp_subdev_source_pad(&video_pipe->vdev));
+	input_stream_id = ATOMISP_INPUT_STREAM_VIDEO;
+	atomisp_q_video_buffers_to_css(asd, video_pipe,
+					       input_stream_id,
+					       buf_type, css_video_pipe_id);
 	return 0;
 }
 
