@@ -714,31 +714,31 @@ static int imx_get_intg_factor(struct i2c_client *client,
 		return ret;
 	vt_pix_clk_div = data[0] & IMX_MASK_5BIT;
 
-	if (dev->sensor_id == IMX132_ID || dev->sensor_id == IMX208_ID)
+	if (dev->sensor_id == IMX132_ID || dev->sensor_id == IMX208_ID) {
+		static const int rgpltd[] = { 2, 4, 1, 1 };
 		ret = imx_read_reg(client, 1, IMX132_208_VT_RGPLTD, data);
-	else
+		if (ret)
+			return ret;
+		vt_sys_clk_div = rgpltd[data[0] & IMX_MASK_2BIT];
+	} else {
 		ret = imx_read_reg(client, 1, IMX_VT_SYS_CLK_DIV, data);
-	if (ret)
-		return ret;
-	vt_sys_clk_div = data[0] & IMX_MASK_2BIT;
+		if (ret)
+			return ret;
+		vt_sys_clk_div = data[0] & IMX_MASK_2BIT;
+	}
 	ret = imx_read_reg(client, 1, IMX_PRE_PLL_CLK_DIV, data);
 	if (ret)
 		return ret;
 	pre_pll_clk_div = data[0] & IMX_MASK_4BIT;
 
-	if (dev->sensor_id == IMX208_ID) {
-		ret = imx_read_reg(client, 1, IMX208_PLL_MULTIPLIER, data);
-		if (ret)
-			return ret;
-		pll_multiplier = data[0] & IMX_MASK_8BIT;
-	} else {
-		ret = imx_read_reg(client, 2,
-			((dev->sensor_id == IMX132_ID) || (dev->sensor_id == IMX219_ID)) ?
-			IMX132_219_PLL_MULTIPLIER : IMX_PLL_MULTIPLIER, data);
-		if (ret)
-			return ret;
-		pll_multiplier = data[0] & IMX_MASK_11BIT;
-	}
+	ret = imx_read_reg(client, 2,
+		(dev->sensor_id == IMX132_ID ||
+		 dev->sensor_id == IMX219_ID ||
+		 dev->sensor_id == IMX208_ID) ?
+		IMX132_208_219_PLL_MULTIPLIER : IMX_PLL_MULTIPLIER, data);
+	if (ret)
+		return ret;
+	pll_multiplier = data[0] & IMX_MASK_11BIT;
 
 	memset(data, 0, IMX_INTG_BUF_COUNT * sizeof(u16));
 	ret = imx_read_reg(client, 4, IMX_COARSE_INTG_TIME_MIN, data);

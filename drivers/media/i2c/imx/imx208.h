@@ -23,9 +23,6 @@
 #define __IMX208_H__
 #include "common.h"
 
-/********************** registers define ********************************/
-#define IMX208_PLL_MULTIPLIER			0x0307
-
 /********************** settings for imx from vendor*********************/
 static struct imx_reg imx208_1080p_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,

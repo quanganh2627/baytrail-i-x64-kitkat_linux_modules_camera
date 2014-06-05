@@ -86,8 +86,8 @@
 /* Post Divider setting register for imx132 and imx208 */
 #define IMX132_208_VT_RGPLTD		0x30A4
 
-/* Multiplier setting register for imx132 and imx219 */
-#define IMX132_219_PLL_MULTIPLIER		0x0306
+/* Multiplier setting register for imx132, imx208, and imx219 */
+#define IMX132_208_219_PLL_MULTIPLIER		0x0306
 
 #define IMX_COARSE_INTEGRATION_TIME		0x0202
 #define IMX_TEST_PATTERN_MODE			0x0600
