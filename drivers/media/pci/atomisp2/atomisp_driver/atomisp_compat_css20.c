@@ -2354,8 +2354,19 @@ static enum ia_css_pipe_mode __pipe_id_to_pipe_mode(
 					struct atomisp_sub_device *asd,
 					enum ia_css_pipe_id pipe_id)
 {
+	struct atomisp_device *isp = asd->isp;
+	struct camera_mipi_info *mipi_info = atomisp_to_sensor_mipi_info(
+			isp->inputs[asd->input_curr].camera);
+
 	switch (pipe_id) {
 	case IA_CSS_PIPE_ID_COPY:
+		/* Currently only YUVPP mode supports YUV420_Legacy format.
+		 * Revert this when other pipe modes can support
+		 * YUV420_Legacy format.
+		 */
+		if (mipi_info->input_format ==
+			ATOMISP_INPUT_FORMAT_YUV420_8_LEGACY)
+			return IA_CSS_PIPE_MODE_YUVPP;
 		if (asd->copy_mode_format_conv)
 			return IA_CSS_PIPE_MODE_CAPTURE;
 		return IA_CSS_PIPE_MODE_COPY;
