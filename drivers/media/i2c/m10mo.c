@@ -394,7 +394,9 @@ static int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout)
 	ret = wait_event_interruptible_timeout(dev->irq_waitq,
 					       dev->mode == mode,
 					       msecs_to_jiffies(timeout));
-	if (ret <= 0) {
+	if (ret > 0) {
+		return 0;
+	} else if (ret == 0) {
 		dev_err(&client->dev, "m10mo_wait_mode_change timed out");
 		return -ETIMEDOUT;
 	}
