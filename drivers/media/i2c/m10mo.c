@@ -378,6 +378,20 @@ static int m10mo_request_mode_change(struct v4l2_subdev *sd, u8 requested_mode)
 			dev_err(&client->dev,
 				"Unable to change to SINGLE_CAPTURE_MODE\n");
 		break;
+	case M10MO_BURST_CAPTURE_MODE:
+		/* Set monitor type as burst capture. */
+		ret = m10mo_write(sd, 1, CATEGORY_PARAM,
+			MONITOR_TYPE, MONITOR_BURST);
+		if (ret < 0) {
+			dev_err(&client->dev,
+				"Unable to change to BURST_CAPTURE_MODE\n");
+			break;
+		}
+		ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
+		if (ret < 0)
+			dev_err(&client->dev,
+				"Unable to change to BURST_CAPTURE_MODE\n");
+		break;
 	default:
 		break;
 	}
@@ -1046,6 +1060,10 @@ static int m10mo_set_burst_mode(struct v4l2_subdev *sd, unsigned int val)
 
 	switch(val) {
 	case EXT_ISP_BURST_CAPTURE_CTRL_START:
+		if (dev->fw_type == M10MO_FW_TYPE_2) {
+			dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_BURST;
+			break;
+		}
 		/* First check if already in ZSL monitor mode. If not start */
 		if (dev->mode != M10MO_MONITOR_MODE_ZSL) {
 			ret = m10mo_set_zsl_monitor(sd);
@@ -1056,6 +1074,10 @@ static int m10mo_set_burst_mode(struct v4l2_subdev *sd, unsigned int val)
 		dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_BURST;
 		return m10mo_set_zsl_capture(sd, 1);
 	case EXT_ISP_BURST_CAPTURE_CTRL_STOP:
+		if (dev->fw_type == M10MO_FW_TYPE_2) {
+			dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_NORMAL;
+			break;
+		}
 		if (dev->capture_mode != M10MO_CAPTURE_MODE_ZSL_BURST)
 			return 0;
 		/* Stop the burst capture */
@@ -1242,6 +1264,10 @@ static irqreturn_t m10mo_irq_thread(int irq, void *dev_id)
 			dev->mode = M10MO_SINGLE_CAPTURE_MODE;
 			m10mo_single_capture_process(sd);
 		}
+		break;
+	case M10MO_BURST_CAPTURE_MODE:
+		if (int_factor & REG_INT_STATUS_MODE)
+			dev->mode = M10MO_BURST_CAPTURE_MODE;
 		break;
 	default:
 		return IRQ_HANDLED;
@@ -1676,6 +1702,54 @@ out:
 	return ret;
 }
 
+static int m10mo_set_burst_capture(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	const struct m10mo_resolution *capture_res;
+	int idx;
+	int ret;
+
+	dev_info(&client->dev, "%s mode: %d width: %d, height: %d, cmd: 0x%x\n",
+		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
+		dev->curr_res_table[dev->fmt_idx].height,
+		dev->curr_res_table[dev->fmt_idx].command);
+
+	/* Exit from normal monitor mode. */
+	ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
+	if (ret)
+		return ret;
+	ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE, M10MO_INIT_TIMEOUT);
+	if (ret)
+		return ret;
+
+	/* Configure burst capture resolution.
+	 * Map burst capture size to monitor size. Burst capture uses
+	 * monitor parameters.
+	 */
+	capture_res = &resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX]
+		[dev->capture_res_idx];
+	idx = get_resolution_index(
+		resolutions[dev->fw_type][M10MO_MODE_PREVIEW_INDEX],
+		resolutions_sizes[dev->fw_type][M10MO_MODE_PREVIEW_INDEX],
+		capture_res->width, capture_res->height);
+	if (idx == -1) {
+		dev_err(&client->dev, "Unsupported burst capture size %dx%d\n",
+			capture_res->width, capture_res->height);
+		return -EINVAL;
+	}
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
+		resolutions[dev->fw_type][M10MO_MODE_PREVIEW_INDEX][idx]
+		.command);
+	if (ret)
+		return ret;
+
+	/* Start burst capture. */
+	ret = m10mo_request_mode_change(sd, M10MO_BURST_CAPTURE_MODE);
+
+	return ret;
+}
+
 static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -1692,10 +1766,15 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 	default:
 		if (dev->fw_type == M10MO_FW_TYPE_2) {
 			/* Start still capture if M10MO is already in monitor mode. */
-			if (dev->mode == M10MO_MONITOR_MODE)
-				ret = m10mo_set_still_capture(sd);
-			else
+			if (dev->mode == M10MO_MONITOR_MODE) {
+				if (dev->capture_mode ==
+					M10MO_CAPTURE_MODE_ZSL_BURST)
+					ret = m10mo_set_burst_capture(sd);
+				else
+					ret = m10mo_set_still_capture(sd);
+			} else {
 				ret = m10mo_set_monitor_mode(sd);
+			}
 		} else {
 			/* TODO: Revisit this logic on switching to panorama */
 			if (dev->curr_res_table[dev->fmt_idx].command == 0x43)
@@ -1758,6 +1837,34 @@ static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 			if (ret)
 				goto out;
 			ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE, M10MO_INIT_TIMEOUT);
+		} else if (dev->fw_type == M10MO_FW_TYPE_2 &&
+			dev->mode == M10MO_BURST_CAPTURE_MODE) {
+			/* Exit burst capture mode. */
+			ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
+			if (ret)
+				goto out;
+			ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE, M10MO_INIT_TIMEOUT);
+			if (ret)
+				goto out;
+			/* Set monitor type as Preview. */
+			ret = m10mo_write(sd, 1, CATEGORY_PARAM,
+				MONITOR_TYPE, MONITOR_PREVIEW);
+			if (ret)
+				goto out;
+			/* Restart monitor mode. */
+			ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+			if (ret)
+				goto out;
+			ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE);
+			if (ret)
+				goto out;
+			ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE, M10MO_INIT_TIMEOUT);
+		} else {
+			/* Exit monitor mode. */
+			ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
+			if (ret)
+				goto out;
+			ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE, M10MO_INIT_TIMEOUT);
 		}
 	}
 out:

@@ -232,6 +232,10 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 #define REG_OUTPUT_MIPI_4LANE		0x04
 #define PARAM_VDIS				0x00
 #define SHOT_MODE				0x0e
+#define MONITOR_TYPE			0x6e
+
+#define MONITOR_PREVIEW		0
+#define MONITOR_BURST		1
 
 
 /* Category 2_MONITOR mode */
@@ -462,7 +466,8 @@ enum M10MO_MODES {
 	M10MO_MONITOR_MODE,
 	M10MO_MONITOR_MODE_ZSL,
 	M10MO_MONITOR_MODE_PANORAMA,
-	M10MO_SINGLE_CAPTURE_MODE
+	M10MO_SINGLE_CAPTURE_MODE,
+	M10MO_BURST_CAPTURE_MODE
 };
 
 /* Internal modes of M10MO */
