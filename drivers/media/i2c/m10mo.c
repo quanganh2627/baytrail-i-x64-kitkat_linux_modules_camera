@@ -1653,6 +1653,15 @@ static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
 			goto out;
 	}
 
+	if (dev->fw_type == M10MO_FW_TYPE_2) {
+		if (dev->run_mode == CI_MODE_VIDEO)
+			ret = m10mo_write(sd, 1, CATEGORY_PARAM,
+				MONITOR_TYPE, MONITOR_VIDEO);
+		else
+			ret = m10mo_write(sd, 1, CATEGORY_PARAM,
+				MONITOR_TYPE, MONITOR_PREVIEW);
+	}
+
 	/* Enable interrupt signal */
 	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
 	if (ret)

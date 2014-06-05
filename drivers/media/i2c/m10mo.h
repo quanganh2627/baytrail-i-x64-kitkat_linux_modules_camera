@@ -236,6 +236,7 @@ int m10mo_set_spi_state(struct m10mo_device *m10mo_dev, bool enabled);
 
 #define MONITOR_PREVIEW		0
 #define MONITOR_BURST		1
+#define MONITOR_VIDEO		3
 
 
 /* Category 2_MONITOR mode */
