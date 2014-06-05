@@ -1968,11 +1968,9 @@ imx_g_frame_interval(struct v4l2_subdev *sd,
 				struct v4l2_subdev_frame_interval *interval)
 {
 	struct imx_device *dev = to_imx_sensor(sd);
-	const struct imx_resolution *res =
-				&dev->curr_res_table[dev->fmt_idx];
 
 	mutex_lock(&dev->input_lock);
-	interval->interval.denominator = res->fps_options[dev->fps_index].fps;
+	interval->interval.denominator = dev->fps;
 	interval->interval.numerator = 1;
 	mutex_unlock(&dev->input_lock);
 	return 0;
