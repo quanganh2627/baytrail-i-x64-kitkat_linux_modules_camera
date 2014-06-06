@@ -87,7 +87,7 @@ gc0339_read_reg(struct i2c_client *client, u16 data_length, u8 reg, u8 *val)
 {
 	int err;
 	struct i2c_msg msg[2];
-	unsigned char data[2];
+	unsigned char data[4] = {0};
 
 	if (!client->adapter) {
 		v4l2_err(client, "%s error, no client->adapter\n", __func__);
@@ -111,7 +111,7 @@ gc0339_read_reg(struct i2c_client *client, u16 data_length, u8 reg, u8 *val)
 	msg[1].addr = client->addr;
 	msg[1].len = data_length;
 	msg[1].flags = I2C_M_RD;
-	msg[1].buf = data+1;
+	msg[1].buf = data;
 
 	err = i2c_transfer(client->adapter, msg, 2);
 
@@ -119,11 +119,11 @@ gc0339_read_reg(struct i2c_client *client, u16 data_length, u8 reg, u8 *val)
 		*val = 0;
 		/* high byte comes first */
 		if (data_length == MISENSOR_8BIT)
-			*val = data[1];
+			*val = data[0];
 		else if (data_length == MISENSOR_16BIT)
-			*val = data[1] + (data[0] << 8);
+			*((u16 *) val) = data[1] + (data[0] << 8);
 		else
-			*val = data[3] + (data[2] << 8) +
+			*((u32 *) val) = data[3] + (data[2] << 8) +
 			    (data[1] << 16) + (data[0] << 24);
 
 		return 0;
