@@ -3970,6 +3970,7 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 				  unsigned int width, unsigned int height) =
 							configure_pp_input_nop;
 	uint16_t stream_index = atomisp_source_pad_to_stream_id(asd, source_pad);
+	const struct atomisp_in_fmt_conv *fc;
 	int ret;
 
 	v4l2_fh_init(&fh.vfh, vdev);
@@ -3991,10 +3992,12 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			return -EINVAL;
 		}
 		atomisp_set_sensor_mipi_to_isp(asd, stream_index, mipi_info);
-
+		fc = atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
+				mipi_info->input_format);
+		BUG_ON(!fc);
 		if (format->sh_fmt == CSS_FRAME_FORMAT_RAW &&
-		     raw_output_format_match_input(
-			mipi_info->input_format, pix->pixelformat))
+		     raw_output_format_match_input(fc->css_stream_fmt,
+			pix->pixelformat))
 			return -EINVAL;
 	}
 
