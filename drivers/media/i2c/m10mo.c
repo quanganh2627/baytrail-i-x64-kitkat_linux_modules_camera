@@ -99,8 +99,11 @@ static int m10mo_read(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 *
 			*val = recv_data[1] << 24 | recv_data[2] << 16
 				| recv_data[3] << 8 | recv_data[4];
 	}
-	dev_dbg(&client->dev, "Read reg. Category=0x%02X Reg=0x%02X Value=0x%X ret=%s\n",
-		category, reg, *val, (ret == 2) ? "OK" : "Error");
+
+	dev_dbg(&client->dev,
+		"%s len :%d cat, reg, val: 0x%02x, 0x%02x, 0x%02x\n",
+		__func__, len, category, reg, *val);
+
 	return (ret == 2) ? 0 : -EIO;
 }
 
@@ -126,6 +129,10 @@ static int m10mo_write(struct v4l2_subdev *sd, u8 len, u8 category, u8 reg, u32 
 		dev_err(&client->dev, "Wrong data size\n");
 		return -EINVAL;
 	}
+
+	dev_dbg(&client->dev,
+		"%s len :%d cat, reg, val: 0x%02x, 0x%02x, 0x%02x\n",
+		__func__, len, category, reg, val);
 
 	msg.addr = client->addr;
 	msg.flags = 0;
