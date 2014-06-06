@@ -984,7 +984,7 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 	const struct m10mo_resolution *capture_res =
 			resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
-	int ret, i, dual_status;
+	int ret;
 	u32 fmt;
 
 	dev_info(&client->dev,
@@ -1066,17 +1066,6 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	if (ret < 0)
 		goto out;
 
-	/* Start polling START_DUAL_STATUS */
-	for (i = POLL_NUM; i; i--) {
-		ret = m10mo_readb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_STATUS,
-				&dual_status);
-		if (ret)
-			continue;
-		if (dual_status == 0)
-			break;
-		msleep(10);
-	}
-
 	return 0;
 out:
 	dev_err(&client->dev, "m10mo_set_zsl_monitor failed %d\n", ret);
@@ -1106,13 +1095,29 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int ret;
-	u32 val;
+	int ret, i;
+	u32 val, dual_status;
 
 	/* TODO: Fix this. Currently we do not use this */
 	(void) sel_frame;
 
 	val = __get_dual_capture_value(dev->capture_mode);
+
+	/* Check dual capture status before the capture request */
+	for (i = POLL_NUM; i; i--) {
+		ret = m10mo_readb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_STATUS,
+				&dual_status);
+		if (ret)
+			continue;
+		if (dual_status == 0)
+			break;
+		msleep(10);
+	}
+	if (dual_status) {
+		dev_err(&client->dev, "%s Device busy. Status check failed\n",
+			__func__);
+		return -EBUSY;
+	}
 
 	/* Start capture, JPEG encode & transfer start */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, START_DUAL_CAPTURE, val);
