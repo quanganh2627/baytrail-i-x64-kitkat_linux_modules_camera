@@ -29,7 +29,7 @@
 #define __IA_CSS_VERSION_DATA_H
 
 
-#define CSS_VERSION_STRING "VER:1.4; REL:20140604_23.3_0259; API:2.1.2.5; GIT:irci_20140603_1933__cf4da3#cf4da37e7398a13205e12fe260071173ccb16e52; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
+#define CSS_VERSION_STRING "VER:1.4; REL:20140605_23.4_0341; API:2.1.2.5; GIT:irci_20140604_1500__45cacb#45cacb6c9a6729cb3583b3dd892fe80f4c9a03f1; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
 
 
 #endif
