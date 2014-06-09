@@ -2566,6 +2566,26 @@ static int m10mo_set_color_effect_cbcr(struct v4l2_subdev *sd, s32 val)
 	return 0;
 }
 
+static int m10mo_get_focal(struct v4l2_subdev *sd, s32 *val)
+{
+	*val = (M10MO_FOCAL_LENGTH_NUM << 16) | M10MO_FOCAL_LENGTH_DEM;
+	return 0;
+}
+
+static int m10mo_get_fnumber(struct v4l2_subdev *sd, s32 *val)
+{
+	*val = (M10MO_F_NUMBER_DEFAULT_NUM << 16) | M10MO_F_NUMBER_DEM;
+	return 0;
+}
+
+static int m10mo_get_fnumber_range(struct v4l2_subdev *sd, s32 *val)
+{
+	*val = (M10MO_F_NUMBER_DEFAULT_NUM << 24) |
+		(M10MO_F_NUMBER_DEM << 16) |
+		(M10MO_F_NUMBER_DEFAULT_NUM << 8) | M10MO_F_NUMBER_DEM;
+	return 0;
+}
+
 static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct m10mo_device *dev = container_of(
@@ -2628,6 +2648,15 @@ static int m10mo_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_EXPOSURE:
 		ret = m10mo_get_ev_bias(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_FOCAL_ABSOLUTE:
+		ret = m10mo_get_focal(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_FNUMBER_ABSOLUTE:
+		ret = m10mo_get_fnumber(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_FNUMBER_RANGE:
+		ret = m10mo_get_fnumber_range(&dev->sd, &ctrl->val);
 		break;
 	default:
 		return -EINVAL;
@@ -2844,6 +2873,39 @@ static const struct v4l2_ctrl_config ctrls[] = {
 		.def = 0,
 		.max = 1,
 		.step = 1
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_FOCAL_ABSOLUTE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "focal length",
+		.min = M10MO_FOCAL_LENGTH_DEFAULT,
+		.max = M10MO_FOCAL_LENGTH_DEFAULT,
+		.step = 1,
+		.def = M10MO_FOCAL_LENGTH_DEFAULT,
+		.flags = 0,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_FNUMBER_ABSOLUTE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "f-number",
+		.min = M10MO_F_NUMBER_DEFAULT,
+		.max = M10MO_F_NUMBER_DEFAULT,
+		.step = 1,
+		.def = M10MO_F_NUMBER_DEFAULT,
+		.flags = 0,
+	},
+	{
+		.ops = &m10mo_ctrl_ops,
+		.id = V4L2_CID_FNUMBER_RANGE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "f-number range",
+		.min = M10MO_F_NUMBER_RANGE,
+		.max =  M10MO_F_NUMBER_RANGE,
+		.step = 1,
+		.def = M10MO_F_NUMBER_RANGE,
+		.flags = 0,
 	},
 };
 

@@ -54,6 +54,39 @@
 #define M10MO_METERING_SPOT		0x01
 #define M10MO_METERING_AVERAGE		0x02
 
+/* TODO These values for focal length, f-number are taken from
+ * imx135 13MP. This can be changed when we get the proper values
+ * for m10mo
+ */
+
+/*
+ * focal length bits definition:
+ * bits 31-16: numerator, bits 15-0: denominator
+ */
+
+#define M10MO_FOCAL_LENGTH_DEFAULT	0x1710064
+
+/*
+ * current f-number bits definition:
+ * bits 31-16: numerator, bits 15-0: denominator
+ */
+
+#define M10MO_F_NUMBER_DEFAULT 		0x16000a
+
+/*
+ * f-number range bits definition:
+ * bits 31-24: max f-number numerator
+ * bits 23-16: max f-number denominator
+ * bits 15-8: min f-number numerator
+ * bits 7-0: min f-number denominator
+ */
+
+#define M10MO_F_NUMBER_RANGE 		0x160a160a
+#define M10MO_FOCAL_LENGTH_NUM		369
+#define M10MO_FOCAL_LENGTH_DEM		100
+#define M10MO_F_NUMBER_DEFAULT_NUM	22
+#define M10MO_F_NUMBER_DEM		10
+
 #define M10MO_INVALID_CHECKSUM          0xffff
 #define M10MO_VALID_CHECKSUM            0
 
