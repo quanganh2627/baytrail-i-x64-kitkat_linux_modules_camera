@@ -486,6 +486,21 @@ static int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout)
 	return ret;
 }
 
+static int __m10mo_param_mode_set(struct v4l2_subdev *sd)
+{
+	int ret;
+
+	ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
+	if (ret)
+		return ret;
+
+	ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE,
+				     M10MO_INIT_TIMEOUT);
+	if (ret > 0)
+		ret = 0;
+	return ret;
+}
+
 static int m10mo_detect(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -1036,14 +1051,9 @@ static int m10mo_set_panorama_monitor(struct v4l2_subdev *sd)
 
 	if (dev->mode != M10MO_PARAM_SETTING_MODE &&
 		dev->mode != M10MO_PARAMETER_MODE) {
-		/* Already in panorma mode. So swith to parameter mode */
-		ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
+		/* Already in panorama mode. So swith to parameter mode */
+		ret = __m10mo_param_mode_set(sd);
 		if (ret)
-			goto out;
-
-		ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE,
-			M10MO_INIT_TIMEOUT);
-		if (ret < 0)
 			goto out;
 	}
 
@@ -1127,13 +1137,9 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 		 * At this stage means we are already at ZSL. So switch to
 		 * param mode first and reset all the parameters.
 		 */
-		ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
-		if (ret)
-			goto out;
 
-		ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE,
-			M10MO_INIT_TIMEOUT);
-		if (ret < 0)
+		ret = __m10mo_param_mode_set(sd);
+		if (ret)
 			goto out;
 	}
 
@@ -2202,7 +2208,6 @@ static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret = 0;
 
-	/* TODO: Handle Stream OFF case */
 	mutex_lock(&dev->input_lock);
 	if (enable) {
 		ret = __m10mo_set_run_mode(sd);
@@ -2249,11 +2254,7 @@ static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 				goto out;
 			ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE, M10MO_INIT_TIMEOUT);
 		} else {
-			/* Exit monitor mode. */
-			ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
-			if (ret)
-				goto out;
-			ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE, M10MO_INIT_TIMEOUT);
+			ret = __m10mo_param_mode_set(sd);
 		}
 	}
 out:
