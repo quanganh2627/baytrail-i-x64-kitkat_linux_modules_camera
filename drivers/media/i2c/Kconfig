@@ -30,6 +30,17 @@ config VIDEO_WV511
 
          It currently only works with the atomisp driver.
 
+config VIDEO_OV2685
+        tristate "OVT ov2685 sensor support"
+        depends on I2C && VIDEO_V4L2
+        ---help---
+          This is a Video4Linux2 sensor-level driver for the OVT
+          OV2685 soc camera.
+
+          OVT is a 2M soc sensor.
+
+          It currently only works with the atomisp driver.
+
 config VIDEO_OV9724
        tristate "OVT ov9724 sensor support"
        depends on I2C && VIDEO_V4L2
@@ -63,6 +74,17 @@ config VIDEO_OV2722
 
          It currently only works with the atomisp driver.
 
+config VIDEO_OV8858
+       tristate "OVT ov8858 sensor support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the OVT
+         OV8858 raw camera.
+
+         OV8858 is a 8M raw sensor.
+
+         It currently only works with the atomisp driver.
+
 config VIDEO_OV5648
     tristate "Omnivision ov5648 sensor support"
     depends on I2C && VIDEO_V4L2
@@ -83,6 +105,15 @@ config VIDEO_OV2680
 
          It currently only works with the atomisp driver.
 
+config VIDEO_BF3A20
+   tristate "BYD bf3a20 sensor support"
+   depends on I2C && VIDEO_V4L2
+   ---help---
+     This is a Video4Linux2 sensor-level driver for the BYD
+     bf3a20 2M camera.
+
+     It currently only works with the atomisp driver.
+
 config VIDEO_GC2235
        tristate "Galaxy gc2235 sensor support"
        depends on I2C && VIDEO_V4L2
@@ -91,6 +122,17 @@ config VIDEO_GC2235
          GC2235 raw camera.
 
          GC2235 is a 2M raw sensor.
+
+         It currently only works with the atomisp driver.
+
+config VIDEO_GC2155
+       tristate "Galaxy gc2155 sensor support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the OVT
+         GC2155 SOC camera.
+
+         GC2155 is a 2M SOC sensor.
 
          It currently only works with the atomisp driver.
 
@@ -112,6 +154,19 @@ config VIDEO_GC0339
 
          gc0339 is a 0.3M raw sensor.
 
+         It currently only works with the atomisp driver.
+
+config VIDEO_GC0310
+       tristate "GALAXYCORE gc0310 sensor support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the GALAXYCORE
+         GC0310 raw camera.
+
+         gc0310 is a 0.3M raw sensor.
+
+         It currently only works with the atomisp driver.
+
 config VIDEO_OV8830
        tristate "Omnivision ov8830 sensor support"
        depends on I2C && VIDEO_V4L2 && VIDEO_ATOMISP
@@ -120,6 +175,15 @@ config VIDEO_OV8830
          ov8830 8MP RAW sensor.
 
          It currently only works with the atomisp driver.
+
+config VIDEO_BF3905
+         tristate "BYD bf3905 sensor support"
+         depends on I2C && VIDEO_V4L2
+         ---help---
+           This is a Video4Linux2 sensor-level driver for the BYD
+           bf3905 0.3M camera.
+
+           It currently only works with the atomisp driver.
 
 config VIDEO_CSI_XACTOR
         tristate "csi xactor"

@@ -36,6 +36,7 @@
 #include <linux/atomisp_platform.h>
 
 #define OV2680_NAME		"ov2680"
+#define OV2680B_NAME	"ov2680b"
 #define OV2680F_NAME	"ov2680f"
 
 /* Defines for register writes and register array processing */
@@ -229,7 +230,7 @@ struct ov2680_control {
 	};
 
 	static const struct i2c_device_id ov2680_id[] = {
-		{OV2680_NAME, 0},
+		{OV2680B_NAME, 0},
 		{OV2680F_NAME, 0},
 		{}
 	};
@@ -679,36 +680,6 @@ struct ov2680_control {
 	};
 
 	static struct ov2680_resolution ov2680_res_preview[] = {
-	{
-		.desc = "ov2680_1296x976_30fps",
-		.width = 1296,
-		.height = 976,
-		.fps = 30,
-		.pix_clk_freq = 66,
-		.used = 0,
-		.pixels_per_line = 1698,//1704,
-		.lines_per_frame = 1294,
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.bin_mode = 0,
-		.skip_frames = 3,
-		.regs = ov2680_1296x976_30fps,
-	},
-   	{
-		.desc = "ov2680_1456x1096_30fps",
-		.width = 1456,
-		.height = 1096,
-		.fps = 30,
-		.pix_clk_freq = 66,
-		.used = 0,
-		.pixels_per_line = 1698,//1704,
-		.lines_per_frame = 1294,
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.bin_mode = 0,
-		.skip_frames = 3,
-		.regs = ov2680_1456x1096_30fps,
-	},
    	{
 		.desc = "ov2680_1616x916_30fps",
 		.width = 1616,
@@ -758,36 +729,6 @@ struct ov2680_control {
 #define N_RES_PREVIEW (ARRAY_SIZE(ov2680_res_preview))
 
 static struct ov2680_resolution ov2680_res_still[] = {
-	{
-		.desc = "ov2680_1296x976_30fps",
-		.width = 1296,
-		.height = 976,
-		.fps = 30,
-		.pix_clk_freq = 66,
-		.used = 0,
-		.pixels_per_line = 1698,//1704,
-		.lines_per_frame = 1294,
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.bin_mode = 0,
-		.skip_frames = 3,
-		.regs = ov2680_1296x976_30fps,
-	},
-   	{
-		.desc = "ov2680_1456x1096_30fps",
-		.width = 1456,
-		.height = 1096,
-		.fps = 30,
-		.pix_clk_freq = 66,
-		.used = 0,
-		.pixels_per_line = 1698,//1704,
-		.lines_per_frame = 1294,
-		.bin_factor_x = 0,
-		.bin_factor_y = 0,
-		.bin_mode = 0,
-		.skip_frames = 3,
-		.regs = ov2680_1456x1096_30fps,
-	},
    	{
 		.desc = "ov2680_1616x916_30fps",
 		.width = 1616,

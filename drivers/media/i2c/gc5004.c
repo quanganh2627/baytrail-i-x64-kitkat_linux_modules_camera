@@ -202,6 +202,10 @@ gc5004_write_reg(struct i2c_client *client, u16 data_length, u16 reg, u16 val)
 	}
 
 	ret = gc5004_i2c_write(client, len, data);
+	if (ret)
+		dev_err(&client->dev,
+			"write error: wrote 0x%x to offset 0x%x error %d",
+			val, reg, ret);
 
 	return ret;
 }
@@ -726,6 +730,8 @@ static int gc5004_set_streaming(struct v4l2_subdev *sd)
 static int gc5004_init_common(struct v4l2_subdev *sd)  //fix me need write the regs
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = -1;
+
 #if 0// v1
 
 ////////////////////////////////////////////////////
@@ -1100,7 +1106,10 @@ static int gc5004_init_common(struct v4l2_subdev *sd)  //fix me need write the r
 //BGGR
 //2592x1944
 
-	gc5004_write_reg(client, GC5004_8BIT, 0xfe, 0x80);
+	if (0 != (ret = gc5004_write_reg(client, GC5004_8BIT, 0xfe, 0x80))) {
+		dev_err(&client->dev, "%s:init common error", __func__);
+		return ret;
+	}
 	gc5004_write_reg(client, GC5004_8BIT, 0xfe, 0x80);
 	gc5004_write_reg(client, GC5004_8BIT, 0xfe, 0x80);
 	gc5004_write_reg(client, GC5004_8BIT, 0xf2, 0x00); //sync_pad_io_ebi
@@ -2322,8 +2331,7 @@ static int gc5004_s_config(struct v4l2_subdev *sd,
 	ret = __gc5004_s_power(sd, 1);
 	if (ret) {
 		v4l2_err(client, "gc5004 power-up err.\n");
-		mutex_unlock(&dev->input_lock);
-		return ret;
+		goto fail_csi_cfg;
 	}
 	
 	ret = dev->platform_data->csi_cfg(sd, 1);
@@ -2336,7 +2344,6 @@ static int gc5004_s_config(struct v4l2_subdev *sd,
 		v4l2_err(client, "gc5004_detect err s_config.\n");
 		goto fail_detect;
 	}
-
 
 	dev->sensor_id = sensor_id;
 
