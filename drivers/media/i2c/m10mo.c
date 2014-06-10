@@ -478,35 +478,42 @@ static int m10mo_fw_start(struct v4l2_subdev *sd, u32 val)
 static int m10mo_set_af_mode(struct v4l2_subdev *sd, unsigned int val)
 {
 	int ret;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
+	u8 af_mode;
 
 	switch (val) {
 	case EXT_ISP_FOCUS_MODE_NORMAL:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_NORMAL);
+		af_mode = m10m0_af_parameters[id].af_normal;
 		break;
 	case EXT_ISP_FOCUS_MODE_MACRO:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_MACRO);
+		af_mode = m10m0_af_parameters[id].af_macro;
 		break;
 	case EXT_ISP_FOCUS_MODE_TOUCH_AF:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_TOUCH);
+		af_mode = m10m0_af_parameters[id].af_touch;
 		break;
 	case EXT_ISP_FOCUS_MODE_PREVIEW_CAF:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_PREVIEW_CAF);
+		af_mode = m10m0_af_parameters[id].af_preview_caf;
 		break;
 	case EXT_ISP_FOCUS_MODE_MOVIE_CAF:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_MOVIE_CAF);
+		af_mode = m10m0_af_parameters[id].af_movie_caf;
 		break;
 	case EXT_ISP_FOCUS_MODE_FACE_CAF:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_FACE_CAF);
+		af_mode = m10m0_af_parameters[id].af_face_caf;
 		break;
 	case EXT_ISP_FOCUS_MODE_TOUCH_MACRO:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_TOUCH_MACRO);
+		af_mode = m10m0_af_parameters[id].af_touch_macro;
 		break;
 	case EXT_ISP_FOCUS_MODE_TOUCH_CAF:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_MODE, AF_TOUCH_CAF);
+		af_mode = m10m0_af_parameters[id].af_touch_caf;
 		break;
 	default:
 		return -EINVAL;
 	}
+
+	ret = m10mo_writeb(sd, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_mode,
+			af_mode);
 
 	return ret;
 }
@@ -514,20 +521,27 @@ static int m10mo_set_af_mode(struct v4l2_subdev *sd, unsigned int val)
 static int m10mo_set_af_execution(struct v4l2_subdev *sd, s32 val)
 {
 	int ret;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
+	u8 exe_mode;
+
 	switch (val) {
 	case EXT_ISP_FOCUS_STOP:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_EXECUTION, AF_STOP);
+		exe_mode = m10m0_af_parameters[id].af_stop;
 		break;
 	case EXT_ISP_FOCUS_SEARCH:
-		ret = m10mo_writeb(sd, CATEGORY_LENS, AF_EXECUTION, AF_SEARCH);
+		exe_mode = m10m0_af_parameters[id].af_search;
 		break;
 	case EXT_ISP_PAN_FOCUSING:
-		ret = m10mo_writeb(sd, CATEGORY_LENS,
-					AF_EXECUTION, AF_PAN_FOCUSING);
+		exe_mode = m10m0_af_parameters[id].af_pan_focusing;
 		break;
 	default:
 		return -EINVAL;
 	}
+
+	ret = m10mo_writeb(sd, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_execution,
+			exe_mode);
 
 	return ret;
 }
@@ -536,9 +550,12 @@ static int m10mo_set_af_position_x(struct v4l2_subdev *sd, unsigned int x)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
 
 	/* Set X Position */
-	ret = m10mo_writew(sd, CATEGORY_LENS, AF_TOUCH_POSX, x);
+	ret = m10mo_writew(sd, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_touch_posx, x);
 	if (ret)
 		dev_err(&client->dev, "AutoFocus position x failed %d\n", ret);
 
@@ -549,11 +566,59 @@ static int m10mo_set_af_position_y(struct v4l2_subdev *sd, unsigned int y)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
 
 	/* Set Y Position */
-	ret = m10mo_writew(sd, CATEGORY_LENS, AF_TOUCH_POSY, y);
+	ret = m10mo_writew(sd, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_touch_posy, y);
 	if (ret)
 		dev_err(&client->dev, "AutoFocus position y failed %d\n", ret);
+
+	return ret;
+}
+
+/* Because of different m10m0 firmwares and parameter values, transform
+   the values to the macro definition */
+static u32 m10mo_af_parameter_transform(struct v4l2_subdev *sd, u32 val)
+{
+	u32 ret = 0xffffffff;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
+
+	if (val == m10m0_af_parameters[id].caf_status_focusing) {
+		ret = CAF_STATUS_FOCUSING;
+	} else if (val == m10m0_af_parameters[id].caf_status_success) {
+		ret = CAF_STATUS_SUCCESS;
+	} else if (val == m10m0_af_parameters[id].caf_status_fail) {
+		ret = CAF_STATUS_FAIL;
+	} else if (val == m10m0_af_parameters[id].caf_status_restart_check) {
+		ret = CAF_STATUS_RESTART_CHECK;
+	} else if (val == m10m0_af_parameters[id].af_status_invalid) {
+		ret = AF_STATUS_INVALID;
+	} else if (val == m10m0_af_parameters[id].af_status_focusing) {
+		ret = AF_STATUS_FOCUSING;
+	} else if (val == m10m0_af_parameters[id].af_status_success) {
+		ret = AF_STATUS_SUCCESS;
+	} else if (val == m10m0_af_parameters[id].af_status_fail) {
+		ret = AF_STATUS_FAIL;
+	} else if (val == m10m0_af_parameters[id].af_normal) {
+		ret = AF_NORMAL;
+	} else if (val == m10m0_af_parameters[id].af_macro) {
+		ret = AF_MACRO;
+	} else if (val == m10m0_af_parameters[id].af_touch) {
+		ret = AF_TOUCH;
+	} else if (val == m10m0_af_parameters[id].af_preview_caf) {
+		ret = AF_PREVIEW_CAF;
+	} else if (val == m10m0_af_parameters[id].af_movie_caf) {
+		ret = AF_MOVIE_CAF;
+	} else if (val == m10m0_af_parameters[id].af_face_caf) {
+		ret = AF_FACE_CAF;
+	} else if (val == m10m0_af_parameters[id].af_touch_macro) {
+		ret = AF_TOUCH_MACRO;
+	} else if (val == m10m0_af_parameters[id].af_touch_caf) {
+		ret = AF_TOUCH_CAF;
+	}
 
 	return ret;
 }
@@ -562,10 +627,15 @@ static int m10mo_get_caf_status(struct v4l2_subdev *sd, unsigned int *status)
 {
 	int ret;
 	u32 af_result;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
 
-	ret = m10mo_read(sd, 1, CATEGORY_LENS, AF_RESULT, &af_result);
+	ret = m10mo_read(sd, 1, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_result, &af_result);
 	if (ret)
 		return ret;
+
+	af_result = m10mo_af_parameter_transform(sd, af_result);
 
 	switch (af_result) {
 	case CAF_STATUS_FOCUSING:
@@ -591,10 +661,15 @@ static int m10mo_get_af_status(struct v4l2_subdev *sd, unsigned int *status)
 {
 	int ret;
 	u32 af_result;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
 
-	ret = m10mo_read(sd, 1, CATEGORY_LENS, AF_RESULT, &af_result);
+	ret = m10mo_read(sd, 1, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_result, &af_result);
 	if (ret)
 		return ret;
+
+	af_result = m10mo_af_parameter_transform(sd, af_result);
 
 	switch (af_result) {
 	case AF_STATUS_INVALID:
@@ -621,10 +696,15 @@ static int m10mo_get_af_mode(struct v4l2_subdev *sd, unsigned int *status)
 {
 	int ret;
 	u32 af_mode;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
 
-	ret = m10mo_read(sd, 1, CATEGORY_LENS, AF_RESULT, &af_mode);
+	ret = m10mo_read(sd, 1, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_result, &af_mode);
 	if (ret)
 		return ret;
+
+	af_mode = m10mo_af_parameter_transform(sd, af_mode);
 
 	switch (af_mode) {
 	case AF_NORMAL:
@@ -1019,8 +1099,9 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 	const struct m10mo_resolution *capture_res =
-			resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
+			resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 	int ret;
 	u32 val;
 
@@ -1392,6 +1473,7 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 			(struct atomisp_input_stream_info *)fmt->reserved;
 	const struct m10mo_resolution * res;
 	int entries, idx;
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 
 	if (!fmt)
 		return -EINVAL;
@@ -1410,9 +1492,9 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 
 	/* Select resolution table according to stream type. */
 	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE) {
-		res = resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
+		res = resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 		entries =
-		     resolutions_sizes[dev->fw_type][M10MO_MODE_CAPTURE_INDEX];
+		     resolutions_sizes[mode][M10MO_MODE_CAPTURE_INDEX];
 	} else {
 		res = dev->curr_res_table;
 		entries = dev->entries_curr_table;
@@ -1569,7 +1651,7 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 		if (ret)
 			return ret;
 
-		while(fw_ids->id_string) {
+		while (fw_ids->id_string) {
 			/*
 			 * Null char is skipped (strlen - 1) because the string in
 			 * platform data can be shorter than the string in the FW.
@@ -1603,7 +1685,7 @@ static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 
 	init_waitqueue_head(&dev->irq_waitq);
 
-	dev->fw_type = dev->pdata->def_fw_type;
+	dev->fw_type = ((M10MO_RESOLUTION_MODE_0 & M10MO_MASK) | (M10MO_AF_MODE_0 << 16));
 	dev->ref_clock = dev->pdata->ref_clock_rate;
 
 	if (dev->pdata->common.platform_init) {
@@ -1676,6 +1758,7 @@ static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 	u32 val;
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 
 	dev_info(&client->dev,"%s mode: %d Width: %d, height: %d, cmd: 0x%x\n",
 		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
@@ -1698,7 +1781,7 @@ static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
 	if (ret)
 		goto out;
 
-	if (dev->fw_type == M10MO_FW_TYPE_0) {
+	if (mode == M10MO_RESOLUTION_MODE_0) {
 		/* TODO: FPS setting must be changed */
 		ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_FPS, 0x02);
 		if (ret)
@@ -2376,6 +2459,7 @@ static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int index;
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 
 	mutex_lock(&dev->input_lock);
 	dev->run_mode = param->parm.capture.capturemode;
@@ -2390,8 +2474,8 @@ static int m10mo_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 		index = M10MO_MODE_PREVIEW_INDEX;
 		break;
 	}
-	dev->entries_curr_table = resolutions_sizes[dev->fw_type][index];
-	dev->curr_res_table = resolutions[dev->fw_type][index];
+	dev->entries_curr_table = resolutions_sizes[mode][index];
+	dev->curr_res_table = resolutions[mode][index];
 
 	mutex_unlock(&dev->input_lock);
 	return 0;

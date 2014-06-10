@@ -83,6 +83,9 @@
 #define JPEG_CONFIG_WIDTH		M10MO_PACKETS_SEND_UNIT
 #define JPEG_CONFIG_HEIGHT		M10MO_HEIGHT_FOR_SEND_UNIT
 
+#define M10MO_GET_FOCUS_MODE(arg)		((arg >> 16) & M10MO_MASK)
+#define M10MO_GET_RESOLUTION_MODE(arg)	(arg & M10MO_MASK)
+
 struct m10mo_spi {
 	int spi_enabled;
 	struct spi_device *spi_device;
@@ -534,6 +537,37 @@ enum M10MO_CAPTURE_MODES {
 
 extern const struct m10mo_resolution *resolutions[][3];
 extern const ssize_t resolutions_sizes[][3];
+
+struct M10MO_AF_Parameters {
+	u8 af_mode;
+	u8 af_normal;
+	u8 af_macro;
+	u8 af_touch;
+	u8 af_preview_caf;
+	u8 af_movie_caf;
+	u8 af_face_caf;
+	u8 af_touch_macro;
+	u8 af_touch_caf;
+
+	u8 af_execution;
+	u8 af_stop;
+	u8 af_search;
+	u8 af_pan_focusing;
+
+	u8 af_result;
+	u8 caf_status_restart_check;
+	u8 caf_status_focusing;
+	u8 caf_status_success;
+	u8 caf_status_fail;
+	u8 af_status_invalid;
+	u8 af_status_focusing;
+	u8 af_status_success;
+	u8 af_status_fail;
+
+	u8 af_touch_posx;
+	u8 af_touch_posy;
+};
+extern const struct M10MO_AF_Parameters m10m0_af_parameters[];
 
 #endif	/* M10MO_H */
 
