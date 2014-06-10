@@ -389,12 +389,11 @@ static long __ov5693_set_exposure(struct v4l2_subdev *sd, int coarse_itg,
 		return ret;
 
 	/*
-	 * According to spec, the low 4 bits of exposure/gain reg are
+	 * According to spec, the low 4 bits of exposure reg are
 	 * fraction bits, so need to take 4 bits left shift to align
 	 * reg integer bits.
 	 */
 	coarse_itg <<= 4;
-	gain <<= 4;
 
 	/* set exposure */
 	ret = ov5693_write_reg(client, OV5693_8BIT,
