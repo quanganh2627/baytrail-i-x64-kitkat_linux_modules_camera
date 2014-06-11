@@ -4495,6 +4495,7 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 /*
  * TODO: Free up the hmm memory space.
 	 */
+unsigned int dequeue_buf_count = 0;
 enum ia_css_err
 ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			   struct ia_css_buffer *buffer)
@@ -4562,7 +4563,11 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 				&ddr_buffer,
 				sizeof(struct sh_css_hmm_buffer));
 
-		assert(ddr_buffer.kernel_ptr != 0);
+//		assert(ddr_buffer.kernel_ptr != 0);
+		if (ddr_buffer.kernel_ptr == 0) {
+			dequeue_buf_count++;
+			printk("%s:dequeue buf err: dequeue_buf_count = %x\n", __func__, dequeue_buf_count);
+		}
 
 		/* if the pointer is 0 we only want to return an error;
 		   we do not want to touch buffer

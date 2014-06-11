@@ -145,6 +145,8 @@ hrt_vaddress ia_css_refcount_increment(int32_t id, hrt_vaddress ptr)
 	return ptr;
 }
 
+uint32_t refcount_ccount = 0;
+uint32_t refcount_dcount = 0;
 bool ia_css_refcount_decrement(int32_t id, hrt_vaddress ptr)
 {
 	struct ia_css_refcount_entry *entry;
@@ -175,7 +177,10 @@ bool ia_css_refcount_decrement(int32_t id, hrt_vaddress ptr)
 	/* SHOULD NOT HAPPEN: ptr not managed by refcount, or not
 	   valid anymore */
 
-	assert(false);
+	//assert(false);
+	refcount_dcount++;
+	if (refcount_dcount != 0)
+		printk("refcount_decrement: refcount_dcount = 0x%x\n", refcount_dcount);
 
 	return false;
 }
@@ -221,7 +226,10 @@ void ia_css_refcount_clear(int32_t id, clear_func clear_func_ptr)
 						    "no clear_func\n");
 				mmgr_free(entry->data);
 			}
-			assert(entry->count == 0);
+//			assert(entry->count == 0);
+			if (entry->count != 0)
+				refcount_ccount++;
+
 			entry->data = mmgr_NULL;
 			entry->count = 0;
 			entry->id = 0;
@@ -231,4 +239,6 @@ void ia_css_refcount_clear(int32_t id, clear_func clear_func_ptr)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			    "ia_css_refcount_clear(%x): cleared %d\n", id,
 			    count);
+	if (refcount_ccount != 0)
+		printk("refcount_clear: refcount_ccount = 0x%x\n", refcount_ccount);
 }
