@@ -110,10 +110,10 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	cropped_width = binary->in_frame_info.res.width;
 	/* This should correspond to the input buffer definition for ISP
 	 * binaries in input_buf.isp.h */
-	if (binary->info->sp.enable.continuous && binary->info->sp.mode != IA_CSS_BINARY_MODE_COPY)
+	if (binary->info->sp.enable.continuous && binary->info->sp.pipeline.mode != IA_CSS_BINARY_MODE_COPY)
 		buffer_width = MAX_VECTORS_PER_INPUT_LINE_CONT * ISP_VEC_NELEMS;
 	else
-		buffer_width = binary->info->sp.max_input_width;
+		buffer_width = binary->info->sp.input.max_width;
 	input_format = binary->input_format;
 	two_ppc = config->pixels_per_clock == 2;
 
@@ -300,7 +300,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 			vmem_increment = 1;
 			deinterleaving = 2;
 			if (config->continuous &&
-			    binary->info->sp.mode == IA_CSS_BINARY_MODE_COPY) {
+			    binary->info->sp.pipeline.mode == IA_CSS_BINARY_MODE_COPY) {
 				/* No deinterleaving for sp copy */
 				deinterleaving = 1;
 			}
@@ -380,7 +380,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	vectors_per_buffer = buffer_height * buffer_width / ISP_VEC_NELEMS;
 
 	if (config->mode == IA_CSS_INPUT_MODE_TPG &&
-	    binary->info->sp.mode == IA_CSS_BINARY_MODE_VIDEO) {
+	    binary->info->sp.pipeline.mode == IA_CSS_BINARY_MODE_VIDEO) {
 		/* workaround for TPG in video mode */
 		start_line = 0;
 		start_column = 0;

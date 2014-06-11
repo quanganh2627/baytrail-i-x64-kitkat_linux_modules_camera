@@ -21,7 +21,6 @@
 
 #ifndef __IA_CSS_FRAME_FORMAT_H
 #define __IA_CSS_FRAME_FORMAT_H
-
 /** Frame formats, some of these come from fourcc.org, others are
    better explained by video4linux2. The NV11 seems to be described only
    on MSDN pages, but even those seem to be gone now.
@@ -75,7 +74,7 @@ enum ia_css_frame_format {
 							   interleaved even line */
 	IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8, /**< Legacy YUV420. UY odd
 							   line; VY even line */
-	IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10,       /**< 10 bit per Y/U/V. Y odd
+	IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10       /**< 10 bit per Y/U/V. Y odd
 							   line; UYVY interleaved
 							   even line */
 };

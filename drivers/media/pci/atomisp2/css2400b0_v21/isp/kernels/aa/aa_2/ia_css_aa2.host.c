@@ -38,8 +38,10 @@ const struct ia_css_aa_config default_baa_config = {
 void
 ia_css_aa_encode(
 	struct sh_css_isp_aa_params *to,
-	const struct ia_css_aa_config *from)
+	const struct ia_css_aa_config *from,
+	unsigned size)
 {
+	(void)size;
 	to->strength = from->strength;
 }
 

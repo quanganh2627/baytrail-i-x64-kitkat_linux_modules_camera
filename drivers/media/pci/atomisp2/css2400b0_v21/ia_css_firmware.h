@@ -64,4 +64,14 @@ ia_css_load_firmware(const struct ia_css_env *env,
 void
 ia_css_unload_firmware(void);
 
+/** @brief Checks firmware version
+ * @param[in]	fw	Firmware package containing the firmware for all
+ *			predefined ISP binaries.
+ * @return		Returns true when the firmware version matches with the CSS
+ *			host code version and returns false otherwise.
+ * This function checks if the firmware package version matches with the CSS host code version.
+ */
+bool
+ia_css_check_firmware_version(const struct ia_css_fw  *fw);
+
 #endif /* __IA_CSS_FIRMWARE_H */

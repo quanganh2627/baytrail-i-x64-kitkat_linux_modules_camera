@@ -32,7 +32,8 @@
 void
 ia_css_ref_config(
 	struct sh_css_isp_ref_isp_config      *to,
-	const struct ia_css_ref_configuration *from);
+	const struct ia_css_ref_configuration *from,
+	unsigned size);
 
 void
 ia_css_ref_configure(
@@ -42,5 +43,6 @@ ia_css_ref_configure(
 
 void
 ia_css_init_ref_state(
-	struct sh_css_isp_ref_dmem_state *state);
+	struct sh_css_isp_ref_dmem_state *state,
+	unsigned size);
 #endif /* __IA_CSS_REF_HOST_H */

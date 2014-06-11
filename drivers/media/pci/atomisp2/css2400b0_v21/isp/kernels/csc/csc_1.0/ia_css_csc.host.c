@@ -33,8 +33,10 @@ const struct ia_css_cc_config default_cc_config = {
 void
 ia_css_encode_cc(
 	struct sh_css_isp_csc_params *to,
-	const struct ia_css_cc_config *from)
+	const struct ia_css_cc_config *from,
+	unsigned size)
 {
+	(void)size;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_encode_cc() enter:\n");
 
 	to->m_shift    = (int) from->fraction_bits;
@@ -54,9 +56,10 @@ ia_css_encode_cc(
 void
 ia_css_csc_encode(
 	struct sh_css_isp_csc_params *to,
-	const struct ia_css_cc_config *from)
+	const struct ia_css_cc_config *from,
+	unsigned size)
 {
-	ia_css_encode_cc(to, from);
+	ia_css_encode_cc(to, from, size);
 }
 
 void

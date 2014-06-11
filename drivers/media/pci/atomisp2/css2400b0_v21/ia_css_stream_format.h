@@ -32,9 +32,9 @@ enum ia_css_stream_format {
 	IA_CSS_STREAM_FORMAT_YUV420_8,  /**< 8 bits per subpixel */
 	IA_CSS_STREAM_FORMAT_YUV420_10, /**< 10 bits per subpixel */
 	IA_CSS_STREAM_FORMAT_YUV420_16, /**< 16 bits per subpixel */
-	IA_CSS_STREAM_FORMAT_YUV422_8,  /**< UYVY..UVYV, 8 bits per subpixel */
-	IA_CSS_STREAM_FORMAT_YUV422_10, /**< UYVY..UVYV, 10 bits per subpixel */
-	IA_CSS_STREAM_FORMAT_YUV422_16, /**< UYVY..UVYV, 16 bits per subpixel */
+	IA_CSS_STREAM_FORMAT_YUV422_8,  /**< UYVY..UYVY, 8 bits per subpixel */
+	IA_CSS_STREAM_FORMAT_YUV422_10, /**< UYVY..UYVY, 10 bits per subpixel */
+	IA_CSS_STREAM_FORMAT_YUV422_16, /**< UYVY..UYVY, 16 bits per subpixel */
 	IA_CSS_STREAM_FORMAT_RGB_444,  /**< BGR..BGR, 4 bits per subpixel */
 	IA_CSS_STREAM_FORMAT_RGB_555,  /**< BGR..BGR, 5 bits per subpixel */
 	IA_CSS_STREAM_FORMAT_RGB_565,  /**< BGR..BGR, 5 bits B and R, 6 bits G */

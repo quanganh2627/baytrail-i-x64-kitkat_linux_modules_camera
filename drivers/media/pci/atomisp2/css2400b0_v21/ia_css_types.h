@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140605_0253 */
+/* Release Version: irci_master_20140611_0339 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -71,11 +71,6 @@
 #define IA_CSS_VERSION_REVISION 2
 
 #define IA_CSS_MORPH_TABLE_NUM_PLANES  6
-
-/** Number of DVS coefficient types */
-#define IA_CSS_DVS_NUM_COEF_TYPES      6
-#define IA_CSS_DVS_COEF_TYPES_ON_DMEM  2
-#define IA_CSS_DVS2_NUM_COEF_TYPES     4
 
 /* opaque types */
 struct ia_css_isp_parameters;
@@ -414,7 +409,8 @@ struct ia_css_isp_config {
 	struct ia_css_2500_rgbpp_kernel_config   *rgbpp_2500_config;     /**< Skylake: RGBPP config */
 	struct ia_css_2500_dvs_statistics_kernel_config *dvs_stat_2500_config; /**< Skylake: DVS STAT config */
 	struct ia_css_2500_lace_stat_kernel_config *lace_stat_2500_config; /**< Skylake: LACE STAT config */
-	struct ia_css_2500_yuvp1_kernel_config   *yuvp1_2500_config;     /**< Skylake: yuvp1 config */
+	struct ia_css_2500_yuvp1_b0_kernel_config   *yuvp1_b0_2500_config;     /**< Skylake: yuvp1 config for B0*/
+	struct ia_css_2500_yuvp1_c0_kernel_config   *yuvp1_c0_2500_config;     /**< Skylake: yuvp1 config for C0*/
 	struct ia_css_2500_yuvp2_kernel_config   *yuvp2_2500_config;     /**< Skylake: yuvp2 config */
 	struct ia_css_2500_tnr_kernel_config     *tnr_2500_config;       /**< Skylake: TNR config */
 	struct ia_css_2500_dpc_kernel_config     *dpc_2500_config;       /**< Skylake: DPC config */

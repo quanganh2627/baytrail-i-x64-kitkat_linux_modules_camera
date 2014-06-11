@@ -81,9 +81,9 @@ ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
 	if (binary_supports_yuv_ds) {
 		if (in_info != NULL) {
 			isp_tmp_internal_width = in_info->res.width
-				+ info->left_cropping + binary_dvs_env.width;
+				+ info->pipeline.left_cropping + binary_dvs_env.width;
 			isp_tmp_internal_height = in_info->res.height
-				+ info->top_cropping + binary_dvs_env.height;
+				+ info->pipeline.top_cropping + binary_dvs_env.height;
 		}
 	} else if ((bds_out_info != NULL) && (out_info != NULL) &&
 				/* TODO: hack to make video_us case work. this should be reverted after
@@ -102,11 +102,11 @@ ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
 	 * we use those resolutions to compute sizes for tables etc. */
 	internal_res->width = __ISP_INTERNAL_WIDTH(isp_tmp_internal_width,
 		(int)binary_dvs_env.width,
-		info->left_cropping, info->mode,
-		info->c_subsampling,
-		info->output_num_chunks, info->pipelining);
+		info->pipeline.left_cropping, info->pipeline.mode,
+		info->pipeline.c_subsampling,
+		info->output.num_chunks, info->pipeline.pipelining);
 	internal_res->height = __ISP_INTERNAL_HEIGHT(isp_tmp_internal_height,
-		info->top_cropping,
+		info->pipeline.top_cropping,
 		binary_dvs_env.height);
 #if defined(HAS_RES_MGR)
 	/* note - resolutions mgr flow does not yet support left/top cropping
@@ -193,7 +193,7 @@ ia_css_binary_compute_shading_table_bayer_origin(
 	(Hopefully, left_crop/left_padding/top_crop should be defined in css
 	appropriately, depending on bds_factor.)
 	*/
-	need_bds_factor_2_00 = ((binary->info->sp.supported_bds_factors &
+	need_bds_factor_2_00 = ((binary->info->sp.bds.supported_bds_factors &
 		(PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_2_00) |
 		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_2_50) |
 		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_3_00) |
@@ -203,7 +203,7 @@ ia_css_binary_compute_shading_table_bayer_origin(
 		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_6_00) |
 		 PACK_BDS_FACTOR(SH_CSS_BDS_FACTOR_8_00))) != 0);
 
-	if (need_bds_factor_2_00 && binary->info->sp.left_cropping > 0)
+	if (need_bds_factor_2_00 && binary->info->sp.pipeline.left_cropping > 0)
 		left_padding_adjusted_bqs = left_padding_bqs + ISP_VEC_NELEMS;
 	else
 		left_padding_adjusted_bqs = left_padding_bqs;
@@ -386,7 +386,7 @@ ia_css_binary_3a_grid_info(const struct ia_css_binary *binary,
 	s3a_info->bqs_per_grid_cell = (1 << binary->deci_factor_log2);
 	s3a_info->deci_factor_log2  = binary->deci_factor_log2;
 	s3a_info->elem_bit_depth    = SH_CSS_BAYER_BITS;
-	s3a_info->use_dmem          = binary->info->sp.s3atbl_use_dmem;
+	s3a_info->use_dmem          = binary->info->sp.s3a.s3atbl_use_dmem;
 #if defined(HAS_NO_HMEM)
 	s3a_info->has_histogram     = 1;
 #else
@@ -426,7 +426,7 @@ binary_init_metrics(struct sh_css_binary_metrics *metrics,
 	assert(metrics != NULL);
 	assert(info != NULL);
 
-	metrics->mode = info->mode;
+	metrics->mode = info->pipeline.mode;
 	metrics->id   = info->id;
 	metrics->next = NULL;
 	binary_init_pc_histogram(&metrics->isp_histogram);
@@ -508,8 +508,8 @@ ia_css_binary_init_infos(void)
 		if (!binary_found)
 			continue;
 		/* Prepend new binary information */
-		binary->next = binary_infos[binary->sp.mode];
-		binary_infos[binary->sp.mode] = binary;
+		binary->next = binary_infos[binary->sp.pipeline.mode];
+		binary_infos[binary->sp.pipeline.mode] = binary;
 		binary->blob = &sh_css_blob_info[i];
 		binary->mem_offsets = sh_css_blob_info[i].mem_offsets;
 	}
@@ -557,11 +557,11 @@ binary_grid_deci_factor_log2(int width, int height)
 
 static int
 binary_in_frame_padded_width(int in_frame_width,
-							int isp_internal_width,
-							int dvs_env_width,
-							int stream_config_left_padding,
-							int left_cropping,
-							bool need_scaling)
+			     int isp_internal_width,
+			     int dvs_env_width,
+			     int stream_config_left_padding,
+			     int left_cropping,
+			     bool need_scaling)
 {
 	int rval;
 	int nr_of_left_paddings;	/* number of paddings pixels on the left of an image line */
@@ -693,8 +693,8 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		bits_per_pixel = in_info->raw_bit_depth;
 
 		/* input info */
-		binary->in_frame_info.res.width = in_info->res.width + info->left_cropping;
-		binary->in_frame_info.res.height = in_info->res.height + info->top_cropping;
+		binary->in_frame_info.res.width = in_info->res.width + info->pipeline.left_cropping;
+		binary->in_frame_info.res.height = in_info->res.height + info->pipeline.top_cropping;
 
 #if !defined(HAS_RES_MGR) /* dvs env is included already */
 		binary->in_frame_info.res.width += dvs_env_width;
@@ -703,11 +703,11 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 
 		binary->in_frame_info.padded_width =
 			binary_in_frame_padded_width(in_info->res.width,
-										isp_internal_width,
-										dvs_env_width,
-										stream_config_left_padding,
-										info->left_cropping,
-										need_scaling);
+						     isp_internal_width,
+						     dvs_env_width,
+						     stream_config_left_padding,
+						     info->pipeline.left_cropping,
+						     need_scaling);
 
 		binary->in_frame_info.format = in_info->format;
 		binary->in_frame_info.raw_bayer_order = in_info->raw_bayer_order;
@@ -725,7 +725,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 			binary->out_frame_info[i].res.width     = out_info[i]->res.width;
 			binary->out_frame_info[i].res.height    = out_info[i]->res.height;
 			binary->out_frame_info[i].padded_width  = out_info[i]->padded_width;
-			if (info->mode == IA_CSS_BINARY_MODE_COPY) {
+			if (info->pipeline.mode == IA_CSS_BINARY_MODE_COPY) {
 				binary->out_frame_info[i].raw_bit_depth = bits_per_pixel;
 			} else {
 				/* Only relevant for RAW format.
@@ -767,7 +767,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 			vf_log_ds);
 
 		/* For preview mode, output pin is used instead of vf. */
-		if (info->mode == IA_CSS_BINARY_MODE_PREVIEW) {
+		if (info->pipeline.mode == IA_CSS_BINARY_MODE_PREVIEW) {
 			binary->out_frame_info[0].res.width =
 				(bin_out_info->res.width >> vf_log_ds);
 			binary->out_frame_info[0].padded_width = vf_out_width;
@@ -812,16 +812,16 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 			bds_out_info->res.width != in_info->res.width) {
 		/* TODO: Next, "internal_frame_info" should be derived from
 		 * bds_out. So this part will change once it is in place! */
-		sc_3a_dis_width = bds_out_info->res.width + info->left_cropping;
+		sc_3a_dis_width = bds_out_info->res.width + info->pipeline.left_cropping;
 		sc_3a_dis_padded_width = isp_internal_width;
 		sc_3a_dis_height = isp_internal_height;
 	}
 
 
 	s3a_isp_width = _ISP_S3A_ELEMS_ISP_WIDTH(sc_3a_dis_padded_width,
-		info->left_cropping);
-	if (info->fixed_s3a_deci_log) {
-		s3a_log_deci = info->fixed_s3a_deci_log;
+		info->pipeline.left_cropping);
+	if (info->s3a.fixed_s3a_deci_log) {
+		s3a_log_deci = info->s3a.fixed_s3a_deci_log;
 	} else {
 		s3a_log_deci = binary_grid_deci_factor_log2(s3a_isp_width,
 							    sc_3a_dis_height);
@@ -866,11 +866,11 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 				sc_3a_dis_width,
 				sc_3a_dis_padded_width,
 				sc_3a_dis_height,
-				info->isp_pipe_version,
+				info->pipeline.isp_pipe_version,
 				info->enable.dis);
 #endif
-	if (info->left_cropping)
-		binary->left_padding = 2 * ISP_VEC_NELEMS - info->left_cropping;
+	if (info->pipeline.left_cropping)
+		binary->left_padding = 2 * ISP_VEC_NELEMS - info->pipeline.left_cropping;
 	else
 		binary->left_padding = 0;
 
@@ -959,7 +959,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 		 * %d\n",candidate->id); */
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			"ia_css_binary_find() candidate = %p, mode = %d ID = %d\n",
-			candidate, candidate->mode, candidate->id);
+			candidate, candidate->pipeline.mode, candidate->id);
 
 		/*
 		 * MW: Only a limited set of jointly configured binaries can
@@ -976,14 +976,14 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 			continue;
 		}
 
-		if (candidate->isp_pipe_version != isp_pipe_version &&
+		if (candidate->pipeline.isp_pipe_version != isp_pipe_version &&
 		    (mode != IA_CSS_BINARY_MODE_COPY) &&
 		    (mode != IA_CSS_BINARY_MODE_CAPTURE_PP) &&
 		    (mode != IA_CSS_BINARY_MODE_VF_PP)) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: (%d != %d)\n",
 				__LINE__,
-				candidate->isp_pipe_version, isp_pipe_version);
+				candidate->pipeline.isp_pipe_version, isp_pipe_version);
 			continue;
 		}
 		if (!candidate->enable.reduced_pipe && enable_reduced_pipe) {
@@ -1042,14 +1042,14 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 		/* when we require vf output, we need to have vf_veceven */
 		if ((req_vf_info != NULL) && !(candidate->enable.vf_veceven ||
 				/* or variable vf vec even */
-				candidate->variable_vf_veceven ||
+				candidate->vf_dec.is_variable ||
 				/* or more than one output pin. */
 				xcandidate->num_output_pins > 1)) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: (%p != NULL) && !(%d || %d || (%d >%d))\n",
 				__LINE__, req_vf_info,
 				candidate->enable.vf_veceven,
-				candidate->variable_vf_veceven,
+				candidate->vf_dec.is_variable,
 				xcandidate->num_output_pins, 1);
 			continue;
 		}
@@ -1063,18 +1063,18 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 		/* internal_res check considers input, output, and dvs envelope sizes */
 		ia_css_binary_internal_res(req_in_info, req_bds_out_info,
 					   req_bin_out_info, &dvs_env, candidate, &internal_res);
-		if (internal_res.width > candidate->max_internal_width) {
+		if (internal_res.width > candidate->internal.max_width) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			"ia_css_binary_find() [%d] continue: (%d > %d)\n",
 			__LINE__, internal_res.width,
-			candidate->max_internal_width);
+			candidate->internal.max_width);
 			continue;
 		}
-		if (internal_res.height > candidate->max_internal_height) {
+		if (internal_res.height > candidate->internal.max_height) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			"ia_css_binary_find() [%d] continue: (%d > %d)\n",
 			__LINE__, internal_res.height,
-			candidate->max_internal_height);
+			candidate->internal.max_height);
 			continue;
 		}
 		if (!candidate->enable.ds && need_ds) {
@@ -1089,36 +1089,36 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				__LINE__, candidate->enable.uds, (int)need_dz);
 			continue;
 		}
-		if (online && candidate->input == IA_CSS_BINARY_INPUT_MEMORY) {
+		if (online && candidate->input.source == IA_CSS_BINARY_INPUT_MEMORY) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: %d && (%d == %d)\n",
-				__LINE__, online, candidate->input,
+				__LINE__, online, candidate->input.source,
 				IA_CSS_BINARY_INPUT_MEMORY);
 			continue;
 		}
-		if (!online && candidate->input == IA_CSS_BINARY_INPUT_SENSOR) {
+		if (!online && candidate->input.source == IA_CSS_BINARY_INPUT_SENSOR) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: !%d && (%d == %d)\n",
-				__LINE__, online, candidate->input,
+				__LINE__, online, candidate->input.source,
 				IA_CSS_BINARY_INPUT_SENSOR);
 			continue;
 		}
-		if (req_bin_out_info->res.width < candidate->min_output_width ||
-		    req_bin_out_info->res.width > candidate->max_output_width) {
+		if (req_bin_out_info->res.width < candidate->output.min_width ||
+		    req_bin_out_info->res.width > candidate->output.max_width) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: (%d > %d) || (%d < %d)\n",
 				__LINE__,
 				req_bin_out_info->padded_width,
-				candidate->min_output_width,
+				candidate->output.min_width,
 				req_bin_out_info->padded_width,
-				candidate->max_output_width);
+				candidate->output.max_width);
 			continue;
 		}
-		if (req_in_info->padded_width > candidate->max_input_width) {
+		if (req_in_info->padded_width > candidate->input.max_width) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: (%d > %d)\n",
 				__LINE__, req_in_info->padded_width,
-				candidate->max_input_width);
+				candidate->input.max_width);
 			continue;
 		}
 		if (!binary_supports_output_format(xcandidate, req_bin_out_info->format)) {
@@ -1142,11 +1142,11 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 			continue;
 		}
 
-		if (!supports_bds_factor(candidate->supported_bds_factors,
+		if (!supports_bds_factor(candidate->bds.supported_bds_factors,
 		    descr->required_bds_factor)) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 				"ia_css_binary_find() [%d] continue: 0x%x & 0x%x)\n",
-				__LINE__, candidate->supported_bds_factors,
+				__LINE__, candidate->bds.supported_bds_factors,
 				descr->required_bds_factor);
 			continue;
 		}
@@ -1169,7 +1169,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_binary_find() selected = %p, mode = %d ID = %d\n",
-		xcandidate, xcandidate ? xcandidate->sp.mode : 0, xcandidate ? xcandidate->sp.id : 0);
+		xcandidate, xcandidate ? xcandidate->sp.pipeline.mode : 0, xcandidate ? xcandidate->sp.id : 0);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 		"ia_css_binary_find() leave: return_err=%d\n", err);
@@ -1180,7 +1180,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 unsigned
 ia_css_binary_max_vf_width(void)
 {
-	return binary_infos[IA_CSS_BINARY_MODE_VF_PP]->sp.max_output_width;
+	return binary_infos[IA_CSS_BINARY_MODE_VF_PP]->sp.output.max_width;
 }
 
 void

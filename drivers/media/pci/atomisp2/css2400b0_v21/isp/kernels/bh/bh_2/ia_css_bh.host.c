@@ -58,8 +58,10 @@ ia_css_bh_hmem_decode(
 void
 ia_css_bh_encode(
 	struct sh_css_isp_bh_params *to,
-	const struct ia_css_3a_config *from)
+	const struct ia_css_3a_config *from,
+	unsigned size)
 {
+	(void)size;
 	/* coefficients to calculate Y */
 	to->y_coef_r =
 	    uDIGIT_FITTING(from->ae_y_coef_r, 16, SH_CSS_AE_YCOEF_SHIFT);
@@ -72,8 +74,10 @@ ia_css_bh_encode(
 void
 ia_css_bh_hmem_encode(
 	struct sh_css_isp_bh_hmem_params *to,
-	const struct ia_css_3a_config *from)
+	const struct ia_css_3a_config *from,
+	unsigned size)
 {
+	(void)size;
 	(void)from;
 	(void)to;
 }

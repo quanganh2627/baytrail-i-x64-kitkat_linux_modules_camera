@@ -36,8 +36,10 @@
 void
 ia_css_fpn_encode(
 	struct sh_css_isp_fpn_params *to,
-	const struct ia_css_fpn_table *from)
+	const struct ia_css_fpn_table *from,
+	unsigned size)
 {
+	(void)size;
 	to->shift = from->shift;
 	to->enabled = from->data != NULL;
 }
@@ -58,9 +60,12 @@ ia_css_fpn_dump(
 void
 ia_css_fpn_config(
 	struct sh_css_isp_fpn_isp_config *to,
-	const struct ia_css_fpn_configuration *from)
+	const struct ia_css_fpn_configuration *from,
+	unsigned size)
 {
 	unsigned elems_a = ISP_VEC_NELEMS;
+
+	(void)size;
 	ia_css_dma_configure_from_info(&to->port_b, from->info);
 	to->width_a_over_b = elems_a / to->port_b.elems;
 

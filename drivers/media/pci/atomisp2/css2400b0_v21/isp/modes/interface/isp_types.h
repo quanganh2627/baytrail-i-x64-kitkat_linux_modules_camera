@@ -29,12 +29,6 @@
    without this extra decl. */
 struct ia_css_3a_output;
 
-/* Binary independent types */
-//#include <ia_css_binary.h>
-#include "isp_const.h"
-
-//-------------------
-
 #if defined(__ISP) || defined(__SP)
 struct isp_uds_config {
 	int      hive_dx;
@@ -51,7 +45,7 @@ struct s_isp_gdcac_config {
 
 /* output.hive.c request information */
 typedef enum {
-  output_y_channel, 
+  output_y_channel,
   output_c_channel,
   OUTPUT_NUM_CHANNELS
 } output_channel_type;

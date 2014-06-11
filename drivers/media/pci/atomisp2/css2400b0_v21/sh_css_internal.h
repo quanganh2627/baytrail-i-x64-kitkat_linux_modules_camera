@@ -212,8 +212,6 @@ struct sh_css_ddr_address_map {
 	hrt_vaddress macc_tbl;
 	hrt_vaddress fpn_tbl;
 	hrt_vaddress sc_tbl;
-	hrt_vaddress sdis_hor_coef;
-	hrt_vaddress sdis_ver_coef;
 	hrt_vaddress tetra_r_x;
 	hrt_vaddress tetra_r_y;
 	hrt_vaddress tetra_gr_x;
@@ -231,7 +229,7 @@ struct sh_css_ddr_address_map {
 #define SIZE_OF_SH_CSS_DDR_ADDRESS_MAP_STRUCT					\
 	(SIZE_OF_HRT_VADDRESS +							\
 	(SH_CSS_MAX_STAGES * IA_CSS_NUM_MEMORIES * SIZE_OF_HRT_VADDRESS) +	\
-	(18 * SIZE_OF_HRT_VADDRESS))
+	(16 * SIZE_OF_HRT_VADDRESS))
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -242,8 +240,6 @@ struct sh_css_ddr_address_map_size {
 	size_t macc_tbl;
 	size_t fpn_tbl;
 	size_t sc_tbl;
-	size_t sdis_hor_coef;
-	size_t sdis_ver_coef;
 	size_t tetra_r_x;
 	size_t tetra_r_y;
 	size_t tetra_gr_x;
@@ -548,7 +544,6 @@ struct sh_css_sp_pipeline {
  * s3a and dis are now also dynamic but (stil) handled seperately
  */
 #define SH_CSS_NUM_DYNAMIC_FRAME_IDS (3)
-#define SH_CSS_INVALID_FRAME_ID (-1)
 
 struct ia_css_frames_sp {
 	struct ia_css_frame_sp	in;
@@ -556,10 +551,14 @@ struct ia_css_frames_sp {
 	struct ia_css_resolution effective_in_res;
 	struct ia_css_frame_sp	out_vf;
 	struct ia_css_frame_sp_info internal_frame_info;
-	/* PQ TODO: should be a separate host-sp communication array which
-	is used for all dynamic objects through queue. */
-	hrt_vaddress static_frame_data[IA_CSS_NUM_BUFFER_TYPE];
-	enum ia_css_buffer_type buf_type[IA_CSS_NUM_DYNAMIC_BUFFER_TYPE];
+	struct ia_css_buffer_sp s3a_buf;
+	struct ia_css_buffer_sp dvs_buf;
+#if defined(IS_ISP_2500_SYSTEM)
+	struct ia_css_buffer_sp lace_buf;
+#endif
+#if defined SH_CSS_ENABLE_METADATA
+	struct ia_css_buffer_sp metadata_buf;
+#endif
 };
 
 /* Information for a single pipeline stage for an ISP */

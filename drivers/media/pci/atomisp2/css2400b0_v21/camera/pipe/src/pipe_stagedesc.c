@@ -38,7 +38,7 @@ void ia_css_pipe_get_generic_stage_desc(
 	stage_desc->firmware = NULL;
 	stage_desc->sp_func = IA_CSS_PIPELINE_NO_FUNC;
 	stage_desc->max_input_width = 0;
-	stage_desc->mode = binary->info->sp.mode;
+	stage_desc->mode = binary->info->sp.pipeline.mode;
 	stage_desc->cc_frame = cc_frame;
 	stage_desc->in_frame = in_frame;
 	for (i = 0; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {

@@ -31,9 +31,12 @@
 void
 ia_css_ref_config(
 	struct sh_css_isp_ref_isp_config *to,
-	const struct ia_css_ref_configuration  *from)
+	const struct ia_css_ref_configuration  *from,
+	unsigned size)
 {
 	unsigned elems_a = ISP_VEC_NELEMS, i;
+
+	(void)size;
 	ia_css_dma_configure_from_info(&to->port_b, &(from->ref_frames[0]->info));
 	to->width_a_over_b = elems_a / to->port_b.elems;
 	to->dvs_frame_delay = from->dvs_frame_delay;
@@ -63,8 +66,11 @@ ia_css_ref_configure(
 }
 
 void
-ia_css_init_ref_state(struct sh_css_isp_ref_dmem_state *state)
+ia_css_init_ref_state(
+	struct sh_css_isp_ref_dmem_state *state,
+	unsigned size)
 {
+	(void)size;
 	assert(NUM_VIDEO_DELAY_FRAMES >= 2);
 	state->ref_in_buf_idx = 0;
 	state->ref_out_buf_idx = 1;

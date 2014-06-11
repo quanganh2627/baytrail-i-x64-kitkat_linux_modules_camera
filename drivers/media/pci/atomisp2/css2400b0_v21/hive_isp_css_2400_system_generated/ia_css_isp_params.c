@@ -54,7 +54,6 @@
 #include "isp/kernels/ynr/ynr_2/ia_css_ynr2.host.h"
 /* Generated code: do not edit or commmit. */
 
-#include "ia_css.h"
 #include "ia_css_pipeline.h"
 #include "ia_css_isp_params.h"
 #include "ia_css_debug.h"
@@ -73,12 +72,14 @@ ia_css_process_aa(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_aa() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.aa;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.aa.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.aa.offset;
+
+		if (size) {
 			ia_css_aa_encode((struct sh_css_isp_aa_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->aa_config);
+					&params->aa_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -100,12 +101,14 @@ ia_css_process_anr(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_anr() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.anr;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.anr.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.anr.offset;
+
+		if (size) {
 			ia_css_anr_encode((struct sh_css_isp_anr_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->anr_config);
+					&params->anr_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -127,12 +130,14 @@ ia_css_process_anr2(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_anr2() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vmem.anr2;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vmem.anr2.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vmem.anr2.offset;
+
+		if (size) {
 			ia_css_anr2_vmem_encode((struct ia_css_isp_anr2_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VMEM].address[offset],
-					&params->anr_thres);
+					&params->anr_thres, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VMEM] = true;
 		}
@@ -154,24 +159,28 @@ ia_css_process_bh(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_bh() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.bh;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.bh.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.bh.offset;
+
+		if (size) {
 			ia_css_bh_encode((struct sh_css_isp_bh_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->s3a_config);
+					&params->s3a_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
 
 	}
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->hmem0.bh;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->hmem0.bh.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->hmem0.bh.offset;
+
+		if (size) {
 			ia_css_bh_hmem_encode((struct sh_css_isp_bh_hmem_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_HMEM0].address[offset],
-					&params->s3a_config);
+					&params->s3a_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_HMEM0] = true;
 		}
@@ -193,12 +202,14 @@ ia_css_process_cnr(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_cnr() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.cnr;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.cnr.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.cnr.offset;
+
+		if (size) {
 			ia_css_cnr_encode((struct sh_css_isp_cnr_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->cnr_config);
+					&params->cnr_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -220,12 +231,14 @@ ia_css_process_crop(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_crop() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.crop;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.crop.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.crop.offset;
+
+		if (size) {
 			ia_css_crop_encode((struct sh_css_isp_crop_isp_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->crop_config);
+					&params->crop_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -247,12 +260,14 @@ ia_css_process_csc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_csc() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.csc;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.csc.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.csc.offset;
+
+		if (size) {
 			ia_css_csc_encode((struct sh_css_isp_csc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->cc_config);
+					&params->cc_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -274,12 +289,14 @@ ia_css_process_dp(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_dp() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.dp;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.dp.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.dp.offset;
+
+		if (size) {
 			ia_css_dp_encode((struct sh_css_isp_dp_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->dp_config);
+					&params->dp_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -301,12 +318,14 @@ ia_css_process_bnr(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_bnr() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.bnr;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.bnr.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.bnr.offset;
+
+		if (size) {
 			ia_css_bnr_encode((struct sh_css_isp_bnr_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->nr_config);
+					&params->nr_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -328,12 +347,14 @@ ia_css_process_de(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_de() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.de;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.de.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.de.offset;
+
+		if (size) {
 			ia_css_de_encode((struct sh_css_isp_de_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->de_config);
+					&params->de_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -355,12 +376,14 @@ ia_css_process_ecd(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_ecd() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.ecd;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.ecd.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.ecd.offset;
+
+		if (size) {
 			ia_css_ecd_encode((struct sh_css_isp_ecd_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->ecd_config);
+					&params->ecd_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -382,12 +405,14 @@ ia_css_process_fpn(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_fpn() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.fpn;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.fpn.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.fpn.offset;
+
+		if (size) {
 			ia_css_fpn_encode((struct sh_css_isp_fpn_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->fpn_config);
+					&params->fpn_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -409,24 +434,28 @@ ia_css_process_gc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_gc() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.gc;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.gc.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.gc.offset;
+
+		if (size) {
 			ia_css_gc_encode((struct sh_css_isp_gc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->gc_config);
+					&params->gc_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
 
 	}
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vamem1.gc;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vamem1.gc.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vamem1.gc.offset;
+
+		if (size) {
 			ia_css_gc_vamem_encode((struct sh_css_isp_gc_vamem_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM1].address[offset],
-					&params->gc_table);
+					&params->gc_table, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM1] = true;
 		}
@@ -448,12 +477,14 @@ ia_css_process_ce(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_ce() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.ce;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.ce.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.ce.offset;
+
+		if (size) {
 			ia_css_ce_encode((struct sh_css_isp_ce_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->ce_config);
+					&params->ce_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -475,12 +506,14 @@ ia_css_process_yuv2rgb(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_yuv2rgb() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.yuv2rgb;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.yuv2rgb.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.yuv2rgb.offset;
+
+		if (size) {
 			ia_css_yuv2rgb_encode((struct sh_css_isp_csc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->yuv2rgb_cc_config);
+					&params->yuv2rgb_cc_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -502,12 +535,14 @@ ia_css_process_rgb2yuv(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_rgb2yuv() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.rgb2yuv;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.rgb2yuv.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.rgb2yuv.offset;
+
+		if (size) {
 			ia_css_rgb2yuv_encode((struct sh_css_isp_csc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->rgb2yuv_cc_config);
+					&params->rgb2yuv_cc_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -529,12 +564,14 @@ ia_css_process_r_gamma(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_r_gamma() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vamem0.r_gamma;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vamem0.r_gamma.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vamem0.r_gamma.offset;
+
+		if (size) {
 			ia_css_r_gamma_vamem_encode((struct sh_css_isp_rgb_gamma_vamem_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM0].address[offset],
-					&params->r_gamma_table);
+					&params->r_gamma_table, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM0] = true;
 		}
@@ -556,12 +593,14 @@ ia_css_process_g_gamma(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_g_gamma() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vamem1.g_gamma;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vamem1.g_gamma.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vamem1.g_gamma.offset;
+
+		if (size) {
 			ia_css_g_gamma_vamem_encode((struct sh_css_isp_rgb_gamma_vamem_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM1].address[offset],
-					&params->g_gamma_table);
+					&params->g_gamma_table, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM1] = true;
 		}
@@ -583,12 +622,14 @@ ia_css_process_b_gamma(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_b_gamma() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vamem2.b_gamma;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vamem2.b_gamma.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vamem2.b_gamma.offset;
+
+		if (size) {
 			ia_css_b_gamma_vamem_encode((struct sh_css_isp_rgb_gamma_vamem_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM2].address[offset],
-					&params->b_gamma_table);
+					&params->b_gamma_table, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM2] = true;
 		}
@@ -610,12 +651,14 @@ ia_css_process_uds(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_uds() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.uds;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.uds.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.uds.offset;
+
+		if (size) {
 			ia_css_uds_encode((struct sh_css_sp_uds_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->uds_config);
+					&params->uds_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -637,12 +680,14 @@ ia_css_process_raa(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_raa() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.raa;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.raa.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.raa.offset;
+
+		if (size) {
 			ia_css_raa_encode((struct sh_css_isp_aa_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->raa_config);
+					&params->raa_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -664,12 +709,14 @@ ia_css_process_s3a(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_s3a() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.s3a;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.s3a.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.s3a.offset;
+
+		if (size) {
 			ia_css_s3a_encode((struct sh_css_isp_s3a_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->s3a_config);
+					&params->s3a_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -691,24 +738,28 @@ ia_css_process_ob(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_ob() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.ob;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.ob.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.ob.offset;
+
+		if (size) {
 			ia_css_ob_encode((struct sh_css_isp_ob_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->ob_config, &params->stream_configs.ob);
+					&params->ob_config, &params->stream_configs.ob, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
 
 	}
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vmem.ob;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vmem.ob.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vmem.ob.offset;
+
+		if (size) {
 			ia_css_ob_vmem_encode((struct sh_css_isp_ob_vmem_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VMEM].address[offset],
-					&params->ob_config, &params->stream_configs.ob);
+					&params->ob_config, &params->stream_configs.ob, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VMEM] = true;
 		}
@@ -730,12 +781,14 @@ ia_css_process_sc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sc() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.sc;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.sc.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.sc.offset;
+
+		if (size) {
 			ia_css_sc_encode((struct sh_css_isp_sc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->sc_config);
+					&params->sc_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -757,12 +810,14 @@ ia_css_process_raw(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_raw() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.raw;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.raw.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.raw.offset;
+
+		if (size) {
 			ia_css_raw_encode((struct sh_css_isp_raw_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->raw_config);
+					&params->raw_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -784,12 +839,14 @@ ia_css_process_tnr(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_tnr() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.tnr;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.tnr.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.tnr.offset;
+
+		if (size) {
 			ia_css_tnr_encode((struct sh_css_isp_tnr_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->tnr_config);
+					&params->tnr_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -811,12 +868,14 @@ ia_css_process_macc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_macc() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.macc;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.macc.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.macc.offset;
+
+		if (size) {
 			ia_css_macc_encode((struct sh_css_isp_macc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->macc_config);
+					&params->macc_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -828,79 +887,233 @@ ia_css_process_macc(
 /* Code generated by genparam/gencode.c:gen_process_function() */
 
 static void
-ia_css_process_sdis(
+ia_css_process_sdis_horicoef(
 	unsigned pipe_id,
 	const struct ia_css_pipeline_stage *stage,
 	struct ia_css_isp_parameters *params)
 {
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis_horicoef() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.sdis;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vmem.sdis_horicoef.size;
 
-		if (offset >= 0) {
-			ia_css_sdis_encode((struct sh_css_isp_sdis_dmem_params *)
-					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->dvs_coefs);
-			params->isp_params_changed = true;
-			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
-		}
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vmem.sdis_horicoef.offset;
 
-	}
-	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vmem.sdis;
-
-		if (offset >= 0) {
-			ia_css_sdis_vmem_encode((struct sh_css_isp_sdis_vmem_params *)
+		if (size) {
+			ia_css_sdis_horicoef_vmem_encode((struct sh_css_isp_sdis_hori_coef_tbl *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VMEM].address[offset],
-					&params->dvs_coefs);
+					&params->dvs_coefs, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VMEM] = true;
 		}
 
 	}
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis() leave:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis_horicoef() leave:\n");
 }
 
 /* Code generated by genparam/gencode.c:gen_process_function() */
 
 static void
-ia_css_process_sdis2(
+ia_css_process_sdis_vertcoef(
 	unsigned pipe_id,
 	const struct ia_css_pipeline_stage *stage,
 	struct ia_css_isp_parameters *params)
 {
 	assert(params != NULL);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2() enter:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis_vertcoef() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.sdis2;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vmem.sdis_vertcoef.size;
 
-		if (offset >= 0) {
-			ia_css_sdis2_encode((struct sh_css_isp_sdis_dmem_params *)
-					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->dvs2_coefs);
-			params->isp_params_changed = true;
-			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
-		}
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vmem.sdis_vertcoef.offset;
 
-	}
-	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vmem.sdis2;
-
-		if (offset >= 0) {
-			ia_css_sdis2_vmem_encode((struct sh_css_isp_sdis_vmem_params *)
+		if (size) {
+			ia_css_sdis_vertcoef_vmem_encode((struct sh_css_isp_sdis_vert_coef_tbl *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VMEM].address[offset],
-					&params->dvs2_coefs);
+					&params->dvs_coefs, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VMEM] = true;
 		}
 
 	}
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2() leave:\n");
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis_vertcoef() leave:\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_process_function() */
+
+static void
+ia_css_process_sdis_horiproj(
+	unsigned pipe_id,
+	const struct ia_css_pipeline_stage *stage,
+	struct ia_css_isp_parameters *params)
+{
+	assert(params != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis_horiproj() enter:\n");
+
+	{
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.sdis_horiproj.size;
+
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.sdis_horiproj.offset;
+
+		if (size) {
+			ia_css_sdis_horiproj_encode((struct sh_css_isp_sdis_hori_proj_tbl *)
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
+					&params->dvs_coefs, size);
+			params->isp_params_changed = true;
+			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
+		}
+
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis_horiproj() leave:\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_process_function() */
+
+static void
+ia_css_process_sdis_vertproj(
+	unsigned pipe_id,
+	const struct ia_css_pipeline_stage *stage,
+	struct ia_css_isp_parameters *params)
+{
+	assert(params != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis_vertproj() enter:\n");
+
+	{
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.sdis_vertproj.size;
+
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.sdis_vertproj.offset;
+
+		if (size) {
+			ia_css_sdis_vertproj_encode((struct sh_css_isp_sdis_vert_proj_tbl *)
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
+					&params->dvs_coefs, size);
+			params->isp_params_changed = true;
+			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
+		}
+
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis_vertproj() leave:\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_process_function() */
+
+static void
+ia_css_process_sdis2_horicoef(
+	unsigned pipe_id,
+	const struct ia_css_pipeline_stage *stage,
+	struct ia_css_isp_parameters *params)
+{
+	assert(params != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2_horicoef() enter:\n");
+
+	{
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vmem.sdis2_horicoef.size;
+
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vmem.sdis2_horicoef.offset;
+
+		if (size) {
+			ia_css_sdis2_horicoef_vmem_encode((struct sh_css_isp_sdis_hori_coef_tbl *)
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VMEM].address[offset],
+					&params->dvs2_coefs, size);
+			params->isp_params_changed = true;
+			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VMEM] = true;
+		}
+
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2_horicoef() leave:\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_process_function() */
+
+static void
+ia_css_process_sdis2_vertcoef(
+	unsigned pipe_id,
+	const struct ia_css_pipeline_stage *stage,
+	struct ia_css_isp_parameters *params)
+{
+	assert(params != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2_vertcoef() enter:\n");
+
+	{
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vmem.sdis2_vertcoef.size;
+
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vmem.sdis2_vertcoef.offset;
+
+		if (size) {
+			ia_css_sdis2_vertcoef_vmem_encode((struct sh_css_isp_sdis_vert_coef_tbl *)
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VMEM].address[offset],
+					&params->dvs2_coefs, size);
+			params->isp_params_changed = true;
+			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VMEM] = true;
+		}
+
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2_vertcoef() leave:\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_process_function() */
+
+static void
+ia_css_process_sdis2_horiproj(
+	unsigned pipe_id,
+	const struct ia_css_pipeline_stage *stage,
+	struct ia_css_isp_parameters *params)
+{
+	assert(params != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2_horiproj() enter:\n");
+
+	{
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.sdis2_horiproj.size;
+
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.sdis2_horiproj.offset;
+
+		if (size) {
+			ia_css_sdis2_horiproj_encode((struct sh_css_isp_sdis_hori_proj_tbl *)
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
+					&params->dvs2_coefs, size);
+			params->isp_params_changed = true;
+			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
+		}
+
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2_horiproj() leave:\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_process_function() */
+
+static void
+ia_css_process_sdis2_vertproj(
+	unsigned pipe_id,
+	const struct ia_css_pipeline_stage *stage,
+	struct ia_css_isp_parameters *params)
+{
+	assert(params != NULL);
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2_vertproj() enter:\n");
+
+	{
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.sdis2_vertproj.size;
+
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.sdis2_vertproj.offset;
+
+		if (size) {
+			ia_css_sdis2_vertproj_encode((struct sh_css_isp_sdis_vert_proj_tbl *)
+					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
+					&params->dvs2_coefs, size);
+			params->isp_params_changed = true;
+			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
+		}
+
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_sdis2_vertproj() leave:\n");
 }
 
 /* Code generated by genparam/gencode.c:gen_process_function() */
@@ -916,12 +1129,14 @@ ia_css_process_wb(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_wb() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.wb;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.wb.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.wb.offset;
+
+		if (size) {
 			ia_css_wb_encode((struct sh_css_isp_wb_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->wb_config);
+					&params->wb_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -943,12 +1158,14 @@ ia_css_process_nr(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_nr() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.nr;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.nr.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.nr.offset;
+
+		if (size) {
 			ia_css_nr_encode((struct sh_css_isp_ynr_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->nr_config);
+					&params->nr_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -970,12 +1187,14 @@ ia_css_process_yee(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_yee() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.yee;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.yee.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.yee.offset;
+
+		if (size) {
 			ia_css_yee_encode((struct sh_css_isp_yee_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->yee_config);
+					&params->yee_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -997,12 +1216,14 @@ ia_css_process_ynr(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_ynr() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.ynr;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.ynr.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.ynr.offset;
+
+		if (size) {
 			ia_css_ynr_encode((struct sh_css_isp_yee2_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->ynr_config);
+					&params->ynr_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -1024,12 +1245,14 @@ ia_css_process_fc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_fc() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.fc;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.fc.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.fc.offset;
+
+		if (size) {
 			ia_css_fc_encode((struct sh_css_isp_fc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->fc_config);
+					&params->fc_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -1051,24 +1274,28 @@ ia_css_process_ctc(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_ctc() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.ctc;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.ctc.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.ctc.offset;
+
+		if (size) {
 			ia_css_ctc_encode((struct sh_css_isp_ctc_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->ctc_config);
+					&params->ctc_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
 
 	}
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vamem0.ctc;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vamem0.ctc.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vamem0.ctc.offset;
+
+		if (size) {
 			ia_css_ctc_vamem_encode((struct sh_css_isp_ctc_vamem_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM0].address[offset],
-					&params->ctc_table);
+					&params->ctc_table, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM0] = true;
 		}
@@ -1090,12 +1317,14 @@ ia_css_process_xnr_table(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_xnr_table() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->vamem1.xnr_table;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->vamem1.xnr_table.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->vamem1.xnr_table.offset;
+
+		if (size) {
 			ia_css_xnr_table_vamem_encode((struct sh_css_isp_xnr_vamem_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_VAMEM1].address[offset],
-					&params->xnr_table);
+					&params->xnr_table, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_VAMEM1] = true;
 		}
@@ -1117,12 +1346,14 @@ ia_css_process_xnr(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_process_xnr() enter:\n");
 
 	{
-		short offset = stage->binary->info->mem_offsets.offsets.param->dmem.xnr;
+		unsigned size   = stage->binary->info->mem_offsets.offsets.param->dmem.xnr.size;
 
-		if (offset >= 0) {
+		unsigned offset = stage->binary->info->mem_offsets.offsets.param->dmem.xnr.offset;
+
+		if (size) {
 			ia_css_xnr_encode((struct sh_css_isp_xnr_params *)
 					&stage->binary->mem_params.params[IA_CSS_PARAM_CLASS_PARAM][IA_CSS_ISP_DMEM].address[offset],
-					&params->xnr_config);
+					&params->xnr_config, size);
 			params->isp_params_changed = true;
 			params->isp_mem_params_changed[pipe_id][stage->stage_num][IA_CSS_ISP_DMEM] = true;
 		}
@@ -1164,8 +1395,14 @@ void (* ia_css_kernel_process_param[IA_CSS_NUM_PARAMETER_IDS])(
 	ia_css_process_raw,
 	ia_css_process_tnr,
 	ia_css_process_macc,
-	ia_css_process_sdis,
-	ia_css_process_sdis2,
+	ia_css_process_sdis_horicoef,
+	ia_css_process_sdis_vertcoef,
+	ia_css_process_sdis_horiproj,
+	ia_css_process_sdis_vertproj,
+	ia_css_process_sdis2_horicoef,
+	ia_css_process_sdis2_vertcoef,
+	ia_css_process_sdis2_horiproj,
+	ia_css_process_sdis2_vertproj,
 	ia_css_process_wb,
 	ia_css_process_nr,
 	ia_css_process_yee,
@@ -1940,76 +2177,328 @@ ia_css_set_gc_config(struct ia_css_isp_parameters *params,
 /* Code generated by genparam/gencode.c:gen_get_function() */
 
 static void
-ia_css_get_sdis_config(const struct ia_css_isp_parameters *params,
+ia_css_get_sdis_horicoef_config(const struct ia_css_isp_parameters *params,
 			struct ia_css_dvs_coefficients *config){
 	if (config == NULL)
 		return;
 
 	assert(params != NULL);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_config() enter: "
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_horicoef_config() enter: "
 		"config=%p\n",config);
 
 	*config = params->dvs_coefs;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_config() leave\n");
-	ia_css_sdis_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_horicoef_config() leave\n");
+	ia_css_sdis_horicoef_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
 
 void
-ia_css_set_sdis_config(struct ia_css_isp_parameters *params,
+ia_css_set_sdis_horicoef_config(struct ia_css_isp_parameters *params,
 			const struct ia_css_dvs_coefficients *config)
 {
 	if (config == NULL)
 		return;
 
 	assert(params != NULL);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis_config() enter:\n");
-	ia_css_sdis_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis_horicoef_config() enter:\n");
+	ia_css_sdis_horicoef_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->dvs_coefs = *config;
-	params->config_changed[IA_CSS_SDIS_ID] = true;
-	params->config_changed[IA_CSS_SDIS_ID] = true;
+	params->config_changed[IA_CSS_SDIS_HORICOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTCOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS_HORIPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS_HORICOEF_ID] = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis_config() leave: "
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis_horicoef_config() leave: "
 		"return_void\n");
 }
 
 /* Code generated by genparam/gencode.c:gen_get_function() */
 
 static void
-ia_css_get_sdis2_config(const struct ia_css_isp_parameters *params,
-			struct ia_css_dvs2_coefficients *config){
+ia_css_get_sdis_vertcoef_config(const struct ia_css_isp_parameters *params,
+			struct ia_css_dvs_coefficients *config){
 	if (config == NULL)
 		return;
 
 	assert(params != NULL);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_config() enter: "
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_vertcoef_config() enter: "
 		"config=%p\n",config);
 
-	*config = params->dvs2_coefs;
+	*config = params->dvs_coefs;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_config() leave\n");
-	ia_css_sdis2_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_vertcoef_config() leave\n");
+	ia_css_sdis_vertcoef_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 }
 
 /* Code generated by genparam/gencode.c:gen_set_function() */
 
 void
-ia_css_set_sdis2_config(struct ia_css_isp_parameters *params,
+ia_css_set_sdis_vertcoef_config(struct ia_css_isp_parameters *params,
+			const struct ia_css_dvs_coefficients *config)
+{
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis_vertcoef_config() enter:\n");
+	ia_css_sdis_vertcoef_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->dvs_coefs = *config;
+	params->config_changed[IA_CSS_SDIS_HORICOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTCOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS_HORIPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTCOEF_ID] = true;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis_vertcoef_config() leave: "
+		"return_void\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_get_function() */
+
+static void
+ia_css_get_sdis_horiproj_config(const struct ia_css_isp_parameters *params,
+			struct ia_css_dvs_coefficients *config){
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_horiproj_config() enter: "
+		"config=%p\n",config);
+
+	*config = params->dvs_coefs;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_horiproj_config() leave\n");
+	ia_css_sdis_horiproj_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+}
+
+/* Code generated by genparam/gencode.c:gen_set_function() */
+
+void
+ia_css_set_sdis_horiproj_config(struct ia_css_isp_parameters *params,
+			const struct ia_css_dvs_coefficients *config)
+{
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis_horiproj_config() enter:\n");
+	ia_css_sdis_horiproj_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->dvs_coefs = *config;
+	params->config_changed[IA_CSS_SDIS_HORICOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTCOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS_HORIPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS_HORIPROJ_ID] = true;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis_horiproj_config() leave: "
+		"return_void\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_get_function() */
+
+static void
+ia_css_get_sdis_vertproj_config(const struct ia_css_isp_parameters *params,
+			struct ia_css_dvs_coefficients *config){
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_vertproj_config() enter: "
+		"config=%p\n",config);
+
+	*config = params->dvs_coefs;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis_vertproj_config() leave\n");
+	ia_css_sdis_vertproj_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+}
+
+/* Code generated by genparam/gencode.c:gen_set_function() */
+
+void
+ia_css_set_sdis_vertproj_config(struct ia_css_isp_parameters *params,
+			const struct ia_css_dvs_coefficients *config)
+{
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis_vertproj_config() enter:\n");
+	ia_css_sdis_vertproj_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->dvs_coefs = *config;
+	params->config_changed[IA_CSS_SDIS_HORICOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTCOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS_HORIPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS_VERTPROJ_ID] = true;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis_vertproj_config() leave: "
+		"return_void\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_get_function() */
+
+static void
+ia_css_get_sdis2_horicoef_config(const struct ia_css_isp_parameters *params,
+			struct ia_css_dvs2_coefficients *config){
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_horicoef_config() enter: "
+		"config=%p\n",config);
+
+	*config = params->dvs2_coefs;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_horicoef_config() leave\n");
+	ia_css_sdis2_horicoef_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+}
+
+/* Code generated by genparam/gencode.c:gen_set_function() */
+
+void
+ia_css_set_sdis2_horicoef_config(struct ia_css_isp_parameters *params,
 			const struct ia_css_dvs2_coefficients *config)
 {
 	if (config == NULL)
 		return;
 
 	assert(params != NULL);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis2_config() enter:\n");
-	ia_css_sdis2_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis2_horicoef_config() enter:\n");
+	ia_css_sdis2_horicoef_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
 	params->dvs2_coefs = *config;
-	params->config_changed[IA_CSS_SDIS2_ID] = true;
-	params->config_changed[IA_CSS_SDIS2_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_HORICOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTCOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_HORIPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_HORICOEF_ID] = true;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis2_config() leave: "
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis2_horicoef_config() leave: "
+		"return_void\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_get_function() */
+
+static void
+ia_css_get_sdis2_vertcoef_config(const struct ia_css_isp_parameters *params,
+			struct ia_css_dvs2_coefficients *config){
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_vertcoef_config() enter: "
+		"config=%p\n",config);
+
+	*config = params->dvs2_coefs;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_vertcoef_config() leave\n");
+	ia_css_sdis2_vertcoef_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+}
+
+/* Code generated by genparam/gencode.c:gen_set_function() */
+
+void
+ia_css_set_sdis2_vertcoef_config(struct ia_css_isp_parameters *params,
+			const struct ia_css_dvs2_coefficients *config)
+{
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis2_vertcoef_config() enter:\n");
+	ia_css_sdis2_vertcoef_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->dvs2_coefs = *config;
+	params->config_changed[IA_CSS_SDIS2_HORICOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTCOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_HORIPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTCOEF_ID] = true;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis2_vertcoef_config() leave: "
+		"return_void\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_get_function() */
+
+static void
+ia_css_get_sdis2_horiproj_config(const struct ia_css_isp_parameters *params,
+			struct ia_css_dvs2_coefficients *config){
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_horiproj_config() enter: "
+		"config=%p\n",config);
+
+	*config = params->dvs2_coefs;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_horiproj_config() leave\n");
+	ia_css_sdis2_horiproj_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+}
+
+/* Code generated by genparam/gencode.c:gen_set_function() */
+
+void
+ia_css_set_sdis2_horiproj_config(struct ia_css_isp_parameters *params,
+			const struct ia_css_dvs2_coefficients *config)
+{
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis2_horiproj_config() enter:\n");
+	ia_css_sdis2_horiproj_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->dvs2_coefs = *config;
+	params->config_changed[IA_CSS_SDIS2_HORICOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTCOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_HORIPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_HORIPROJ_ID] = true;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis2_horiproj_config() leave: "
+		"return_void\n");
+}
+
+/* Code generated by genparam/gencode.c:gen_get_function() */
+
+static void
+ia_css_get_sdis2_vertproj_config(const struct ia_css_isp_parameters *params,
+			struct ia_css_dvs2_coefficients *config){
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_vertproj_config() enter: "
+		"config=%p\n",config);
+
+	*config = params->dvs2_coefs;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_get_sdis2_vertproj_config() leave\n");
+	ia_css_sdis2_vertproj_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+}
+
+/* Code generated by genparam/gencode.c:gen_set_function() */
+
+void
+ia_css_set_sdis2_vertproj_config(struct ia_css_isp_parameters *params,
+			const struct ia_css_dvs2_coefficients *config)
+{
+	if (config == NULL)
+		return;
+
+	assert(params != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_set_sdis2_vertproj_config() enter:\n");
+	ia_css_sdis2_vertproj_debug_dtrace(config, IA_CSS_DEBUG_TRACE);
+	params->dvs2_coefs = *config;
+	params->config_changed[IA_CSS_SDIS2_HORICOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTCOEF_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_HORIPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTPROJ_ID] = true;
+	params->config_changed[IA_CSS_SDIS2_VERTPROJ_ID] = true;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_set_sdis2_vertproj_config() leave: "
 		"return_void\n");
 }
 
@@ -2268,8 +2757,14 @@ ia_css_get_configs(struct ia_css_isp_parameters *params,
 	ia_css_get_csc_config(params, config->cc_config);
 	ia_css_get_nr_config(params, config->nr_config);
 	ia_css_get_gc_config(params, config->gc_config);
-	ia_css_get_sdis_config(params, config->dvs_coefs);
-	ia_css_get_sdis2_config(params, config->dvs2_coefs);
+	ia_css_get_sdis_horicoef_config(params, config->dvs_coefs);
+	ia_css_get_sdis_vertcoef_config(params, config->dvs_coefs);
+	ia_css_get_sdis_horiproj_config(params, config->dvs_coefs);
+	ia_css_get_sdis_vertproj_config(params, config->dvs_coefs);
+	ia_css_get_sdis2_horicoef_config(params, config->dvs2_coefs);
+	ia_css_get_sdis2_vertcoef_config(params, config->dvs2_coefs);
+	ia_css_get_sdis2_horiproj_config(params, config->dvs2_coefs);
+	ia_css_get_sdis2_vertproj_config(params, config->dvs2_coefs);
 	ia_css_get_r_gamma_config(params, config->r_gamma_table);
 	ia_css_get_g_gamma_config(params, config->g_gamma_table);
 	ia_css_get_b_gamma_config(params, config->b_gamma_table);
@@ -2304,8 +2799,14 @@ ia_css_set_configs(struct ia_css_isp_parameters *params,
 	ia_css_set_csc_config(params, config->cc_config);
 	ia_css_set_nr_config(params, config->nr_config);
 	ia_css_set_gc_config(params, config->gc_config);
-	ia_css_set_sdis_config(params, config->dvs_coefs);
-	ia_css_set_sdis2_config(params, config->dvs2_coefs);
+	ia_css_set_sdis_horicoef_config(params, config->dvs_coefs);
+	ia_css_set_sdis_vertcoef_config(params, config->dvs_coefs);
+	ia_css_set_sdis_horiproj_config(params, config->dvs_coefs);
+	ia_css_set_sdis_vertproj_config(params, config->dvs_coefs);
+	ia_css_set_sdis2_horicoef_config(params, config->dvs2_coefs);
+	ia_css_set_sdis2_vertcoef_config(params, config->dvs2_coefs);
+	ia_css_set_sdis2_horiproj_config(params, config->dvs2_coefs);
+	ia_css_set_sdis2_vertproj_config(params, config->dvs2_coefs);
 	ia_css_set_r_gamma_config(params, config->r_gamma_table);
 	ia_css_set_g_gamma_config(params, config->g_gamma_table);
 	ia_css_set_b_gamma_config(params, config->b_gamma_table);

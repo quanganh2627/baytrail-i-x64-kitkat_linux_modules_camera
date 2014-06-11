@@ -23,6 +23,7 @@
 #define _ISP_FORMATS_ISP_H
 
 #include "assert_support.h"
+#include "ia_css_frame_format.h"
 
 /* internal isp representation for the frame formats.
  * always use the encode and decode functions to translate
@@ -66,7 +67,9 @@
 #define PACK_FMT(fmt) (1<<fmt)
 #define SUPPORT_FMT(fmt) ((SUPPORTED_OUTPUT_FORMATS & PACK_FMT(fmt)) != 0)
 
+#ifndef PARAM_GENERATION
 #include "isp_defs_for_hive.h" /* SUPPORTED_OUTPUT_FORMATS */
+#endif
 
 /***************************/
 
@@ -87,11 +90,11 @@
                         || SUPPORT_FMT(FRAME_FORMAT_NV61) || SUPPORT_FMT(FRAME_FORMAT_YUV_LINE) \
                         || SUPPORT_FMT(FRAME_FORMAT_UYVY) || SUPPORT_FMT(FRAME_FORMAT_YUYV))
 
-#define SUPPORTS_YUV_IL   (SUPPORT_FMT(FRAME_FORMAT_UYVY) || SUPPORT_FMT(FRAME_FORMAT_YUYV) || SUPPORT_FMT(FRAME_FORMAT_NV12))
+#define SUPPORTS_YUV_IL   (SUPPORT_FMT(FRAME_FORMAT_UYVY) || SUPPORT_FMT(FRAME_FORMAT_YUYV))
 
 #define SUPPORTS_RGB_IL   (SUPPORT_FMT(FRAME_FORMAT_RGBA888) || SUPPORT_FMT(FRAME_FORMAT_RGB565))
 
-#define SUPPORTS_IL       (SUPPORTS_YUV_IL || SUPPORTS_RGB_IL)
+#define SUPPORTS_IL       (SUPPORTS_YUV_IL || SUPPORTS_RGB_IL || SUPPORTS_UV_IL)
 
 #define SUPPORTS_UYVY     (SUPPORT_FMT(FRAME_FORMAT_UYVY))
 

@@ -22,6 +22,9 @@
 #ifndef __IA_CSS_SDIS_TYPES_H
 #define __IA_CSS_SDIS_TYPES_H
 
+/** Number of DVS coefficient types */
+#define IA_CSS_DVS_NUM_COEF_TYPES      6
+
 #ifndef PIPE_GENERATION
 #include "isp/kernels/sdis/common/ia_css_sdis_common_types.h"
 #endif

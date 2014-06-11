@@ -101,6 +101,95 @@ struct ia_css_blob_info {
 	CSS_ALIGN(const void  *data, 8);		/**< Data section absolute pointer within fw, data = data + bss */
 };
 
+struct ia_css_binary_input_info {
+	uint32_t		min_width;
+	uint32_t		min_height;
+	uint32_t		max_width;
+	uint32_t		max_height;
+	uint32_t		source; /* memory, sensor, variable */
+};
+
+struct ia_css_binary_output_info {
+	uint32_t		min_width;
+	uint32_t		min_height;
+	uint32_t		max_width;
+	uint32_t		max_height;
+	uint32_t		num_chunks;
+	uint32_t		variable_format;
+};
+
+struct ia_css_binary_internal_info {
+	uint32_t		max_width;
+	uint32_t		max_height;
+};
+
+struct ia_css_binary_bds_info {
+	uint32_t		supported_bds_factors;
+};
+
+struct ia_css_binary_dvs_info {
+	uint32_t		max_envelope_width;
+	uint32_t		max_envelope_height;
+};
+
+struct ia_css_binary_vf_dec_info {
+	uint32_t		is_variable;
+	uint32_t		max_log_downscale;
+};
+
+struct ia_css_binary_s3a_info {
+	uint32_t		s3atbl_use_dmem;
+	uint32_t		fixed_s3a_deci_log;
+};
+
+struct ia_css_binary_iterator_info {
+	uint32_t		num_stripes;
+	uint32_t		row_stripes_height;
+	uint32_t		row_stripes_overlap_lines;
+};
+
+struct ia_css_binary_address_info {
+	uint32_t		isp_addresses;	/* Address in ISP dmem */
+	uint32_t		main_entry;	/* Address of entry fct */
+	uint32_t		in_frame;	/* Address in ISP dmem */
+	uint32_t		out_frame;	/* Address in ISP dmem */
+	uint32_t		in_data;	/* Address in ISP dmem */
+	uint32_t		out_data;	/* Address in ISP dmem */
+	uint32_t		sh_dma_cmd_ptr;     /* In ISP dmem */
+};
+
+struct ia_css_binary_uds_info {
+	uint16_t	bpp;
+	uint16_t	use_bci;
+	uint16_t	use_str;
+	uint16_t	woix;
+	uint16_t	woiy;
+	uint16_t	extra_out_vecs;
+	uint16_t	vectors_per_line_in;
+	uint16_t	vectors_per_line_out;
+	uint16_t	vectors_c_per_line_in;
+	uint16_t	vectors_c_per_line_out;
+	uint16_t	vmem_gdc_in_block_height_y;
+	uint16_t	vmem_gdc_in_block_height_c;
+	/* uint16_t padding; */
+};
+
+struct ia_css_binary_pipeline_info {
+	uint32_t	mode;
+	uint32_t	isp_pipe_version;
+	uint32_t	pipelining;
+	uint32_t	c_subsampling;
+	uint32_t	top_cropping;
+	uint32_t	left_cropping;
+	uint32_t	variable_resolution;
+};
+
+struct ia_css_binary_block_info {
+	uint32_t	block_width;
+	uint32_t	block_height;
+	uint32_t	output_block_height;
+};
+
 /** Structure describing an ISP binary.
  * It describes the capabilities of a binary, like the maximum resolution,
  * support features, dma channels, uds features, etc.
@@ -109,50 +198,20 @@ struct ia_css_blob_info {
  * thereby making the SP code more binary independent.
  */
 struct ia_css_binary_info {
-	CSS_ALIGN(uint32_t	id, 8); /* IA_CSS_BINARY_ID_* */
-	uint32_t		mode;
-	uint32_t		supported_bds_factors;
-	uint32_t		min_input_width;
-	uint32_t		min_input_height;
-	uint32_t		max_input_width;
-	uint32_t		max_input_height;
-	uint32_t		min_output_width;
-	uint32_t		min_output_height;
-	uint32_t		max_output_width;
-	uint32_t		max_output_height;
-	uint32_t		max_internal_width;
-	uint32_t		max_internal_height;
-	uint32_t		max_dvs_envelope_width;
-	uint32_t		max_dvs_envelope_height;
-	uint32_t		variable_resolution;
-	uint32_t		variable_output_format;
-	uint32_t		variable_vf_veceven;
-	uint32_t		max_vf_log_downscale;
-	uint32_t		top_cropping;
-	uint32_t		left_cropping;
-	uint32_t		s3atbl_use_dmem;
-	int32_t			input;
-	uint32_t		c_subsampling;
-	uint32_t		output_num_chunks;
-	uint32_t		num_stripes;
-	uint32_t		row_stripes_height;
-	uint32_t		row_stripes_overlap_lines;
-	uint32_t		pipelining;
-	uint32_t		fixed_s3a_deci_log;
-	uint32_t		isp_addresses;	/* Address in ISP dmem */
-	uint32_t		main_entry;	/* Address of entry fct */
-	uint32_t		in_frame;	/* Address in ISP dmem */
-	uint32_t		out_frame;	/* Address in ISP dmem */
-	uint32_t		in_data;	/* Address in ISP dmem */
-	uint32_t		out_data;	/* Address in ISP dmem */
-	uint32_t		block_width;
-	uint32_t		block_height;
-	uint32_t		output_block_height;
-	uint32_t		dvs_in_block_width;
-	uint32_t		dvs_in_block_height;
-	struct ia_css_isp_param_isp_segments mem_initializers;
-	uint32_t		sh_dma_cmd_ptr;     /* In ISP dmem */
-	uint32_t		isp_pipe_version;
+	CSS_ALIGN(uint32_t			id, 8); /* IA_CSS_BINARY_ID_* */
+	struct ia_css_binary_pipeline_info	pipeline;
+	struct ia_css_binary_input_info		input;
+	struct ia_css_binary_output_info	output;
+	struct ia_css_binary_internal_info	internal;
+	struct ia_css_binary_bds_info		bds;
+	struct ia_css_binary_dvs_info		dvs;
+	struct ia_css_binary_vf_dec_info	vf_dec;
+	struct ia_css_binary_s3a_info		s3a;
+	struct ia_css_binary_iterator_info	iterator;
+	struct ia_css_binary_address_info	addresses;
+	struct ia_css_binary_uds_info		uds;
+	struct ia_css_binary_block_info		block;
+	struct ia_css_isp_param_isp_segments	mem_initializers;
 /* MW: Packing (related) bools in an integer ?? */
 	struct {
 #if defined(IS_ISP_2500_SYSTEM)
@@ -174,7 +233,8 @@ struct ia_css_binary_info {
 		uint8_t	demosaic_acc;
 		uint8_t	dvs_stats;
 		uint8_t	lace_stats;
-		uint8_t	yuvp1_acc;
+		uint8_t	yuvp1_b0_acc;
+		uint8_t	yuvp1_c0_acc;
 		uint8_t	yuvp2_acc;
 		uint8_t	ae;
 		uint8_t	af;
@@ -230,21 +290,6 @@ struct ia_css_binary_info {
 		uint8_t	claimed_by_isp;
 		uint8_t padding[2];
 	} dma;
-	struct {
-		uint16_t	bpp;
-		uint16_t	use_bci;
-		uint16_t	use_str;
-		uint16_t	woix;
-		uint16_t	woiy;
-		uint16_t	extra_out_vecs;
-		uint16_t	vectors_per_line_in;
-		uint16_t	vectors_per_line_out;
-		uint16_t	vectors_c_per_line_in;
-		uint16_t	vectors_c_per_line_out;
-		uint16_t	vmem_gdc_in_block_height_y;
-		uint16_t	vmem_gdc_in_block_height_c;
-		/* uint16_t padding; */
-	} uds;
 };
 
 /** Structure describing an ISP binary.

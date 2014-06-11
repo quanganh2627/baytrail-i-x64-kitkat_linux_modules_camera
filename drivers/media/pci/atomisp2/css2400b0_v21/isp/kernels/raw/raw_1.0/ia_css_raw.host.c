@@ -34,8 +34,10 @@
 void
 ia_css_raw_encode(
 	struct sh_css_isp_raw_params *to,
-	const struct ia_css_aa_config *from)
+	const struct ia_css_aa_config *from,
+	unsigned size)
 {
+	(void)size;
 	to->baf_strength = from->strength;
 }
 
@@ -92,12 +94,14 @@ css2isp_stream_format(enum ia_css_stream_format from)
 void
 ia_css_raw_config(
 	struct sh_css_isp_raw_isp_config *to,
-	const struct ia_css_raw_configuration  *from)
+	const struct ia_css_raw_configuration  *from,
+	unsigned size)
 {
 	unsigned elems_a = ISP_VEC_NELEMS;
 	const struct ia_css_frame_info *in_info = from->in_info;
 	const struct ia_css_frame_info *internal_info = from->internal_info;
 
+	(void)size;
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* 2401 input system uses input width width */
 	in_info = internal_info;

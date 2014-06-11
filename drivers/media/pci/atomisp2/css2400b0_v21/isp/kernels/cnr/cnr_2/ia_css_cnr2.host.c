@@ -39,8 +39,10 @@ const struct ia_css_cnr_config default_cnr_config = {
 void
 ia_css_cnr_encode(
 	struct sh_css_isp_cnr_params *to,
-	const struct ia_css_cnr_config *from)
+	const struct ia_css_cnr_config *from,
+	unsigned size)
 {
+	(void)size;
 	to->coring_u = from->coring_u;
 	to->coring_v = from->coring_v;
 	to->sense_gain_vy = from->sense_gain_vy;
@@ -73,7 +75,9 @@ ia_css_cnr_debug_dtrace(
 }
 
 void
-ia_css_init_cnr2_state(void/*struct sh_css_isp_cnr_vmem_state *state*/)
+ia_css_init_cnr2_state(
+	void/*struct sh_css_isp_cnr_vmem_state*/ *state,
+	size_t size)
 {
-	//memset(state, 0, sizeof(*state));
+	memset(state, 0, size);
 }

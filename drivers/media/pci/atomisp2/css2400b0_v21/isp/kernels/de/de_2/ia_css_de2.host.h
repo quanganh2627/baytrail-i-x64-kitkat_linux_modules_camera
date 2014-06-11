@@ -30,7 +30,8 @@ extern const struct ia_css_ecd_config default_ecd_config;
 void
 ia_css_ecd_encode(
 	struct sh_css_isp_ecd_params *to,
-	const struct ia_css_ecd_config *from);
+	const struct ia_css_ecd_config *from,
+	unsigned size);
 
 void
 ia_css_ecd_dump(

@@ -31,9 +31,12 @@
 void
 ia_css_output_config(
 	struct sh_css_isp_output_isp_config *to,
-	const struct ia_css_output_configuration  *from)
+	const struct ia_css_output_configuration  *from,
+	unsigned size)
 {
 	unsigned elems_a = ISP_VEC_NELEMS;
+
+	(void)size;
 	ia_css_dma_configure_from_info(&to->port_b, from->info);
 	to->width_a_over_b = elems_a / to->port_b.elems;
 	to->height = from->info->res.height;
@@ -46,20 +49,22 @@ ia_css_output_config(
 
 void
 ia_css_output0_config(
-	struct sh_css_isp_output_isp_config      *to,
-	const struct ia_css_output0_configuration *from)
+	struct sh_css_isp_output_isp_config       *to,
+	const struct ia_css_output0_configuration *from,
+	unsigned size)
 {
 	ia_css_output_config (
-		to, (const struct ia_css_output_configuration *)from);
+		to, (const struct ia_css_output_configuration *)from, size);
 }
 
 void
 ia_css_output1_config(
-	struct sh_css_isp_output_isp_config      *to,
-	const struct ia_css_output1_configuration *from)
+	struct sh_css_isp_output_isp_config       *to,
+	const struct ia_css_output1_configuration *from,
+	unsigned size)
 {
 	ia_css_output_config (
-		to, (const struct ia_css_output_configuration *)from);
+		to, (const struct ia_css_output_configuration *)from, size);
 }
 
 void

@@ -29,8 +29,10 @@
 void
 ia_css_iterator_config(
 	struct sh_css_isp_iterator_isp_config *to,
-	const struct ia_css_iterator_configuration *from)
+	const struct ia_css_iterator_configuration *from,
+	unsigned size)
 {
+	(void)size;
 	ia_css_frame_info_to_frame_sp_info(&to->input_info,    from->input_info);
 	ia_css_frame_info_to_frame_sp_info(&to->internal_info, from->internal_info);
 	ia_css_frame_info_to_frame_sp_info(&to->output_info,   from->output_info);
@@ -62,7 +64,7 @@ ia_css_iterator_configure(
 	 * we assign vf_out res to out res, but for ISP internal processing, we need
 	 * the original out res. for video pipe, it has two output pins --- out and
 	 * vf_out, so it can keep these two resolutions already. */
-	if (binary->info->sp.mode == IA_CSS_BINARY_MODE_PREVIEW &&
+	if (binary->info->sp.pipeline.mode == IA_CSS_BINARY_MODE_PREVIEW &&
 	    binary->vf_downscale_log2 > 0) {
 		/* TODO: Remove this after preview output decimation is fixed
 		 * by configuring out&vf info files properly */

@@ -24,6 +24,6 @@
 
 #include "vmem_global.h"
 
-#define VMEM_ARRAY(x,s) uint16_t x[s/ISP_NWAY][ISP_NWAY]
+#define VMEM_ARRAY(x,s)    uint16_t x[s/ISP_NWAY][ISP_NWAY]
 
 #endif /* __VMEM_LOCAL_H_INCLUDED__ */

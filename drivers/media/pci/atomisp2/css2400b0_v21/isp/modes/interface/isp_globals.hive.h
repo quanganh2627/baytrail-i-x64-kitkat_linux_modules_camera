@@ -110,8 +110,6 @@ typedef struct s_isp_addresses {
   struct {
     PVECTOR  input_buf;
     PVECTOR  g_macc_coef;
-    PVECTOR  g_sdis_horicoef_tbl;
-    PVECTOR  g_sdis_vertcoef_tbl; /* Can be vmem or dmem */
     PVECTOR  uds_data_via_sp;
     PVECTOR  uds_ipxs_via_sp;
     PVECTOR  uds_ibuf_via_sp;

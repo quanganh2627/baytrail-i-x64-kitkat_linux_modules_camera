@@ -42,6 +42,12 @@ enum ia_css_param_class {
 };
 #define IA_CSS_NUM_PARAM_CLASSES (IA_CSS_PARAM_CLASS_STATE + 1)
 
+/** ISP parameter descriptor */
+struct ia_css_isp_parameter {
+	uint16_t offset; /* Offset in isp_<mem>)parameters, etc. */
+	uint16_t size;   /* Disabled if 0 */
+};
+
 
 /* Address/size of each parameter class in each isp memory, host memory pointers */
 struct ia_css_isp_param_host_segments {

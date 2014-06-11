@@ -46,6 +46,10 @@
 #define OUTPUT_SCALE_FACTOR 10
 #define SLOPE_A_RESOLUTION 10
 
+#define ONE_IN_Q14 (1<<(NUM_BITS-2))
+#define Q29_TO_Q15_SHIFT_VAL (NUM_BITS-2)
+#define Q28_TO_Q15_SHIFT_VAL (NUM_BITS-3)
+
 typedef unsigned short tscalar1w_3bit;
 typedef short tscalar1w_5bit_signed;
 typedef unsigned short tscalar1w_5bit;
@@ -53,6 +57,8 @@ typedef unsigned short tvector_5bit;
 typedef unsigned short tvector_4bit;
 typedef unsigned short tvector1w_unsigned;
 typedef unsigned int   tvector2w_unsigned;
+typedef short tscalar1w_signed_positive;
+typedef short tvector1w_signed_positive;
 
 typedef struct {
   tvector1w     v0  ;

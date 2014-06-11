@@ -30,33 +30,56 @@
 extern const struct ia_css_dvs_coefficients default_sdis_config;
 
 /* Opaque here, since size is binary dependent. */
-struct sh_css_isp_sdis_dmem_params;
-struct sh_css_isp_sdis_vmem_params;
+struct sh_css_isp_sdis_hori_coef_tbl;
+struct sh_css_isp_sdis_vert_coef_tbl;
+struct sh_css_isp_sdis_hori_proj_tbl;
+struct sh_css_isp_sdis_vert_proj_tbl;
 
-void ia_css_sdis_encode (
-	struct sh_css_isp_sdis_dmem_params   *to,
-	const struct ia_css_dvs_coefficients *from);
+void ia_css_sdis_horicoef_vmem_encode (
+	struct sh_css_isp_sdis_hori_coef_tbl *to,
+	const struct ia_css_dvs_coefficients *from,
+	unsigned size);
 
-void ia_css_sdis_vmem_encode (
-	struct sh_css_isp_sdis_vmem_params   *to,
-	const struct ia_css_dvs_coefficients *from);
+void ia_css_sdis_vertcoef_vmem_encode (
+	struct sh_css_isp_sdis_vert_coef_tbl *to,
+	const struct ia_css_dvs_coefficients *from,
+	unsigned size);
 
-void ia_css_sdis_store_coefficients(
-	const struct ia_css_dvs_coefficients *dvs_coefs,
-	const struct ia_css_binary *binary,
-	hrt_vaddress ddr_addr_hor,
-	hrt_vaddress ddr_addr_ver);
+void ia_css_sdis_horiproj_encode (
+	struct sh_css_isp_sdis_hori_proj_tbl *to,
+	const struct ia_css_dvs_coefficients *from,
+	unsigned size);
+
+void ia_css_sdis_vertproj_encode (
+	struct sh_css_isp_sdis_vert_proj_tbl *to,
+	const struct ia_css_dvs_coefficients *from,
+	unsigned size);
 
 void ia_css_get_isp_dis_coefficients(
 	struct ia_css_stream *stream,
 	short *horizontal_coefficients,
 	short *vertical_coefficients);
 
-size_t ia_css_sdis_hor_coef_tbl_bytes(
-	const struct ia_css_binary *binary);
+enum ia_css_err
+ia_css_get_dvs_statistics(
+	struct ia_css_dvs_statistics	       *host_stats,
+	const struct ia_css_isp_dvs_statistics *isp_stats);
 
-size_t ia_css_sdis_ver_coef_tbl_bytes(
-	const struct ia_css_binary *binary);
+void
+ia_css_translate_dvs_statistics(
+		struct ia_css_dvs_statistics               *host_stats,
+		const struct ia_css_isp_dvs_statistics_map *isp_stats);
+
+struct ia_css_isp_dvs_statistics *
+ia_css_isp_dvs_statistics_allocate(
+	const struct ia_css_dvs_grid_info *grid);
+
+void
+ia_css_isp_dvs_statistics_free(
+	struct ia_css_isp_dvs_statistics *me);
+
+size_t ia_css_sdis_hor_coef_tbl_bytes(const struct ia_css_binary *binary);
+size_t ia_css_sdis_ver_coef_tbl_bytes(const struct ia_css_binary *binary);
 
 void
 ia_css_sdis_init_info(
@@ -70,7 +93,16 @@ ia_css_sdis_init_info(
 void ia_css_sdis_clear_coefficients(
 	struct ia_css_dvs_coefficients *dvs_coefs);
 
-void ia_css_sdis_debug_dtrace(
+void ia_css_sdis_horicoef_debug_dtrace(
+	const struct ia_css_dvs_coefficients *config, unsigned level);
+
+void ia_css_sdis_vertcoef_debug_dtrace(
+	const struct ia_css_dvs_coefficients *config, unsigned level);
+
+void ia_css_sdis_horiproj_debug_dtrace(
+	const struct ia_css_dvs_coefficients *config, unsigned level);
+
+void ia_css_sdis_vertproj_debug_dtrace(
 	const struct ia_css_dvs_coefficients *config, unsigned level);
 
 #endif /* __IA_CSS_SDIS_HOST_H */
