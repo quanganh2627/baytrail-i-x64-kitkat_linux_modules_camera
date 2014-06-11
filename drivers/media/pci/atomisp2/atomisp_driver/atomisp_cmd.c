@@ -4870,24 +4870,30 @@ int atomisp_exif_makernote(struct atomisp_sub_device *asd,
 
 	ctrl.id = V4L2_CID_FOCAL_ABSOLUTE;
 	if (v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
-				 core, g_ctrl, &ctrl))
+				 core, g_ctrl, &ctrl)) {
 		dev_warn(isp->dev, "failed to g_ctrl for focal length\n");
-	else
+		return -EINVAL;
+	} else {
 		config->focal_length = ctrl.value;
+	}
 
 	ctrl.id = V4L2_CID_FNUMBER_ABSOLUTE;
 	if (v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
-				core, g_ctrl, &ctrl))
+				core, g_ctrl, &ctrl)) {
 		dev_warn(isp->dev, "failed to g_ctrl for f-number\n");
-	else
+		return -EINVAL;
+	} else {
 		config->f_number_curr = ctrl.value;
+	}
 
 	ctrl.id = V4L2_CID_FNUMBER_RANGE;
 	if (v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
-				core, g_ctrl, &ctrl))
+				core, g_ctrl, &ctrl)) {
 		dev_warn(isp->dev, "failed to g_ctrl for f number range\n");
-	else
+		return -EINVAL;
+	} else {
 		config->f_number_range = ctrl.value;
+	}
 
 	return 0;
 }
