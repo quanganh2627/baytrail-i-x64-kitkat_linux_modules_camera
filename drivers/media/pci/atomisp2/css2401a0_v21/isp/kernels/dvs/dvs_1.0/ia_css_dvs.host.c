@@ -36,8 +36,10 @@
 void
 ia_css_dvs_config(
 	struct sh_css_isp_dvs_isp_config *to,
-	const struct ia_css_dvs_configuration  *from)
+	const struct ia_css_dvs_configuration  *from,
+	unsigned size)
 {
+	(void)size;
 	to->num_horizontal_blocks =
 	    DVS_NUM_BLOCKS_X(from->info->res.width);
 	to->num_vertical_blocks =

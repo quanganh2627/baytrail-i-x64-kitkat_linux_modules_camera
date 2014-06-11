@@ -30,7 +30,8 @@
 void
 ia_css_iterator_config(
 	struct sh_css_isp_iterator_isp_config *to,
-	const struct ia_css_iterator_configuration *from);
+	const struct ia_css_iterator_configuration *from,
+	unsigned size);
 
 enum ia_css_err
 ia_css_iterator_configure(

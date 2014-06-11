@@ -32,7 +32,8 @@
 void
 ia_css_dvs_config(
 	struct sh_css_isp_dvs_isp_config      *to,
-	const struct ia_css_dvs_configuration *from);
+	const struct ia_css_dvs_configuration *from,
+	unsigned size);
 
 void
 ia_css_dvs_configure(

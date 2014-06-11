@@ -53,12 +53,14 @@ void
 ia_css_ob_encode(
 	struct sh_css_isp_ob_params *to,
 	const struct ia_css_ob_config *from,
-	const struct sh_css_isp_ob_stream_config *config)
+	const struct sh_css_isp_ob_stream_config *config,
+	unsigned size)
 {
 	unsigned int ob_bit_depth
 		= config->isp_pipe_version == 2 ? SH_CSS_BAYER_BITS : config->raw_bit_depth;
 	unsigned int scale = 16 - ob_bit_depth;
 
+	(void)size;
 	switch (from->mode) {
 	case IA_CSS_OB_MODE_FIXED:
 		to->blacklevel_gr = from->level_gr >> scale;
@@ -95,12 +97,14 @@ void
 ia_css_ob_vmem_encode(
 	struct sh_css_isp_ob_vmem_params *to,
 	const struct ia_css_ob_config *from,
-	const struct sh_css_isp_ob_stream_config *config)
+	const struct sh_css_isp_ob_stream_config *config,
+	unsigned size)
 {
 	struct sh_css_isp_ob_params tmp;
 	struct sh_css_isp_ob_params *ob = &tmp;
 
-	ia_css_ob_encode(&tmp, from, config);
+	(void)size;
+	ia_css_ob_encode(&tmp, from, config, sizeof(tmp));
 
 	{
 		unsigned i;

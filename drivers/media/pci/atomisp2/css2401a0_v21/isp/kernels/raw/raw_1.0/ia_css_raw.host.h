@@ -30,7 +30,8 @@
 void
 ia_css_raw_encode(
 	struct sh_css_isp_raw_params *to,
-	const struct ia_css_aa_config *from);
+	const struct ia_css_aa_config *from,
+	unsigned size);
 
 void
 ia_css_raw_dump(
@@ -40,7 +41,8 @@ ia_css_raw_dump(
 void
 ia_css_raw_config(
 	struct sh_css_isp_raw_isp_config      *to,
-	const struct ia_css_raw_configuration *from);
+	const struct ia_css_raw_configuration *from,
+	unsigned size);
 
 void
 ia_css_raw_configure(

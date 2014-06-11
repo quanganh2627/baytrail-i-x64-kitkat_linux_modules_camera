@@ -313,6 +313,7 @@ ia_css_isp_dvs_statistics_map_free(struct ia_css_isp_dvs_statistics_map *me);
 */
 struct ia_css_isp_skc_dvs_statistics *ia_css_skc_dvs_statistics_allocate(void);
 
+#if defined(IS_ISP_2500_SYSTEM)
 /** @brief Allocate memory for the DVS statistics on the ISP
  * @param[in] type - DVS statistics type
  * @param[in] params - grid parameters for DVS/DVS2 (not used
@@ -333,5 +334,6 @@ ia_css_dvs_statistics_allocate_isp(enum dvs_statistics_type type,
 void
 ia_css_dvs_statistics_free_isp(enum dvs_statistics_type type,
 			       union ia_css_dvs_statistics_isp *me);
+#endif
 
 #endif /*  __IA_CSS_DVS_H */

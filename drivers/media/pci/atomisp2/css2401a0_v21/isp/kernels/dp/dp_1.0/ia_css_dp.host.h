@@ -31,7 +31,8 @@ extern const struct ia_css_dp_config default_dp_config;
 void
 ia_css_dp_encode(
 	struct sh_css_isp_dp_params *to,
-	const struct ia_css_dp_config *from);
+	const struct ia_css_dp_config *from,
+	unsigned size);
 
 void
 ia_css_dp_dump(
@@ -45,6 +46,7 @@ ia_css_dp_debug_dtrace(
 
 void
 ia_css_init_dp_state(
-	void/*struct sh_css_isp_dp_vmem_state *state*/);
+	void/*struct sh_css_isp_dp_vmem_state*/ *state,
+	size_t size);
 
 #endif /* __IA_CSS_DP_HOST_H */

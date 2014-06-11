@@ -24,6 +24,7 @@
 
 #include "type_support.h"
 #include "platform_support.h"
+#include "runtime/bufq/interface/ia_css_bufq_comm.h"
 #include <system_types.h>	 /* hrt_vaddress */
 
 /*
@@ -87,9 +88,17 @@ struct ia_css_frame_sp_info {
 	unsigned char padding[3];	/* Extend to 32 bit multiple */
 };
 
+struct ia_css_buffer_sp {
+	union {
+		hrt_vaddress xmem_addr;
+		enum sh_css_queue_id queue_id;
+	} buf_src;
+	enum ia_css_buffer_type buf_type;
+};
 
 struct ia_css_frame_sp {
 	struct ia_css_frame_sp_info info;
+	struct ia_css_buffer_sp buf_attr;
 	union {
 		struct ia_css_frame_sp_plane raw;
 		struct ia_css_frame_sp_plane rgb;

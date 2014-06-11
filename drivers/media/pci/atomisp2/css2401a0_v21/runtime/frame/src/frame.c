@@ -824,7 +824,7 @@ static struct ia_css_frame *frame_create(unsigned int width,
 	me->data_bytes = 0;
 	me->data = mmgr_NULL;
 	/* To indicate it is not valid frame. */
-	me->dynamic_data_index = (int)SH_CSS_INVALID_QUEUE_ID;
+	me->dynamic_queue_id = (int)SH_CSS_INVALID_QUEUE_ID;
 	me->buf_type = IA_CSS_BUFFER_TYPE_INVALID;
 
 	return me;

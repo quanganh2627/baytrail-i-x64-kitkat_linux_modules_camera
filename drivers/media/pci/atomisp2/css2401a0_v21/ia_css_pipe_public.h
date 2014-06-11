@@ -51,7 +51,7 @@ enum ia_css_pipe_mode {
 									for SoC sensor and external ISP */
 };
 /* Temporary define  */
-#define IA_CSS_PIPE_MODE_NUM (IA_CSS_PIPE_MODE_COPY + 1)
+#define IA_CSS_PIPE_MODE_NUM (IA_CSS_PIPE_MODE_YUVPP + 1)
 
 /**
  * Pipe configuration structure.

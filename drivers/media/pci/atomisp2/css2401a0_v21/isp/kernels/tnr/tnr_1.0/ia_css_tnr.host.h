@@ -32,7 +32,8 @@ extern const struct ia_css_tnr_config default_tnr_config;
 void
 ia_css_tnr_encode(
 	struct sh_css_isp_tnr_params *to,
-	const struct ia_css_tnr_config *from);
+	const struct ia_css_tnr_config *from,
+	unsigned size);
 
 void
 ia_css_tnr_dump(
@@ -47,7 +48,8 @@ ia_css_tnr_debug_dtrace(
 void
 ia_css_tnr_config(
 	struct sh_css_isp_tnr_isp_config      *to,
-	const struct ia_css_tnr_configuration *from);
+	const struct ia_css_tnr_configuration *from,
+	unsigned size);
 
 void
 ia_css_tnr_configure(
@@ -56,5 +58,6 @@ ia_css_tnr_configure(
 
 void
 ia_css_init_tnr_state(
-	struct sh_css_isp_tnr_dmem_state *state);
+	struct sh_css_isp_tnr_dmem_state *state,
+	size_t size);
 #endif /* __IA_CSS_TNR_HOST_H */

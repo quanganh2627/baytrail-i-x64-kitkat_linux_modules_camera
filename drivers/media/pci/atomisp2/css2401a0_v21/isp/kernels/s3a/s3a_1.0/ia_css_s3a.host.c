@@ -50,8 +50,10 @@ ia_css_s3a_configure(unsigned int raw_bit_depth)
 static void
 ia_css_ae_encode(
 	struct sh_css_isp_ae_params *to,
-	const struct ia_css_3a_config *from)
+	const struct ia_css_3a_config *from,
+	unsigned size)
 {
+	(void)size;
 	/* coefficients to calculate Y */
 	to->y_coef_r =
 	    uDIGIT_FITTING(from->ae_y_coef_r, 16, SH_CSS_AE_YCOEF_SHIFT);
@@ -64,8 +66,10 @@ ia_css_ae_encode(
 static void
 ia_css_awb_encode(
 	struct sh_css_isp_awb_params *to,
-	const struct ia_css_3a_config *from)
+	const struct ia_css_3a_config *from,
+	unsigned size)
 {
+	(void)size;
 	/* AWB level gate */
 	to->lg_high_raw =
 		uDIGIT_FITTING(from->awb_lg_high_raw, 16, s3a_raw_bit_depth);
@@ -78,9 +82,11 @@ ia_css_awb_encode(
 static void
 ia_css_af_encode(
 	struct sh_css_isp_af_params *to,
-	const struct ia_css_3a_config *from)
+	const struct ia_css_3a_config *from,
+	unsigned size)
 {
 	unsigned int i;
+	(void)size;
 
 	/* af fir coefficients */
 	for (i = 0; i < 7; ++i) {
@@ -96,11 +102,14 @@ ia_css_af_encode(
 void
 ia_css_s3a_encode(
 	struct sh_css_isp_s3a_params *to,
-	const struct ia_css_3a_config *from)
+	const struct ia_css_3a_config *from,
+	unsigned size)
 {
-	ia_css_ae_encode(&to->ae,  from);
-	ia_css_awb_encode(&to->awb, from);
-	ia_css_af_encode(&to->af,  from);
+	(void)size;
+
+	ia_css_ae_encode(&to->ae,   from, sizeof(to->ae));
+	ia_css_awb_encode(&to->awb, from, sizeof(to->awb));
+	ia_css_af_encode(&to->af,   from, sizeof(to->af));
 }
 
 #if 0
