@@ -53,6 +53,7 @@
 */
 /* The binary id is used in pre-processor expressions so we cannot
  * use an enum here. */
+ /* 24xx pipelines*/
 #define SH_CSS_BINARY_ID_COPY                      0
 #define SH_CSS_BINARY_ID_BAYER_DS                  1
 #define SH_CSS_BINARY_ID_VF_PP_FULL                2
@@ -103,7 +104,83 @@
 #define SH_CSS_BINARY_ID_ACCELERATION           47
 #define SH_CSS_BINARY_ID_PRE_DE_ISP2            48
 #define SH_CSS_BINARY_ID_KERNEL_TEST_LOAD_STORE 49
-#define SH_CSS_BINARY_NUM_IDS                   50
+
+/* skycam product pipelines */
+#define SH_CSS_BINARY_ID_PRIMARY                            100
+#define SH_CSS_BINARY_ID_VIDEO                              101
+#define SH_CSS_BINARY_ID_SC_VIDEO_HIGH_RESOLUTION           102
+
+/* skycam kerneltest pipelines */
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_NORM              120
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_LIN               121
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_SHD           122
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_AWB           123
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_3A                124
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_AF            125
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_OBGRID            126
+#define SH_CSS_BINARY_ID_VIDEO_TEST_INPUTCORRECTION         127
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_BAYER_DENOISE       128
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_DEMOSAIC            129
+#define SH_CSS_BINARY_ID_VIDEO_TEST_SHD_BNR_DM_RGBPP        130
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ADD_RGBPP               131
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_YUVP1               132
+#define SH_CSS_BINARY_ID_VIDEO_TEST_SPATIAL_FF              133
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DVS               134
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_YUVP2               135
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_XNR               136
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_TNR               137
+#define SH_CSS_BINARY_ID_VIDEO_PARTIALPIPE_INPUTCOR_FULL    138
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_AE            139
+#define SH_CSS_BINARY_ID_VIDEO_WITH_3A                      140
+#define SH_CSS_BINARY_ID_VIDEO_RAW                          141
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_AWB_FR        142
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DM_RGBPP          143
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DM_RGBPP_STRIPED  144
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_ANR                 145
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_BDS_ACC           146
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_IF_STRIPED        147
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_OUTPUT_SYSTEM     148
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_TNR_STRIPED       149
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DVS_STRIPED       150
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_OBGRID_STRIPED    151
+
+/* skycam partial test pipelines*/
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_ISP_EXITS           200
+#define SH_CSS_BINARY_ID_IF_TO_DPC                          201
+#define SH_CSS_BINARY_ID_IF_TO_BDS                          202
+#define SH_CSS_BINARY_ID_IF_TO_NORM                         203
+#define SH_CSS_BINARY_ID_IF_TO_OB                           204
+#define SH_CSS_BINARY_ID_IF_TO_LIN                          205
+#define SH_CSS_BINARY_ID_IF_TO_SHD                          206
+#define SH_CSS_BINARY_ID_IF_TO_BNR                          207
+#define SH_CSS_BINARY_ID_IF_TO_DM_WO_ANR_STATS              208
+#define SH_CSS_BINARY_ID_IF_TO_DM_3A_WO_ANR                 209
+#define SH_CSS_BINARY_ID_IF_TO_RGB                          210
+#define SH_CSS_BINARY_ID_IF_TO_YUVP1                        211
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_WO_ANR                 212
+#define SH_CSS_BINARY_ID_IF_TO_DM_WO_STATS                  213
+#define SH_CSS_BINARY_ID_IF_TO_DM_3A                        214
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2                        215
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_ANR_VIA_ISP            216
+#define SH_CSS_BINARY_ID_VIDEO_IF_TO_DVS                    217
+#define SH_CSS_BINARY_ID_VIDEO_IF_TO_TNR                    218
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_BNR_STRIPED        219
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_DVS_STAT            220
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_LACE_STAT           221
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_YUVP1_S             222
+#define SH_CSS_BINARY_ID_IF_TO_BDS_STRIPED                  223
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_ANR_STRIPED         224
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AWB_BNR_STRIPED    225
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_YUVP2_STRIPED       226
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AF_BNR_STRIPED     227
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AWBFR_BNR_STRIPED  228
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB_STATS        229
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB_AE           230
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AE_BNR_STRIPED     231
+#define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS           232
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB              233
+#define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS_STRIPED   234
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_INPUT_YUV         235
 
 #define XMEM_WIDTH_BITS              HIVE_ISP_DDR_WORD_BITS
 #define XMEM_SHORTS_PER_WORD         (HIVE_ISP_DDR_WORD_BITS/16)
@@ -152,10 +229,6 @@
    Four FPGA vectors are required and
    four of them fit in one ASIC vector.*/
 #define UDS_MAX_CHUNKS                16
-
-/* ************
- * lookup table
- * ************/
 
 #define ISP_LEFT_PADDING	_ISP_LEFT_CROP_EXTRA(ISP_LEFT_CROPPING)
 #define ISP_LEFT_PADDING_VECS	CEIL_DIV(ISP_LEFT_PADDING, ISP_VEC_NELEMS)

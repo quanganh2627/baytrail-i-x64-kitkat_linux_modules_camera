@@ -38,13 +38,16 @@ const struct ia_css_dp_config default_dp_config = {
 void
 ia_css_dp_encode(
 	struct sh_css_isp_dp_params *to,
-	const struct ia_css_dp_config *from)
+	const struct ia_css_dp_config *from,
+	unsigned size)
 {
 	int gain = from->gain;
 	int gr   = from->gr;
 	int r    = from->r;
 	int b    = from->b;
 	int gb   = from->gb;
+
+	(void)size;
 	to->threshold_single =
 	    SH_CSS_BAYER_MAXVAL;
 	to->threshold_2adjacent =
@@ -114,7 +117,9 @@ ia_css_dp_debug_dtrace(
 }
 
 void
-ia_css_init_dp_state(void/*struct sh_css_isp_dp_vmem_state *state*/)
+ia_css_init_dp_state(
+	void/*struct sh_css_isp_dp_vmem_state*/ *state,
+	size_t size)
 {
-	//memset(state, 0, sizeof(*state));
+	memset(state, 0, size);
 }

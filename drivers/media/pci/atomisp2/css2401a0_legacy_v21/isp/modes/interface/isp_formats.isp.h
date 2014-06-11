@@ -23,6 +23,7 @@
 #define _ISP_FORMATS_ISP_H
 
 #include "assert_support.h"
+#include "ia_css_frame_format.h"
 
 /* internal isp representation for the frame formats.
  * always use the encode and decode functions to translate

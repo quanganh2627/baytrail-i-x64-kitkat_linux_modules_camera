@@ -31,17 +31,20 @@
 void
 ia_css_output_config(
 	struct sh_css_isp_output_isp_config      *to,
-	const struct ia_css_output_configuration *from);
+	const struct ia_css_output_configuration *from,
+	unsigned size);
 
 void
 ia_css_output0_config(
-	struct sh_css_isp_output_isp_config      *to,
-	const struct ia_css_output0_configuration *from);
+	struct sh_css_isp_output_isp_config       *to,
+	const struct ia_css_output0_configuration *from,
+	unsigned size);
 
 void
 ia_css_output1_config(
-	struct sh_css_isp_output_isp_config      *to,
-	const struct ia_css_output1_configuration *from);
+	struct sh_css_isp_output_isp_config       *to,
+	const struct ia_css_output1_configuration *from,
+	unsigned size);
 
 void
 ia_css_output_configure(

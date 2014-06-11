@@ -44,6 +44,9 @@ extern unsigned			 sh_css_num_binaries;
 char
 *sh_css_get_fw_version(void);
 
+bool
+sh_css_check_firmware_version(const char *fw_data);
+
 enum ia_css_err
 sh_css_load_firmware(const char *fw_data,
 		     unsigned int fw_size);

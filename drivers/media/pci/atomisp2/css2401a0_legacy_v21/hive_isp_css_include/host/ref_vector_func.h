@@ -450,5 +450,70 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean2x3m(
 */
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x6m(
 	s_1w_1x6_matrix m);
-#endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/
 
+/** @brief Bi-linear Interpolation optimized(approximate)
+ *
+ * @param[in] a input0
+ * @param[in] b input1
+ * @param[in] c cloned weight factor
+  *
+ * @return		(a-b)*c + b
+ *
+ * This function will do bi-linear Interpolation on
+ * inputs a and b using constant weight factor c
+ *
+ * Inputs a,b are assumed in S1.15 format
+ * Weight factor has to be in range [0,1] and is assumed to be in S2.14 format
+ *
+ * The bilinear interpolation equation is (a*c) + b*(1-c),
+ * But this is implemented as (a-b)*c + b for optimization
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol_approx_c(
+	tvector1w a,
+	tvector1w b,
+	tscalar1w_signed_positive c);
+
+/** @brief Bi-linear Interpolation optimized(approximate)
+ *
+ * @param[in] a input0
+ * @param[in] b input1
+ * @param[in] c weight factor
+  *
+ * @return		(a-b)*c + b
+ *
+ * This function will do bi-linear Interpolation on
+ * inputs a and b using weight factor c
+ *
+ * Inputs a,b are assumed in S1.15 format
+ * Weight factor has to be in range [0,1] and is assumed to be in S2.14 format
+ *
+ * The bilinear interpolation equation is (a*c) + b*(1-c),
+ * But this is implemented as (a-b)*c + b for optimization
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol_approx(
+	tvector1w a,
+	tvector1w b,
+	tvector1w_signed_positive c);
+
+/** @brief Bi-linear Interpolation
+ *
+ * @param[in] a input0
+ * @param[in] b input1
+ * @param[in] c weight factor
+  *
+ * @return		(a*c) + b*(1-c)
+ *
+ * This function will do bi-linear Interpolation on
+ * inputs a and b using weight factor c
+ *
+ * Inputs a,b are assumed in S1.15 format
+ * Weight factor has to be in range [0,1] and is assumed to be in S2.14 format
+ *
+ * The bilinear interpolation equation is (a*c) + b*(1-c),
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol(
+	tvector1w a,
+	tvector1w b,
+	tscalar1w_signed_positive c);
+
+#endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/

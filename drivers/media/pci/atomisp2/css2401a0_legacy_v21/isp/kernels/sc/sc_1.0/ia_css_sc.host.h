@@ -30,7 +30,8 @@
 void
 ia_css_sc_encode(
 	struct sh_css_isp_sc_params *to,
-	struct ia_css_shading_table **from);
+	struct ia_css_shading_table **from,
+	unsigned size);
 
 void
 ia_css_sc_dump(

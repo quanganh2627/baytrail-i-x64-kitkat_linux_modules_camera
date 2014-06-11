@@ -1,22 +1,25 @@
 /*
- * Support for Intel Camera Imaging ISP subsystem.
+ * INTEL CONFIDENTIAL
  *
- * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
+ * Copyright (C) 2010 - 2013 Intel Corporation.
+ * All Rights Reserved.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License version
- * 2 as published by the Free Software Foundation.
+ * The source code contained or described herein and all documents
+ * related to the source code ("Material") are owned by Intel Corporation
+ * or licensors. Title to the Material remains with Intel
+ * Corporation or its licensors. The Material contains trade
+ * secrets and proprietary and confidential information of Intel or its
+ * licensors. The Material is protected by worldwide copyright
+ * and trade secret laws and treaty provisions. No part of the Material may
+ * be used, copied, reproduced, modified, published, uploaded, posted,
+ * transmitted, distributed, or disclosed in any way without Intel's prior
+ * express written permission.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- *
+ * No License under any patent, copyright, trade secret or other intellectual
+ * property right is granted to or conferred upon you by disclosure or
+ * delivery of the Materials, either expressly, by implication, inducement,
+ * estoppel or otherwise. Any license under such intellectual property rights
+ * must be express and approved by Intel in writing.
  */
 
 #ifndef _COMMON_ISP_CONST_H_
@@ -41,6 +44,143 @@
 #else
 #define UNION struct /* Union constructors not allowed in C++ */
 #endif
+
+/* ISP binary identifiers.
+   These determine the order in which the binaries are looked up, do not change
+   this!
+   Also, the SP firmware uses this same order (isp_loader.hive.c).
+   Also, gen_firmware.c uses this order in its firmware_header.
+*/
+/* The binary id is used in pre-processor expressions so we cannot
+ * use an enum here. */
+ /* 24xx pipelines*/
+#define SH_CSS_BINARY_ID_COPY                      0
+#define SH_CSS_BINARY_ID_BAYER_DS                  1
+#define SH_CSS_BINARY_ID_VF_PP_FULL                2
+#define SH_CSS_BINARY_ID_VF_PP_OPT                 3
+#define SH_CSS_BINARY_ID_YUV_SCALE                 4
+#define SH_CSS_BINARY_ID_CAPTURE_PP                5
+#define SH_CSS_BINARY_ID_PRE_ISP                   6
+#define SH_CSS_BINARY_ID_PRE_ISP_ISP2              7
+#define SH_CSS_BINARY_ID_GDC                       8
+#define SH_CSS_BINARY_ID_POST_ISP                  9
+#define SH_CSS_BINARY_ID_POST_ISP_ISP2            10
+#define SH_CSS_BINARY_ID_ANR                      11
+#define SH_CSS_BINARY_ID_ANR_ISP2                 12
+#define SH_CSS_BINARY_ID_PREVIEW_CONT_DS          13
+#define SH_CSS_BINARY_ID_PREVIEW_DS               14
+#define SH_CSS_BINARY_ID_PREVIEW_DEC              15
+#define SH_CSS_BINARY_ID_PREVIEW_CONT_BDS125_ISP2 16
+#define SH_CSS_BINARY_ID_PREVIEW_CONT_BDS150_ISP2 17
+#define SH_CSS_BINARY_ID_PREVIEW_CONT_BDS200_ISP2 18
+#define SH_CSS_BINARY_ID_PREVIEW_DZ               19
+#define SH_CSS_BINARY_ID_PREVIEW_DZ_ISP2          20
+#define SH_CSS_BINARY_ID_PRIMARY_DS               21
+#define SH_CSS_BINARY_ID_PRIMARY_VAR              22
+#define SH_CSS_BINARY_ID_PRIMARY_VAR_ISP2         23
+#define SH_CSS_BINARY_ID_PRIMARY_SMALL            24
+#define SH_CSS_BINARY_ID_PRIMARY_STRIPED          25
+#define SH_CSS_BINARY_ID_PRIMARY_STRIPED_ISP2     26
+#define SH_CSS_BINARY_ID_PRIMARY_8MP              27
+#define SH_CSS_BINARY_ID_PRIMARY_14MP             28
+#define SH_CSS_BINARY_ID_PRIMARY_16MP             29
+#define SH_CSS_BINARY_ID_PRIMARY_REF              30
+#define SH_CSS_BINARY_ID_VIDEO_OFFLINE            31
+#define SH_CSS_BINARY_ID_VIDEO_DS                 32
+#define SH_CSS_BINARY_ID_VIDEO_YUV_DS             33
+#define SH_CSS_BINARY_ID_VIDEO_DZ                 34
+#define SH_CSS_BINARY_ID_VIDEO_DZ_2400_ONLY       35
+#define SH_CSS_BINARY_ID_VIDEO_HIGH               36
+#define SH_CSS_BINARY_ID_VIDEO_NODZ               37
+#define SH_CSS_BINARY_ID_VIDEO_CONT_MULTIBDS_ISP2_MIN 38
+#define SH_CSS_BINARY_ID_VIDEO_CONT_BDS_300_600_ISP2_MIN 39
+#define SH_CSS_BINARY_ID_VIDEO_CONT_BDS150_ISP2_MIN   40
+#define SH_CSS_BINARY_ID_VIDEO_CONT_BDS200_ISP2_MIN   41
+#define SH_CSS_BINARY_ID_VIDEO_CONT_NOBDS_ISP2_MIN    42
+#define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2_MIN      43
+#define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2          44
+#define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2_ROTATED  45
+#define SH_CSS_BINARY_ID_RESERVED1              46
+#define SH_CSS_BINARY_ID_ACCELERATION           47
+#define SH_CSS_BINARY_ID_PRE_DE_ISP2            48
+#define SH_CSS_BINARY_ID_KERNEL_TEST_LOAD_STORE 49
+
+/* skycam product pipelines */
+#define SH_CSS_BINARY_ID_PRIMARY                            100
+#define SH_CSS_BINARY_ID_VIDEO                              101
+#define SH_CSS_BINARY_ID_SC_VIDEO_HIGH_RESOLUTION           102
+
+/* skycam kerneltest pipelines */
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_NORM              120
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_LIN               121
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_SHD           122
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_AWB           123
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_3A                124
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_AF            125
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_OBGRID            126
+#define SH_CSS_BINARY_ID_VIDEO_TEST_INPUTCORRECTION         127
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_BAYER_DENOISE       128
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_DEMOSAIC            129
+#define SH_CSS_BINARY_ID_VIDEO_TEST_SHD_BNR_DM_RGBPP        130
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ADD_RGBPP               131
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_YUVP1               132
+#define SH_CSS_BINARY_ID_VIDEO_TEST_SPATIAL_FF              133
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DVS               134
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_YUVP2               135
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_XNR               136
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_TNR               137
+#define SH_CSS_BINARY_ID_VIDEO_PARTIALPIPE_INPUTCOR_FULL    138
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_AE            139
+#define SH_CSS_BINARY_ID_VIDEO_WITH_3A                      140
+#define SH_CSS_BINARY_ID_VIDEO_RAW                          141
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_ACC_AWB_FR        142
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DM_RGBPP          143
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DM_RGBPP_STRIPED  144
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_ANR                 145
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_BDS_ACC           146
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_IF_STRIPED        147
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_OUTPUT_SYSTEM     148
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_TNR_STRIPED       149
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_DVS_STRIPED       150
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_OBGRID_STRIPED    151
+
+/* skycam partial test pipelines*/
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_ISP_EXITS           200
+#define SH_CSS_BINARY_ID_IF_TO_DPC                          201
+#define SH_CSS_BINARY_ID_IF_TO_BDS                          202
+#define SH_CSS_BINARY_ID_IF_TO_NORM                         203
+#define SH_CSS_BINARY_ID_IF_TO_OB                           204
+#define SH_CSS_BINARY_ID_IF_TO_LIN                          205
+#define SH_CSS_BINARY_ID_IF_TO_SHD                          206
+#define SH_CSS_BINARY_ID_IF_TO_BNR                          207
+#define SH_CSS_BINARY_ID_IF_TO_DM_WO_ANR_STATS              208
+#define SH_CSS_BINARY_ID_IF_TO_DM_3A_WO_ANR                 209
+#define SH_CSS_BINARY_ID_IF_TO_RGB                          210
+#define SH_CSS_BINARY_ID_IF_TO_YUVP1                        211
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_WO_ANR                 212
+#define SH_CSS_BINARY_ID_IF_TO_DM_WO_STATS                  213
+#define SH_CSS_BINARY_ID_IF_TO_DM_3A                        214
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2                        215
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_ANR_VIA_ISP            216
+#define SH_CSS_BINARY_ID_VIDEO_IF_TO_DVS                    217
+#define SH_CSS_BINARY_ID_VIDEO_IF_TO_TNR                    218
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_BNR_STRIPED        219
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_DVS_STAT            220
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_LACE_STAT           221
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_YUVP1_S             222
+#define SH_CSS_BINARY_ID_IF_TO_BDS_STRIPED                  223
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_ANR_STRIPED         224
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AWB_BNR_STRIPED    225
+#define SH_CSS_BINARY_ID_VIDEO_TEST_ACC_YUVP2_STRIPED       226
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AF_BNR_STRIPED     227
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AWBFR_BNR_STRIPED  228
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB_STATS        229
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB_AE           230
+#define SH_CSS_BINARY_ID_IF_NORM_LIN_SHD_AE_BNR_STRIPED     231
+#define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS           232
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB              233
+#define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS_STRIPED   234
+#define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_INPUT_YUV         235
 
 #define XMEM_WIDTH_BITS              HIVE_ISP_DDR_WORD_BITS
 #define XMEM_SHORTS_PER_WORD         (HIVE_ISP_DDR_WORD_BITS/16)
@@ -90,66 +230,11 @@
    four of them fit in one ASIC vector.*/
 #define UDS_MAX_CHUNKS                16
 
-#define UDS_DATA_ICX_LEFT_ROUNDED            0
-#define UDS_DATA_OXDIM_FLOORED               1
-#define UDS_DATA_OXDIM_LAST                  2
-#define UDS_DATA_WOIX_LAST                   3
-#define UDS_DATA_IY_TOPLEFT                  4
-#define UDS_DATA_CHUNK_CNT                   5
-#define UDS_DATA_ELEMENTS_PER_XMEM_ADDR      6
-#define UDS_DATA_BLOCK_HEIGHT                7 //free
-#define UDS_DATA_DMA_CHANNEL_STRIDE_A        8   //error in param transmit
-#define UDS_DATA_DMA_CHANNEL_STRIDE_B        9   //error in param transmit
-#define UDS_DATA_DMA_CHANNEL_WIDTH_A        10
-#define UDS_DATA_DMA_CHANNEL_WIDTH_B        11
-#define UDS_DATA_VECTORS_PER_LINE_IN        12   //error in param transmit
-#define UDS_DATA_VECTORS_PER_LINE_OUT       13   //error in param transmit
-#define UDS_DATA_VMEM_IN_DIMY               14   //error in param transmit
-
-/* ************
- * lookup table
- * ************/
-#define CTC_LUT_VALSU                   simd_is7_valsu
-#define CTC_LUT_OFFSET                  0
-#define CTC_LUT_MEM                     CAT(ISP_CELL_TYPE,_simd_bamem)
-
-#define GAMMA_LUT_VALSU                 simd_is8_valsu
-#define GAMMA_LUT_OFFSET                0
-#define GAMMA_LUT_MEM                   CAT(ISP_CELL_TYPE,_simd_bamem)
-
-#if defined(HAS_VAMEM_VERSION_2)
-#define R_GAMMA_LUT_VALSU               simd_is7_valsu
-#define R_GAMMA_LUT_OFFSET              0
-#define R_GAMMA_LUT_MEM                 CAT(ISP_CELL_TYPE,_simd_vamem1)
-#define G_GAMMA_LUT_VALSU               simd_is8_valsu
-#define G_GAMMA_LUT_OFFSET              0
-#define G_GAMMA_LUT_MEM                 CAT(ISP_CELL_TYPE,_simd_vamem2)
-#define B_GAMMA_LUT_VALSU               simd_is6_valsu
-#define B_GAMMA_LUT_OFFSET              0
-#define B_GAMMA_LUT_MEM                 CAT(ISP_CELL_TYPE,_simd_vamem3)
-#elif defined(HAS_VAMEM_VERSION_1)
-/* dummy setting : sRGB Gamma is not supported for ISP2300 */
-#define R_GAMMA_LUT_VALSU               simd_is7_valsu
-#define R_GAMMA_LUT_OFFSET              0
-#define R_GAMMA_LUT_MEM                 CAT(ISP_CELL_TYPE,_simd_vamem1)
-#define G_GAMMA_LUT_VALSU               simd_is8_valsu
-#define G_GAMMA_LUT_OFFSET              0
-#define G_GAMMA_LUT_MEM                 CAT(ISP_CELL_TYPE,_simd_vamem2)
-#define B_GAMMA_LUT_VALSU               simd_is7_valsu
-#define B_GAMMA_LUT_OFFSET              1024
-#define B_GAMMA_LUT_MEM                 CAT(ISP_CELL_TYPE,_simd_vamem1)
-#else
-#error "Unknown VAMEM version"
-#endif
-
-#define XNR_LUT_VALSU                   simd_is8_valsu
-#define XNR_LUT_OFFSET                  1024
-
 #define ISP_LEFT_PADDING	_ISP_LEFT_CROP_EXTRA(ISP_LEFT_CROPPING)
 #define ISP_LEFT_PADDING_VECS	CEIL_DIV(ISP_LEFT_PADDING, ISP_VEC_NELEMS)
 
 #define CEIL_ROUND_DIV_STRIPE(width, stripe, padding) \
-	CEIL_MUL(padding + CEIL_DIV(width - padding, stripe), 2)
+	CEIL_MUL(padding + CEIL_DIV(width - padding, stripe), ((ENABLE_RAW_BINNING || ENABLE_FIXED_BAYER_DS)?4:2))
 
 /* output (Y,U,V) image, 4:2:0 */
 #define MAX_VECTORS_PER_LINE \
@@ -219,9 +304,6 @@
 	(INPUT_NUM_CHUNKS == 1 ? MAX_VECTORS_PER_INPUT_STRIPE \
 			       : 2*CEIL_DIV(MAX_VECTORS_PER_INPUT_STRIPE, \
 					    2*OUTPUT_NUM_CHUNKS))
-
-/* The input buffer should be on a fixed address in vmem, for continuous capture */
-#define INPUT_BUF_ADDR 0x0
 
 #define DEFAULT_C_SUBSAMPLING      2
 

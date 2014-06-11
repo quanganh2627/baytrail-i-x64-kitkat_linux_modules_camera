@@ -165,7 +165,7 @@ struct ia_css_frame {
 	 *                            ia_css_frame_out_vf
 	 *     index to host-sp queue id: queue_0, queue_1 etc.
 	 */
-	int dynamic_data_index;
+	int dynamic_queue_id;
 	/*
 	 * if it is dynamic frame, buf_type indicates which buffer type it
 	 * should use for event generation. we have this because in vf_pp

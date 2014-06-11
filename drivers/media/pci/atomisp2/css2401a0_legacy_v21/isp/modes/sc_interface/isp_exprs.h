@@ -289,12 +289,8 @@
 #define ISP_SDIS_VER_COEF_NUM_VECS isp_sdis_vertcoef_vectors
 #endif
 
-/* Use dmem to store sdis vertical coefficients */
-#define SDIS_VER_COEF_TBL_USE_DMEM \
-	_SDIS_VER_COEF_TBL_USE_DMEM(MODE, ENABLE_SDIS, ENABLE_DS, ISP_PIPE_VERSION)
-
 #else /* defined(__ISP) || defined(INIT_VARS) */
-  
+
 #define ISP_INTERNAL_WIDTH         isp_internal_width
 #define ISP_INTERNAL_HEIGHT        isp_internal_height
 

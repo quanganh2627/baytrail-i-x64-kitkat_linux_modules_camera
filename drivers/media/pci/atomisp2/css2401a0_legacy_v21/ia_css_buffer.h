@@ -29,15 +29,6 @@
 /** Enumeration of buffer types. Buffers can be queued and de-queued
  *  to hand them over between IA and ISP.
  */
-/*
- * The first frames (with comment Dynamic) can be dynamic or static
- * The other frames (ref_in and below) can only be static
- * Static means that the data addres will not change during the life time
- * of the associated pipe. Dynamic means that the data address can
- * change with every (frame) iteration of the associated pipe
- *
- * s3a and dis are now also dynamic but (stil) handled seperately
- */
 enum ia_css_buffer_type {
 	IA_CSS_BUFFER_TYPE_INVALID = -1,
 	IA_CSS_BUFFER_TYPE_3A_STATISTICS = 0,

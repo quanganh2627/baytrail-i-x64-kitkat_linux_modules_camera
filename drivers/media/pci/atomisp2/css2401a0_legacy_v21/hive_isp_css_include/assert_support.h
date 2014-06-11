@@ -63,8 +63,14 @@
 #else
 
 #if defined(_MSC_VER)
+#ifdef _KERNEL_MODE
+/*Windows kernel mode compilation*/
 #include <wdm.h>
 #define assert(cnd) ASSERT(cnd)
+#else
+/*Windows usermode compilation*/
+#include <assert.h>
+#endif
 
 #define OP___assert(cnd) assert(cnd)
 #define OP_std_break()	OP___assert(0)

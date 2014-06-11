@@ -35,7 +35,8 @@ ia_css_s3a_configure(
 void
 ia_css_s3a_encode(
 	struct sh_css_isp_s3a_params *to,
-	const struct ia_css_3a_config *from);
+	const struct ia_css_3a_config *from,
+	unsigned size);
 
 void
 ia_css_ae_dump(

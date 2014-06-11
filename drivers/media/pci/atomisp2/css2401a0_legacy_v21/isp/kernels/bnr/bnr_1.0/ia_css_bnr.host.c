@@ -29,8 +29,10 @@
 void
 ia_css_bnr_encode(
 	struct sh_css_isp_bnr_params *to,
-	const struct ia_css_nr_config *from)
+	const struct ia_css_nr_config *from,
+	unsigned size)
 {
+	(void)size;
 	/* BNR (Bayer Noise Reduction) */
 	to->threshold_low =
 	    uDIGIT_FITTING(from->direction, 16, SH_CSS_BAYER_BITS);

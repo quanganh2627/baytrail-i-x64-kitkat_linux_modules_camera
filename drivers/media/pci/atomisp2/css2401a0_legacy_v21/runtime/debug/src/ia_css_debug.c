@@ -1119,21 +1119,21 @@ static void debug_binary_info_print(const struct ia_css_binary_xinfo *info)
 {
 	assert(info != NULL);
 	ia_css_debug_dtrace(2, "id = %d\n", info->sp.id);
-	ia_css_debug_dtrace(2, "mode = %d\n", info->sp.mode);
-	ia_css_debug_dtrace(2, "max_input_width = %d\n", info->sp.max_input_width);
+	ia_css_debug_dtrace(2, "mode = %d\n", info->sp.pipeline.mode);
+	ia_css_debug_dtrace(2, "max_input_width = %d\n", info->sp.input.max_width);
 	ia_css_debug_dtrace(2, "min_output_width = %d\n",
-			    info->sp.min_output_width);
+			    info->sp.output.min_width);
 	ia_css_debug_dtrace(2, "max_output_width = %d\n",
-			    info->sp.max_output_width);
-	ia_css_debug_dtrace(2, "top_cropping = %d\n", info->sp.top_cropping);
-	ia_css_debug_dtrace(2, "left_cropping = %d\n", info->sp.left_cropping);
+			    info->sp.output.max_width);
+	ia_css_debug_dtrace(2, "top_cropping = %d\n", info->sp.pipeline.top_cropping);
+	ia_css_debug_dtrace(2, "left_cropping = %d\n", info->sp.pipeline.left_cropping);
 	ia_css_debug_dtrace(2, "xmem_addr = %d\n", info->xmem_addr);
 	ia_css_debug_dtrace(2, "enable_vf_veceven = %d\n",
 			    info->sp.enable.vf_veceven);
 	ia_css_debug_dtrace(2, "enable_dis = %d\n", info->sp.enable.dis);
 	ia_css_debug_dtrace(2, "enable_uds = %d\n", info->sp.enable.uds);
 	ia_css_debug_dtrace(2, "enable ds = %d\n", info->sp.enable.ds);
-	ia_css_debug_dtrace(2, "s3atbl_use_dmem = %d\n", info->sp.s3atbl_use_dmem);
+	ia_css_debug_dtrace(2, "s3atbl_use_dmem = %d\n", info->sp.s3a.s3atbl_use_dmem);
 	return;
 }
 
@@ -2551,12 +2551,12 @@ ia_css_debug_pipe_graph_dump_frame(
 {
 	char bufinfo[100];
 
-	if (frame->dynamic_data_index == -1) {
+	if (frame->dynamic_queue_id == SH_CSS_INVALID_QUEUE_ID) {
 		snprintf(bufinfo, sizeof(bufinfo), "Internal");
 	} else {
 		snprintf(bufinfo, sizeof(bufinfo), "Queue: %s %s",
 			pipe_id_to_str[id],
-			queue_id_to_str[frame->dynamic_data_index]);
+			queue_id_to_str[frame->dynamic_queue_id]);
 	}
 	dtrace_dot(
 		"node [shape = box, "

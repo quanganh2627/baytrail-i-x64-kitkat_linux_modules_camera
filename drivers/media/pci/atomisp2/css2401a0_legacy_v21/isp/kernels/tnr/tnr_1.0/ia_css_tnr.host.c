@@ -39,8 +39,10 @@ const struct ia_css_tnr_config default_tnr_config = {
 void
 ia_css_tnr_encode(
 	struct sh_css_isp_tnr_params *to,
-	const struct ia_css_tnr_config *from)
+	const struct ia_css_tnr_config *from,
+	unsigned size)
 {
+	(void)size;
 	to->coef =
 	    uDIGIT_FITTING(from->gain, 16, SH_CSS_TNR_COEF_SHIFT);
 	to->threshold_Y =
@@ -79,10 +81,14 @@ ia_css_tnr_debug_dtrace(
 void
 ia_css_tnr_config(
 	struct sh_css_isp_tnr_isp_config *to,
-	const struct ia_css_tnr_configuration *from)
+	const struct ia_css_tnr_configuration *from,
+	unsigned size)
 {
-	unsigned elems_a = ISP_VEC_NELEMS, i;
-	ia_css_dma_configure_from_info(&to->port_b, &(from->tnr_frames[0]->info));
+	unsigned elems_a = ISP_VEC_NELEMS;
+	unsigned i;
+
+	(void)size;
+	ia_css_dma_configure_from_info(&to->port_b, &from->tnr_frames[0]->info);
 	to->width_a_over_b = elems_a / to->port_b.elems;
 	to->frame_height = from->tnr_frames[0]->info.res.height;
 	for (i = 0; i < NUM_VIDEO_TNR_FRAMES; i++) {
@@ -108,9 +114,12 @@ ia_css_tnr_configure(
 }
 
 void
-ia_css_init_tnr_state(struct sh_css_isp_tnr_dmem_state *state)
+ia_css_init_tnr_state(
+	struct sh_css_isp_tnr_dmem_state *state,
+	size_t size)
 {
 	assert(NUM_VIDEO_TNR_FRAMES >= 2);
+	assert(sizeof(*state) == size);
 	state->tnr_in_buf_idx = 0;
 	state->tnr_out_buf_idx = 1;
 }

@@ -52,10 +52,10 @@ struct fw_param {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140605_0253) is a place holder
+/* The string STR(irci_master_20140611_0339) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char *release_version = STR(irci_master_20140605_0253);
+static const char *release_version = STR(irci_master_20140611_0339);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";
@@ -190,6 +190,22 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 	return IA_CSS_SUCCESS;
 }
 
+bool
+sh_css_check_firmware_version(const char *fw_data)
+{
+	struct sh_css_fw_bi_file_h *file_header;
+
+	firmware_header = (struct firmware_header *)fw_data;
+	file_header = (struct sh_css_fw_bi_file_h *)&firmware_header->file_header;
+
+	if (strcmp(file_header->version, release_version) != 0) {
+		return false;
+	} else {
+		/* firmware version matches */
+		return true;
+	}
+}
+
 enum ia_css_err
 sh_css_load_firmware(const char *fw_data,
 		     unsigned int fw_size)
@@ -197,14 +213,17 @@ sh_css_load_firmware(const char *fw_data,
 	unsigned i;
 	struct ia_css_fw_info *binaries;
 	struct sh_css_fw_bi_file_h *file_header;
+	bool valid_firmware = false;
 
 	firmware_header = (struct firmware_header *)fw_data;
 	file_header = (struct sh_css_fw_bi_file_h *)&firmware_header->file_header;
 	binaries = (struct ia_css_fw_info *)&firmware_header->binary_header;
-	strcpy(FW_rel_ver_name, file_header->version);
-	if (strcmp(file_header->version, release_version) != 0) {
+	strncpy(FW_rel_ver_name, file_header->version, min(sizeof(FW_rel_ver_name), sizeof(file_header->version)) - 1);
+	valid_firmware = sh_css_check_firmware_version(fw_data);
+	if (!valid_firmware) {
 #if (!defined HRT_CSIM && !defined HRT_RTL)
-		IA_CSS_ERROR("CSS code and firmware version mismatch!");
+		IA_CSS_ERROR("CSS code version (%s) and firmware version (%s) mismatch!",
+				file_header->version, release_version);
 		return IA_CSS_ERR_VERSION_MISMATCH;
 #endif
 	} else {

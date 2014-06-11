@@ -38,8 +38,10 @@ const struct ia_css_wb_config default_wb_config = {
 void
 ia_css_wb_encode(
 	struct sh_css_isp_wb_params *to,
-	const struct ia_css_wb_config *from)
+	const struct ia_css_wb_config *from,
+	unsigned size)
 {
+	(void)size;
 	to->gain_shift =
 	    uISP_REG_BIT - from->integer_bits;
 	to->gain_gr =
