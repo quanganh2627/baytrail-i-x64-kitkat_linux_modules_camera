@@ -1550,9 +1550,8 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 	char buffer[M10MO_MAX_FW_ID_STRING];
 	int ret;
 
-	fw_ids = dev->pdata->fw_ids;
-	if (!fw_ids)
-		return 0;
+	int m10mo_fw_address_cnt = m10mo_get_fw_address_count();
+	int i;
 
 	ret = dev->pdata->identify_fw();
 	if (ret != -1) {
@@ -1560,26 +1559,35 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 		return 0;
 	}
 
-	ret = m10mo_get_isp_fw_version_string(dev, buffer, sizeof(buffer));
-	if (ret)
-		return ret;
-
-	while(fw_ids->id_string) {
-		/*
-		 * Null char is skipped (strlen - 1) because the string in
-		 * platform data can be shorter than the string in the FW.
-		 * There can be some additional information
-		 * after the match.
-		 */
-		if (!strncmp(fw_ids->id_string, buffer,
-			     strlen(fw_ids->id_string) - 1))
-		{
-			dev_info(&client->dev, "FW id %s detected\n", buffer);
-			dev->fw_type = fw_ids->fw_type;
+	for (i = 0; i < m10mo_fw_address_cnt; i++) {
+		fw_ids = dev->pdata->fw_ids;
+		if (!fw_ids)
 			return 0;
+
+		ret = m10mo_get_isp_fw_version_string(dev, buffer,
+				sizeof(buffer), i);
+		if (ret)
+			return ret;
+
+		while(fw_ids->id_string) {
+			/*
+			 * Null char is skipped (strlen - 1) because the string in
+			 * platform data can be shorter than the string in the FW.
+			 * There can be some additional information
+			 * after the match.
+			 */
+			if (!strncmp(fw_ids->id_string, buffer,
+						strlen(fw_ids->id_string) - 1))
+			{
+				dev_info(&client->dev, "FW id %s detected\n", buffer);
+				dev->fw_type = fw_ids->fw_type;
+				dev->fw_addr_id = i;
+				return 0;
+			}
+			fw_ids++;
 		}
-		fw_ids++;
 	}
+
 	dev_err(&client->dev, "FW id string table given but no match found");
 	return 0;
 }
@@ -2694,7 +2702,8 @@ static int read_fw_version(struct m10mo_device *dev, char *buf)
 		goto leave;
 	}
 	__m10mo_s_power(&dev->sd, 1, true);
-	ret = m10mo_get_isp_fw_version_string(dev, buf, M10MO_MAX_FW_ID_STRING);
+	ret = m10mo_get_isp_fw_version_string(dev, buf, M10MO_MAX_FW_ID_STRING,
+			dev->fw_addr_id);
 	__m10mo_s_power(&dev->sd, 0, true);
 leave:
 	mutex_unlock(&dev->input_lock);

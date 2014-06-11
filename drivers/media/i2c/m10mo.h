@@ -57,6 +57,10 @@
 #define M10MO_INVALID_CHECKSUM          0xffff
 #define M10MO_VALID_CHECKSUM            0
 
+/* M10MO FW VERSION INFO ADDR */
+#define M10MO_FW_VERSION_INFO_ADDR_0	0x181EF080
+#define M10MO_FW_VERSION_INFO_ADDR_1	0x18000020
+
 /* M10MO I2C commands */
 #define M10MO_BYTE_READ			0x01
 #define M10MO_BYTE_WRITE		0x02
@@ -171,7 +175,9 @@ void m10mo_register_spi_fw_flash_interface(struct m10mo_device *dev,
 					   struct m10mo_spi *m10mo_spi_dev);
 
 int m10mo_dump_fw(struct m10mo_device *m10mo_dev);
-int m10mo_get_isp_fw_version_string(struct m10mo_device *dev, char *buf, int len);
+int m10mo_get_fw_address_count(void);
+int m10mo_get_isp_fw_version_string(struct m10mo_device *dev, char *buf,
+		int len, int fw_address_id);
 int m10mo_fw_checksum(struct m10mo_device *dev, u16 *result);
 int m10mo_program_device(struct m10mo_device *m10mo_dev);
 

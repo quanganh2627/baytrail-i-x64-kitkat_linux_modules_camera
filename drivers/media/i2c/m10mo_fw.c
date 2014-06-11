@@ -104,6 +104,11 @@ static const u8 buf_port_settings2_m10mo[] = {
 		  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		 };
 
+static const u32 m10mo_fw_address[] = {
+	M10MO_FW_VERSION_INFO_ADDR_0,
+	M10MO_FW_VERSION_INFO_ADDR_1,
+};
+
 static int m10mo_set_flash_address(struct v4l2_subdev *sd, u32 addr)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -324,7 +329,13 @@ out_file:
 	return err;
 }
 
-int m10mo_get_isp_fw_version_string(struct m10mo_device *dev, char *buf, int len)
+int m10mo_get_fw_address_count(void)
+{
+	return ARRAY_SIZE(m10mo_fw_address);
+}
+
+int m10mo_get_isp_fw_version_string(struct m10mo_device *dev,
+		char *buf, int len, int fw_address_id)
 {
 	int err;
 	struct v4l2_subdev *sd = &dev->sd;
@@ -343,8 +354,14 @@ int m10mo_get_isp_fw_version_string(struct m10mo_device *dev, char *buf, int len
 	msleep(10);
 
 	memset(buf, 0, len);
-	err = m10mo_memory_read(sd, len - 1, FW_VERSION_INFO_ADDR,
-				buf);
+	if ((fw_address_id < 0) ||
+		(fw_address_id >= ARRAY_SIZE(m10mo_fw_address))) {
+		dev_err(&client->dev, "Error FW address ID: %d\n",
+				fw_address_id);
+		fw_address_id = 0;
+	}
+	err = m10mo_memory_read(sd, len - 1,
+			m10mo_fw_address[fw_address_id], buf);
 	if (err)
 		dev_err(&client->dev, "version read failed\n");
 
