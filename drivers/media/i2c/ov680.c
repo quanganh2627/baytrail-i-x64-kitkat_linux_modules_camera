@@ -453,24 +453,14 @@ static int ov680_load_firmware(struct v4l2_subdev *sd)
 		return -EBUSY;
 	}
 
-	#if 0
-	/* turn embedded line off */
+	/* turn embedded line on */
 	ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
 	if (ret) {
 		dev_err(&client->dev, "%s - turn embedded on failed\n",
 			__func__);
 		return ret;
 	}
-	#endif
-	#if 1
-	/* turn embedded line off */
-	ret = ov680_write_reg_array(sd, ov680_embedded_line_off);
-	if (ret) {
-		dev_err(&client->dev, "%s - turn embedded off failed\n",
-			__func__);
-		return ret;
-	}
-	#endif
+
 	dev_info(&client->dev, "firmware load successfully.\n");
 	return ret;
 }
@@ -783,6 +773,26 @@ static int ov680_set_mbus_fmt(struct v4l2_subdev *sd,
 		dev_dbg(&client->dev, "%s - fw_index failed\n", __func__);
 		ret = -EINVAL;
 	}
+
+	switch (ov680_info->input_format) {
+	case ATOMISP_INPUT_FORMAT_YUV422_8:
+		ov680_info->metadata_width = fmt->width * 2;
+		break;
+	case ATOMISP_INPUT_FORMAT_RAW_10:
+		ov680_info->metadata_width = fmt->width * 10 / 8;
+		break;
+	case ATOMISP_INPUT_FORMAT_RAW_8:
+		ov680_info->metadata_width = fmt->width;
+		break;
+	default:
+		ov680_info->metadata_width = 0;
+		dev_err(&client->dev, "%s unsupported format for embedded data.\n",
+			__func__);
+	}
+
+	ov680_info->metadata_height = 2;
+	ov680_info->metadata_format = ATOMISP_INPUT_FORMAT_EMBEDDED;
+
 out:
 	dev_dbg(&client->dev, "%s - mbusf done ret %d\n", __func__, ret);
 	return ret;
@@ -943,10 +953,8 @@ static int ov680_s_stream(struct v4l2_subdev *sd, int enable)
 
 	mutex_lock(&dev->input_lock);
 	if (dev->power_on && enable) {
-
 		/* start streaming */
-		ret = ov680_i2c_write_reg(sd, REG_SC_03,
-					  REG_SC_03_GLOBAL_ENABLED);
+		ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_stream_on);
 		if (ret) {
 			dev_err(&client->dev,
 				"%s - stream on failed\n", __func__);
@@ -954,7 +962,6 @@ static int ov680_s_stream(struct v4l2_subdev *sd, int enable)
 		} else {
 			dev->sys_activated = 1;
 		}
-
 	} else { /* stream off */
 
 		ret = ov680_i2c_write_reg(sd, REG_SC_03,
