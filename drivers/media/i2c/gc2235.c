@@ -372,7 +372,8 @@ static int gc2235_init_common(struct v4l2_subdev *sd)
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfc, 0x06);
 
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf7, 0x15);
-	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf8, 0x86);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf8, 0x85);
+
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfa, 0x00);
 
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf9, 0xfe);
@@ -470,7 +471,6 @@ static int gc2235_init_common(struct v4l2_subdev *sd)
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x23, 0x01);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x29, 0x02);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x2a, 0x01);
-
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x00);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf2, 0x00);
 
