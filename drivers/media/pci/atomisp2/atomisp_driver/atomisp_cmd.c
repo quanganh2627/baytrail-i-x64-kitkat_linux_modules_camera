@@ -5134,9 +5134,8 @@ int atomisp_exp_id_unlock(struct atomisp_sub_device *asd, int *exp_id)
 	ret = atomisp_css_exp_id_unlock(asd, value);
 	if (ret) {
 		dev_err(isp->dev, "%s exp_id %d failed.\n", __func__, value);
-		return -EIO;
 	}
-	return 0;
+	return ret;
 }
 
 int atomisp_enable_dz_capt_pipe(struct atomisp_sub_device *asd,

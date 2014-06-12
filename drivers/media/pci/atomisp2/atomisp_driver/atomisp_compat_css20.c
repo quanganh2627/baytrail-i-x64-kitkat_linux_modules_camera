@@ -3201,8 +3201,12 @@ int atomisp_css_exp_id_capture(struct atomisp_sub_device *asd, int exp_id)
 	ret = ia_css_stream_capture_frame(
 		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
 		exp_id);
-	if (ret != IA_CSS_SUCCESS)
+	if (ret == IA_CSS_ERR_QUEUE_IS_FULL) {
+		/* capture cmd queue is full */
+		return -EBUSY;
+	} else if (ret != IA_CSS_SUCCESS) {
 		return -EIO;
+	}
 
 	return 0;
 }
