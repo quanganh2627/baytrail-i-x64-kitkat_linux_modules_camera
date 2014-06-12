@@ -41,6 +41,10 @@
 #include "gc2235.h"
 #include <asm/intel-mid.h>
 
+#ifndef POWER_ALWAYS_ON_BEFORE_SUSPEND
+#define POWER_ALWAYS_ON_BEFORE_SUSPEND
+#endif
+
 static enum atomisp_bayer_order gc2235_bayer_order_mapping[] = {
 	atomisp_bayer_order_gbrg,
 	atomisp_bayer_order_bggr,
@@ -507,6 +511,42 @@ static int gc2235_s_power(struct v4l2_subdev *sd, int on)
 
 	return ret;
 }
+
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int __gc2235_s_power_always_on(struct v4l2_subdev *sd, int on)
+{
+	struct gc2235_device *dev = to_gc2235_sensor(sd);
+	int ret = 0;
+
+	if (on == 0) {
+		//ret = power_down(sd);
+		//dev->power = 0;
+	} else {
+		if (!dev->power) {
+			ret = power_up(sd);
+			if (!ret) {
+				dev->power = 1;
+				dev->once_launched = 1;
+				return gc2235_init_common(sd);
+			}
+		}
+	}
+
+	return ret;
+}
+
+static int gc2235_s_power_always_on(struct v4l2_subdev *sd, int on)
+{
+	int ret;
+	struct gc2235_device *dev = to_gc2235_sensor(sd);
+
+	mutex_lock(&dev->input_lock);
+	ret = __gc2235_s_power_always_on(sd, on);
+	mutex_unlock(&dev->input_lock);
+
+	return ret;
+}
+#endif
 
 static int gc2235_g_chip_ident(struct v4l2_subdev *sd,
 				struct v4l2_dbg_chip_ident *chip)
@@ -1420,7 +1460,11 @@ static const struct v4l2_subdev_core_ops gc2235_core_ops = {
 	.queryctrl = gc2235_queryctrl,
 	.g_ctrl = gc2235_g_ctrl,
 	.s_ctrl = gc2235_s_ctrl,
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	.s_power = gc2235_s_power_always_on,
+#else
 	.s_power = gc2235_s_power,
+#endif
 	.ioctl = gc2235_ioctl,
 };
 
@@ -1485,6 +1529,8 @@ static int gc2235_probe(struct i2c_client *client,
 	dev->sensor_id = GC2235_ID_DEFAULT;
 	v4l2_i2c_subdev_init(&(dev->sd), client, &gc2235_ops);
 
+	dev->once_launched = 0;
+
 	if (client->dev.platform_data) {
 		ret = gc2235_s_config(&dev->sd, client->irq,
 				       client->dev.platform_data);
@@ -1523,6 +1569,48 @@ out_free:
 	return ret;
 }
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int gc2235_suspend(struct device *dev)
+{
+	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct gc2235_device *gc_dev = to_gc2235_sensor(sd);
+	int ret = 0;
+
+	//printk("%s() in\n", __func__);
+
+	if (gc_dev->once_launched) {
+		ret = __gc2235_s_power(sd, 0);
+		if (ret) {
+			v4l2_err(client, "gc2235 power-down err.\n");
+		}
+	}
+
+	return 0;
+}
+
+static int gc2235_resume(struct device *dev)
+{
+	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct gc2235_device *gc_dev = to_gc2235_sensor(sd);
+	int ret = 0;
+
+	//printk("%s() in\n", __func__);
+
+	if (gc_dev->once_launched) {
+		ret = __gc2235_s_power(sd, 1);
+		if (ret) {
+			v4l2_err(client, "gc2235 power-up err.\n");
+		}
+	}
+
+	return 0;
+}
+
+SIMPLE_DEV_PM_OPS(gc2235_pm_ops, gc2235_suspend, gc2235_resume);
+#endif
+
 static const struct i2c_device_id gc2235_ids[] = {
 	{GC2235_NAME, GC2235_ID},
 	{}
@@ -1534,6 +1622,9 @@ static struct i2c_driver gc2235_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = GC2235_DRIVER,
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+		.pm = &gc2235_pm_ops,
+#endif
 	},
 	.probe = gc2235_probe,
 	.remove = gc2235_remove,

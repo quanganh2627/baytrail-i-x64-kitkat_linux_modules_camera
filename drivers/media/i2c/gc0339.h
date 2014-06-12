@@ -239,6 +239,7 @@ struct gc0339_device {
 	int real_model_id;
 	int nctx;
 	int power;
+	int once_launched;
 
 	unsigned int bus_width;
 	unsigned int mode;
@@ -366,7 +367,7 @@ static const struct i2c_device_id gc0339_id[] = {
 	{}
 };
 
-static struct misensor_reg const gc0339_suspend[] = {
+static struct misensor_reg const gc0339_suspend_reg[] = {
 	 {MISENSOR_TOK_TERM, 0, 0}
 };
 

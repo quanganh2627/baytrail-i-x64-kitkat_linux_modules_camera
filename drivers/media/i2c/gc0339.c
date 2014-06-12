@@ -46,6 +46,11 @@
 
 #define to_gc0339_sensor(sd) container_of(sd, struct gc0339_device, sd)
 
+
+#ifndef POWER_ALWAYS_ON_BEFORE_SUSPEND
+#define POWER_ALWAYS_ON_BEFORE_SUSPEND
+#endif
+
 /*
  * TODO: use debug parameter to actually define when debug messages should
  * be printed.
@@ -699,14 +704,44 @@ static int power_down(struct v4l2_subdev *sd)
 
 static int gc0339_s_power(struct v4l2_subdev *sd, int power)
 {
-	if (power == 0)
-		return power_down(sd);
-	else {
+	struct gc0339_device *dev = to_gc0339_sensor(sd);
+	int ret = 0;
+
+	if (power == 0) {
+		ret = power_down(sd);
+		dev->power = 0;
+	} else {
 		if (power_up(sd))
 			return -EINVAL;
-		return gc0339_init_common(sd);
+		dev->power = 1;
+		ret = gc0339_init_common(sd);
 	}
+
+	return ret;
 }
+
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int gc0339_s_power_always_on(struct v4l2_subdev *sd, int power)
+{
+	struct gc0339_device *dev = to_gc0339_sensor(sd);
+	int ret = 0;
+
+	if (power == 0) {
+		ret = 0;
+		//return power_down(sd);
+	} else {
+		if (!dev->power) {
+			if (power_up(sd))
+				return -EINVAL;
+			dev->power = 1;
+			dev->once_launched = 1;
+			ret = gc0339_init_common(sd);
+		}
+	}
+
+	return ret;
+}
+#endif
 
 static int gc0339_try_res(u32 *w, u32 *h)
 {
@@ -1738,7 +1773,11 @@ static const struct v4l2_subdev_core_ops gc0339_core_ops = {
 	.queryctrl = gc0339_queryctrl,
 	.g_ctrl = gc0339_g_ctrl,
 	.s_ctrl = gc0339_s_ctrl,
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	.s_power = gc0339_s_power_always_on,
+#else
 	.s_power = gc0339_s_power,
+#endif
 	.ioctl = gc0339_ioctl,
 };
 
@@ -1792,6 +1831,8 @@ static int gc0339_probe(struct i2c_client *client,
 
 	v4l2_i2c_subdev_init(&dev->sd, client, &gc0339_ops);
 
+	dev->once_launched = 0;
+
 	if (client->dev.platform_data) {
 		ret = gc0339_s_config(&dev->sd, client->irq,
 				       client->dev.platform_data);
@@ -1821,12 +1862,57 @@ static int gc0339_probe(struct i2c_client *client,
 	return 0;
 }
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int gc0339_suspend(struct device *dev)
+{
+	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct gc0339_device *gc_dev = to_gc0339_sensor(sd);
+	int ret = 0;
+
+	//printk("%s() in\n", __func__);
+
+	if (gc_dev->once_launched) {
+		ret = gc0339_s_power(sd, 0);
+		if (ret) {
+			v4l2_err(client, "gc0339 power-down err.\n");
+		}
+	}
+
+	return 0;
+}
+
+static int gc0339_resume(struct device *dev)
+{
+	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct gc0339_device *gc_dev = to_gc0339_sensor(sd);
+	int ret = 0;
+
+	//printk("%s() in\n", __func__);
+
+	if (gc_dev->once_launched) {
+		ret = gc0339_s_power(sd, 1);
+		if (ret) {
+			v4l2_err(client, "gc0339 power-up err.\n");
+		}
+	}
+
+	return 0;
+}
+
+SIMPLE_DEV_PM_OPS(gc0339_pm_ops, gc0339_suspend, gc0339_resume);
+#endif
+
 MODULE_DEVICE_TABLE(i2c, gc0339_id);
 
 static struct i2c_driver gc0339_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
-		.name = "gc0339"
+		.name = "gc0339",
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+		.pm = &gc0339_pm_ops,
+#endif
 	},
 	.probe = gc0339_probe,
 	.remove = gc0339_remove,
