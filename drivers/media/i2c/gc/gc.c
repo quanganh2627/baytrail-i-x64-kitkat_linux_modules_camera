@@ -346,7 +346,7 @@ static int __gc_program_ctrl_table(struct v4l2_subdev *sd, enum gc_setting_enum 
 	struct gc_table_info	*table_info;
 	int ret;
 	int i;
-
+ 
 	table_info = __get_register_table_info(dev, setting_id);
 
 	if (!table_info) {
@@ -449,20 +449,21 @@ int __gc_g_fnumber_range(struct v4l2_subdev *sd, s32 *val)
 int __gc_g_exposure(struct v4l2_subdev *sd, s32 *value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+    struct gc_device *dev = to_gc_sensor(sd);
 	u16 coarse;
 	u8 reg_val_h, reg_val_l;
 	int ret;
 
 	/* the fine integration time is currently not calculated */
 	ret = gc_read_reg(client, GC_8BIT,
-				   GC2155_REG_EXPO_COARSE, &reg_val_h);
+				   dev->product_info->reg_expo_coarse, &reg_val_h);
 	if (ret)
 		return ret;
 
 	coarse = ((u16)(reg_val_h & 0x1f)) << 8;
 
 	ret = gc_read_reg(client, GC_8BIT,
-				   GC2155_REG_EXPO_COARSE + 1, &reg_val_l);
+				   dev->product_info->reg_expo_coarse + 1, &reg_val_l);
 	if (ret)
 		return ret;
 
@@ -895,6 +896,12 @@ static int gc_init_common(struct v4l2_subdev *sd)
 	if (!dev->product_info->mode_info) {
 		return -ENODEV;
 	}	
+
+
+	if (!dev->product_info->mode_info->init_settings) {
+		/* Not an error as some sensor might not have init sequence */
+		return 0;
+	}
 
 	ret = gc_write_reg_array(client, dev->product_info->mode_info->init_settings);
 	return 0;
@@ -1621,8 +1628,8 @@ static int gc_probe(struct i2c_client *client,
 	gc_mipi_info = v4l2_get_subdev_hostdata(&dev->sd);
 
 
-	snprintf(dev->sd.name, sizeof(dev->sd.name), "%s%x %d-%04x",
-		GC_SUBDEV_PREFIX, dev->sensor_id,
+	snprintf(dev->sd.name, sizeof(dev->sd.name), "%s %d-%04x",
+		dev->product_info->name,
 		i2c_adapter_id(client->adapter), client->addr);
 
 

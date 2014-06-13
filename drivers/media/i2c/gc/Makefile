@@ -1,8 +1,13 @@
 #
-# Makefile for gc2155 sensor driver
+# Makefile for gc class sensor driver
 #
-obj-m += gc2155.o
+obj-m += gc_class.o
 
-gc2155-objs := gc.o 
+gc_class-objs := gc.o 
+
+
+ccflags-y += $(addprefix -DCONFIG_GC, $(subst m, _0310, $(CONFIG_VIDEO_GC0310SOC)))
+ccflags-y += $(addprefix -DCONFIG_GC, $(subst m, _2155, $(CONFIG_VIDEO_GC2155)))
+
 
 ccflags-y += -Werror

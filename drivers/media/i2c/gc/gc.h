@@ -116,7 +116,7 @@ int gc_write_reg_array(struct i2c_client *client,
 #define GC2155_ID	0x2155
 
 
-#define GC0310_NAME "gc0310"
+#define GC0310_NAME "gc0310soc"
 #define GC0310_ID	0xa310
 
 
@@ -215,6 +215,7 @@ struct gc_table_info {
 
 
 struct gc_product_info {
+	char *name;
 	struct gc_mode_info *mode_info;
 	struct gc_ctrl_config *ctrl_config;
 	int num_ctrls;
@@ -227,6 +228,7 @@ struct gc_product_info {
 	s32	f_number;
 	s32 f_number_range;
 
+	u8 reg_expo_coarse;
 
 	struct gc_table_info settings_tables[GC_NUM_SETTINGS];
 };

@@ -125,9 +125,18 @@ config VIDEO_GC2235
 
          It currently only works with the atomisp driver.
 
+
+config VIDEO_GC_CLASS
+       tristate "Galaxy CLASS driver"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 class driver for GalaxyCore
+		 chips.
+
+
 config VIDEO_GC2155
        tristate "Galaxy gc2155 sensor support"
-       depends on I2C && VIDEO_V4L2
+       depends on I2C && VIDEO_V4L2 && VIDEO_GC_CLASS
        ---help---
          This is a Video4Linux2 sensor-level driver for the OVT
          GC2155 SOC camera.
@@ -135,6 +144,18 @@ config VIDEO_GC2155
          GC2155 is a 2M SOC sensor.
 
          It currently only works with the atomisp driver.
+
+config VIDEO_GC0310SOC
+       tristate "Galaxy gc0310 SOC sensor support"
+       depends on I2C && VIDEO_V4L2 && VIDEO_GC_CLASS
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the OVT
+         GC0310 SOC camera.
+
+         GC0310 is a 480p SOC sensor.
+
+         It currently only works with the atomisp driver.
+
 
 config VIDEO_GC5004
     tristate "GC sensor support"
