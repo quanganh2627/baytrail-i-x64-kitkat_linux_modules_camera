@@ -353,16 +353,6 @@ static bool create_input_system_input_port(
 				me->csi_rx.backend_id,
 				packet_type,
 				&(me->csi_rx.backend_lut_entry));
-
-		/* for metadata */
-		if (rc && cfg->metadata.enable) {
-			me->metadata.packet_type = get_csi_mipi_packet_type(
-					cfg->metadata.fmt_type);
-			rc = acquire_be_lut_entry(
-					me->csi_rx.backend_id,
-					me->metadata.packet_type,
-					&me->metadata.backend_lut_entry);
-		}
 		break;
 	case INPUT_SYSTEM_PIXELGEN_PORT0_ID:
 		me->pixelgen.pixelgen_id = PIXELGEN0_ID;
@@ -404,6 +394,16 @@ static bool create_input_system_input_port(
 	}
 
 	me->source_type = cfg->mode;
+
+	/* for metadata */
+	if (rc && cfg->metadata.enable) {
+		me->metadata.packet_type = get_csi_mipi_packet_type(
+				cfg->metadata.fmt_type);
+		rc = acquire_be_lut_entry(
+				me->csi_rx.backend_id,
+				me->metadata.packet_type,
+				&me->metadata.backend_lut_entry);
+	}
 
 	return rc;
 }

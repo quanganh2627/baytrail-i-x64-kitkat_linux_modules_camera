@@ -19,18 +19,28 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __IA_CSS_FORMATS_HOST_H
+#define __IA_CSS_FORMATS_HOST_H
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "ia_css_formats_types.h"
+#include "ia_css_formats_param.h"
 
+extern const struct ia_css_formats_config default_formats_config;
 
-#define CSS_VERSION_STRING "VER:1.4; REL:20140613_24.5_0602; API:2.1.2.8; GIT:irci_20140612_1528__dfbdd3#dfbdd382eb6390ba59cf6dcb4fa78536db215719; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
+void
+ia_css_formats_encode(
+	struct sh_css_isp_formats_params *to,
+	const struct ia_css_formats_config *from,
+	unsigned size);
 
+void
+ia_css_formats_dump(
+	const struct sh_css_isp_formats_params *formats,
+	unsigned level);
 
-#endif
+void
+ia_css_formats_debug_dtrace(
+	const struct ia_css_formats_config *formats,
+	unsigned level);
 
+#endif /* __IA_CSS_FORMATS_HOST_H */

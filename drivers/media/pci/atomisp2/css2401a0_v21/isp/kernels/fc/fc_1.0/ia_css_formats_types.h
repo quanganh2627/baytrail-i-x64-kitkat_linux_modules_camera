@@ -19,18 +19,21 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __IA_CSS_FORMATS_TYPES_H
+#define __IA_CSS_FORMATS_TYPES_H
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "type_support.h"
 
+/** Formats configuration.
+ *
+ *  ISP block: FORMATS
+ *  ISP1: FORMATS is used.
+ *  ISP2: FORMATS is used.
+ */
+struct ia_css_formats_config {
+	uint32_t video_full_range_flag; /**< selects the range of YUV output.
+				u8.0, [0,1],
+				default 1, ineffective n/a */
+};
 
-#define CSS_VERSION_STRING "VER:1.4; REL:20140613_24.5_0602; API:2.1.2.8; GIT:irci_20140612_1528__dfbdd3#dfbdd382eb6390ba59cf6dcb4fa78536db215719; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
-
-
-#endif
-
+#endif /* __IA_CSS_FORMATS_TYPES_H */
