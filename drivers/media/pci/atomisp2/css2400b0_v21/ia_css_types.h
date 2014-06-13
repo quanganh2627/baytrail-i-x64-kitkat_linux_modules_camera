@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140611_0339 */
+/* Release Version: irci_master_20140613_0512 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -51,6 +51,7 @@
 #include "isp/kernels/dp/dp_1.0/ia_css_dp_types.h"
 #include "isp/kernels/de/de_1.0/ia_css_de_types.h"
 #include "isp/kernels/de/de_2/ia_css_de2_types.h"
+#include "isp/kernels/fc/fc_1.0/ia_css_formats_types.h"
 #include "isp/kernels/fpn/fpn_1.0/ia_css_fpn_types.h"
 #include "isp/kernels/gc/gc_1.0/ia_css_gc_types.h"
 #include "isp/kernels/gc/gc_2/ia_css_gc2_types.h"
@@ -340,6 +341,8 @@ struct ia_css_isp_config {
 							[YNR2&YEE2, 2only] */
 	struct ia_css_fc_config   *fc_config;	/**< Fringe Control
 							[FC2, 2only] */
+	struct ia_css_formats_config   *formats_config;	/**< Formats Control
+							[FORMATS, 1&2] */
 	struct ia_css_cnr_config  *cnr_config;	/**< Chroma Noise Reduction
 							[CNR2, 2only] */
 	struct ia_css_macc_config *macc_config;	/**< MACC

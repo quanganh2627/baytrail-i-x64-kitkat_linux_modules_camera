@@ -166,7 +166,8 @@ sh_css_sp_get_debug_state(struct sh_css_sp_debug_state *state);
 #endif
 
 #if !defined(HAS_NO_INPUT_FORMATTER)
-extern void sh_css_sp_set_if_configs(
+void
+sh_css_sp_set_if_configs(
 	const input_formatter_cfg_t	*config_a,
 	const input_formatter_cfg_t	*config_b,
 	const uint8_t		if_config_index);
@@ -211,7 +212,8 @@ sh_css_sp_reset_global_vars(void);
  *	- true, if it is successful.
  *	- false, otherwise.
  */
-extern bool sh_css_sp_init_dma_sw_reg(int dma_id);
+bool
+sh_css_sp_init_dma_sw_reg(int dma_id);
 
 /**
  * @brief Set the DMA software-mask in the debug mode.
@@ -235,7 +237,8 @@ extern bool sh_css_sp_init_dma_sw_reg(int dma_id);
  *	- true, if it is successful.
  *	- false, otherwise.
  */
-extern bool sh_css_sp_set_dma_sw_reg(int dma_id,
+bool
+sh_css_sp_set_dma_sw_reg(int dma_id,
 		int channel_id,
 		int request_type,
 		bool enable);
@@ -246,4 +249,3 @@ extern struct sh_css_sp_stage sh_css_sp_stage;
 extern struct sh_css_isp_stage sh_css_isp_stage;
 
 #endif /* _SH_CSS_SP_H_ */
-

@@ -1,24 +1,26 @@
 /*
- * Support for Intel Camera Imaging ISP subsystem.
+ * INTEL CONFIDENTIAL
  *
- * Copyright (c) 2010 - 2014 Intel Corporation. All Rights Reserved.
+ * Copyright (C) 2010 - 2013 Intel Corporation.
+ * All Rights Reserved.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License version
- * 2 as published by the Free Software Foundation.
+ * The source code contained or described herein and all documents
+ * related to the source code ("Material") are owned by Intel Corporation
+ * or licensors. Title to the Material remains with Intel
+ * Corporation or its licensors. The Material contains trade
+ * secrets and proprietary and confidential information of Intel or its
+ * licensors. The Material is protected by worldwide copyright
+ * and trade secret laws and treaty provisions. No part of the Material may
+ * be used, copied, reproduced, modified, published, uploaded, posted,
+ * transmitted, distributed, or disclosed in any way without Intel's prior
+ * express written permission.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- *
+ * No License under any patent, copyright, trade secret or other intellectual
+ * property right is granted to or conferred upon you by disclosure or
+ * delivery of the Materials, either expressly, by implication, inducement,
+ * estoppel or otherwise. Any license under such intellectual property rights
+ * must be express and approved by Intel in writing.
  */
-
 
 #ifndef _COMMON_ISP_EXPRS_H_
 #define _COMMON_ISP_EXPRS_H_
@@ -52,11 +54,11 @@
 #define ISP_OUTPUT_CHUNK_LOG_FACTOR (MAX_VF_LOG_DOWNSCALE<=1 ? LOG_VECTOR_STEP : \
 					max(VF_LOG_DOWNSCALE,LOG_VECTOR_STEP))
 
-#define CEIL_DIV_CHUNKS(n,c)	((c) == 1 ? (n) \
+#define CEIL_DIV_CHUNKS(n,c)    ((c) == 1 ? (n) \
 		  		          : CEIL_SHIFT(CEIL_DIV((n), (c)), ISP_OUTPUT_CHUNK_LOG_FACTOR)<<ISP_OUTPUT_CHUNK_LOG_FACTOR)
 
 
-#define ISP_VARIABLE_INPUT 	(ISP_INPUT == IA_CSS_BINARY_INPUT_VARIABLE)
+#define ISP_VARIABLE_INPUT     (ISP_INPUT == IA_CSS_BINARY_INPUT_VARIABLE)
 
 /* Binary independent versions, see isp_defs.h for binary dependent ones */
 #ifndef __ISP 
@@ -111,19 +113,23 @@
 
 #define ENABLE_HUP ((isp_input_width  - isp_envelope_width)  < isp_output_width)
 #define ENABLE_VUP ((isp_input_height - isp_envelope_height) < isp_output_height)
-#define _ENABLE_BDS ( ( isp_input_width > isp_output_width ) || ( isp_input_height > isp_output_height ) )
 
+#define ISP_INPUT_WIDTH  (ENABLE_DS | ENABLE_HUP ? isp_input_width  : ISP_INTERNAL_WIDTH)
+#define ISP_INPUT_HEIGHT (ENABLE_DS | ENABLE_VUP ? isp_input_height : isp_internal_height)
 
-#define ISP_INPUT_WIDTH  ( ( ENABLE_DS || ENABLE_HUP || _ENABLE_BDS )? isp_input_width  : ISP_INTERNAL_WIDTH)
-#define ISP_INPUT_HEIGHT ( ( ENABLE_DS || ENABLE_VUP || _ENABLE_BDS ) ? isp_input_height : isp_internal_height)
+#define DECI_FACTOR_LOG2 (ISP_FIXED_S3A_DECI_LOG ? ISP_FIXED_S3A_DECI_LOG : isp_deci_log_factor)
 
-#define DECI_FACTOR_LOG2 isp_deci_log_factor
+#define ISP_S3ATBL_WIDTH \
+  _ISP_S3ATBL_ISP_WIDTH(_ISP_S3A_ELEMS_ISP_WIDTH((ENABLE_HUP ? ISP_INTERNAL_WIDTH : ISP_INPUT_WIDTH), ISP_LEFT_CROPPING), \
+    DECI_FACTOR_LOG2)
+#define S3ATBL_WIDTH_BYTES   (sizeof(struct ia_css_3a_output) * ISP_S3ATBL_WIDTH)
+#define S3ATBL_WIDTH_SHORTS  (S3ATBL_WIDTH_BYTES / sizeof(short))
 
 /* should be even?? */
 #define ISP_UV_OUTPUT_CHUNK_VECS   	CEIL_DIV(ISP_OUTPUT_CHUNK_VECS, 2)
 
 
-#if defined(__ISP) || defined(INIT_VARS) 
+#if defined(__ISP) || defined(INIT_VARS)
 
 #define ISP_USE_IF	(ISP_INPUT == IA_CSS_BINARY_INPUT_MEMORY ? 0 : \
 	       	         ISP_INPUT == IA_CSS_BINARY_INPUT_SENSOR ? 1 : \
@@ -197,13 +203,12 @@
 
 
 
-#define ISP_LOG_VECTOR_STEP(mode) \
-	((mode) == IA_CSS_BINARY_MODE_CAPTURE_PP ? 2 : 1)
-
 #define ISP_MIN_STRIPE_WIDTH (ISP_PIPELINING * (1<<_ISP_LOG_VECTOR_STEP(MODE)))
 
 /******* STRIPING-RELATED MACROS *******/
 #define NO_STRIPING (ISP_NUM_STRIPES == 1)
+
+#if defined(HAS_RES_MGR)
 
 #define ISP_OUTPUT_CHUNK_VECS ISP_INTERNAL_WIDTH_VECS
 
@@ -219,13 +224,29 @@
 	(NO_STRIPING 	? ISP_INPUT_WIDTH_VECS \
 				: ISP_IO_STRIPE_WIDTH_VECS(ISP_INPUT_WIDTH_VECS, ISP_LEFT_PADDING_VECS, ISP_NUM_STRIPES, ISP_MIN_STRIPE_WIDTH) )
 
+#else
+
+#define ISP_OUTPUT_CHUNK_VECS \
+	(NO_STRIPING 	? CEIL_DIV_CHUNKS(ISP_OUTPUT_VECS_EXTRA_CROP, OUTPUT_NUM_CHUNKS) \
+				: ISP_IO_STRIPE_WIDTH_VECS(ISP_OUTPUT_VECS_EXTRA_CROP, ISP_LEFT_PADDING_VECS, ISP_NUM_STRIPES, ISP_MIN_STRIPE_WIDTH) )
+
+#define VECTORS_PER_LINE \
+	(NO_STRIPING 	? ISP_INTERNAL_WIDTH_VECS \
+				: ISP_IO_STRIPE_WIDTH_VECS(ISP_INTERNAL_WIDTH_VECS, ISP_LEFT_PADDING_VECS, ISP_NUM_STRIPES, ISP_MIN_STRIPE_WIDTH) )
+
+#define VECTORS_PER_INPUT_LINE \
+	(NO_STRIPING 	? ISP_INPUT_WIDTH_VECS \
+				: ISP_IO_STRIPE_WIDTH_VECS(ISP_INPUT_WIDTH_VECS, ISP_LEFT_PADDING_VECS, ISP_NUM_STRIPES, ISP_MIN_STRIPE_WIDTH)+_ISP_EXTRA_PADDING_VECS)
+
+#endif
+
 #define ISP_MAX_VF_OUTPUT_STRIPE_VECS \
 	(NO_STRIPING 	? ISP_MAX_VF_OUTPUT_VECS \
 				: CEIL_MUL(CEIL_DIV(ISP_MAX_VF_OUTPUT_VECS, ISP_NUM_STRIPES), 2))
 #define _ISP_VF_OUTPUT_WIDTH_VECS \
 	(NO_STRIPING 	? __ISP_VF_OUTPUT_WIDTH_VECS(ISP_OUTPUT_WIDTH, VF_LOG_DOWNSCALE) \
 				: __ISP_VF_OUTPUT_WIDTH_VECS(CEIL_DIV(ISP_OUTPUT_WIDTH, ISP_NUM_STRIPES), VF_LOG_DOWNSCALE))
-					   
+
 #define ISP_IO_STRIPE_WIDTH_VECS(width, padding, num_stripes, min_stripe) \
 	MAX(CEIL_MUL(padding + CEIL_DIV(width-padding, num_stripes) \
 		   , 2) \
@@ -240,9 +261,6 @@
 #define VECTORS_PER_FULL_LINE         	ISP_INTERNAL_WIDTH_VECS
 #define VECTORS_PER_INPUT_FULL_LINE   	ISP_INPUT_WIDTH_VECS
 
-// #define ISP_LEFT_PADDING_VECS 		CEIL_DIV(_ISP_LEFT_CROP_EXTRA(ISP_LEFT_CROPPING), ISP_VEC_NELEMS)  
-
-
 ////////// OUTPUT
 /* should at least even and also multiple of vf scaling */
 #define ISP_OUTPUT_VECS_EXTRA_CROP	CEIL_DIV(ISP_OUTPUT_WIDTH_EXTRA_CROP, ISP_VEC_NELEMS)
@@ -256,38 +274,21 @@
                                 : 2*CEIL_DIV(ISP_MAX_VF_OUTPUT_STRIPE_VECS, 2*OUTPUT_NUM_CHUNKS))
 
 #define OUTPUT_VECTORS_PER_CHUNK	CEIL_DIV_CHUNKS(VECTORS_PER_LINE,OUTPUT_NUM_CHUNKS)
+
 /* should be even?? */
+#if !defined(HAS_RES_MGR)
+#define OUTPUT_C_VECTORS_PER_CHUNK  	CEIL_DIV(OUTPUT_VECTORS_PER_CHUNK, 2)
+#else
 #define OUTPUT_C_VECTORS_PER_CHUNK  	CEIL_DIV(MAX_VECTORS_PER_CHUNK, 2)
+#endif
 
-
+/**** SCTBL defs *******/
+#define ISP_SCTBL_HEIGHT \
+	_ISP_SCTBL_HEIGHT(ISP_INPUT_HEIGHT, DECI_FACTOR_LOG2)
 
 /**** UDS defs *********/
 #define UDS_DMACH_STRIDE_B_IN_Y           (( ISP_INTERNAL_WIDTH   /BITS8_ELEMENTS_PER_XMEM_ADDR)*HIVE_ISP_DDR_WORD_BYTES)
 #define UDS_DMACH_STRIDE_B_IN_C           (((ISP_INTERNAL_WIDTH/2)/BITS8_ELEMENTS_PER_XMEM_ADDR)*HIVE_ISP_DDR_WORD_BYTES)
-
-
-/**** SDIS defs ********/
-#define _ISP_SDIS_HOR_PROJ_NUM_ISP \
-  __ISP_SDIS_HOR_PROJ_NUM_ISP(ISP_INTERNAL_WIDTH, \
-                              ISP_INTERNAL_HEIGHT, \
-                              SH_CSS_DIS_DECI_FACTOR_LOG2, ISP_PIPE_VERSION)
-#define _ISP_SDIS_VER_PROJ_NUM_ISP \
-  __ISP_SDIS_VER_PROJ_NUM_ISP(ISP_INTERNAL_WIDTH, \
-                              ISP_INTERNAL_HEIGHT, \
-                              SH_CSS_DIS_DECI_FACTOR_LOG2, ISP_PIPE_VERSION)
-
-#define _ISP_SDIS_HOR_COEF_NUM_VECS \
-  __ISP_SDIS_HOR_COEF_NUM_VECS(ISP_INTERNAL_WIDTH)
-#define _ISP_SDIS_VER_COEF_NUM_VECS \
-  __ISP_SDIS_VER_COEF_NUM_VECS(ISP_INTERNAL_HEIGHT)
-
-#if defined(__ISP) && !VARIABLE_RESOLUTION
-#define ISP_SDIS_HOR_COEF_NUM_VECS _ISP_SDIS_HOR_COEF_NUM_VECS
-#define ISP_SDIS_VER_COEF_NUM_VECS _ISP_SDIS_VER_COEF_NUM_VECS
-#else
-#define ISP_SDIS_HOR_COEF_NUM_VECS isp_sdis_horicoef_vectors
-#define ISP_SDIS_VER_COEF_NUM_VECS isp_sdis_vertcoef_vectors
-#endif
 
 #else /* defined(__ISP) || defined(INIT_VARS) */
 

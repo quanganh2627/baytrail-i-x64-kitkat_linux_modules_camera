@@ -90,6 +90,7 @@
 #include "gc/gc_2/ia_css_gc2.host.h"
 #include "sdis/sdis_2/ia_css_sdis2.host.h"
 #include "ynr/ynr_2/ia_css_ynr2.host.h"
+#include "fc/fc_1.0/ia_css_formats.host.h"
 #endif
 #include "platform_support.h"
 
@@ -3117,6 +3118,7 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 		ia_css_set_xnr_config(params, &default_xnr_config);
 		ia_css_set_sdis_config(params, &default_sdis_config);
 		ia_css_set_sdis2_config(params, &default_sdis2_config);
+		ia_css_set_formats_config(params, &default_formats_config);
 		ia_css_set_param_exceptions(params);
 
 		/* gdc_lut_store is moved to ia_css_stream_isp_parameters_init() */
@@ -3184,6 +3186,7 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 		ia_css_set_yuv2rgb_config(params, &stream_params->yuv2rgb_cc_config);
 		ia_css_set_rgb2yuv_config(params, &stream_params->rgb2yuv_cc_config);
 		ia_css_set_xnr_config(params, &stream_params->xnr_config);
+		ia_css_set_formats_config(params, &stream_params->formats_config);
 
 		ia_css_set_param_exceptions(params);
 
