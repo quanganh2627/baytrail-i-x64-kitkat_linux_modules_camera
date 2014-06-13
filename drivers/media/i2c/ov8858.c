@@ -656,8 +656,13 @@ static int ov8858_get_register(struct v4l2_subdev *sd, int reg, int type,
 
 	/* Try if the values are in the register list */
 	for (next = reglist; next->type != OV8858_TOK_TERM; next++) {
-		if (next->sreg == reg)
-			return next->val;
+		if (next->sreg == reg) {
+			if (type == OV8858_8BIT)
+				return next->val;
+
+			if (type == OV8858_16BIT && next[1].type != OV8858_TOK_TERM)
+				return next[0].val << 8 | next[1].val;
+		}
 	}
 
 	/* If not, read from sensor */
