@@ -921,11 +921,12 @@ void
 sh_css_free(void *ptr);
 
 /* For Acceleration API: Flush FW (shared buffer pointer) arguments */
-extern void
+void
 sh_css_flush(struct ia_css_acc_fw *fw);
 
 
-void sh_css_binary_args_reset(struct sh_css_binary_args *args);
+void
+sh_css_binary_args_reset(struct sh_css_binary_args *args);
 
 /* Check two frames for equality (format, resolution, bits per element) */
 bool

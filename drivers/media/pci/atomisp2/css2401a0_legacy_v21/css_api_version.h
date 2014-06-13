@@ -31,7 +31,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatbile
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.2.7"
+#define CSS_API_VERSION_STRING	"2.1.2.8"
 
 /*
 Change log
@@ -88,6 +88,9 @@ v2.1.2.6 add function ia_css_check_firmware_version()
 v2.1.2.7
 - rename dynamic_data_index to dynamic_queue_id in struct ia_css_frame.
 - update IA_CSS_PIPE_MODE_NUM
+
+v2.1.2.8
+ - added flag for video full range
 */
 
-#endif __CSS_API_VERSION_H
+#endif /*__CSS_API_VERSION_H*/

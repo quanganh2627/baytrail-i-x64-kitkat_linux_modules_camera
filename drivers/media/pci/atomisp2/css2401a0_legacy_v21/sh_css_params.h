@@ -84,6 +84,7 @@ struct ia_css_isp_parameters {
 	struct ia_css_gc_config     gc_config;
 	struct ia_css_anr_config    anr_config;
 	struct ia_css_ce_config     ce_config;
+	struct ia_css_formats_config     formats_config;
 
 	struct ia_css_dvs_6axis_config	*dvs_6axis_config;
 
@@ -144,7 +145,7 @@ struct ia_css_isp_parameters {
 enum ia_css_err
 sh_css_params_write_to_ddr(struct ia_css_stream *stream,
 			   struct ia_css_pipeline_stage *stage);
-extern void
+void
 ia_css_params_store_sctbl(
 	    const struct ia_css_pipeline_stage *stage,
 	    hrt_vaddress ddr_addr,
