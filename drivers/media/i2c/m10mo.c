@@ -549,6 +549,7 @@ static int m10mo_set_af_mode(struct v4l2_subdev *sd, unsigned int val)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int id = M10MO_GET_FOCUS_MODE(dev->fw_type);
 	int ret = 0;
+	u32 cur_af_mode;
 
 	switch (val) {
 	case EXT_ISP_FOCUS_MODE_NORMAL:
@@ -579,17 +580,29 @@ static int m10mo_set_af_mode(struct v4l2_subdev *sd, unsigned int val)
 		return -EINVAL;
 	}
 
-	if (is_m10mo_in_monitor_mode(sd)) {
+	if (!is_m10mo_in_monitor_mode(sd))
+		return ret;
 
-		dev_info(&client->dev, "%s: In monitor mode, set AF mode to %d",
-			 __func__, dev->monitor_params.af_mode);
+	ret = m10mo_read(sd, 1, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_mode,
+			&cur_af_mode);
 
-		/* We are in monitor mode already, */
-		/* af_mode can be applied immediately */
-		ret = m10mo_writeb(sd, CATEGORY_LENS,
-				   m10m0_af_parameters[id].af_mode,
-				   dev->monitor_params.af_mode);
-	}
+	/*
+	 * If af_mode has changed as expected already
+	 * no need to set any more
+	 */
+	if (dev->monitor_params.af_mode == cur_af_mode)
+		return ret;
+
+	dev_info(&client->dev, "%s: In monitor mode, set AF mode to %d",
+		 __func__, dev->monitor_params.af_mode);
+
+	/* We are in monitor mode already, */
+	/* af_mode can be applied immediately */
+	ret = m10mo_writeb(sd, CATEGORY_LENS,
+			m10m0_af_parameters[id].af_mode,
+			dev->monitor_params.af_mode);
+
 	return ret;
 }
 
