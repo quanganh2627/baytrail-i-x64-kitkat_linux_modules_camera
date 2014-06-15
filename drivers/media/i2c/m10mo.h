@@ -42,7 +42,7 @@
 #define M10MO_MIPI_FREQ_1			(980700000/2)
 #define M10MO_INIT_TIMEOUT		500
 #define M10MO_BOOT_TIMEOUT		50
-#define POLL_NUM			5
+#define POLL_NUM			20
 
 #define M10MO_MIN_EV -2000
 #define M10MO_MAX_EV  3000
