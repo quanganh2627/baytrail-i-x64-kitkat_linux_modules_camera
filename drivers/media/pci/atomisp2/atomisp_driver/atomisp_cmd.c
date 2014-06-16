@@ -2914,7 +2914,6 @@ void atomisp_handle_parameter_and_buffer(struct atomisp_video_pipe *pipe)
 	struct videobuf_buffer *vb = NULL, *vb_tmp;
 	struct atomisp_css_params_with_list *param = NULL, *param_tmp;
 	struct videobuf_vmalloc_memory *vm_mem = NULL;
-	struct ia_css_pipe *css_pipe = NULL;
 	unsigned long irqflags;
 	bool need_to_enqueue_buffer = false;
 
@@ -2948,40 +2947,13 @@ void atomisp_handle_parameter_and_buffer(struct atomisp_video_pipe *pipe)
 				 * will be handled and enqueued into CSS soon
 				 */
 				pipe->frame_request_config_id[vb->i] = 0;
+				pipe->frame_params[vb->i] = param;
 				vm_mem = vb->priv;
 				BUG_ON(!vm_mem);
 				break;
 			}
 
 			if (vm_mem) {
-				/* update and apply the parameters */
-				atomisp_apply_css_parameters(asd,
-							&param->us_params,
-							&param->params);
-				atomisp_css_set_isp_config_applied_frame(asd,
-							vm_mem->vaddr);
-				if (pipe == &asd->video_out_capture) {
-					css_pipe =
-					  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-					  pipes[IA_CSS_PIPE_ID_CAPTURE];
-				} else if (pipe == &asd->video_out_preview) {
-					css_pipe =
-					  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-					  pipes[IA_CSS_PIPE_ID_PREVIEW];
-				} else if (pipe == &asd->video_out_video_capture) {
-					css_pipe =
-					  asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-					  pipes[IA_CSS_PIPE_ID_VIDEO];
-				} else {
-					dev_warn(isp->dev, "%s: failed to find a proper CSS pipe\n",
-						 __func__);
-					css_pipe = NULL;
-				}
-				atomisp_css_update_isp_params_on_pipe(asd, css_pipe);
-				/* free the parameters */
-				atomisp_free_css_parameters(&param->params);
-				atomisp_kernel_free(param);
-
 				spin_lock_irqsave(&pipe->irq_lock, irqflags);
 				list_add_tail(&vb->queue, &pipe->activeq);
 				spin_unlock_irqrestore(&pipe->irq_lock, irqflags);
@@ -2993,6 +2965,7 @@ void atomisp_handle_parameter_and_buffer(struct atomisp_video_pipe *pipe)
 			}
 		} else {
 			list_del(&vb->queue);
+			pipe->frame_params[vb->i] = NULL;
 			spin_lock_irqsave(&pipe->irq_lock, irqflags);
 			list_add_tail(&vb->queue, &pipe->activeq);
 			spin_unlock_irqrestore(&pipe->irq_lock, irqflags);

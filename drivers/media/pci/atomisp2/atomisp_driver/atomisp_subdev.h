@@ -109,6 +109,7 @@ struct atomisp_video_pipe {
 	 * non-zero value to indicate which parameter it needs to applu
 	 */
 	unsigned int frame_request_config_id[VIDEO_MAX_FRAME];
+	struct atomisp_css_params_with_list *frame_params[VIDEO_MAX_FRAME];
 };
 
 struct atomisp_pad_format {

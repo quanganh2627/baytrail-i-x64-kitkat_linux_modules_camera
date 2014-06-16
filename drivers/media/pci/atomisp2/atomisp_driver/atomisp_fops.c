@@ -94,6 +94,7 @@ int atomisp_q_video_buffers_to_css(struct atomisp_sub_device *asd,
 			     enum atomisp_css_pipe_id css_pipe_id)
 {
 	struct videobuf_vmalloc_memory *vm_mem;
+	struct atomisp_css_params_with_list *param;
 	unsigned long irqflags;
 	int err;
 
@@ -111,8 +112,27 @@ int atomisp_q_video_buffers_to_css(struct atomisp_sub_device *asd,
 		vb->state = VIDEOBUF_ACTIVE;
 		spin_unlock_irqrestore(&pipe->irq_lock, irqflags);
 
+		/*
+		 * If there is a per_frame setting to apply on the buffer,
+		 * do it before buffer en-queueing.
+		 */
 		vm_mem = vb->priv;
 
+		param = pipe->frame_params[vb->i];
+		if (param) {
+			atomisp_apply_css_parameters(asd,
+						&param->us_params,
+						&param->params);
+			atomisp_css_set_isp_config_applied_frame(asd,
+						vm_mem->vaddr);
+			atomisp_css_update_isp_params_on_pipe(asd,
+				asd->stream_env[stream_id].pipes[css_pipe_id]);
+			/* free the parameters */
+			atomisp_free_css_parameters(&param->params);
+			atomisp_kernel_free(param);
+			pipe->frame_params[vb->i] = NULL;
+		}
+		/* Enqueue buffer */
 		err = atomisp_q_video_buffer_to_css(asd, vm_mem, stream_id,
 						css_buf_type, css_pipe_id);
 		if (err) {
@@ -614,6 +634,9 @@ static int atomisp_init_pipe(struct atomisp_video_pipe *pipe)
 	INIT_LIST_HEAD(&pipe->per_frame_params);
 	memset(pipe->frame_request_config_id,
 	       0, VIDEO_MAX_FRAME * sizeof(unsigned int));
+	memset(pipe->frame_params,
+	       0, VIDEO_MAX_FRAME *
+	          sizeof(struct atomisp_css_params_with_list *));
 
 	return 0;
 }

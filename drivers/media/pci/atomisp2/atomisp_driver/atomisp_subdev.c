@@ -1003,6 +1003,9 @@ static void atomisp_init_subdev_pipe(struct atomisp_sub_device *asd,
 	INIT_LIST_HEAD(&pipe->per_frame_params);
 	memset(pipe->frame_request_config_id,
 	       0, VIDEO_MAX_FRAME * sizeof(unsigned int));
+	memset(pipe->frame_params,
+	       0, VIDEO_MAX_FRAME *
+	          sizeof(struct atomisp_css_params_with_list *));
 }
 
 /*

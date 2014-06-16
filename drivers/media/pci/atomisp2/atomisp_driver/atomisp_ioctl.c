@@ -1046,6 +1046,9 @@ int __atomisp_reqbufs(struct file *file, void *fh,
 		/* clear request config id */
 		memset(pipe->frame_request_config_id,
 		       0, VIDEO_MAX_FRAME * sizeof(unsigned int));
+		memset(pipe->frame_params,
+		       0, VIDEO_MAX_FRAME *
+		          sizeof(struct atomisp_css_params_with_list *));
 		return 0;
 	}
 
@@ -1249,6 +1252,8 @@ done:
 					~ATOMISP_BUFFER_HAS_PER_FRAME_SETTING;
 	else
 		pipe->frame_request_config_id[buf->index] = 0;
+
+	pipe->frame_params[buf->index] = NULL;
 
 	mutex_unlock(&isp->mutex);
 	ret = videobuf_qbuf(&pipe->capq, buf);
