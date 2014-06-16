@@ -1181,11 +1181,8 @@ static u32 __get_dual_capture_value(u8 capture_mode)
 		return DUAL_CAPTURE_BURST_CAPTURE_START;
 	case M10MO_CAPTURE_MODE_ZSL_LLS:
 		return DUAL_CAPTURE_LLS_CAPTURE_START;
-	/*
-	 * TODO: Fix this. Fujitsu recommended 0x07 for ZSL Capture.
-	 * But it is causing broken jpeg images with Fujitsu firmware for AF
-	 */
 	case M10MO_CAPTURE_MODE_ZSL_NORMAL:
+		return DUAL_CAPTURE_ZSL_CAPTURE_START;
 	case M10MO_CAPTURE_MODE_ZSL_HDR:
 	case M10MO_CAPTURE_MODE_ZSL_RAW:
 	default:
