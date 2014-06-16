@@ -100,14 +100,29 @@ static const struct m10mo_resolution const m10mo_preview_modes_fw1[] = {
 
 static const struct m10mo_resolution const m10mo_preview_modes_fw2[] = {
 	{
+		.width = 176,
+		.height = 144,
+		.command = 0x5,
+	},
+	{
 		.width = 320,
 		.height = 240,
 		.command = 0x9,
 	},
 	{
+		.width = 480,
+		.height = 320,
+		.command = 0x12,
+	},
+	{
 		.width = 640,
 		.height = 480,
 		.command = 0x17,
+	},
+	{
+		.width = 720,
+		.height = 480,
+		.command = 0x18,
 	},
 	{
 		.width = 960,
@@ -229,14 +244,34 @@ static const struct m10mo_resolution const m10mo_capture_modes_fw1[] = {
 
 static const struct m10mo_resolution const m10mo_capture_modes_fw2[] = {
 	{
+		.width = 320,
+		.height = 240,
+		.command = 0x2,
+	},
+	{
+		.width = 480,
+		.height = 320,
+		.command = 0x37,
+	},
+	{
 		.width = 640,
 		.height = 480,
 		.command = 0x9,
 	},
 	{
+		.width = 1280,
+		.height = 720,
+		.command = 0x10,
+	},
+	{
 		.width = 1920,
 		.height = 1080,
 		.command = 0x19,
+	},
+	{
+		.width = 2048,
+		.height = 1536,
+		.command = 0x1b,
 	},
 	{
 		.width = 3264,
@@ -247,6 +282,11 @@ static const struct m10mo_resolution const m10mo_capture_modes_fw2[] = {
 		.width = 3840,
 		.height = 2160,
 		.command = 0x26,
+	},
+	{
+		.width = 5248,
+		.height = 2952,
+		.command = 0x3e,
 	},
 	{
 		.width = 5248,
@@ -273,14 +313,29 @@ static const struct m10mo_resolution const m10mo_video_modes_fw1[] = {
 
 static const struct m10mo_resolution const m10mo_video_modes_fw2[] = {
 	{
+		.width = 176,
+		.height = 144,
+		.command = 0x5,
+	},
+	{
 		.width = 320,
 		.height = 240,
 		.command = 0x9,
 	},
 	{
+		.width = 352,
+		.height = 288,
+		.command = 0xe,
+	},
+	{
 		.width = 640,
 		.height = 480,
 		.command = 0x17,
+	},
+	{
+		.width = 720,
+		.height = 480,
+		.command = 0x18,
 	},
 	{
 		.width = 1280,
@@ -291,6 +346,11 @@ static const struct m10mo_resolution const m10mo_video_modes_fw2[] = {
 		.width = 1920,
 		.height = 1080,
 		.command = 0x28,
+	},
+	{
+		.width = 3840,
+		.height = 2160,
+		.command = 0x4a,
 	},
 };
 
