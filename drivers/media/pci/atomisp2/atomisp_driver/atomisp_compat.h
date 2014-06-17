@@ -203,6 +203,7 @@ int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
 				struct atomisp_css_buffer *isp_css_buffer);
 
 int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device *asd,
+				      uint16_t stream_id,
 				      struct atomisp_s3a_buf *s3a_buf,
 				      struct atomisp_dis_buf *dis_buf,
 				      struct atomisp_metadata_buf *md_buf);

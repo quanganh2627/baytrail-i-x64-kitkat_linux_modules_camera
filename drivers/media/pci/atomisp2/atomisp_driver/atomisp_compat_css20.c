@@ -1414,6 +1414,7 @@ int atomisp_css_dequeue_buffer(struct atomisp_sub_device *asd,
 }
 
 int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
+				      uint16_t stream_id,
 				      struct atomisp_s3a_buf      *s3a_buf,
 				      struct atomisp_dis_buf      *dis_buf,
 				      struct atomisp_metadata_buf *md_buf)
@@ -1451,10 +1452,10 @@ int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
 						dis_buf->dis_data, dvs_ptr);
 	}
 
-	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.
+	if (asd->stream_env[stream_id].stream_info.
 			metadata_info.size && md_buf) {
 		md_buf->metadata = ia_css_metadata_allocate(
-			&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_info.metadata_info);
+			&asd->stream_env[stream_id].stream_info.metadata_info);
 		if (!md_buf->metadata) {
 			if (s3a_buf)
 				ia_css_isp_3a_statistics_free(s3a_buf->s3a_data);

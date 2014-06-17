@@ -942,7 +942,8 @@ static void atomisp_videobuf_free_queue(struct videobuf_queue *q)
 	}
 }
 
-int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
+int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd,
+	uint16_t stream_id)
 {
 	struct atomisp_s3a_buf *s3a_buf = NULL, *_s3a_buf;
 	struct atomisp_dis_buf *dis_buf = NULL, *_dis_buf;
@@ -962,7 +963,7 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 			}
 
 			if (atomisp_css_allocate_stat_buffers(
-						asd, s3a_buf, NULL, NULL)) {
+					asd, stream_id, s3a_buf, NULL, NULL)) {
 				kfree(s3a_buf);
 				goto error;
 			}
@@ -982,7 +983,7 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 				goto error;
 			}
 			if (atomisp_css_allocate_stat_buffers(
-						asd, NULL, dis_buf, NULL)) {
+					asd, stream_id, NULL, dis_buf, NULL)) {
 				kfree(dis_buf);
 				goto error;
 			}
@@ -1003,7 +1004,7 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 			}
 
 			if (atomisp_css_allocate_stat_buffers(
-						asd, NULL, NULL, md_buf)) {
+					asd, stream_id, NULL, NULL, md_buf)) {
 				kfree(md_buf);
 				goto error;
 			}
@@ -1051,6 +1052,7 @@ int __atomisp_reqbufs(struct file *file, void *fh,
 	struct atomisp_css_frame *frame;
 	struct videobuf_vmalloc_memory *vm_mem;
 	uint16_t source_pad = atomisp_subdev_source_pad(vdev);
+	uint16_t stream_id = atomisp_source_pad_to_stream_id(asd, source_pad);
 	int ret = 0, i = 0;
 
 	if (req->count == 0) {
@@ -1073,7 +1075,7 @@ int __atomisp_reqbufs(struct file *file, void *fh,
 	if (ret)
 		return ret;
 
-	atomisp_alloc_css_stat_bufs(asd);
+	atomisp_alloc_css_stat_bufs(asd, stream_id);
 
 	/*
 	 * for user pointer type, buffers are not really allcated here,

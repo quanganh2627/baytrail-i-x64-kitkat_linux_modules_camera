@@ -1900,6 +1900,7 @@ static void atomisp_update_grid_info(struct atomisp_sub_device *asd,
 {
 	struct atomisp_device *isp = asd->isp;
 	int err;
+	uint16_t stream_id = atomisp_source_pad_to_stream_id(asd, source_pad);
 
 	if (atomisp_css_get_grid_info(asd, pipe_id, source_pad))
 		return;
@@ -1908,7 +1909,7 @@ static void atomisp_update_grid_info(struct atomisp_sub_device *asd,
 	   the grid size. */
 	atomisp_css_free_stat_buffers(asd);
 
-	err = atomisp_alloc_css_stat_bufs(asd);
+	err = atomisp_alloc_css_stat_bufs(asd, stream_id);
 	if (err) {
 		dev_err(isp->dev, "stat_buf allocate error\n");
 		goto err;
