@@ -2168,14 +2168,13 @@ int atomisp_css_input_configure_port(
 		stream_env->stream_config.source.port.timeout = timeout;
 		if (mipi_freq)
 			stream_env->stream_config.source.port.rxcount = rxcount;
+		stream_env->stream_config.
+			metadata_config.data_type = metadata_format;
+		stream_env->stream_config.
+			metadata_config.resolution.width = metadata_width;
+		stream_env->stream_config.
+			metadata_config.resolution.height = metadata_height;
 	}
-
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_config.
-		metadata_config.data_type = metadata_format;
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_config.
-		metadata_config.resolution.width = metadata_width;
-	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream_config.
-		metadata_config.resolution.height = metadata_height;
 
 	return 0;
 }
