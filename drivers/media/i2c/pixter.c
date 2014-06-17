@@ -302,6 +302,85 @@ static int pixter_config_tx(struct v4l2_subdev *sd)
 	return 0;
 }
 
+static void __print_mipi_timing(struct v4l2_subdev *sd)
+{
+	struct pixter_device *dev = to_pixter_dev(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct pixter_timing *dbg_time = &dev->dbg_timing;
+	unsigned short mipi_clk = dbg_time->mipi_clk / 1000000;
+	/* 1UI = 1 bit periold, in pS */
+	unsigned int ui = 1000000 / (mipi_clk * 2);
+	unsigned int tmp;
+
+	dev_dbg(&client->dev, "MIPI CLK: %d MHz.\n", mipi_clk);
+
+	dev_dbg(&client->dev, "----Pixter MIPI Parameters----\n");
+	dev_dbg(&client->dev, "ck_lpx: %d.\n", dbg_time->ck_lpx);
+	dev_dbg(&client->dev, "ck_prep: %d.\n", dbg_time->ck_prep);
+	dev_dbg(&client->dev, "ck_zero: %d.\n", dbg_time->ck_zero);
+	dev_dbg(&client->dev, "pre: %d.\n", dbg_time->pre);
+	dev_dbg(&client->dev, "post: %d.\n", dbg_time->post);
+	dev_dbg(&client->dev, "ck_trail: %d.\n", dbg_time->ck_trail);
+	dev_dbg(&client->dev, "dat_lpx: %d.\n", dbg_time->dat_lpx);
+	dev_dbg(&client->dev, "dat_prep: %d.\n", dbg_time->dat_prep);
+	dev_dbg(&client->dev, "dat_zero: %d.\n", dbg_time->dat_zero);
+	dev_dbg(&client->dev, "dat_trail: %d.\n", dbg_time->dat_trail);
+	dev_dbg(&client->dev, "gap: %d.\n", dbg_time->gap);
+	dev_dbg(&client->dev, "twakeup: %d.\n", dbg_time->twakeup);
+
+	dev_dbg(&client->dev, "----Standard MIPI Parameters----\n");
+
+	tmp = (dbg_time->ck_lpx + 1) * 8 * ui;
+	dev_dbg(&client->dev, "CLK-LPX: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->ck_prep + 1) * 8 * ui;
+	dev_dbg(&client->dev, "CLK-PREPARE: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->ck_zero + 1) * 8 * ui;
+	dev_dbg(&client->dev, "CLK-ZERO: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->pre - dbg_time->ck_lpx - dbg_time->ck_zero - 3)
+		* 8 * ui;
+	dev_dbg(&client->dev, "CLK-PRE: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->post + 8) * 8 * ui;
+	dev_dbg(&client->dev, "CLK-POST: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->ck_trail + 1) * 8 * ui;
+	dev_dbg(&client->dev, "CLK-TRAIL: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->dat_lpx + 1) * 8 * ui;
+	dev_dbg(&client->dev, "HS-LPX: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->dat_prep + 1) * 8 * ui;
+	dev_dbg(&client->dev, "HS-PREPARE: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->dat_zero + 6) * 8 * ui;
+	dev_dbg(&client->dev, "HS-ZERO: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->dat_trail + 2) * 8 * ui;
+	dev_dbg(&client->dev, "HS-TRAIL: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->gap + 9) * 8 * ui;
+	dev_dbg(&client->dev, "HS-EXIT: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+	tmp = (dbg_time->twakeup + 1) * 8 * ui;
+	dev_dbg(&client->dev, "Wakeup: %d.%d nS.\n",
+			tmp / 1000, tmp % 1000);
+
+}
+
 static int pixter_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct pixter_device *dev = to_pixter_dev(sd);
@@ -314,6 +393,7 @@ static int pixter_s_stream(struct v4l2_subdev *sd, int enable)
 	mutex_lock(&dev->input_lock);
 
 	if (enable) {
+		__print_mipi_timing(sd);
 		ret = pixter_config_rx(sd);
 		if (ret)
 			goto out;
