@@ -218,8 +218,8 @@ int ad5823_t_vcm_timing(struct v4l2_subdev *sd, s32 value)
 
 int ad5823_vcm_init(struct v4l2_subdev *sd)
 {
-	/* set vcm mode to ARC RES0.5 */
-	ad5823_dev.vcm_mode = AD5823_ARC_RES1;
+	/* set vcm mode to DIRECT */
+	ad5823_dev.vcm_mode = AD5823_DIRECT;
 	ad5823_dev.platform_data = camera_get_af_platform_data();
 	return ad5823_dev.platform_data ? 0 : -ENODEV;
 }
