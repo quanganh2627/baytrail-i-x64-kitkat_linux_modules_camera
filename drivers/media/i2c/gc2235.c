@@ -385,13 +385,12 @@ static int gc2235_init_common(struct v4l2_subdev *sd)
 
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x03, 0x04);
 
-	gc2235_write_reg(client, GCSENSOR_8BIT, 0x04, 0xb0);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0x04, 0x1c);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x05, 0x01);
-
-	gc2235_write_reg(client, GCSENSOR_8BIT, 0x06, 0x2a);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0x06, 0x0d);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x07, 0x00);
 
-	gc2235_write_reg(client, GCSENSOR_8BIT, 0x08, 0x30);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0x08, 0x14);
 
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x0a, 0x02);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x0c, 0x00);
@@ -473,7 +472,7 @@ static int gc2235_init_common(struct v4l2_subdev *sd)
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x21, 0x01);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x22, 0x02);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x23, 0x01);
-	gc2235_write_reg(client, GCSENSOR_8BIT, 0x29, 0x02);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0x29, 0x01);//0x02
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x2a, 0x01);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x00);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf2, 0x00);
@@ -575,6 +574,7 @@ static int gc2235_get_intg_factor(struct i2c_client *client,
 	u32 coarse_integration_time_min;
 	u32 coarse_integration_time_max_margin;
 	u16 tmp;
+	u8 pll_div;
 
 	if (info == NULL)
 		return -EINVAL;
@@ -587,7 +587,10 @@ static int gc2235_get_intg_factor(struct i2c_client *client,
 	coarse_integration_time_min = 1;
 	coarse_integration_time_max_margin = 6;
 
-	vt_pix_clk_freq_mhz = 67200000;
+        gc2235_read_reg(client, 1, 0xf8, &pll_div);
+	pll_div &= 0b00111111;
+	vt_pix_clk_freq_mhz = GC2235_MCLK*100000*(pll_div+1)/2;
+//	vt_pix_clk_freq_mhz = 57600000;
 
 	dev->vt_pix_clk_freq_mhz = vt_pix_clk_freq_mhz;
 
