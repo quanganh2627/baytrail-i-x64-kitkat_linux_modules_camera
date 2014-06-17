@@ -20,6 +20,7 @@
  */
 
 #include "ia_css_queue.h"
+#include <math_support.h>
 #include <ia_css_circbuf.h>
 #include <ia_css_circbuf_desc.h>
 #include "queue_access.h"
@@ -301,10 +302,10 @@ int ia_css_queue_get_used_space(
 
 int ia_css_queue_peek(
 		ia_css_queue_t *qhandle,
-		int32_t offset,
+		uint32_t offset,
 		uint32_t *element)
 {
-	int32_t num_elems = 0;
+	uint32_t num_elems = 0;
 	int error = 0;
 
 	if ((qhandle == NULL) || (element == NULL))
@@ -320,7 +321,7 @@ int ia_css_queue_peek(
 		if (offset > num_elems)
 			return EINVAL;
 
-		*element = ia_css_circbuf_peek(&qhandle->desc.cb_local, offset);
+		*element = ia_css_circbuf_peek_from_start(&qhandle->desc.cb_local, (int) offset);
 		return 0;
 	} else if (qhandle->type == IA_CSS_QUEUE_TYPE_REMOTE) {
 		/* a. Load the queue from remote */
@@ -339,6 +340,7 @@ int ia_css_queue_peek(
 		if (offset > num_elems)
 			return EINVAL;
 
+		offset = OP_std_modadd(cb_desc.start, offset, cb_desc.size);
 		error = ia_css_queue_item_load(qhandle, offset, &cb_elem);
 		if (error != 0)
 			return error;

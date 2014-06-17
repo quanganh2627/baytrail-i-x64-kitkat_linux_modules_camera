@@ -202,7 +202,10 @@ void ia_css_isys_stream_destroy(
 {
 	destroy_input_system_input_port(&(isys_stream->input_port));
 	destroy_input_system_channel(&(isys_stream->channel));
-	destroy_input_system_channel(&isys_stream->md_channel);
+	if (isys_stream->enable_metadata) {
+		/* Destroy metadata channel only if its allocated*/
+		destroy_input_system_channel(&isys_stream->md_channel);
+	}
 }
 
 ia_css_isys_error_t ia_css_isys_stream_calculate_cfg(

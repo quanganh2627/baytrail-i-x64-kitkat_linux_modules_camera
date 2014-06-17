@@ -35,10 +35,10 @@
 static struct ia_css_dvs_6axis_config *
 alloc_dvs_6axis_table(const struct ia_css_resolution *frame_res, struct ia_css_dvs_6axis_config  *dvs_config_src)
 {
-	unsigned int width_y;
-	unsigned int height_y;
-	unsigned int width_uv;
-	unsigned int height_uv;
+	unsigned int width_y = 0;
+	unsigned int height_y = 0;
+	unsigned int width_uv = 0;
+	unsigned int height_uv = 0;
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	struct ia_css_dvs_6axis_config  *dvs_config = NULL;
 
@@ -49,14 +49,14 @@ alloc_dvs_6axis_table(const struct ia_css_resolution *frame_res, struct ia_css_d
 	}
 	else
 	{	/*Initialize new struct with latest config settings*/
-		if (dvs_config_src) {
+		if (NULL != dvs_config_src) {
 			dvs_config->width_y = width_y = dvs_config_src->width_y;
 			dvs_config->height_y = height_y = dvs_config_src->height_y;
 			dvs_config->width_uv = width_uv = dvs_config_src->width_uv;
 			dvs_config->height_uv = height_uv = dvs_config_src->height_uv;
 			IA_CSS_LOG("alloc_dvs_6axis_table Y: W %d H %d", width_y, height_y);
 		}
-		else {
+		else if (NULL != frame_res) {
 			dvs_config->width_y = width_y = DVS_TABLE_IN_BLOCKDIM_X_LUMA(frame_res->width);
 			dvs_config->height_y = height_y = DVS_TABLE_IN_BLOCKDIM_Y_LUMA(frame_res->height);
 			dvs_config->width_uv = width_uv = DVS_TABLE_IN_BLOCKDIM_X_CHROMA(frame_res->width / 2); /* UV = Y/2, depens on colour format YUV 4.2.0*/

@@ -2462,12 +2462,17 @@ STORAGE_CLASS_INLINE void dtrace_dot(const char *fmt, ...)
 	va_end(ap);
 }
 #ifdef HAS_WATCHDOG_SP_THREAD_DEBUG
+/*
+ * TODO:SH_CSS_MAX_SP_THREADS is not the max number of sp threads
+ * future rework should fix this and remove the define MAX_THREAD_NUM
+ */
+#define MAX_THREAD_NUM (SH_CSS_MAX_SP_THREADS + SH_CSS_MAX_SP_INTERNAL_THREADS)
 void sh_css_dump_thread_wait_info(void)
 {
 	const struct ia_css_fw_info *fw;
 	int i;
 	unsigned int HIVE_ADDR_sp_thread_wait;
-	int32_t sp_thread_wait[5];
+	int32_t sp_thread_wait[MAX_THREAD_NUM];
 	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "SEM WAITS:\n");
 
 	fw = &sh_css_sp_fw;
@@ -2480,7 +2485,7 @@ void sh_css_dump_thread_wait_info(void)
 		(unsigned int)sp_address_of(sp_thread_wait),
 		     &sp_thread_wait,
 		     sizeof(sp_thread_wait));
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < MAX_THREAD_NUM; i++) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
 			"\twait[%d] = 0x%X\n",
 			i, sp_thread_wait[i]);
@@ -2493,7 +2498,7 @@ void sh_css_dump_pipe_stage_info(void)
 	const struct ia_css_fw_info *fw;
 	int i;
 	unsigned int HIVE_ADDR_sp_pipe_stage;
-	int32_t sp_pipe_stage[5];
+	int32_t sp_pipe_stage[MAX_THREAD_NUM];
 	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "PIPE STAGE:\n");
 
 	fw = &sh_css_sp_fw;
@@ -2506,7 +2511,7 @@ void sh_css_dump_pipe_stage_info(void)
 		(unsigned int)sp_address_of(sp_pipe_stage),
 		     &sp_pipe_stage,
 		     sizeof(sp_pipe_stage));
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < MAX_THREAD_NUM; i++) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
 			"\tstage[%d] = %d\n",
 			i, sp_pipe_stage[i]);
@@ -2519,7 +2524,7 @@ void sh_css_dump_pipe_stripe_info(void)
 	const struct ia_css_fw_info *fw;
 	int i;
 	unsigned int HIVE_ADDR_sp_pipe_stripe;
-	int32_t sp_pipe_stripe[5];
+	int32_t sp_pipe_stripe[MAX_THREAD_NUM];
 	ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE, "PIPE STRIPE:\n");
 
 	fw = &sh_css_sp_fw;
@@ -2532,7 +2537,7 @@ void sh_css_dump_pipe_stripe_info(void)
 		(unsigned int)sp_address_of(sp_pipe_stripe),
 		     &sp_pipe_stripe,
 		     sizeof(sp_pipe_stripe));
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < MAX_THREAD_NUM; i++) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_VERBOSE,
 			"\tstripe[%d] = %d\n",
 			i, sp_pipe_stripe[i]);
