@@ -946,53 +946,65 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd)
 	int count;
 	struct atomisp_device *isp = asd->isp;
 
-	if (!list_empty(&asd->s3a_stats) &&
-	    !list_empty(&asd->dis_stats) &&
-	    !list_empty(&asd->metadata))
-		return 0;
+	if (list_empty(&asd->s3a_stats)) {
+		count = ATOMISP_CSS_Q_DEPTH + 1;
+		dev_dbg(isp->dev, "allocating %d 3a buffers\n", count);
+		while (count--) {
+			s3a_buf = kzalloc(sizeof(struct atomisp_s3a_buf), GFP_KERNEL);
+			if (!s3a_buf) {
+				dev_err(isp->dev, "s3a stat buf alloc failed\n");
+				goto error;
+			}
 
-	count = ATOMISP_CSS_Q_DEPTH + 1;
-	dev_dbg(isp->dev, "allocating %d 3a & dis buffers\n", count);
-	while (count--) {
-		s3a_buf = kzalloc(sizeof(struct atomisp_s3a_buf), GFP_KERNEL);
-		if (!s3a_buf) {
-			dev_err(isp->dev, "s3a stat buf alloc failed\n");
-			goto error;
-		}
+			if (atomisp_css_allocate_stat_buffers(
+						asd, s3a_buf, NULL, NULL)) {
+				kfree(s3a_buf);
+				goto error;
+			}
 
-		dis_buf = kzalloc(sizeof(struct atomisp_dis_buf), GFP_KERNEL);
-		if (!dis_buf) {
-			dev_err(isp->dev, "dis stat buf alloc failed\n");
-			kfree(s3a_buf);
-			goto error;
+			list_add_tail(&s3a_buf->list, &asd->s3a_stats);
 		}
-		if (atomisp_css_allocate_stat_buffers(
-					asd, s3a_buf, dis_buf, NULL)) {
-			kfree(s3a_buf);
-			kfree(dis_buf);
-			goto error;
-		}
-
-		list_add_tail(&s3a_buf->list, &asd->s3a_stats);
-		list_add_tail(&dis_buf->list, &asd->dis_stats);
 	}
 
-	count = ATOMISP_CSS_Q_DEPTH * 2;
-	dev_dbg(isp->dev, "allocating %d metadata buffers\n", count);
-	while (count--) {
-		md_buf = kzalloc(sizeof(struct atomisp_metadata_buf),
-				 GFP_KERNEL);
-		if (!md_buf) {
-			dev_err(isp->dev, "metadata buf alloc failed\n");
-			goto error;
-		}
+	if (list_empty(&asd->dis_stats)) {
+		count = ATOMISP_CSS_Q_DEPTH + 1;
+		dev_dbg(isp->dev, "allocating %d dis buffers\n", count);
+		while (count--) {
+			dis_buf = kzalloc(sizeof(struct atomisp_dis_buf), GFP_KERNEL);
+			if (!dis_buf) {
+				dev_err(isp->dev, "dis stat buf alloc failed\n");
+				kfree(s3a_buf);
+				goto error;
+			}
+			if (atomisp_css_allocate_stat_buffers(
+						asd, NULL, dis_buf, NULL)) {
+				kfree(dis_buf);
+				goto error;
+			}
 
-		if (atomisp_css_allocate_stat_buffers(
-					asd, NULL, NULL, md_buf)) {
-			kfree(md_buf);
-			goto error;
+			list_add_tail(&dis_buf->list, &asd->dis_stats);
 		}
-		list_add_tail(&md_buf->list, &asd->metadata);
+	}
+
+	if (list_empty(&asd->metadata)) {
+		count = ATOMISP_CSS_Q_DEPTH * 2;
+		dev_dbg(isp->dev, "allocating %d metadata buffers\n", count);
+		while (count--) {
+			md_buf = kzalloc(sizeof(struct atomisp_metadata_buf),
+					 GFP_KERNEL);
+			if (!md_buf) {
+				dev_err(isp->dev, "metadata buf alloc failed\n");
+				goto error;
+			}
+
+			if (atomisp_css_allocate_stat_buffers(
+						asd, NULL, NULL, md_buf)) {
+				kfree(md_buf);
+				goto error;
+			}
+
+			list_add_tail(&md_buf->list, &asd->metadata);
+		}
 	}
 
 	return 0;

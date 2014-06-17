@@ -3888,7 +3888,7 @@ int get_frame_info_nop(struct atomisp_sub_device *asd,
 static int css_input_resolution_changed(struct atomisp_sub_device *asd,
 		struct v4l2_mbus_framefmt *ffmt)
 {
-	int ret = 0;
+	struct atomisp_metadata_buf *md_buf = NULL, *_md_buf;
 
 	dev_dbg(asd->isp->dev, "css_input_resolution_changed to %ux%u\n",
 		ffmt->width, ffmt->height);
@@ -3909,8 +3909,18 @@ static int css_input_resolution_changed(struct atomisp_sub_device *asd,
 			atomisp_css_enable_raw_binning(asd, true);
 		}
 	}
+	/*
+	 * If sensor input changed, which means metadata resolution changed
+	 * together. Release all metadata buffers here to let it re-allocated
+	 * next time in reqbufs.
+	 */
+	list_for_each_entry_safe(md_buf, _md_buf, &asd->metadata, list) {
+		atomisp_css_free_metadata_buffer(md_buf);
+		list_del(&md_buf->list);
+		kfree(md_buf);
+	}
 
-	return ret;
+	return 0;
 
 	/*
 	 * TODO: atomisp_css_preview_configure_pp_input() not
