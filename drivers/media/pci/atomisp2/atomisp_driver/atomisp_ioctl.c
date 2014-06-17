@@ -993,7 +993,7 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd,
 	}
 
 	if (list_empty(&asd->metadata)) {
-		count = ATOMISP_CSS_Q_DEPTH * 2;
+		count = ATOMISP_CSS_Q_DEPTH * ATOMISP_INPUT_STREAM_NUM;
 		dev_dbg(isp->dev, "allocating %d metadata buffers\n", count);
 		while (count--) {
 			md_buf = kzalloc(sizeof(struct atomisp_metadata_buf),
