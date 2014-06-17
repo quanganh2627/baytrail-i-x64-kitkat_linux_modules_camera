@@ -85,18 +85,6 @@
 #define SP_DEBUG_MINIMAL_OVERWRITE 1
 
 
-#ifdef __DISABLE_UNUSED_THREAD__
-#define SH_CSS_MAX_SP_THREADS	1
-#else
-#if defined(IS_ISP_2500_SYSTEM)
-#define SH_CSS_MAX_SP_THREADS	2
-#else
-#define SH_CSS_MAX_SP_THREADS	5
-#endif
-#endif
-
-#define SH_CSS_MAX_PIPELINES	SH_CSS_MAX_SP_THREADS
-
 /* keep next up to date with the definition for MAX_CB_ELEMS_FOR_TAGGER in tagger.sp.c */
 #if defined(HAS_SP_2400)
 #define NUM_CONTINUOUS_FRAMES	15
@@ -116,9 +104,50 @@
 #define SH_CSS_ENABLE_METADATA
 #endif
 
-#if defined(SH_CSS_ENABLE_METADATA) && defined(USE_INPUT_SYSTEM_VERSION_2)
+#if defined(SH_CSS_ENABLE_METADATA) && !defined(USE_INPUT_SYSTEM_VERSION_2401)
 #define SH_CSS_ENABLE_METADATA_THREAD
 #endif
+
+
+ /*
+  * SH_CSS_MAX_SP_THREADS:
+  *	 sp threads visible to host with connected communication queues
+  *	 these threads are capable of running an image pipe
+  * SH_CSS_MAX_SP_INTERNAL_THREADS:
+  *	 internal sp service threads, no communication queues to host
+  *	 these threads can't be used as image pipe
+  */
+
+#if !defined(SWITCH_GACS_TO_SP1) && defined(IS_ISP_2500_SYSTEM)
+#define SH_CSS_SP_INTERNAL_SWITCH_GACS_TO_SP1_THREAD	1
+#else
+#define SH_CSS_SP_INTERNAL_SWITCH_GACS_TO_SP1_THREAD	0
+#endif
+
+#if defined(SH_CSS_ENABLE_METADATA_THREAD)
+#define SH_CSS_SP_INTERNAL_METADATA_THREAD	1
+#else
+#define SH_CSS_SP_INTERNAL_METADATA_THREAD	0
+#endif
+
+#define SH_CSS_SP_INTERNAL_SERVICE_THREAD		1
+
+#ifdef __DISABLE_UNUSED_THREAD__
+	#define SH_CSS_MAX_SP_THREADS			0
+#else
+	#if defined(IS_ISP_2500_SYSTEM)
+		#define SH_CSS_MAX_SP_THREADS		2
+	#else
+		#define SH_CSS_MAX_SP_THREADS		5
+	#endif
+#endif
+
+#define SH_CSS_MAX_SP_INTERNAL_THREADS	(\
+	 SH_CSS_SP_INTERNAL_SERVICE_THREAD +\
+	 SH_CSS_SP_INTERNAL_SWITCH_GACS_TO_SP1_THREAD +\
+	 SH_CSS_SP_INTERNAL_METADATA_THREAD)
+
+#define SH_CSS_MAX_PIPELINES	SH_CSS_MAX_SP_THREADS
 
 /**
  * The C99 standard does not specify the exact object representation of structs;
