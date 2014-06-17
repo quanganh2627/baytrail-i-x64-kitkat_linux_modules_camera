@@ -160,7 +160,8 @@ static int atomisp_q_metadata_buffers_to_css(struct atomisp_sub_device *asd,
 		return -EINVAL;
 	}
 
-	while (asd->metadata_bufs_in_css[css_pipe_id] < ATOMISP_CSS_Q_DEPTH) {
+	while (asd->metadata_bufs_in_css[stream_id][css_pipe_id]
+		< ATOMISP_CSS_Q_DEPTH) {
 		metadata_buf = list_entry(asd->metadata.next,
 				struct atomisp_metadata_buf, list);
 		list_move_tail(&metadata_buf->list, &asd->metadata);
@@ -169,7 +170,7 @@ static int atomisp_q_metadata_buffers_to_css(struct atomisp_sub_device *asd,
 					stream_id, css_pipe_id))
 			return -EINVAL;
 
-		asd->metadata_bufs_in_css[css_pipe_id]++;
+		asd->metadata_bufs_in_css[stream_id][css_pipe_id]++;
 	}
 
 	return 0;

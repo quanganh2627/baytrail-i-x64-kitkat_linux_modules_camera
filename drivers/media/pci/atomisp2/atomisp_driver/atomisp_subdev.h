@@ -287,7 +287,8 @@ struct atomisp_sub_device {
 	unsigned int s3a_bufs_in_css[CSS_PIPE_ID_NUM];
 	unsigned int dis_bufs_in_css;
 
-	unsigned int metadata_bufs_in_css[CSS_PIPE_ID_NUM];
+	unsigned int metadata_bufs_in_css
+		[ATOMISP_INPUT_STREAM_NUM][CSS_PIPE_ID_NUM];
 	struct list_head metadata;
 
 	struct list_head s3a_stats;

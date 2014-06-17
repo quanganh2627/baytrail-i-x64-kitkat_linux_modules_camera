@@ -581,8 +581,11 @@ out_nowake:
 
 void atomisp_clear_css_buffer_counters(struct atomisp_sub_device *asd)
 {
+	int i;
 	memset(asd->s3a_bufs_in_css, 0, sizeof(asd->s3a_bufs_in_css));
-	memset(asd->metadata_bufs_in_css, 0, sizeof(asd->metadata_bufs_in_css));
+	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++)
+		memset(asd->metadata_bufs_in_css[i], 0,
+			sizeof(asd->metadata_bufs_in_css[i]));
 	asd->dis_bufs_in_css = 0;
 	asd->video_out_capture.buffers_in_css = 0;
 	asd->video_out_vf.buffers_in_css = 0;
@@ -874,7 +877,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			if (!error)
 				atomisp_css_get_metadata(asd, &buffer);
 
-			asd->metadata_bufs_in_css[css_pipe_id]--;
+			asd->metadata_bufs_in_css[stream_id][css_pipe_id]--;
 
 			atomisp_metadata_ready_event(asd);
 			break;
@@ -1275,15 +1278,21 @@ void atomisp_wdt_work(struct work_struct *work)
 			dev_err(isp->dev,
 				"%s, metadata buffers in css preview pipe:%d\n",
 				__func__,
-				asd->metadata_bufs_in_css[CSS_PIPE_ID_PREVIEW]);
+				asd->metadata_bufs_in_css
+				[ATOMISP_INPUT_STREAM_GENERAL]
+				[CSS_PIPE_ID_PREVIEW]);
 			dev_err(isp->dev,
 				"%s, metadata buffers in css capture pipe:%d\n",
 				__func__,
-				asd->metadata_bufs_in_css[CSS_PIPE_ID_CAPTURE]);
+				asd->metadata_bufs_in_css
+				[ATOMISP_INPUT_STREAM_GENERAL]
+				[CSS_PIPE_ID_CAPTURE]);
 			dev_err(isp->dev,
 				"%s, metadata buffers in css video pipe:%d\n",
 				__func__,
-				asd->metadata_bufs_in_css[CSS_PIPE_ID_VIDEO]);
+				asd->metadata_bufs_in_css
+				[ATOMISP_INPUT_STREAM_GENERAL]
+				[CSS_PIPE_ID_VIDEO]);
 		}
 
 		/*sh_css_dump_sp_state();*/
