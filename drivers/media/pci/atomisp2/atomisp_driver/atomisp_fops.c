@@ -329,6 +329,11 @@ static int atomisp_qbuffers_to_css_for_all_pipes(struct atomisp_sub_device *asd)
 	atomisp_q_video_buffers_to_css(asd, preview_pipe,
 				       input_stream_id,
 				       buf_type, css_preview_pipe_id);
+	if (asd->stream_env[input_stream_id].stream_info.
+			metadata_info.size) {
+		atomisp_q_metadata_buffers_to_css(asd, input_stream_id,
+			css_preview_pipe_id);
+	}
 
 	buf_type = atomisp_get_css_buf_type( asd, css_capture_pipe_id,
 			atomisp_subdev_source_pad(&capture_pipe->vdev));
@@ -336,6 +341,11 @@ static int atomisp_qbuffers_to_css_for_all_pipes(struct atomisp_sub_device *asd)
 	atomisp_q_video_buffers_to_css(asd, capture_pipe,
 					       input_stream_id,
 					       buf_type, css_capture_pipe_id);
+	if (asd->stream_env[input_stream_id].stream_info.
+			metadata_info.size) {
+		atomisp_q_metadata_buffers_to_css(asd, input_stream_id,
+			css_capture_pipe_id);
+	}
 
 	buf_type = atomisp_get_css_buf_type(asd, css_video_pipe_id,
 			atomisp_subdev_source_pad(&video_pipe->vdev));
@@ -343,6 +353,11 @@ static int atomisp_qbuffers_to_css_for_all_pipes(struct atomisp_sub_device *asd)
 	atomisp_q_video_buffers_to_css(asd, video_pipe,
 					       input_stream_id,
 					       buf_type, css_video_pipe_id);
+	if (asd->stream_env[input_stream_id].stream_info.
+			metadata_info.size)
+		atomisp_q_metadata_buffers_to_css(asd, input_stream_id,
+			css_video_pipe_id);
+
 	return 0;
 }
 
