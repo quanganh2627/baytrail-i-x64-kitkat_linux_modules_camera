@@ -128,6 +128,10 @@
 #define M10MO_GET_FOCUS_MODE(arg)		((arg >> M10MO_AF_MODE_OFFSET) & M10MO_MASK)
 #define M10MO_GET_RESOLUTION_MODE(arg)	((arg >> M10MO_RESOLUTION_MODE_OFFSET) & M10MO_MASK)
 
+#define M10MO_METADATA_WIDTH	2048
+#define M10MO_METADATA_HEIGHT	4
+#define M10MO_METADATA_FORMAT	ATOMISP_INPUT_FORMAT_EMBEDDED
+
 struct m10mo_spi {
 	int spi_enabled;
 	struct spi_device *spi_device;
@@ -304,6 +308,7 @@ int m10mo_dump_string_log3(struct v4l2_subdev *sd);
 
 #define PARAM_VDIS			0x00
 #define SHOT_MODE			0x0e
+#define MPO_FORMAT_META			0x0e
 #define MONITOR_TYPE			0x6e
 #define MOVIE_MODE			0x3c
 

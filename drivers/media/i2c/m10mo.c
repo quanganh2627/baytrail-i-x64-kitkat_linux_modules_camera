@@ -44,6 +44,13 @@
 #include <media/v4l2-device.h>
 #include "m10mo.h"
 
+static const uint32_t m10mo_md_effective_size[] = {
+	M10MO_METADATA_WIDTH,
+	M10MO_METADATA_WIDTH,
+	M10MO_METADATA_WIDTH,
+	M10MO_METADATA_WIDTH
+};
+
 /*
  * m10mo_read -  I2C read function
  * @reg: combination of size, category and command for the I2C packet
@@ -1758,6 +1765,7 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct atomisp_input_stream_info *stream_info =
 			(struct atomisp_input_stream_info*)fmt->reserved;
+	struct camera_mipi_info *mipi_info = v4l2_get_subdev_hostdata(sd);
 	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 	int index;
 
@@ -1784,6 +1792,10 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 			stream_info->ch_id = 1;
 		else
 			stream_info->ch_id = 0;
+		mipi_info->metadata_format = M10MO_METADATA_FORMAT;
+		mipi_info->metadata_width = M10MO_METADATA_WIDTH;
+		mipi_info->metadata_height = M10MO_METADATA_HEIGHT;
+		mipi_info->metadata_effective_width = m10mo_md_effective_size;
 	/*
 	 * In ZSL Capture cases, for capture an image the run mode is not
 	 * changed. So we need to maintain a separate cpature table index
@@ -2004,6 +2016,15 @@ static int m10mo_set_monitor_mode(struct v4l2_subdev *sd)
 		else
 			ret = m10mo_write(sd, 1, CATEGORY_PARAM,
 				MONITOR_TYPE, MONITOR_PREVIEW);
+
+		/* Enable metadata */
+		ret = m10mo_writeb(sd, CATEGORY_PARAM, MON_METADATA_SUPPORT_CTRL,
+				MON_METADATA_SUPPORT_CTRL_EN);
+		if (ret)
+			goto out;
+		ret = m10mo_writeb(sd, CATEGORY_PARAM, MPO_FORMAT_META, 1);
+		if (ret)
+			goto out;
 	}
 
 	/* Enable interrupt signal */
