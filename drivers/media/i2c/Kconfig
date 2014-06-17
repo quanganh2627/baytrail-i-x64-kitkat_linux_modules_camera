@@ -2,6 +2,7 @@
 # Kconfig for sensor drivers
 #
 
+source "drivers/external_drivers/camera/drivers/media/i2c/ov/Kconfig"
 source "drivers/external_drivers/camera/drivers/media/i2c/mt9e013/Kconfig"
 source "drivers/external_drivers/camera/drivers/media/i2c/imx/Kconfig"
 source "drivers/external_drivers/camera/drivers/media/i2c/imx135VB/Kconfig"
@@ -29,17 +30,6 @@ config VIDEO_WV511
          This is a Video4Linux2 sensor-level driver for the wv511.
 
          It currently only works with the atomisp driver.
-
-config VIDEO_OV2685
-        tristate "OVT ov2685 sensor support"
-        depends on I2C && VIDEO_V4L2
-        ---help---
-          This is a Video4Linux2 sensor-level driver for the OVT
-          OV2685 soc camera.
-
-          OVT is a 2M soc sensor.
-
-          It currently only works with the atomisp driver.
 
 config VIDEO_OV9724
        tristate "OVT ov9724 sensor support"
