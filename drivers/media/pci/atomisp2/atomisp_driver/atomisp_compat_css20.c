@@ -904,6 +904,15 @@ static inline int __set_css_print_env(struct atomisp_device *isp, int opt)
 	return ret;
 }
 
+int atomisp_css_check_firmware_version(struct atomisp_device *isp)
+{
+	if (!sh_css_check_firmware_version((void *)isp->firmware->data)) {
+		dev_err(isp->dev, "Fw version check failed.\n");
+		return -EINVAL;
+	}
+	return 0;
+}
+
 int atomisp_css_load_firmware(struct atomisp_device *isp)
 {
 	enum ia_css_err err;

@@ -1126,6 +1126,12 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		goto load_fw_fail;
 	}
 
+	err = atomisp_css_check_firmware_version(isp);
+	if (err) {
+		dev_dbg(&dev->dev, "Firmware version check failed\n");
+		goto fw_validation_fail;
+	}
+
 	isp->wdt_work_queue = alloc_workqueue(isp->v4l2_dev.name, 0, 1);
 	if (isp->wdt_work_queue == NULL) {
 		dev_err(&dev->dev, "Failed to initialize wdt work queue\n");
@@ -1250,6 +1256,7 @@ initialize_modules_fail:
 enable_msi_fail:
 	destroy_workqueue(isp->wdt_work_queue);
 wdt_work_queue_fail:
+fw_validation_fail:
 	release_firmware(isp->firmware);
 load_fw_fail:
 	pci_dev_put(isp->pci_root);
