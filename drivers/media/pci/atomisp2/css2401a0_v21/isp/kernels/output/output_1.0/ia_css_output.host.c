@@ -21,12 +21,27 @@
 
 #include "ia_css_frame.h"
 #include "ia_css.h"
+#include "ia_css_debug.h"
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
 #include "ia_css_output.host.h"
 #include "isp.h"
 
 #include "assert_support.h"
+
+const struct ia_css_output_config default_output_config = {
+	0
+};
+
+void
+ia_css_output_encode(
+	struct sh_css_isp_output_params *to,
+	const struct ia_css_output_config *from,
+	unsigned size)
+{
+	(void)size;
+	to->enable_mirror = from->enable_mirror;
+}
 
 void
 ia_css_output_config(
@@ -98,4 +113,25 @@ ia_css_output1_configure(
 		{ info };
 	if (info)
 		ia_css_configure_output1(binary, &config);
+}
+
+void
+ia_css_output_dump(
+	const struct sh_css_isp_output_params *output,
+	unsigned level)
+{
+	if (!output) return;
+	ia_css_debug_dtrace(level, "Output Mirror:\n");
+	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
+			"enable", output->enable_mirror);
+}
+
+void
+ia_css_output_debug_dtrace(
+	const struct ia_css_output_config *config,
+	unsigned level)
+{
+	ia_css_debug_dtrace(level,
+		"config.enable_mirror=%d",
+		config->enable_mirror);
 }

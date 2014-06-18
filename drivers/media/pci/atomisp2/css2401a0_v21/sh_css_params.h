@@ -103,8 +103,10 @@ struct ia_css_isp_parameters {
 	struct ia_css_rgb_gamma_table     b_gamma_table;
 	struct ia_css_anr_thres     anr_thres;
 	struct ia_css_xnr_config    xnr_config;
+	struct ia_css_xnr3_config   xnr3_config;
 	struct ia_css_uds_config    uds_config;
 	struct ia_css_crop_config   crop_config;
+	struct ia_css_output_config output_config;
 #if defined(IS_ISP_2500_SYSTEM)
 	struct ia_css_2500_lin_kernel_config  lin_2500_config;
 	struct ia_css_2500_tnr_kernel_config  tnr_2500_config;

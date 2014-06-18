@@ -86,7 +86,8 @@ compute_coring(int coring)
 void
 ia_css_xnr3_encode(
 	struct sh_css_isp_xnr3_params *to,
-	const struct ia_css_xnr3_config *from)
+	const struct ia_css_xnr3_config *from,
+        unsigned size)
 {
 	int kernel_size = XNR_FILTER_SIZE;
 	int adjust_factor = 2 * (kernel_size - 1);
@@ -102,6 +103,8 @@ ia_css_xnr3_encode(
 	int32_t coring_u1 = compute_coring(from->coring.u1);
 	int32_t coring_v0 = compute_coring(from->coring.v0);
 	int32_t coring_v1 = compute_coring(from->coring.v1);
+
+        (void)size;
 
 	/* alpha's are represented in qN.5 format */
 	to->alpha.y0 = alpha_y0;

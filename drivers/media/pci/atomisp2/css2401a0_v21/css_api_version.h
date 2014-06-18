@@ -31,7 +31,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatbile
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.2.8"
+#define CSS_API_VERSION_STRING	"2.1.2.10"
 
 /*
 Change log
@@ -91,6 +91,12 @@ v2.1.2.7
 
 v2.1.2.8
  - added flag for video full range
+
+v2.1.2.9
+ - add public parameters for xnr3 kernel
+
+v2.1.2.10
+ - add new interface to enable output mirroring
 */
 
 #endif /*__CSS_API_VERSION_H*/
