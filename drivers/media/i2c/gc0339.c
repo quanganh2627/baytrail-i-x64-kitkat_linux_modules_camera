@@ -471,7 +471,14 @@ static int gc0339_wait_state(struct i2c_client *client, int timeout)
 static int gc0339_set_suspend(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	gc0339_write_reg(client, MISENSOR_8BIT,  0x60, 0x88); /*10bit raw disable*/
+	gc0339_write_reg(client, MISENSOR_8BIT,  0x60, 0x88);
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	gc0339_write_reg(client, MISENSOR_8BIT,  0x69, 0x00);
+	gc0339_write_reg(client, MISENSOR_8BIT,  0xf6, 0x04);
+	gc0339_write_reg(client, MISENSOR_8BIT,  0xf7, 0x00);
+	gc0339_write_reg(client, MISENSOR_8BIT,  0xfc, 0x17);
+#endif
+
 	return 0;
 }
 
@@ -480,6 +487,7 @@ static int gc0339_set_streaming(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 
 	gc0339_write_reg(client, MISENSOR_8BIT,  0x60, 0x98); /*10bit raw enable*/
+
 	return 0;
 }
 
@@ -721,9 +729,23 @@ static int gc0339_s_power(struct v4l2_subdev *sd, int power)
 }
 
 #ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int gc0339_sub_init(struct i2c_client *client)
+{
+	int ret = 0;
+
+	ret |= gc0339_write_reg(client, MISENSOR_8BIT, 0x69, 0x03);
+	ret |= gc0339_write_reg(client, MISENSOR_8BIT, 0xf6, 0x05);
+	ret |= gc0339_write_reg(client, MISENSOR_8BIT, 0xf7, 0x01);
+	ret |= gc0339_write_reg(client, MISENSOR_8BIT, 0xf7, 0x03);
+	ret |= gc0339_write_reg(client, MISENSOR_8BIT, 0xfc, 0x16);
+
+	return ret;
+}
+
 static int gc0339_s_power_always_on(struct v4l2_subdev *sd, int power)
 {
 	struct gc0339_device *dev = to_gc0339_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
 	if (power == 0) {
@@ -736,6 +758,12 @@ static int gc0339_s_power_always_on(struct v4l2_subdev *sd, int power)
 			dev->power = 1;
 			dev->once_launched = 1;
 			ret = gc0339_init_common(sd);
+		} else {
+			//ret = gc0339_init_common(sd);
+			ret = gc0339_sub_init(client);
+			if (ret) {
+				dev_err(&client->dev, "i2c write error for gc0339_sub_init()\n");
+			}
 		}
 	}
 
@@ -988,6 +1016,13 @@ static int gc0339_set_mbus_fmt(struct v4l2_subdev *sd,
 		WARN_ON(1);
 		return -EINVAL;
 	}
+
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	ret = gc0339_sub_init(c);
+	if (ret) {
+		dev_err(&c->dev, "i2c write error for gc0339_sub_init()\n");
+	}
+#endif
 
 	switch (res_index->res) {
 	case GC0339_RES_CIF:

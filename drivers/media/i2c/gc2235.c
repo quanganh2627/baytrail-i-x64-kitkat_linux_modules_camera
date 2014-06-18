@@ -339,9 +339,17 @@ static int gc2235_set_suspend(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x03);
-	gc2235_write_reg(client, GCSENSOR_8BIT,  0x10, 0x81);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0x10, 0x81);
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0x01, 0x00);
+#endif
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x00);
-
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf7, 0x14);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf9, 0xff);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfc, 0x07);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0xf2, 0x00);
+#endif
 	return 0;
 }
 
@@ -353,9 +361,12 @@ static int gc2235_set_streaming(struct v4l2_subdev *sd)
 	__gc2235_update_exposure_timing(client, g_exposure, 0, 0);
 	__gc2235_update_gain(sd, g_gain);
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x03);
-	gc2235_write_reg(client, GCSENSOR_8BIT,  0x10, 0x91);
+	gc2235_write_reg(client, GCSENSOR_8BIT, 0x10, 0x91);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x00);
+#endif
+
 	return 0;
 }
 
@@ -364,10 +375,10 @@ static int gc2235_init_common(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = -1;
 
-       if (0 != (ret = gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x80))) {
-               dev_err(&client->dev, "%s:init common error", __func__);
-               return ret;
-       }
+	if (0 != (ret = gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x80))) {
+		dev_err(&client->dev, "%s:init common error", __func__);
+		return ret;
+	}
 
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x80);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x80);
@@ -512,9 +523,25 @@ static int gc2235_s_power(struct v4l2_subdev *sd, int on)
 }
 
 #ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int gc2235_sub_init(struct i2c_client *client)
+{
+	int ret = 0;
+
+	ret |= gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x03);
+	ret |= gc2235_write_reg(client, GCSENSOR_8BIT, 0x01, 0x07);
+	ret |= gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x00);
+	ret |= gc2235_write_reg(client, GCSENSOR_8BIT, 0xf7, 0x15);
+	ret |= gc2235_write_reg(client, GCSENSOR_8BIT, 0xf9, 0xfe);
+	ret |= gc2235_write_reg(client, GCSENSOR_8BIT, 0xfc, 0x06);
+	ret |= gc2235_write_reg(client, GCSENSOR_8BIT, 0xf2, 0x00);
+
+	return ret;
+}
+
 static int __gc2235_s_power_always_on(struct v4l2_subdev *sd, int on)
 {
 	struct gc2235_device *dev = to_gc2235_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
 	if (on == 0) {
@@ -527,6 +554,12 @@ static int __gc2235_s_power_always_on(struct v4l2_subdev *sd, int on)
 				dev->power = 1;
 				dev->once_launched = 1;
 				return gc2235_init_common(sd);
+			}
+		} else {
+			//return gc2235_init_common(sd);
+			ret = gc2235_sub_init(client);
+			if (ret) {
+				dev_err(&client->dev, "i2c write error for gc2235_sub_init()\n");
 			}
 		}
 	}
@@ -1082,6 +1115,13 @@ static int gc2235_s_mbus_fmt(struct v4l2_subdev *sd,
 		ret = -EINVAL;
 		goto out;
 	}
+
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	ret = gc2235_sub_init(client);
+	if (ret) {
+		dev_err(&client->dev, "i2c write error for gc2235_sub_init()\n");
+	}
+#endif
 
 	gc2235_def_reg = dev->curr_res_table[dev->fmt_idx].regs;
 
