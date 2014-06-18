@@ -87,6 +87,10 @@
 #define ENABLE_BAYER_OUTPUT     0
 #endif
 
+#if !defined(ENABLE_MIRROR)
+#define ENABLE_MIRROR           0
+#endif
+
 #if !defined(ENABLE_MACC)
 #define ENABLE_MACC           0
 #endif

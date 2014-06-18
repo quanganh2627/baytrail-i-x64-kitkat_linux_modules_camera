@@ -33,7 +33,8 @@ extern const struct ia_css_xnr3_config default_xnr3_config;
 void
 ia_css_xnr3_encode(
 	struct sh_css_isp_xnr3_params *to,
-	const struct ia_css_xnr3_config *from);
+	const struct ia_css_xnr3_config *from,
+        unsigned size);
 
 void
 ia_css_xnr3_debug_dtrace(

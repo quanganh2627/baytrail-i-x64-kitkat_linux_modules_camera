@@ -106,6 +106,7 @@ typedef struct s_isp_addresses {
 	unsigned			            ISP_DMEM *isp_raw_block_width_b;
 	unsigned			            ISP_DMEM *isp_raw_line_width_b;
 	unsigned			            ISP_DMEM *isp_raw_stripe_offset_b;
+	uint8_t	                        ISP_DMEM *enable_output_mirror;
   } dmem;
   struct {
     PVECTOR  input_buf;

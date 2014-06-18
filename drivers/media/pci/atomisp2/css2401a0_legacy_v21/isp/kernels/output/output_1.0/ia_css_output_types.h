@@ -27,7 +27,8 @@
  *  ISP block: output frame
  */
 
-#include "ia_css_frame_public.h"
+//#include "ia_css_frame_public.h"
+struct ia_css_frame_info;
 
 struct ia_css_output_configuration {
 	const struct ia_css_frame_info *info;
@@ -39,6 +40,10 @@ struct ia_css_output0_configuration {
 
 struct ia_css_output1_configuration {
 	const struct ia_css_frame_info *info;
+};
+
+struct ia_css_output_config {
+	uint8_t enable_mirror;  /**< enable output mirroring */
 };
 
 #endif /* __IA_CSS_OUTPUT_TYPES_H */
