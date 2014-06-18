@@ -278,8 +278,8 @@ static struct ov680_reg const ov680_init_clock_pll[] = {
 	{OV680_8BIT, 0x6b00, 0x10},
 	/* MIPI Rx CIF sel Rx0 PHY clk (MIPI receiver sync clock select */
 	{OV680_8BIT, 0x6001, 0xa8},
-	/* Clock Drive Strength --YM (CMD_RDY driver - direct driver) */
-	{OV680_8BIT, 0x6060, 0x20},
+	/* Clock Drive Strength --YM (CMD_RDY driver - open drain) */
+	{OV680_8BIT, 0x6060, 0x3C},
 	/* PLL1 - for system clock */
 	{OV680_8BIT, 0x6020, 0x64},
 	{OV680_8BIT, 0x6021, 0x22},
