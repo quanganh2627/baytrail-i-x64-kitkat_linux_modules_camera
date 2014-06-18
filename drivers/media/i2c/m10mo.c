@@ -2016,6 +2016,7 @@ static int m10mo_set_still_capture(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 	int ret;
 
 	dev_info(&client->dev,"%s mode: %d width: %d, height: %d, cmd: 0x%x\n",
@@ -2026,7 +2027,7 @@ static int m10mo_set_still_capture(struct v4l2_subdev *sd)
 	if (dev->fw_type == M10MO_FW_TYPE_2) {
 		/* Setting before switching to capture mode */
 		ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
-			resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX][dev->capture_res_idx]
+			resolutions[mode][M10MO_MODE_CAPTURE_INDEX][dev->capture_res_idx]
 			.command);
 		if (ret)
 			goto out;
@@ -2051,6 +2052,7 @@ static int m10mo_set_burst_capture(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	const struct m10mo_resolution *capture_res;
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 	int idx;
 	int ret;
 
@@ -2071,11 +2073,11 @@ static int m10mo_set_burst_capture(struct v4l2_subdev *sd)
 	 * Map burst capture size to monitor size. Burst capture uses
 	 * monitor parameters.
 	 */
-	capture_res = &resolutions[dev->fw_type][M10MO_MODE_CAPTURE_INDEX]
+	capture_res = &resolutions[mode][M10MO_MODE_CAPTURE_INDEX]
 		[dev->capture_res_idx];
 	idx = get_resolution_index(
-		resolutions[dev->fw_type][M10MO_MODE_PREVIEW_INDEX],
-		resolutions_sizes[dev->fw_type][M10MO_MODE_PREVIEW_INDEX],
+		resolutions[mode][M10MO_MODE_PREVIEW_INDEX],
+		resolutions_sizes[mode][M10MO_MODE_PREVIEW_INDEX],
 		capture_res->width, capture_res->height);
 	if (idx == -1) {
 		dev_err(&client->dev, "Unsupported burst capture size %dx%d\n",
@@ -2083,7 +2085,7 @@ static int m10mo_set_burst_capture(struct v4l2_subdev *sd)
 		return -EINVAL;
 	}
 	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
-		resolutions[dev->fw_type][M10MO_MODE_PREVIEW_INDEX][idx]
+		resolutions[mode][M10MO_MODE_PREVIEW_INDEX][idx]
 		.command);
 	if (ret)
 		return ret;
