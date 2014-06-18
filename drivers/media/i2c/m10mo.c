@@ -1155,6 +1155,12 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 			goto out;
 	}
 
+	/* Select monitor/movie mode */
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, MOVIE_MODE,
+			dev->run_mode == CI_MODE_VIDEO ? 0x01 : 0x00);
+	if (ret)
+		goto out;
+
 	/* vdis on/off */
 	m10mo_writeb(sd, CATEGORY_MONITOR, PARAM_VDIS,
 		     dev->curr_res_table[dev->fmt_idx].vdis ? 0x01 : 0x00);

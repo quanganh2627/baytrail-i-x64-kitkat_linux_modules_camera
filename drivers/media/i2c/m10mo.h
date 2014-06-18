@@ -305,6 +305,7 @@ int m10mo_dump_string_log3(struct v4l2_subdev *sd);
 #define PARAM_VDIS			0x00
 #define SHOT_MODE			0x0e
 #define MONITOR_TYPE			0x6e
+#define MOVIE_MODE			0x3c
 
 #define MONITOR_PREVIEW		0
 #define MONITOR_BURST		1
