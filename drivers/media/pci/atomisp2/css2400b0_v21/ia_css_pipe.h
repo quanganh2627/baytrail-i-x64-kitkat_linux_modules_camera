@@ -28,7 +28,6 @@
 #include "ia_css_pipeline.h"
 #include "ia_css_binary.h"
 #include "sh_css_legacy.h"
-#include "sh_css_internal.h"
 
 struct ia_css_preview_settings {
 	struct ia_css_binary copy_binary;

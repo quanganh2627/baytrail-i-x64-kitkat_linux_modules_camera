@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140614_1134 */
+/* Release Version: irci_master_20140619_0823 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -64,8 +64,10 @@
 #include "isp/kernels/tnr/tnr_1.0/ia_css_tnr_types.h"
 #include "isp/kernels/wb/wb_1.0/ia_css_wb_types.h"
 #include "isp/kernels/xnr/xnr_1.0/ia_css_xnr_types.h"
+#include "isp/kernels/xnr/xnr_3.0/ia_css_xnr3_types.h"
 #include "isp/kernels/ynr/ynr_1.0/ia_css_ynr_types.h"
 #include "isp/kernels/ynr/ynr_2/ia_css_ynr2_types.h"
+#include "isp/kernels/output/output_1.0/ia_css_output_types.h"
 
 #define IA_CSS_VERSION_MAJOR    2
 #define IA_CSS_VERSION_MINOR    0
@@ -403,6 +405,14 @@ struct ia_css_isp_config {
 /* ------ deprecated(bz675) : from ------ */
 	struct ia_css_shading_settings *shading_settings;
 /* ------ deprecated(bz675) : to ------ */
+	struct ia_css_xnr3_config *xnr3_config; /**< eXtreme Noise Reduction v3 */
+	/** comment from Lasse: Be aware how this feature will affect coordinate
+	 *  normalization in different parts of the system. (e.g. face detection,
+	 *  touch focus, 3A statistics and windows of interest, shading correction,
+	 *  DVS, GDC) from IQ tool level and application level down-to ISP FW level.
+	 *  the risk for regression is not in the individual blocks, but how they
+	 *  integrate together. */
+	struct ia_css_output_config   *output_config;  /**< Ouput Mirroring */
 
 	struct ia_css_2500_lin_kernel_config     *lin_2500_config;       /**< Skylake: Linearization config */
 	struct ia_css_2500_obgrid_kernel_config  *obgrid_2500_config;    /**< Skylake: OBGRID config */

@@ -27,6 +27,12 @@
  * platform specific definitions.
  */
 
+#define IA_CSS_UINT8_T_BITS						8
+#define IA_CSS_UINT16_T_BITS					16
+#define IA_CSS_UINT32_T_BITS					32
+#define IA_CSS_INT32_T_BITS						32
+#define IA_CSS_UINT64_T_BITS					64
+
 #if defined(_MSC_VER)
 #include <stdint.h>
 #include <stdbool.h>

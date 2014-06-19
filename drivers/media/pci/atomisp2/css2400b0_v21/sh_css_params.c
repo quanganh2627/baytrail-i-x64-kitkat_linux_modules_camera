@@ -100,6 +100,7 @@
 #include "components/acc_cluster/acc_lace_stat/lace_stat_private.h"
 #include "components/acc_cluster/acc_lace_stat/host/lace_stat.host.h"
 #include "components/acc_cluster/gen/host/acc_cluster.host.h"
+#include "components/dvs/sc_dvs_1.0/host/dvs.host.h"
 #include <components/stats_3a/src/host/stats_3a.host.h>
 #include <components/include/components_types.host.h>                /* Skylake kernel settings structs */
 #endif
@@ -3374,6 +3375,7 @@ ia_css_stream_isp_parameters_uninit(struct ia_css_stream *stream)
 
 #if defined(IS_ISP_2500_SYSTEM)
 	destroy_acc_cluster();
+	free_dvs_2500_6axis_table();
 #endif
 
 	/* Free up theDVS table memory blocks before recomputing new table */
@@ -3705,7 +3707,6 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 			/* the processing is a.o. resolution dependent */
 			ia_css_process_zoom_and_motion(params,
 					pipeline->stages);
-			params->isp_params_changed = true;
 		}
 #endif
 

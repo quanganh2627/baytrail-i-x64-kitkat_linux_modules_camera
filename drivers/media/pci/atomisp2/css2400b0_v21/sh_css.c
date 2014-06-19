@@ -5168,7 +5168,7 @@ static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 		pipe->num_invalid_frames = 1;
 
 #if !defined(IS_ISP_2500_SYSTEM)    /* skycam doesn't need the copy stage */
-/* pqiao TODO: temp hack for samsung PO, should be removed after offline YUVPP is enabled */
+/* pqiao TODO: temp hack for PO, should be removed after offline YUVPP is enabled */
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* Copy */
 	if (!online && !continuous) {
@@ -5392,7 +5392,7 @@ enum ia_css_err sh_css_pipe_get_viewfinder_frame_info(
 		return IA_CSS_ERR_MODE_HAS_NO_VIEWFINDER;
 	/* offline video does not generate viewfinder output */
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
-	/* pqiao TODO: temporary hack for samsung PO, should be removed after offline YUVPP is enabled */
+	/* pqiao TODO: temporary hack for  PO, should be removed after offline YUVPP is enabled */
 	*info = pipe->vf_output_info[idx];
 #else
 	if ( pipe->mode == IA_CSS_PIPE_ID_VIDEO &&

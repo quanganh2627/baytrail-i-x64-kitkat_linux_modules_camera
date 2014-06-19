@@ -183,6 +183,15 @@
 #define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB              234
 #define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS_STRIPED   235
 #define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_INPUT_YUV         236
+#define SH_CSS_BINARY_ID_IF_TO_DVS_STRIPED                  237
+#define SH_CSS_BINARY_ID_IF_TO_YUVP2_STRIPED                238
+#define SH_CSS_BINARY_ID_IF_TO_YUVP1_STRIPED                239
+#define SH_CSS_BINARY_ID_IF_TO_RGBPP_STRIPED                240
+#define SH_CSS_BINARY_ID_IF_TO_ANR_STRIPED                  241
+#define SH_CSS_BINARY_ID_IF_TO_BNR_STRIPED                  242
+#define SH_CSS_BINARY_ID_IF_TO_SHD_STRIPED                  243
+#define SH_CSS_BINARY_ID_IF_TO_LIN_STRIPED                  244
+#define SH_CSS_BINARY_ID_IF_TO_OB_STRIPED                   245
 
 #define XMEM_WIDTH_BITS              HIVE_ISP_DDR_WORD_BITS
 #define XMEM_SHORTS_PER_WORD         (HIVE_ISP_DDR_WORD_BITS/16)
