@@ -2007,11 +2007,8 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	/* No need to proceed further if we are not streaming */
-	if (!dev->streaming) {
-		/* Save the new FPS and use it while selecting setting */
-		dev->fps = fps;
+	if (!dev->streaming)
 		return 0;
-	}
 
 	 /* Ignore if we are already using the required FPS. */
 	if (fps == dev->fps)
