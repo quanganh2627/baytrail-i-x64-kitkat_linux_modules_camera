@@ -1114,6 +1114,7 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
+	int shot_mode_support = M10MO_SHOT_MODES_SUPPORTED(dev->fw_type);
 	const struct m10mo_resolution *capture_res =
 			resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
 	int ret;
@@ -1162,7 +1163,7 @@ static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 		goto out;
 
 	/* Set shot mode */
-	if (dev->fw_type != M10MO_FW_TYPE_1) {
+	if (shot_mode_support) {
 		ret = m10mo_writeb(sd, CATEGORY_PARAM, SHOT_MODE, dev->shot_mode);
 		if (ret)
 			goto out;
@@ -1414,6 +1415,10 @@ static int m10mo_set_hdr_mode(struct v4l2_subdev *sd, unsigned int val)
 static int m10mo_set_shot_mode(struct v4l2_subdev *sd, unsigned int val)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int shot_mode_support = M10MO_SHOT_MODES_SUPPORTED(dev->fw_type);
+
+	if (!shot_mode_support)
+		return -EINVAL;
 
 	switch (val) {
 	case EXT_ISP_SHOT_MODE_AUTO:
