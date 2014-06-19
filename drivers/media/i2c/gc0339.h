@@ -239,6 +239,7 @@ struct gc0339_device {
 	int real_model_id;
 	int nctx;
 	int power;
+	int second_power_on_at_boot_done;
 	int once_launched;
 
 	unsigned int bus_width;

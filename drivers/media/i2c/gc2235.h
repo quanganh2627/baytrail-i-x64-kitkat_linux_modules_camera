@@ -491,6 +491,7 @@ struct gc2235_device {
 	int status;
 	int streaming;
 	int power;
+	int second_power_on_at_boot_done;
 	int once_launched;
 	int run_mode;
 	int vt_pix_clk_freq_mhz;

@@ -544,9 +544,18 @@ static int __gc2235_s_power_always_on(struct v4l2_subdev *sd, int on)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
+	if (!dev->second_power_on_at_boot_done) {
+		if (!on) {
+			dev->second_power_on_at_boot_done = 1;
+		}
+		return __gc2235_s_power(sd, on);
+	}
+
 	if (on == 0) {
 		//ret = power_down(sd);
 		//dev->power = 0;
+		// For case camera is stream-on, and then closed without a stream-off.
+		ret = gc2235_set_suspend(sd);
 	} else {
 		if (!dev->power) {
 			ret = power_up(sd);
@@ -1572,6 +1581,7 @@ static int gc2235_probe(struct i2c_client *client,
 	dev->sensor_id = GC2235_ID_DEFAULT;
 	v4l2_i2c_subdev_init(&(dev->sd), client, &gc2235_ops);
 
+	dev->second_power_on_at_boot_done = 0;
 	dev->once_launched = 0;
 
 	if (client->dev.platform_data) {
@@ -1646,6 +1656,8 @@ static int gc2235_resume(struct device *dev)
 		if (ret) {
 			v4l2_err(client, "gc2235 power-up err.\n");
 		}
+
+		ret = gc2235_set_suspend(sd);
 	}
 
 	return 0;

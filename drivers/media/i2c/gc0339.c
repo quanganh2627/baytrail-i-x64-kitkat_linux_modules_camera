@@ -748,9 +748,17 @@ static int gc0339_s_power_always_on(struct v4l2_subdev *sd, int power)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
+	if (!dev->second_power_on_at_boot_done) {
+		if (!power) {
+			dev->second_power_on_at_boot_done = 1;
+		}
+		return gc0339_s_power(sd, power);
+	}
+
 	if (power == 0) {
-		ret = 0;
 		//return power_down(sd);
+		// For case camera is stream-on, and then closed without a stream-off.
+		ret = gc0339_set_suspend(sd);
 	} else {
 		if (!dev->power) {
 			if (power_up(sd))
@@ -1866,6 +1874,7 @@ static int gc0339_probe(struct i2c_client *client,
 
 	v4l2_i2c_subdev_init(&dev->sd, client, &gc0339_ops);
 
+	dev->second_power_on_at_boot_done = 0;
 	dev->once_launched = 0;
 
 	if (client->dev.platform_data) {
@@ -1931,6 +1940,8 @@ static int gc0339_resume(struct device *dev)
 		if (ret) {
 			v4l2_err(client, "gc0339 power-up err.\n");
 		}
+
+		ret = gc0339_set_suspend(sd);
 	}
 
 	return 0;
