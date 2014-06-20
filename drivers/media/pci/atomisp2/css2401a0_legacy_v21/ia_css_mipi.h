@@ -36,6 +36,8 @@
  * @param[in]	contiguous	Allocate memory physically contiguously or not.
  * @return		The error code.
  *
+ * \deprecated{Use ia_css_mipi_buffer_config instead.}
+ *
  * Specifies a CSS MIPI frame buffer: size in memory words (32B).
  */
 enum ia_css_err

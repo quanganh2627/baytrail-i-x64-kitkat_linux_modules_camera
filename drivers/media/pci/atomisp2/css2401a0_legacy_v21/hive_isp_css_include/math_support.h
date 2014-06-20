@@ -28,7 +28,7 @@
 #define IS_EVEN(a) (!IS_ODD(a))
 
 /* force a value to a lower even value */
-#define EVEN_FLOOR(x)	(x & ~1)
+#define EVEN_FLOOR(x)	((x) & ~1)
 
 /* A => B */
 #define IMPLIES(a, b) (!(a) || (b))
@@ -47,7 +47,7 @@
 #define _CEIL_SHIFT(a, b) (((a)+(1<<(b))-1)>>(b))
 #define _CEIL_SHIFT_MUL(a, b) (_CEIL_SHIFT(a, b) << (b))
 #define _CEIL_MUL2(a, b)  (((a)+(b)-1) & ~((b)-1))
-#define OP_std_modadd(base, offset, size) ((base+offset)%(size))
+#define OP_std_modadd(base, offset, size) (((base)+(offset))%(size))
 
 #ifndef SH_CSS_CEIL_INLINE
 #define MAX(a, b)	 	_MAX(a,b)
@@ -83,7 +83,7 @@ static __inline unsigned _ceil_div(unsigned a, unsigned b)
 	return _CEIL_DIV(a,b);
 }
 
-static inline unsigned _ceil_mul(unsigned a, unsigned b)
+static __inline unsigned _ceil_mul(unsigned a, unsigned b)
 {
 	return _CEIL_MUL(a,b);
 }
