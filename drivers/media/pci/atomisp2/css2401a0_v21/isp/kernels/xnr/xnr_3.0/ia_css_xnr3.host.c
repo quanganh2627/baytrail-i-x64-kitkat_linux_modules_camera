@@ -33,6 +33,18 @@
 #define XNR_MIN_SIGMA  (IA_CSS_XNR3_SIGMA_SCALE / 100)
 
 /*
+ * Default kernel parameters. In general, default is bypass mode or as close
+ * to the ineffective values as possible. Due to the chroma down+upsampling,
+ * perfect bypass mode is not possible for xnr3.
+ */
+const struct ia_css_xnr3_config default_xnr3_config = {
+	/* sigma */
+	{ 0, 0, 0, 0, 0, 0 },
+	/* coring */
+	{ 0, 0, 0, 0 }
+};
+
+/*
  * Compute an alpha value for the ISP kernel from sigma value on the host
  * parameter interface as: alpha_scale * 1/(sigma/sigma_scale)
  */
@@ -42,12 +54,9 @@ compute_alpha(int sigma)
 	int32_t alpha;
 	int32_t alpha_unscaled;
 
-	if (sigma < XNR_MIN_SIGMA)
-	{
+	if (sigma < XNR_MIN_SIGMA) {
 		alpha = XNR_MAX_ALPHA;
-	}
-	else
-	{
+	} else {
 		/* The scale factor for alpha must be the same as on the ISP,
 		 * For sigma, it must match the public interface. The code
 		 * below mimics the rounding and unintended loss of precision
@@ -58,8 +67,7 @@ compute_alpha(int sigma)
 		alpha_unscaled = IA_CSS_XNR3_SIGMA_SCALE / sigma;
 		alpha = alpha_unscaled * XNR_ALPHA_SCALE_FACTOR;
 
-		if (alpha > XNR_MAX_ALPHA)
-		{
+		if (alpha > XNR_MAX_ALPHA) {
 			alpha = XNR_MAX_ALPHA;
 		}
 	}
@@ -87,7 +95,7 @@ void
 ia_css_xnr3_encode(
 	struct sh_css_isp_xnr3_params *to,
 	const struct ia_css_xnr3_config *from,
-        unsigned size)
+	unsigned size)
 {
 	int kernel_size = XNR_FILTER_SIZE;
 	int adjust_factor = 2 * (kernel_size - 1);
@@ -104,7 +112,7 @@ ia_css_xnr3_encode(
 	int32_t coring_v0 = compute_coring(from->coring.v0);
 	int32_t coring_v1 = compute_coring(from->coring.v1);
 
-        (void)size;
+	(void)size;
 
 	/* alpha's are represented in qN.5 format */
 	to->alpha.y0 = alpha_y0;

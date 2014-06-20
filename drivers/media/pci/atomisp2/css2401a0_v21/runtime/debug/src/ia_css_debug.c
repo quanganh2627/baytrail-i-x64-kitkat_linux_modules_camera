@@ -3098,8 +3098,8 @@ ia_css_debug_dump_mipi_buffer_config(
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s()\n", __func__);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "size_mem_words: %d\n",
 			config->size_mem_words);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "continuous: %d\n",
-			config->contiguous);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "nof_mipi_buffers: %d\n",
+			config->nof_mipi_buffers);
 }
 
 void

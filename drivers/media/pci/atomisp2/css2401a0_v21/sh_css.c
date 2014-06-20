@@ -1524,7 +1524,6 @@ ia_css_reset_defaults(struct sh_css* css)
 	 * default_css.num_mipi_frames[N_CSI_PORTS] = 0;
 	 */
 
-	default_css.contiguous = true;
 	default_css.irq_type = IA_CSS_IRQ_TYPE_EDGE;
 
 	/*Set the defaults to the output */
@@ -8138,13 +8137,39 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	if (!stream_config->online)
 #endif
 	{
-		if (my_css.size_mem_words == 0) {
-			IA_CSS_LOG("need to set mipi frame size");
-			assert(my_css.size_mem_words != 0);
+		unsigned int port = (unsigned int) stream_config->source.port.port;
+		if (port >= N_MIPI_PORT_ID) {
+			err = IA_CSS_ERR_INVALID_ARGUMENTS;
+			IA_CSS_LEAVE_ERR(err);
+			return err;
+		}
+
+		if (my_css.size_mem_words != 0){
+			my_css.mipi_frame_size[port] = my_css.size_mem_words;
+		} else if (stream_config->mipi_buffer_config.size_mem_words != 0) {
+			my_css.mipi_frame_size[port] = stream_config->mipi_buffer_config.size_mem_words;
+		} else {
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"ia_css_stream_create() exit: error, need to set mipi frame size.\n");
+			assert(stream_config->mipi_buffer_config.size_mem_words != 0);
 			err = IA_CSS_ERR_INTERNAL_ERROR;
 			IA_CSS_LEAVE_ERR(err);
 			return err;
 		}
+
+		if (my_css.size_mem_words != 0) {
+			my_css.num_mipi_frames[port] = 2; /* Temp change: Default for backwards compatibility. */
+		} else if (stream_config->mipi_buffer_config.nof_mipi_buffers != 0) {
+			my_css.num_mipi_frames[port] = stream_config->mipi_buffer_config.nof_mipi_buffers;
+		} else {
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"ia_css_stream_create() exit: error, need to set number of mipi frames.\n");
+			assert(stream_config->mipi_buffer_config.nof_mipi_buffers != 0);
+			err = IA_CSS_ERR_INTERNAL_ERROR;
+			IA_CSS_LEAVE_ERR(err);
+			return err;
+		}
+
 	}
 #endif
 

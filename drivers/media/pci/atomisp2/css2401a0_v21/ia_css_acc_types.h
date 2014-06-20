@@ -34,7 +34,7 @@
 #include <debug_global.h>
 
 #include "ia_css_types.h"
-#include "ia_css_frame_public.h"
+#include "ia_css_frame_format.h"
 
 /* Should be included without the path.
    However, that requires adding the path to numerous makefiles

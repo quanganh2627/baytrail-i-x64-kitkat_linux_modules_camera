@@ -47,7 +47,7 @@ ia_css_mipi_frame_specify(const unsigned int size_mem_words,
 	enum ia_css_err err = IA_CSS_SUCCESS;
 
 	my_css.size_mem_words = size_mem_words;
-	my_css.contiguous = contiguous;
+	(void)contiguous;
 
 	return err;
 }
@@ -376,21 +376,6 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 		return IA_CSS_SUCCESS; /* AM TODO: Check  */
 	}
 
-#ifdef USE_INPUT_SYSTEM_VERSION_2401
-	err = calculate_mipi_buff_size(
-			&(pipe->stream->config),
-			&(my_css.size_mem_words));
-#endif
-
-	/* AM TODO: size_mem_words should come from stream struct. */
-	assert(my_css.size_mem_words != 0);
-	if (my_css.size_mem_words == 0) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"allocate_mipi_frames(%p) exit: error: mipi frame size not specified.\n",
-			pipe);
-		return IA_CSS_ERR_INTERNAL_ERROR;
-	}
-
 	port = (unsigned int) pipe->stream->config.source.port.port;
 	assert(port < N_CSI_PORTS);
 	if (port >= N_CSI_PORTS) {
@@ -399,6 +384,12 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 			pipe, port);
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	}
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2401
+	err = calculate_mipi_buff_size(
+			&(pipe->stream->config),
+			&(my_css.mipi_frame_size[port]));
+#endif
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2)
 	assert(ref_count_mipi_allocation[port] == 0);
@@ -427,7 +418,7 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 
 	/* TODO: Cleaning needed. */
 	/* This code needs to modified to allocate the MIPI frames in the correct normal way
-	   with a allocate from info by justin */
+	  with an allocate from info, by justin */
 	mipi_intermediate_info = pipe->pipe_settings.video.video_binary.internal_frame_info;
 	mipi_intermediate_info.res.width = 0;
 	mipi_intermediate_info.res.height = 0;
@@ -453,8 +444,8 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 				/* allocate new frame */
 				err = ia_css_frame_allocate_with_buffer_size(
 					&my_css.mipi_frames[port][i],
-					my_css.size_mem_words * HIVE_ISP_DDR_WORD_BYTES,
-					my_css.contiguous);
+					my_css.mipi_frame_size[port] * HIVE_ISP_DDR_WORD_BYTES,
+					false);
 				if (err != IA_CSS_SUCCESS) {
 					for (j = 0; j < i; j++) {
 						if (my_css.mipi_frames[port][j]) {
