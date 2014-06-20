@@ -48,7 +48,9 @@ struct ia_css_mipi_buffer_config {
 	unsigned int size_mem_words; /**< The frame size in the system memory
 					  words (32B) */
 	bool contiguous;	     /**< Allocated memory physically
-					  contiguously or not */
+					  contiguously or not. \deprecated{Will be false always.}*/
+	unsigned int nof_mipi_buffers; /**< The number of MIPI buffers required for this
+					stream */
 };
 
 enum {

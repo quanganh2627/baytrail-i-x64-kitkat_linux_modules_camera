@@ -109,6 +109,7 @@
 #define SH_CSS_BINARY_ID_PRIMARY                            100
 #define SH_CSS_BINARY_ID_VIDEO                              101
 #define SH_CSS_BINARY_ID_SC_VIDEO_HIGH_RESOLUTION           102
+#define SH_CSS_BINARY_ID_VIDEO_C0                           103
 
 /* skycam kerneltest pipelines */
 #define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_NORM              120

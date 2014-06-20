@@ -35,6 +35,7 @@
 #include "ia_css_queue.h"
 #include "sw_event_global.h"		/* Event IDs */
 
+#include "platform_support.h"
 #include "assert_support.h"
 #include "math_support.h"	/* max(), min()  EVEN_FLOOR()*/
 
@@ -92,7 +93,9 @@
 #include "ynr/ynr_2/ia_css_ynr2.host.h"
 #include "fc/fc_1.0/ia_css_formats.host.h"
 #endif
-#include "platform_support.h"
+
+#include "xnr/xnr_3.0/ia_css_xnr3.host.h"
+
 
 #if defined(IS_ISP_2500_SYSTEM)
 #include "product_specific.host.h"
@@ -2525,9 +2528,14 @@ sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
 		struct ia_css_isp_parameters *params,
 		const struct ia_css_isp_config *config)
 {
-	enum ia_css_err err;
+	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 	IA_CSS_ENTER_PRIVATE("stream=%p, config=%p, params=%p", stream, config, params);
-#if !defined(IS_ISP_2500_SYSTEM)
+
+	ia_css_set_configs(params, config);
+
+#if defined(IS_ISP_2500_SYSTEM)
+	err = sh_css_set_config_product_specific(config);
+#else
 	sh_css_set_nr_config(params, config->nr_config);
 	sh_css_set_ee_config(params, config->ee_config);
 	sh_css_set_baa_config(params, config->baa_config);
@@ -2543,11 +2551,7 @@ sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
 /* ------ deprecated(bz675) : from ------ */
 	sh_css_set_shading_settings(params, config->shading_settings);
 /* ------ deprecated(bz675) : to ------ */
-#endif
 
-	ia_css_set_configs(params, config);
-
-#if !defined(IS_ISP_2500_SYSTEM)
 	params->dis_coef_table_changed = (config->dvs_coefs != NULL);
 	params->dvs2_coef_table_changed = (config->dvs2_coefs != NULL);
 
@@ -2555,17 +2559,9 @@ sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
 	params->isp_parameters_id = config->isp_config_id;
 
 	ia_css_set_param_exceptions(params);
-
 	err = IA_CSS_SUCCESS;
-	/*
-	   if (config->_config)
-	   ia_css_set_xnr_config(config->xnr_config);
-	*/
-#else /* defined(IS_ISP_2500_SYSTEM) */
-	(void)stream;
-	(void)params;
-	err = sh_css_set_config_product_specific(config);
 #endif
+
 	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
 }
@@ -2582,14 +2578,14 @@ ia_css_stream_get_isp_config(
 
 	IA_CSS_ENTER("config=%p", config);
 
-#if defined(IS_ISP_2500_SYSTEM)
-	sh_css_get_config_product_specific(config);
-#endif
-
 	params = stream->isp_params_configs;
 	assert(params != NULL);
 
-#if !defined(IS_ISP_2500_SYSTEM)
+	ia_css_get_configs(params, config);
+
+#if defined(IS_ISP_2500_SYSTEM)
+	sh_css_get_config_product_specific(config);
+#else
 	sh_css_get_ee_config(params, config->ee_config);
 	sh_css_get_baa_config(params, config->baa_config);
 	sh_css_get_dvs_6axis_config(params, config->dvs_6axis_config);
@@ -2601,17 +2597,11 @@ ia_css_stream_get_isp_config(
 /* ------ deprecated(bz675) : from ------ */
 	sh_css_get_shading_settings(params, config->shading_settings);
 /* ------ deprecated(bz675) : to ------ */
-#endif
-
-	ia_css_get_configs(params, config);
 
 	config->output_frame = params->output_frame;
 	config->isp_config_id = params->isp_parameters_id;
+#endif
 
-/*
-	if (config->xnr_config != NULL)
-		ia_css_get_xnr_config(config->xnr_config);
-*/
 	IA_CSS_LEAVE("void");
 }
 
@@ -3070,14 +3060,15 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 	succ &= (ddr_ptrs->macc_tbl != mmgr_NULL);
 #endif
 
-#if !defined(IS_ISP_2500_SYSTEM)
 
 	params->output_frame = NULL;
 	params->isp_parameters_id = 0;
 
 	if (use_default_config)
 	{
+		ia_css_set_xnr3_config(params, &default_xnr3_config);
 
+#if !defined(IS_ISP_2500_SYSTEM)
 		sh_css_set_nr_config(params, &default_nr_config);
 		sh_css_set_ee_config(params, &default_ee_config);
 		if (isp_pipe_version == 1)
@@ -3145,9 +3136,13 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 
 		ia_css_sdis_clear_coefficients(&params->dvs_coefs);
 		params->dis_coef_table_changed = true;
+#endif /* !defined(IS_ISP_2500_SYSTEM) */
 	}
 	else
 	{
+		ia_css_set_xnr3_config(params, &stream_params->xnr3_config);
+
+#if !defined(IS_ISP_2500_SYSTEM)
 		sh_css_set_nr_config(params, &stream_params->nr_config);
 		sh_css_set_ee_config(params, &stream_params->ee_config);
 		if (isp_pipe_version == 1)
@@ -3208,10 +3203,8 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 
 		ia_css_set_sdis2_config(params, &stream_params->dvs2_coefs);
 		params->dvs2_coef_table_changed = stream_params->dvs2_coef_table_changed;
+#endif /* !defined(IS_ISP_2500_SYSTEM) */
 	}
-#else
-	(void)use_default_config;
-#endif
 
 	return params;
 }
@@ -3582,12 +3575,12 @@ process_kernel_parameters(unsigned int pipe_id,
 {
 	unsigned param_id;
 
-	sh_css_enable_pipeline(stage->binary);
-
-#if defined(IS_ISP_2500_SYSTEM)
 	(void)isp_pipe_version;
 	(void)raw_bit_depth;
-#else
+
+	sh_css_enable_pipeline(stage->binary);
+
+#if !defined(IS_ISP_2500_SYSTEM)
 	if (params->config_changed[IA_CSS_OB_ID]) {
 		ia_css_ob_configure(&params->stream_configs.ob,
 			    isp_pipe_version, raw_bit_depth);
@@ -3721,13 +3714,14 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 			process_kernel_parameters(pipeline->pipe_id,
 					stage, params,
 					isp_pipe_version, raw_bit_depth);
-			err =
-					sh_css_params_write_to_ddr_internal(
-							pipeline->pipe_id,
-							params,
-							stage,
-							cur_map,
-							cur_map_size);
+
+			err = sh_css_params_write_to_ddr_internal(
+					pipeline->pipe_id,
+					params,
+					stage,
+					cur_map,
+					cur_map_size);
+
 			if (err != IA_CSS_SUCCESS)
 				break;
 			for (mem = 0; mem < IA_CSS_NUM_MEMORIES; mem++) {
@@ -3882,8 +3876,7 @@ sh_css_params_write_to_ddr_internal(
 	(void)pipe_id;
 	(void)stage;
 	(void)buff_realloced;
-	(void)mem;
-	(void)stage_num;
+
 	/* pass call to product specific to handle copying of tables to DDR */
 	err = sh_css_params_to_ddr(binary, ddr_map, ddr_map_size);
 	if (err != IA_CSS_SUCCESS) {
@@ -4206,6 +4199,7 @@ sh_css_params_write_to_ddr_internal(
 				ia_css_morph_table_free(id_table);
 		}
 	}
+#endif /* !defined(IS_ISP_2500_SYSTEM) */
 
 	/* After special cases like SC, FPN since they may change parameters */
 	for (mem = 0; mem < N_IA_CSS_MEMORIES; mem++) {
@@ -4229,7 +4223,6 @@ sh_css_params_write_to_ddr_internal(
 		}
 	}
 
-#endif
 	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 	return IA_CSS_SUCCESS;
 }
