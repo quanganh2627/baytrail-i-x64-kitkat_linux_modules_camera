@@ -1865,6 +1865,26 @@ int atomisp_gamma_correction(struct atomisp_sub_device *asd, int flag,
 	return 0;
 }
 
+/*
+ * Function to update narrow gamma flag
+ */
+int atomisp_formats(struct atomisp_sub_device *asd, int flag,
+		struct atomisp_formats_config *config)
+{
+	if (flag == 0) {
+		/* Get narrow gamma flag from current setup */
+		if (atomisp_css_get_formats_config(asd, config))
+			return -EINVAL;
+	} else {
+		/* Set narrow gamma flag to isp parameters */
+		memcpy(&asd->params.css_param.formats_config, config,
+			sizeof(asd->params.css_param.formats_config));
+		atomisp_css_set_formats_config(asd, &asd->params.css_param.formats_config);
+	}
+
+	return 0;
+}
+
 void atomisp_free_internal_buffers(struct atomisp_sub_device *asd)
 {
 	atomisp_free_css_parameters(&asd->params.css_param);

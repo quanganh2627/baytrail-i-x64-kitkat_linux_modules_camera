@@ -116,6 +116,9 @@ int atomisp_low_light(struct atomisp_sub_device *asd, int flag,
  */
 int atomisp_xnr(struct atomisp_sub_device *asd, int flag, int *arg);
 
+int atomisp_formats(struct atomisp_sub_device *asd, int flag,
+		struct atomisp_formats_config *config);
+
 /*
  * Function to configure noise reduction
  */

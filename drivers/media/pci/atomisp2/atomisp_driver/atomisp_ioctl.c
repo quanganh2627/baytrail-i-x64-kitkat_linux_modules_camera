@@ -2613,6 +2613,13 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 	case ATOMISP_IOC_S_ENABLE_DZ_CAPT_PIPE:
 		err = atomisp_enable_dz_capt_pipe(asd, arg);
 		break;
+	case ATOMISP_IOC_G_FORMATS_CONFIG:
+		err = atomisp_formats(asd, 0, arg);
+		break;
+
+	case ATOMISP_IOC_S_FORMATS_CONFIG:
+		err = atomisp_formats(asd, 1, arg);
+		break;
 	default:
 		mutex_unlock(&isp->mutex);
 		return -EINVAL;

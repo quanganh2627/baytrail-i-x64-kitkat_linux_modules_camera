@@ -555,6 +555,12 @@ int atomisp_css_get_gc_config(struct atomisp_sub_device *asd,
 int atomisp_css_get_3a_config(struct atomisp_sub_device *asd,
 			struct atomisp_3a_config *config);
 
+int atomisp_css_get_formats_config(struct atomisp_sub_device *asd,
+			struct atomisp_formats_config *formats_config);
+
+void atomisp_css_set_formats_config(struct atomisp_sub_device *asd,
+			struct atomisp_css_formats_config *formats_config);
+
 int atomisp_css_get_zoom_factor(struct atomisp_sub_device *asd,
 					unsigned int *zoom);
 

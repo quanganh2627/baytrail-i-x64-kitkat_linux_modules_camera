@@ -3603,6 +3603,12 @@ void atomisp_css_set_zoom_factor(struct atomisp_sub_device *asd,
 	asd->params.dz_config.dy = zoom;
 }
 
+void atomisp_css_set_formats_config(struct atomisp_sub_device *asd,
+			struct atomisp_css_formats_config *formats_config)
+{
+	asd->params.config.formats_config = formats_config;
+}
+
 int atomisp_css_get_wb_config(struct atomisp_sub_device *asd,
 			struct atomisp_wb_config *config)
 {
@@ -3865,6 +3871,30 @@ int atomisp_css_get_3a_config(struct atomisp_sub_device *asd,
 		&isp_config);
 	/* Get white balance from current setup */
 	memcpy(config, &s3a_config, sizeof(*config));
+
+	return 0;
+}
+
+int atomisp_css_get_formats_config(struct atomisp_sub_device *asd,
+			struct atomisp_formats_config *config)
+{
+	struct atomisp_css_formats_config formats_config;
+	struct ia_css_isp_config isp_config;
+	struct atomisp_device *isp = asd->isp;
+
+	if (!asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream) {
+		dev_err(isp->dev, "%s called after streamoff, skipping.\n",
+			__func__);
+		return -EINVAL;
+	}
+	memset(&formats_config, 0, sizeof(formats_config));
+	memset(&isp_config, 0, sizeof(isp_config));
+	isp_config.formats_config = &formats_config;
+	ia_css_stream_get_isp_config(
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream,
+		&isp_config);
+	/* Get narrow gamma from current setup */
+	memcpy(config, &formats_config, sizeof(*config));
 
 	return 0;
 }

@@ -137,6 +137,7 @@ struct atomisp_css_params {
 	struct ia_css_ecd_config  ecd_config;
 	struct ia_css_ynr_config  ynr_config;
 	struct ia_css_fc_config   fc_config;
+	struct ia_css_formats_config formats_config;
 	struct ia_css_cnr_config  cnr_config;
 	struct ia_css_macc_config macc_config;
 	struct ia_css_ctc_config  ctc_config;

@@ -51,6 +51,7 @@ atomisp-$(postfix)-objs := \
 		css/ia_css_device_access.o \
 		css/sh_css_param_dvs.o \
 		css/sh_css_mipi.o \
+		css/sh_css_stream_format.o \
 		css/isp/kernels/ref/ref_1.0/ia_css_ref.host.o \
 		css/isp/kernels/vf/vf_1.0/ia_css_vf.host.o \
 		css/isp/kernels/crop/crop_1.0/ia_css_crop.host.o \
