@@ -41,6 +41,7 @@
 
 #include "ia_css_debug.h"
 #include "ia_css_isp_param.h"
+#include "sh_css_hrt.h"
 
 #include <linux/pm_runtime.h>
 
@@ -236,15 +237,13 @@ static void atomisp_css2_hw_load(hrt_address addr, void *to, uint32_t n)
 
 static int atomisp_css2_dbg_print(const char *fmt, va_list args)
 {
-	if (dbg_level > 5)
-		vprintk(fmt, args);
+	vprintk(fmt, args);
 	return 0;
 }
 
 static int atomisp_css2_dbg_ftrace_print(const char *fmt, va_list args)
 {
-	if (dbg_level > 5)
-		ftrace_vprintk(fmt, args);
+	ftrace_vprintk(fmt, args);
 	return 0;
 }
 
@@ -4174,16 +4173,9 @@ int atomisp_css_wait_acc_finish(struct atomisp_sub_device *asd)
 	rt_mutex_unlock(&isp->mutex);
 	if (wait_for_completion_interruptible_timeout(&isp->acc.acc_done,
 					ATOMISP_ISP_TIMEOUT_DURATION) == 0) {
-		unsigned int old_dbglevel = dbg_level;
-
-		dbg_level = 6;
 		dev_err(isp->dev, "<%s: completion timeout\n", __func__);
-		atomisp_css_debug_set_dtrace_level(
-						CSS_DTRACE_VERBOSITY_TIMEOUT);
 		atomisp_css_debug_dump_sp_sw_debug_info();
 		atomisp_css_debug_dump_debug_info(__func__);
-		atomisp_css_debug_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
-		dbg_level = old_dbglevel;
 		ret = -EIO;
 	}
 	rt_mutex_lock(&isp->mutex);

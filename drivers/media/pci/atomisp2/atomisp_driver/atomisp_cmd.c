@@ -1231,11 +1231,8 @@ void atomisp_wdt_work(struct work_struct *work)
 	if (atomic_inc_return(&isp->wdt_count) <
 			ATOMISP_ISP_MAX_TIMEOUT_COUNT) {
 		unsigned int old_dbglevel = dbg_level;
-		dbg_level = 6;
-		atomisp_css_debug_set_dtrace_level(CSS_DTRACE_VERBOSITY_TIMEOUT);
 		atomisp_css_debug_dump_sp_sw_debug_info();
 		atomisp_css_debug_dump_debug_info(__func__);
-		atomisp_css_debug_set_dtrace_level(CSS_DTRACE_VERBOSITY_LEVEL);
 		dbg_level = old_dbglevel;
 		for (i = 0; i < isp->num_of_streams; i++) {
 			struct atomisp_sub_device *asd = &isp->asd[i];
