@@ -1215,6 +1215,7 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret, i;
 	u32 val, dual_status;
+	int finish = 0;
 
 	/* TODO: Fix this. Currently we do not use this */
 	(void) sel_frame;
@@ -1227,13 +1228,21 @@ static int m10mo_set_zsl_capture(struct v4l2_subdev *sd, int sel_frame)
 				&dual_status);
 		if (ret)
 			continue;
-		if (dual_status == 0)
+
+		if ((dual_status == 0) || (dual_status == DUAL_STATUS_AF_WORKING)) {
+			finish = 1;
 			break;
+		}
+
 		msleep(10);
 	}
-	if (dual_status) {
-		dev_err(&client->dev, "%s Device busy. Status check failed\n",
-			__func__);
+
+	/*
+	* If last capture not finished yet, return error code
+	*/
+	if (!finish) {
+		dev_err(&client->dev, "%s Device busy. Status check failed %d\n",
+			__func__, dual_status);
 		return -EBUSY;
 	}
 

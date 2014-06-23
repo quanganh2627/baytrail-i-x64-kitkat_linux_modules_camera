@@ -368,6 +368,10 @@ int m10mo_dump_string_log3(struct v4l2_subdev *sd);
 #define DUAL_CAPTURE_ZSL_CAPTURE_START		0x07
 #define DUAL_CAPTURE_LLS_CAPTURE_START		0x08
 
+#define DUAL_STATUS_IDLE			0x0
+#define DUAL_STATUS_CAPTURE			0x1
+#define DUAL_STATUS_AF_WORKING		0x2
+
 /* Output format selection between YUV422 and NV12/NV21 */
 #define OUTPUT_FMT_SELECT	0x05
 #define OUTPUT_FMT_SELECT_YUV422	0x00
