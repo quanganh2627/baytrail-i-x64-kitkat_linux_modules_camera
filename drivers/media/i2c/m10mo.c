@@ -461,6 +461,19 @@ static int m10mo_set_monitor_parameters(struct v4l2_subdev *sd)
 	ret = m10mo_writeb(sd, CATEGORY_LENS,
 			   m10m0_af_parameters[id].af_execution,
 			   dev->monitor_params.exe_mode);
+
+	if (ret)
+	    return ret;
+
+	if (dev->monitor_params.flash_mode == LED_TORCH)
+		ret = m10mo_writeb(sd, CATEGORY_LOGLEDFLASH,
+				   LED_TORCH,
+				   dev->monitor_params.torch);
+	else
+		ret = m10mo_writeb(sd, CATEGORY_LOGLEDFLASH,
+				   FLASH_MODE,
+				   dev->monitor_params.flash_mode);
+
 	return ret;
 }
 
@@ -877,29 +890,52 @@ static int m10mo_get_af_mode(struct v4l2_subdev *sd, unsigned int *status)
 
 static int m10mo_set_flash_mode(struct v4l2_subdev *sd, unsigned int val)
 {
-	unsigned int flash_mode;
+	int ret = 0;
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+
+	/* by default force the torch off, value depends on incoming flash mode */
+	dev->monitor_params.torch = LED_TORCH_OFF;
 
 	switch (val) {
 	case EXT_ISP_FLASH_MODE_OFF:
-		flash_mode = FLASH_MODE_OFF;
+		dev->monitor_params.flash_mode = FLASH_MODE_OFF;
 		break;
 	case EXT_ISP_FLASH_MODE_ON:
-		flash_mode = FLASH_MODE_ON;
+		dev->monitor_params.flash_mode = FLASH_MODE_ON;
 		break;
 	case EXT_ISP_FLASH_MODE_AUTO:
-		flash_mode = FLASH_MODE_AUTO;
+		dev->monitor_params.flash_mode = FLASH_MODE_AUTO;
 		break;
 	case EXT_ISP_LED_TORCH_OFF:
-		return m10mo_writeb(sd, CATEGORY_LOGLEDFLASH, LED_TORCH,
-						LED_TORCH_OFF);
+		dev->monitor_params.flash_mode = LED_TORCH;
+		dev->monitor_params.torch = LED_TORCH_OFF;
+		break;
 	case EXT_ISP_LED_TORCH_ON:
-		return m10mo_writeb(sd, CATEGORY_LOGLEDFLASH, LED_TORCH,
-						LED_TORCH_ON);
+		dev->monitor_params.flash_mode = LED_TORCH;
+		dev->monitor_params.torch = LED_TORCH_ON;
+		break;
 	default:
 		return -EINVAL;
 	}
 
-	return m10mo_writeb(sd, CATEGORY_LOGLEDFLASH, FLASH_MODE, flash_mode);
+	/* Only apply setting if we are in monitor mode */
+	if (!is_m10mo_in_monitor_mode(sd))
+		return ret;
+
+	dev_info(&client->dev, "%s: In monitor mode, set flash mode to %d",
+		 __func__, dev->monitor_params.flash_mode);
+
+	/* TODO get current flash mode, and apply new setting only when needed? */
+
+	if (dev->monitor_params.flash_mode == LED_TORCH)
+		ret = m10mo_writeb(sd, CATEGORY_LOGLEDFLASH, LED_TORCH,
+				   dev->monitor_params.torch);
+	else
+		ret = m10mo_writeb(sd, CATEGORY_LOGLEDFLASH, FLASH_MODE,
+				   dev->monitor_params.flash_mode);
+
+	return ret;
 }
 
 static int power_up(struct v4l2_subdev *sd)

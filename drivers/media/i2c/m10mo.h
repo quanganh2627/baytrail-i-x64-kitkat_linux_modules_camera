@@ -163,6 +163,8 @@ struct m10mo_monitor_params {
 	u8 exe_mode;
 	unsigned int af_touch_posx;
 	unsigned int af_touch_posy;
+	u8 flash_mode;
+	u8 torch;
 };
 
 struct m10mo_device {
