@@ -70,7 +70,6 @@
 #define verifexit(cond,error_tag)  \
 do {                               \
 	if (!(cond)){              \
-		errno = error_tag; \
 		goto EXIT;         \
 	}                          \
 } while(0)
