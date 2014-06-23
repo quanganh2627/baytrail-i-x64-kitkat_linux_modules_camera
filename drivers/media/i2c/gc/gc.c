@@ -1282,10 +1282,10 @@ gc_set_pad_format(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
 static int gc_g_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 {
 	struct gc_device *dev = to_gc_sensor(sd);
-	dev->run_mode = param->parm.capture.capturemode;
 
 	if (!param || param->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
 		return -EINVAL;
+	dev->run_mode = param->parm.capture.capturemode;
 
 	memset(param, 0, sizeof(*param));
 	param->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
