@@ -4869,8 +4869,6 @@ out:
 int atomisp_ospm_dphy_down(struct atomisp_device *isp)
 {
 	unsigned long flags;
-	int timeout = 100;
-	bool idle;
 	u32 reg;
 
 	dev_dbg(isp->dev, "%s\n", __func__);
@@ -4881,19 +4879,6 @@ int atomisp_ospm_dphy_down(struct atomisp_device *isp)
 
 	if (!atomisp_dev_users(isp))
 		goto done;
-
-	idle = sh_css_hrt_system_is_idle();
-	dev_dbg(isp->dev, "%s system_is_idle:%d\n", __func__, idle);
-	while (!idle && timeout--) {
-		udelay(20);
-		idle = sh_css_hrt_system_is_idle();
-	}
-
-	if (timeout < 0) {
-		dev_err(isp->dev, "Timeout to stop ISP HW\n");
-		/* force power down here */
-		/* return -EINVAL; */
-	}
 
 	spin_lock_irqsave(&isp->lock, flags);
 	isp->sw_contex.power_state = ATOM_ISP_POWER_DOWN;

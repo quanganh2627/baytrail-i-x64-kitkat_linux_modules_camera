@@ -1288,10 +1288,14 @@ int atomisp_css_start(struct atomisp_sub_device *asd,
 				}
 			}
 		}
-	} else if (ia_css_start_sp() != IA_CSS_SUCCESS) {
-		dev_err(isp->dev, "start sp error.\n");
-		ret = -EINVAL;
-		goto start_err;
+	} else {
+		if (!sh_css_hrt_system_is_idle())
+			dev_err(isp->dev, "CSS HW not idle before starting SP\n");
+		if (ia_css_start_sp() != IA_CSS_SUCCESS) {
+			dev_err(isp->dev, "start sp error.\n");
+			ret = -EINVAL;
+			goto start_err;
+		}
 	}
 
 	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
@@ -1321,11 +1325,8 @@ stream_err:
 	/*
 	 * SP can not be stop if other streams are in use
 	 */
-	if (atomisp_streaming_count(isp))
-		dev_dbg(isp->dev, "skip stop sp\n");
-	else if (ia_css_isp_has_started() &&
-		 ia_css_stop_sp() != IA_CSS_SUCCESS)
-		dev_err(isp->dev, "stop sp failed.\n");
+	if (atomisp_streaming_count(isp) == 0)
+		ia_css_stop_sp();
 
 	return ret;
 }
@@ -2282,13 +2283,12 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	/*
 	 * SP can not be stop if other streams are in use
 	 */
-	if (atomisp_streaming_count(isp)) {
-		dev_dbg(isp->dev, "skip stop sp\n");
-	} else if (ia_css_isp_has_started() &&
-		   (ia_css_stop_sp() != IA_CSS_SUCCESS)) {
-		dev_err(isp->dev, "stop sp failed. stop css fatal error.\n");
-		return -EINVAL;
+	if (atomisp_streaming_count(isp) == 0) {
+		ia_css_stop_sp();
+		if (!sh_css_hrt_system_is_idle())
+			dev_err(isp->dev, "CSS HW not idle after stopping SP\n");
 	}
+
 
 	if (!in_reset) {
 		struct atomisp_stream_env *stream_env;
@@ -4369,8 +4369,7 @@ void atomisp_css_destroy_acc_pipe(struct atomisp_sub_device *asd)
 	/* css 2.0 API limitation: ia_css_stop_sp() could be only called after
 	 * destroy all pipes
 	 */
-	if (ia_css_isp_has_started())
-		ia_css_stop_sp();
+	ia_css_stop_sp();
 
 	kfree(asd->isp->acc.acc_stages);
 	asd->isp->acc.acc_stages = NULL;
