@@ -45,6 +45,7 @@
 #define INPUT_SCALE_FACTOR 10
 #define OUTPUT_SCALE_FACTOR 10
 #define SLOPE_A_RESOLUTION 10
+#define CONFIG_UNIT_LUT_SIZE 32
 
 #define ONE_IN_Q14 (1<<(NUM_BITS-2))
 #define Q29_TO_Q15_SHIFT_VAL (NUM_BITS-2)
@@ -59,6 +60,7 @@ typedef unsigned short tvector1w_unsigned;
 typedef unsigned int   tvector2w_unsigned;
 typedef short tscalar1w_signed_positive;
 typedef short tvector1w_signed_positive;
+typedef unsigned short tscalar1w_16bit;
 
 typedef struct {
   tvector1w     v0  ;
@@ -145,6 +147,13 @@ typedef struct {
 	tvector1w slope[MAX_CONFIG_POINTS-1];
 	tvector1w y_offset[MAX_CONFIG_POINTS-1];
 } ref_config_points;
+
+typedef struct {
+	tscalar1w_16bit slope_vec[CONFIG_UNIT_LUT_SIZE];
+	tscalar1w_16bit offset_vec[CONFIG_UNIT_LUT_SIZE];
+	tscalar1w_16bit x_cord_vec[CONFIG_UNIT_LUT_SIZE];
+	tscalar1w_16bit exponent;
+} ref_config_point_vectors;
 
 
 #endif /* __REF_VECTOR_FUNC_TYPES_H_INCLUDED__ */
