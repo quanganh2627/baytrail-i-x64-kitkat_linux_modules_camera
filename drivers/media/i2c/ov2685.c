@@ -43,6 +43,10 @@
 
 #define to_ov2685_sensor(sd) container_of(sd, struct ov2685_device, sd)
 
+static int  v_flag=0;
+static int  h_flag=0;
+static int  test_num=7777;
+
 static int
 ov2685_read_reg(struct i2c_client *client, u16 data_length, u16 reg, u32 *val)
 {
@@ -273,17 +277,73 @@ static int ov2685_g_wb(struct v4l2_subdev *sd, s32 *value)
 
 static int ov2685_s_wb(struct v4l2_subdev *sd, int value)
 {
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	printk("%s: %d\n",__func__, value);
 	switch (value) {
-		case V4L2_WHITE_BALANCE_MANUAL			:
 		case V4L2_WHITE_BALANCE_AUTO	        :
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x00);//start group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5180,0xf4);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x10);//end group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0xa0);//launch group 1
+			break;
+
+		case V4L2_WHITE_BALANCE_MANUAL			:
 		case V4L2_WHITE_BALANCE_INCANDESCENT	:
+			//	Sunny
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x00);// start group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5180,0xf6);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5195,0x07);//R Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5196,0x9c);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5197,0x04);//G Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5198,0x00);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5199,0x05);//B Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x519a,0xf3);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x10);// end group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0xa0);// launch group 1
+			break;
 		case V4L2_WHITE_BALANCE_FLUORESCENT		:
+			//		Home
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x00);// start group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5180,0xf6);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5195,0x04);//R Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5196,0x90);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5197,0x04);//G Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5198,0x00);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5199,0x09);//B Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x519a,0x20);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x10);// end group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0xa0);// launch group 1
+			break;
 		case V4L2_WHITE_BALANCE_FLUORESCENT_H :
-		case V4L2_WHITE_BALANCE_HORIZON	      :
-		case V4L2_WHITE_BALANCE_DAYLIGHT      :
-		case V4L2_WHITE_BALANCE_FLASH	      :
-		case V4L2_WHITE_BALANCE_CLOUDY	      :
-		case V4L2_WHITE_BALANCE_SHADE	      :
+		case V4L2_WHITE_BALANCE_HORIZON:
+		case V4L2_WHITE_BALANCE_DAYLIGHT:
+			//Office
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x00);// start group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5180,0xf6);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5195,0x06);//R Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5196,0xb8);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5197,0x04);//G Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5198,0x00);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5199,0x06);//B Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x519a,0x5f);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x10);// end group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0xa0);// launch group 1
+			break;
+		case V4L2_WHITE_BALANCE_FLASH:
+		case V4L2_WHITE_BALANCE_CLOUDY:
+			//Cloudy
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x00);// start group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5180,0xf6);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5195,0x07);//R Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5196,0xdc);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5197,0x04);//G Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5198,0x00);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x5199,0x05);//B Gain
+			ov2685_write_reg(client, MISENSOR_8BIT,0x519a,0xd3);//
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0x10);// end group 1
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3208,0xa0);// launch group 1
+			break;
+		case V4L2_WHITE_BALANCE_SHADE:
 		default:
 			printk("ov2685_s_wb: %d\n", value);
 		break;
@@ -299,42 +359,27 @@ static int ov2685_g_exposure(struct v4l2_subdev *sd, s32 *value)
 static int ov2685_s_exposure(struct v4l2_subdev *sd, int value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-
 	switch (value) {
 		case -2:
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_AUTO, 0x3);
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_1, 0x6);
-
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a03, 0x3a);
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a04, 0x30);
 			break;
 		case -1:
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_AUTO, 0x3);
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_1, 0x16);
-
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a03, 0x42);
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a04, 0x38);
 			break;
 		case 0:
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_AUTO, 0x0);
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a03, 0x4e);
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a04, 0x40);
 			break;
 		case 1:
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_AUTO, 0x3);
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_1, 0x36);
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_GAIN_1, 0x46);
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a03, 0x52);
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a04, 0x48);
 			break;
 
 		case 2:
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_AUTO, 0x3);
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_EXPOSURE_1, 0x46);
-			ov2685_write_reg(client, MISENSOR_8BIT,
-				OV2685_REG_GAIN_1, 0x56);
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a03, 0x5a);
+			ov2685_write_reg(client, MISENSOR_8BIT,0x3a04, 0x50);
 			break;
 	}
 	return 0;
@@ -441,7 +486,7 @@ static int ov2685_s_power(struct v4l2_subdev *sd, int power)
 
 /* ov2685 resolutions supports below 2 aspect ratio */
 #define OV2685_4_3 1333 /* 4:3*//* 1600x1200*/
-#define OV2585_3_2 1500 /* 3:2*//* 720x480*/
+#define OV2685_3_2 1500 /* 3:2*//* 720x480*/
 #define OV2685_16_9 1777 /* 16:9*//* 1280x720*/
 
 static int ov2685_try_res(u32 *w, u32 *h)
@@ -451,7 +496,7 @@ static int ov2685_try_res(u32 *w, u32 *h)
 	printk("ov2685 is asked for w=%d h=%d\n", *w, *h);
 
 	aspec_ratio = *w * 1000 / *h;
-	if (aspec_ratio < OV2585_3_2) {
+	if (aspec_ratio < OV2685_3_2) {
 		*w = OV2685_RES_2M_SIZE_H;
 		*h = OV2685_RES_2M_SIZE_V;
 	} else {
@@ -535,6 +580,56 @@ static int ov2685_g_mbus_fmt(struct v4l2_subdev *sd,
 	return 0;
 }
 
+
+static struct misensor_reg const  Normal_full[]={
+	{MISENSOR_8BIT, 0x3820, 0xc0},
+	{MISENSOR_8BIT, 0x3821, 0x00},
+	{MISENSOR_TOK_TERM, 0, 0},
+};
+static struct misensor_reg const   Mirror_on_full[]={
+	{MISENSOR_8BIT, 0x3820, 0xc0},
+	{MISENSOR_8BIT, 0x3821, 0x04},
+	{MISENSOR_TOK_TERM, 0, 0},
+};
+static struct misensor_reg const    Flip_On_full[]={
+	//Normal_full
+	{MISENSOR_8BIT, 0x3820, 0xc4},
+	{MISENSOR_8BIT, 0x3821, 0x00},
+	{MISENSOR_TOK_TERM, 0, 0},
+};
+static struct misensor_reg const    Mirror_Flip_on_full[]={
+	//Flip_On_full
+	{MISENSOR_8BIT, 0x3820, 0xc4},
+	{MISENSOR_8BIT, 0x3821, 0x04},
+	{MISENSOR_TOK_TERM, 0, 0},
+};
+
+
+static struct misensor_reg const    Normal_quarter_size[]={
+	//Mirror_on_quarter_size
+	{MISENSOR_8BIT, 0x3820, 0xc2},
+	{MISENSOR_8BIT, 0x3821, 0x01},
+	{MISENSOR_TOK_TERM, 0, 0},
+};
+static struct misensor_reg const    Mirror_on_quarter_size[]={
+	//Mirror_Flip_on_quarter_size
+	{MISENSOR_8BIT, 0x3820, 0x02},
+	{MISENSOR_8BIT, 0x3821, 0x05},
+	{MISENSOR_TOK_TERM, 0, 0},
+};
+static struct misensor_reg const    Flip_On_quarter_size[]={
+	//Normal_quarter_size
+	{MISENSOR_8BIT, 0x3820, 0xc6},
+	{MISENSOR_8BIT, 0x3821, 0x01},
+	{MISENSOR_TOK_TERM, 0, 0},
+};
+static struct misensor_reg const    Mirror_Flip_on_quarter_size[]={
+	//Flip_On_quarter_size
+	{MISENSOR_8BIT, 0x3820, 0x06},
+	{MISENSOR_8BIT, 0x3821, 0x05},
+	{MISENSOR_TOK_TERM, 0, 0},
+};
+
 static int ov2685_s_mbus_fmt(struct v4l2_subdev *sd,
 			      struct v4l2_mbus_framefmt *fmt)
 {
@@ -545,6 +640,7 @@ static int ov2685_s_mbus_fmt(struct v4l2_subdev *sd,
 	u32 width = fmt->width;
 	u32 height = fmt->height;
 	int ret;
+	u8 sum_flag=0;
 	mipi_info = v4l2_get_subdev_hostdata(sd);
 	if (mipi_info == NULL) {
 		dev_err(&c->dev, "%s: can not find mipi info!!!\n", __func__);
@@ -581,6 +677,25 @@ static int ov2685_s_mbus_fmt(struct v4l2_subdev *sd,
 		default:
 			dev_err(&c->dev, "%s: can not support the resolution!!!\n", __func__);
 	}
+	sum_flag = (v_flag & 0x03) | (h_flag & 0x03);
+//if(fmt->width <= 1296)
+#if  1
+	switch(sum_flag)
+	{
+		case 1:ov2685_write_reg_array(c, Mirror_on_full);break;
+		case 2:ov2685_write_reg_array(c, Flip_On_full);break;
+		case 3:ov2685_write_reg_array(c, Mirror_Flip_on_full);break;
+		default: ov2685_write_reg_array(c, Normal_full);
+	}
+#else
+		switch(sum_flag)
+	{
+		case 1:ov2685_write_reg_array(c, Mirror_on_quarter_size);break;
+		case 2:ov2685_write_reg_array(c, Flip_On_quarter_size);break;
+		case 3:ov2685_write_reg_array(c, Mirror_Flip_on_quarter_size);break;
+		default: ov2685_write_reg_array(c, Normal_quarter_size);
+	}
+#endif
 
 	if (dev->res != res_index->res) {
 		int index;
@@ -828,11 +943,21 @@ static int ov2685_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
+	printk("%s: %d\n", __func__,ctrl->id);
+
 	if (!octrl || !octrl->tweak) {
 		dev_err(&client->dev,  "%s unsupported control id or no tweak func!\n",
 			__func__);
 		return 0;
 	}
+	switch(ctrl->id)
+	{
+		case V4L2_CID_VFLIP:if(ctrl->value) v_flag=2;else  v_flag=0;
+			break;
+		case V4L2_CID_HFLIP:if(ctrl->value) h_flag=1;else  h_flag=0;
+			break;
+		default:break;
+	};
 
 	ret = octrl->tweak(sd, ctrl->value);
 	return 0;
