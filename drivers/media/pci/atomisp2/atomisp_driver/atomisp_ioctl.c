@@ -700,6 +700,11 @@ static int atomisp_s_input(struct file *file, void *fh, unsigned int input)
 		dev_err(isp->dev, "Failed to power-on sensor\n");
 		goto error;
 	}
+	/*
+	 * Some sensor driver resets the run mode during power-on, thus force
+	 * update the run mode to sensor after power-on.
+	 */
+	atomisp_update_run_mode(asd);
 
 	/* select operating sensor */
 	ret = v4l2_subdev_call(isp->inputs[input].camera, video, s_routing,
