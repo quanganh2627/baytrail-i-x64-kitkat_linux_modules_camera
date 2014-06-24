@@ -38,7 +38,14 @@
 #include <media/v4l2-device.h>
 #include <asm/intel-mid.h>
 #include "gc.h"
-#include "gc_products.h"
+
+#ifdef CONFIG_GC_0310
+#include "gc_0310.h"
+#endif
+
+#ifdef CONFIG_GC_2155
+#include "gc_2155.h"
+#endif
 
 
 #define GC_BIN_FACTOR_MAX			4
@@ -202,6 +209,41 @@ __gc_write_reg_is_consecutive(struct i2c_client *client,
 #endif
 
 
+/* __verify_register_write
+	Verify that register write is properly updated. GC seems to require
+	somewhere around 4ms for write to register to be reflected back when it is
+	read out
+*/
+static int __verify_register_write(struct i2c_client *client,
+									u8 reg, u8 expect_val)
+{
+	int count = 0;
+	int err = 0;
+	u8 new_val;
+
+	while (1) {
+	   count++;
+	   msleep(4);
+	   err = gc_read_reg(client, GC_8BIT, reg, &new_val);
+
+		if (err)
+			break;
+
+		/* Success */
+		if (new_val == expect_val)
+			break;
+
+		if (count >= GC_REG_UPDATE_RETRY_LIMIT) {
+			dev_err(&client->dev, "Register update failed for GC register!!\n");
+			err = -ENODEV;
+			break;
+		}
+	}
+
+	return err;
+}
+
+
 int gc_write_reg_array(struct i2c_client *client,
 				   const struct gc_register *reglist)
 {
@@ -230,6 +272,8 @@ int gc_write_reg_array(struct i2c_client *client,
 			if (err)
 				break;
 
+			err = __verify_register_write(client, next->sreg, tmp_val);
+
 			break;
 
 		case GC_8BIT_RMW_OR:
@@ -238,12 +282,15 @@ int gc_write_reg_array(struct i2c_client *client,
 			if (err)
 				break;
 
-			tmp_val = tmp_val | next->val;
 
+			tmp_val = tmp_val | next->val;
+  
 			err = gc_write_reg(client, GC_8BIT, next->sreg, tmp_val);
 
 			if (err)
 				break;
+
+			err = __verify_register_write(client, next->sreg, tmp_val);
 
 			break;
 
@@ -386,7 +433,7 @@ int __gc_set_scene_mode(struct v4l2_subdev *sd, s32 value)
 
 int __gc_set_color(struct v4l2_subdev *sd, s32 value)
 {
-    return __gc_program_ctrl_table(sd, GC_SETTING_COLOR_EFFECT, value);
+	return __gc_program_ctrl_table(sd, GC_SETTING_COLOR_EFFECT, value);
 }
 
 int __gc_set_wb(struct v4l2_subdev *sd, s32 value)
@@ -449,7 +496,7 @@ int __gc_g_fnumber_range(struct v4l2_subdev *sd, s32 *val)
 int __gc_g_exposure(struct v4l2_subdev *sd, s32 *value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-    struct gc_device *dev = to_gc_sensor(sd);
+	struct gc_device *dev = to_gc_sensor(sd);
 	u16 coarse;
 	u8 reg_val_h, reg_val_l;
 	int ret;
@@ -991,16 +1038,16 @@ static int gc_try_mbus_fmt(struct v4l2_subdev *sd,
 
 		idx = get_resolution_index(sd, fmt->width, fmt->height);
 
-        if (idx < 0) {
-		    for (idx = 0; idx < dev->entries_curr_table; idx++) {
+		if (idx < 0) {
+			for (idx = 0; idx < dev->entries_curr_table; idx++) {
 
 			  tmp_res = &dev->curr_res_table[idx];
 
 			  if ((tmp_res->width >= fmt->width) &&
 				  (tmp_res->height >= fmt->height))
 				  break;
-		     }
-        }
+			 }
+		}
 
 		if (idx == dev->entries_curr_table)
 			idx = dev->entries_curr_table - 1;
@@ -1469,7 +1516,7 @@ static int gc_s_config(struct v4l2_subdev *sd, int irq, void *pdata)
 {
 	struct gc_device *dev = to_gc_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	u16 sensor_id = GC_ID_DEFAULT;
+	u16 sensor_id = 0x0;
 	int ret = 0;
 
 	if (NULL == pdata)
@@ -1501,7 +1548,11 @@ static int gc_s_config(struct v4l2_subdev *sd, int irq, void *pdata)
 		goto fail_detect;
 	}
 
-	dev->sensor_id = sensor_id;
+
+	if (dev->product_info->sensor_id != sensor_id) {
+		v4l2_err(client, "sensor id didn't match expected\n");
+		goto fail_detect;
+	}
 
 	/* Query device specifics */
 	ret = __query_device_specifics(dev);
@@ -1538,18 +1589,6 @@ fail_csi_cfg:
 
 static int __query_device_specifics(struct gc_device *dev)
 {
-	int i;
-
-	for (i = 0 ; i < ARRAY_SIZE(product_mappings); i++) {
-		if (product_mappings[i].gc_id == dev->sensor_id) {
-			dev->product_info = product_mappings[i].product_info;
-			break;
-		}
-	}	
-
-	if (dev->product_info == NULL) {
-		return -ENODEV;
-	}
 
 	/* If product specific does not need to override any configs
 	   use default ones; otherwise override those that are specified */
@@ -1600,7 +1639,6 @@ static int gc_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
 	struct gc_device *dev;
-	struct camera_mipi_info *gc_mipi_info = NULL;
 	int ret;
 
 
@@ -1614,7 +1652,15 @@ static int gc_probe(struct i2c_client *client,
 	mutex_init(&dev->input_lock);
 
 	dev->fmt_idx = 0;
-	dev->sensor_id = GC_ID_DEFAULT;
+
+	dev->product_info = (struct gc_product_info*)id->driver_data;
+
+	if (dev->product_info == NULL) {
+		v4l2_err(client, "product_info was null\n");
+		ret = -ENODEV;
+		goto out_free;
+	}
+
 	v4l2_i2c_subdev_init(&(dev->sd), client, &gc_ops);
 
 	if (client->dev.platform_data) {
@@ -1625,7 +1671,6 @@ static int gc_probe(struct i2c_client *client,
 			goto out_free;
 
 	}
-	gc_mipi_info = v4l2_get_subdev_hostdata(&dev->sd);
 
 
 	snprintf(dev->sd.name, sizeof(dev->sd.name), "%s %d-%04x",
@@ -1680,8 +1725,14 @@ static int gc_remove(struct i2c_client *client)
 
 
 static const struct i2c_device_id gc_ids[] = {
-	{GC2155_NAME, GC2155_ID },
-	{GC0310_NAME, GC0310_ID },
+#ifdef CONFIG_GC_2155
+	{GC2155_NAME, (kernel_ulong_t)&gc2155_product_info },
+#endif
+
+#ifdef CONFIG_GC_0310
+	{GC0310_NAME, (kernel_ulong_t)&gc0310_product_info },
+#endif
+
 	{ },
 };
 
@@ -1715,7 +1766,6 @@ static __exit void exit_gc(void)
 
 module_init(init_gc);
 module_exit(exit_gc);
-
 
 
 MODULE_DESCRIPTION("Class driver for GalaxyCore sensors");

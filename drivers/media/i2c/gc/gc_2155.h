@@ -1639,6 +1639,7 @@ static struct gc_table_map gc2155_awb_mode_tables[] = {
 
 struct gc_product_info gc2155_product_info = {
 	.name = "gc2155",
+	.sensor_id = 0x2155,
 	.mode_info = gc2155_mode_info,
 
 	/* Optional controls */

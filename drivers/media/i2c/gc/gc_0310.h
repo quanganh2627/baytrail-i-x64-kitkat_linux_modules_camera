@@ -895,6 +895,7 @@ static struct gc_table_map gc0310_awb_mode_tables[] = {
 
 struct gc_product_info gc0310_product_info = {
 	.name = "gc0310soc",
+	.sensor_id = 0xa310,
 	.mode_info = gc0310_mode_info,
 
 	/* Optional controls */

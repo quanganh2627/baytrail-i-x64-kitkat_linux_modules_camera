@@ -78,6 +78,7 @@ struct gc_register {
 #define I2C_RETRY_COUNT		5
 
 #define GC_MAX_WRITE_BUF_SIZE	32
+#define GC_REG_UPDATE_RETRY_LIMIT 100
 struct gc_write_buffer {
 	u16 addr;
 	u8 data[GC_MAX_WRITE_BUF_SIZE];
@@ -216,6 +217,7 @@ struct gc_table_info {
 
 struct gc_product_info {
 	char *name;
+	u16 sensor_id;
 	struct gc_mode_info *mode_info;
 	struct gc_ctrl_config *ctrl_config;
 	int num_ctrls;
@@ -258,7 +260,6 @@ struct gc_device {
 	int vt_pix_clk_freq_mhz;
 	int fps_index;
 	u32 focus;
-	u16 sensor_id;
 	u16 coarse_itg;
 	u16 fine_itg;
 	u16 gain;
