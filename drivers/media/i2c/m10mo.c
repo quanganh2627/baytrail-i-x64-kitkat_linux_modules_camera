@@ -1855,14 +1855,8 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 			return ret;
 
 		while (fw_ids->id_string) {
-			/*
-			 * Null char is skipped (strlen - 1) because the string in
-			 * platform data can be shorter than the string in the FW.
-			 * There can be some additional information
-			 * after the match.
-			 */
 			if (!strncmp(fw_ids->id_string, buffer,
-						strlen(fw_ids->id_string) - 1))
+				     strlen(fw_ids->id_string)))
 			{
 				dev_info(&client->dev, "FW id %s detected\n", buffer);
 				dev->fw_type = fw_ids->fw_type;
