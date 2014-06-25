@@ -347,59 +347,110 @@ static int __ov_power_down(struct v4l2_subdev *sd)
 /* Horizontal flip the image. */
 static int ov_g_hflip(struct v4l2_subdev *sd, s32 * val)
 {
+	struct ov_device *dev = to_ov_sensor(sd);
+	*val = dev->id_hflip;
+
 	return 0;
 }
 
 static int ov_g_vflip(struct v4l2_subdev *sd, s32 * val)
 {
+	struct ov_device *dev = to_ov_sensor(sd);
+	*val = dev->id_vflip;
+
 	return 0;
 }
 
 /* Horizontal flip the image. */
 static int ov_s_hflip(struct v4l2_subdev *sd, int value)
 {
-	return __ov_program_reglist(sd, OV_SETTING_HFLIP, value);
+	int ret;
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	ret = __ov_program_reglist(sd, OV_SETTING_HFLIP, value);
+	if (!ret)
+		dev->id_hflip = value;
+	return ret;
 }
 
 /* Vertically flip the image */
 static int ov_s_vflip(struct v4l2_subdev *sd, int value)
 {
-	return __ov_program_reglist(sd, OV_SETTING_VFLIP, value);
+	int ret;
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	ret = __ov_program_reglist(sd, OV_SETTING_VFLIP, value);
+	if (!ret)
+		dev->id_vflip = value;
+	return ret;
 }
 
 static int ov_s_freq(struct v4l2_subdev *sd, int value)
 {
-	return __ov_program_reglist(sd, OV_SETTING_FREQ, value);
+	int ret;
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	ret = __ov_program_reglist(sd, OV_SETTING_FREQ, value);
+	if (!ret)
+		dev->id_freq = value;
+	return ret;
 }
 
 static int ov_g_scene(struct v4l2_subdev *sd, s32 *value)
 {
+	struct ov_device *dev = to_ov_sensor(sd);
+	*value = dev->id_scene;
+
 	return 0;
 }
 
 static int ov_s_scene(struct v4l2_subdev *sd, int value)
 {
-	return __ov_program_reglist(sd, OV_SETTING_SCENE_MODE, value);
+	int ret;
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	ret = __ov_program_reglist(sd, OV_SETTING_SCENE_MODE, value);
+	if (!ret)
+		dev->id_scene = value;
+	return ret;
 }
 
 static int ov_g_wb(struct v4l2_subdev *sd, s32 *value)
 {
+	struct ov_device *dev = to_ov_sensor(sd);
+	*value = dev->id_awb;
+
 	return 0;
 }
 
 static int ov_s_wb(struct v4l2_subdev *sd, int value)
 {
-	return __ov_program_reglist(sd, OV_SETTING_AWB_MODE, value);
+	int ret;
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	ret = __ov_program_reglist(sd, OV_SETTING_AWB_MODE, value);
+	if (!ret)
+		dev->id_awb = value;
+	return ret;
 }
 
 static int ov_g_exposure(struct v4l2_subdev *sd, s32 *value)
 {
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	*value = dev->id_exposure;
 	return 0;
 }
 
 static int ov_s_exposure(struct v4l2_subdev *sd, int value)
 {
-	return __ov_program_reglist(sd, OV_SETTING_EXPOSURE, value);
+	int ret;
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	ret = __ov_program_reglist(sd, OV_SETTING_EXPOSURE, value);
+	if (!ret)
+		dev->id_exposure = value;
+	return ret;
 }
 
 static int ov_s_power(struct v4l2_subdev *sd, int power)

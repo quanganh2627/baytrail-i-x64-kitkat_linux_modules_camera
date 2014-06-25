@@ -201,6 +201,13 @@ struct ov_device {
 	struct ov_control *ctrl_config;
 	int num_ctrls;
 
+	int id_exposure;
+	int id_awb;
+	int id_scene;
+	int id_coloreffect;
+	int id_freq;
+	int id_vflip;
+	int id_hflip;
 };
 
 #define ADD_SETTINGS_TABLES(_type_id, _reglist) \
