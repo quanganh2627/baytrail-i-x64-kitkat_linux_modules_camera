@@ -297,7 +297,10 @@ static struct gc5004_reg const gc5004_1296x976_30fps[] = {
 	{GC5004_8BIT,0x0d, 0x07}, //1960 Window setting
 	{GC5004_8BIT,0x0e, 0xa8}, 
 	{GC5004_8BIT,0x0f, 0x0a}, //2640
-	{GC5004_8BIT,0x10, 0x50}, 
+	{GC5004_8BIT,0x10, 0x50},
+
+	{GC5004_8BIT,0x4e, 0x00}, //add by travis 20140625
+	{GC5004_8BIT,0x4f, 0x06},
 
 	//{GC5004_8BIT,0x17, 0x35}, 
 
@@ -338,6 +341,9 @@ static struct gc5004_reg const gc5004_1296x736_30fps[] = {
 	{GC5004_8BIT,0x0f, 0x0a}, //2640
 	{GC5004_8BIT,0x10, 0x50}, 
 
+	{GC5004_8BIT,0x4e, 0x00}, //add by travis 20140625
+	{GC5004_8BIT,0x4f, 0x06},
+
 	{GC5004_8BIT, 0x92, 0x00}, //00/crop win y
 	{GC5004_8BIT, 0x94, 0x00}, //04/crop win x  0d
 
@@ -374,6 +380,9 @@ static struct gc5004_reg const gc5004_1296x864_30fps[] = {
 	{GC5004_8BIT,0x0f, 0x0a}, //2640
 	{GC5004_8BIT,0x10, 0x50}, 
 
+	{GC5004_8BIT,0x4e, 0x00}, //add by travis 20140625
+	{GC5004_8BIT,0x4f, 0x06},
+
 	{GC5004_8BIT, 0x92, 0x00}, //00/crop win y
 	{GC5004_8BIT, 0x94, 0x00}, //04/crop win x  0d
 	
@@ -408,6 +417,9 @@ static struct gc5004_reg const gc5004_2592x1944_30fps[] = {
 	{GC5004_8BIT, 0x0e, 0xa8}, 
 	{GC5004_8BIT, 0x0f, 0x0a}, //Window setting width 2640
 	{GC5004_8BIT, 0x10, 0x50},  
+
+	{GC5004_8BIT, 0x4e, 0x3c}, //add by travis 20140625
+	{GC5004_8BIT, 0x4f, 0x00},
 
 	{GC5004_8BIT, 0x92, 0x02}, //00/crop win y
 	{GC5004_8BIT, 0x94, 0x01}, //04/crop win x  0d

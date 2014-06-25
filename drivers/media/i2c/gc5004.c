@@ -439,7 +439,16 @@ static int __gc5004_update_exposure_timing(struct i2c_client *client, u16 exposu
 	tmp = exposure % 4;
 	if (tmp > 2)	
 		exposure+=4;
-			
+
+	if (exposure < 32) {
+		gc5004_write_reg(client, GC5004_8BIT, 0xfe, 0x00);
+		gc5004_write_reg(client, GC5004_8BIT, 0x01, 0x00);
+		gc5004_write_reg(client, GC5004_8BIT, 0xb0, 0x80);//travis 20140625
+	} else {
+		gc5004_write_reg(client, GC5004_8BIT, 0xfe, 0x00);
+		gc5004_write_reg(client, GC5004_8BIT, 0x01, 0x10);
+		gc5004_write_reg(client, GC5004_8BIT, 0xb0, 0x70);
+	}
 
 	expo_coarse_h = (u8)(exposure >> 8);
 	expo_coarse_l = (u8)(exposure & 0xff);
@@ -1149,7 +1158,7 @@ static int gc5004_init_common(struct v4l2_subdev *sd)  //fix me need write the r
 	gc5004_write_reg(client, GC5004_8BIT, 0x1f, 0x78); 
 	gc5004_write_reg(client, GC5004_8BIT, 0x20, 0xc5); //03/[7:6]ref_r [3:1]comv_r 
 	gc5004_write_reg(client, GC5004_8BIT, 0x21, 0x4f); //7f
-	gc5004_write_reg(client, GC5004_8BIT, 0x22, 0x82); //b2 
+	gc5004_write_reg(client, GC5004_8BIT, 0x22, 0xb2); //82 travis 20140625
 	gc5004_write_reg(client, GC5004_8BIT, 0x23, 0x43); //f1/[7:3]opa_r [1:0]sRef
 	gc5004_write_reg(client, GC5004_8BIT, 0x24, 0x2f); //PAD drive 
 	gc5004_write_reg(client, GC5004_8BIT, 0x2b, 0x01); 
@@ -1175,8 +1184,8 @@ static int gc5004_init_common(struct v4l2_subdev *sd)  //fix me need write the r
 	/////////////////////////////////////////////////////
 	//////////////////////   BLK   //////////////////////
 	/////////////////////////////////////////////////////
-	gc5004_write_reg(client, GC5004_8BIT, 0x40, 0x22);
-	gc5004_write_reg(client, GC5004_8BIT, 0x41, 0x00);//38
+	gc5004_write_reg(client, GC5004_8BIT, 0x40, 0x72);//22 travis 20140625
+	gc5004_write_reg(client, GC5004_8BIT, 0x41, 0x00);
 	
 	gc5004_write_reg(client, GC5004_8BIT, 0x50, 0x00);
 	gc5004_write_reg(client, GC5004_8BIT, 0x51, 0x00);
@@ -1224,7 +1233,7 @@ static int gc5004_init_common(struct v4l2_subdev *sd)  //fix me need write the r
 	/////////////////////////////////////////////////////
 	//////////////////////   GAIN   /////////////////////
 	/////////////////////////////////////////////////////
-	gc5004_write_reg(client, GC5004_8BIT, 0xb0, 0x50);
+	gc5004_write_reg(client, GC5004_8BIT, 0xb0, 0x70);//50 travis 20140625
 	gc5004_write_reg(client, GC5004_8BIT, 0xb1, 0x01);
 	gc5004_write_reg(client, GC5004_8BIT, 0xb2, 0x02);
 	gc5004_write_reg(client, GC5004_8BIT, 0xb3, 0x40);
