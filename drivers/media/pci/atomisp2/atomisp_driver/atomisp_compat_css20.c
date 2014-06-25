@@ -42,6 +42,7 @@
 #include "ia_css_debug.h"
 #include "ia_css_isp_param.h"
 #include "sh_css_hrt.h"
+#include "ia_css_isys.h"
 
 #include <linux/pm_runtime.h>
 
@@ -1028,19 +1029,21 @@ int atomisp_css_irq_translate(struct atomisp_device *isp,
 	return 0;
 }
 
-void atomisp_css_rx_get_irq_info(unsigned int *infos)
+void atomisp_css_rx_get_irq_info(enum ia_css_csi2_port port,
+					unsigned int *infos)
 {
 #ifndef ISP2401_NEW_INPUT_SYSTEM
-	ia_css_rx_get_irq_info(infos);
+	ia_css_isys_rx_get_irq_info(port, infos);
 #else
 	*infos = 0;
 #endif
 }
 
-void atomisp_css_rx_clear_irq_info(unsigned int infos)
+void atomisp_css_rx_clear_irq_info(enum ia_css_csi2_port port,
+					unsigned int infos)
 {
 #ifndef ISP2401_NEW_INPUT_SYSTEM
-	ia_css_rx_clear_irq_info(infos);
+	ia_css_isys_rx_clear_irq_info(port, infos);
 #endif
 }
 

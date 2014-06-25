@@ -448,13 +448,14 @@ static void atomisp_metadata_ready_event(struct atomisp_sub_device *asd)
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }
 
-static void print_csi_rx_errors(struct atomisp_device *isp)
+static void print_csi_rx_errors(enum ia_css_csi2_port port,
+				struct atomisp_device *isp)
 {
 	u32 infos = 0;
 
-	atomisp_css_rx_get_irq_info(&infos);
+	atomisp_css_rx_get_irq_info(port, &infos);
 
-	dev_err(isp->dev, "CSI Receiver errors:\n");
+	dev_err(isp->dev, "CSI Receiver port %d errors:\n", port);
 	if (infos & CSS_RX_IRQ_INFO_BUFFER_OVERRUN)
 		dev_err(isp->dev, "  buffer overrun");
 	if (infos & CSS_RX_IRQ_INFO_ERR_SOT)
@@ -564,10 +565,14 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 		(irq_infos & CSS_IRQ_INFO_IF_ERROR)) {
 		/* handle mipi receiver error */
 		u32 rx_infos;
+		enum ia_css_csi2_port port;
 
-		print_csi_rx_errors(isp);
-		atomisp_css_rx_get_irq_info(&rx_infos);
-		atomisp_css_rx_clear_irq_info(rx_infos);
+		for (port = IA_CSS_CSI2_PORT0; port <= IA_CSS_CSI2_PORT2;
+		     port++) {
+			print_csi_rx_errors(port, isp);
+			atomisp_css_rx_get_irq_info(port, &rx_infos);
+			atomisp_css_rx_clear_irq_info(port, rx_infos);
+		}
 	}
 	spin_unlock_irqrestore(&isp->lock, flags);
 

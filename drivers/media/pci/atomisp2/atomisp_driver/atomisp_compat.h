@@ -149,9 +149,11 @@ void atomisp_css_init_struct(struct atomisp_sub_device *asd);
 int atomisp_css_irq_translate(struct atomisp_device *isp,
 			      unsigned int *infos);
 
-void atomisp_css_rx_get_irq_info(unsigned int *infos);
+void atomisp_css_rx_get_irq_info(enum ia_css_csi2_port port,
+					unsigned int *infos);
 
-void atomisp_css_rx_clear_irq_info(unsigned int infos);
+void atomisp_css_rx_clear_irq_info(enum ia_css_csi2_port port,
+					unsigned int infos);
 
 int atomisp_css_irq_enable(struct atomisp_device *isp,
 			   enum atomisp_css_irq_info info, bool enable);
