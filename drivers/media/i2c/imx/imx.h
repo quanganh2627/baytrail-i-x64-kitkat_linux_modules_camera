@@ -426,6 +426,7 @@ struct imx_device {
 	u16 gain;
 	u16 pixels_per_line;
 	u16 lines_per_frame;
+	u8 targetfps;
 	u8 fps;
 	const struct imx_reg *regs;
 	u8 res;

@@ -1351,7 +1351,7 @@ static int nearest_resolution_index(struct v4l2_subdev *sd, int w, int h)
 			idx = i;
 		}
 		if (dist == min_dist) {
-			fps_diff = __imx_min_fps_diff(dev->fps,
+			fps_diff = __imx_min_fps_diff(dev->targetfps,
 						tmp_res->fps_options);
 			if (fps_diff < min_fps_diff) {
 				min_fps_diff = fps_diff;
@@ -1460,7 +1460,7 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	res = &dev->curr_res_table[dev->fmt_idx];
 
 	/* Adjust the FPS selection based on the resolution selected */
-	dev->fps_index = __imx_nearest_fps_index(dev->fps, res->fps_options);
+	dev->fps_index = __imx_nearest_fps_index(dev->targetfps, res->fps_options);
 	dev->fps = res->fps_options[dev->fps_index].fps;
 	dev->regs = res->fps_options[dev->fps_index].regs;
 	if (!dev->regs)
@@ -1660,6 +1660,7 @@ static int imx_s_stream(struct v4l2_subdev *sd, int enable)
 		}
 		dev->streaming = 0;
 		dev->fps_index = 0;
+		dev->targetfps = 0;
 		dev->fps = 0;
 	}
 	mutex_unlock(&dev->input_lock);
@@ -2012,6 +2013,7 @@ static int __imx_s_frame_interval(struct v4l2_subdev *sd,
 	if (!fps)
 		return -EINVAL;
 
+	dev->targetfps = fps;
 	/* No need to proceed further if we are not streaming */
 	if (!dev->streaming)
 		return 0;
