@@ -1104,7 +1104,7 @@ static struct gc_register gc2155_1280x720[] = {
 	{GC_TOK_TERM, 0, 0},
 };
 
-
+#if 0
 static struct gc_register gc2155_1280x960[] = {
 	{ GC_8BIT, 0xfe, 0x00 },
 
@@ -1170,6 +1170,7 @@ static struct gc_register gc2155_1280x960[] = {
 	{ GC_8BIT, 0xfe, 0x00 },
 	{GC_TOK_TERM, 0, 0},
 };
+#endif
 
 static struct gc_register gc2155_1600x1200[] =  {
 	{ GC_8BIT, 0xfe, 0x00 },
@@ -1241,6 +1242,7 @@ static struct gc_register gc2155_1600x1200[] =  {
 
 
 struct gc_resolution gc2155_res_video[] = {
+#if 0
 	{
 		.desc = "gc2155_1280x960",
 		.regs = gc2155_1280x960,
@@ -1254,6 +1256,7 @@ struct gc_resolution gc2155_res_video[] = {
 		.used = 0,
 		.skip_frames = 4,
 	},
+#endif
 	{
 		.desc = "gc2155_640x480",
 		.regs = gc2155_640x480,
