@@ -1529,6 +1529,12 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 		if (imx_info->metadata_effective_width == NULL)
 			imx_info->metadata_effective_width =
 				imx135_embedded_effective_size;
+		/* WORKAROUND FOR 199251, disable metadata for saltbay */
+		if (intel_mid_identify_cpu() == INTEL_MID_CPU_CHIP_TANGIER) {
+			imx_info->metadata_width = 0;
+			imx_info->metadata_height = 0;
+			imx_info->metadata_effective_width = NULL;
+		}
 
 		break;
 	default:
