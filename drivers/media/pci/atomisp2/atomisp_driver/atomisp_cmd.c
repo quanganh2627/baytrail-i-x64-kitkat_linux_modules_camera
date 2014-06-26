@@ -1218,9 +1218,9 @@ void atomisp_wdt_work(struct work_struct *work)
 						  wdt_work);
 	int i;
 
-	mutex_lock(&isp->mutex);
+	rt_mutex_lock(&isp->mutex);
 	if (!atomisp_streaming_count(isp)) {
-		mutex_unlock(&isp->mutex);
+		rt_mutex_unlock(&isp->mutex);
 		return;
 	}
 
@@ -1316,7 +1316,7 @@ void atomisp_wdt_work(struct work_struct *work)
 		atomic_set(&isp->wdt_count, 0);
 		isp->isp_fatal_error = true;
 
-		mutex_unlock(&isp->mutex);
+		rt_mutex_unlock(&isp->mutex);
 		return;
 	}
 
@@ -1324,7 +1324,7 @@ void atomisp_wdt_work(struct work_struct *work)
 	atomisp_set_stop_timeout(ATOMISP_CSS_STOP_TIMEOUT_US);
 	dev_err(isp->dev, "timeout recovery handling done\n");
 
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 }
 
 void atomisp_css_flush(struct atomisp_device *isp)
@@ -1433,7 +1433,7 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 	struct atomisp_sub_device *asd = &isp->asd[0];
 
 	dev_dbg(isp->dev, ">%s\n", __func__);
-	mutex_lock(&isp->mutex);
+	rt_mutex_lock(&isp->mutex);
 
 	spin_lock_irqsave(&isp->lock, flags);
 
@@ -1493,7 +1493,7 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 					    ATOMISP_WDT_KEEP_CURRENT_DELAY);
 	}
 out:
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 	for (i = 0; i < isp->num_of_streams; i++) {
 		asd = &isp->asd[i];
 		if (asd->streaming == ATOMISP_DEVICE_STREAMING_ENABLED

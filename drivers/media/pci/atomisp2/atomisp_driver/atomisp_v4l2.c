@@ -1045,7 +1045,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	}
 	isp->saved_regs.ispmmadr = start;
 
-	mutex_init(&isp->mutex);
+	rt_mutex_init(&isp->mutex);
 	mutex_init(&isp->streamoff_mutex);
 	spin_lock_init(&isp->lock);
 

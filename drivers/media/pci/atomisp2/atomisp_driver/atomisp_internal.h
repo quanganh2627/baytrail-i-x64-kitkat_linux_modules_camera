@@ -284,7 +284,7 @@ struct atomisp_device {
 
 	/* Purpose of mutex is to protect and serialize use of isp data
 	 * structures and css API calls. */
-	struct mutex mutex;
+	struct rt_mutex mutex;
 	/*
 	 * Serialise streamoff: mutex is dropped during streamoff to
 	 * cancel the watchdog queue. MUST be acquired BEFORE

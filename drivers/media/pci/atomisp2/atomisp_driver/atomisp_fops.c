@@ -750,7 +750,7 @@ static int atomisp_open(struct file *file)
 
 	dev_dbg(isp->dev, "open device %s\n", vdev->name);
 
-	mutex_lock(&isp->mutex);
+	rt_mutex_lock(&isp->mutex);
 
 	if (!isp->input_cnt) {
 		dev_err(isp->dev, "no camera attached\n");
@@ -763,7 +763,7 @@ static int atomisp_open(struct file *file)
 	 */
 	if (pipe->users) {
 		dev_dbg(isp->dev, "video node already opened\n");
-		mutex_unlock(&isp->mutex);
+		rt_mutex_unlock(&isp->mutex);
 		return -EBUSY;
 	}
 
@@ -813,7 +813,7 @@ init_subdev:
 
 done:
 	pipe->users++;
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 	return 0;
 
 css_error:
@@ -821,7 +821,7 @@ css_error:
 error:
 	hmm_pool_unregister(HMM_POOL_TYPE_DYNAMIC);
 	pm_runtime_put(vdev->v4l2_dev->dev);
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 	return ret;
 }
 
@@ -844,7 +844,7 @@ static int atomisp_release(struct file *file)
 		return -EBADF;
 
 	mutex_lock(&isp->streamoff_mutex);
-	mutex_lock(&isp->mutex);
+	rt_mutex_lock(&isp->mutex);
 
 	pipe->users--;
 
@@ -924,7 +924,7 @@ static int atomisp_release(struct file *file)
 		dev_err(isp->dev, "Failed to power off device\n");
 
 done:
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 	mutex_unlock(&isp->streamoff_mutex);
 
 	return 0;
@@ -1086,7 +1086,7 @@ static int atomisp_mmap(struct file *file, struct vm_area_struct *vma)
 	if (!(vma->vm_flags & VM_SHARED))
 		return -EINVAL;
 
-	mutex_lock(&isp->mutex);
+	rt_mutex_lock(&isp->mutex);
 	new_size = pipe->pix.width * pipe->pix.height * 2;
 
 	/* mmap for ISP offline raw data */
@@ -1132,7 +1132,7 @@ static int atomisp_mmap(struct file *file, struct vm_area_struct *vma)
 #else
 		vma->vm_flags |= VM_RESERVED;
 #endif
-		mutex_unlock(&isp->mutex);
+		rt_mutex_unlock(&isp->mutex);
 		return 0;
 	}
 
@@ -1144,12 +1144,12 @@ static int atomisp_mmap(struct file *file, struct vm_area_struct *vma)
 		ret = -EINVAL;
 		goto error;
 	}
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 
 	return atomisp_videobuf_mmap_mapper(&pipe->capq, vma);
 
 error:
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 
 	return ret;
 }
@@ -1169,12 +1169,12 @@ static unsigned int atomisp_poll(struct file *file,
 	struct atomisp_device *isp = video_get_drvdata(vdev);
 	struct atomisp_video_pipe *pipe = atomisp_to_video_pipe(vdev);
 
-	mutex_lock(&isp->mutex);
+	rt_mutex_lock(&isp->mutex);
 	if (pipe->capq.streaming != 1) {
-		mutex_unlock(&isp->mutex);
+		rt_mutex_unlock(&isp->mutex);
 		return POLLERR;
 	}
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 
 	return videobuf_poll_stream(file, &pipe->capq, pt);
 }

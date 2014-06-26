@@ -4170,7 +4170,7 @@ int atomisp_css_wait_acc_finish(struct atomisp_sub_device *asd)
 	struct atomisp_device *isp = asd->isp;
 
 	/* Unlock the isp mutex taken in IOCTL handler before sleeping! */
-	mutex_unlock(&isp->mutex);
+	rt_mutex_unlock(&isp->mutex);
 	if (wait_for_completion_interruptible_timeout(&isp->acc.acc_done,
 					ATOMISP_ISP_TIMEOUT_DURATION) == 0) {
 		unsigned int old_dbglevel = dbg_level;
@@ -4185,7 +4185,7 @@ int atomisp_css_wait_acc_finish(struct atomisp_sub_device *asd)
 		dbg_level = old_dbglevel;
 		ret = -EIO;
 	}
-	mutex_lock(&isp->mutex);
+	rt_mutex_lock(&isp->mutex);
 
 	return ret;
 }
