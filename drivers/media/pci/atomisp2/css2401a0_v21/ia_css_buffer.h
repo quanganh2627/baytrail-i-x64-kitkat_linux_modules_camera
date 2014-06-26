@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_BUFFER_H
 #define __IA_CSS_BUFFER_H
 
+/** @file
+ * This file contains datastructures and types for buffers used in CSS
+ */
+
 #include <type_support.h>
 #include "ia_css_types.h"
 #include "ia_css_timer.h"

@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_SHADING_H
 #define __IA_CSS_SHADING_H
 
+/** @file
+ * This file contains support for setting the shading table for CSS
+ */
+
 #include <ia_css_types.h>
 
 /** @brief Shading table

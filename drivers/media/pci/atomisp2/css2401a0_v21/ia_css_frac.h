@@ -22,6 +22,10 @@
 #ifndef _IA_CSS_FRAC_H_
 #define _IA_CSS_FRAC_H_
 
+/** @file
+ * This file contains typedefs used for fractional numbers
+ */
+
 #include <type_support.h>
 
 /* Fixed point types.

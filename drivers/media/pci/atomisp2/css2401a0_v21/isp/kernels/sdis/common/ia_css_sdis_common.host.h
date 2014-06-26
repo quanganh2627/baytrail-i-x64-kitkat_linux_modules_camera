@@ -29,9 +29,11 @@
 	__ISP_SDIS_HOR_PROJ_NUM_ISP(ISP_MAX_INTERNAL_WIDTH, ISP_MAX_INTERNAL_HEIGHT, \
 		SH_CSS_DIS_DECI_FACTOR_LOG2, ISP_PIPE_VERSION)
 #define ISP_MAX_SDIS_VER_PROJ_NUM_ISP \
-	__ISP_SDIS_VER_PROJ_NUM_ISP(ISP_MAX_INTERNAL_WIDTH, ISP_MAX_INTERNAL_HEIGHT, \
-		SH_CSS_DIS_DECI_FACTOR_LOG2, ISP_PIPE_VERSION)
+	__ISP_SDIS_VER_PROJ_NUM_ISP(ISP_MAX_INTERNAL_WIDTH, \
+		SH_CSS_DIS_DECI_FACTOR_LOG2)
 
+#define _ISP_SDIS_HOR_COEF_NUM_VECS \
+	__ISP_SDIS_HOR_COEF_NUM_VECS(ISP_INTERNAL_WIDTH)
 #define ISP_MAX_SDIS_HOR_COEF_NUM_VECS \
 	__ISP_SDIS_HOR_COEF_NUM_VECS(ISP_MAX_INTERNAL_WIDTH)
 #define ISP_MAX_SDIS_VER_COEF_NUM_VECS \
@@ -54,15 +56,10 @@
 	isp_pipe_version) \
 	((isp_pipe_version == 1) ? \
 		CEIL_SHIFT(_ISP_BQS(in_height), deci_factor_log2) : \
-		(CEIL_SHIFT(_ISP_BQS(in_width), deci_factor_log2) * \
-		 CEIL_SHIFT(_ISP_BQS(in_height), deci_factor_log2)))
+		CEIL_SHIFT(_ISP_BQS(in_width), deci_factor_log2))
 
-#define __ISP_SDIS_VER_PROJ_NUM_ISP(in_width, in_height, deci_factor_log2, \
-	isp_pipe_version) \
-	((isp_pipe_version == 1) ? \
-		CEIL_SHIFT(_ISP_BQS(in_width), deci_factor_log2) : \
-		(CEIL_SHIFT(_ISP_BQS(in_width), deci_factor_log2) * \
-		 CEIL_SHIFT(_ISP_BQS(in_height), deci_factor_log2)))
+#define __ISP_SDIS_VER_PROJ_NUM_ISP(in_width, deci_factor_log2) \
+	CEIL_SHIFT(_ISP_BQS(in_width), deci_factor_log2)
 
 #define SH_CSS_DIS_VER_NUM_COEF_TYPES(b) \
   (((b)->info->sp.pipeline.isp_pipe_version == 2) ? \

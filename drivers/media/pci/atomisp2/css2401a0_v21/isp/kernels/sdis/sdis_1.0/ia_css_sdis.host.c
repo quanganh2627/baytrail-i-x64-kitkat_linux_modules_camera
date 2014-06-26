@@ -218,9 +218,7 @@ ia_css_sdis_init_info(
 				isp_pipe_version);
 	dis->proj.pad.height =
 			__ISP_SDIS_VER_PROJ_NUM_ISP(sc_3a_dis_padded_width,
-				sc_3a_dis_height,
-				SH_CSS_DIS_DECI_FACTOR_LOG2,
-				isp_pipe_version);
+				SH_CSS_DIS_DECI_FACTOR_LOG2);
 }
 
 void ia_css_sdis_clear_coefficients(

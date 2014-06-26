@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_CONTROL_H
 #define __IA_CSS_CONTROL_H
 
+/** @file
+ * This file contains functionality for starting and controlling CSS
+ */
+
 #include <type_support.h>
 #include <ia_css_env.h>
 #include <ia_css_firmware.h>

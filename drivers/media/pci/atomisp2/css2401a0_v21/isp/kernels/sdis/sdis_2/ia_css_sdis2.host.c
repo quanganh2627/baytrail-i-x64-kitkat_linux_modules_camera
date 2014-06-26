@@ -199,8 +199,9 @@ ia_css_translate_dvs2_statistics(
 	struct ia_css_dvs2_statistics		   *host_stats,
 	const struct ia_css_isp_dvs_statistics_map *isp_stats)
 {
-	unsigned int size, size_bytes;
-	int32_t *temp_ptr;
+	unsigned int size_bytes, table_width, table_size, height;
+	unsigned int src_offset = 0, dst_offset = 0;
+	int32_t *htemp_ptr, *vtemp_ptr;
 
 	assert(host_stats != NULL);
 	assert(host_stats->hor_prod.odd_real  != NULL);
@@ -226,20 +227,40 @@ ia_css_translate_dvs2_statistics(
 		host_stats->ver_prod.even_real, host_stats->ver_prod.even_imag,
 		isp_stats->hor_proj, isp_stats->ver_proj);
 
-	size = host_stats->grid.aligned_width * host_stats->grid.aligned_height;
-	size_bytes = size*sizeof(*temp_ptr);
+	/* Host side: reflecting the true width in bytes */
+	size_bytes = host_stats->grid.aligned_width * sizeof(*htemp_ptr);
 
-	temp_ptr = isp_stats->hor_proj;
-	memcpy(host_stats->hor_prod.odd_real,  &temp_ptr[0*size], size_bytes);
-	memcpy(host_stats->hor_prod.odd_imag,  &temp_ptr[1*size], size_bytes);
-	memcpy(host_stats->hor_prod.even_real, &temp_ptr[2*size], size_bytes);
-	memcpy(host_stats->hor_prod.even_imag, &temp_ptr[3*size], size_bytes);
+	/* DDR side: need to be aligned to the system bus width */
+	/* statistics table width in terms of 32-bit words*/
+	table_width = CEIL_MUL(size_bytes, HIVE_ISP_DDR_WORD_BYTES) / sizeof(*htemp_ptr);
+	table_size = table_width * host_stats->grid.aligned_height;
 
-	temp_ptr = isp_stats->ver_proj;
-	memcpy(host_stats->ver_prod.odd_real,  &temp_ptr[0*size], size_bytes);
-	memcpy(host_stats->ver_prod.odd_imag,  &temp_ptr[1*size], size_bytes);
-	memcpy(host_stats->ver_prod.even_real, &temp_ptr[2*size], size_bytes);
-	memcpy(host_stats->ver_prod.even_imag, &temp_ptr[3*size], size_bytes);
+	htemp_ptr = isp_stats->hor_proj; /* horizontal stats */
+	vtemp_ptr = isp_stats->ver_proj; /* vertical stats */
+	for (height = 0; height < host_stats->grid.aligned_height; height++) {
+		/* hor stats */
+		memcpy(host_stats->hor_prod.odd_real + dst_offset,
+			&htemp_ptr[0*table_size+src_offset], size_bytes);
+		memcpy(host_stats->hor_prod.odd_imag + dst_offset,
+			&htemp_ptr[1*table_size+src_offset], size_bytes);
+		memcpy(host_stats->hor_prod.even_real + dst_offset,
+			&htemp_ptr[2*table_size+src_offset], size_bytes);
+		memcpy(host_stats->hor_prod.even_imag + dst_offset,
+			&htemp_ptr[3*table_size+src_offset], size_bytes);
+
+		/* ver stats */
+		memcpy(host_stats->ver_prod.odd_real + dst_offset,
+			&vtemp_ptr[0*table_size+src_offset], size_bytes);
+		memcpy(host_stats->ver_prod.odd_imag + dst_offset,
+			&vtemp_ptr[1*table_size+src_offset], size_bytes);
+		memcpy(host_stats->ver_prod.even_real + dst_offset,
+			&vtemp_ptr[2*table_size+src_offset], size_bytes);
+		memcpy(host_stats->ver_prod.even_imag + dst_offset,
+			&vtemp_ptr[3*table_size+src_offset], size_bytes);
+
+		src_offset += table_width; /* aligned table width */
+		dst_offset += host_stats->grid.aligned_width;
+	}
 
 	IA_CSS_LEAVE("void");
 }
@@ -262,9 +283,11 @@ ia_css_isp_dvs2_statistics_allocate(
 	if (!me)
 		goto err;
 
-	size = CEIL_MUL(sizeof(int) * IA_CSS_DVS2_NUM_COEF_TYPES *
-				grid->aligned_width * grid->aligned_height,
-			HIVE_ISP_DDR_WORD_BYTES);
+	/* on ISP 2 SDIS DMA model, every row of projection table width must be
+	   aligned to HIVE_ISP_DDR_WORD_BYTES
+	*/
+	size = CEIL_MUL(sizeof(int) * grid->aligned_width, HIVE_ISP_DDR_WORD_BYTES)
+		* grid->aligned_height * IA_CSS_DVS2_NUM_COEF_TYPES;
 
 	me->size = 2*size;
 	me->data_ptr = mmgr_malloc(me->size);

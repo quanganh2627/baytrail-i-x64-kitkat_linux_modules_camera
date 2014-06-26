@@ -22,6 +22,10 @@
 #ifndef _IA_CSS_DEVICE_ACCESS_H_
 #define _IA_CSS_DEVICE_ACCESS_H_
 
+/** @file
+ * File containing internal functions for the CSS-API to access the CSS device.
+ */
+
 #include <type_support.h> /* for uint*, size_t */
 #include <system_types.h> /* for hrt_address */
 #include <ia_css_env.h>   /* for ia_css_hw_access_env */

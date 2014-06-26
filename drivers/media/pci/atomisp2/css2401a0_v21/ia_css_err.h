@@ -22,6 +22,11 @@
 #ifndef __IA_CSS_ERR_H
 #define __IA_CSS_ERR_H
 
+/** @file
+ * This file contains possible return values for most
+ * functions in the CSS-API.
+ */
+
 /** Errors, these values are used as the return value for most
  *  functions in this API.
  */
