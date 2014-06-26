@@ -3791,7 +3791,7 @@ mipi_port_ID_t __get_mipi_port(struct atomisp_device *isp,
 	}
 }
 
-static inline void atomisp_set_sensor_mipi_to_isp(
+static inline int atomisp_set_sensor_mipi_to_isp(
 				struct atomisp_sub_device *asd,
 				enum atomisp_input_stream_id stream_id,
 				struct camera_mipi_info *mipi_info)
@@ -3800,50 +3800,62 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 	struct atomisp_device *isp = asd->isp;
 	const struct atomisp_in_fmt_conv *fc;
 	int mipi_freq = 0;
-	unsigned int input_format;
+	unsigned int input_format, bayer_order;
 
 	ctrl.id = V4L2_CID_LINK_FREQ;
 	if (v4l2_subdev_g_ctrl(isp->inputs[asd->input_curr].camera, &ctrl) == 0)
 		mipi_freq = ctrl.value;
 
+	if (asd->stream_env[stream_id].isys_configs == 1) {
+		input_format =
+			asd->stream_env[stream_id].isys_info[0].input_format;
+		atomisp_css_isys_set_format(asd, stream_id,
+				input_format, IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
+	} else if (asd->stream_env[stream_id].isys_configs == 2) {
+		atomisp_css_isys_two_stream_cfg_update_stream1(
+				asd, stream_id,
+				asd->stream_env[stream_id].isys_info[0].input_format,
+				asd->stream_env[stream_id].isys_info[0].width,
+				asd->stream_env[stream_id].isys_info[0].height);
+
+		atomisp_css_isys_two_stream_cfg_update_stream2(
+				asd, stream_id,
+				asd->stream_env[stream_id].isys_info[1].input_format,
+				asd->stream_env[stream_id].isys_info[1].width,
+				asd->stream_env[stream_id].isys_info[1].height);
+	}
+
 	/* Compatibility for sensors which provide no media bus code
 	 * in s_mbus_framefmt() nor support pad formats. */
 	if (mipi_info->input_format != -1) {
-		input_format = mipi_info->input_format;
-		atomisp_css_input_set_bayer_order(asd, stream_id,
-						mipi_info->raw_bayer_order);
-
-		if (asd->stream_env[stream_id].isys_configs == 1) {
-			input_format =
-			asd->stream_env[stream_id].isys_info[0].input_format;
-			atomisp_css_isys_set_format(asd, stream_id,
-			input_format, IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX);
-		} else if (asd->stream_env[stream_id].isys_configs == 2) {
-			atomisp_css_isys_two_stream_cfg_update_stream1(
-			asd, stream_id,
-			asd->stream_env[stream_id].isys_info[0].input_format,
-			asd->stream_env[stream_id].isys_info[0].width,
-			asd->stream_env[stream_id].isys_info[0].height);
-
-			atomisp_css_isys_two_stream_cfg_update_stream2(
-			asd, stream_id,
-			asd->stream_env[stream_id].isys_info[1].input_format,
-			asd->stream_env[stream_id].isys_info[1].width,
-			asd->stream_env[stream_id].isys_info[1].height);
-		}
+		bayer_order = mipi_info->raw_bayer_order;
 
 		/* Input stream config is still needs configured */
 		/* TODO: Check if this is necessary */
 		fc = atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
 						mipi_info->input_format);
-		BUG_ON(!fc);
+		if (!fc)
+			return -EINVAL;
 		input_format = fc->css_stream_fmt;
-		atomisp_css_input_set_format(asd, stream_id, input_format);
+	} else {
+		struct v4l2_mbus_framefmt *sink;
+		sink = atomisp_subdev_get_ffmt(&asd->subdev, NULL,
+				V4L2_SUBDEV_FORMAT_ACTIVE,
+				ATOMISP_SUBDEV_PAD_SINK);
+		fc = atomisp_find_in_fmt_conv(sink->code);
+		if (!fc)
+			return -EINVAL;
+		input_format = fc->css_stream_fmt;
+		bayer_order = fc->bayer_order;
 	}
+
+	atomisp_css_input_set_format(asd, stream_id, input_format);
+	atomisp_css_input_set_bayer_order(asd, stream_id, bayer_order);
 
 	fc = atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
 					mipi_info->metadata_format);
-	BUG_ON(!fc);
+	if (!fc)
+		return -EINVAL;
 	input_format = fc->css_stream_fmt;
 	atomisp_css_input_configure_port(asd,
 				__get_mipi_port(asd->isp, mipi_info->port),
@@ -3852,6 +3864,7 @@ static inline void atomisp_set_sensor_mipi_to_isp(
 				input_format,
 				mipi_info->metadata_width,
 				mipi_info->metadata_height);
+	return 0;
 }
 
 static int __enable_continuous_mode(struct atomisp_sub_device *asd,
@@ -4006,10 +4019,18 @@ static int atomisp_set_fmt_to_isp(struct video_device *vdev,
 			dev_err(isp->dev, "mipi_info is NULL\n");
 			return -EINVAL;
 		}
-		atomisp_set_sensor_mipi_to_isp(asd, stream_index, mipi_info);
+		if (atomisp_set_sensor_mipi_to_isp(asd, stream_index,
+					mipi_info))
+			return -EINVAL;
 		fc = atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
 				mipi_info->input_format);
-		BUG_ON(!fc);
+		if (!fc)
+			fc = atomisp_find_in_fmt_conv(
+					atomisp_subdev_get_ffmt(&asd->subdev,
+					NULL, V4L2_SUBDEV_FORMAT_ACTIVE,
+					ATOMISP_SUBDEV_PAD_SINK)->code);
+		if (!fc)
+			return -EINVAL;
 		if (format->sh_fmt == CSS_FRAME_FORMAT_RAW &&
 		     raw_output_format_match_input(fc->css_stream_fmt,
 			pix->pixelformat))
