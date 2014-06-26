@@ -908,9 +908,7 @@ static int pixter_probe(struct i2c_client *client,
 
 	/* Find settings that match the current device. */
 	for (i = 0, j = 0; i < dev->setting_num; i++) {
-		if (caps->sensor[0].stream_num == settings[i].valid_vc_num &&
-		   (dev->mipi_info->input_format == format_bridge[
-		   settings[i].vc[settings[i].def_vc].format].atomisp_format))
+		if (caps->sensor[0].stream_num == settings[i].valid_vc_num)
 			settings[j++] = settings[i];
 	}
 	dev->setting_num = j;
