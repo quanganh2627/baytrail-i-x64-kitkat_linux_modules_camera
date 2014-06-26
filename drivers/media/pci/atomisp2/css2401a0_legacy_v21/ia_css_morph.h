@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_MORPH_H
 #define __IA_CSS_MORPH_H
 
+/** @file
+ * This file contains supporting for morphing table
+ */
+
 #include <ia_css_types.h>
 
 /** @brief Morphing table

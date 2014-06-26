@@ -91,6 +91,7 @@ typedef struct s_isp_addresses {
     unsigned                        ISP_DMEM *vertical_upsampled;
     struct sh_css_ddr_address_map   ISP_DMEM *xmem_base;
     struct ia_css_isp_3a_statistics ISP_DMEM *s3a_data;
+    struct ia_css_isp_dvs_statistics ISP_DMEM *sdis_data;
     sh_dma_cmd*                     ISP_DMEM *sh_dma_cmd_ptr;
     unsigned                        ISP_DMEM *g_isp_do_zoom;
     struct isp_uds_config           ISP_DMEM *uds_config;
@@ -161,6 +162,7 @@ extern unsigned isp_online;
 
 extern struct sh_css_ddr_address_map xmem_base;
 extern struct ia_css_isp_3a_statistics s3a_data;
+extern struct ia_css_isp_dvs_statistics sdis_data;
 extern struct s_isp_frames isp_frames;
 extern struct isp_uds_config uds_config;
 

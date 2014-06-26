@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_MIPI_H
 #define __IA_CSS_MIPI_H
 
+/** @file
+ * This file contains MIPI support functionality
+ */
+
 #include <type_support.h>
 #include "ia_css_err.h"
 #include "ia_css_stream_format.h"

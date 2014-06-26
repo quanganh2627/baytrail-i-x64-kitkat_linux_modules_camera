@@ -193,6 +193,8 @@
 #define SH_CSS_BINARY_ID_IF_TO_SHD_STRIPED                  243
 #define SH_CSS_BINARY_ID_IF_TO_LIN_STRIPED                  244
 #define SH_CSS_BINARY_ID_IF_TO_OB_STRIPED                   245
+#define SH_CSS_BINARY_ID_IF_TO_TNR_NO_DVS_STATS             246
+#define SH_CSS_BINARY_ID_IF_TO_TNR_NO_DVS_STATS_HR          247
 
 #define XMEM_WIDTH_BITS              HIVE_ISP_DDR_WORD_BITS
 #define XMEM_SHORTS_PER_WORD         (HIVE_ISP_DDR_WORD_BITS/16)

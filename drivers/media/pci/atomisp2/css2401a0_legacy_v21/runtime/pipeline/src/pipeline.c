@@ -118,7 +118,7 @@ void ia_css_pipeline_destroy(struct ia_css_pipeline *pipeline)
 	ia_css_pipeline_clean(pipeline);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_pipeline_destroy() exit:");
+		"ia_css_pipeline_destroy() exit:\n");
 }
 
 /* Run a pipeline and wait till it completes. */
@@ -308,7 +308,7 @@ enum ia_css_err ia_css_pipeline_create_and_add_stage(
 		*stage = new_stage;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		      "ia_css_pipeline_create_and_add_stage() done:");
+		      "ia_css_pipeline_create_and_add_stage() done:\n");
 	return IA_CSS_SUCCESS;
 }
 

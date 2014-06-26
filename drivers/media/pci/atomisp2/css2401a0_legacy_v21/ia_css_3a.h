@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_3A_H
 #define __IA_CSS_3A_H
 
+/** @file
+ * This file contains types used for 3A statistics
+ */
+
 #include <type_support.h>
 #include "ia_css_types.h"
 #include "ia_css_err.h"

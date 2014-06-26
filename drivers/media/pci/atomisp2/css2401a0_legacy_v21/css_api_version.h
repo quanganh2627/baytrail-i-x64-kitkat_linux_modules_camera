@@ -19,19 +19,21 @@
  *
  */
 
-/* CSS API version file */
-
 #ifndef __CSS_API_VERSION_H
 #define __CSS_API_VERSION_H
 
-/*
+/** @file
+ * CSS API version file. This file contains the version number of the CSS-API
+ */
+
+/**
 The last two digits of the CSS_API_VERSION_STRING give the major and minor
 versions of the CSS-API. The minor version number will be increased by one when
 a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatible
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.2.11"
+#define CSS_API_VERSION_STRING	"2.1.2.12"
 
 /*
 Change log
@@ -101,6 +103,9 @@ v2.1.2.10
 v2.1.2.11 MIPI buffers optimization
  - modified struct ia_css_mipi_buffer_config, added number of MIPI buffers needed for the stream
  - backwards compatible, need another patch to remove legacy function and code
+
+v2.1.2.12
+- create consolidated  firmware package for 2400, 2401, csi2p, bxtpoc
 */
 
 #endif /*__CSS_API_VERSION_H*/

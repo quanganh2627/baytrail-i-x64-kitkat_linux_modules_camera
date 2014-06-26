@@ -951,6 +951,21 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 		need_dvs = dvs_env.width || dvs_env.height;
 	}
 
+	/* print a map of the binary file */
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,	"BINARY INFO:\n");
+	for (i = 0; i < IA_CSS_BINARY_NUM_MODES; i++) {
+		xcandidate = binary_infos[i];
+		if (xcandidate) {
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,	"%d:\n", i);
+			while (xcandidate) {
+				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, " Name:%s Type:%d Cont:%d\n",
+						xcandidate->blob->name, xcandidate->type,
+						xcandidate->sp.enable.continuous);
+				xcandidate = xcandidate->next;
+			}
+		}
+	}
+
 	/* printf("sh_css_binary_find: pipe version %d\n", isp_pipe_version); */
 	for (xcandidate = binary_infos[mode]; xcandidate;
 	     xcandidate = xcandidate->next) {

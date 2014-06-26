@@ -27,6 +27,11 @@
 #include "ia_css_types.h"
 #include "ia_css_acc_types.h"
 
+/** @file
+ * This file contains prototypes for functions that need to be provided to the
+ * CSS-API host-code by the environment in which the CSS-API code runs.
+ */
+
 /** Memory allocation attributes, for use in ia_css_css_mem_env. */
 enum ia_css_mem_attr {
 	IA_CSS_MEM_ATTR_CACHED = 1 << 0,

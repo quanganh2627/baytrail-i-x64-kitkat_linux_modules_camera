@@ -99,7 +99,7 @@
 #define SH_CSS_BINARY_ID_VIDEO_CONT_NOBDS_ISP2_MIN    42
 #define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2_MIN      43
 #define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2          44
-#define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2_ROTATED  45
+#define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2_ROTATED  45 // iwwu: Will clean up this binary later
 #define SH_CSS_BINARY_ID_RESERVED1              46
 #define SH_CSS_BINARY_ID_ACCELERATION           47
 #define SH_CSS_BINARY_ID_PRE_DE_ISP2            48
@@ -182,6 +182,9 @@
 #define SH_CSS_BINARY_ID_IF_TO_YUVP2_NO_DPC_OB              233
 #define SH_CSS_BINARY_ID_IF_TO_BDS_RGBP_DVS_STATS_STRIPED   234
 #define SH_CSS_BINARY_ID_VIDEO_KERNELTEST_INPUT_YUV         235
+#define SH_CSS_BINARY_ID_IF_TO_TNR_NO_DVS_STATS             236
+#define SH_CSS_BINARY_ID_IF_TO_TNR_NO_DVS_STATS_HR          237
+
 
 #define XMEM_WIDTH_BITS              HIVE_ISP_DDR_WORD_BITS
 #define XMEM_SHORTS_PER_WORD         (HIVE_ISP_DDR_WORD_BITS/16)
@@ -208,9 +211,9 @@
  * ****************************/
 /* input image */
 #define INPUT_BUF_DMA_HEIGHT          2
-#define INPUT_BUF_HEIGHT              2 /* double buffer */
+#define INPUT_BUF_HEIGHT              2 /* double buffer */
 #define OUTPUT_BUF_DMA_HEIGHT         2
-#define OUTPUT_BUF_HEIGHT             2 /* double buffer */
+#define OUTPUT_BUF_HEIGHT             2 /* double buffer */
 #define OUTPUT_NUM_TRANSFERS	      4
 
 /* GDC accelerator: Up/Down Scaling */

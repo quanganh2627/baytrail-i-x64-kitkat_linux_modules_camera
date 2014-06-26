@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140623_1500 */
+/* Release Version: irci_master_20140625_0200 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,10 +20,13 @@
  *
  */
 
-/*! \file */
-
 #ifndef _IA_CSS_H_
 #define _IA_CSS_H_
+
+/** @file
+ * This file is the starting point of the CSS-API. It includes all CSS-API
+ * header files.
+ */
 
 #include "ia_css_3a.h"
 #include "ia_css_acc_types.h"

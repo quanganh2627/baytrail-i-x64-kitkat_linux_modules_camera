@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140623_1500 */
+/* Release Version: irci_master_20140625_0200 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -23,9 +23,7 @@
 #ifndef _IA_CSS_TYPES_H_
 #define _IA_CSS_TYPES_H_
 
-/*! \file */
-
-/** @file ia_css_types.h
+/** @file
  * This file contains types used for the ia_css parameters.
  * These types are in a separate file because they are expected
  * to be used in software layers that do not access the CSS API

@@ -22,9 +22,7 @@
 #ifndef _IA_CSS_ACC_TYPES_H_
 #define _IA_CSS_ACC_TYPES_H_
 
-/*! \file */
-
-/** @file ia_css_acc_types.h
+/** @file
  * This file contains types used for acceleration
  */
 

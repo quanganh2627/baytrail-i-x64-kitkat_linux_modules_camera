@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_VERSION_H
 #define __IA_CSS_VERSION_H
 
+/** @file
+ * This file contains functions to retrieve CSS-API version information
+ */
+
 #include <ia_css_err.h>
 
 /* a common size for the version arrays */

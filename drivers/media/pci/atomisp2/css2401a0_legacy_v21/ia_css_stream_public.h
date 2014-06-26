@@ -22,6 +22,10 @@
 #ifndef __IA_CCS_STREAM_PUBLIC_H
 #define __IA_CCS_STREAM_PUBLIC_H
 
+/** @file
+ * This file contains support for configuring and controlling streams
+ */
+
 #include <type_support.h>
 #include "ia_css_types.h"
 #include "ia_css_pipe_public.h"

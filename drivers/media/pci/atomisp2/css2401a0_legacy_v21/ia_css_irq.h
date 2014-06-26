@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_IRQ_H
 #define __IA_CSS_IRQ_H
 
+/** @file
+ * This file contains information for Interrupts/IRQs from CSS
+ */
+
 #include "ia_css_err.h"
 #include "ia_css_pipe_public.h"
 
