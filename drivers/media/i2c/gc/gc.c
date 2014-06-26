@@ -1551,6 +1551,7 @@ static int gc_s_config(struct v4l2_subdev *sd, int irq, void *pdata)
 
 	if (dev->product_info->sensor_id != sensor_id) {
 		v4l2_err(client, "sensor id didn't match expected\n");
+		ret = -ENODEV;
 		goto fail_detect;
 	}
 
