@@ -44,6 +44,11 @@
 #include <media/v4l2-device.h>
 #include "m10mo.h"
 
+/* cross component debug message flag */
+int dbglvl = 0;
+module_param(dbglvl, int, 0644);
+MODULE_PARM_DESC(dbglvl, "debug message on/off (default:off)");
+
 static const uint32_t m10mo_md_effective_size[] = {
 	M10MO_METADATA_WIDTH,
 	M10MO_METADATA_WIDTH,
@@ -2395,6 +2400,13 @@ static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 	}
 out:
 	mutex_unlock(&dev->input_lock);
+
+	/*
+	 * Dump M10MO log when stream-off with checking folder
+	 */
+	if (!enable)
+		m10mo_dump_log(sd);
+
 	return ret;
 }
 
@@ -3492,6 +3504,26 @@ static int m10mo_ispd4(struct m10mo_device *dev)
 	dev_info(&client->dev, "ispd4 finished\n");
 	mutex_unlock(&dev->input_lock);
 	return ret;
+}
+
+void m10mo_dump_log(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *m10mo_dev = to_m10mo_sensor(sd);
+
+	/*
+	 * dbglvl: bit0 to dump m10mo_ispd1
+	 * dbglvl: bit1 to dump m10mo_ispd2
+	 * dbglvl: bit2 to dump m10mo_ispd4
+	 * Debug log 3 is most important, so dump first
+	 */
+	if (dbglvl & 4)
+		m10mo_ispd4(m10mo_dev);
+
+	if (dbglvl & 2)
+		m10mo_ispd2(m10mo_dev);
+
+	if (dbglvl & 1)
+		m10mo_ispd1(m10mo_dev);
 }
 
 static ssize_t m10mo_isp_log_store(struct device *dev,

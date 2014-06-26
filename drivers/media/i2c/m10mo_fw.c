@@ -36,14 +36,17 @@
  * Currently the FW image and dump paths are hardcoded here.
  * TBD: flexible interface for defining proper path as needed
  */
-#define M10MO_FW_DUMP_PATH "/data/M10MO_dump.bin"
-#define M10MO_FW_LOG1_PATH "/data/M10MO_log1.bin"
-#define M10MO_FW_LOG2_1_PATH "/data/M10MO_log2_1.bin"
-#define M10MO_FW_LOG2_2_PATH "/data/M10MO_log2_2.bin"
-#define M10MO_FW_LOG2_3_PATH "/data/M10MO_log2_3.bin"
-#define M10MO_FW_LOG3_PATH "/data/M10MO_log3.bin"
+#define M10MO_FW_LOG1_NAME      "/data/M10MO_log1"
+#define M10MO_FW_LOG2_1_NAME    "/data/M10MO_log2_1"
+#define M10MO_FW_LOG2_2_NAME    "/data/M10MO_log2_2"
+#define M10MO_FW_LOG2_3_NAME    "/data/M10MO_log2_3"
+#define M10MO_FW_LOG3_NAME      "/data/M10MO_log3"
 
-#define M10MO_FW_NAME "M10MO_fw.bin"
+#define M10MO_FW_LOG_SUFFIX     ".bin"
+#define M10MO_FW_LOG_MAX_NAME_LEN (128)
+
+#define M10MO_FW_DUMP_PATH      "/data/M10MO_dump.bin"
+#define M10MO_FW_NAME           "M10MO_fw.bin"
 
 #define SRAM_BUFFER_ADDRESS 0x01100000
 #define SDRAM_BUFFER_ADDRESS 0x20000000
@@ -347,6 +350,14 @@ out_file:
 	return err;
 }
 
+static void m10mo_gen_log_name(char *name, char *prefix)
+{
+	static long long time;
+
+	time = ktime_to_ms(ktime_get());
+	snprintf(name, M10MO_FW_LOG_MAX_NAME_LEN, "%s_%lld%s", prefix, time, M10MO_FW_LOG_SUFFIX);
+}
+
 int m10mo_dump_string_log3(struct v4l2_subdev *sd)
 {
 	u32 addr;
@@ -359,10 +370,13 @@ int m10mo_dump_string_log3(struct v4l2_subdev *sd)
 	u32 ptr = 0;
 	char *buf = NULL;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	char filename[M10MO_FW_LOG_MAX_NAME_LEN] = {0};
+
+	m10mo_gen_log_name(filename, M10MO_FW_LOG3_NAME);
 
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
-	fp = filp_open(M10MO_FW_LOG3_PATH,
+	fp = filp_open(filename,
 			O_WRONLY|O_CREAT|O_TRUNC, S_IRUGO|S_IWUGO|S_IXUSR);
 	if (IS_ERR(fp)) {
 		dev_err(&client->dev,
@@ -456,10 +470,13 @@ int m10mo_dump_string_log2_3(struct v4l2_subdev *sd)
 	u32 ptr = 0;
 	char *buf = NULL;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	char filename[M10MO_FW_LOG_MAX_NAME_LEN] = {0};
+
+	m10mo_gen_log_name(filename, M10MO_FW_LOG2_3_NAME);
 
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
-	fp = filp_open(M10MO_FW_LOG2_3_PATH,
+	fp = filp_open(filename,
 			O_WRONLY|O_CREAT|O_TRUNC, S_IRUGO|S_IWUGO|S_IXUSR);
 	if (IS_ERR(fp)) {
 		dev_err(&client->dev,
@@ -554,10 +571,13 @@ int m10mo_dump_string_log2_2(struct v4l2_subdev *sd)
 	u32 ptr = 0;
 	char *buf = NULL;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	char filename[M10MO_FW_LOG_MAX_NAME_LEN] = {0};
+
+	m10mo_gen_log_name(filename, M10MO_FW_LOG2_2_NAME);
 
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
-	fp = filp_open(M10MO_FW_LOG2_2_PATH,
+	fp = filp_open(filename,
 			O_WRONLY|O_CREAT|O_TRUNC, S_IRUGO|S_IWUGO|S_IXUSR);
 	if (IS_ERR(fp)) {
 		dev_err(&client->dev,
@@ -651,10 +671,13 @@ int m10mo_dump_string_log2_1(struct v4l2_subdev *sd)
 	u32 ptr = 0;
 	char *buf = NULL;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	char filename[M10MO_FW_LOG_MAX_NAME_LEN] = {0};
+
+	m10mo_gen_log_name(filename, M10MO_FW_LOG2_1_NAME);
 
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
-	fp = filp_open(M10MO_FW_LOG2_1_PATH,
+	fp = filp_open(filename,
 			O_WRONLY|O_CREAT|O_TRUNC, S_IRUGO|S_IWUGO|S_IXUSR);
 	if (IS_ERR(fp)) {
 		dev_err(&client->dev,
@@ -756,10 +779,13 @@ int m10mo_dump_string_log1(struct v4l2_subdev *sd)
 	u32 ptr = 0;
 	char *buf = NULL;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	char filename[M10MO_FW_LOG_MAX_NAME_LEN] = {0};
+
+	m10mo_gen_log_name(filename, M10MO_FW_LOG1_NAME);
 
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
-	fp = filp_open(M10MO_FW_LOG1_PATH,
+	fp = filp_open(filename,
 			O_WRONLY|O_CREAT|O_TRUNC, S_IRUGO|S_IWUGO|S_IXUSR);
 	if (IS_ERR(fp)) {
 		dev_err(&client->dev,

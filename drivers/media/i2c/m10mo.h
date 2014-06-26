@@ -251,6 +251,7 @@ int m10mo_dump_string_log2_1(struct v4l2_subdev *sd);
 int m10mo_dump_string_log2_2(struct v4l2_subdev *sd);
 int m10mo_dump_string_log2_3(struct v4l2_subdev *sd);
 int m10mo_dump_string_log3(struct v4l2_subdev *sd);
+void m10mo_dump_log(struct v4l2_subdev *sd);
 
 /* Below contents are based on the M10MO_categoryParameter-a1.xls */
 
