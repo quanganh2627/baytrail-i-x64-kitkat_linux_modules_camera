@@ -608,12 +608,13 @@ static int ov5693_g_ctrl(struct v4l2_ctrl *ctrl)
 
 static int ov5693_s_ctrl(struct v4l2_ctrl *ctrl)
 {
-	struct ov5693_device *dev = container_of(
-		ctrl->handler, struct ov5693_device, ctrl_handler);
+	struct ov5693_device *dev = NULL;
 	int ret = 0;
 
 	if (!ctrl)
 		return -EINVAL;
+	dev = container_of(
+		ctrl->handler, struct ov5693_device, ctrl_handler);
 
 	switch (ctrl->id) {
 	case V4L2_CID_RUN_MODE:

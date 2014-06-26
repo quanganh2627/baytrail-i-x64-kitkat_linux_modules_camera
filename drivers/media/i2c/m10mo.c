@@ -3108,10 +3108,14 @@ static int __m10mo_init_ctrl_handler(struct m10mo_device *dev)
 	v4l2_ctrl_handler_setup(hdl);
 
 	dev->link_freq = v4l2_ctrl_find(&dev->ctrl_handler, V4L2_CID_LINK_FREQ);
+	if (NULL == dev->link_freq)
+		return -ENODEV;
 	v4l2_ctrl_s_ctrl(dev->link_freq, V4L2_CID_LINK_FREQ);
 
 	dev->zsl_capture = v4l2_ctrl_find(&dev->ctrl_handler,
 					V4L2_CID_START_ZSL_CAPTURE);
+	if (NULL == dev->zsl_capture)
+		return -ENODEV;
 	v4l2_ctrl_s_ctrl(dev->zsl_capture, V4L2_CID_START_ZSL_CAPTURE);
 
 	dev->colorfx = v4l2_ctrl_find(&dev->ctrl_handler,

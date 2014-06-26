@@ -628,6 +628,11 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 				.camera_caps->sensor_num;
 			isp->input_cnt++;
 			for (i = 1; i < sensor_num; i++) {
+				if (isp->input_cnt >= ATOM_ISP_MAX_INPUTS) {
+					dev_warn(isp->dev,
+						"atomisp inputs out of range\n");
+					break;
+				}
 				isp->inputs[isp->input_cnt] =
 					isp->inputs[isp->input_cnt - 1];
 				isp->inputs[isp->input_cnt].sensor_index = i;
