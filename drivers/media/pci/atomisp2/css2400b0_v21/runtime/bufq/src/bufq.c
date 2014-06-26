@@ -417,6 +417,9 @@ enum ia_css_err ia_css_bufq_enqueue_event(
 	int error = 0;
 	ia_css_queue_t *q;
 
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"ia_css_bufq_enqueue_event() enter\n");
+
 	q = bufq_get_qhandle(sh_css_host2sp_event_queue, -1, -1);
 	if (NULL == q) {
 		/* Error as the queue is not initialized */

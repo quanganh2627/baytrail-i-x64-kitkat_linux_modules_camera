@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_FIRMWARE_H
 #define __IA_CSS_FIRMWARE_H
 
+/** @file
+ * This file contains firmware loading/unloading support functionality
+ */
+
 #include "ia_css_err.h"
 #include "ia_css_env.h"
 

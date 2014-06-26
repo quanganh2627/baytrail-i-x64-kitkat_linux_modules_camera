@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_LACE_STAT_H
 #define __IA_CSS_LACE_STAT_H
 
+/** @file
+ * This file contains types used for LACE statistics
+ */
+
 #if defined(IS_ISP_2500_SYSTEM)
 #include <components/acc_cluster/acc_lace_stat/lace_stat_public.h>
 #endif

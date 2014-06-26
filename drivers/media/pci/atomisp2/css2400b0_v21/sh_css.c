@@ -1956,6 +1956,14 @@ map_sp_threads(struct ia_css_stream *stream, bool map)
 	if(copy_pipe) {
 		ia_css_pipeline_map(copy_pipe->pipe_num, map);
 	}
+	/* DH regular multi pipe - not continuous mode: map the next pipes too */
+	if ((!stream->cont_capt) &&
+		((pipe_id == IA_CSS_PIPE_ID_VIDEO) || (pipe_id == IA_CSS_PIPE_ID_VIDEO)) &&
+		(stream->num_pipes > 1) && (!copy_pipe) && (!capture_pipe)) {
+			int i;
+			for (i = 1; i < stream->num_pipes; i++)
+				ia_css_pipeline_map(stream->pipes[i]->pipe_num, map);
+	}
 
 	return err;
 }
@@ -2029,6 +2037,20 @@ create_host_pipeline_structure(struct ia_css_stream *stream)
 								capture_pipe->mode,
 								capture_pipe->pipe_num,
 								capture_pipe_delay);
+	}
+
+	/* DH regular multi pipe - not continuous mode: create the next pipelines too */
+	if ((!stream->cont_capt) &&
+		((pipe_id == IA_CSS_PIPE_ID_VIDEO) || (pipe_id == IA_CSS_PIPE_ID_VIDEO)) &&
+		(stream->num_pipes > 1) && (!copy_pipe) && (!capture_pipe)) {
+			int i;
+			for (i = 1; i < stream->num_pipes; i++) {
+				main_pipe = stream->pipes[i];
+				err = ia_css_pipeline_create(&main_pipe->pipeline,
+										main_pipe->mode,
+										main_pipe->pipe_num,
+										main_pipe->dvs_frame_delay);
+			}
 	}
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
@@ -2140,6 +2162,18 @@ create_host_pipeline(struct ia_css_stream *stream)
 		err = create_host_capture_pipeline(capture_pipe);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
+	}
+
+	/* DH regular multi pipe - not continuous mode: create the next pipelines too */
+	if ((!stream->cont_capt) &&
+		((pipe_id == IA_CSS_PIPE_ID_VIDEO) || (pipe_id == IA_CSS_PIPE_ID_VIDEO)) &&
+		(stream->num_pipes > 1) && (!copy_pipe) && (!capture_pipe)) {
+			int i;
+			for (i = 1; i < stream->num_pipes; i++) {
+				err = create_host_video_pipeline(stream->pipes[i]);
+				if (err != IA_CSS_SUCCESS)
+					goto ERR;
+		 }
 	}
 
 ERR:
@@ -4756,9 +4790,25 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 	switch (pipe_id) {
 	case IA_CSS_PIPE_ID_PREVIEW:
 		err = preview_start(pipe);
+		/* DH regular multi pipe - not continuous mode: start the next pipes too */
+		if ((err == IA_CSS_SUCCESS) && (!stream->cont_capt) && (stream->num_pipes > 1)) {
+			int i;
+			for (i = 1; i < stream->num_pipes; i++) {
+				stream->pipes[i]->stop_requested = false;
+				err = preview_start(stream->pipes[i]);
+			}
+		}
 		break;
 	case IA_CSS_PIPE_ID_VIDEO:
 		err = video_start(pipe);
+		/* DH regular muti pipe - not continuous mode: start the next pipes too */
+		if ((err == IA_CSS_SUCCESS) && (!stream->cont_capt) && (stream->num_pipes > 1)) {
+			int i;
+			for (i = 1; i < stream->num_pipes; i++) {
+				stream->pipes[i]->stop_requested = false;
+				err = video_start(stream->pipes[i]);
+			}
+		}
 		break;
 	case IA_CSS_PIPE_ID_CAPTURE:
 		err = capture_start(pipe);
@@ -4803,6 +4853,18 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
 	ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0, 0);
+
+	/* DH regular multi pipe - not continuous mode: enqueue event to the next pipes too */
+	if (((pipe_id == IA_CSS_PIPE_ID_VIDEO) || (pipe_id == IA_CSS_PIPE_ID_VIDEO)) &&
+		(stream->num_pipes > 1) && (!stream->cont_capt)) {
+			int i;
+			for (i = 1; i < stream->num_pipes; i++) {
+				ia_css_pipeline_get_sp_thread_id(
+								ia_css_pipe_get_pipe_num(stream->pipes[i]),
+								&thread_id);
+				ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0, 0);
+			}
+	}
 
 	/* in case of continuous capture mode, we also start capture thread and copy thread*/
 	if (pipe->stream->config.continuous) {

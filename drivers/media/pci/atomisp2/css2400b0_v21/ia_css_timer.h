@@ -22,7 +22,7 @@
 #ifndef __IA_CSS_TIMER_H__
 #define __IA_CSS_TIMER_H__
 
-/*
+/** @file
  * Timer interface definitions
  */
 

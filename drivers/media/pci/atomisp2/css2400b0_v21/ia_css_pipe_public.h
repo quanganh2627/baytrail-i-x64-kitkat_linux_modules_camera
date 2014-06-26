@@ -22,6 +22,10 @@
 #ifndef __IA_CCS_PIPE_PUBLIC_H
 #define __IA_CCS_PIPE_PUBLIC_H
 
+/** @file
+ * This file contains the public interface for CSS pipes.
+ */
+
 #include <type_support.h>
 #include <ia_css_err.h>
 #include <ia_css_types.h>

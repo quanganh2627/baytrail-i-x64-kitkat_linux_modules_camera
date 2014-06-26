@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_PROPERTIES_H
 #define __IA_CSS_PROPERTIES_H
 
+/** @file
+ * This file contains support for retrieving properties of some hardware the CSS system
+ */
+
 #include <type_support.h> /* bool */
 #include <ia_css_types.h> /* ia_css_vamem_type */
 

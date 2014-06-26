@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_STREAM_FORMAT_H
 #define __IA_CSS_STREAM_FORMAT_H
 
+/** @file
+ * This file contains formats usable for ISP streaming input
+ */
+
 #include <type_support.h> /* bool */
 
 /** The ISP streaming input interface supports the following formats.

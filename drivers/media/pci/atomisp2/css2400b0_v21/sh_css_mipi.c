@@ -392,12 +392,11 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 #endif
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2)
-	assert(ref_count_mipi_allocation[port] == 0);
 	if (ref_count_mipi_allocation[port] != 0) {
 		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"allocate_mipi_frames(%p) exit: error: already allocated for this port (port=%d).\n",
+			"allocate_mipi_frames(%p) exit: already allocated for this port (port=%d).\n",
 			pipe, port);
-		return IA_CSS_ERR_INTERNAL_ERROR;
+		return IA_CSS_SUCCESS;
 	}
 #else
 	/* 2401 system allows multiple streams to use same physical port. This is not

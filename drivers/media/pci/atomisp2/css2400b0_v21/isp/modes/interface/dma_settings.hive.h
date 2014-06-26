@@ -155,6 +155,29 @@
 #define DMA_S3ATBL_ELEMS_B              XMEM_SHORTS_PER_WORD    /* 16 bit elements */
 #define DMA_S3ATBL_CROPPING_B	        0
 
+/* ******************************************************************
+ * parameters for SDIS projection communication 	(isp dmem -> ddr)
+ * 		isp dmem -> ddr
+ *		1value : unsigned 32bit
+ *		transfer unit : unsigned 16bit because 32bit elements are not supported inside the CSS.
+ * ****************************************************************** */
+
+/* isp side: each word is 32 bits */
+#define SDISPROJ_WIDTH_SHORTS  (sizeof(int) * _ISP_SDIS_HOR_COEF_NUM_VECS / sizeof(short))
+#define DMA_SDISPROJ_BLOCK_HEIGHT	1 /* 1 line to write for each DMA trasaction */
+#define DMA_SDISPROJ_BLOCK_WIDTH_A	CEIL_DIV(SDISPROJ_WIDTH_SHORTS, DMA_SDISPROJ_ELEMS_A)
+#define DMA_SDISPROJ_STRIDE_A		1
+#define DMA_SDISPROJ_ELEMS_A		2 /* 1 proj entry (32bit) = 2 elements (16 bit each) */
+#define DMA_SDISPROJ_CROPPING_A		0
+
+/* ddr side: each word is 256 bits */
+#define ISP_SDISPROJ_WIDTH_STRIPE_B \
+	CEIL_DIV(DMA_SDISPROJ_BLOCK_WIDTH_A * DMA_SDISPROJ_ELEMS_A, DMA_SDISPROJ_ELEMS_B)
+#define DMA_SDISPROJ_BLOCK_WIDTH_B	ISP_SDISPROJ_WIDTH_STRIPE_B
+#define DMA_SDISPROJ_STRIDE_B		1
+#define DMA_SDISPROJ_ELEMS_B		XMEM_SHORTS_PER_WORD /* 16 bit elements */
+#define DMA_SDISPROJ_CROPPING_B		0
+
 /* ******************************************************
  * parameters for crop communication
  * ******************************************************/

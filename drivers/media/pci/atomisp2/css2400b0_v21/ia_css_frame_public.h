@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_FRAME_PUBLIC_H
 #define __IA_CSS_FRAME_PUBLIC_H
 
+/** @file
+ * This file contains structs to describe various frame-formats supported by the ISP.
+ */
+
 #include <type_support.h>
 #include "ia_css_err.h"
 #include "ia_css_types.h"
