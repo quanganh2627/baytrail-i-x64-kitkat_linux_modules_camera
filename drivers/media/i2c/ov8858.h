@@ -29,7 +29,7 @@
 /*
  * This should be added into include/linux/videodev2.h
  * NOTE: This is most likely not used anywhere.
- * */
+ */
 #define V4L2_IDENT_OV8858	V4L2_IDENT_UNKNOWN
 
 /*
@@ -38,9 +38,22 @@
 #define OV8858_ID_DEFAULT	0
 #define OV8858_SUNNY		1
 
+#define OV8858_OTP_START_ADDR	0x7010
+#define OV8858_OTP_END_ADDR	0x7186
+
 /*
  * ov8858 System control registers
  */
+
+#define OV8858_OTP_LOAD_CTRL		0x3D81
+#define OV8858_OTP_MODE_CTRL		0x3D84
+#define OV8858_OTP_START_ADDR_REG	0x3D88
+#define OV8858_OTP_END_ADDR_REG		0x3D8A
+
+#define OV8858_OTP_MODE_MANUAL		BIT(0)
+#define OV8858_OTP_MODE_PROGRAM_DISABLE	BIT(7)
+#define OV8858_OTP_LOAD_ENABLE		BIT(0)
+
 #define OV8858_PLL1_PREDIV0		0x030A
 #define OV8858_PLL1_PREDIV		0x0300
 #define OV8858_PLL1_MULTIPLIER		0x0301
@@ -234,6 +247,8 @@ struct ov8858_device {
 	u16 pixels_per_line;
 	u16 lines_per_frame;
 	u8 fps;
+	u8 *otp_data;
+
 	const struct ov8858_reg *regs;
 	struct ov8858_vcm *vcm_driver;
 	const struct ov8858_resolution *curr_res_table;

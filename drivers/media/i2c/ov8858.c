@@ -25,42 +25,35 @@
 #include <media/v4l2-device.h>
 #include "ov8858.h"
 
-static int ov8858_read_reg(struct i2c_client *client, u16 len, u16 reg,
-			   u16 *val)
+static int ov8858_i2c_read(struct i2c_client *client, u16 len, u16 addr,
+			   u8 *buf)
 {
 	struct i2c_msg msg[2];
-	u16 data[OV8858_SHORT_MAX];
+	u8 address[2];
 	int err;
-
-	dev_dbg(&client->dev, "%s: len = %d, reg = 0x%04x\n",
-		__func__, len, reg);
 
 	if (!client->adapter) {
 		dev_err(&client->dev, "%s error, no adapter\n", __func__);
 		return -ENODEV;
 	}
 
-	/* read only 8 and 16 bit values */
-	if (len < OV8858_8BIT || len > OV8858_16BIT) {
-		dev_err(&client->dev, "%s error, invalid data length\n",
-			__func__);
-		return -EINVAL;
-	}
+	dev_dbg(&client->dev, "%s: len = %d, addr = 0x%04x\n",
+		__func__, len, addr);
 
 	memset(msg, 0, sizeof(msg));
-	memset(data, 0, sizeof(data));
+
+	address[0] = (addr >> 8) & 0xff;
+	address[1] = addr & 0xff;
 
 	msg[0].addr = client->addr;
 	msg[0].flags = 0;
 	msg[0].len = I2C_MSG_LENGTH;
-	msg[0].buf = (u8 *)data;
-	/* high byte goes first */
-	data[0] = cpu_to_be16(reg);
+	msg[0].buf = address;
 
 	msg[1].addr = client->addr;
 	msg[1].len = len;
 	msg[1].flags = I2C_M_RD;
-	msg[1].buf = (u8 *)data;
+	msg[1].buf = buf;
 
 	err = i2c_transfer(client->adapter, msg, ARRAY_SIZE(msg));
 	if (err != 2) {
@@ -69,11 +62,39 @@ static int ov8858_read_reg(struct i2c_client *client, u16 len, u16 reg,
 		goto error;
 	}
 
+	return 0;
+error:
+	dev_err(&client->dev, "reading from address 0x%x error %d", addr, err);
+	return err;
+}
+
+static int ov8858_read_reg(struct i2c_client *client, u16 type, u16 reg,
+			   u16 *val)
+{
+	u8 data[OV8858_SHORT_MAX];
+	int err;
+
+	dev_dbg(&client->dev, "%s: type = %d, reg = 0x%04x\n",
+		__func__, type, reg);
+
+	/* read only 8 and 16 bit values */
+	if (type != OV8858_8BIT && type != OV8858_16BIT) {
+		dev_err(&client->dev, "%s error, invalid data length\n",
+			__func__);
+		return -EINVAL;
+	}
+
+	memset(data, 0, sizeof(data));
+
+	err = ov8858_i2c_read(client, type, reg, data);
+	if (err)
+		goto error;
+
 	/* high byte comes first */
-	if (len == OV8858_8BIT)
+	if (type == OV8858_8BIT)
 		*val = (u8)data[0];
 	else
-		*val = be16_to_cpu(data[0]);
+		*val = data[0] << 8 | data[1];
 
 	dev_dbg(&client->dev, "%s: val = 0x%04x\n", __func__, *val);
 
@@ -444,19 +465,82 @@ static int ov8858_s_exposure(struct v4l2_subdev *sd,
 static int ov8858_g_priv_int_data(struct v4l2_subdev *sd,
 				  struct v4l2_private_int_data *priv)
 {
-	u32 size;
-	/* TODO: Need to add reading of OTP data here */
-	void *b = NULL; /*le24l042cs_read(v4l2_get_subdevdata(sd), &size);*/
-	int r = 0;
+	struct ov8858_device *dev = to_ov8858_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	u32 size = OV8858_OTP_END_ADDR - OV8858_OTP_START_ADDR + 1;
+	int r;
 
-	if (!b)
-		return -EIO;
+	mutex_lock(&dev->input_lock);
+	if (!dev->otp_data) {
+		dev->otp_data = devm_kzalloc(&client->dev, size, GFP_KERNEL);
+		if (!dev->otp_data) {
+			dev_err(&client->dev, "%s: can't allocate memory",
+				__func__);
+			r = -ENOMEM;
+			goto error3;
+		}
 
-	if (copy_to_user(priv->data, b, min_t(__u32, priv->size, size)))
+		/* Streaming has to be on */
+		r = ov8858_write_reg(client, OV8858_8BIT, OV8858_STREAM_MODE,
+				     0x01);
+		if (r)
+			goto error2;
+
+		r = ov8858_write_reg(client, OV8858_8BIT, OV8858_OTP_MODE_CTRL,
+				     OV8858_OTP_MODE_PROGRAM_DISABLE |
+				     OV8858_OTP_MODE_MANUAL);
+		if (r)
+			goto error1;
+
+		r = ov8858_write_reg(client, OV8858_16BIT,
+				     OV8858_OTP_START_ADDR_REG,
+				     OV8858_OTP_START_ADDR);
+		if (r)
+			goto error1;
+
+		r = ov8858_write_reg(client, OV8858_16BIT,
+				     OV8858_OTP_END_ADDR_REG,
+				     OV8858_OTP_END_ADDR);
+		if (r)
+			goto error1;
+
+		r = ov8858_write_reg(client, OV8858_8BIT, OV8858_OTP_LOAD_CTRL,
+				     OV8858_OTP_LOAD_ENABLE);
+		if (r)
+			goto error1;
+
+		r = ov8858_i2c_read(client, size, OV8858_OTP_START_ADDR,
+				    dev->otp_data);
+		if (r)
+			goto error1;
+
+		r = ov8858_write_reg(client, 1, OV8858_STREAM_MODE, 0x00);
+		if (r)
+			dev_warn(&client->dev, "%s: cannot turn off streaming.",
+				 __func__);
+	}
+
+	if (copy_to_user(priv->data, dev->otp_data,
+			 min_t(__u32, priv->size, size))) {
 		r = -EFAULT;
+		goto error3;
+	}
 
 	priv->size = size;
-	kfree(b);
+	mutex_unlock(&dev->input_lock);
+
+	return 0;
+
+error1:
+	r = ov8858_write_reg(client, 1, OV8858_STREAM_MODE, 0x00);
+	if (r)
+		dev_warn(&client->dev, "%s: cannot turn off streaming.",
+			 __func__);
+error2:
+	devm_kfree(&client->dev, dev->otp_data);
+	dev->otp_data = NULL;
+error3:
+	mutex_unlock(&dev->input_lock);
 
 	return r;
 }
@@ -660,7 +744,8 @@ static int ov8858_get_register(struct v4l2_subdev *sd, int reg, int type,
 			if (type == OV8858_8BIT)
 				return next->val;
 
-			if (type == OV8858_16BIT && next[1].type != OV8858_TOK_TERM)
+			if (type == OV8858_16BIT &&
+			    next[1].type != OV8858_TOK_TERM)
 				return next[0].val << 8 | next[1].val;
 		}
 	}
