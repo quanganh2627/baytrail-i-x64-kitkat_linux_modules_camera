@@ -494,14 +494,13 @@ int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout)
 					       dev->mode == mode,
 					       msecs_to_jiffies(timeout));
 	if (ret > 0) {
+		if (is_m10mo_in_monitor_mode(sd))
+			return m10mo_set_monitor_parameters(sd);
 		return 0;
 	} else if (ret == 0) {
 		dev_err(&client->dev, "m10mo_wait_mode_change timed out\n");
 		return -ETIMEDOUT;
 	}
-
-	if (is_m10mo_in_monitor_mode(sd))
-		ret = m10mo_set_monitor_parameters(sd);
 
 	return ret;
 }
