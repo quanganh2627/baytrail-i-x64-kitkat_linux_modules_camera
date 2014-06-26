@@ -183,6 +183,7 @@ struct atomisp_parameters32 {
 	compat_uptr_t ecd_config; /* Eigen Color Demosaicing */
 	compat_uptr_t ynr_config; /* Y(Luma) Noise Reduction */
 	compat_uptr_t fc_config;  /* Fringe Control */
+	compat_uptr_t formats_config;  /* Formats Control */
 	compat_uptr_t cnr_config; /* Chroma Noise Reduction */
 	compat_uptr_t macc_config;  /* MACC */
 	compat_uptr_t ctc_config; /* Chroma Tone Control */
