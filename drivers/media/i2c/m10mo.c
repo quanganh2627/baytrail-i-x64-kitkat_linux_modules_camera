@@ -381,6 +381,7 @@ static int m10mo_request_mode_change(struct v4l2_subdev *sd, u8 requested_mode)
 	case M10MO_MONITOR_MODE_PANORAMA:
 	case M10MO_MONITOR_MODE_ZSL:
 	case M10MO_MONITOR_MODE:
+	case M10MO_MONITOR_MODE_HIGH_SPEED:
 		ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_SYSMODE, 0x02);
 		if (ret < 0)
 			dev_err(&client->dev,
@@ -419,7 +420,8 @@ static int is_m10mo_in_monitor_mode(struct v4l2_subdev *sd)
 
 	if (dev->mode == M10MO_MONITOR_MODE_PANORAMA ||
 	    dev->mode == M10MO_MONITOR_MODE_ZSL ||
-	    dev->mode == M10MO_MONITOR_MODE)
+	    dev->mode == M10MO_MONITOR_MODE ||
+	    dev->mode == M10MO_MONITOR_MODE_HIGH_SPEED)
 		return 1;
 
 	return 0;
@@ -1606,6 +1608,11 @@ static irqreturn_t m10mo_irq_thread(int irq, void *dev_id)
 		if (int_factor & REG_INT_STATUS_MODE)
 			dev->mode = M10MO_BURST_CAPTURE_MODE;
 		break;
+	case M10MO_MONITOR_MODE_HIGH_SPEED:
+		if (int_factor & REG_INT_STATUS_MODE) {
+			dev->mode = M10MO_MONITOR_MODE_HIGH_SPEED;
+		}
+		break;
 	default:
 		return IRQ_HANDLED;
 	}
@@ -1862,6 +1869,8 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	/* Make the fixed width and height for JPEG and RAW formats */
 	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8) {
+		/* The m10mo can only run JPEG in 30fps or lower */
+		dev->fps = M10MO_NORMAL_FPS;
 		fmt->width = JPEG_CONFIG_WIDTH;
 		fmt->height = JPEG_CONFIG_HEIGHT;
 	} else if (dev->format.code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
@@ -2175,6 +2184,68 @@ static int m10mo_set_burst_capture(struct v4l2_subdev *sd)
 	return ret;
 }
 
+static int m10mo_set_high_speed(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
+	dev_dbg(&client->dev, "%s: enter\n", __func__);
+
+	if (dev->mode != M10MO_PARAM_SETTING_MODE &&
+		dev->mode != M10MO_PARAMETER_MODE) {
+		/*
+		 * We should switch to param mode first and
+		 * reset all the parameters.
+		 */
+		ret = __m10mo_param_mode_set(sd);
+		if (ret)
+			goto out;
+	}
+
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPTURE_MODE,
+				CAP_MODE_MOVIE);
+	if (ret)
+		goto out;
+
+	/* 1080P@60FPS */
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
+			MON_SIZE_FHD_60FPS);
+	if (ret)
+		goto out;
+	/* NO meta data */
+	ret = m10mo_write(sd, 1, CATEGORY_PARAM,
+			MON_METADATA_SUPPORT_CTRL,
+			MON_METADATA_SUPPORT_CTRL_DIS);
+	if (ret)
+		goto out;
+	/* Select format NV12 */
+	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT,
+			CHOOSE_NV12NV21_FMT_NV12);
+	if (ret)
+		goto out;
+	/* Enable interrupt signal */
+	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM,
+			SYSTEM_INT_ENABLE, 0x01);
+	if (ret)
+		goto out;
+	/* Go to Monitor mode and output YUV Data */
+	ret = m10mo_request_mode_change(sd,
+			M10MO_MONITOR_MODE_HIGH_SPEED);
+	if (ret)
+		goto out;
+
+	ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE_HIGH_SPEED,
+			M10MO_INIT_TIMEOUT);
+	if (ret < 0)
+		goto out;
+
+	return 0;
+out:
+	dev_err(&client->dev, "%s:streaming failed %d\n", __func__, ret);
+	return ret;
+}
+
 static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -2215,6 +2286,9 @@ static int __m10mo_set_run_mode(struct v4l2_subdev *sd)
 			/* TODO: Revisit this logic on switching to panorama */
 			if (dev->curr_res_table[dev->fmt_idx].command == 0x43)
 				ret = m10mo_set_panorama_monitor(sd);
+			else if ((dev->fps == M10MO_HIGH_SPEED_FPS) &&
+					(dev->fw_type == M10MO_FW_TYPE_1))
+				ret = m10mo_set_high_speed(sd);
 			else
 				ret = m10mo_set_zsl_monitor(sd);
 		}
@@ -3060,6 +3134,27 @@ static int m10mo_s_routing(struct v4l2_subdev *sd, u32 input, u32 output, u32 co
 	return 0;
 }
 
+static int m10mo_s_frame_interval(struct v4l2_subdev *sd,
+		struct v4l2_subdev_frame_interval *interval)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int fps = 0;
+
+	mutex_lock(&dev->input_lock);
+	if (interval->interval.numerator != 0)
+		fps = interval->interval.denominator / interval->interval.numerator;
+	if (!fps) {
+		mutex_unlock(&dev->input_lock);
+		return -EINVAL;
+	}
+	dev->fps = fps;
+	dev_dbg(&client->dev, "%s: fps is %d\n", __func__, dev->fps);
+	mutex_unlock(&dev->input_lock);
+
+	return 0;
+}
+
 static const struct v4l2_subdev_video_ops m10mo_video_ops = {
 	.try_mbus_fmt = m10mo_try_mbus_fmt,
 	.s_mbus_fmt = m10mo_set_mbus_fmt,
@@ -3068,6 +3163,7 @@ static const struct v4l2_subdev_video_ops m10mo_video_ops = {
 	.s_parm = m10mo_s_parm,
 	.enum_framesizes = m10mo_enum_framesizes,
 	.s_routing = m10mo_s_routing,
+	.s_frame_interval = m10mo_s_frame_interval,
 };
 
 static const struct v4l2_subdev_core_ops m10mo_core_ops = {

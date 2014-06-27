@@ -364,6 +364,9 @@ int m10mo_dump_string_log3(struct v4l2_subdev *sd);
 #define CAP_MODE_INFINITY_ZSL	0x0f
 #define CAP_MODE_PANORAMA	0x00
 
+/* In other type firmware movie mode is 0x00 */
+#define CAP_MODE_MOVIE		0x00
+
 #define ZSL_TRANSFER_NO 	0x16
 #define CAP_NV12_MODE		0x0a
 #define START_DUAL_STATUS	0x1f
@@ -394,6 +397,12 @@ int m10mo_dump_string_log3(struct v4l2_subdev *sd);
 #define MON_METADATA_SUPPORT_CTRL	0x06
 #define MON_METADATA_SUPPORT_CTRL_EN	0x01
 #define MON_METADATA_SUPPORT_CTRL_DIS	0x00
+
+/* MPO format */
+#define MON_MPO_FMT_CTRL		0x07
+#define MON_MPO_FMT_NV21		0x02
+#define MON_MPO_FMT_YUV422		0x03
+#define MON_MPO_FMT_YUV420		0x06
 
 /* Category 3_Auto Exposure */
 
@@ -618,7 +627,8 @@ enum M10MO_MODES {
 	M10MO_MONITOR_MODE_ZSL,
 	M10MO_MONITOR_MODE_PANORAMA,
 	M10MO_SINGLE_CAPTURE_MODE,
-	M10MO_BURST_CAPTURE_MODE
+	M10MO_BURST_CAPTURE_MODE,
+	M10MO_MONITOR_MODE_HIGH_SPEED
 };
 
 /* Internal modes of M10MO */
@@ -636,6 +646,11 @@ enum M10MO_CAPTURE_MODES {
 
 #define M10MO_ZSL_JPEG_VIRTUAL_CHANNEL	1
 #define M10MO_ZSL_NV12_VIRTUAL_CHANNEL	0
+
+#define M10MO_NORMAL_FPS		30
+#define M10MO_HIGH_SPEED_FPS	60
+/* FIXME It should be in tables */
+#define MON_SIZE_FHD_60FPS		0x2b
 
 extern const struct m10mo_resolution *resolutions[][3];
 extern const ssize_t resolutions_sizes[][3];
