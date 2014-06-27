@@ -814,6 +814,7 @@ static struct ia_css_frame *frame_create(unsigned int width,
 	if (me == NULL)
 		return NULL;
 
+	memset(me, 0, sizeof(*me));
 	me->info.res.width = width;
 	me->info.res.height = height;
 	me->info.format = format;

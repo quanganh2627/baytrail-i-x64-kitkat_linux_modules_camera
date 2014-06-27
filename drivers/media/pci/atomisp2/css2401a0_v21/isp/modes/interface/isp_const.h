@@ -99,11 +99,10 @@
 #define SH_CSS_BINARY_ID_VIDEO_CONT_NOBDS_ISP2_MIN    42
 #define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2_MIN      43
 #define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2          44
-#define SH_CSS_BINARY_ID_VIDEO_DZ_ISP2_ROTATED  45 // iwwu: Will clean up this binary later
-#define SH_CSS_BINARY_ID_RESERVED1              46
-#define SH_CSS_BINARY_ID_ACCELERATION           47
-#define SH_CSS_BINARY_ID_PRE_DE_ISP2            48
-#define SH_CSS_BINARY_ID_KERNEL_TEST_LOAD_STORE 49
+#define SH_CSS_BINARY_ID_RESERVED1              45
+#define SH_CSS_BINARY_ID_ACCELERATION           46
+#define SH_CSS_BINARY_ID_PRE_DE_ISP2            47
+#define SH_CSS_BINARY_ID_KERNEL_TEST_LOAD_STORE 48
 
 /* skycam product pipelines */
 #define SH_CSS_BINARY_ID_PRIMARY                            100

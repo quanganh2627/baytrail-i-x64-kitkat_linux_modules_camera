@@ -1645,7 +1645,7 @@ ia_css_init(const struct ia_css_env *env,
 	    return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	sh_css_printf = env->print_env.debug_print;
-	ia_css_debug_set_dtrace_level(9);
+	ia_css_debug_set_dtrace_level(IA_CSS_DEBUG_WARNING);
 
 	IA_CSS_ENTER("void");
 
@@ -8542,7 +8542,6 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 	if ((stream->last_pipe != NULL) &&
 		ia_css_pipeline_is_mapped(stream->last_pipe->pipe_num)) {
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
-#if defined(HAS_ISYS_CSI_RSRC_RELEASE)
 		for (i = 0; i < stream->num_pipes; i++) {
 			struct ia_css_pipe *entry = stream->pipes[i];
 			unsigned int sp_thread_id;
@@ -8564,7 +8563,6 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 				}
 			}
 		}
-#endif
 		stream_unregister_with_csi_rx(stream);
 #endif
 
@@ -9186,20 +9184,24 @@ ia_css_stop_sp(void)
 	sh_css_sp_set_sp_running(false);
 
 	timeout = SP_SHUTDOWN_TIMEOUT_US;
-	while ((ia_css_spctrl_get_state(SP0_ID)!= IA_CSS_SP_SW_TERMINATED) && timeout) {
+	while (!sp_ctrl_getbit(SP0_ID, SP_SC_REG, SP_IDLE_BIT) && timeout) {
 		timeout--;
 		hrt_sleep();
 	}
+	if ((ia_css_spctrl_get_state(SP0_ID) != IA_CSS_SP_SW_TERMINATED))
+		IA_CSS_WARNING("SP has not terminated (SW)");
+
 	if (timeout == 0) {
-		ia_css_debug_dump_debug_info("ia_css_stop_sp : point1");
+		IA_CSS_WARNING("SP is not idle");
 		ia_css_debug_dump_sp_sw_debug_info();
 	}
+	timeout = SP_SHUTDOWN_TIMEOUT_US;
 	while (!isp_ctrl_getbit(ISP0_ID, ISP_SC_REG, ISP_IDLE_BIT) && timeout) {
 		timeout--;
 		hrt_sleep();
 	}
 	if (timeout == 0) {
-		ia_css_debug_dump_debug_info("ia_css_stop_sp : point2");
+		IA_CSS_WARNING("ISP is not idle");
 		ia_css_debug_dump_sp_sw_debug_info();
 	}
 

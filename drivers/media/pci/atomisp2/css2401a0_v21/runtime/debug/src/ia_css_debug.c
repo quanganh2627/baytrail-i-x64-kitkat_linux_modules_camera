@@ -747,13 +747,38 @@ static void debug_print_if_state(input_formatter_state_t *state)
 	return;
 }
 
+static void debug_print_if_bin_state(input_formatter_bin_state_t *state)
+{
+	ia_css_debug_dtrace(2, "Stream-to-memory state:\n");
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "reset", state->reset);
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "input endianness",
+			    state->input_endianness);
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "output endianness",
+			    state->output_endianness);
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "bitswap", state->bitswap);
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "block_synch",
+			    state->block_synch);
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "packet_synch",
+			    state->packet_synch);
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "readpostwrite_sync",
+			    state->readpostwrite_synch);
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "is_2ppc", state->is_2ppc);
+	ia_css_debug_dtrace(2, "\t%-32s: %d\n", "en_status_update",
+			    state->en_status_update);
+}
+
 void ia_css_debug_dump_if_state(void)
 {
-	input_formatter_state_t state;
-	input_formatter_get_state(INPUT_FORMATTER0_ID, &state);
-	debug_print_if_state(&state);
+	input_formatter_state_t if_state;
+	input_formatter_bin_state_t if_bin_state;
+
+	input_formatter_get_state(INPUT_FORMATTER0_ID, &if_state);
+	debug_print_if_state(&if_state);
 	ia_css_debug_dump_pif_isp_fifo_state();
-	return;
+
+	input_formatter_bin_get_state(INPUT_FORMATTER3_ID, &if_bin_state);
+	debug_print_if_bin_state(&if_bin_state);
+	ia_css_debug_dump_str2mem_sp_fifo_state();
 }
 #endif
 
@@ -1050,8 +1075,18 @@ void ia_css_debug_dump_pif_isp_fifo_state(void)
 	fifo_channel_get_state(FIFO_MONITOR0_ID,
 			       FIFO_CHANNEL_ISP0_TO_IF0, &isp_to_pif);
 	debug_print_fifo_channel_state(&pif_to_isp, "Primary IF A to ISP");
-	debug_print_fifo_channel_state(&isp_to_pif, "ISP to Primary IF A)");
-	return;
+	debug_print_fifo_channel_state(&isp_to_pif, "ISP to Primary IF A");
+}
+
+void ia_css_debug_dump_str2mem_sp_fifo_state(void)
+{
+	fifo_channel_state_t s2m_to_sp, sp_to_s2m;
+	fifo_channel_get_state(FIFO_MONITOR0_ID,
+			       FIFO_CHANNEL_STREAM2MEM0_TO_SP0, &s2m_to_sp);
+	fifo_channel_get_state(FIFO_MONITOR0_ID,
+			       FIFO_CHANNEL_SP0_TO_STREAM2MEM0, &sp_to_s2m);
+	debug_print_fifo_channel_state(&s2m_to_sp, "Stream-to-memory to SP");
+	debug_print_fifo_channel_state(&sp_to_s2m, "SP to stream-to-memory");
 }
 
 void ia_css_debug_dump_dma_sp_fifo_state(void)
