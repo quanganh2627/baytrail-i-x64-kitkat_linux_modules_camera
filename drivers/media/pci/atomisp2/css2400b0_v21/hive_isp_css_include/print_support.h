@@ -41,4 +41,12 @@ STORAGE_CLASS_INLINE void ia_css_print(const char *fmt, ...)
 	}
 }
 
+/* Start adding support for bxt tracing functions for poc. From
+ * bxt_sandbox/support/print_support.h. */
+/* TODO: support these macros in userspace. */
+#define PWARN(format, ...) ia_css_print("warning: ", ##__VA_ARGS__)
+#define PRINT(format, ...) ia_css_print(format, ##__VA_ARGS__)
+#define PERROR(format, ...) ia_css_print("error: " format, ##__VA_ARGS__)
+#define PDEBUG(format, ...) ia_css_print("debug: " format, ##__VA_ARGS__)
+
 #endif /* __PRINT_SUPPORT_H_INCLUDED__ */

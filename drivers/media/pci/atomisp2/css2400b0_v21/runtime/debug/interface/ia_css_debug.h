@@ -77,6 +77,10 @@ enum ia_css_debug_enable_param_dump {
 	ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, \
 		"%s(): error: " fmt "\n", __func__, ##__VA_ARGS__)
 
+#define IA_CSS_WARNING(fmt, ...) \
+	ia_css_debug_dtrace(IA_CSS_DEBUG_WARNING, \
+		"%s(): warning: " fmt "\n", __func__, ##__VA_ARGS__)
+
 /* Logging macros for public functions (API functions) */
 #define IA_CSS_ENTER(fmt, ...) \
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, \
@@ -228,6 +232,12 @@ void ia_css_debug_dump_dma_sp_fifo_state(void);
  * \return	None
  */
 void ia_css_debug_dump_pif_isp_fifo_state(void);
+
+/*! \brief Dump stream-to-memory sp fifo state
+ * Dumps the stream-to-memory block state to tracing output.
+ * \return	None
+ */
+extern void ia_css_debug_dump_str2mem_sp_fifo_state(void);
 
 /*! \brief Dump isp sp fifo state
  * Dumps the isp sp fifo state to tracing output.
