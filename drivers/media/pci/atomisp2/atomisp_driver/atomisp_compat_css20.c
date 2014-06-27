@@ -879,6 +879,7 @@ int atomisp_css_init(struct atomisp_device *isp)
 		dev_err(isp->dev, "css init failed --- bad firmware?\n");
 		return -EINVAL;
 	}
+	ia_css_enable_isys_event_queue(true);
 
 	isp->css_initialized = true;
 	dev_dbg(isp->dev, "sh_css_init success\n");
@@ -1005,6 +1006,7 @@ int atomisp_css_resume(struct atomisp_device *isp)
 		dev_err(isp->dev, "re-init css failed.\n");
 		return -EINVAL;
 	}
+	ia_css_enable_isys_event_queue(true);
 
 	isp->css_initialized = true;
 	return 0;
@@ -4418,26 +4420,6 @@ static struct atomisp_sub_device *__get_atomisp_subdev(
 	return NULL;
 }
 
-static struct atomisp_sub_device *
-	__get_asd_from_port(struct atomisp_device *isp, mipi_port_ID_t port)
-{
-	int i;
-
-	/* Check which isp subdev to send eof */
-	for (i = 0; i < isp->num_of_streams; i++) {
-		struct atomisp_sub_device *asd = &isp->asd[i];
-		struct camera_mipi_info *mipi_info =
-				atomisp_to_sensor_mipi_info(
-					isp->inputs[asd->input_curr].camera);
-		if (isp->asd[i].streaming == ATOMISP_DEVICE_STREAMING_ENABLED &&
-		    __get_mipi_port(isp, mipi_info->port) == port) {
-			return &isp->asd[i];
-		}
-	}
-
-	return NULL;
-}
-
 int atomisp_css_isr_thread(struct atomisp_device *isp,
 			   bool *frame_done_found,
 			   bool *css_pipe_done,
@@ -4448,13 +4430,7 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 	struct atomisp_sub_device *asd = &isp->asd[0];
 
 	while (!atomisp_css_dequeue_event(&current_event)) {
-
-		/* EOF Event does not have the css_pipe returned */
-		if (current_event.event.type == IA_CSS_EVENT_TYPE_PORT_EOF)
-			asd = __get_asd_from_port(isp,
-					current_event.event.port);
-		else
-			asd = __get_atomisp_subdev(current_event.event.pipe,
+		asd = __get_atomisp_subdev(current_event.event.pipe,
 					isp, &stream_id);
 		if (!asd) {
 			dev_err(isp->dev, "%s:no subdev.event:%d",  __func__,
@@ -4508,17 +4484,6 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			break;
 		case CSS_EVENT_PIPELINE_DONE:
 			css_pipe_done[asd->index] = true;
-			break;
-		case CSS_EVENT_PORT_EOF:
-			atomisp_eof_event(asd, current_event.event.exp_id);
-
-			/* signal streamon after delayed init is done */
-			if (asd->delayed_init ==
-					ATOMISP_DELAYED_INIT_WORK_DONE) {
-				asd->delayed_init = ATOMISP_DELAYED_INIT_DONE;
-				complete(&asd->init_done);
-			}
-
 			break;
 		default:
 			dev_dbg(isp->dev, "unhandled css stored event: 0x%x\n",
