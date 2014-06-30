@@ -1596,8 +1596,8 @@ static int gc2235_probe(struct i2c_client *client,
 	 * sd->name is updated with sensor driver name by the v4l2.
 	 * change it to sensor name in this case.
 	 */
-	snprintf(dev->sd.name, sizeof(dev->sd.name), "%s%x %d-%04x",
-		GC2235_SUBDEV_PREFIX, dev->sensor_id,
+	snprintf(dev->sd.name, sizeof(dev->sd.name), "%s %d-%04x",
+		client->name,
 		i2c_adapter_id(client->adapter), client->addr);
 
 	/* Resolution settings depend on sensor type and platform */

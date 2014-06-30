@@ -124,7 +124,7 @@
 
 #define GC2235_SUBDEV_PREFIX "gc"
 #define GC2235_DRIVER	"gc22351x5"
-#define GC2235_NAME	"gc2235"
+#define GC2235_NAME	"gc2235b"
 #define GC2235_ID	0x2235
 
 #define GC2235_REG_SENSOR_ID_HIGH_BIT	0xf0
