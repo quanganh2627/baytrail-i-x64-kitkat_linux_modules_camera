@@ -1728,11 +1728,11 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	/* If the caller wants to get updated fmt values based on the search */
 	if (update_fmt) {
 		if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
-			fmt->width = JPEG_CONFIG_WIDTH;
-			fmt->height = JPEG_CONFIG_HEIGHT;
+			fmt->width = dev->mipi_params.jpeg_width;
+			fmt->height = dev->mipi_params.jpeg_height;
 		} else if (fmt->code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
-			fmt->width = M10MO_RAW_CONFIG_WIDTH;
-			fmt->height = M10MO_RAW_CONFIG_HEIGHT;
+			fmt->width = dev->mipi_params.raw_width;
+			fmt->height = dev->mipi_params.raw_height;
 		} else {
 			fmt->width = res[idx].width;
 			fmt->height = res[idx].height;
@@ -1871,11 +1871,11 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8) {
 		/* The m10mo can only run JPEG in 30fps or lower */
 		dev->fps = M10MO_NORMAL_FPS;
-		fmt->width = JPEG_CONFIG_WIDTH;
-		fmt->height = JPEG_CONFIG_HEIGHT;
+		fmt->width = dev->mipi_params.jpeg_width;
+		fmt->height = dev->mipi_params.jpeg_height;
 	} else if (dev->format.code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
-		fmt->width = M10MO_RAW_CONFIG_WIDTH;
-		fmt->height = M10MO_RAW_CONFIG_HEIGHT;
+		fmt->width = dev->mipi_params.raw_width;
+		fmt->height = dev->mipi_params.raw_height;
 	}
 
 	/* Update the stream info. Atomisp uses this for configuring mipi */
@@ -1939,6 +1939,25 @@ static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
 
 	dev_err(&client->dev, "FW id string table given but no match found");
 	return 0;
+}
+
+static void m10mo_mipi_initialization(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int id = M10MO_GET_MIPI_PACKET_SIZE_IDX(dev->fw_type);
+	u32 mipi_packet_size = dev->pdata->mipi_packet_size[id];
+
+	dev->mipi_params.jpeg_width = mipi_packet_size;
+	dev->mipi_params.jpeg_height = M10MO_MAX_YUV422_SIZE / mipi_packet_size;
+
+	dev->mipi_params.raw_width = mipi_packet_size;
+	dev->mipi_params.raw_height = M10MO_MAX_RAW_SIZE / mipi_packet_size;
+
+	dev_dbg(&client->dev,
+		"%s JPEG: W=%d H=%d, RAW: W=%d H=%d\n", __func__,
+		dev->mipi_params.jpeg_width, dev->mipi_params.jpeg_height,
+		dev->mipi_params.raw_width, dev->mipi_params.raw_height);
 }
 
 static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
@@ -2006,6 +2025,8 @@ static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 	 */
 	id = M10MO_GET_CLOCK_RATE_MODE(dev->fw_type);
 	dev->ref_clock = dev->pdata->ref_clock_rate[id];
+
+	m10mo_mipi_initialization(sd);
 
 	ret = __m10mo_s_power(sd, 0, true);
 	if (ret) {

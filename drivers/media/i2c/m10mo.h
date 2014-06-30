@@ -108,26 +108,18 @@
 #define CAPTURE_FORMAT_YUV422		0x00
 #define CAPTURE_FORMAT_JPEG8		0x01
 
-#define M10MO_PACKETS_SEND_UNIT		2048
 /* TODO: Fix this */
 /* 4128*3096*2 + X extra bytes. Rounded to height divisible by 32 -> 25624576 */
 #define M10MO_MAX_YUV422_SIZE		25624576
-#define M10MO_HEIGHT_FOR_SEND_UNIT \
-			(M10MO_MAX_YUV422_SIZE / M10MO_PACKETS_SEND_UNIT)
-#define JPEG_CONFIG_WIDTH		M10MO_PACKETS_SEND_UNIT
-#define JPEG_CONFIG_HEIGHT		M10MO_HEIGHT_FOR_SEND_UNIT
-
 /* Max RAW size 26000000 + 8*2048 + 1048 (to algin to 32 bytes) */
 #define M10MO_MAX_RAW_SIZE		26017792
-#define M10MO_RAW_CONFIG_WIDTH		M10MO_PACKETS_SEND_UNIT
-#define M10MO_RAW_CONFIG_HEIGHT \
-			(M10MO_MAX_RAW_SIZE / M10MO_PACKETS_SEND_UNIT)
 
 #define M10MO_GET_CLOCK_RATE_MODE(arg)	((arg >> M10MO_CLOCK_RATE_MODE_OFFSET) & M10MO_MASK)
 #define M10MO_GET_MIPI_FREQ_MODE(arg)	((arg >> M10MO_MIPI_FREQ_MODE_OFFSET) & M10MO_MASK)
 #define M10MO_GET_FOCUS_MODE(arg)		((arg >> M10MO_AF_MODE_OFFSET) & M10MO_MASK)
 #define M10MO_GET_RESOLUTION_MODE(arg)	((arg >> M10MO_RESOLUTION_MODE_OFFSET) & M10MO_MASK)
 #define M10MO_SHOT_MODES_SUPPORTED(arg)	(arg & M10MO_SHOT_MODE_SUPPORT)
+#define M10MO_GET_MIPI_PACKET_SIZE_IDX(arg) ((arg >> M10MO_MIPI_PACKET_SIZE_OFFSET) & M10MO_MASK)
 
 #define M10MO_METADATA_WIDTH	2048
 #define M10MO_METADATA_HEIGHT	4
@@ -167,6 +159,14 @@ struct m10mo_monitor_params {
 	u8 torch;
 };
 
+/* Parameters dependent to the MIPI packet size (FW specific) */
+struct m10mo_mipi_params {
+	u32 jpeg_width;
+	u32 jpeg_height;
+	u32 raw_width;
+	u32 raw_height;
+};
+
 struct m10mo_device {
 	struct v4l2_subdev sd;
 	struct media_pad pad;
@@ -175,6 +175,7 @@ struct m10mo_device {
 	struct mutex input_lock; /* serialize sensor's ioctl */
 	struct m10mo_spi *spi;
 	struct m10mo_monitor_params monitor_params;
+	struct m10mo_mipi_params mipi_params;
 	u8 message_buffer[256]; /* Real buffer size TBD */
 	int res_type;
 	int power;
