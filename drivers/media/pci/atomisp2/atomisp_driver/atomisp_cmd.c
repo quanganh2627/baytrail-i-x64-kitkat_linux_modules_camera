@@ -27,6 +27,7 @@
 #include <linux/kfifo.h>
 #include <linux/pm_runtime.h>
 #include <linux/timer.h>
+#include <linux/kct.h>
 
 #include <asm/intel-mid.h>
 
@@ -1168,6 +1169,10 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 	enable_isp_irq(hrt_isp_css_irq_sp, false);
 	clear_isp_irq(hrt_isp_css_irq_sp);
 
+	/* Set the SRSE to 3 before resetting */
+	pci_write_config_dword(isp->pdev, PCI_I_CONTROL, isp->saved_regs.i_control |
+			MRFLD_PCI_I_CONTROL_SRSE_RESET_MASK);
+
 	/* reset ISP and restore its state */
 	isp->isp_timeout = true;
 	atomisp_reset(isp);
@@ -1345,6 +1350,9 @@ void atomisp_wdt_work(struct work_struct *work)
 		rt_mutex_unlock(&isp->mutex);
 		return;
 	}
+
+	/* Push CrashEvent log for recovery cases tracking */
+	kct_log(CT_EV_CRASH, "ATOMISP2", "TIMEOUT", 0, "", "", "", "", "", "", "/logs/aplog");
 
 	__atomisp_css_recover(isp);
 	atomisp_set_stop_timeout(ATOMISP_CSS_STOP_TIMEOUT_US);
