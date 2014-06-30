@@ -682,11 +682,11 @@ static int ov_s_mbus_fmt(struct v4l2_subdev *sd,
 		ov_res->used = 1;
 	}
 
+	dev->cur_fps = ov_res->fps;
 	dev->cur_res = ov_res->res_id;
 	fmt->width = width;
 	fmt->height = height;
 	mutex_unlock(&dev->input_lock);
-
 	/*FixME: ignore if ctrl handler failed, as not all ctrls we supportted*/
 	v4l2_ctrl_handler_setup(&dev->ctrl_handler);
 	return 0;
@@ -998,6 +998,18 @@ static int ov_s_parm(struct v4l2_subdev *sd,
 }
 
 static int
+ov_g_frame_interval(struct v4l2_subdev *sd,
+				struct v4l2_subdev_frame_interval *interval)
+{
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	interval->interval.numerator = 1;
+	interval->interval.denominator = dev->cur_fps;
+
+	return 0;
+}
+
+static int
 ov_g_skip_frames(struct v4l2_subdev *sd, u32 *frames)
 {
 	int index;
@@ -1028,6 +1040,7 @@ static const struct v4l2_subdev_video_ops ov_video_ops = {
 	.s_stream = ov_s_stream,
 	.enum_framesizes = ov_enum_framesizes,
 	.enum_frameintervals = ov_enum_frameintervals,
+	.g_frame_interval = ov_g_frame_interval,
 };
 
 static const struct v4l2_subdev_sensor_ops ov_sensor_ops = {
