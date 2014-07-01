@@ -1554,6 +1554,7 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 		asd->params.metadata_allocated = false;
 		asd->params.metadata_user = NULL;
 		asd->params.metadata_buf_data_valid = false;
+		asd->params.metadata_width_size = 0;
 		list_for_each_entry_safe(md_buf, _md_buf,
 				&asd->metadata, list) {
 			ia_css_metadata_free(md_buf->metadata);
