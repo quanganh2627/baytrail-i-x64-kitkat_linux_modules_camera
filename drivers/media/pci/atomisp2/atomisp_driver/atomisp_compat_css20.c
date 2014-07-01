@@ -2909,7 +2909,7 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 {
 	struct ia_css_pipe_info info;
 	int pipe_index = atomisp_get_pipe_index(asd, source_pad);
-	int stream_index = (pipe_index == IA_CSS_PIPE_ID_YUVPP) ?
+	int stream_index = ((pipe_index == IA_CSS_PIPE_ID_YUVPP) && !(ATOMISP_USE_YUVPP(asd))) ?
 			   ATOMISP_INPUT_STREAM_VIDEO :
 			   atomisp_source_pad_to_stream_id(asd, source_pad);
 
@@ -2935,8 +2935,7 @@ int atomisp_get_css_frame_info(struct atomisp_sub_device *asd,
 		break;
 	case ATOMISP_SUBDEV_PAD_SOURCE_PREVIEW:
 		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO &&
-		    (pipe_index == IA_CSS_PIPE_ID_VIDEO ||
-		     pipe_index == IA_CSS_PIPE_ID_YUVPP))
+		    (pipe_index == IA_CSS_PIPE_ID_VIDEO || pipe_index == IA_CSS_PIPE_ID_YUVPP))
 			if (ATOMISP_USE_YUVPP(asd) && asd->continuous_mode->val)
 				*frame_info = info.
 					vf_output_info[ATOMISP_CSS_OUTPUT_SECOND_INDEX];
@@ -3261,7 +3260,7 @@ int atomisp_css_video_configure_pp_input(
 		&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
 
 	__configure_video_pp_input(asd, width, height,
-			IA_CSS_PIPE_ID_VIDEO);
+		ATOMISP_USE_YUVPP(asd) ? IA_CSS_PIPE_ID_YUVPP : IA_CSS_PIPE_ID_VIDEO);
 
 	if (width > stream_env->pipe_configs[IA_CSS_PIPE_ID_CAPTURE].
 					capt_pp_in_res.width)

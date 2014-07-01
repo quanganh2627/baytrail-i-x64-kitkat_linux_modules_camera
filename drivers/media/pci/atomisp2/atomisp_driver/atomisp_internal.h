@@ -145,7 +145,7 @@
  * c.Now, the FW has some issue about YUVPP pipe. so I disable YUVPP pipe for
  *   SOC sensor
  */
-#define ATOMISP_CSS_SUPPORT_YUVPP     0
+#define ATOMISP_CSS_SUPPORT_YUVPP     IS_BYT
 
 #define ATOMISP_CSS_OUTPUT_SECOND_INDEX     1
 #define ATOMISP_CSS_OUTPUT_DEFAULT_INDEX    0
