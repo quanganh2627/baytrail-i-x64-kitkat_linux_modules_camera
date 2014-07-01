@@ -1616,6 +1616,7 @@ static int __gc_init_ctrl_handler(struct gc_device *dev)
 
 	for (i = 0; i < dev->product_info->num_ctrls; i++) {
 		dev->product_info->ctrl_config[i].config.ops = &gc_ctrl_ops;
+		dev->product_info->ctrl_config[i].config.flags |= V4L2_CTRL_FLAG_VOLATILE;
 
 		v4l2_ctrl_new_custom(&dev->ctrl_handler, &(dev->product_info->ctrl_config[i].config), NULL);
 
@@ -1627,7 +1628,6 @@ static int __gc_init_ctrl_handler(struct gc_device *dev)
 	/* Use same lock for controls as for everything else. */
 	dev->ctrl_handler.lock = &dev->input_lock;
 	dev->sd.ctrl_handler = &dev->ctrl_handler;
-
 	
 	return ret;
 }
