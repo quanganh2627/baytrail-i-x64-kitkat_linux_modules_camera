@@ -1258,6 +1258,75 @@ static int ov5693_s_power(struct v4l2_subdev *sd, int on)
 	return ret;
 }
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int ov5693_set_suspend(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = 0;
+
+	ret = ov5693_write_reg(client, OV5693_8BIT, 0x0100, 0x00);
+	if (ret) {
+		dev_err(&client->dev, "ov5693 write err.\n");
+	}
+
+	return ret;
+}
+
+static int ov5693_sub_init(struct i2c_client *client)
+{
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	return ov5693_init(sd);
+}
+
+static int ov5693_s_power_always_on(struct v4l2_subdev *sd, int on)
+{
+	struct ov5693_device *dev = to_ov5693_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = 0;
+
+	if (!dev->second_power_on_at_boot_done) {
+		if (!on) {
+			dev->second_power_on_at_boot_done = 1;
+		}
+		return ov5693_s_power(sd, on);
+	}
+
+	if (on == 0) {
+		//ret = power_down(sd);
+		//dev->power = 0;
+		// For case camera is stream-on, and then closed without a stream-off.
+		ret = ov5693_set_suspend(sd);
+
+		//if (dev->vcm_driver && dev->vcm_driver->power_down)
+		//	ret = dev->vcm_driver->power_down(sd);
+	} else {
+			if (!dev->power) {
+			if (dev->vcm_driver && dev->vcm_driver->power_up)
+				ret = dev->vcm_driver->power_up(sd);
+			if (ret)
+				return ret;
+
+			ret = power_up(sd);
+			if (!ret) {
+				dev->power = 1;
+				dev->once_launched = 1;
+				ret = ov5693_sub_init(client);
+				if (ret) {
+					dev_err(&client->dev, "i2c write error for ov5693_sub_init()\n");
+				}
+			}
+		} else {
+			ret = ov5693_sub_init(client);
+			if (ret) {
+				dev_err(&client->dev, "i2c write error for ov5693_sub_init()\n");
+			}
+		}
+	}
+
+	return ret;
+}
+#endif
+
 /*
  * distance - calculate the distance
  * @res: resolution
@@ -1755,7 +1824,11 @@ static const struct v4l2_subdev_sensor_ops ov5693_sensor_ops = {
 };
 
 static const struct v4l2_subdev_core_ops ov5693_core_ops = {
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	.s_power = ov5693_s_power_always_on,
+#else
 	.s_power = ov5693_s_power,
+#endif
 	.queryctrl = ov5693_queryctrl,
 	.g_ctrl = ov5693_g_ctrl,
 	.s_ctrl = ov5693_s_ctrl,
@@ -1808,6 +1881,11 @@ static int ov5693_probe(struct i2c_client *client,
 	dev->fmt_idx = 0;
 	v4l2_i2c_subdev_init(&(dev->sd), client, &ov5693_ops);
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	dev->second_power_on_at_boot_done = 0;
+	dev->once_launched = 0;
+#endif
+
 	if (client->dev.platform_data) {
 		ret = ov5693_s_config(&dev->sd, client->irq,
 				      client->dev.platform_data);
@@ -1834,11 +1912,58 @@ out_free:
 	return ret;
 }
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int ov5693_suspend(struct device *dev)
+{
+	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct ov5693_device *ov_dev = to_ov5693_sensor(sd);
+	int ret = 0;
+
+	//printk("%s() in\n", __func__);
+
+	if (ov_dev->once_launched) {
+		ret = ov5693_s_power(sd, 0);
+		if (ret) {
+			v4l2_err(client, "ov5693 power-down err.\n");
+		}
+	}
+
+	return 0;
+}
+
+static int ov5693_resume(struct device *dev)
+{
+	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct ov5693_device *ov_dev = to_ov5693_sensor(sd);
+	int ret = 0;
+
+	//printk("%s() in\n", __func__);
+
+	if (ov_dev->once_launched) {
+		ret = ov5693_s_power(sd, 1);
+		if (ret) {
+			v4l2_err(client, "ov5693 power-up err.\n");
+		}
+
+		ret = ov5693_set_suspend(sd);
+	}
+
+	return 0;
+}
+
+SIMPLE_DEV_PM_OPS(ov5693_pm_ops, ov5693_suspend, ov5693_resume);
+#endif
+
 MODULE_DEVICE_TABLE(i2c, ov5693_id);
 static struct i2c_driver ov5693_driver = {
 	.driver = {
 		   .owner = THIS_MODULE,
 		   .name = OV5693_NAME,
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+		   .pm = &ov5693_pm_ops,
+#endif
 		   },
 	.probe = ov5693_probe,
 	.remove = ov5693_remove,

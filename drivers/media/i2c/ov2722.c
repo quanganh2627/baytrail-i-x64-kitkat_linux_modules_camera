@@ -1024,6 +1024,66 @@ static int ov2722_s_power(struct v4l2_subdev *sd, int on)
 	return ret;
 }
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int ov2722_set_suspend(struct v4l2_subdev *sd)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = 0;
+
+	ret = ov2722_write_reg(client, OV2722_8BIT, 0x0100, 0x00);
+	if (ret) {
+		dev_err(&client->dev, "ov2722 write err.\n");
+	}
+
+	return ret;
+}
+
+static int ov2722_sub_init(struct i2c_client *client)
+{
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	update_otp(sd);
+	ov2722_init(sd);
+	return 0;
+}
+
+static int ov2722_s_power_always_on(struct v4l2_subdev *sd, int on)
+{
+	struct ov2722_device *dev = to_ov2722_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret = 0;
+
+	if (!dev->second_power_on_at_boot_done) {
+		if (!on) {
+			dev->second_power_on_at_boot_done = 1;
+		}
+		return ov2722_s_power(sd, on);
+	}
+
+	if (on == 0) {
+		//ret = power_down(sd);
+		//dev->power = 0;
+		// For case camera is stream-on, and then closed without a stream-off.
+		ret = ov2722_set_suspend(sd);
+	} else {
+		if (!dev->power) {
+			ret = power_up(sd);
+			if (!ret) {
+				dev->power = 1;
+				dev->once_launched = 1;
+				return ov2722_sub_init(client);
+			}
+		} else {
+			ret = ov2722_sub_init(client);
+			if (ret) {
+				dev_err(&client->dev, "i2c write error for ov2722_sub_init()\n");
+			}
+		}
+	}
+
+	return ret;
+}
+#endif
+
 /*
  * distance - calculate the distance
  * @res: resolution
@@ -1524,7 +1584,11 @@ static const struct v4l2_subdev_video_ops ov2722_video_ops = {
 };
 
 static const struct v4l2_subdev_core_ops ov2722_core_ops = {
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	.s_power = ov2722_s_power_always_on,
+#else
 	.s_power = ov2722_s_power,
+#endif
 	.queryctrl = ov2722_queryctrl,
 	.g_ctrl = ov2722_g_ctrl,
 	.s_ctrl = ov2722_s_ctrl,
@@ -1580,6 +1644,11 @@ static int ov2722_probe(struct i2c_client *client,
 	dev->fmt_idx = 0;
 	v4l2_i2c_subdev_init(&(dev->sd), client, &ov2722_ops);
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	dev->second_power_on_at_boot_done = 0;
+	dev->once_launched = 0;
+#endif
+
 	if (client->dev.platform_data) {
 		ret = ov2722_s_config(&dev->sd, client->irq,
 				       client->dev.platform_data);
@@ -1603,11 +1672,58 @@ out_free:
 	return ret;
 }
 
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+static int ov2722_suspend(struct device *dev)
+{
+	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct ov2722_device *ov_dev = to_ov2722_sensor(sd);
+	int ret = 0;
+
+	//printk("%s() in\n", __func__);
+
+	if (ov_dev->once_launched) {
+		ret = ov2722_s_power(sd, 0);
+		if (ret) {
+			v4l2_err(client, "ov2722 power-down err.\n");
+		}
+	}
+
+	return 0;
+}
+
+static int ov2722_resume(struct device *dev)
+{
+	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct ov2722_device *ov_dev = to_ov2722_sensor(sd);
+	int ret = 0;
+
+	//printk("%s() in\n", __func__);
+
+	if (ov_dev->once_launched) {
+		ret = ov2722_s_power(sd, 1);
+		if (ret) {
+			v4l2_err(client, "ov2722 power-up err.\n");
+		}
+
+		ret = ov2722_set_suspend(sd);
+	}
+
+	return 0;
+}
+
+SIMPLE_DEV_PM_OPS(ov2722_pm_ops, ov2722_suspend, ov2722_resume);
+#endif
+
 MODULE_DEVICE_TABLE(i2c, ov2722_id);
 static struct i2c_driver ov2722_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = OV2722_NAME,
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+		.pm = &ov2722_pm_ops,
+#endif
 	},
 	.probe = ov2722_probe,
 	.remove = ov2722_remove,

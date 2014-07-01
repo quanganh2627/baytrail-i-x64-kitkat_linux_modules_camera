@@ -35,6 +35,10 @@
 
 #include <linux/atomisp_platform.h>
 
+#ifndef POWER_ALWAYS_ON_BEFORE_SUSPEND
+#define POWER_ALWAYS_ON_BEFORE_SUSPEND
+#endif
+
 #define OV2722_NAME		"ov2722"
 
 /* Defines for register writes and register array processing */
@@ -214,6 +218,11 @@ struct ov2722_device {
 	int G_gain;
 	int B_gain;
 	int pre_digitgain;
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	int power;
+	int second_power_on_at_boot_done;
+	int once_launched;
+#endif
 	u8 res;
 	u8 type;
 };

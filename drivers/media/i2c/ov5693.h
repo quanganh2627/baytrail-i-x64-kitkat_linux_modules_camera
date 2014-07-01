@@ -35,6 +35,10 @@
 
 #include <linux/atomisp_platform.h>
 
+#ifndef POWER_ALWAYS_ON_BEFORE_SUSPEND
+#define POWER_ALWAYS_ON_BEFORE_SUSPEND
+#endif
+
 #define OV5693_NAME		"ov5693"
 
 /* Defines for register writes and register array processing */
@@ -226,6 +230,11 @@ struct ov5693_device {
 	int vt_pix_clk_freq_mhz;
 	int fmt_idx;
 	int run_mode;
+#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+	int power;
+	int second_power_on_at_boot_done;
+	int once_launched;
+#endif
 	u32 focus;
 	s16 number_of_steps;
 	u8 res;
