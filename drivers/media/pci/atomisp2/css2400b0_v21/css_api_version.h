@@ -33,7 +33,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatible
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.2.12"
+#define CSS_API_VERSION_STRING	"2.1.3.0"
 
 /*
 Change log
@@ -98,7 +98,7 @@ v2.1.2.9
  - add public parameters for xnr3 kernel
 
 v2.1.2.10
- - add new interface to enable output mirroring
+ - add new interface to enable horizontal output flipping
 
 v2.1.2.11 MIPI buffers optimization
  - modified struct ia_css_mipi_buffer_config, added number of MIPI buffers needed for the stream
@@ -106,6 +106,10 @@ v2.1.2.11 MIPI buffers optimization
 
 v2.1.2.12
 - create consolidated  firmware package for 2400, 2401, csi2p, bxtpoc
+
+v2.1.3.0
+ - rename ia_css_output_config.enable_mirror
+ - add new interface to enable vertical output flipping
 */
 
 #endif /*__CSS_API_VERSION_H*/
