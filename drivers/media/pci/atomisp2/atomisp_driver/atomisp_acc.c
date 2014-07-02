@@ -335,24 +335,34 @@ int atomisp_acc_map(struct atomisp_device *isp, struct atomisp_acc_map *map)
 	ia_css_ptr cssptr;
 	int pgnr;
 
-	if (map->flags || !map->user_ptr || map->css_ptr)
+	if (map->css_ptr)
 		return -EINVAL;
 
 	if (isp->acc.pipeline)
 		return -EBUSY;
 
-	/* Buffer to map must be page-aligned */
-	if ((unsigned long)map->user_ptr & ~PAGE_MASK) {
-		dev_err(isp->dev,
-			"%s: mapped buffer address %p is not page aligned\n",
-			__func__, map->user_ptr);
-		return -EINVAL;
+	if (map->user_ptr) {
+		/* Buffer to map must be page-aligned */
+		if ((unsigned long)map->user_ptr & ~PAGE_MASK) {
+			dev_err(isp->dev,
+				"%s: mapped buffer address %p is not page aligned\n",
+				__func__, map->user_ptr);
+			return -EINVAL;
+		}
+
+		pgnr = DIV_ROUND_UP(map->length, PAGE_SIZE);
+		cssptr = hrt_isp_css_mm_alloc_user_ptr(
+				map->length, map->user_ptr,
+				pgnr, HRT_USR_PTR,
+				(map->flags & ATOMISP_MAP_FLAG_CACHED));
+	} else {
+		/* Allocate private buffer. */
+		if (map->flags & ATOMISP_MAP_FLAG_CACHED)
+			cssptr = hrt_isp_css_mm_calloc_cached(map->length);
+		else
+			cssptr = hrt_isp_css_mm_calloc(map->length);
 	}
 
-	pgnr = DIV_ROUND_UP(map->length, PAGE_SIZE);
-	cssptr = hrt_isp_css_mm_alloc_user_ptr(
-			map->length, map->user_ptr,
-			pgnr, HRT_USR_PTR, false);
 	if (!cssptr)
 		return -ENOMEM;
 
@@ -374,9 +384,6 @@ int atomisp_acc_map(struct atomisp_device *isp, struct atomisp_acc_map *map)
 int atomisp_acc_unmap(struct atomisp_device *isp, struct atomisp_acc_map *map)
 {
 	struct atomisp_map *atomisp_map;
-
-	if (map->flags)
-		return -EINVAL;
 
 	if (isp->acc.pipeline)
 		return -EBUSY;

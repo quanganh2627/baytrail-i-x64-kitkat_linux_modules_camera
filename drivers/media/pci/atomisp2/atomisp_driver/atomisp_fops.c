@@ -1083,16 +1083,26 @@ static int atomisp_mmap(struct file *file, struct vm_area_struct *vma)
 	if (!(vma->vm_flags & (VM_WRITE | VM_READ)))
 		return -EACCES;
 
-	if (!(vma->vm_flags & VM_SHARED))
-		return -EINVAL;
-
 	rt_mutex_lock(&isp->mutex);
-	new_size = pipe->pix.width * pipe->pix.height * 2;
+
+	if (!(vma->vm_flags & VM_SHARED)) {
+		/* Map private buffer.
+		 * Set VM_SHARED to the flags since we need
+		 * to map the buffer page by page.
+		 * Without VM_SHARED, remap_pfn_range() treats
+		 * this kind of mapping as invalid.
+		 */
+		vma->vm_flags |= VM_SHARED;
+		ret = hmm_mmap(vma, vma->vm_pgoff << PAGE_SHIFT);
+		rt_mutex_unlock(&isp->mutex);
+		return ret;
+	}
 
 	/* mmap for ISP offline raw data */
 	if (atomisp_subdev_source_pad(vdev)
 	    == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE &&
 	    vma->vm_pgoff == (ISP_PARAM_MMAP_OFFSET >> PAGE_SHIFT)) {
+		new_size = pipe->pix.width * pipe->pix.height * 2;
 		if (asd->params.online_process != 0) {
 			ret = -EINVAL;
 			goto error;
