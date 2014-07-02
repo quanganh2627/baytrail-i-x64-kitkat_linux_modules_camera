@@ -647,21 +647,22 @@ static int power_up(struct v4l2_subdev *sd)
 		return -ENODEV;
 	}
 
+	/* flis clock control */
+	ret = dev->platform_data->flisclk_ctrl(sd, 1);
+	if (ret)
+		goto fail_clk;
+
 	/* power control */
 	ret = dev->platform_data->power_ctrl(sd, 1);
 	if (ret)
 		goto fail_power;
-
 
 	usleep_range(5000, 6000);
 	/* gpio ctrl */
 	ret = dev->platform_data->gpio_ctrl(sd, 1);
 	if (ret)
 		dev_err(&client->dev, "gpio failed 1\n");
-	/* flis clock control */
-	ret = dev->platform_data->flisclk_ctrl(sd, 1);
-	if (ret)
-		goto fail_clk;
+
 	/*
 	 * according to DS, 44ms is needed between power up and first i2c
 	 * commend
@@ -670,10 +671,10 @@ static int power_up(struct v4l2_subdev *sd)
 
 	return 0;
 
-fail_clk:
-	dev->platform_data->flisclk_ctrl(sd, 0);
 fail_power:
 	dev->platform_data->power_ctrl(sd, 0);
+fail_clk:
+	dev->platform_data->flisclk_ctrl(sd, 0);
 	dev_err(&client->dev, "sensor power-up failed\n");
 
 	return ret;
@@ -690,10 +691,6 @@ static int power_down(struct v4l2_subdev *sd)
 		return -ENODEV;
 	}
 
-	ret = dev->platform_data->flisclk_ctrl(sd, 0);
-	if (ret)
-		dev_err(&client->dev, "flisclk failed\n");
-
 	/* gpio ctrl */
 	ret = dev->platform_data->gpio_ctrl(sd, 0);
 	if (ret)
@@ -703,6 +700,10 @@ static int power_down(struct v4l2_subdev *sd)
 	ret = dev->platform_data->power_ctrl(sd, 0);
 	if (ret)
 		dev_err(&client->dev, "vprog failed.\n");
+
+	ret = dev->platform_data->flisclk_ctrl(sd, 0);
+	if (ret)
+		dev_err(&client->dev, "flisclk failed\n");
 
 	/*according to DS, 20ms is needed after power down*/
 	msleep(20);
