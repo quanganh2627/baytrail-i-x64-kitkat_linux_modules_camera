@@ -347,6 +347,19 @@ static int __imx_get_max_fps_index(
 	return i - 1;
 }
 
+static int imx_get_lanes(struct v4l2_subdev *sd)
+{
+	struct camera_mipi_info *imx_info = v4l2_get_subdev_hostdata(sd);
+
+	if (!imx_info)
+		return -ENOSYS;
+	if (imx_info->num_lanes < 1 || imx_info->num_lanes > 4 ||
+	    imx_info->num_lanes == 3)
+		return -EINVAL;
+
+	return imx_info->num_lanes;
+}
+
 static int __imx_update_exposure_timing(struct i2c_client *client, u16 exposure,
 			u16 llp, u16 fll)
 {
@@ -422,6 +435,8 @@ static int imx_set_exposure_gain(struct v4l2_subdev *sd, u16 coarse_itg,
 {
 	struct imx_device *dev = to_imx_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int lanes = imx_get_lanes(sd);
+	unsigned int digitgain_scaled;
 	int ret = 0;
 
 	/* Validate exposure:  cannot exceed VTS-4 where VTS is 16bit */
@@ -430,10 +445,21 @@ static int imx_set_exposure_gain(struct v4l2_subdev *sd, u16 coarse_itg,
 	/* Validate gain: must not exceed maximum 8bit value */
 	gain = clamp_t(u16, gain, 0, IMX_MAX_GLOBAL_GAIN_SUPPORTED);
 
-	/* Validate digital gain: must not exceed 12 bit value*/
-	digitgain = clamp_t(u16, digitgain, 0, IMX_MAX_DIGITAL_GAIN_SUPPORTED);
-
 	mutex_lock(&dev->input_lock);
+
+	/* For imx175, setting gain must be delayed by one */
+	if ((dev->sensor_id == IMX175_ID) && dev->digital_gain)
+		digitgain_scaled = dev->digital_gain;
+	else
+		digitgain_scaled = digitgain;
+	/* imx132 with two lanes needs more gain to saturate at max */
+	if (dev->sensor_id == IMX132_ID && lanes > 1) {
+		digitgain_scaled *= IMX132_2LANES_GAINFACT;
+		digitgain_scaled >>= IMX132_2LANES_GAINFACT_SHIFT;
+	}
+	/* Validate digital gain: must not exceed 12 bit value*/
+	digitgain_scaled = clamp_t(unsigned int, digitgain_scaled,
+				   0, IMX_MAX_DIGITAL_GAIN_SUPPORTED);
 
 	ret = __imx_update_exposure_timing(client, coarse_itg,
 			dev->pixels_per_line, dev->lines_per_frame);
@@ -449,10 +475,7 @@ static int imx_set_exposure_gain(struct v4l2_subdev *sd, u16 coarse_itg,
 		goto out;
 	dev->gain = gain;
 
-	if ((dev->sensor_id == IMX175_ID) && dev->digital_gain)
-		ret = __imx_update_digital_gain(client, dev->digital_gain);
-	else
-		ret = __imx_update_digital_gain(client, digitgain);
+	ret = __imx_update_digital_gain(client, digitgain_scaled);
 	if (ret)
 		goto out;
 	dev->digital_gain = digitgain;
@@ -502,19 +525,6 @@ out:
 	priv->size = dev->otp_driver->size;
 
 	return 0;
-}
-
-static int imx_get_lanes(struct v4l2_subdev *sd)
-{
-	struct camera_mipi_info *imx_info = v4l2_get_subdev_hostdata(sd);
-
-	if (!imx_info)
-		return -ENOSYS;
-	if (imx_info->num_lanes < 1 || imx_info->num_lanes > 4 ||
-	    imx_info->num_lanes == 3)
-		return -EINVAL;
-
-	return imx_info->num_lanes;
 }
 
 static int __imx_init(struct v4l2_subdev *sd, u32 val)

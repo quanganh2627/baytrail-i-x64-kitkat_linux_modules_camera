@@ -29,6 +29,9 @@
 #define IMX132_RGLANESEL_2LANES			0x00
 #define IMX132_RGLANESEL_4LANES			0x03
 
+#define IMX132_2LANES_GAINFACT			2096	/* 524/256 * 2^10 */
+#define IMX132_2LANES_GAINFACT_SHIFT		10
+
 /********************** settings for imx from vendor*********************/
 static struct imx_reg imx132_1080p_30fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
