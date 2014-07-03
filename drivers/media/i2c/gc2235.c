@@ -361,11 +361,11 @@ static int gc2235_set_streaming(struct v4l2_subdev *sd)
 	__gc2235_update_exposure_timing(client, g_exposure, 0, 0);
 	__gc2235_update_gain(sd, g_gain);
 
-#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
+//#ifdef POWER_ALWAYS_ON_BEFORE_SUSPEND
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x03);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0x10, 0x91);
 	gc2235_write_reg(client, GCSENSOR_8BIT, 0xfe, 0x00);
-#endif
+//#endif
 
 	return 0;
 }
