@@ -19,18 +19,48 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __CPU_MEM_SUPPORT_H_INCLUDED__
+#define __CPU_MEM_SUPPORT_H_INCLUDED__
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
-
-
-#define CSS_VERSION_STRING "VER:1.4; REL:20140703_27.4_1608; API:2.1.3.0; GIT:irci_20140701_1500__237e11#237e11bf6e022a242d4d06d2278943a6cf183e1d; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
-
-
+#if defined (__KERNEL__)
+#include <linux/string.h> /* memset */
+#else
+#include <string.h> /* memset */
 #endif
 
+#include "sh_css_internal.h" /* sh_css_malloc and sh_css_free */
+
+static inline void*
+ia_css_cpu_mem_alloc(unsigned int size)
+{
+	return sh_css_malloc(size);
+}
+
+static inline void*
+ia_css_cpu_mem_copy(void* dst, const void* src, unsigned int size)
+{
+	if(!src || !dst)
+		return NULL;
+
+	return memcpy(dst, src, size);
+}
+
+static inline void*
+ia_css_cpu_mem_set_zero(void* dst, unsigned int size)
+{
+	if(!dst)
+		return NULL;
+
+	return memset(dst, 0, size);
+}
+
+static inline void
+ia_css_cpu_mem_free(void* ptr)
+{
+	if(!ptr)
+		return;
+
+	sh_css_free(ptr);
+}
+
+#endif /* __CPU_MEM_SUPPORT_H_INCLUDED__ */

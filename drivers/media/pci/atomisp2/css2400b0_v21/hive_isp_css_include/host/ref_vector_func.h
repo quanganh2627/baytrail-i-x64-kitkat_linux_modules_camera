@@ -26,11 +26,35 @@
 #ifndef _REF_VECTOR_FUNC_H_INCLUDED_
 #define _REF_VECTOR_FUNC_H_INCLUDED_
 
-#ifndef STORAGE_CLASS_REF_VECTOR_FUNC_H
-#define STORAGE_CLASS_REF_VECTOR_FUNC_H extern
-#endif
+#include "storage_class.h"
+
+#ifdef INLINE_VECTOR_FUNC
+#define STORAGE_CLASS_REF_VECTOR_FUNC_H STORAGE_CLASS_INLINE
+#define STORAGE_CLASS_REF_VECTOR_DATA_H STORAGE_CLASS_INLINE_DATA
+#else /* INLINE_VECTOR_FUNC */
+#define STORAGE_CLASS_REF_VECTOR_FUNC_H STORAGE_CLASS_EXTERN
+#define STORAGE_CLASS_REF_VECTOR_DATA_H STORAGE_CLASS_EXTERN_DATA
+#endif  /* INLINE_VECTOR_FUNC */
+
 
 #include "ref_vector_func_types.h"
+
+/** @brief Doubling multiply accumulate with saturation
+ *
+ * @param[in] acc accumulator
+ * @param[in] a multiply input
+ * @param[in] b multiply input
+  *
+ * @return		acc + (a*b)
+ *
+ * This function will do a doubling multiply ont
+ * inputs a and b, and will add the result to acc.
+ * in case of an overflow of acc, it will saturate.
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector2w OP_1w_maccd_sat(
+	tvector2w acc,
+	tvector1w a,
+	tvector1w b );
 
 /** @brief Doubling multiply accumulate
  *
@@ -42,6 +66,7 @@
  *
  * This function will do a doubling multiply ont
  * inputs a and b, and will add the result to acc.
+ * in case of overflow it will not saturate but wrap around.
  */
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector2w OP_1w_maccd(
 	tvector2w acc,
@@ -562,5 +587,15 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol(
 	tvector1w a,
 	tvector1w b,
 	tscalar1w_signed_positive c);
+
+#ifndef INLINE_VECTOR_FUNC
+#define STORAGE_CLASS_REF_VECTOR_FUNC_C
+#define STORAGE_CLASS_REF_VECTOR_DATA_C const
+#else /* INLINE_VECTOR_FUNC */
+#define STORAGE_CLASS_REF_VECTOR_FUNC_C STORAGE_CLASS_REF_VECTOR_FUNC_H
+#define STORAGE_CLASS_REF_VECTOR_DATA_C STORAGE_CLASS_REF_VECTOR_DATA_H
+#include "ref_vector_func.c"
+#define VECTOR_FUNC_INLINED
+#endif  /* INLINE_VECTOR_FUNC */
 
 #endif /*_REF_VECTOR_FUNC_H_INCLUDED_*/
