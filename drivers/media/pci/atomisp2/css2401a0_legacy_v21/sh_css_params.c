@@ -2611,10 +2611,12 @@ ia_css_stream_get_isp_config(
  * Deprecated: Implement mmgr_realloc()
  */
 static bool realloc_isp_css_mm_buf(
-/* STORAGE_CLASS_INLINE bool realloc_isp_css_mm_buf( */
-	hrt_vaddress *curr_buf, size_t *curr_size,
-	size_t needed_size, bool force, enum ia_css_err *err,
-	uint16_t	mmgr_attribute)
+	hrt_vaddress *curr_buf,
+	size_t *curr_size,
+	size_t needed_size,
+	bool force,
+	enum ia_css_err *err,
+	uint16_t mmgr_attribute)
 {
 	int32_t id;
 
@@ -2650,7 +2652,6 @@ static bool realloc_isp_css_mm_buf(
 }
 
 static bool reallocate_buffer(
-/* STORAGE_CLASS_INLINE bool reallocate_buffer( */
 	hrt_vaddress *curr_buf,
 	size_t *curr_size,
 	size_t needed_size,
@@ -2668,29 +2669,6 @@ static bool reallocate_buffer(
 	IA_CSS_LEAVE_PRIVATE("ret=%d", ret);
 	return ret;
 }
-
-#if 0
-static bool reallocate_cached_buffer(
-/* STORAGE_CLASS_INLINE bool reallocate_cached_buffer( */
-	hrt_vaddress *curr_buf,
-	size_t *curr_size,
-	size_t needed_size,
-	enum ia_css_err *err)
-{
-	bool ret;
-	uint16_t mmgr_attribute = MMGR_ATTRIBUTE_DEFAULT |
-				  MMGR_ATTRIBUTE_CACHED;
-
-	IA_CSS_ENTER_PRIVATE("void");
-
-	ret = realloc_isp_css_mm_buf(curr_buf,
-		curr_size, needed_size, false, err, mmgr_attribute);
-
-	IA_CSS_LEAVE_PRIVATE("void");
-
-	return ret;
-}
-#endif
 
 struct ia_css_isp_3a_statistics *
 ia_css_isp_3a_statistics_allocate(const struct ia_css_3a_grid_info *grid)
