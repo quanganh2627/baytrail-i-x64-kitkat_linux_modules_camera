@@ -186,4 +186,7 @@
 #else
 #define ISP_FREQ_MAX	ISP_FREQ_400MHZ
 #endif
+
+#define ISP_DFS_TRY_TIMES	2
+
 #endif /* ATOMISP_REGS_H */

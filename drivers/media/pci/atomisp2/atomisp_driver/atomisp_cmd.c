@@ -179,9 +179,10 @@ static unsigned short atomisp_get_sensor_fps(struct atomisp_sub_device *asd)
 static int write_target_freq_to_hw(struct atomisp_device *isp,
 				   unsigned int new_freq)
 {
-	unsigned int ratio, timeout;
+	unsigned int ratio, timeout, guar_ratio;
 	unsigned int hpll_freq;
 	u32 isp_sspm1 = 0;
+	int i;
 
 	isp_sspm1 = intel_mid_msgbus_read32(PUNIT_PORT, ISPSSPM1);
 	if (isp_sspm1 & ISP_FREQ_VALID_MASK) {
@@ -196,22 +197,31 @@ static int write_target_freq_to_hw(struct atomisp_device *isp,
 	else
 		hpll_freq = HPLL_FREQ;
 	ratio = (2 * hpll_freq + new_freq / 2) / new_freq - 1;
+	guar_ratio = (2 * hpll_freq + 200 / 2) / 200 - 1;
 	isp_sspm1 = intel_mid_msgbus_read32(PUNIT_PORT, ISPSSPM1);
 	isp_sspm1 &= ~(0x1F << ISP_REQ_FREQ_OFFSET);
-	intel_mid_msgbus_write32(PUNIT_PORT, ISPSSPM1,
+
+	for (i = 0; i < ISP_DFS_TRY_TIMES; i++) {
+		intel_mid_msgbus_write32(PUNIT_PORT, ISPSSPM1,
 				   isp_sspm1
 				   | ratio << ISP_REQ_FREQ_OFFSET
 				   | 1 << ISP_FREQ_VALID_OFFSET
-				   | 0xF << ISP_REQ_GUAR_FREQ_OFFSET);
+				   | guar_ratio << ISP_REQ_GUAR_FREQ_OFFSET);
 
-	isp_sspm1 = intel_mid_msgbus_read32(PUNIT_PORT, ISPSSPM1);
-	timeout = 10;
-	while ((isp_sspm1 & ISP_FREQ_VALID_MASK) && timeout) {
 		isp_sspm1 = intel_mid_msgbus_read32(PUNIT_PORT, ISPSSPM1);
-		dev_dbg(isp->dev, "waiting for ISPSSPM1 valid bit to be 0.\n");
-		udelay(100);
-		timeout--;
+
+		timeout = 20;
+		while ((isp_sspm1 & ISP_FREQ_VALID_MASK) && timeout) {
+			isp_sspm1 = intel_mid_msgbus_read32(PUNIT_PORT, ISPSSPM1);
+			dev_dbg(isp->dev, "waiting for ISPSSPM1 valid bit to be 0.\n");
+			udelay(100);
+			timeout--;
+		}
+
+		if (timeout != 0)
+			break;
 	}
+
 	if (timeout == 0) {
 		dev_err(isp->dev, "DFS failed due to HW error.\n");
 		return -EINVAL;
