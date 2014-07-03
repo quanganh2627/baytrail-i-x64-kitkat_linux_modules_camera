@@ -200,3 +200,56 @@ int m10mo_set_run_mode_fw_type2(struct v4l2_subdev *sd)
 	return ret;
 }
 
+static int __m10mo_monitor_mode_set(struct v4l2_subdev *sd)
+{
+	int ret;
+
+	ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE);
+	if (ret)
+		return ret;
+
+	ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE,
+				     M10MO_INIT_TIMEOUT);
+	if (ret > 0)
+		ret = 0;
+	return ret;
+}
+
+int m10mo_streamoff_fw_type2(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	int ret = 0;
+
+	if (dev->mode == M10MO_SINGLE_CAPTURE_MODE) {
+		/* Exit capture mode and back to monitor mode */
+		ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+		if (ret)
+			goto out;
+		ret = __m10mo_monitor_mode_set(sd);
+		if (ret)
+			return ret;
+	} else if (dev->mode == M10MO_BURST_CAPTURE_MODE) {
+		/* Exit burst capture mode. */
+		ret = __m10mo_param_mode_set(sd);
+		if (ret)
+			goto out;
+		/* Set monitor type as Preview. */
+		ret = m10mo_writeb(sd, CATEGORY_PARAM,
+				  MONITOR_TYPE, MONITOR_PREVIEW);
+		if (ret)
+			goto out;
+		/* Restart monitor mode. */
+		ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
+		if (ret)
+			return ret;
+		ret = __m10mo_monitor_mode_set(sd);
+	}
+out:
+	return ret;
+}
+
+const struct m10mo_fw_ops fw_type2_ops = {
+	.set_run_mode   = m10mo_set_run_mode_fw_type2,
+	.set_burst_mode = m10mo_set_burst_mode_fw_type2,
+	.stream_off     = m10mo_streamoff_fw_type2,
+};

@@ -505,7 +505,7 @@ int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout)
 	return ret;
 }
 
-static int __m10mo_param_mode_set(struct v4l2_subdev *sd)
+int __m10mo_param_mode_set(struct v4l2_subdev *sd)
 {
 	int ret;
 
@@ -2055,18 +2055,27 @@ static int m10mo_set_run_mode(struct v4l2_subdev *sd)
 	return ret;
 }
 
+static int m10mo_streamoff(struct v4l2_subdev *sd)
+{
+	return __m10mo_param_mode_set(sd);
+}
+
+static const struct m10mo_fw_ops fw_ops = {
+	.set_run_mode   = m10mo_set_run_mode,
+	.set_burst_mode = m10mo_set_burst_mode,
+	.stream_off     = m10mo_streamoff,
+};
+
 void m10mo_handlers_init(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 
 	switch (dev->fw_type) {
 	case M10MO_FW_TYPE_2:
-		dev->set_run_mode = m10mo_set_run_mode_fw_type2;
-		dev->set_burst_mode = m10mo_set_burst_mode_fw_type2;
+		dev->fw_ops = &fw_type2_ops;
 		break;
 	default:
-		dev->set_run_mode = m10mo_set_run_mode;
-		dev->set_burst_mode = m10mo_set_burst_mode;
+		dev->fw_ops = &fw_ops;
 	}
 }
 
@@ -2226,54 +2235,19 @@ static int m10mo_s_stream(struct v4l2_subdev *sd, int enable)
 
 	mutex_lock(&dev->input_lock);
 	if (enable) {
-		ret = dev->set_run_mode(sd);
+		ret = dev->fw_ops->set_run_mode(sd);
 		if (ret) {
 			ret = m10mo_recovery(sd);
 			if (ret) {
 				mutex_unlock(&dev->input_lock);
 				return ret;
 			}
-
-			ret = dev->set_run_mode(sd);
+			ret = dev->fw_ops->set_run_mode(sd);
 		}
 	} else {
-		if (dev->fw_type == M10MO_FW_TYPE_2 &&
-		    dev->mode == M10MO_SINGLE_CAPTURE_MODE) {
-			/* Exit capture mode and back to monitor mode */
-			ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
-			if (ret)
-				goto out;
-			ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE);
-			if (ret)
-				goto out;
-			ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE, M10MO_INIT_TIMEOUT);
-		} else if (dev->fw_type == M10MO_FW_TYPE_2 &&
-			dev->mode == M10MO_BURST_CAPTURE_MODE) {
-			/* Exit burst capture mode. */
-			ret = m10mo_request_mode_change(sd, M10MO_PARAMETER_MODE);
-			if (ret)
-				goto out;
-			ret = m10mo_wait_mode_change(sd, M10MO_PARAMETER_MODE, M10MO_INIT_TIMEOUT);
-			if (ret)
-				goto out;
-			/* Set monitor type as Preview. */
-			ret = m10mo_write(sd, 1, CATEGORY_PARAM,
-				MONITOR_TYPE, MONITOR_PREVIEW);
-			if (ret)
-				goto out;
-			/* Restart monitor mode. */
-			ret = m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x01);
-			if (ret)
-				goto out;
-			ret = m10mo_request_mode_change(sd, M10MO_MONITOR_MODE);
-			if (ret)
-				goto out;
-			ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE, M10MO_INIT_TIMEOUT);
-		} else {
-			ret = __m10mo_param_mode_set(sd);
-		}
+		ret = dev->fw_ops->stream_off(sd);
 	}
-out:
+
 	mutex_unlock(&dev->input_lock);
 
 	/*
@@ -2824,7 +2798,7 @@ static long m10mo_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
 		ret = m10mo_get_af_mode(sd, &m10mo_ctrl->data);
 		break;
 	case EXT_ISP_CID_CAPTURE_BURST:
-		ret = dev->set_burst_mode(sd, m10mo_ctrl->data);
+		ret = dev->fw_ops->set_burst_mode(sd, m10mo_ctrl->data);
 		break;
 	case EXT_ISP_CID_FLASH_MODE:
 		ret = m10mo_set_flash_mode(sd, m10mo_ctrl->data);
