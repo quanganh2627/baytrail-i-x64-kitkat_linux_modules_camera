@@ -19,20 +19,48 @@
  *
  */
 
-#ifndef __STORAGE_CLASS_H_INCLUDED__
-#define __STORAGE_CLASS_H_INCLUDED__
+#ifndef __CPU_MEM_SUPPORT_H_INCLUDED__
+#define __CPU_MEM_SUPPORT_H_INCLUDED__
 
-#define STORAGE_CLASS_EXTERN extern
-
-#if defined(_MSC_VER)
-#define STORAGE_CLASS_INLINE static __inline
-#elif defined(__HIVECC)
-#define STORAGE_CLASS_INLINE static inline
+#if defined (__KERNEL__)
+#include <linux/string.h> /* memset */
 #else
-#define STORAGE_CLASS_INLINE static inline
+#include <string.h> /* memset */
 #endif
 
-#define STORAGE_CLASS_EXTERN_DATA extern const
-#define STORAGE_CLASS_INLINE_DATA static const
+#include "sh_css_internal.h" /* sh_css_malloc and sh_css_free */
 
-#endif /* __STORAGE_CLASS_H_INCLUDED__ */
+static inline void*
+ia_css_cpu_mem_alloc(unsigned int size)
+{
+	return sh_css_malloc(size);
+}
+
+static inline void*
+ia_css_cpu_mem_copy(void* dst, const void* src, unsigned int size)
+{
+	if(!src || !dst)
+		return NULL;
+
+	return memcpy(dst, src, size);
+}
+
+static inline void*
+ia_css_cpu_mem_set_zero(void* dst, unsigned int size)
+{
+	if(!dst)
+		return NULL;
+
+	return memset(dst, 0, size);
+}
+
+static inline void
+ia_css_cpu_mem_free(void* ptr)
+{
+	if(!ptr)
+		return;
+
+	sh_css_free(ptr);
+}
+
+#endif /* __CPU_MEM_SUPPORT_H_INCLUDED__ */

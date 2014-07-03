@@ -22,16 +22,14 @@
 #ifndef __MPMATH_H_INCLUDED__
 #define __MPMATH_H_INCLUDED__
 
+#include "storage_class.h"
+
 #ifdef INLINE_MPMATH
-#if defined(MSVC)
-#define STORAGE_CLASS_MPMATH_FUNC_H static __inline
-#else
-#define STORAGE_CLASS_MPMATH_FUNC_H static inline
-#endif
-#define STORAGE_CLASS_MPMATH_DATA_H static const
+#define STORAGE_CLASS_MPMATH_FUNC_H STORAGE_CLASS_INLINE
+#define STORAGE_CLASS_MPMATH_DATA_H STORAGE_CLASS_INLINE_DATA
 #else /* INLINE_MPMATH */
-#define STORAGE_CLASS_MPMATH_FUNC_H extern
-#define STORAGE_CLASS_MPMATH_DATA_H extern const
+#define STORAGE_CLASS_MPMATH_FUNC_H STORAGE_CLASS_EXTERN
+#define STORAGE_CLASS_MPMATH_DATA_H STORAGE_CLASS_EXTERN_DATA
 #endif  /* INLINE_MPMATH */
 
 #include <stdint.h>

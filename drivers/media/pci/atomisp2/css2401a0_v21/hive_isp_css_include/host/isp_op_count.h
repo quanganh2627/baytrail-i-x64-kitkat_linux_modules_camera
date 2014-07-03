@@ -149,6 +149,11 @@ typedef enum {
 
 } core_functions_t;
 
+#ifdef DISABLE_OPCNT
+#define inc_bbb_count(func)
+#else
+#define inc_bbb_count(func) _inc_bbb_count(func)
+#endif
 
 void
 inc_core_count_n(
@@ -156,7 +161,7 @@ inc_core_count_n(
 	unsigned n);
 
 void
-inc_bbb_count(
+_inc_bbb_count(
 	bbb_functions_t func);
 
 void

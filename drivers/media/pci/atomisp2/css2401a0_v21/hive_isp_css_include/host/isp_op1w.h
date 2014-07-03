@@ -34,10 +34,15 @@
  * Prerequisites:
  *
  */
+#include "storage_class.h"
 
-#ifndef STORAGE_CLASS_ISP_OP1W_H
-#define STORAGE_CLASS_ISP_OP1W_H extern
-#endif
+#ifdef INLINE_ISP_OP1W
+#define STORAGE_CLASS_ISP_OP1W_FUNC_H STORAGE_CLASS_INLINE
+#define STORAGE_CLASS_ISP_OP1W_DATA_H STORAGE_CLASS_INLINE_DATA
+#else /* INLINE_ISP_OP1W */
+#define STORAGE_CLASS_ISP_OP1W_FUNC_H STORAGE_CLASS_EXTERN
+#define STORAGE_CLASS_ISP_OP1W_DATA_H STORAGE_CLASS_EXTERN_DATA
+#endif  /* INLINE_ISP_OP1W */
 
 /*
  * Single-precision data type specification
@@ -62,7 +67,7 @@
  * This function will calculate the bitwise and.
  * result = _a & _b
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_and(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_and(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -76,7 +81,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_and(
  * This function will calculate the bitwise or.
  * result = _a | _b
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_or(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_or(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -90,7 +95,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_or(
  * This function will calculate the bitwise xor.
  * result = _a ^ _b
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_xor(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_xor(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -103,7 +108,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_xor(
  * This function will calculate the bitwise inverse.
  * result = ~_a
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_inv(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_inv(
     const tvector1w     _a);
 
 /* Additive */
@@ -119,7 +124,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_inv(
  * in case of overflow it will wrap around.
  * result = _a + _b
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_add(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_add(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -134,7 +139,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_add(
  * in case of overflow it will wrap around.
  * result = _a - _b
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_sub(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_sub(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -149,7 +154,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_sub(
  * in case of overflow it will saturate
  * result = CLIP(_a + _b, MIN_RANGE, MAX_RANGE);
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_addsat(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_addsat(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -164,7 +169,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_addsat(
  * in case of overflow it will saturate
  * result = CLIP(_a - _b, MIN_RANGE, MAX_RANGE);
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_subsat(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_subsat(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -179,7 +184,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_subsat(
  * and right shift the result with 1 bit.
  * result = (_a - _b) >> 1
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_subasr1(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_subasr1(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -193,7 +198,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_subasr1(
  * if (_a > 0) return _a;<br>
  * else return -_a;<br>
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_abs(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_abs(
     const tvector1w     _a);
 
 /** @brief subabs
@@ -207,7 +212,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_abs(
  * of the difference of both inputs
  * result = abs(_a - _b);
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_subabs(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_subabs(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -225,7 +230,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_subabs(
  * precision result
  * result = _a * _b;
  */
-STORAGE_CLASS_ISP_OP1W_H tvector2w OP_1w_muld(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector2w OP_1w_muld(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -241,7 +246,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector2w OP_1w_muld(
  * aligned single precison result.
  * result = _a * _b;
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mul(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_mul(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -258,7 +263,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mul(
  * FP_UNITY * FP_UNITY => FP_UNITY.
  * result = _a * _b >> (NUM_BITS-1);
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qmul(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_qmul(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -277,7 +282,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qmul(
  * it will round to nearest or to nearest even.
  * result = _a * _b >> (NUM_BITS-1);
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qrmul(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_qrmul(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -293,7 +298,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qrmul(
  * This function will return true if both inputs
  * are equal, and false if not equal.
  */
-STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_eq(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tflags OP_1w_eq(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -307,7 +312,7 @@ STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_eq(
  * This function will return false if both inputs
  * are equal, and true if not equal.
  */
-STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_ne(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tflags OP_1w_ne(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -321,7 +326,7 @@ STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_ne(
  * This function will return true if _a is smaller
  * or equal than _b.
  */
-STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_le(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tflags OP_1w_le(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -335,7 +340,7 @@ STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_le(
  * This function will return true if _a is smaller
  * than _b.
  */
-STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_lt(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tflags OP_1w_lt(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -349,7 +354,7 @@ STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_lt(
  * This function will return true if _a is greater
  * or equal than _b.
  */
-STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_ge(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tflags OP_1w_ge(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -363,7 +368,7 @@ STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_ge(
  * This function will return true if _a is greater
  * than _b.
  */
-STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_gt(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tflags OP_1w_gt(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -379,7 +384,7 @@ STORAGE_CLASS_ISP_OP1W_H tflags OP_1w_gt(
  * This function will shift _a with _b bits to the right.
  * preserving the sign bit.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asr(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asr(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -395,7 +400,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asr(
  * it will round to nearest or to nearest even.
  *
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asrrnd(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asrrnd(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -409,7 +414,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asrrnd(
  * This function will shift _a with _b bits to the left.
  *
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asl(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asl(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -423,7 +428,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_asl(
  * This function will shift _a with _b bits to the left.
  *
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_aslsat(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_aslsat(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -437,7 +442,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_aslsat(
  * This function will shift _a with _b bits to the left.
  * It will insert zero's on the right.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lsl(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_lsl(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -451,7 +456,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lsl(
  * This function will shift _a with _b bits to the right.
  * It will insert zero's on the left
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lsr(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_lsr(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -467,7 +472,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_lsr(
  * single precision. It will also assert on ranges
  *
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_int_cast_to_1w (
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_int_cast_to_1w(
     const int           _a);
 
 /** @brief Cast from 1w to int
@@ -480,7 +485,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_int_cast_to_1w (
  * integer.
  *
  */
-STORAGE_CLASS_ISP_OP1W_H int OP_1w_cast_to_int (
+STORAGE_CLASS_ISP_OP1W_FUNC_H int OP_1w_cast_to_int(
     const tvector1w      _a);
 
 /** @brief Cast from int to 1w
@@ -493,7 +498,7 @@ STORAGE_CLASS_ISP_OP1W_H int OP_1w_cast_to_int (
  * double precision. lsb aligned.
  *
  */
-STORAGE_CLASS_ISP_OP1W_H tvector2w OP_1w_cast_to_2w (
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector2w OP_1w_cast_to_2w(
     const tvector1w     _a);
 
 /** @brief Cast from int to 1w
@@ -506,7 +511,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector2w OP_1w_cast_to_2w (
  * single precision. MSB's will be truncated.
  *
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_2w_cast_to_1w (
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_2w_cast_to_1w(
     const tvector2w    _a);
 
 
@@ -521,7 +526,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_2w_cast_to_1w (
  * precision.
  *
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_2w_sat_cast_to_1w (
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_2w_sat_cast_to_1w(
     const tvector2w    _a);
 
 /* clipping */
@@ -536,7 +541,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_2w_sat_cast_to_1w (
  * This function will clip the first argument between
  * the negated version of _b and _b.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_clip_asym(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_clip_asym(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -550,7 +555,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_clip_asym(
  * This function will clip the first argument between
  * zero and _b.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_clipz(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_clipz(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -566,7 +571,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_clipz(
  * This function will divide the first argument by
  * the second argument.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_div(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_div(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -580,7 +585,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_div(
  * This function will perform fixed point division of
  * the first argument by the second argument.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qdiv(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_qdiv(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -593,7 +598,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_qdiv(
  *
  * This function will return _a modulo _b.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mod(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_mod(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -605,7 +610,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mod(
  *
  * This function will calculate the square root of _a
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_sqrt(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_sqrt(
     const tvector1w     _a);
 
 /* Miscellaneous */
@@ -621,7 +626,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_sqrt(
  * This function will return _a if the condition _c
  * is true and _b otherwise.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mux(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_mux(
     const tvector1w     _a,
     const tvector1w     _b,
     const tflags           _c);
@@ -638,7 +643,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_mux(
  * And depending on the rounding mode of the core
  * it will round to nearest or to nearest even.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_avgrnd(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_avgrnd(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -652,7 +657,7 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_avgrnd(
  * This function will return the smallest of both
  * input arguments.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_min(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_min(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -666,8 +671,19 @@ STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_min(
  * This function will return the largest of both
  * input arguments.
  */
-STORAGE_CLASS_ISP_OP1W_H tvector1w OP_1w_max(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_max(
     const tvector1w     _a,
     const tvector1w     _b);
 
+#ifndef INLINE_ISP_OP1W
+#define STORAGE_CLASS_ISP_OP1W_FUNC_C
+#define STORAGE_CLASS_ISP_OP1W_DATA_C const
+#else /* INLINE_ISP_OP1W */
+#define STORAGE_CLASS_ISP_OP1W_FUNC_C STORAGE_CLASS_ISP_OP1W_FUNC_H
+#define STORAGE_CLASS_ISP_OP1W_DATA_C STORAGE_CLASS_ISP_OP1W_DATA_H
+#include "isp_op1w.c"
+#define ISP_OP1W_INLINED
+#endif  /* INLINE_ISP_OP1W */
+
 #endif /* __ISP_OP1W_H_INCLUDED__ */
+
