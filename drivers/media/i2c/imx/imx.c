@@ -1528,6 +1528,14 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	if (ret)
 		goto out;
 
+	ret = __imx_update_gain(sd, dev->gain);
+	if (ret)
+		goto out;
+
+	ret = __imx_update_digital_gain(client, dev->digital_gain);
+	if (ret)
+		goto out;
+
 	ret = imx_write_reg_array(client, dev->param_update);
 	if (ret)
 		goto out;
