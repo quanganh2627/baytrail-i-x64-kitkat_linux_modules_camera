@@ -199,6 +199,8 @@ struct m10mo_device {
 	struct v4l2_ctrl *link_freq;
 	struct v4l2_ctrl *zsl_capture;
 	struct v4l2_ctrl *colorfx;
+	int (*set_run_mode) (struct v4l2_subdev *sd);
+	int (*set_burst_mode) (struct v4l2_subdev *sd, unsigned int val);
 	unsigned int num_lanes;
 	const struct m10mo_resolution *curr_res_table;
 	int entries_curr_table;
@@ -231,6 +233,15 @@ int m10mo_readb(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_readw(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_readl(struct v4l2_subdev *sd, u8 category, u8 reg, u32 *val);
 int m10mo_setup_flash_controller(struct v4l2_subdev *sd);
+int m10mo_request_mode_change(struct v4l2_subdev *sd, u8 requested_mode);
+int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout);
+
+int get_resolution_index(const struct m10mo_resolution *res,
+			 int entries, int w, int h);
+
+int m10mo_set_still_capture(struct v4l2_subdev *sd);
+int m10mo_set_zsl_raw_capture(struct v4l2_subdev *sd);
+
 
 void m10mo_register_spi_fw_flash_interface(struct m10mo_device *dev,
 					   struct m10mo_spi *m10mo_spi_dev);
@@ -252,6 +263,9 @@ int m10mo_dump_string_log2_2(struct v4l2_subdev *sd);
 int m10mo_dump_string_log2_3(struct v4l2_subdev *sd);
 int m10mo_dump_string_log3(struct v4l2_subdev *sd);
 void m10mo_dump_log(struct v4l2_subdev *sd);
+
+int m10mo_set_run_mode_fw_type2(struct v4l2_subdev *sd);
+int m10mo_set_burst_mode_fw_type2(struct v4l2_subdev *sd, unsigned int val);
 
 /* Below contents are based on the M10MO_categoryParameter-a1.xls */
 
