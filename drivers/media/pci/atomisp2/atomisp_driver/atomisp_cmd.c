@@ -1028,7 +1028,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 				asd->enable_raw_buffer_lock->val &&
 				asd->continuous_mode->val) {
 				atomisp_set_raw_buffer_bitmap(asd, frame->exp_id);
-				BUG_ON(frame->exp_id > ATOMISP_MAX_EXP_ID);
+				WARN_ON(frame->exp_id > ATOMISP_MAX_EXP_ID);
 			}
 
 			break;
