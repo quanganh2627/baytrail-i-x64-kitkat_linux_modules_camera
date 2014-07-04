@@ -1709,6 +1709,14 @@ start_sensor:
 		goto out;
 	}
 
+	/* Enable the CSI interface on ANN B0/K0 */
+	if (isp->media_dev.hw_revision >= ((ATOMISP_HW_REVISION_ISP2401 <<
+	    ATOMISP_HW_REVISION_SHIFT) | ATOMISP_HW_STEPPING_B0)) {
+		pci_write_config_word(isp->pdev, MRFLD_PCI_CSI_CONTROL,
+				      isp->saved_regs.csi_control |
+				      MRFLD_PCI_CSI_CONTROL_CSI_READY);
+	}
+
 	/* stream on the sensor */
 	ret = v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 			       video, s_stream, 1);
@@ -1907,6 +1915,14 @@ stopsensor:
 	if (atomisp_streaming_count(isp)) {
 		atomisp_css_flush(isp);
 		return 0;
+	}
+
+	/* Disable the CSI interface on ANN B0/K0 */
+	if (isp->media_dev.hw_revision >= ((ATOMISP_HW_REVISION_ISP2401 <<
+	    ATOMISP_HW_REVISION_SHIFT) | ATOMISP_HW_STEPPING_B0)) {
+		pci_write_config_word(isp->pdev, MRFLD_PCI_CSI_CONTROL,
+				      isp->saved_regs.csi_control &
+				      ~MRFLD_PCI_CSI_CONTROL_CSI_READY);
 	}
 
 	if (atomisp_freq_scaling(isp, ATOMISP_DFS_MODE_LOW, false))

@@ -202,6 +202,15 @@ static int atomisp_save_iunit_reg(struct atomisp_device *isp)
 	    ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT)
 		isp->saved_regs.csi_control |=
 			MRFLD_PCI_CSI_CONTROL_PARPATHEN;
+	/* Disable CSI interface on ANN B0/K0. It is turned on just before
+	 * starting streaming, not before to allow driver time to configure
+	 * the CSI receiver before incoming packets are seen.
+	 * A fuse configures whether this bit has actually any effect.
+	 */
+	if (isp->media_dev.hw_revision >= ((ATOMISP_HW_REVISION_ISP2401 <<
+	    ATOMISP_HW_REVISION_SHIFT) | ATOMISP_HW_STEPPING_B0))
+		isp->saved_regs.csi_control &=
+			~MRFLD_PCI_CSI_CONTROL_CSI_READY;
 	pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_RCOMP_CONTROL,
 			      &isp->saved_regs.csi_afe_rcomp_config);
 	pci_read_config_dword(dev, MRFLD_PCI_CSI_AFE_HS_CONTROL,

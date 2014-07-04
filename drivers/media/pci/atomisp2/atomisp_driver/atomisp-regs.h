@@ -54,6 +54,8 @@
 
 /* Select Arasan (legacy)/Intel input system */
 #define MRFLD_PCI_CSI_CONTROL_PARPATHEN	BIT(24)
+/* Enable CSI interface (ANN B0/K0) */
+#define MRFLD_PCI_CSI_CONTROL_CSI_READY	BIT(25)
 
 /*
  * Enables the combining of adjacent 32-byte read requests to the same
