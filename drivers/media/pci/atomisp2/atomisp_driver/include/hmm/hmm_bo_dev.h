@@ -44,6 +44,9 @@
 
 #define	HMM_BO_DEVICE_INITED	0x1
 
+#define	HMM_BO_CACHE_SIZE	2
+
+
 struct hmm_buffer_object;
 
 struct hmm_bo_device {
