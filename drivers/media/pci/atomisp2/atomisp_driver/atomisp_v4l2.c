@@ -1103,8 +1103,9 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 #else
 			 ATOMISP_HW_REVISION_ISP2401_LEGACY
 #endif
-			 << ATOMISP_HW_REVISION_SHIFT) |
-			ATOMISP_HW_STEPPING_A0;
+			 << ATOMISP_HW_REVISION_SHIFT);
+		isp->media_dev.hw_revision |= isp->pdev->revision < 2 ?
+			ATOMISP_HW_STEPPING_A0 : ATOMISP_HW_STEPPING_B0;
 		isp->dfs = &dfs_config_merr;
 		break;
 	case ATOMISP_PCI_DEVICE_SOC_CHT:
