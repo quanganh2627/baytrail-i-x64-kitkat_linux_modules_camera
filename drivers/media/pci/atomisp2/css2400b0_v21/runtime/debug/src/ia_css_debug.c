@@ -1617,8 +1617,40 @@ void ia_css_debug_print_sp_debug_state(const struct sh_css_sp_debug_state
 static void debug_print_rx_mipi_port_state(mipi_port_state_t *state)
 {
 	int i;
+	unsigned int bits, infos;
 
 	assert(state != NULL);
+
+	bits = state->irq_status, infos;
+	infos = ia_css_isys_rx_translate_irq_infos(bits);
+
+	ia_css_debug_dtrace(2, "\t\t%-32s: (irq reg = 0x%X)\n",
+			    "receiver errors", bits);
+
+	if (infos & IA_CSS_RX_IRQ_INFO_BUFFER_OVERRUN)
+		ia_css_debug_dtrace(2, "\t\t\tbuffer overrun\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_SOT)
+		ia_css_debug_dtrace(2, "\t\t\tstart-of-transmission error\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_SOT_SYNC)
+		ia_css_debug_dtrace(2, "\t\t\tstart-of-transmission sync error\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_CONTROL)
+		ia_css_debug_dtrace(2, "\t\t\tcontrol error\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_ECC_DOUBLE)
+		ia_css_debug_dtrace(2, "\t\t\t2 or more ECC errors\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_CRC)
+		ia_css_debug_dtrace(2, "\t\t\tCRC mismatch\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_UNKNOWN_ID)
+		ia_css_debug_dtrace(2, "\t\t\tunknown error\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_FRAME_SYNC)
+		ia_css_debug_dtrace(2, "\t\t\tframe sync error\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_FRAME_DATA)
+		ia_css_debug_dtrace(2, "\t\t\tframe data error\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_DATA_TIMEOUT)
+		ia_css_debug_dtrace(2, "\t\t\tdata timeout\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_UNKNOWN_ESC)
+		ia_css_debug_dtrace(2, "\t\t\tunknown escape command entry\n");
+	if (infos & IA_CSS_RX_IRQ_INFO_ERR_LINE_SYNC)
+		ia_css_debug_dtrace(2, "\t\t\tline sync error\n");
 
 	ia_css_debug_dtrace(2, "\t\t%-32s: %d\n",
 			    "device_ready", state->device_ready);
@@ -1781,45 +1813,12 @@ static void debug_print_rx_state(receiver_state_t *state)
 #if !defined(HAS_NO_INPUT_SYSTEM) && defined(USE_INPUT_SYSTEM_VERSION_2)
 void ia_css_debug_dump_rx_state(void)
 {
-#if defined(HAS_INPUT_FORMATTER_VERSION_2)
-	receiver_state_t state;
-#endif
-	unsigned int infos = 0, bits;
-	bits = ia_css_isys_rx_get_interrupt_reg();
-	ia_css_rx_get_irq_info(&infos);
-
-	ia_css_debug_dtrace(2, "CSI Receiver errors: (irq reg = 0x%X)\n", bits);
-
-	if (infos & IA_CSS_RX_IRQ_INFO_BUFFER_OVERRUN)
-		ia_css_debug_dtrace(2, "\tbuffer overrun\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_SOT)
-		ia_css_debug_dtrace(2, "\tstart-of-transmission error\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_SOT_SYNC)
-		ia_css_debug_dtrace(2, "\tstart-of-transmission sync error\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_CONTROL)
-		ia_css_debug_dtrace(2, "\tcontrol error\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_ECC_DOUBLE)
-		ia_css_debug_dtrace(2, "\t2 or more ECC errors\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_CRC)
-		ia_css_debug_dtrace(2, "\tCRC mismatch\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_UNKNOWN_ID)
-		ia_css_debug_dtrace(2, "\tunknown error\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_FRAME_SYNC)
-		ia_css_debug_dtrace(2, "\tframe sync error\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_FRAME_DATA)
-		ia_css_debug_dtrace(2, "\tframe data error\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_DATA_TIMEOUT)
-		ia_css_debug_dtrace(2, "\tdata timeout\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_UNKNOWN_ESC)
-		ia_css_debug_dtrace(2, "\tunknown escape command entry\n");
-	if (infos & IA_CSS_RX_IRQ_INFO_ERR_LINE_SYNC)
-		ia_css_debug_dtrace(2, "\tline sync error\n");
-
 #if defined(HAS_INPUT_FORMATTER_VERSION_2) && !defined(HAS_NO_INPUT_FORMATTER)
+	receiver_state_t state;
+
 	receiver_get_state(RX0_ID, &state);
 	debug_print_rx_state(&state);
 #endif
-	return;
 }
 #endif
 
