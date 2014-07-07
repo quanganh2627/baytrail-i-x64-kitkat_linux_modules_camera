@@ -341,7 +341,7 @@ calculate_mipi_buff_size(
 }
 
 enum ia_css_err
-allocate_mipi_frames(struct ia_css_pipe *pipe)
+allocate_mipi_frames(struct ia_css_pipe *pipe, struct ia_css_stream_info *info)
 {
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
@@ -461,6 +461,24 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 				ia_css_frame_zero(my_css.mipi_frames[port][i]);
 #endif
 			}
+			if (info->metadata_info.size > 0) {
+				/* free previous metadata buffer */
+				if (my_css.mipi_metadata[port][i] != NULL) {
+					ia_css_metadata_free(my_css.mipi_metadata[port][i]);
+					my_css.mipi_metadata[port][i] = NULL;
+				}
+				/* check if need to allocate a new metadata buffer */
+				if (i < my_css.num_mipi_frames[port]) {
+					/* allocate new metadata buffer */
+					my_css.mipi_metadata[port][i] = ia_css_metadata_allocate(&info->metadata_info);
+					if (my_css.mipi_metadata[port][i] == NULL) {
+						ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+							"allocate_mipi_metadata(%p, %d) failed.\n",
+							pipe, port);
+						return err;
+					}
+				}
+			}
 		}
 	}
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
@@ -469,6 +487,7 @@ allocate_mipi_frames(struct ia_css_pipe *pipe)
 	return err;
 #else
 	(void)pipe;
+	(void)info;
 	return IA_CSS_SUCCESS;
 #endif
 }
@@ -544,6 +563,10 @@ free_mipi_frames(struct ia_css_pipe *pipe)
 						pipe, port, i);
 					return err;
 				}
+				if (my_css.mipi_metadata[port][i] != NULL) {
+					ia_css_metadata_free(my_css.mipi_metadata[port][i]);
+					my_css.mipi_metadata[port][i] = NULL;
+				}
 			}
 		} /* limit the scope of variables */
 
@@ -563,6 +586,10 @@ free_mipi_frames(struct ia_css_pipe *pipe)
 						"free_mipi_frames(port=%d, num=%d).\n", port, i);
 					ia_css_frame_free(my_css.mipi_frames[port][i]);
 					my_css.mipi_frames[port][i] = NULL;
+				}
+				if (my_css.mipi_metadata[port][i] != NULL) {
+					ia_css_metadata_free(my_css.mipi_metadata[port][i]);
+					my_css.mipi_metadata[port][i] = NULL;
 				}
 			}
 			ref_count_mipi_allocation[port] = 0;
@@ -620,6 +647,8 @@ send_mipi_frames(struct ia_css_pipe *pipe)
 		/* Need to include the ofset for port. */
 		sh_css_update_host2sp_mipi_frame(port * NUM_MIPI_FRAMES_PER_STREAM + i,
 			my_css.mipi_frames[port][i]);
+		sh_css_update_host2sp_mipi_metadata(port * NUM_MIPI_FRAMES_PER_STREAM + i,
+			my_css.mipi_metadata[port][i]);
 	}
 	sh_css_update_host2sp_num_mipi_frames
 		(my_css.num_mipi_frames[port]);

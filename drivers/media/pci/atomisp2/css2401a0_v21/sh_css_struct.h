@@ -56,6 +56,7 @@ struct sh_css {
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	unsigned int                   num_mipi_frames[N_CSI_PORTS];
 	struct ia_css_frame           *mipi_frames[N_CSI_PORTS][NUM_MIPI_FRAMES_PER_STREAM];
+	struct ia_css_metadata        *mipi_metadata[N_CSI_PORTS][NUM_MIPI_FRAMES_PER_STREAM];
 	unsigned int                   mipi_sizes_for_check[N_CSI_PORTS][IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES_PER_PORT];
 	unsigned int                   mipi_frame_size[N_CSI_PORTS];
 #endif

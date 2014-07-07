@@ -26,10 +26,10 @@
 #include "sh_css_internal.h"
 
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)
-void ia_css_isys_rx_enable_all_interrupts(void)
+void ia_css_isys_rx_enable_all_interrupts(mipi_port_ID_t port)
 {
 	hrt_data bits = receiver_port_reg_load(RX0_ID,
-				MIPI_PORT1_ID,
+				port,
 				_HRT_CSS_RECEIVER_IRQ_ENABLE_REG_IDX);
 
 	bits |= (1U << _HRT_CSS_RECEIVER_IRQ_OVERRUN_BIT) |
@@ -53,7 +53,7 @@ void ia_css_isys_rx_enable_all_interrupts(void)
 	/*(1U << _HRT_CSS_RECEIVER_IRQ_ERR_LINE_SYNC_BIT); */
 
 	receiver_port_reg_store(RX0_ID,
-				MIPI_PORT1_ID,
+				port,
 				_HRT_CSS_RECEIVER_IRQ_ENABLE_REG_IDX, bits);
 
 	/*
@@ -64,23 +64,61 @@ void ia_css_isys_rx_enable_all_interrupts(void)
 	return;
 }
 
-unsigned int ia_css_isys_rx_get_interrupt_reg(void)
+/* This function converts between the enum used on the CSS API and the
+ * internal DLI enum type.
+ * We do not use an array for this since we cannot use named array
+ * initializers in Windows. Without that there is no easy way to guarantee
+ * that the array values would be in the correct order.
+ * */
+mipi_port_ID_t ia_css_isys_port_to_mipi_port(enum ia_css_csi2_port api_port)
+{
+	/* In this module the validity of the inptu variable should
+	 * have been checked already, so we do not check for erroneous
+	 * values. */
+	mipi_port_ID_t port = MIPI_PORT0_ID;
+
+	if (api_port == IA_CSS_CSI2_PORT1)
+		port = MIPI_PORT1_ID;
+	else if (api_port == IA_CSS_CSI2_PORT2)
+		port = MIPI_PORT2_ID;
+
+	return port;
+}
+
+unsigned int ia_css_isys_rx_get_interrupt_reg(mipi_port_ID_t port)
 {
 	return receiver_port_reg_load(RX0_ID,
-				      MIPI_PORT1_ID,
+				      port,
 				      _HRT_CSS_RECEIVER_IRQ_STATUS_REG_IDX);
 }
 
 void ia_css_rx_get_irq_info(unsigned int *irq_infos)
 {
-	unsigned long infos = 0;
+	ia_css_rx_port_get_irq_info(IA_CSS_CSI2_PORT1, irq_infos);
+}
 
+void ia_css_rx_port_get_irq_info(enum ia_css_csi2_port api_port,
+				 unsigned int *irq_infos)
+{
+	mipi_port_ID_t port = ia_css_isys_port_to_mipi_port(api_port);
+	ia_css_isys_rx_get_irq_info(port, irq_infos);
+}
 
-	hrt_data bits = receiver_port_reg_load(RX0_ID,
-				MIPI_PORT1_ID,
-				_HRT_CSS_RECEIVER_IRQ_STATUS_REG_IDX);
+void ia_css_isys_rx_get_irq_info(mipi_port_ID_t port,
+				 unsigned int *irq_infos)
+{
+	unsigned int bits;
 
 	assert(irq_infos != NULL);
+	bits = ia_css_isys_rx_get_interrupt_reg(port);
+	*irq_infos = ia_css_isys_rx_translate_irq_infos(bits);
+}
+
+/* Translate register bits to CSS API enum mask */
+unsigned int ia_css_isys_rx_translate_irq_infos(unsigned int bits)
+{
+	unsigned int infos = 0;
+
 	if (bits & (1U << _HRT_CSS_RECEIVER_IRQ_OVERRUN_BIT))
 		infos |= IA_CSS_RX_IRQ_INFO_BUFFER_OVERRUN;
 #if defined(HAS_RX_VERSION_2)
@@ -116,13 +154,24 @@ void ia_css_rx_get_irq_info(unsigned int *irq_infos)
 	if (bits & (1U << _HRT_CSS_RECEIVER_IRQ_ERR_LINE_SYNC_BIT))
 		infos |= IA_CSS_RX_IRQ_INFO_ERR_LINE_SYNC;
 
-	*irq_infos = infos;
+	return infos;
 }
 
 void ia_css_rx_clear_irq_info(unsigned int irq_infos)
 {
+	ia_css_rx_port_clear_irq_info(IA_CSS_CSI2_PORT1, irq_infos);
+}
+
+void ia_css_rx_port_clear_irq_info(enum ia_css_csi2_port api_port, unsigned int irq_infos)
+{
+	mipi_port_ID_t port = ia_css_isys_port_to_mipi_port(api_port);
+	ia_css_isys_rx_clear_irq_info(port, irq_infos);
+}
+
+void ia_css_isys_rx_clear_irq_info(mipi_port_ID_t port, unsigned int irq_infos)
+{
 	hrt_data bits = receiver_port_reg_load(RX0_ID,
-				MIPI_PORT1_ID,
+				port,
 				_HRT_CSS_RECEIVER_IRQ_ENABLE_REG_IDX);
 
 	/* MW: Why do we remap the receiver bitmap */
@@ -162,7 +211,7 @@ void ia_css_rx_clear_irq_info(unsigned int irq_infos)
 		bits |= 1U << _HRT_CSS_RECEIVER_IRQ_ERR_LINE_SYNC_BIT;
 
 	receiver_port_reg_store(RX0_ID,
-				MIPI_PORT1_ID,
+				port,
 				_HRT_CSS_RECEIVER_IRQ_ENABLE_REG_IDX, bits);
 
 	return;

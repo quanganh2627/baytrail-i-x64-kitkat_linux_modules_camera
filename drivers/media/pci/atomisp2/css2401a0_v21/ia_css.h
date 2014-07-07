@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140703_1500 */
+/* Release Version: irci_master_20140707_0622 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *

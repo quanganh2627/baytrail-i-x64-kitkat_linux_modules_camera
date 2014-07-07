@@ -121,6 +121,17 @@ sh_css_update_host2sp_mipi_frame(
 				struct ia_css_frame *frame);
 
 /**
+ * @brief Update the mipi metadata information in host_sp_communication.
+ *
+ * @param[in] frame_num The mipi frame number.
+ * @param[in] metadata The pointer to the mipi metadata.
+ */
+void
+sh_css_update_host2sp_mipi_metadata(
+				unsigned frame_num,
+				struct ia_css_metadata *metadata);
+
+/**
  * @brief Update the nr of mipi frames to use in host_sp_communication.
  *
  * @param[in] num_frames The number of mipi frames to use.
