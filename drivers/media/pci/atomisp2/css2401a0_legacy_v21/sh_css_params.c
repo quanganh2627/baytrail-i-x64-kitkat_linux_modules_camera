@@ -1740,16 +1740,20 @@ sh_css_get_macc_table(const struct ia_css_isp_parameters *params,
 }
 #endif
 
-#if !defined(IS_ISP_2500_SYSTEM)
 void ia_css_morph_table_free(
 	struct ia_css_morph_table *me)
 {
+
+#if !defined(IS_ISP_2500_SYSTEM)
+
 	unsigned int i;
 
 	if (me == NULL)
 		return;
 
 	IA_CSS_ENTER("");
+
+
 
 	for (i = 0; i < IA_CSS_MORPH_TABLE_NUM_PLANES; i++) {
 		if (me->coordinates_x[i])
@@ -1760,14 +1764,23 @@ void ia_css_morph_table_free(
 
 	sh_css_free(me);
 	IA_CSS_LEAVE("void");
-}
+
+#else /* defined(IS_ISP_2500_SYSTEM) */
+	(void)me;
+	IA_CSS_ENTER("");
+	IA_CSS_ERROR("api is not supported for isp2500!");
+	IA_CSS_LEAVE("void");
 #endif
 
-#if !defined(IS_ISP_2500_SYSTEM)
+}
+
+
 struct ia_css_morph_table *ia_css_morph_table_allocate(
 	unsigned int width,
 	unsigned int height)
 {
+#if !defined(IS_ISP_2500_SYSTEM)
+
 	unsigned int i;
 	struct ia_css_morph_table *me;
 
@@ -1801,11 +1814,20 @@ struct ia_css_morph_table *ia_css_morph_table_allocate(
 	}
 	me->width = width;
 	me->height = height;
-
 	IA_CSS_LEAVE("");
 	return me;
-}
+
+#else /* defined(IS_ISP_2500_SYSTEM) */
+	(void)width;
+	(void)height;
+	IA_CSS_ENTER("");
+	IA_CSS_ERROR("api is not supported for isp2500!");
+	IA_CSS_LEAVE("");
+	return NULL;
 #endif
+
+}
+
 
 #if !defined(IS_ISP_2500_SYSTEM)
 static enum ia_css_err sh_css_params_default_morph_table(

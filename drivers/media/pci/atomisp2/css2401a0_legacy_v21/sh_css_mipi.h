@@ -30,7 +30,7 @@ void
 mipi_init(void);
 
 enum ia_css_err
-allocate_mipi_frames(struct ia_css_pipe *pipe);
+allocate_mipi_frames(struct ia_css_pipe *pipe, struct ia_css_stream_info *info);
 
 enum ia_css_err
 free_mipi_frames(struct ia_css_pipe *pipe);

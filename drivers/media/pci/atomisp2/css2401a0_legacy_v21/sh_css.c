@@ -52,6 +52,9 @@
 #include "ia_css_pipe_util.h"
 #include "ia_css_pipe_binarydesc.h"
 #include "ia_css_pipe_stagedesc.h"
+#ifdef USE_INPUT_SYSTEM_VERSION_2
+#include "ia_css_isys.h"
+#endif
 
 #include "memory_access.h"
 #include "tag.h"
@@ -1433,6 +1436,9 @@ sh_css_invalidate_shading_tables(struct ia_css_stream *stream)
 static void
 enable_interrupts(enum ia_css_irq_type irq_type)
 {
+#ifdef USE_INPUT_SYSTEM_VERSION_2
+	mipi_port_ID_t port;
+#endif
 	bool enable_pulse = irq_type != IA_CSS_IRQ_TYPE_EDGE;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "enable_interrupts() enter:\n");
 /* Enable IRQ on the SP which signals that SP goes to idle (aka ready state) */
@@ -1457,8 +1463,9 @@ enable_interrupts(enum ia_css_irq_type irq_type)
 	virq_clear_all();
 #endif
 
-#if !defined(HAS_NO_INPUT_SYSTEM) && !defined(USE_INPUT_SYSTEM_VERSION_2401)
-	ia_css_isys_rx_enable_all_interrupts();
+#ifdef USE_INPUT_SYSTEM_VERSION_2
+	for (port = 0; port < N_MIPI_PORT_ID; port++)
+		ia_css_isys_rx_enable_all_interrupts(port);
 #endif
 
 #if defined(HRT_CSIM)
@@ -2096,7 +2103,7 @@ create_host_pipeline(struct ia_css_stream *stream)
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	if ((pipe_id != IA_CSS_PIPE_ID_ACC)
 			&& (main_pipe->config.mode != IA_CSS_PIPE_MODE_COPY)) {
-		err = allocate_mipi_frames(main_pipe);
+		err = allocate_mipi_frames(main_pipe, &stream->info);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
 	}
@@ -2504,188 +2511,7 @@ sh_css_mmu_set_page_table_base_index(hrt_data base_index)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_mmu_set_page_table_base_index() leave: return_void\n");
 }
 
-#if defined(HAS_IRQ_MAP_VERSION_1) || defined(HAS_IRQ_MAP_VERSION_1_DEMO)
-enum ia_css_err ia_css_irq_translate(
-	unsigned int *irq_infos)
-{
-	virq_id_t	irq;
-	enum hrt_isp_css_irq_status status = hrt_isp_css_irq_status_more_irqs;
-	unsigned int infos = 0;
-
-/* irq_infos can be NULL, but that would make the function useless */
-/* assert(irq_infos != NULL); */
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_irq_translate() enter: irq_infos=%p\n",irq_infos);
-
-	while (status == hrt_isp_css_irq_status_more_irqs) {
-		status = virq_get_channel_id(&irq);
-		if (status == hrt_isp_css_irq_status_error)
-			return IA_CSS_ERR_INTERNAL_ERROR;
-
-#if WITH_PC_MONITORING
-		sh_css_print("PC_MONITORING: %s() irq = %d, "
-			     "sh_binary_running set to 0\n", __func__, irq);
-		sh_binary_running = 0 ;
-#endif
-
-		switch (irq) {
-		case virq_sp:
-			infos |= IA_CSS_IRQ_INFO_EVENTS_READY;
-			break;
-		case virq_isp:
-#ifdef HRT_CSIM
-			/* Enable IRQ which signals that ISP goes to idle
-			 * to get statistics for each binary */
-			infos |= IA_CSS_IRQ_INFO_ISP_BINARY_STATISTICS_READY;
-#endif
-			break;
-		case virq_isys_csi:
-			/* css rx interrupt, read error bits from css rx */
-			infos |= IA_CSS_IRQ_INFO_CSS_RECEIVER_ERROR;
-			break;
-		case virq_isys_fifo_full:
-			infos |=
-			    IA_CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW;
-			break;
-		case virq_isys_sof:
-			infos |= IA_CSS_IRQ_INFO_CSS_RECEIVER_SOF;
-			break;
-		case virq_isys_eof:
-			infos |= IA_CSS_IRQ_INFO_CSS_RECEIVER_EOF;
-			break;
-/* Temporarily removed, until we have a seperate flag for FRAME_READY irq */
-#if 0
-/* hmm, an interrupt mask, why would we have that ? */
-		case virq_isys_sol:
-			infos |= IA_CSS_IRQ_INFO_CSS_RECEIVER_SOL;
-			break;
-#endif
-		case virq_isys_eol:
-			infos |= IA_CSS_IRQ_INFO_CSS_RECEIVER_EOL;
-			break;
-/*
- * MW: The 2300 demo system does not have a receiver, and it
- * does not have the following three IRQ channels defined
- */
-#if defined(HAS_IRQ_MAP_VERSION_1)
-		case virq_ifmt_sideband_changed:
-			infos |=
-			    IA_CSS_IRQ_INFO_CSS_RECEIVER_SIDEBAND_CHANGED;
-			break;
-		case virq_gen_short_0:
-			infos |= IA_CSS_IRQ_INFO_CSS_RECEIVER_GEN_SHORT_0;
-			break;
-		case virq_gen_short_1:
-			infos |= IA_CSS_IRQ_INFO_CSS_RECEIVER_GEN_SHORT_1;
-			break;
-#endif
-		case virq_ifmt0_id:
-			infos |= IA_CSS_IRQ_INFO_IF_PRIM_ERROR;
-			break;
-		case virq_ifmt1_id:
-			infos |= IA_CSS_IRQ_INFO_IF_PRIM_B_ERROR;
-			break;
-		case virq_ifmt2_id:
-			infos |= IA_CSS_IRQ_INFO_IF_SEC_ERROR;
-			break;
-		case virq_ifmt3_id:
-			infos |= IA_CSS_IRQ_INFO_STREAM_TO_MEM_ERROR;
-			break;
-		case virq_sw_pin_0:
-			infos |= IA_CSS_IRQ_INFO_SW_0;
-			break;
-		case virq_sw_pin_1:
-			infos |= translate_sw_interrupt1();
-			/* pqiao TODO: also assumption here */
-			break;
-		default:
-			break;
-		}
-	}
-
-	if (irq_infos)
-		*irq_infos = infos;
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_irq_translate() "
-		"leave: irq_infos=%p\n", infos);
-
-	return IA_CSS_SUCCESS;
-}
-
-enum ia_css_err
-ia_css_irq_enable(enum ia_css_irq_info info,
-		  bool enable)
-{
-	virq_id_t	irq = N_virq_id;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_irq_enable() enter: info=%d, enable=%d\n",info,enable);
-
-	switch (info) {
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_ERROR:
-		irq = virq_isys_csi;
-		break;
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_FIFO_OVERFLOW:
-		irq = virq_isys_fifo_full;
-		break;
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_SOF:
-		irq = virq_isys_sof;
-		break;
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_EOF:
-		irq = virq_isys_eof;
-		break;
-/* Temporarily removed, until we have a seperate flag for FRAME_READY irq */
-#if 0
-/* hmm, an interrupt mask, why would we have that ? */
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_SOL:
-		irq = virq_isys_sol;
-		break;
-#endif
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_EOL:
-		irq = virq_isys_eol;
-		break;
-#if defined(HAS_IRQ_MAP_VERSION_1)
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_SIDEBAND_CHANGED:
-		irq = virq_ifmt_sideband_changed;
-		break;
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_GEN_SHORT_0:
-		irq = virq_gen_short_0;
-		break;
-	case IA_CSS_IRQ_INFO_CSS_RECEIVER_GEN_SHORT_1:
-		irq = virq_gen_short_1;
-		break;
-#endif
-	case IA_CSS_IRQ_INFO_IF_PRIM_ERROR:
-		irq = virq_ifmt0_id;
-		break;
-	case IA_CSS_IRQ_INFO_IF_PRIM_B_ERROR:
-		irq = virq_ifmt1_id;
-		break;
-	case IA_CSS_IRQ_INFO_IF_SEC_ERROR:
-		irq = virq_ifmt2_id;
-		break;
-	case IA_CSS_IRQ_INFO_STREAM_TO_MEM_ERROR:
-		irq = virq_ifmt3_id;
-		break;
-	case IA_CSS_IRQ_INFO_SW_0:
-		irq = virq_sw_pin_0;
-		break;
-	case IA_CSS_IRQ_INFO_SW_1:
-		irq = virq_sw_pin_1;
-		break;
-	case IA_CSS_IRQ_INFO_SW_2:
-		irq = virq_sw_pin_2;
-		break;
-	default:
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_irq_enable() leave: return_err=%d\n",IA_CSS_ERR_INVALID_ARGUMENTS);
-		return IA_CSS_ERR_INVALID_ARGUMENTS;
-	}
-
-	cnd_virq_enable_channel(irq, enable);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_irq_enable() leave: return_err=%d\n",IA_CSS_SUCCESS);
-	return IA_CSS_SUCCESS;
-}
-
-#elif defined(HAS_IRQ_MAP_VERSION_2)
-
+#if defined(HAS_IRQ_MAP_VERSION_2)
 enum ia_css_err ia_css_irq_translate(
 	unsigned int *irq_infos)
 {
@@ -2809,7 +2635,7 @@ enum ia_css_err ia_css_irq_enable(
 
 #else
 #error "sh_css.c: IRQ MAP must be one of \
-	{IRQ_MAP_VERSION_1, IRQ_MAP_VERSION_1_DEMO, IRQ_MAP_VERSION_2}"
+	{IRQ_MAP_VERSION_2}"
 #endif
 
 static unsigned int
@@ -3549,25 +3375,54 @@ ia_css_get_crop_offsets (
     struct ia_css_pipe *pipe,
     struct ia_css_frame_info *in_frame)
 {
-	unsigned row = 0;
-	unsigned column = 0;
+	unsigned int row = 0;
+	unsigned int column = 0;
+	struct ia_css_resolution *input_res;
+	struct ia_css_resolution *effective_res;
+	struct ia_css_resolution *dvs_env;
+	enum ia_css_pipe_id pipe_id;
+	unsigned int left_cropping = 0, top_cropping = 0;
+	const struct ia_css_binary_xinfo *info;
+
+	assert(pipe != NULL);
+	assert(pipe->stream != NULL);
 	assert(in_frame != NULL);
+
+	input_res = &pipe->stream->config.input_config.input_res;
+	effective_res = &pipe->stream->config.input_config.effective_res;
+	dvs_env = &pipe->config.dvs_envelope;
+	pipe_id = pipe->mode;
+
+	switch (pipe_id) {
+	case IA_CSS_PIPE_ID_PREVIEW:
+		info = pipe->pipe_settings.preview.preview_binary.info;
+		break;
+	case IA_CSS_PIPE_ID_VIDEO:
+		info = pipe->pipe_settings.video.video_binary.info;
+		break;
+	case IA_CSS_PIPE_ID_CAPTURE:
+		info = pipe->pipe_settings.capture.primary_binary.info;
+		break;
+	default:
+		info = NULL;
+	}
+
+	if (info != NULL) {
+		left_cropping = info->sp.pipeline.left_cropping;
+		top_cropping = info->sp.pipeline.top_cropping;
+	}
+
 	in_frame->raw_bayer_order = pipe->stream->config.input_config.bayer_order;
 
-#if 0   //disabling cropping for now - has issues on MORFLD HW
-	//only doing bayer offset for now
-
-	struct ia_css_resolution *input_res = &pipe->stream->config.input_res;
-	struct ia_css_resolution *effective_res = &pipe->stream->config.effective_res;
-
 	if (effective_res->height < input_res->height) {
-		row = (input_res->height - effective_res->height - SH_CSS_MAX_LEFT_CROPPING) / 2;
+		row = (input_res->height - effective_res->height - top_cropping - dvs_env->height) / 2;
 		row &= ~0x1;
 	}
 	if (effective_res->width < input_res->width) {
-		column = (input_res->width - effective_res->width - SH_CSS_MAX_LEFT_CROPPING)  / 2;
+		column = (input_res->width - effective_res->width - left_cropping - dvs_env->width) / 2;
 		column &= ~0x1;
 	}
+
 	/*
 	 * TODO:
 	 * 1. Require the special support for RAW10 packed mode.
@@ -3577,7 +3432,6 @@ ia_css_get_crop_offsets (
 	/* ISP expects GRBG bayer order, we skip one line and/or one row
 	 * to correct in case the input bayer order is different.
 	 */
-#endif
 	column += get_crop_columns_for_bayer_order(&pipe->stream->config);
 	row += get_crop_lines_for_bayer_order(&pipe->stream->config);
 
@@ -8038,14 +7892,10 @@ ia_css_stream_configure_rx(struct ia_css_stream *stream)
 	else if (config->num_lanes != 0)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	if (config->port == IA_CSS_CSI2_PORT1)
-		stream->csi_rx_config.port = MIPI_PORT1_ID;
-	else if (config->port == IA_CSS_CSI2_PORT2)
-		stream->csi_rx_config.port = MIPI_PORT2_ID;
-	else if (config->port == IA_CSS_CSI2_PORT0)
-		stream->csi_rx_config.port = MIPI_PORT0_ID;
-	else
+	if (config->port > IA_CSS_CSI2_PORT2)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	stream->csi_rx_config.port =
+		ia_css_isys_port_to_mipi_port(config->port);
 	stream->csi_rx_config.timeout    = config->timeout;
 	stream->csi_rx_config.initcount  = 0;
 	stream->csi_rx_config.synccount  = 0x28282828;

@@ -33,7 +33,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatible
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.3.0"
+#define CSS_API_VERSION_STRING	"2.1.3.1"
 
 /*
 Change log
@@ -110,6 +110,12 @@ v2.1.2.12
 v2.1.3.0
  - rename ia_css_output_config.enable_mirror
  - add new interface to enable vertical output flipping
+
+v2.1.3.1
+- deprecated ia_css_rx_get_irq_info and ia_css_rx_clear_irq_info because both
+  are hardcoded to work on CSI port 1.
+- added new functions ia_css_rx_port_get_irq_info and
+  ia_css_rx_port_clear_irq_info, both have a port ID as extra argument.
 */
 
 #endif /*__CSS_API_VERSION_H*/

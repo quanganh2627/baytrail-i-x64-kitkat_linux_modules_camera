@@ -1401,7 +1401,7 @@ sh_css_update_host2sp_offline_frame(
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 /**
- * @brief Update the offline frame information in host_sp_communication.
+ * @brief Update the mipi frame information in host_sp_communication.
  * Refer to "sh_css_sp.h" for more details.
  */
 void
@@ -1425,6 +1425,32 @@ sh_css_update_host2sp_mipi_frame(
 
 	store_sp_array_uint(host_sp_com, o,
 				frame ? frame->data : 0);
+}
+
+/**
+ * @brief Update the mipi metadata information in host_sp_communication.
+ * Refer to "sh_css_sp.h" for more details.
+ */
+void
+sh_css_update_host2sp_mipi_metadata(
+				unsigned frame_num,
+				struct ia_css_metadata *metadata)
+{
+	unsigned int HIVE_ADDR_host_sp_com;
+	unsigned int o;
+
+	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
+
+	/* MIPI buffers are dedicated to port, so now there are more of them. */
+	assert(frame_num < (N_CSI_PORTS * NUM_MIPI_FRAMES_PER_STREAM));
+
+	/* Write new frame data into SP DMEM */
+	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
+	o = offsetof(struct host_sp_communication, host2sp_mipi_metadata)
+		/ sizeof(int);
+	o += frame_num;
+	store_sp_array_uint(host_sp_com, o,
+				metadata ? metadata->address : 0);
 }
 
 void
