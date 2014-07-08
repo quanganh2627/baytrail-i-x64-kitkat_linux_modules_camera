@@ -1980,6 +1980,8 @@ static int atomisp_g_ctrl(struct file *file, void *fh,
 	case V4L2_CID_IRIS_ABSOLUTE:
 	case V4L2_CID_EXPOSURE_ABSOLUTE:
 	case V4L2_CID_FNUMBER_ABSOLUTE:
+	case V4L2_CID_HFLIP:
+	case V4L2_CID_VFLIP:
 	case V4L2_CID_2A_STATUS:
 	case V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE:
 	case V4L2_CID_EXPOSURE:
@@ -1994,12 +1996,6 @@ static int atomisp_g_ctrl(struct file *file, void *fh,
 		rt_mutex_unlock(&isp->mutex);
 		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 				       core, g_ctrl, control);
-	case V4L2_CID_HFLIP:
-		ret = atomisp_h_flip(asd, 0, &control->value);
-		break;
-	case V4L2_CID_VFLIP:
-		ret = atomisp_v_flip(asd, 0, &control->value);
-		break;
 	case V4L2_CID_COLORFX:
 		ret = atomisp_color_effect(asd, 0, &control->value);
 		break;
@@ -2041,7 +2037,6 @@ static int atomisp_s_ctrl(struct file *file, void *fh,
 	struct video_device *vdev = video_devdata(file);
 	struct atomisp_sub_device *asd = atomisp_to_video_pipe(vdev)->asd;
 	struct atomisp_device *isp = video_get_drvdata(vdev);
-	int source_pad = atomisp_subdev_source_pad(vdev);
 	int i, ret = -EINVAL;
 
 	for (i = 0; i < ctrls_num; i++) {
@@ -2061,6 +2056,8 @@ static int atomisp_s_ctrl(struct file *file, void *fh,
 	case V4L2_CID_SCENE_MODE:
 	case V4L2_CID_ISO_SENSITIVITY:
 	case V4L2_CID_ISO_SENSITIVITY_AUTO:
+	case V4L2_CID_HFLIP:
+	case V4L2_CID_VFLIP:
 	case V4L2_CID_POWER_LINE_FREQUENCY:
 	case V4L2_CID_EXPOSURE_METERING:
 	case V4L2_CID_CONTRAST:
@@ -2072,20 +2069,6 @@ static int atomisp_s_ctrl(struct file *file, void *fh,
 		rt_mutex_unlock(&isp->mutex);
 		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 				       core, s_ctrl, control);
-	case V4L2_CID_HFLIP:
-		if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VIDEO ||
-			source_pad == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE)
-			ret = atomisp_h_flip(asd, 1, &control->value);
-		else
-			ret = 0;
-		break;
-	case V4L2_CID_VFLIP:
-		if (source_pad == ATOMISP_SUBDEV_PAD_SOURCE_VIDEO ||
-			source_pad == ATOMISP_SUBDEV_PAD_SOURCE_CAPTURE)
-			ret = atomisp_v_flip(asd, 1, &control->value);
-		else
-			ret = 0;
-		break;
 	case V4L2_CID_COLORFX:
 		ret = atomisp_color_effect(asd, 1, &control->value);
 		break;

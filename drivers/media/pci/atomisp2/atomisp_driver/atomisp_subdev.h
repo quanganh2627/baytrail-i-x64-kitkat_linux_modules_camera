@@ -207,10 +207,6 @@ struct atomisp_subdev_params {
 	bool metadata_buf_data_valid;
 
 	bool dis_proj_data_valid;
-
-	/* Mirror config */
-	struct atomisp_css_output_config   output_config;
-
 	bool metadata_allocated;
 
 	struct ia_css_dz_config   dz_config;  /**< Digital Zoom */

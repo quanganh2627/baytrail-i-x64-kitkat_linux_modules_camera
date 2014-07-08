@@ -119,9 +119,6 @@ int atomisp_xnr(struct atomisp_sub_device *asd, int flag, int *arg);
 int atomisp_formats(struct atomisp_sub_device *asd, int flag,
 		struct atomisp_formats_config *config);
 
-int atomisp_h_flip(struct atomisp_sub_device *asd, int flag, int *enable);
-int atomisp_v_flip(struct atomisp_sub_device *asd, int flag, int *enable);
-
 /*
  * Function to configure noise reduction
  */
