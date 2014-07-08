@@ -962,6 +962,7 @@ static int ov680_s_stream(struct v4l2_subdev *sd, int enable)
 		} else {
 			dev->sys_activated = 1;
 		}
+		msleep(200);
 	} else { /* stream off */
 
 		ret = ov680_i2c_write_reg(sd, REG_SC_03,
