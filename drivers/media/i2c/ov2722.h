@@ -297,7 +297,8 @@ static struct ov2722_reg const ov2722_BaseInit[] = {
 	{OV2722_8BIT, 0x4005, 0x08},
 	{OV2722_8BIT, 0x404f, 0x84},
 	{OV2722_8BIT, 0x4051, 0x00},
-	{OV2722_8BIT, 0x5000, 0xcf}, /* 0xcf */
+	{OV2722_8BIT, 0x5000, 0xff},
+	{OV2722_8BIT, 0x5180, 0x03}, /* AWB manual mode */
 	{OV2722_8BIT, 0x3a18, 0x00},
 	{OV2722_8BIT, 0x3a19, 0x80},
 	{OV2722_8BIT, 0x3503, 0x07}, /* 0x07  manual 3a */
@@ -448,7 +449,6 @@ static struct ov2722_reg const ov2722_480P_30fps[] = {
 	{OV2722_8BIT, 0x4005, 0x08},
 	{OV2722_8BIT, 0x404f, 0x84},
 	{OV2722_8BIT, 0x4051, 0x00},
-	{OV2722_8BIT, 0x5000, 0xff},
 	{OV2722_8BIT, 0x3a18, 0x00},
 	{OV2722_8BIT, 0x3a19, 0x80},
 	{OV2722_8BIT, 0x3503, 0x00},
@@ -456,7 +456,6 @@ static struct ov2722_reg const ov2722_480P_30fps[] = {
 	{OV2722_8BIT, 0x5183, 0xb0}, /* AWB red */
 	{OV2722_8BIT, 0x5184, 0xb0}, /* AWB green */
 	{OV2722_8BIT, 0x5185, 0xb0}, /* AWB blue */
-	{OV2722_8BIT, 0x5180, 0x03}, /* AWB manual mode */
 	{OV2722_8BIT, 0x370c, 0x0c},
 	{OV2722_8BIT, 0x4800, 0x24}, /* clk lane gate enable */
 	{OV2722_8BIT, 0x3035, 0x00},
@@ -950,6 +949,7 @@ struct ov2722_resolution ov2722_res_still[] = {
 #define N_RES_STILL (ARRAY_SIZE(ov2722_res_still))
 
 struct ov2722_resolution ov2722_res_video[] = {
+#if 0
 	{
 		.desc = "ov2722_QCIF_30fps",
 		.width = 192,
@@ -1010,6 +1010,7 @@ struct ov2722_resolution ov2722_res_video[] = {
 		.skip_frames = 3,
 		.regs = ov2722_VGA_30fps,
 	},
+#endif
 	{
 		.desc = "ov2722_480P_30fps",
 		.width = 736,
