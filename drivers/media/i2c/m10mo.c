@@ -2018,6 +2018,28 @@ out:
 	return ret;
 }
 
+static int m10mo_set_still_capture(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+
+	dev_info(&client->dev, "%s mode: %d width: %d, height: %d, cmd: 0x%x\n",
+		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
+		dev->curr_res_table[dev->fmt_idx].height,
+		dev->curr_res_table[dev->fmt_idx].command);
+
+	ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x08);
+	if (ret)
+		goto out;
+
+	/* Set capture mode */
+	ret = m10mo_request_mode_change(sd, M10MO_SINGLE_CAPTURE_MODE);
+
+out:
+	return ret;
+}
+
 static int m10mo_set_run_mode(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -2169,41 +2191,6 @@ free_irq:
 	dev_err(&client->dev, "External ISP power-gating failed\n");
 	return ret;
 
-}
-
-int m10mo_set_still_capture(struct v4l2_subdev *sd)
-{
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
-	int ret;
-
-	dev_info(&client->dev,"%s mode: %d width: %d, height: %d, cmd: 0x%x\n",
-		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
-		dev->curr_res_table[dev->fmt_idx].height,
-		dev->curr_res_table[dev->fmt_idx].command);
-
-	if (dev->fw_type == M10MO_FW_TYPE_2) {
-		/* Setting before switching to capture mode */
-		ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
-			resolutions[mode][M10MO_MODE_CAPTURE_INDEX][dev->capture_res_idx]
-			.command);
-		if (ret)
-			goto out;
-		ret = m10mo_write(sd, 1, CATEGORY_CAPTURE_CTRL, CAPC_MODE, 0);/* Single Capture*/
-		if (ret)
-			goto out;
-	}
-
-	ret= m10mo_write(sd, 1, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x08);
-	if (ret)
-		goto out;
-
-	/* Set capture mode */
-	ret = m10mo_request_mode_change(sd, M10MO_SINGLE_CAPTURE_MODE);
-
-out:
-	return ret;
 }
 
 static int m10mo_recovery(struct v4l2_subdev *sd)

@@ -244,8 +244,6 @@ int __m10mo_param_mode_set(struct v4l2_subdev *sd);
 
 int get_resolution_index(const struct m10mo_resolution *res,
 			 int entries, int w, int h);
-
-int m10mo_set_still_capture(struct v4l2_subdev *sd);
 int m10mo_set_zsl_raw_capture(struct v4l2_subdev *sd);
 
 

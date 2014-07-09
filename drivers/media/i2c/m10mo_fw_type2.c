@@ -161,6 +161,38 @@ static int m10mo_set_burst_capture(struct v4l2_subdev *sd)
 	return ret;
 }
 
+static int m10mo_set_still_capture_fw_type2(struct v4l2_subdev *sd)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
+	int ret;
+
+	dev_info(&client->dev, "%s mode: %d width: %d, height: %d, cmd: 0x%x\n",
+		__func__, dev->mode, dev->curr_res_table[dev->fmt_idx].width,
+		dev->curr_res_table[dev->fmt_idx].height,
+		dev->curr_res_table[dev->fmt_idx].command);
+
+	/* Setting before switching to capture mode */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
+			  resolutions[mode][M10MO_MODE_CAPTURE_INDEX][dev->capture_res_idx].command);
+	if (ret)
+		goto out;
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPC_MODE, 0);/* Single Capture*/
+	if (ret)
+		goto out;
+
+	ret = m10mo_writeb(sd, CATEGORY_SYSTEM, SYSTEM_INT_ENABLE, 0x08);
+	if (ret)
+		goto out;
+
+	/* Set capture mode */
+	ret = m10mo_request_mode_change(sd, M10MO_SINGLE_CAPTURE_MODE);
+
+out:
+	return ret;
+}
+
 int m10mo_set_run_mode_fw_type2(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -183,7 +215,7 @@ int m10mo_set_run_mode_fw_type2(struct v4l2_subdev *sd)
 
 	switch (dev->run_mode) {
 	case CI_MODE_STILL_CAPTURE:
-		ret = m10mo_set_still_capture(sd);
+		ret = m10mo_set_still_capture_fw_type2(sd);
 		break;
 	default:
 		/* Start still capture if M10MO is already in monitor mode. */
@@ -192,7 +224,7 @@ int m10mo_set_run_mode_fw_type2(struct v4l2_subdev *sd)
 			    M10MO_CAPTURE_MODE_ZSL_BURST)
 				ret = m10mo_set_burst_capture(sd);
 			else
-				ret = m10mo_set_still_capture(sd);
+				ret = m10mo_set_still_capture_fw_type2(sd);
 		} else {
 			ret = m10mo_set_monitor_mode(sd);
 		}
