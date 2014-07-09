@@ -25,6 +25,13 @@
 #ifndef _dma_settings_hive_h_
 #define _dma_settings_hive_h_
 
+#ifdef __ISP
+#include "libc.h"
+#define CEIL_DIV_ICACHE(a, b)   _divu_icache((a)+(b)-1, (b))
+#else
+#define CEIL_DIV_ICACHE(a, b)   CEIL_DIV(a, b)   	
+#endif
+
 /* ***************************************
  * 					DMA macros
  * ***************************************/
@@ -227,8 +234,8 @@
 #define DMA_RAW_STRIPE_OFFSET_B	                               CEIL_DIV(STRIPE_OFFSET_VECS*DMA_RAW_ELEMS_A, DMA_RAW_ELEMS_B)
 
 #define DMA_RAW_ELEMS_B_PACK(bits_per_pixel)                  (XMEM_WIDTH_BITS/bits_per_pixel)  /* [elements] We will store 2 elements on a 32bits word */
-#define DMA_RAW_BLOCK_WIDTH_B_PACK(bpp)                       CEIL_DIV(DMA_RAW_BLOCK_WIDTH_A * DMA_RAW_ELEMS_A, DMA_RAW_ELEMS_B_PACK(bpp))	/* [elements] to write */
-#define DMA_RAW_LINE_WIDTH_B_PACK(bpp)                        CEIL_DIV(DMA_RAW_LINE_WIDTH_A * DMA_RAW_ELEMS_A, DMA_RAW_ELEMS_B_PACK(bpp))
+#define DMA_RAW_BLOCK_WIDTH_B_PACK(bpp)                       CEIL_DIV_ICACHE(DMA_RAW_BLOCK_WIDTH_A * DMA_RAW_ELEMS_A, DMA_RAW_ELEMS_B_PACK(bpp))	/* [elements] to write */
+#define DMA_RAW_LINE_WIDTH_B_PACK(bpp)                        CEIL_DIV_ICACHE(DMA_RAW_LINE_WIDTH_A  * DMA_RAW_ELEMS_A, DMA_RAW_ELEMS_B_PACK(bpp))
 #define DMA_RAW_STRIDE_B_PACK(bpp)                            (DMA_RAW_LINE_WIDTH_B_PACK(bpp) * HIVE_ISP_DDR_WORD_BYTES)    /* [byte address] stride for xmem */
 
 /*remaining elems in one DDR word from last DMA transaction */
