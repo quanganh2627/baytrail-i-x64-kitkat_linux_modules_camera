@@ -84,6 +84,12 @@
 #define SP_DEBUG SP_DEBUG_NONE
 #define SP_DEBUG_MINIMAL_OVERWRITE 1
 
+#define SH_CSS_TNR_BIT_DEPTH 8
+#if defined(IS_ISP_2500_SYSTEM)
+#define SH_CSS_REF_BIT_DEPTH 12   /* Skylake: reference frame is in 12 bit YUV domain */
+#else
+#define SH_CSS_REF_BIT_DEPTH 8
+#endif
 
 /* keep next up to date with the definition for MAX_CB_ELEMS_FOR_TAGGER in tagger.sp.c */
 #if defined(HAS_SP_2400)

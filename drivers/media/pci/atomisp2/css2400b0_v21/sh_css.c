@@ -125,7 +125,6 @@ static int thread_alive;
 #define PIPE_ENTRY_EMPTY_TOKEN                (~0)
 #define PIPE_ENTRY_RESERVED_TOKEN             (0x1)
 
-
 #define DEFAULT_PLANES { {0, 0, 0, 0} }
 
 struct sh_css my_css;
@@ -4936,12 +4935,7 @@ sh_css_pipe_get_grid_info(struct ia_css_pipe *pipe,
 	return err;
 }
 
-#define SH_CSS_TNR_BIT_DEPTH 8
-#if defined(IS_ISP_2500_SYSTEM)
-#define SH_CSS_REF_BIT_DEPTH 12   /* Skylake: reference frame is in 12 bit YUV domain */
-#else
-#define SH_CSS_REF_BIT_DEPTH 8
-#endif
+
 
 static enum ia_css_err load_video_binaries(struct ia_css_pipe *pipe)
 {
