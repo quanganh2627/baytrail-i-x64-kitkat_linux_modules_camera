@@ -30,7 +30,6 @@
 #include "assert_support.h"
 
 const struct ia_css_output_config default_output_config = {
-	0,
 	0
 };
 
@@ -41,8 +40,7 @@ ia_css_output_encode(
 	unsigned size)
 {
 	(void)size;
-	to->enable_hflip = from->enable_hflip;
-	to->enable_vflip = from->enable_vflip;
+	to->enable_mirror = from->enable_mirror;
 }
 
 void
@@ -123,12 +121,9 @@ ia_css_output_dump(
 	unsigned level)
 {
 	if (!output) return;
-	ia_css_debug_dtrace(level, "Horizontal Output Flip:\n");
+	ia_css_debug_dtrace(level, "Output Mirror:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
-			"enable", output->enable_hflip);
-	ia_css_debug_dtrace(level, "Vertical Output Flip:\n");
-	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
-			"enable", output->enable_vflip);
+			"enable", output->enable_mirror);
 }
 
 void
@@ -137,9 +132,6 @@ ia_css_output_debug_dtrace(
 	unsigned level)
 {
 	ia_css_debug_dtrace(level,
-		"config.enable_hflip=%d",
-		config->enable_hflip);
-	ia_css_debug_dtrace(level,
-		"config.enable_vflip=%d",
-		config->enable_vflip);
+		"config.enable_mirror=%d",
+		config->enable_mirror);
 }
