@@ -46,6 +46,9 @@ struct ia_css_isp_parameters;
 #include "crop/crop_1.0/ia_css_crop_types.h"
 #include "uds/uds_1.0/ia_css_uds_param.h"
 
+#define PIX_SHIFT_FILTER_RUN_IN_X 12
+#define PIX_SHIFT_FILTER_RUN_IN_Y 12
+
 /* Isp configurations per stream */
 struct sh_css_isp_param_configs {
 	/* OB (Optical Black) */

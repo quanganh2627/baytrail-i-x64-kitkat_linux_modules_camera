@@ -133,9 +133,6 @@
 	(SH_CSS_MORPH_TABLE_ELEM_BYTES * (binary)->morph_tbl_aligned_width * \
 	 (binary)->morph_tbl_height)
 
-#define PIX_SHIFT_FILTER_RUN_IN_X 12
-#define PIX_SHIFT_FILTER_RUN_IN_Y 12
-
 #if defined(IS_ISP_2500_SYSTEM)
 static struct isp_acc_param sh_css_acc_cluster_parameters;
 #endif
