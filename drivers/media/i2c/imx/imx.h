@@ -40,6 +40,7 @@
 #include "imx134.h"
 #include "imx132.h"
 #include "imx208.h"
+#include "imx219.h"
 
 #define IMX_MCLK		192
 
@@ -110,11 +111,13 @@
 #define IMX_NAME_175	"imx175"
 #define IMX_NAME_132	"imx132"
 #define IMX_NAME_208	"imx208"
+#define IMX_NAME_219	"imx219"
 #define IMX175_ID	0x0175
 #define IMX135_ID	0x0135
 #define IMX134_ID	0x0134
 #define IMX132_ID	0x0132
 #define IMX208_ID	0x0208
+#define IMX219_ID	0x0219
 
 /* Sensor id based on i2c_device_id table
  * (Fuji module can not be detected based on sensor registers) */
@@ -129,6 +132,7 @@
 #define IMX132_SALTBAY 0x132
 #define IMX134_VALLEYVIEW 0x134
 #define IMX208_MOFD_PD2 0x208
+#define IMX219_MFV0_PRH 0x219
 
 /* otp - specific settings */
 #define E2PROM_ADDR 0xa0
@@ -136,10 +140,11 @@
 #define E2PROM_ABICO_SS89A839_ADDR 0xa8
 #define DEFAULT_OTP_SIZE 1280
 #define IMX135_OTP_SIZE 1280
+#define IMX219_OTP_SIZE 2048
 #define E2PROM_LITEON_12P1BA869D_SIZE 544
 
 #define IMX_ID_DEFAULT	0x0000
-#define IMX132_175_208_CHIP_ID	0x0000
+#define IMX132_175_208_219_CHIP_ID	0x0000
 #define IMX134_135_CHIP_ID	0x0016
 
 #define IMX175_RES_WIDTH_MAX	3280
@@ -152,6 +157,8 @@
 #define IMX134_RES_HEIGHT_MAX	2464
 #define IMX208_RES_WIDTH_MAX	1936
 #define IMX208_RES_HEIGHT_MAX	1096
+#define IMX219_RES_WIDTH_MAX	3280
+#define IMX219_RES_HEIGHT_MAX	2464
 
 /* Defines for lens/VCM */
 #define IMX_FOCAL_LENGTH_NUM	369	/*3.69mm*/
@@ -234,6 +241,10 @@ struct max_res imx_max_res[] = {
 		.res_max_width = IMX208_RES_WIDTH_MAX,
 		.res_max_height = IMX208_RES_HEIGHT_MAX,
 	},
+	[IMX219_ID] = {
+		.res_max_width = IMX219_RES_WIDTH_MAX,
+		.res_max_height = IMX219_RES_HEIGHT_MAX,
+	},
 };
 
 struct imx_settings {
@@ -310,6 +321,60 @@ struct imx_settings imx_sets[] = {
 		.n_res_still = ARRAY_SIZE(imx208_res_still),
 		.n_res_video = ARRAY_SIZE(imx208_res_video),
 	},
+	[IMX219_MFV0_PRH] = {
+		.init_settings = imx219_init_settings,
+		.res_preview = imx219_res_preview,
+		.res_still = imx219_res_still,
+		.res_video = imx219_res_video,
+		.n_res_preview = ARRAY_SIZE(imx219_res_preview),
+		.n_res_still = ARRAY_SIZE(imx219_res_still),
+		.n_res_video = ARRAY_SIZE(imx219_res_video),
+	},
+};
+
+struct imx_reg_addr {
+	u16 frame_length_lines;
+	u16 line_length_pixels;
+	u16 horizontal_start_h;
+	u16 vertical_start_h;
+	u16 horizontal_end_h;
+	u16 vertical_end_h;
+	u16 horizontal_output_size_h;
+	u16 vertical_output_size_h;
+	u16 coarse_integration_time;
+	u16 img_orientation;
+	u16 global_gain;
+	u16 dgc_adj;
+};
+
+struct imx_reg_addr imx_addr = {
+	IMX_FRAME_LENGTH_LINES,
+	IMX_LINE_LENGTH_PIXELS,
+	IMX_HORIZONTAL_START_H,
+	IMX_VERTICAL_START_H,
+	IMX_HORIZONTAL_END_H,
+	IMX_VERTICAL_END_H,
+	IMX_HORIZONTAL_OUTPUT_SIZE_H,
+	IMX_VERTICAL_OUTPUT_SIZE_H,
+	IMX_COARSE_INTEGRATION_TIME,
+	IMX_IMG_ORIENTATION,
+	IMX_GLOBAL_GAIN,
+	IMX_DGC_ADJ,
+};
+
+struct imx_reg_addr imx219_addr = {
+	IMX219_FRAME_LENGTH_LINES,
+	IMX219_LINE_LENGTH_PIXELS,
+	IMX219_HORIZONTAL_START_H,
+	IMX219_VERTICAL_START_H,
+	IMX219_HORIZONTAL_END_H,
+	IMX219_VERTICAL_END_H,
+	IMX219_HORIZONTAL_OUTPUT_SIZE_H,
+	IMX219_VERTICAL_OUTPUT_SIZE_H,
+	IMX219_COARSE_INTEGRATION_TIME,
+	IMX219_IMG_ORIENTATION,
+	IMX219_GLOBAL_GAIN,
+	IMX219_DGC_ADJ,
 };
 
 #define	v4l2_format_capture_type_entry(_width, _height, \
@@ -439,6 +504,7 @@ struct imx_device {
 	const struct imx_resolution *curr_res_table;
 	int entries_curr_table;
 	const struct firmware *fw;
+	struct imx_reg_addr *reg_addr;
 
 	/* used for h/b blank tuning */
 	struct v4l2_ctrl_handler ctrl_handler;
@@ -531,6 +597,18 @@ extern int dw9719_q_focus_abs(struct v4l2_subdev *sd, s32 *value);
 extern int dw9719_t_vcm_slew(struct v4l2_subdev *sd, s32 value);
 extern int dw9719_t_vcm_timing(struct v4l2_subdev *sd, s32 value);
 
+extern int dw9718_vcm_power_up(struct v4l2_subdev *sd);
+extern int dw9718_vcm_power_down(struct v4l2_subdev *sd);
+extern int dw9718_vcm_init(struct v4l2_subdev *sd);
+
+extern int dw9718_t_focus_vcm(struct v4l2_subdev *sd, u16 val);
+extern int dw9718_t_focus_abs(struct v4l2_subdev *sd, s32 value);
+extern int dw9718_t_focus_rel(struct v4l2_subdev *sd, s32 value);
+extern int dw9718_q_focus_status(struct v4l2_subdev *sd, s32 *value);
+extern int dw9718_q_focus_abs(struct v4l2_subdev *sd, s32 *value);
+extern int dw9718_t_vcm_slew(struct v4l2_subdev *sd, s32 value);
+extern int dw9718_t_vcm_timing(struct v4l2_subdev *sd, s32 value);
+
 extern int vcm_power_up(struct v4l2_subdev *sd);
 extern int vcm_power_down(struct v4l2_subdev *sd);
 
@@ -595,6 +673,18 @@ struct imx_vcm imx_vcms[] = {
 		.t_vcm_slew = dw9714_t_vcm_slew,
 		.t_vcm_timing = dw9714_t_vcm_timing,
 	},
+	[IMX219_MFV0_PRH] = {
+		.power_up = dw9718_vcm_power_up,
+		.power_down = dw9718_vcm_power_down,
+		.init = dw9718_vcm_init,
+		.t_focus_vcm = dw9718_t_focus_vcm,
+		.t_focus_abs = dw9718_t_focus_abs,
+		.t_focus_rel = dw9718_t_focus_rel,
+		.q_focus_status = dw9718_q_focus_status,
+		.q_focus_abs = dw9718_q_focus_abs,
+		.t_vcm_slew = dw9718_t_vcm_slew,
+		.t_vcm_timing = dw9718_t_vcm_timing,
+	},
 	[IMX_ID_DEFAULT] = {
 		.power_up = vcm_power_up,
 		.power_down = vcm_power_down,
@@ -606,6 +696,8 @@ extern void *dummy_otp_read(struct v4l2_subdev *sd, u8 dev_addr,
 extern void *imx_otp_read(struct v4l2_subdev *sd, u8 dev_addr,
 	u32 start_addr, u32 size);
 extern void *e2prom_otp_read(struct v4l2_subdev *sd, u8 dev_addr,
+	u32 start_addr, u32 size);
+extern void *brcc064_otp_read(struct v4l2_subdev *sd, u8 dev_addr,
 	u32 start_addr, u32 size);
 struct imx_otp imx_otps[] = {
 	[IMX175_MERRFLD] = {
@@ -643,6 +735,12 @@ struct imx_otp imx_otps[] = {
 	[IMX208_MOFD_PD2] = {
 		.otp_read = dummy_otp_read,
 		.size = DEFAULT_OTP_SIZE,
+	},
+	[IMX219_MFV0_PRH] = {
+		.otp_read = brcc064_otp_read,
+		.dev_addr = E2PROM_ADDR,
+		.start_addr = 0,
+		.size = IMX219_OTP_SIZE,
 	},
 	[IMX_ID_DEFAULT] = {
 		.otp_read = dummy_otp_read,
