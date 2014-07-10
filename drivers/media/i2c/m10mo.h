@@ -171,6 +171,7 @@ struct m10mo_fw_ops {
 	int (*set_run_mode) (struct v4l2_subdev *sd);
 	int (*set_burst_mode) (struct v4l2_subdev *sd, unsigned int val);
 	int (*stream_off) (struct v4l2_subdev *sd);
+	int (*single_capture_process) (struct v4l2_subdev *sd);
 };
 
 struct m10mo_device {

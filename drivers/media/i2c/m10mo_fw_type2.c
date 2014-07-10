@@ -280,8 +280,24 @@ out:
 	return ret;
 }
 
+int m10mo_single_capture_process_fw_type2(struct v4l2_subdev *sd)
+{
+	int ret;
+
+	/* Select frame */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
+			  CAPC_SEL_FRAME_MAIN, 0x01);
+	if (ret)
+		return ret;
+
+	/* Start image transfer */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
+			  CAPC_TRANSFER_START, 0x01);
+	return ret;
+}
 const struct m10mo_fw_ops fw_type2_ops = {
-	.set_run_mode   = m10mo_set_run_mode_fw_type2,
-	.set_burst_mode = m10mo_set_burst_mode_fw_type2,
-	.stream_off     = m10mo_streamoff_fw_type2,
+	.set_run_mode           = m10mo_set_run_mode_fw_type2,
+	.set_burst_mode         = m10mo_set_burst_mode_fw_type2,
+	.stream_off             = m10mo_streamoff_fw_type2,
+	.single_capture_process = m10mo_single_capture_process_fw_type2,
 };

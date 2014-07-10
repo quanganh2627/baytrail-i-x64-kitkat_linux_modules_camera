@@ -1519,28 +1519,24 @@ static int m10mo_single_capture_process(struct v4l2_subdev *sd)
 	/* Select frame */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
 			  CAPC_SEL_FRAME_MAIN, 0x01);
-
 	if (ret)
 		return ret;
 
-	if (dev->fw_type != M10MO_FW_TYPE_2) {
-		/* Image format */
-		if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8)
-			fmt = CAPTURE_FORMAT_JPEG8;
-		else
-			fmt = CAPTURE_FORMAT_YUV422;
-		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_YUVOUT_MAIN, fmt);
+	/* Image format */
+	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8)
+		fmt = CAPTURE_FORMAT_JPEG8;
+	else
+		fmt = CAPTURE_FORMAT_YUV422;
 
-		if (ret)
-			return ret;
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_YUVOUT_MAIN, fmt);
+	if (ret)
+		return ret;
 
-		/* Image size */
-		ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
-				  dev->curr_res_table[dev->fmt_idx].command);
-
-		if (ret)
-			return ret;
-	}
+	/* Image size */
+	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_PARAM, CAPP_MAIN_IMAGE_SIZE,
+			   dev->curr_res_table[dev->fmt_idx].command);
+	if (ret)
+		return ret;
 
 	/* Start image transfer */
 	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL,
@@ -1597,7 +1593,7 @@ static irqreturn_t m10mo_irq_thread(int irq, void *dev_id)
 	case M10MO_SINGLE_CAPTURE_MODE:
 		if (int_factor & REG_INT_STATUS_CAPTURE) {
 			dev->mode = M10MO_SINGLE_CAPTURE_MODE;
-			m10mo_single_capture_process(sd);
+			dev->fw_ops->single_capture_process(sd);
 		}
 		break;
 	case M10MO_BURST_CAPTURE_MODE:
@@ -2083,9 +2079,10 @@ static int m10mo_streamoff(struct v4l2_subdev *sd)
 }
 
 static const struct m10mo_fw_ops fw_ops = {
-	.set_run_mode   = m10mo_set_run_mode,
-	.set_burst_mode = m10mo_set_burst_mode,
-	.stream_off     = m10mo_streamoff,
+	.set_run_mode           = m10mo_set_run_mode,
+	.set_burst_mode         = m10mo_set_burst_mode,
+	.stream_off             = m10mo_streamoff,
+	.single_capture_process = m10mo_single_capture_process,
 };
 
 void m10mo_handlers_init(struct v4l2_subdev *sd)
