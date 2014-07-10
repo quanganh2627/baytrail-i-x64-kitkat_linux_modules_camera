@@ -36,8 +36,7 @@
 #include "atomisp_subdev.h"
 #include "atomisp-regs.h"
 #include "hmm/hmm.h"
-#include <linux/pm_qos.h>
-#include <linux/workqueue.h>
+
 #include "hrt/hive_isp_css_mm_hrt.h"
 
 #ifndef CSS21
@@ -506,18 +505,6 @@ unsigned int atomisp_dev_users(struct atomisp_device *isp)
 	return sum;
 }
 
-struct pm_qos_request isp_pm_qos;
-struct delayed_work isp_delay_work;
-static int init_pm_qos, pm_qos_flag;
-void atomisp_isp_work(struct work_struct *work)
-{
-	if (pm_qos_flag) {
-		pm_qos_flag = 0;
-		pm_qos_update_request(&isp_pm_qos, PM_QOS_DEFAULT_VALUE);
-		pr_info("updateeee qos request to default value\n");
-	}
-}
-
 static int atomisp_open(struct file *file)
 {
 	struct video_device *vdev = video_devdata(file);
@@ -527,16 +514,6 @@ static int atomisp_open(struct file *file)
 	int ret;
 
 	dev_dbg(isp->dev, "open device %s\n", vdev->name);
-	if (!init_pm_qos) {
-		init_pm_qos = 1;
-		INIT_DELAYED_WORK(&isp_delay_work, atomisp_isp_work);
-		pm_qos_add_request(&isp_pm_qos, PM_QOS_CPU_DMA_LATENCY,
-                           PM_QOS_DEFAULT_VALUE);
-	}
-
-	pm_qos_flag = 1;
-	pm_qos_update_request(&isp_pm_qos, 0);
-	pr_info("updateeee qos request to 0\n");
 
 	mutex_lock(&isp->mutex);
 
@@ -625,10 +602,8 @@ static int atomisp_release(struct file *file)
 	struct v4l2_requestbuffers req;
 	struct v4l2_subdev_fh fh;
 	int ret = 0;
+
 	dev_dbg(isp->dev, "release device %s\n", vdev->name);
-	if (init_pm_qos) {
-		schedule_delayed_work(&isp_delay_work, 15*HZ);
-	}
 
 	v4l2_fh_init(&fh.vfh, vdev);
 
