@@ -3550,10 +3550,11 @@ void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 			/* TMP: keep track of dequeued param set count
 			 */
 			g_param_buffer_dequeue_count++;
-			ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_2,
-				0,
-				param_queue_ids[i],
-				0);
+			ia_css_bufq_enqueue_psys_event(
+					IA_CSS_PSYS_SW_EVENT_BUFFER_DEQUEUED,
+					0,
+					param_queue_ids[i],
+					0);
 
 			IA_CSS_LOG("dequeued param set %x from %d, release ref", cpy, 0);
 			free_ia_css_isp_parameter_set_info(cpy);
@@ -3806,7 +3807,8 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 				IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
 				return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 			}
-			ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_1,
+			ia_css_bufq_enqueue_psys_event(
+					IA_CSS_PSYS_SW_EVENT_BUFFER_ENQUEUED,
 					(uint8_t)thread_id,
 					(uint8_t)queue_id,
 					0);

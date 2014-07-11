@@ -704,6 +704,16 @@ sh_css_sp_configure_enable_raw_pool_locking(void)
 	sh_css_sp_group.config.enable_raw_pool_locking = true;
 }
 
+void
+sh_css_sp_enable_isys_event_queue(bool enable)
+{
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	sh_css_sp_group.config.enable_isys_event_queue = enable;
+#else
+	(void)enable;
+#endif
+}
+
 static enum ia_css_err
 sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args)
 {
@@ -727,12 +737,11 @@ sh_css_sp_write_frame_pointers(const struct sh_css_binary_args *args)
 	return err;
 }
 
-void
+static void
 sh_css_sp_init_group(bool two_ppc,
-			enum ia_css_stream_format input_format,
-			bool no_isp_sync,
-			uint8_t if_config_index
-			)
+		     enum ia_css_stream_format input_format,
+		     bool no_isp_sync,
+		     uint8_t if_config_index)
 {
 #if !defined(HAS_NO_INPUT_FORMATTER)
 	sh_css_sp_group.config.input_formatter.isp_2ppc = two_ppc;
@@ -1156,7 +1165,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 			enum ia_css_input_mode input_mode,
 			const struct ia_css_metadata_config *md_config,
 			const struct ia_css_metadata_info *md_info
-#if !defined(IS_ISP_2500_SYSTEM)
+#if !defined(HAS_NO_INPUT_SYSTEM)
 			, const mipi_port_ID_t port_id
 #endif
 			)
@@ -1177,15 +1186,17 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 
 	first_binary = me->stages->binary;
 
-	if (input_mode == IA_CSS_INPUT_MODE_SENSOR
-		|| input_mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
-			assert(port_id < N_MIPI_PORT_ID);
-			if (port_id >= N_MIPI_PORT_ID) /* should not happen but KW does not know */
-				return; /* we should be able to return an error */
-			if_config_index  = (uint8_t) (port_id - MIPI_PORT0_ID);
+	if (input_mode == IA_CSS_INPUT_MODE_SENSOR ||
+	    input_mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
+		assert(port_id < N_MIPI_PORT_ID);
+		if (port_id >= N_MIPI_PORT_ID) /* should not happen but KW does not know */
+			return; /* we should be able to return an error */
+		if_config_index  = (uint8_t) (port_id - MIPI_PORT0_ID);
 	} else if (input_mode == IA_CSS_INPUT_MODE_MEMORY) {
 		if_config_index = SH_CSS_IF_CONFIG_NOT_NEEDED;
-	} else if_config_index = 0x0;
+	} else {
+		if_config_index = 0x0;
+	}
 #else
 	(void)input_mode;
 	if_config_index = SH_CSS_IF_CONFIG_NOT_NEEDED;
@@ -1202,8 +1213,9 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 	me->num_stages = num;
 
 	if (first_binary != NULL) {
-	/* Init pipeline data */
-		sh_css_sp_init_group(two_ppc, first_binary->input_format, offline, if_config_index);
+		/* Init pipeline data */
+		sh_css_sp_init_group(two_ppc, first_binary->input_format,
+				     offline, if_config_index);
 	} /* if (first_binary != NULL) */
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)

@@ -24,14 +24,19 @@
 
 #define MAX_NR_OF_PAYLOADS_PER_SW_EVENT 4
 
-#define SP_SW_EVENT_ID_0	0	/* for the error		*/
-#define SP_SW_EVENT_ID_1	1	/* for the host2sp_buffer_queue */
-#define SP_SW_EVENT_ID_2	2	/* for the sp2host_buffer_queue */
-#define SP_SW_EVENT_ID_3	3	/* for the sp2host_event_queue  */
-#define SP_SW_EVENT_ID_4	4	/* for the start stream cmd */
-#define SP_SW_EVENT_ID_5	5	/* for the stop stream cmd  */
-#define SP_SW_EVENT_ID_6	6	/* for the host2sp empty mipi buffers */
-#define SP_SW_EVENT_ID_7	7	/* HALv3 Support unlock a raw buffer cmd */
+enum ia_css_psys_sw_event {
+	IA_CSS_PSYS_SW_EVENT_BUFFER_ENQUEUED, /* from host to SP */
+	IA_CSS_PSYS_SW_EVENT_BUFFER_DEQUEUED, /* from SP to host */
+	IA_CSS_PSYS_SW_EVENT_EVENT_DEQUEUED, /* from SP to host, one way only */
+	IA_CSS_PSYS_SW_EVENT_START_STREAM,
+	IA_CSS_PSYS_SW_EVENT_STOP_STREAM,
+	IA_CSS_PSYS_SW_EVENT_MIPI_BUFFERS_READY,
+	IA_CSS_PSYS_SW_EVENT_UNLOCK_RAW_BUFFER
+};
+
+enum ia_css_isys_sw_event {
+	IA_CSS_ISYS_SW_EVENT_EVENT_DEQUEUED
+};
 
 #endif /* __SW_EVENT_GLOBAL_H_INCLUDED__ */
 

@@ -33,7 +33,7 @@ a backwards-compatible change is made. The major version number will be
 increased (and the minor version number reset) when a non-backwards-compatible
 change is made.
 */
-#define CSS_API_VERSION_STRING	"2.1.3.2"
+#define CSS_API_VERSION_STRING	"2.1.3.3"
 
 /*
 Change log
@@ -120,6 +120,10 @@ v2.1.3.1
 v2.1.3.2
 - reverted v2.1.3.0 change
 
+v2.1.3.3
+- Added isys event queue.
+- Renamed ia_css_dequeue_event to ia_css_dequeue_psys_event
+- Made ia_css_dequeue_event deprecated
 */
 
 #endif /*__CSS_API_VERSION_H*/

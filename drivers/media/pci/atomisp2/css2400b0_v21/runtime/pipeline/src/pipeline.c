@@ -148,10 +148,10 @@ void ia_css_pipeline_start(enum ia_css_pipe_id pipe_id,
 		/* queues are invalid*/
 		return;
 	}
-	ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4,
-				(uint8_t)thread_id,
-				0,
-				0);
+	ia_css_bufq_enqueue_psys_event(IA_CSS_PSYS_SW_EVENT_START_STREAM,
+				       (uint8_t)thread_id,
+				       0,
+				       0);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 	      "ia_css_pipeline_start() leave: return_void\n");
@@ -205,10 +205,10 @@ enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
 		/* queues are invalid */
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
-	ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_5,
-				(uint8_t)thread_id,
-				0,
-				0);
+	ia_css_bufq_enqueue_psys_event(IA_CSS_PSYS_SW_EVENT_STOP_STREAM,
+				       (uint8_t)thread_id,
+				       0,
+				       0);
 	sh_css_sp_uninit_pipeline(pipeline->pipe_num);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,

@@ -98,6 +98,20 @@ ia_css_suspend(void);
 enum ia_css_err
 ia_css_resume(void);
 
+/** @brief Enable use of a separate queue for ISYS events.
+ *
+ * @param[in]	enable: enable or disable use of separate ISYS event queues.
+ * @return		error if called when SP is running.
+ *
+ * @deprecated{This is a temporary function that allows drivers to migrate to
+ * the use of the separate ISYS event queue. Once all drivers supports this, it
+ * will be made the default and this function will be removed.
+ * This function should only be called when the SP is not running, calling it
+ * when the SP is running will result in an error value being returned. }
+ */
+enum ia_css_err
+ia_css_enable_isys_event_queue(bool enable);
+
 /** @brief Test whether the ISP has started.
  *
  * @return	Boolean flag true if the ISP has started or false otherwise.
