@@ -1064,7 +1064,7 @@ startup_failure:
 	return ret;
 }
 
-static int m10mo_set_panorama_monitor(struct v4l2_subdev *sd)
+int m10mo_set_panorama_monitor(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -1151,7 +1151,7 @@ out:
 	return ret;
 }
 
-static int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
+int m10mo_set_zsl_monitor(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -1344,7 +1344,7 @@ int m10mo_set_zsl_raw_capture(struct v4l2_subdev *sd)
 	return m10mo_set_zsl_capture(sd, 1);
 }
 
-static int m10mo_set_burst_mode(struct v4l2_subdev *sd, unsigned int val)
+int m10mo_set_burst_mode(struct v4l2_subdev *sd, unsigned int val)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret = 0;
@@ -1510,7 +1510,7 @@ static int m10mo_s_power(struct v4l2_subdev *sd, int on)
 	return ret;
 }
 
-static int m10mo_single_capture_process(struct v4l2_subdev *sd)
+int m10mo_single_capture_process(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	int ret;
@@ -1952,69 +1952,7 @@ static void m10mo_mipi_initialization(struct v4l2_subdev *sd)
 		dev->mipi_params.raw_width, dev->mipi_params.raw_height);
 }
 
-static int m10mo_set_high_speed(struct v4l2_subdev *sd)
-{
-	struct m10mo_device *dev = to_m10mo_sensor(sd);
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	int ret;
-
-	dev_dbg(&client->dev, "%s: enter\n", __func__);
-
-	if (dev->mode != M10MO_PARAM_SETTING_MODE &&
-		dev->mode != M10MO_PARAMETER_MODE) {
-		/*
-		 * We should switch to param mode first and
-		 * reset all the parameters.
-		 */
-		ret = __m10mo_param_mode_set(sd);
-		if (ret)
-			goto out;
-	}
-
-	ret = m10mo_writeb(sd, CATEGORY_CAPTURE_CTRL, CAPTURE_MODE,
-				CAP_MODE_MOVIE);
-	if (ret)
-		goto out;
-
-	/* 1080P@60FPS */
-	ret = m10mo_write(sd, 1, CATEGORY_PARAM, PARAM_MON_SIZE,
-			MON_SIZE_FHD_60FPS);
-	if (ret)
-		goto out;
-	/* NO meta data */
-	ret = m10mo_write(sd, 1, CATEGORY_PARAM,
-			MON_METADATA_SUPPORT_CTRL,
-			MON_METADATA_SUPPORT_CTRL_DIS);
-	if (ret)
-		goto out;
-	/* Select format NV12 */
-	ret = m10mo_writeb(sd, CATEGORY_PARAM, CHOOSE_NV12NV21_FMT,
-			CHOOSE_NV12NV21_FMT_NV12);
-	if (ret)
-		goto out;
-	/* Enable interrupt signal */
-	ret = m10mo_write(sd, 1, CATEGORY_SYSTEM,
-			SYSTEM_INT_ENABLE, 0x01);
-	if (ret)
-		goto out;
-	/* Go to Monitor mode and output YUV Data */
-	ret = m10mo_request_mode_change(sd,
-			M10MO_MONITOR_MODE_HIGH_SPEED);
-	if (ret)
-		goto out;
-
-	ret = m10mo_wait_mode_change(sd, M10MO_MONITOR_MODE_HIGH_SPEED,
-			M10MO_INIT_TIMEOUT);
-	if (ret < 0)
-		goto out;
-
-	return 0;
-out:
-	dev_err(&client->dev, "%s:streaming failed %d\n", __func__, ret);
-	return ret;
-}
-
-static int m10mo_set_still_capture(struct v4l2_subdev *sd)
+int m10mo_set_still_capture(struct v4l2_subdev *sd)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -2064,16 +2002,13 @@ static int m10mo_set_run_mode(struct v4l2_subdev *sd)
 		/* TODO: Revisit this logic on switching to panorama */
 		if (dev->curr_res_table[dev->fmt_idx].command == 0x43)
 			ret = m10mo_set_panorama_monitor(sd);
-		else if (dev->fps == M10MO_HIGH_SPEED_FPS &&
-			 dev->fw_type == M10MO_FW_TYPE_1)
-			ret = m10mo_set_high_speed(sd);
 		else
 			ret = m10mo_set_zsl_monitor(sd);
 	}
 	return ret;
 }
 
-static int m10mo_streamoff(struct v4l2_subdev *sd)
+int m10mo_streamoff(struct v4l2_subdev *sd)
 {
 	return __m10mo_param_mode_set(sd);
 }
@@ -2090,14 +2025,19 @@ void m10mo_handlers_init(struct v4l2_subdev *sd)
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 
 	switch (dev->fw_type) {
+	case M10MO_FW_TYPE_1:
+		dev->fw_ops = &fw_type1_5_ops;
+		break;
 	case M10MO_FW_TYPE_2:
 		dev->fw_ops = &fw_type2_ops;
+		break;
+	case M10MO_FW_TYPE_5:
+		dev->fw_ops = &fw_type1_5_ops;
 		break;
 	default:
 		dev->fw_ops = &fw_ops;
 	}
 }
-
 
 static int m10mo_s_config(struct v4l2_subdev *sd, int irq)
 {

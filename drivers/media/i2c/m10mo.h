@@ -268,7 +268,14 @@ int m10mo_dump_string_log2_2(struct v4l2_subdev *sd);
 int m10mo_dump_string_log2_3(struct v4l2_subdev *sd);
 int m10mo_dump_string_log3(struct v4l2_subdev *sd);
 void m10mo_dump_log(struct v4l2_subdev *sd);
+int m10mo_single_capture_process(struct v4l2_subdev *sd);
+int m10mo_set_still_capture(struct v4l2_subdev *sd);
+int m10mo_set_panorama_monitor(struct v4l2_subdev *sd);
+int m10mo_set_zsl_monitor(struct v4l2_subdev *sd);
+int m10mo_set_burst_mode(struct v4l2_subdev *sd, unsigned int val);
+int m10mo_streamoff(struct v4l2_subdev *sd);
 
+extern const struct m10mo_fw_ops fw_type1_5_ops;
 extern const struct m10mo_fw_ops fw_type2_ops;
 
 /* Below contents are based on the M10MO_categoryParameter-a1.xls */
