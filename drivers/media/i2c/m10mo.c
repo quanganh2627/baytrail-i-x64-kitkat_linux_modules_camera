@@ -49,13 +49,6 @@ int dbglvl = 0;
 module_param(dbglvl, int, 0644);
 MODULE_PARM_DESC(dbglvl, "debug message on/off (default:off)");
 
-static const uint32_t m10mo_md_effective_size[] = {
-	M10MO_METADATA_WIDTH,
-	M10MO_METADATA_WIDTH,
-	M10MO_METADATA_WIDTH,
-	M10MO_METADATA_WIDTH
-};
-
 /*
  * m10mo_read -  I2C read function
  * @reg: combination of size, category and command for the I2C packet
@@ -1671,28 +1664,25 @@ int get_resolution_index(const struct m10mo_resolution *res,
 	return -1;
 }
 
-static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
+int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 			struct v4l2_mbus_framefmt *fmt, bool update_fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct atomisp_input_stream_info *stream_info =
 			(struct atomisp_input_stream_info *)fmt->reserved;
-	const struct m10mo_resolution * res;
+	const struct m10mo_resolution *res;
 	int entries, idx;
 	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 
-	if (dev->fw_type == M10MO_FW_TYPE_2) {
-		/* Set mbus format to 0x8001(YUV420) */
-		fmt->code = 0x8001;
-	} else 	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
-		fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 &&
-		fmt->code != V4L2_MBUS_FMT_CUSTOM_NV12 &&
-		fmt->code != V4L2_MBUS_FMT_CUSTOM_NV21 &&
-		fmt->code != V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
+	if (fmt->code != V4L2_MBUS_FMT_JPEG_1X8 &&
+	    fmt->code != V4L2_MBUS_FMT_UYVY8_1X16 &&
+	    fmt->code != V4L2_MBUS_FMT_CUSTOM_NV12 &&
+	    fmt->code != V4L2_MBUS_FMT_CUSTOM_NV21 &&
+	    fmt->code != V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
 		dev_info(&client->dev,
-			"%s unsupported code: 0x%x. Set to NV12\n",
-			__func__, fmt->code);
+			 "%s unsupported code: 0x%x. Set to NV12\n",
+			 __func__, fmt->code);
 		fmt->code = V4L2_MBUS_FMT_CUSTOM_NV12;
 	}
 
@@ -1712,7 +1702,7 @@ static int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	/* check if the given resolutions are spported */
 	idx = get_resolution_index(res, entries, fmt->width, fmt->height);
 	if (idx < 0) {
-		dev_err(&client->dev, "%s unsupported resolution: %dx%d \n",
+		dev_err(&client->dev, "%s unsupported resolution: %dx%d\n",
 			__func__, fmt->width, fmt->height);
 		return -EINVAL;
 	}
@@ -1740,7 +1730,7 @@ static int m10mo_try_mbus_fmt(struct v4l2_subdev *sd,
 	int idx;
 
 	mutex_lock(&dev->input_lock);
-	idx = __m10mo_try_mbus_fmt(sd, fmt, true);
+	idx = dev->fw_ops->try_mbus_fmt(sd, fmt, true);
 	mutex_unlock(&dev->input_lock);
 	return idx >= 0 ? 0 : -EINVAL;
 }
@@ -1761,8 +1751,8 @@ static int m10mo_get_mbus_fmt(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int __m10mo_update_stream_info(struct v4l2_subdev *sd,
-					struct v4l2_mbus_framefmt *fmt)
+int __m10mo_update_stream_info(struct v4l2_subdev *sd,
+			       struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct atomisp_input_stream_info *stream_info =
@@ -1805,20 +1795,19 @@ static int __m10mo_update_stream_info(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
+int __m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 			      struct v4l2_mbus_framefmt *fmt)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct atomisp_input_stream_info *stream_info =
-			(struct atomisp_input_stream_info*)fmt->reserved;
-	struct camera_mipi_info *mipi_info = v4l2_get_subdev_hostdata(sd);
+			(struct atomisp_input_stream_info *)fmt->reserved;
 	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
 	int index;
 
 	mutex_lock(&dev->input_lock);
 
-	index = __m10mo_try_mbus_fmt(sd, fmt, false);
+	index = dev->fw_ops->try_mbus_fmt(sd, fmt, false);
 	if (index < 0) {
 		mutex_unlock(&dev->input_lock);
 		return -EINVAL;
@@ -1831,27 +1820,15 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 		dev->capture_res_idx = dev->fmt_idx;
 	}
 
-	if (dev->fw_type == M10MO_FW_TYPE_2) {
-		/* For FW_TYPE_2, preview/video images are output from VC0
-		 * and capture images are output from VC1.
-		 */
-		if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE)
-			stream_info->ch_id = 1;
-		else
-			stream_info->ch_id = 0;
-		mipi_info->metadata_format = M10MO_METADATA_FORMAT;
-		mipi_info->metadata_width = M10MO_METADATA_WIDTH;
-		mipi_info->metadata_height = M10MO_METADATA_HEIGHT;
-		mipi_info->metadata_effective_width = m10mo_md_effective_size;
 	/*
 	 * In ZSL Capture cases, for capture an image the run mode is not
 	 * changed. So we need to maintain a separate cpature table index
 	 * to select the snapshot sizes.
 	 */
-	} else if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE &&
-	 		(dev->run_mode == CI_MODE_PREVIEW ||
-			 dev->run_mode == CI_MODE_VIDEO ||
-			 dev->run_mode == CI_MODE_CONTINUOUS))
+	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE &&
+	    (dev->run_mode == CI_MODE_PREVIEW ||
+	     dev->run_mode == CI_MODE_VIDEO ||
+	     dev->run_mode == CI_MODE_CONTINUOUS))
 		dev->capture_res_idx = dev->fmt_idx;
 
 	dev_dbg(&client->dev,
@@ -1887,6 +1864,14 @@ static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	mutex_unlock(&dev->input_lock);
 	return 0;
+}
+
+static int m10mo_set_mbus_fmt(struct v4l2_subdev *sd,
+			      struct v4l2_mbus_framefmt *fmt)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+
+	return dev->fw_ops->set_mbus_fmt(sd, fmt);
 }
 
 static int m10mo_identify_fw_type(struct v4l2_subdev *sd)
@@ -2018,6 +2003,8 @@ static const struct m10mo_fw_ops fw_ops = {
 	.set_burst_mode         = m10mo_set_burst_mode,
 	.stream_off             = m10mo_streamoff,
 	.single_capture_process = m10mo_single_capture_process,
+	.try_mbus_fmt           =  __m10mo_try_mbus_fmt,
+	.set_mbus_fmt           =  __m10mo_set_mbus_fmt,
 };
 
 void m10mo_handlers_init(struct v4l2_subdev *sd)

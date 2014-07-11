@@ -23,6 +23,13 @@
 #include <linux/module.h>
 #include "m10mo.h"
 
+static const uint32_t m10mo_md_effective_size[] = {
+	M10MO_METADATA_WIDTH,
+	M10MO_METADATA_WIDTH,
+	M10MO_METADATA_WIDTH,
+	M10MO_METADATA_WIDTH
+};
+
 int m10mo_set_burst_mode_fw_type2(struct v4l2_subdev *sd, unsigned int val)
 {
 	struct m10mo_device *dev = to_m10mo_sensor(sd);
@@ -295,9 +302,137 @@ int m10mo_single_capture_process_fw_type2(struct v4l2_subdev *sd)
 			  CAPC_TRANSFER_START, 0x01);
 	return ret;
 }
+
+int __m10mo_try_mbus_fmt_fw_type2(struct v4l2_subdev *sd,
+			struct v4l2_mbus_framefmt *fmt, bool update_fmt)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct atomisp_input_stream_info *stream_info =
+			(struct atomisp_input_stream_info *)fmt->reserved;
+	const struct m10mo_resolution *res;
+	int entries, idx;
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
+
+	/* Set mbus format to 0x8001(YUV420) */
+	fmt->code = 0x8001;
+
+	/* In ZSL case, capture table needs to be handled separately */
+	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE &&
+			(dev->run_mode == CI_MODE_PREVIEW ||
+			 dev->run_mode == CI_MODE_VIDEO ||
+			 dev->run_mode == CI_MODE_CONTINUOUS)) {
+		res = resolutions[mode][M10MO_MODE_CAPTURE_INDEX];
+		entries =
+		     resolutions_sizes[mode][M10MO_MODE_CAPTURE_INDEX];
+	} else {
+		res = dev->curr_res_table;
+		entries = dev->entries_curr_table;
+	}
+
+	/* check if the given resolutions are spported */
+	idx = get_resolution_index(res, entries, fmt->width, fmt->height);
+	if (idx < 0) {
+		dev_err(&client->dev, "%s unsupported resolution: %dx%d\n",
+			__func__, fmt->width, fmt->height);
+		return -EINVAL;
+	}
+
+	/* If the caller wants to get updated fmt values based on the search */
+	if (update_fmt) {
+		if (fmt->code == V4L2_MBUS_FMT_JPEG_1X8) {
+			fmt->width = dev->mipi_params.jpeg_width;
+			fmt->height = dev->mipi_params.jpeg_height;
+		} else if (fmt->code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
+			fmt->width = dev->mipi_params.raw_width;
+			fmt->height = dev->mipi_params.raw_height;
+		} else {
+			fmt->width = res[idx].width;
+			fmt->height = res[idx].height;
+		}
+	}
+	return idx;
+}
+
+int __m10mo_set_mbus_fmt_fw_type2(struct v4l2_subdev *sd,
+				struct v4l2_mbus_framefmt *fmt)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct atomisp_input_stream_info *stream_info =
+			(struct atomisp_input_stream_info *)fmt->reserved;
+	struct camera_mipi_info *mipi_info = v4l2_get_subdev_hostdata(sd);
+	int mode = M10MO_GET_RESOLUTION_MODE(dev->fw_type);
+	int index;
+
+	mutex_lock(&dev->input_lock);
+
+	index = dev->fw_ops->try_mbus_fmt(sd, fmt, false);
+	if (index < 0) {
+		mutex_unlock(&dev->input_lock);
+		return -EINVAL;
+	}
+
+	dev->format.code = fmt->code;
+	dev->fmt_idx = index;
+	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE) {
+		/* Save the index for selecting the capture resolution */
+		dev->capture_res_idx = dev->fmt_idx;
+	}
+
+	/* For FW_TYPE_2, preview/video images are output from VC0
+	 * and capture images are output from VC1.
+	 */
+	if (stream_info->stream == ATOMISP_INPUT_STREAM_CAPTURE)
+		stream_info->ch_id = 1;
+	else
+		stream_info->ch_id = 0;
+
+	mipi_info->metadata_format = M10MO_METADATA_FORMAT;
+	mipi_info->metadata_width = M10MO_METADATA_WIDTH;
+	mipi_info->metadata_height = M10MO_METADATA_HEIGHT;
+	mipi_info->metadata_effective_width = m10mo_md_effective_size;
+
+	dev_dbg(&client->dev,
+		"%s index prev/cap: %d/%d width: %d, height: %d, code; 0x%x\n",
+		 __func__, dev->fmt_idx, dev->capture_res_idx, fmt->width,
+		 fmt->height, dev->format.code);
+
+	/* Make the fixed width and height for JPEG and RAW formats */
+	if (dev->format.code == V4L2_MBUS_FMT_JPEG_1X8) {
+		/* The m10mo can only run JPEG in 30fps or lower */
+		dev->fps = M10MO_NORMAL_FPS;
+		fmt->width = dev->mipi_params.jpeg_width;
+		fmt->height = dev->mipi_params.jpeg_height;
+	} else if (dev->format.code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
+		fmt->width = dev->mipi_params.raw_width;
+		fmt->height = dev->mipi_params.raw_height;
+	}
+
+	/* Update the stream info. Atomisp uses this for configuring mipi */
+	__m10mo_update_stream_info(sd, fmt);
+
+	/*
+	 * Handle raw capture mode separately. Update the capture mode to RAW
+	 * capture now. So that the next streamon call will start RAW capture.
+	 */
+	if (mode == M10MO_RESOLUTION_MODE_1 &&
+	    dev->format.code == V4L2_MBUS_FMT_CUSTOM_M10MO_RAW) {
+		dev_dbg(&client->dev, "%s RAW capture mode\n", __func__);
+		dev->capture_mode = M10MO_CAPTURE_MODE_ZSL_RAW;
+		dev->capture_res_idx = dev->fmt_idx;
+		dev->fmt_idx = 0;
+	}
+
+	mutex_unlock(&dev->input_lock);
+	return 0;
+}
+
 const struct m10mo_fw_ops fw_type2_ops = {
 	.set_run_mode           = m10mo_set_run_mode_fw_type2,
 	.set_burst_mode         = m10mo_set_burst_mode_fw_type2,
 	.stream_off             = m10mo_streamoff_fw_type2,
 	.single_capture_process = m10mo_single_capture_process_fw_type2,
+	.try_mbus_fmt           =  __m10mo_try_mbus_fmt_fw_type2,
+	.set_mbus_fmt           =  __m10mo_set_mbus_fmt_fw_type2,
 };

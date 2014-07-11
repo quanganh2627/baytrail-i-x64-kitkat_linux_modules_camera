@@ -172,6 +172,8 @@ struct m10mo_fw_ops {
 	int (*set_burst_mode) (struct v4l2_subdev *sd, unsigned int val);
 	int (*stream_off) (struct v4l2_subdev *sd);
 	int (*single_capture_process) (struct v4l2_subdev *sd);
+	int (*try_mbus_fmt) (struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt, bool update_fmt);
+	int (*set_mbus_fmt) (struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt);
 };
 
 struct m10mo_device {
@@ -242,6 +244,9 @@ int m10mo_setup_flash_controller(struct v4l2_subdev *sd);
 int m10mo_request_mode_change(struct v4l2_subdev *sd, u8 requested_mode);
 int m10mo_wait_mode_change(struct v4l2_subdev *sd, u8 mode, u32 timeout);
 int __m10mo_param_mode_set(struct v4l2_subdev *sd);
+int __m10mo_update_stream_info(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt);
+int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt, bool update_fmt);
+int __m10mo_set_mbus_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt);
 
 int get_resolution_index(const struct m10mo_resolution *res,
 			 int entries, int w, int h);
