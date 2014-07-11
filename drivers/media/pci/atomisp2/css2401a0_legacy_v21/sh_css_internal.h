@@ -439,6 +439,9 @@ struct sh_css_sp_config {
 	uint8_t			input_circuit_cfg_changed;
 	uint32_t		mipi_sizes_for_check[N_CSI_PORTS][IA_CSS_MIPI_SIZE_CHECK_MAX_NOF_ENTRIES_PER_PORT];
 #endif
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	uint8_t                 enable_isys_event_queue;
+#endif
 };
 
 enum sh_css_stage_type {
@@ -732,15 +735,28 @@ struct sh_css_config_on_frame_enqueue {
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE    3
 #define  IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE  6
 #define  IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE 6
+#if !defined(HAS_NO_INPUT_SYSTEM)
+/* sp-to-host queue is expected to be emptied in ISR since
+ * it is used instead of HW interrupts (due to HW design issue).
+ * We need one queue element per CSI port. */
+#define  IA_CSS_NUM_ELEMS_SP2HOST_ISYS_EVENT_QUEUE N_CSI_PORTS
+/* The host-to-sp queue needs to be deeper to allow for some delay
+ * in the emptying of this queue in the SP since there is no
+ * separate SP thread for this. */
+#define  IA_CSS_NUM_ELEMS_HOST2SP_ISYS_EVENT_QUEUE (2 * N_CSI_PORTS)
+#else
+#define  IA_CSS_NUM_ELEMS_SP2HOST_ISYS_EVENT_QUEUE 0
+#define  IA_CSS_NUM_ELEMS_HOST2SP_ISYS_EVENT_QUEUE 0
+#endif
 
 #if defined(HAS_SP_2400)
-#define  IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE    13
-#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE   13
-#define  IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE    13
+#define  IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE    13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE        13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE    13
 #else
-#define  IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE    6
-#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE   6
-#define  IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE    6
+#define  IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE    6
+#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE        6
+#define  IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE    6
 #endif
 
 struct sh_css_hmm_buffer {
@@ -793,8 +809,12 @@ enum sh_css_queue_type {
 	sh_css_invalid_queue_type = -1,
 	sh_css_host2sp_buffer_queue,
 	sh_css_sp2host_buffer_queue,
-	sh_css_host2sp_event_queue,
-	sh_css_sp2host_event_queue,
+	sh_css_host2sp_psys_event_queue,
+	sh_css_sp2host_psys_event_queue,
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	sh_css_sp2host_isys_event_queue,
+	sh_css_host2sp_isys_event_queue,
+#endif
 	sh_css_host2sp_tag_cmd_queue,
 	sh_css_host2sp_unlock_buff_msg_queue,
 };
@@ -862,52 +882,72 @@ struct host_sp_queues {
 	ia_css_circbuf_desc_t host2sp_buffer_queues_desc
 		[SH_CSS_MAX_SP_THREADS][SH_CSS_MAX_NUM_QUEUES];
 	ia_css_circbuf_elem_t host2sp_buffer_queues_elems
-	[SH_CSS_MAX_SP_THREADS][SH_CSS_MAX_NUM_QUEUES]
-	[IA_CSS_NUM_ELEMS_HOST2SP_BUFFER_QUEUE];
+		[SH_CSS_MAX_SP_THREADS][SH_CSS_MAX_NUM_QUEUES]
+		[IA_CSS_NUM_ELEMS_HOST2SP_BUFFER_QUEUE];
 	ia_css_circbuf_desc_t sp2host_buffer_queues_desc
 		[SH_CSS_MAX_NUM_QUEUES];
 	ia_css_circbuf_elem_t sp2host_buffer_queues_elems
-	[SH_CSS_MAX_NUM_QUEUES][IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE];
+		[SH_CSS_MAX_NUM_QUEUES][IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE];
 
 	/*
-	 * The queue for the events.
+	 * The queues for the events.
 	 */
-	ia_css_circbuf_desc_t host2sp_event_queue_desc;
-	ia_css_circbuf_elem_t host2sp_event_queue_elems
-	[IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE];
-	ia_css_circbuf_desc_t sp2host_event_queue_desc;
-	ia_css_circbuf_elem_t sp2host_event_queue_elems
-	[IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE];
+	ia_css_circbuf_desc_t host2sp_psys_event_queue_desc;
+	ia_css_circbuf_elem_t host2sp_psys_event_queue_elems
+		[IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE];
+	ia_css_circbuf_desc_t sp2host_psys_event_queue_desc;
+	ia_css_circbuf_elem_t sp2host_psys_event_queue_elems
+		[IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE];
+
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	/*
+	 * The queues for the ISYS events.
+	 */
+	ia_css_circbuf_desc_t host2sp_isys_event_queue_desc;
+	ia_css_circbuf_elem_t host2sp_isys_event_queue_elems
+		[IA_CSS_NUM_ELEMS_HOST2SP_ISYS_EVENT_QUEUE];
+	ia_css_circbuf_desc_t sp2host_isys_event_queue_desc;
+	ia_css_circbuf_elem_t sp2host_isys_event_queue_elems
+		[IA_CSS_NUM_ELEMS_SP2HOST_ISYS_EVENT_QUEUE];
+#endif
 
 	/*
 	 * The queue for the tagger commands.
 	 */
 	ia_css_circbuf_desc_t host2sp_tag_cmd_queue_desc;
-	ia_css_circbuf_elem_t host2sp_tag_cmd_queue_elems[IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE];
+	ia_css_circbuf_elem_t host2sp_tag_cmd_queue_elems
+		[IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE];
 
 	/*
 	 * The queue for the Unlock Raw Buffer messages
 	 */
 	ia_css_circbuf_desc_t host2sp_unlock_raw_buff_msg_queue_desc;
-	ia_css_circbuf_elem_t host2sp_unlock_raw_buff_msg_queue_elems[IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE];
+	ia_css_circbuf_elem_t host2sp_unlock_raw_buff_msg_queue_elems
+		[IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE];
 };
 
 #define SIZE_OF_QUEUES_ELEMS							\
 	(SIZE_OF_IA_CSS_CIRCBUF_ELEM_S_STRUCT *				\
 	((SH_CSS_MAX_SP_THREADS * SH_CSS_MAX_NUM_QUEUES * IA_CSS_NUM_ELEMS_HOST2SP_BUFFER_QUEUE) + \
 	(SH_CSS_MAX_NUM_QUEUES * IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE) +	\
-	(IA_CSS_NUM_ELEMS_HOST2SP_EVENT_QUEUE) +				\
-	(IA_CSS_NUM_ELEMS_SP2HOST_EVENT_QUEUE) +				\
+	(IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE) +				\
+	(IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE) +				\
+	(IA_CSS_NUM_ELEMS_HOST2SP_ISYS_EVENT_QUEUE) +				\
+	(IA_CSS_NUM_ELEMS_SP2HOST_ISYS_EVENT_QUEUE) +				\
 	(IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE) +				\
 	(IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE)))
 
-#define SIZE_OF_QUEUES_DESC										\
-	((SH_CSS_MAX_SP_THREADS * SH_CSS_MAX_NUM_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +	\
-	(SH_CSS_MAX_NUM_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +				\
-	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +							\
-	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +							\
-	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) +							\
-	(SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT))
+#if !defined(HAS_NO_INPUT_SYSTEM)
+#define IA_CSS_NUM_CIRCBUF_DESCS 6
+#else
+#define IA_CSS_NUM_CIRCBUF_DESCS 4
+#endif
+
+#define SIZE_OF_QUEUES_DESC \
+	((SH_CSS_MAX_SP_THREADS * SH_CSS_MAX_NUM_QUEUES * \
+	  SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) + \
+	 (SH_CSS_MAX_NUM_QUEUES * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT) + \
+	 (IA_CSS_NUM_CIRCBUF_DESCS * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT))
 
 #define SIZE_OF_HOST_SP_QUEUES_STRUCT		\
 	(SIZE_OF_QUEUES_ELEMS) + (SIZE_OF_QUEUES_DESC)

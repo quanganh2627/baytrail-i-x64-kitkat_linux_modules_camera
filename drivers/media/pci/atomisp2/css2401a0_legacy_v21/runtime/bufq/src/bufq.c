@@ -47,10 +47,18 @@ struct sh_css_queues {
 		[SH_CSS_MAX_NUM_QUEUES];
 
 	/* Host2SP event queue */
-	ia_css_queue_t host2sp_event_queue_handle;
+	ia_css_queue_t host2sp_psys_event_queue_handle;
 
 	/* SP2Host event queue */
-	ia_css_queue_t sp2host_event_queue_handle;
+	ia_css_queue_t sp2host_psys_event_queue_handle;
+
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	/* Host2SP ISYS event queue */
+	ia_css_queue_t host2sp_isys_event_queue_handle;
+
+	/* SP2Host ISYS event queue */
+	ia_css_queue_t sp2host_isys_event_queue_handle;
+#endif
 
 	/* Tagger command queue */
 	ia_css_queue_t host2sp_tag_cmd_queue_handle;
@@ -220,12 +228,20 @@ static ia_css_queue_t *bufq_get_qhandle(
 			break;
 		q = &css_queues.sp2host_buffer_queue_handles[id];
 		break;
-	case sh_css_host2sp_event_queue:
-		q = &css_queues.host2sp_event_queue_handle;
+	case sh_css_host2sp_psys_event_queue:
+		q = &css_queues.host2sp_psys_event_queue_handle;
 		break;
-	case sh_css_sp2host_event_queue:
-		q = &css_queues.sp2host_event_queue_handle;
+	case sh_css_sp2host_psys_event_queue:
+		q = &css_queues.sp2host_psys_event_queue_handle;
 		break;
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	case sh_css_host2sp_isys_event_queue:
+		q = &css_queues.host2sp_isys_event_queue_handle;
+		break;
+	case sh_css_sp2host_isys_event_queue:
+		q = &css_queues.sp2host_isys_event_queue_handle;
+		break;
+#endif
 	case sh_css_host2sp_tag_cmd_queue:
 		q = &css_queues.host2sp_tag_cmd_queue_handle;
 		break;
@@ -239,100 +255,88 @@ static ia_css_queue_t *bufq_get_qhandle(
 	return q;
 }
 
-
-enum ia_css_err ia_css_bufq_init(void)
+/* Local function to initialize a buffer queue. This reduces
+ * the chances of copy-paste errors or typos.
+ */
+STORAGE_CLASS_INLINE void
+init_bufq(unsigned int desc_offset,
+	  unsigned int elems_offset,
+	  ia_css_queue_t *handle)
 {
 	const struct ia_css_fw_info *fw;
-	unsigned int HIVE_ADDR_ia_css_bufq_host_sp_queue;
+	unsigned int q_base_addr;
 	ia_css_queue_remote_t remoteq;
-	int i, j;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_bufq_init() enter:\n");
 	fw = &sh_css_sp_fw;
-
 #ifdef C_RUN
-	HIVE_ADDR_ia_css_bufq_host_sp_queue = (unsigned int)
-		sp_address_of(ia_css_bufq_host_sp_queue);
+	q_base_addr = (unsigned int)sp_address_of(ia_css_bufq_host_sp_queue);
 #else
-	HIVE_ADDR_ia_css_bufq_host_sp_queue = fw->info.sp.host_sp_queue;
+	q_base_addr = fw->info.sp.host_sp_queue;
 #endif
-	/* Setup queue location as SP and proc id as SP0_ID*/
+
+	/* Setup queue location as SP and proc id as SP0_ID */
 	remoteq.location = IA_CSS_QUEUE_LOC_SP;
 	remoteq.proc_id = SP0_ID;
+	remoteq.cb_desc_addr = q_base_addr + desc_offset;
+	remoteq.cb_elems_addr = q_base_addr + elems_offset;
+	/* Initialize the queue instance and obtain handle */
+	ia_css_queue_remote_init(handle, &remoteq);
+}
+
+void ia_css_bufq_init(void)
+{
+	int i, j;
+
+	IA_CSS_ENTER_PRIVATE("");
 
 	/* Setup all the local queue descriptors for Host2SP Buffer Queues */
 	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++)
 		for (j = 0; j < SH_CSS_MAX_NUM_QUEUES; j++) {
-			remoteq.cb_desc_addr =
-				HIVE_ADDR_ia_css_bufq_host_sp_queue
-					+ offsetof(struct host_sp_queues,
-					 host2sp_buffer_queues_desc[i][j]);
-
-			remoteq.cb_elems_addr =
-				HIVE_ADDR_ia_css_bufq_host_sp_queue
-					+ offsetof(struct host_sp_queues,
-					 host2sp_buffer_queues_elems[i][j]);
-
-			/* Initialize the queue instance and obtain handle */
-			ia_css_queue_remote_init(
-				&css_queues.host2sp_buffer_queue_handles[i][j],
-				&remoteq);
+			init_bufq(offsetof(struct host_sp_queues, host2sp_buffer_queues_desc[i][j]),
+				  offsetof(struct host_sp_queues, host2sp_buffer_queues_elems[i][j]),
+				  &css_queues.host2sp_buffer_queue_handles[i][j]);
 		}
 
 	/* Setup all the local queue descriptors for SP2Host Buffer Queues */
 	for (i = 0; i < SH_CSS_MAX_NUM_QUEUES; i++) {
-		remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue
-			+ offsetof(struct host_sp_queues,
-				 sp2host_buffer_queues_desc[i]);
-
-		remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue
-			+ offsetof(struct host_sp_queues,
-				 sp2host_buffer_queues_elems[i]);
-
-		/* Initialize the queue instance and obtain handle */
-		ia_css_queue_remote_init(
-			&css_queues.sp2host_buffer_queue_handles[i],
-			&remoteq);
+		init_bufq(offsetof(struct host_sp_queues, sp2host_buffer_queues_desc[i]),
+			  offsetof(struct host_sp_queues, sp2host_buffer_queues_elems[i]),
+			  &css_queues.sp2host_buffer_queue_handles[i]);
 	}
 
-	/* Host2SP queues event queue*/
-	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, host2sp_event_queue_desc);
-	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, host2sp_event_queue_elems);
-	/* Initialize the queue instance and obtain handle */
-	ia_css_queue_remote_init(&css_queues.host2sp_event_queue_handle,
-		&remoteq);
+	/* Host2SP event queue*/
+	init_bufq(offsetof(struct host_sp_queues, host2sp_psys_event_queue_desc),
+		  offsetof(struct host_sp_queues, host2sp_psys_event_queue_elems),
+		  &css_queues.host2sp_psys_event_queue_handle);
 
-	/* SP2Host queues event queue*/
-	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, sp2host_event_queue_desc);
-	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, sp2host_event_queue_elems);
-	/* Initialize the queue instance and obtain handle */
-	ia_css_queue_remote_init(&css_queues.sp2host_event_queue_handle,
-		&remoteq);
+	/* SP2Host event queue */
+	init_bufq(offsetof(struct host_sp_queues, sp2host_psys_event_queue_desc),
+		  offsetof(struct host_sp_queues, sp2host_psys_event_queue_elems),
+		  &css_queues.sp2host_psys_event_queue_handle);
+
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	/* Host2SP ISYS event queue */
+	init_bufq(offsetof(struct host_sp_queues, host2sp_isys_event_queue_desc),
+		  offsetof(struct host_sp_queues, host2sp_isys_event_queue_elems),
+		  &css_queues.host2sp_isys_event_queue_handle);
+
+	/* SP2Host ISYS event queue*/
+	init_bufq(offsetof(struct host_sp_queues, sp2host_isys_event_queue_desc),
+		  offsetof(struct host_sp_queues, sp2host_isys_event_queue_elems),
+		  &css_queues.sp2host_isys_event_queue_handle);
+#endif
 
 	/* Host2SP tagger command queue */
-	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_desc);
-	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_elems);
-	/* Initialize the queue instance and obtain handle */
-	ia_css_queue_remote_init(&css_queues.host2sp_tag_cmd_queue_handle,
-		&remoteq);
+	init_bufq(offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_desc),
+		  offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_elems),
+		  &css_queues.host2sp_tag_cmd_queue_handle);
 
 	/* Host2SP Unlock Raw Buffer message queue */
-	remoteq.cb_desc_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_desc);
-	remoteq.cb_elems_addr = HIVE_ADDR_ia_css_bufq_host_sp_queue +
-		offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_elems);
-	/* Initialize the queue instance and obtain handle */
-	ia_css_queue_remote_init(&css_queues.host2sp_unlock_raw_buff_msg_queue_handle,
-		&remoteq);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_bufq_init() leave:\n");
+	init_bufq(offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_desc),
+		  offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_elems),
+		  &css_queues.host2sp_unlock_raw_buff_msg_queue_handle);
 
-	return IA_CSS_SUCCESS;
+	IA_CSS_LEAVE_PRIVATE("");
 }
 
 enum ia_css_err ia_css_bufq_enqueue_buffer(
@@ -344,14 +348,10 @@ enum ia_css_err ia_css_bufq_enqueue_buffer(
 	ia_css_queue_t *q;
 	int error;
 
+	IA_CSS_ENTER_PRIVATE("queue_id=%d", queue_id);
 	if ((thread_index >= SH_CSS_MAX_SP_THREADS) || (thread_index < 0) ||
 			(queue_id == SH_CSS_INVALID_QUEUE_ID))
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_enqueue_buffer() enter: thread_index = %d, queue_id=%d\n",
-		thread_index,
-		queue_id);
 
 	/* Get the queue for communication */
 	q = bufq_get_qhandle(sh_css_host2sp_buffer_queue,
@@ -361,13 +361,11 @@ enum ia_css_err ia_css_bufq_enqueue_buffer(
 		error = ia_css_queue_enqueue(q, item);
 		return_err = ia_css_convert_errno(error);
 	} else {
-		/* Error as the queue is not initialized */
+		IA_CSS_ERROR("queue is not initialized");
 		return_err = IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_enqueue_buffer() leave: return_err = %d\n", return_err);
-
+	IA_CSS_LEAVE_ERR_PRIVATE(return_err);
 	return return_err;
 }
 
@@ -379,15 +377,12 @@ enum ia_css_err ia_css_bufq_dequeue_buffer(
 	int error = 0;
 	ia_css_queue_t *q;
 
+	IA_CSS_ENTER_PRIVATE("queue_id=%d", queue_id);
 	if ((item == NULL) ||
 	    (queue_id <= SH_CSS_INVALID_QUEUE_ID) ||
 	    (queue_id >= SH_CSS_MAX_NUM_QUEUES)
 	   )
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_dequeue_buffer() enter: queue_id = %d\n",
-		queue_id);
 
 	q = bufq_get_qhandle(sh_css_sp2host_buffer_queue,
 		queue_id,
@@ -396,18 +391,15 @@ enum ia_css_err ia_css_bufq_dequeue_buffer(
 		error = ia_css_queue_dequeue(q, item);
 		return_err = ia_css_convert_errno(error);
 	} else {
-		/* Error as the queue is not initialized */
+		IA_CSS_ERROR("queue is not initialized");
 		return_err = IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_dequeue_buffer() leave: return_err = %d item = %p\n",
-		return_err,
-		item);
+	IA_CSS_LEAVE_ERR_PRIVATE(return_err);
 	return return_err;
 }
 
-enum ia_css_err ia_css_bufq_enqueue_event(
+enum ia_css_err ia_css_bufq_enqueue_psys_event(
 	uint8_t evt_id,
 	uint8_t evt_payload_0,
 	uint8_t evt_payload_1,
@@ -417,14 +409,10 @@ enum ia_css_err ia_css_bufq_enqueue_event(
 	int error = 0;
 	ia_css_queue_t *q;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_enqueue_event() enter\n");
-
-	q = bufq_get_qhandle(sh_css_host2sp_event_queue, -1, -1);
+	IA_CSS_ENTER_PRIVATE("evt_id=%d", evt_id);
+	q = bufq_get_qhandle(sh_css_host2sp_psys_event_queue, -1, -1);
 	if (NULL == q) {
-		/* Error as the queue is not initialized */
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_bufq_enqueue_event() leaving: queue not available\n");
+		IA_CSS_ERROR("queue is not initialized");
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
 
@@ -432,36 +420,85 @@ enum ia_css_err ia_css_bufq_enqueue_event(
 			evt_id, evt_payload_0, evt_payload_1, evt_payload_2);
 
 	return_err = ia_css_convert_errno(error);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_enqueue_event() leave: return_err = %d\n", return_err);
-
+	IA_CSS_LEAVE_ERR_PRIVATE(return_err);
 	return return_err;
 }
 
-enum  ia_css_err ia_css_bufq_dequeue_event(
+enum  ia_css_err ia_css_bufq_dequeue_psys_event(
 	uint8_t item[BUFQ_EVENT_SIZE])
 {
 	enum ia_css_err return_err;
 	int error = 0;
 	ia_css_queue_t *q;
 
+	/* No ENTER/LEAVE in this function since this is polled
+	 * by some test apps. Enablign logging here floods the log
+	 * files which may cause timeouts. */
 	if (item == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
-	q = bufq_get_qhandle(sh_css_sp2host_event_queue, -1, -1);
+	q = bufq_get_qhandle(sh_css_sp2host_psys_event_queue, -1, -1);
 	if (NULL == q) {
-		/* Error as the queue is not initialized */
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_dequeue_event() leaving: Not available\n");
-			return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+		IA_CSS_ERROR("queue is not initialized");
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
 	error = ia_css_eventq_recv(q, item);
 
 	return_err = ia_css_convert_errno(error);
-
 	return return_err;
 
+}
+
+enum  ia_css_err ia_css_bufq_dequeue_isys_event(
+	uint8_t item[BUFQ_EVENT_SIZE])
+{
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	enum ia_css_err return_err;
+	int error = 0;
+	ia_css_queue_t *q;
+
+	/* No ENTER/LEAVE in this function since this is polled
+	 * by some test apps. Enablign logging here floods the log
+	 * files which may cause timeouts. */
+	if (item == NULL)
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
+	q = bufq_get_qhandle(sh_css_sp2host_isys_event_queue, -1, -1);
+	if (q == NULL) {
+		IA_CSS_ERROR("queue is not initialized");
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
+	error = ia_css_eventq_recv(q, item);
+	return_err = ia_css_convert_errno(error);
+	return return_err;
+#else
+	(void)item;
+	return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+#endif
+}
+
+enum ia_css_err ia_css_bufq_enqueue_isys_event(uint8_t evt_id)
+{
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	enum ia_css_err return_err;
+	int error = 0;
+	ia_css_queue_t *q;
+
+	IA_CSS_ENTER_PRIVATE("event_id=%d", evt_id);
+	q = bufq_get_qhandle(sh_css_host2sp_isys_event_queue, -1, -1);
+	if (q == NULL) {
+		IA_CSS_ERROR("queue is not initialized");
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
+
+	error = ia_css_eventq_send(q, evt_id, 0, 0, 0);
+	return_err = ia_css_convert_errno(error);
+	IA_CSS_LEAVE_ERR_PRIVATE(return_err);
+	return return_err;
+#else
+	(void)evt_id;
+	return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+#endif
 }
 
 enum ia_css_err ia_css_bufq_enqueue_tag_cmd(
@@ -471,19 +508,16 @@ enum ia_css_err ia_css_bufq_enqueue_tag_cmd(
 	int error = 0;
 	ia_css_queue_t *q;
 
+	IA_CSS_ENTER_PRIVATE("item=%d", item);
 	q = bufq_get_qhandle(sh_css_host2sp_tag_cmd_queue, -1, -1);
 	if (NULL == q) {
-		/* Error as the queue is not initialized */
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_bufq_enqueue_tag_cmd() leaving: queue not available\n");
+		IA_CSS_ERROR("queue is not initialized");
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
 	error = ia_css_queue_enqueue(q, item);
+
 	return_err = ia_css_convert_errno(error);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_enqueue_tag_cmd() leave: return_err = %d\n", return_err);
-
+	IA_CSS_LEAVE_ERR_PRIVATE(return_err);
 	return return_err;
 }
 
@@ -494,22 +528,16 @@ enum ia_css_err ia_css_bufq_enqueue_unlock_raw_buff_msg(
 	int error = 0;
 	ia_css_queue_t *q;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_enqueue_unlock_raw_buff_msg() enter: exp_id=%u\n", exp_id);
-
+	IA_CSS_ENTER_PRIVATE("exposure ID=%d", exp_id);
 	q = bufq_get_qhandle(sh_css_host2sp_unlock_buff_msg_queue, -1, -1);
 	if (NULL == q) {
-		/* Error as the queue is not initialized */
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_bufq_enqueue_unlock_raw_buff_msg() leaving: queue not available\n");
+		IA_CSS_ERROR("queue is not initialized");
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
 	error = ia_css_queue_enqueue(q, exp_id);
+
 	return_err = ia_css_convert_errno(error);
-
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_bufq_enqueue_unlock_raw_buff_msg() leave: return_err = %d\n", return_err);
-
+	IA_CSS_LEAVE_ERR_PRIVATE(return_err);
 	return return_err;
 }
 

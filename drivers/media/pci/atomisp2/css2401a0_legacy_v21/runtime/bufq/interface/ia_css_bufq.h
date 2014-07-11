@@ -77,9 +77,9 @@ void ia_css_queue_map_init(void);
  *-host to SP event communication queue
  * -SP to host event communication queue
  * -queue for tagger commands
- * @return	IA_CSS_SUCCESS or error code upon error.
+ * @return none
  */
-enum ia_css_err ia_css_bufq_init(void);
+void ia_css_bufq_init(void);
 
 
 /**
@@ -120,7 +120,7 @@ enum  ia_css_err ia_css_bufq_dequeue_buffer(
  * @return	IA_CSS_SUCCESS or error code upon error.
  *
 */
-enum ia_css_err ia_css_bufq_enqueue_event(
+enum ia_css_err ia_css_bufq_enqueue_psys_event(
 	uint8_t evt_id,
 	uint8_t evt_payload_0,
 	uint8_t evt_payload_1,
@@ -128,17 +128,36 @@ enum ia_css_err ia_css_bufq_enqueue_event(
 	);
 
 /**
-* @brief   Dequeue an item from  SP to host communication event queue.
-
+ * @brief   Dequeue an item from  SP to host communication event queue.
  *
  * @param item	Object to be dequeued into this item.
  * @return	IA_CSS_SUCCESS or error code upon error.
  *
 */
-enum  ia_css_err ia_css_bufq_dequeue_event(
+enum  ia_css_err ia_css_bufq_dequeue_psys_event(
 	uint8_t item[BUFQ_EVENT_SIZE]
 	);
 
+/**
+ * @brief  Enqueue an event item into host to SP EOF event queue.
+ *
+ * @param[in]	evt_id		      The event ID.
+ * @return	IA_CSS_SUCCESS or error code upon error.
+ *
+ */
+enum ia_css_err ia_css_bufq_enqueue_isys_event(
+	uint8_t evt_id);
+
+/**
+* @brief   Dequeue an item from  SP to host communication EOF event queue.
+
+ *
+ * @param item	Object to be dequeued into this item.
+ * @return	IA_CSS_SUCCESS or error code upon error.
+ *
+ */
+enum  ia_css_err ia_css_bufq_dequeue_isys_event(
+	uint8_t item[BUFQ_EVENT_SIZE]);
 
 /**
 * @brief   Enqueue a tagger command item into tagger command queue..
