@@ -80,20 +80,25 @@ static struct pixter_dbgfs dbgfs[] = {
 	{"mipi_lanes_num", "timing", DBGFS_FILE, PIXTER_RONLY, dev_off(dbg_timing.mipi_lanes_num)},
 };
 
-static u32 pixter_get_tx_freq_sel(u32 freq)
+static u32 pixter_get_tx_freq_sel(u32 *freq)
 {
 	u32 sel;
 
-	freq /= 1000000; /* To MHz */
-	if (freq < 20) {
+	*freq /= 1000000; /* To MHz */
+	if (*freq < 20) {
 		sel = 1;
-	} else if (freq <= 100) {
-		sel = (freq + 9) / 10 - 1;
-	} else if (freq <= 750) {
-		sel = (freq + 24) / 25 + 5;
+		*freq = 20;
+	} else if (*freq <= 100) {
+		sel = (*freq + 9) / 10 - 1;
+		*freq = 20 + (sel - 1) * 10;
+	} else if (*freq <= 750) {
+		sel = (*freq + 24) / 25 + 5;
+		*freq = 100 + (sel - 9) * 25;
 	} else {
 		sel = 35;
+		*freq = 750;
 	}
+	*freq *= 1000000;
 
 	return sel;
 }
@@ -282,7 +287,7 @@ static int pixter_config_tx(struct v4l2_subdev *sd)
 	}
 
 	/* Config MIPI clock. */
-	reg_val = pixter_get_tx_freq_sel(dev->dbg_timing.mipi_clk);
+	reg_val = pixter_get_tx_freq_sel(&dev->dbg_timing.mipi_clk);
 	pixter_write_reg(sd, PIXTER_TX_CTRL(ch), reg_val);
 	/* Wait MIPI clock to be ready. Timeout=5s. */
 	while (cnt) {
