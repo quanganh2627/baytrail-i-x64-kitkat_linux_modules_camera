@@ -392,6 +392,7 @@ static long __ov5648_set_exposure(struct v4l2_subdev *sd, int coarse_itg,
 	struct ov5648_device *dev = to_ov5648_sensor(sd);
 	u16 vts, hts;
 	int ret, exp_val, vts_val;
+	int temp;
 
 	if (dev->run_mode == CI_MODE_VIDEO)
 		ov5648_res = ov5648_res_video;
@@ -446,21 +447,31 @@ static long __ov5648_set_exposure(struct v4l2_subdev *sd, int coarse_itg,
 		return ret;
 
 	/* Digital gain */
-	if (digitgain) {
-		ret = ov5648_write_reg(client, OV5648_16BIT,
-			OV5648_MWB_RED_GAIN_H, digitgain);
-		if (ret)
-			return ret;
+	if (digitgain != dev->pre_digitgain){
+		dev->pre_digitgain = digitgain;
+		temp = digitgain*(dev->current_otp.R_gain)>>10;
+		if (temp >= 0x400){
+			ret = ov5648_write_reg(client, OV5648_16BIT,
+				OV5648_MWB_RED_GAIN_H, temp);
+			if (ret)
+				return ret;
+		}
 
-		ret = ov5648_write_reg(client, OV5648_16BIT,
-			OV5648_MWB_GREEN_GAIN_H, digitgain);
-		if (ret)
-			return ret;
+		temp = digitgain*(dev->current_otp.G_gain)>>10;
+		if (temp >= 0x400){
+			ret = ov5648_write_reg(client, OV5648_16BIT,
+				OV5648_MWB_GREEN_GAIN_H, temp);
+			if (ret)
+				return ret;
+		}
 
-		ret = ov5648_write_reg(client, OV5648_16BIT,
-			OV5648_MWB_BLUE_GAIN_H, digitgain);
-		if (ret)
-			return ret;
+		temp = digitgain*(dev->current_otp.B_gain)>>10;
+		if (temp >= 0x400){
+			ret = ov5648_write_reg(client, OV5648_16BIT,
+				OV5648_MWB_BLUE_GAIN_H, temp);
+			if (ret)
+				return ret;
+		}
 	}
 
 	/* Analog gain */

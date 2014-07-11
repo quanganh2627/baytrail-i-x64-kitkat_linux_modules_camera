@@ -227,6 +227,7 @@ struct ov5648_device {
 	u8 type;
 	struct ov5648_vcm *vcm_driver;
 	struct otp_struct current_otp;
+	int pre_digitgain;
 };
 
 enum ov5648_tok_type {
