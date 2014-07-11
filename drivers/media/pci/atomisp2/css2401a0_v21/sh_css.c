@@ -1398,8 +1398,8 @@ static enum ia_css_err start_pipe(
 				&me->stream->info.metadata_info
 #if !defined(HAS_NO_INPUT_SYSTEM)
 				, (input_mode==IA_CSS_INPUT_MODE_MEMORY)?
-					(mipi_port_ID_t)0:
-				me->stream->config.source.port.port
+					(mipi_port_ID_t)0 :
+					me->stream->config.source.port.port
 #endif
 				);
 
@@ -1439,10 +1439,11 @@ enable_interrupts(enum ia_css_irq_type irq_type)
 	mipi_port_ID_t port;
 #endif
 	bool enable_pulse = irq_type != IA_CSS_IRQ_TYPE_EDGE;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "enable_interrupts() enter:\n");
-/* Enable IRQ on the SP which signals that SP goes to idle (aka ready state) */
+	IA_CSS_ENTER_PRIVATE("");
+	/* Enable IRQ on the SP which signals that SP goes to idle
+	 * (aka ready state) */
 	cnd_sp_irq_enable(SP0_ID, true);
-/* Set the IRQ device 0 to either level or pulse */
+	/* Set the IRQ device 0 to either level or pulse */
 	irq_enable_pulse(IRQ0_ID, enable_pulse);
 
 #if defined(IS_ISP_2500_SYSTEM)
@@ -1452,13 +1453,19 @@ enable_interrupts(enum ia_css_irq_type irq_type)
 	cnd_virq_enable_channel(virq_sp, true);
 #endif
 
-	/* Triggered by SP to signal Host that there are new statistics */
-	cnd_virq_enable_channel((virq_id_t)(IRQ_SW_CHANNEL1_ID + IRQ_SW_CHANNEL_OFFSET), true);
-	/* Triggered by SP to signal Host that there is data in one of the
-	 * SP->Host queues.*/
+	/* Enable SW interrupt 0, this is used to signal ISYS events */
+	cnd_virq_enable_channel(
+			(virq_id_t)(IRQ_SW_CHANNEL0_ID + IRQ_SW_CHANNEL_OFFSET),
+			true);
+	/* Enable SW interrupt 1, this is used to signal PSYS events */
+	cnd_virq_enable_channel(
+			(virq_id_t)(IRQ_SW_CHANNEL1_ID + IRQ_SW_CHANNEL_OFFSET),
+			true);
 #if !defined(HAS_IRQ_MAP_VERSION_2)
-/* IRQ_SW_CHANNEL2_ID does not exist on 240x systems */
-	cnd_virq_enable_channel((virq_id_t)(IRQ_SW_CHANNEL2_ID + IRQ_SW_CHANNEL_OFFSET), true);
+	/* IRQ_SW_CHANNEL2_ID does not exist on 240x systems */
+	cnd_virq_enable_channel(
+			(virq_id_t)(IRQ_SW_CHANNEL2_ID + IRQ_SW_CHANNEL_OFFSET),
+			true);
 	virq_clear_all();
 #endif
 
@@ -1468,13 +1475,14 @@ enable_interrupts(enum ia_css_irq_type irq_type)
 #endif
 
 #if defined(HRT_CSIM)
-/*
- * Enable IRQ on the SP which signals that SP goes to idle
- * to get statistics for each binary
- */
+	/*
+	 * Enable IRQ on the SP which signals that SP goes to idle
+	 * to get statistics for each binary
+	 */
 	cnd_isp_irq_enable(ISP0_ID, true);
 	cnd_virq_enable_channel(virq_isp, true);
 #endif
+	IA_CSS_LEAVE_PRIVATE("");
 }
 
 static bool sh_css_setup_spctrl_config(const struct ia_css_fw_info *fw,
@@ -1877,6 +1885,15 @@ ia_css_resume(void)
 	my_css_save.mode = sh_css_mode_working;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_resume() leave: return_void\n");
 	return(IA_CSS_SUCCESS);
+}
+
+enum ia_css_err
+ia_css_enable_isys_event_queue(bool enable)
+{
+	if (sh_css_sp_is_running())
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	sh_css_sp_enable_isys_event_queue(enable);
+	return IA_CSS_SUCCESS;
 }
 
 void *
@@ -2463,38 +2480,6 @@ ia_css_uninit(void)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_uninit() leave: return_void\n");
 }
 
-static unsigned int translate_sw_interrupt(unsigned value)
-{
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "translate_sw_interrupt() enter:\n");
-	/* previous versions of sp would put info in the upper word
-	   better safe than sorry so mask that away
-	*/
-	value = value & 0xffff;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "translate_sw_interrupt() leave: return %d\n", value);
-	return value;
-}
-
-static unsigned int translate_sw_interrupt1(void)
-{
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "translate_sw_interrupt1() enter:\n");
-	return translate_sw_interrupt(sh_css_get_sw_interrupt_value(1));
-}
-
-#if 0
-static unsigned int translate_sw_interrupt2(void)
-{
-	/* By smart coding the flag/bits in value (on the SP side),
-	 * no translation is required. The returned value can be
-	 * binary ORed with existing interrupt info
-	 * (it is compatible with enum ia_css_irq_info)
-	 */
-/* MW: No smart coding required, we should just keep interrupt info
-   and local context info separated */
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "translate_sw_interrupt2() enter:\n");
-	return translate_sw_interrupt(sh_css_get_sw_interrupt_value(2));
-}
-#endif
-
 /* Deprecated, this is an HRT backend function (memory_access.h) */
 static void
 sh_css_mmu_set_page_table_base_index(hrt_data base_index)
@@ -2539,6 +2524,8 @@ enum ia_css_err ia_css_irq_translate(
 #else
 		case virq_sp:
 #endif
+			/* When SP goes to idle, info is available in the
+			 * event queue. */
 			infos |= IA_CSS_IRQ_INFO_EVENTS_READY;
 			break;
 		case virq_isp:
@@ -2568,10 +2555,10 @@ enum ia_css_err ia_css_irq_translate(
 			infos |= IA_CSS_IRQ_INFO_DMA_ERROR;
 			break;
 		case virq_sw_pin_0:
-			infos |= IA_CSS_IRQ_INFO_SW_0;
+			infos |= sh_css_get_sw_interrupt_value(0);
 			break;
 		case virq_sw_pin_1:
-			infos |= translate_sw_interrupt1();
+			infos |= sh_css_get_sw_interrupt_value(1);
 			/* pqiao TODO: also assumption here */
 			break;
 		default:
@@ -2593,7 +2580,7 @@ enum ia_css_err ia_css_irq_enable(
 	bool enable)
 {
 	virq_id_t	irq = N_virq_id;
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_irq_enable() enter: info=%d, enable=%d\n",info,enable);
+	IA_CSS_ENTER("info=%d, enable=%d", info, enable);
 
 	switch (info) {
 #if !defined(HAS_NO_INPUT_FORMATTER)
@@ -2622,13 +2609,13 @@ enum ia_css_err ia_css_irq_enable(
 		irq = virq_sw_pin_1;
 		break;
 	default:
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_irq_enable() leave: return_err=%d\n",IA_CSS_ERR_INVALID_ARGUMENTS);
+		IA_CSS_LEAVE_ERR(IA_CSS_ERR_INVALID_ARGUMENTS);
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
 
 	cnd_virq_enable_channel(irq, enable);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_irq_enable() leave: return_err=%d\n",IA_CSS_SUCCESS);
+	IA_CSS_LEAVE_ERR(IA_CSS_SUCCESS);
 	return IA_CSS_SUCCESS;
 }
 
@@ -3294,7 +3281,6 @@ ia_css_connect_buf_queues(unsigned int host2sp_addr,
 
 static void sh_css_setup_queues(void)
 {
-	enum ia_css_err error;
 	const struct ia_css_fw_info *fw;
 	unsigned int HIVE_ADDR_host_sp_queues_initialized;
 	int i;
@@ -3308,19 +3294,14 @@ static void sh_css_setup_queues(void)
 	HIVE_ADDR_host_sp_queues_initialized =
 		fw->info.sp.host_sp_queues_initialized;
 
-	error = ia_css_bufq_init();
-	if(error != IA_CSS_SUCCESS)
-		return;
+	ia_css_bufq_init();
 
-		/* set "host_sp_queues_initialized" to "true" */
+	/* set "host_sp_queues_initialized" to "true" */
 	sp_dmem_store_uint32(SP0_ID,
 		(unsigned int)sp_address_of(host_sp_queues_initialized),
 		(uint32_t)(1));
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "sh_css_setup_queues() leave:\n");
-	return;
 }
-
-
 
 static enum ia_css_err
 init_vf_frameinfo_defaults(struct ia_css_pipe *pipe,
@@ -4246,8 +4227,8 @@ ia_css_pipe_enqueue_buffer(struct ia_css_pipe *pipe,
 				"queues unavailable\n");
 			return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 		}
-		return_err = ia_css_bufq_enqueue_event(
-				SP_SW_EVENT_ID_1,
+		return_err = ia_css_bufq_enqueue_psys_event(
+				IA_CSS_PSYS_SW_EVENT_BUFFER_ENQUEUED,
 				(uint8_t)thread_id,
 				queue_id,
 				0);
@@ -4444,7 +4425,8 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			/* SP is not running. The queues are not valid */
 			return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 		}
-		ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_2,
+		ia_css_bufq_enqueue_psys_event(
+					IA_CSS_PSYS_SW_EVENT_BUFFER_DEQUEUED,
 					0,
 					queue_id,
 					0);
@@ -4478,10 +4460,19 @@ static enum ia_css_event_type convert_event_sp_to_host_domain[] = {
 enum ia_css_err
 ia_css_dequeue_event(struct ia_css_event *event)
 {
+	return ia_css_dequeue_psys_event(event);
+}
+
+enum ia_css_err
+ia_css_dequeue_psys_event(struct ia_css_event *event)
+{
 	enum ia_css_pipe_id pipe_id;
 	uint8_t payload[4] = {0,0,0,0};
 	enum ia_css_err ret_err;
 
+	/* We skip the IA_CSS_ENTER logging call
+	 * to avoid flooding the logs when the host application
+	 * uses polling. */
 	if (event == NULL)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 
@@ -4490,9 +4481,6 @@ ia_css_dequeue_event(struct ia_css_event *event)
 	 * b) group decode and dequeue into eventQueue module
 	 */
 	if (!sh_css_sp_is_running()) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_dequeue_event() leaving:"
-			"queues unavailable\n");
 		/* SP is not running. The queues are not valid */
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
@@ -4500,22 +4488,21 @@ ia_css_dequeue_event(struct ia_css_event *event)
 	/* dequeue the IRQ event */
 	/* check whether the IRQ event is available or not */
 
-	ret_err = ia_css_bufq_dequeue_event(payload);
-	if (ret_err != IA_CSS_SUCCESS) {
-		/* ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_bufq_dequeue_event() returned error\n"); */
+	ret_err = ia_css_bufq_dequeue_psys_event(payload);
+	if (ret_err != IA_CSS_SUCCESS)
 		return ret_err;
-	} else {
-		/*
-		 * Tell the SP which queues are not full,
-		 * by sending the software event.
-		 */
-		/* No need to check here as queue is definetly initialized
-		 * by the time we reach here.*/
-		ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_3, 0, 0, 0);
-	}
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_dequeue_event() enter: queue not empty\n");
+	IA_CSS_LOG("event dequeued from psys event queue");
+
+	/*
+	 * Tell the SP which queues are not full,
+	 * by sending the software event.
+	 */
+	/* No need to check here as queue is definitely initialized
+	 * by the time we reach here.*/
+	ia_css_bufq_enqueue_psys_event(
+			IA_CSS_PSYS_SW_EVENT_EVENT_DEQUEUED, 0, 0, 0);
+
 	/*  queue contains an event, it is decoded into 4 bytes of payload,
 	 *  convert sp event type in payload to host event type,
 	 *  TODO: can this enum conversion be eliminated */
@@ -4596,11 +4583,46 @@ ia_css_dequeue_event(struct ia_css_event *event)
     count++;
 	}
 #endif
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_dequeue_event() leave: pipe_id=%d, event_id=%d\n",
-				pipe_id, event->type);
+	IA_CSS_LEAVE("pipe_id=%d, event_id=%d", pipe_id, event->type);
 
 	return IA_CSS_SUCCESS;
+}
+
+enum ia_css_err
+ia_css_dequeue_isys_event(struct ia_css_event *event)
+{
+	uint8_t payload[4] = {0, 0, 0, 0};
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	/* We skip the IA_CSS_ENTER logging call
+	 * to avoid flooding the logs when the host application
+	 * uses polling. */
+	if (event == NULL)
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
+	if (!sh_css_sp_is_running()) {
+		/* SP is not running. The queues are not valid */
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
+	}
+
+	err = ia_css_bufq_dequeue_isys_event(payload);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+
+	IA_CSS_LOG("event dequeued from isys event queue");
+
+	/* Update SP state to indicate that element was dequeued. */
+	ia_css_bufq_enqueue_isys_event(IA_CSS_ISYS_SW_EVENT_EVENT_DEQUEUED);
+
+	/* Fill return struct with appropriate info */
+	event->type = IA_CSS_EVENT_TYPE_PORT_EOF;
+	/* EOF events are associated with a CSI port, not with a pipe */
+	event->pipe = NULL;
+	event->port = payload[1];
+	event->exp_id = payload[3];
+
+	IA_CSS_LEAVE_ERR(err);
+	return err;
 }
 
 static enum ia_css_err
@@ -4705,7 +4727,8 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 		/* SP is not running. The queues are not valid */
 		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
-	ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0, 0);
+	ia_css_bufq_enqueue_psys_event(IA_CSS_PSYS_SW_EVENT_START_STREAM,
+				       (uint8_t)thread_id, 0, 0);
 
 	/* DH regular multi pipe - not continuous mode: enqueue event to the next pipes too */
 	if (((pipe_id == IA_CSS_PIPE_ID_VIDEO) || (pipe_id == IA_CSS_PIPE_ID_VIDEO)) &&
@@ -4715,7 +4738,9 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 				ia_css_pipeline_get_sp_thread_id(
 								ia_css_pipe_get_pipe_num(stream->pipes[i]),
 								&thread_id);
-				ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0, 0);
+				ia_css_bufq_enqueue_psys_event(
+					IA_CSS_PSYS_SW_EVENT_START_STREAM,
+					(uint8_t)thread_id, 0, 0);
 			}
 	}
 
@@ -4733,7 +4758,9 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(copy_pipe), &thread_id);
 		 /* by the time we reach here q is initialized and handle is available.*/
-		ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0,  0);
+		ia_css_bufq_enqueue_psys_event(
+				IA_CSS_PSYS_SW_EVENT_START_STREAM,
+				(uint8_t)thread_id, 0,  0);
 	}
 	if (pipe->stream->cont_capt) {
 		struct ia_css_pipe *capture_pipe = NULL;
@@ -4747,7 +4774,9 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		ia_css_pipeline_get_sp_thread_id(ia_css_pipe_get_pipe_num(capture_pipe), &thread_id);
 		 /* by the time we reach here q is initialized and handle is available.*/
-		ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_4, (uint8_t)thread_id, 0,  0);
+		ia_css_bufq_enqueue_psys_event(
+				IA_CSS_PSYS_SW_EVENT_START_STREAM,
+				(uint8_t)thread_id, 0,  0);
 	}
 
 	stream->started = true;
@@ -7605,7 +7634,7 @@ sh_css_init_host_sp_control_vars(void)
 		my_css.stop_copy_preview?(uint32_t)(1):(uint32_t)(0));
 	store_sp_array_uint(host_sp_com, o, host2sp_cmd_ready);
 
-#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
+#if !defined(HAS_NO_INPUT_SYSTEM)
 	for (i = 0; i < N_CSI_PORTS; i++) {
 		sh_css_update_host2sp_num_mipi_frames
 			(my_css.num_mipi_frames[i]);
@@ -8938,7 +8967,7 @@ ia_css_start_sp(void)
 {
 	unsigned long timeout;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_start_sp() enter\n");
+	IA_CSS_ENTER("");
 	sh_css_sp_start_isp();
 
 	/* waiting for the SP is completely started */
@@ -8948,7 +8977,7 @@ ia_css_start_sp(void)
 		hrt_sleep();
 	}
 	if (timeout == 0) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_ERROR, "ia_css_start_sp() timeout\n");
+		IA_CSS_ERROR("timeout during SP initialization");
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	}
 
@@ -8967,7 +8996,7 @@ ia_css_start_sp(void)
 	ia_css_start_sp1();
 #endif
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_start_sp() exit\n");
+	IA_CSS_LEAVE_ERR(IA_CSS_SUCCESS);
 	return IA_CSS_SUCCESS;
 }
 
@@ -9244,26 +9273,22 @@ ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id)
 {
 	enum ia_css_err ret;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_unlock_raw_frame() enter:\n");
+	IA_CSS_ENTER("");
 
 	if (stream == NULL) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_unlock_raw_frame() leave: invalid argument\n");
+		IA_CSS_ERROR("invalid stream pointer");
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
 
 	/* Enqueue the Exposure ID */
 	ret = ia_css_bufq_enqueue_unlock_raw_buff_msg(exp_id);
-
-	if (ret != IA_CSS_SUCCESS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_unlock_raw_frame() enqueue failed leave: return (%d)\n", ret);
+	if (ret != IA_CSS_SUCCESS)
 		return ret;
-	}
+
 	/* Send an event */
-	ret = ia_css_bufq_enqueue_event(SP_SW_EVENT_ID_7, 0, 0, 0);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_unlock_raw_frame() leave: return (%d)\n", ret);
+	ret = ia_css_bufq_enqueue_psys_event(
+			IA_CSS_PSYS_SW_EVENT_UNLOCK_RAW_BUFFER, 0, 0, 0);
+
+	IA_CSS_LEAVE_ERR(ret);
 	return ret;
 }

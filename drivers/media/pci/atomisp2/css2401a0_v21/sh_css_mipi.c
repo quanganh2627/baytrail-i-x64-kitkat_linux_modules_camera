@@ -34,7 +34,7 @@
 #include "sh_css_struct.h"
 #include "sh_css_defs.h"
 #include "sh_css_sp.h" /* sh_css_update_host2sp_mipi_frame sh_css_update_host2sp_num_mipi_frames ... */
-#include "sw_event_global.h" /* SP_SW_EVENT_ID_6 */
+#include "sw_event_global.h" /* IA_CSS_PSYS_SW_EVENT_MIPI_BUFFERS_READY */
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 static uint32_t ref_count_mipi_allocation[N_CSI_PORTS]; /* Initialized in mipi_init */
@@ -609,36 +609,27 @@ send_mipi_frames(struct ia_css_pipe *pipe)
 	unsigned int i;
 	unsigned int port;
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"send_mipi_frames(%p) enter:\n", pipe);
+	IA_CSS_ENTER_PRIVATE("pipe=%d", pipe);
 
 	assert(pipe != NULL);
 	assert(pipe->stream != NULL);
-	if ((pipe == NULL) || (pipe->stream == NULL)) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"send_mipi_frames(%p) exit: error: pipe or stream is null.\n",
-			pipe);
+	if (pipe == NULL || pipe->stream == NULL) {
+		IA_CSS_ERROR("pipe or stream is null");
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
-
 
 	/* multi stream video needs mipi buffers */
 	/* nothing to be done in other cases. */
 	if (pipe->stream->config.mode != IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"send_mipi_frames(%p) exit: nothing to be done for this mode.\n",
-			pipe);
-
+		IA_CSS_LOG("nothing to be done for this mode");
 		return IA_CSS_SUCCESS;
-	/* TODO: AM: maybe this should be returning an error. */
+		/* TODO: AM: maybe this should be returning an error. */
 	}
 
 	port = (unsigned int) pipe->stream->config.source.port.port;
 	assert(port < N_CSI_PORTS);
 	if (port >= N_CSI_PORTS) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"send_mipi_frames(%p) exit: error: port is not correct(port=%d).\n",
-			pipe, port);
+		IA_CSS_ERROR("invalid port specified (%d)", port);
 		return err;
 	}
 
@@ -650,33 +641,24 @@ send_mipi_frames(struct ia_css_pipe *pipe)
 		sh_css_update_host2sp_mipi_metadata(port * NUM_MIPI_FRAMES_PER_STREAM + i,
 			my_css.mipi_metadata[port][i]);
 	}
-	sh_css_update_host2sp_num_mipi_frames
-		(my_css.num_mipi_frames[port]);
+	sh_css_update_host2sp_num_mipi_frames(my_css.num_mipi_frames[port]);
 
 	/**********************************
-	 *
 	 * Send an event to inform the SP
 	 * that all MIPI frames are passed.
-	 *
 	 **********************************/
-	{
-		if (!sh_css_sp_is_running()) {
-			/* SP is not running. The queues are not valid */
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-				"send_mipi_frames(%p) exit: error: sp is not running.\n",
-				pipe);
-			return err;
-		}
-
-		ia_css_bufq_enqueue_event(
-			SP_SW_EVENT_ID_6,				/* the event ID	*/
-			port,							/* port			*/
-			my_css.num_mipi_frames[port],	/* n_of_buffers	*/
-			0								/* not used		*/);
+	if (!sh_css_sp_is_running()) {
+		/* SP is not running. The queues are not valid */
+		IA_CSS_ERROR("sp is not running");
+		return err;
 	}
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-		"send_mipi_frames(%p) exit: Done.\n",
-		pipe);
+
+	ia_css_bufq_enqueue_psys_event(
+			IA_CSS_PSYS_SW_EVENT_MIPI_BUFFERS_READY,
+			port,
+			my_css.num_mipi_frames[port],
+			0 /* not used */);
+	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 #else
 	(void)pipe;
 #endif
