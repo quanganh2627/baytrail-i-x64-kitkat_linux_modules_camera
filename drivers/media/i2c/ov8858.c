@@ -329,19 +329,18 @@ static int __ov8858_get_max_fps_index(
 	return i - 1;
 }
 
-static int __ov8858_update_frame_timing(struct v4l2_subdev *sd, int exposure,
+static int __ov8858_update_frame_timing(struct v4l2_subdev *sd,
 					u16 *hts, u16 *vts)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 
-	if (*vts < exposure + OV8858_INTEGRATION_TIME_MARGIN)
-		*vts = (u16) exposure + OV8858_INTEGRATION_TIME_MARGIN;
 
 	dev_dbg(&client->dev, "%s OV8858_TIMING_HTS=0x%04x\n",
 		__func__, *hts);
 
-	ret = ov8858_write_reg(client, OV8858_16BIT, OV8858_TIMING_HTS, *hts);
+	/* HTS = pixel_per_line / 2 */
+	ret = ov8858_write_reg(client, OV8858_16BIT, OV8858_TIMING_HTS, *hts >> 1);
 	if (ret)
 		return ret;
 	dev_dbg(&client->dev, "%s OV8858_TIMING_VTS=0x%04x\n",
@@ -358,9 +357,12 @@ static int __ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
 	dev_dbg(&client->dev, "%s, exposure = %d, gain=%d, dig_gain=%d\n",
 		__func__, exposure, gain, dig_gain);
 
-	ret = __ov8858_update_frame_timing(sd, exposure, hts, vts);
-	if (ret)
-		return ret;
+	if (*vts < exposure + OV8858_INTEGRATION_TIME_MARGIN) {
+		*vts = (u16) exposure + OV8858_INTEGRATION_TIME_MARGIN;
+		ret = __ov8858_update_frame_timing(sd, hts, vts);
+		if (ret)
+			return ret;
+	}
 
 	/* For ov8858, the low 4 bits are fraction bits and must be kept 0 */
 	exp_val = exposure << 4;
@@ -432,7 +434,7 @@ static int ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
 	/*
 	 * Vendor: HTS reg value is half the total pixel line
 	 */
-	hts = res->fps_options[dev->fps_index].pixels_per_line >> 1;
+	hts = res->fps_options[dev->fps_index].pixels_per_line;
 	vts = res->fps_options[dev->fps_index].lines_per_frame;
 
 	ret = __ov8858_set_exposure(sd, exposure, gain, dig_gain, &hts, &vts);
@@ -1295,14 +1297,16 @@ static void __ov8858_print_timing(struct v4l2_subdev *sd)
 	u16 width = dev->curr_res_table[dev->fmt_idx].width;
 	u16 height = dev->curr_res_table[dev->fmt_idx].height;
 
-	dev_dbg(&client->dev, "Dump imx timing in stream on:\n");
+	dev_dbg(&client->dev, "Dump ov8858 timing in stream on:\n");
 	dev_dbg(&client->dev, "width: %d:\n", width);
 	dev_dbg(&client->dev, "height: %d:\n", height);
 	dev_dbg(&client->dev, "pixels_per_line: %d:\n", dev->pixels_per_line);
 	dev_dbg(&client->dev, "line per frame: %d:\n", dev->lines_per_frame);
 	dev_dbg(&client->dev, "pix freq: %d:\n", dev->vt_pix_clk_freq_mhz);
+	/* updated formula: pixels_per_line = 2 * HTS */
+	/* updated formula: fps = SCLK / (VTS * HTS) */
 	dev_dbg(&client->dev, "init fps: %d:\n", dev->vt_pix_clk_freq_mhz /
-		dev->pixels_per_line / dev->lines_per_frame);
+		(dev->pixels_per_line / 2) / dev->lines_per_frame);
 	dev_dbg(&client->dev, "HBlank: %d nS:\n",
 		1000 * (dev->pixels_per_line - width) /
 		(dev->vt_pix_clk_freq_mhz / 1000000));
@@ -1718,8 +1722,8 @@ static int __ov8858_s_frame_interval(struct v4l2_subdev *sd,
 		res->fps_options[dev->fps_index].lines_per_frame;
 
 	/* update frametiming. Conside the curren exposure/gain as well */
-	ret = __ov8858_set_exposure(sd, dev->exposure, dev->gain,
-	      dev->digital_gain, &dev->pixels_per_line, &dev->lines_per_frame);
+	ret = __ov8858_update_frame_timing(sd,
+			&dev->pixels_per_line, &dev->lines_per_frame);
 	if (ret)
 		return ret;
 
