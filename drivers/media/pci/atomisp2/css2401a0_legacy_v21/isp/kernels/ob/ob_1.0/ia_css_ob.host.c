@@ -112,10 +112,13 @@ ia_css_ob_vmem_encode(
 		unsigned sp_obarea_length_bq = ob->area_length_bq;
 		unsigned low = sp_obarea_start_bq;
 		unsigned high = low + sp_obarea_length_bq;
-		unsigned all_ones = ~0;
+		unsigned all_ones = ~0U;
 
 		for (i = 0; i < OBAREA_MASK_SIZE; i++) {
-			to->vmask[i/ISP_VEC_NELEMS][i%ISP_VEC_NELEMS] = (i >= low && i < high) * all_ones;
+			if (i >= low && i < high)
+				to->vmask[i/ISP_VEC_NELEMS][i%ISP_VEC_NELEMS] = all_ones;
+			else
+				to->vmask[i/ISP_VEC_NELEMS][i%ISP_VEC_NELEMS] = 0;
 		}
 	}
 }

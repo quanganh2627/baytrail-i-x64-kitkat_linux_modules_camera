@@ -192,7 +192,10 @@ typedef struct {
   tmemvectoru raw[OUTPUT_BUF_HEIGHT][OUTPUT_BUF_LINES][MAX_VECTORS_PER_LINE]; /* 2 bayer lines */
 } output_line_type;
 
+#if !defined(IS_ISP_2500_SYSTEM) || \
+    (defined(IS_ISP_2500_SYSTEM) && ENABLE_RAW == 1)
 extern input_line_type SYNC_WITH (INPUT_BUF) MEM (VMEM) input_buf;
+#endif
 extern output_line_type SYNC_WITH (OUTPUT_BUF) MEM (VMEM) raw_output_buf;
 
 #endif /* MODE != IA_CSS_BINARY_MODE_COPY */

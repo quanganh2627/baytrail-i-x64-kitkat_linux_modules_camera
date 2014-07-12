@@ -655,8 +655,8 @@ send_mipi_frames(struct ia_css_pipe *pipe)
 
 	ia_css_bufq_enqueue_psys_event(
 			IA_CSS_PSYS_SW_EVENT_MIPI_BUFFERS_READY,
-			port,
-			my_css.num_mipi_frames[port],
+			(uint8_t)port,
+			(uint8_t)my_css.num_mipi_frames[port],
 			0 /* not used */);
 	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 #else

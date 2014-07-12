@@ -531,12 +531,15 @@ void ia_css_pipe_get_yuvscaler_binarydesc(
 	struct ia_css_frame_info *internal_out_info,
 	struct ia_css_frame_info *vf_info)
 {
-	unsigned int i;
 	struct ia_css_frame_info *out_infos[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 
 	assert(pipe != NULL);
 	assert(in_info != NULL);
-	assert(IA_CSS_BINARY_MAX_OUTPUT_PORTS >= 2);
+	/* Note: if the following assert fails, the number of ports has been
+	 * changed; in that case an additional initializer must be added
+	 * a few lines below after which this assert can be updated.
+	 */
+	assert(IA_CSS_BINARY_MAX_OUTPUT_PORTS == 2);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "ia_css_pipe_get_yuvscaler_binarydesc() enter:\n");
 
@@ -545,9 +548,10 @@ void ia_css_pipe_get_yuvscaler_binarydesc(
 	ia_css_frame_info_set_width(in_info, in_info->res.width, 0);
 	out_infos[0] = out_info;
 	out_infos[1] = internal_out_info;
-	for (i = 2; i < IA_CSS_BINARY_MAX_OUTPUT_PORTS; i++) {
-		out_infos[i] = NULL;
-	}
+	/* add initializers here if
+	 * assert(IA_CSS_BINARY_MAX_OUTPUT_PORTS == ...);
+	 * fails
+	 */
 
 	/*
 	 * zhengjie.lu@intel.com
@@ -610,7 +614,7 @@ void ia_css_pipe_get_capturepp_binarydesc(
 
 	capture_pp_descr->enable_fractional_ds = true;
 	capture_pp_descr->enable_xnr =
-		pipe->config.default_capture_config.enable_xnr;
+		pipe->config.default_capture_config.enable_xnr != 0;
 }
 
 void ia_css_pipe_get_primary_binarydesc(

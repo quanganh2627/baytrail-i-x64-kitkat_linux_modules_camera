@@ -33,7 +33,7 @@ ia_css_isp_param_set_mem_init(
 	char *address, size_t size)
 {
 	mem_init->params[pclass][mem].address = address;
-	mem_init->params[pclass][mem].size = size;
+	mem_init->params[pclass][mem].size = (uint32_t)size;
 }
 
 void
@@ -44,7 +44,7 @@ ia_css_isp_param_set_css_mem_init(
 	hrt_vaddress address, size_t size)
 {
 	mem_init->params[pclass][mem].address = address;
-	mem_init->params[pclass][mem].size = size;
+	mem_init->params[pclass][mem].size = (uint32_t)size;
 }
 
 void
@@ -55,7 +55,7 @@ ia_css_isp_param_set_isp_mem_init(
 	uint32_t address, size_t size)
 {
 	mem_init->params[pclass][mem].address = address;
-	mem_init->params[pclass][mem].size = size;
+	mem_init->params[pclass][mem].size = (uint32_t)size;
 }
 
 /* Get functions for parameter memory descriptors */
@@ -117,7 +117,7 @@ ia_css_isp_param_allocate_isp_parameters(
 	pclass = IA_CSS_PARAM_CLASS_PARAM;
 	for (mem = 0; mem < IA_CSS_NUM_MEMORIES; mem++) {
 		for (pclass = 0; pclass < IA_CSS_NUM_PARAM_CLASSES; pclass++) {
-			size_t size = 0;
+			uint32_t size = 0;
 			if (mem_initializers)
 				size = mem_initializers->params[pclass][mem].size;
 			mem_params->params[pclass][mem].size = size;

@@ -39,16 +39,16 @@ ia_css_encode_cc(
 	(void)size;
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_encode_cc() enter:\n");
 
-	to->m_shift    = (int) from->fraction_bits;
-	to->m00 = (int) from->matrix[0];
-	to->m01 = (int) from->matrix[1];
-	to->m02 = (int) from->matrix[2];
-	to->m10 = (int) from->matrix[3];
-	to->m11 = (int) from->matrix[4];
-	to->m12 = (int) from->matrix[5];
-	to->m20 = (int) from->matrix[6];
-	to->m21 = (int) from->matrix[7];
-	to->m22 = (int) from->matrix[8];
+	to->m_shift    = (int16_t) from->fraction_bits;
+	to->m00 = (int16_t) from->matrix[0];
+	to->m01 = (int16_t) from->matrix[1];
+	to->m02 = (int16_t) from->matrix[2];
+	to->m10 = (int16_t) from->matrix[3];
+	to->m11 = (int16_t) from->matrix[4];
+	to->m12 = (int16_t) from->matrix[5];
+	to->m20 = (int16_t) from->matrix[6];
+	to->m21 = (int16_t) from->matrix[7];
+	to->m22 = (int16_t) from->matrix[8];
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "ia_css_encode_cc() leave:\n");
 }

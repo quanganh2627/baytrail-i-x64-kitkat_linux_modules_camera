@@ -47,10 +47,16 @@ typedef struct {
   /* Two more lines for SP raw copy efficiency */
   tmemvectoru _raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_LINE_CONT]; /* 2 bayer lines */
 } input_line_type;
-#else
+#else /* ENABLE CONTINUOUS == 0 */
+#if defined(HAS_RES_MGR)
+typedef struct {
+  tmemvectoru  raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_STRIPE]; /* 2 bayer lines */
+} input_line_type;
+#else /* !defined(HAS_RES_MGR) */
 typedef struct {
   tmemvectoru  raw[INPUT_BUF_HEIGHT][INPUT_BUF_LINES][MAX_VECTORS_PER_INPUT_LINE]; /* 2 bayer lines */
 } input_line_type;
+#endif /* HAS_RES_MGR */
 #endif /* ENABLE_CONTINUOUS */
 
 #endif /*MODE*/

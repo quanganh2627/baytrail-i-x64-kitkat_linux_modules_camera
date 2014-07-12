@@ -61,6 +61,7 @@ struct ia_css_pipeline {
 	unsigned inout_port_config;
 	int num_execs;
 	bool acquire_isp_each_stage;
+	uint32_t pipe_qos_config;
 };
 
 #define DEFAULT_PIPELINE \
@@ -77,7 +78,8 @@ struct ia_css_pipeline {
 	IA_CSS_FRAME_DELAY_1,   /* frame_delay */ \
 	0,                      /* inout_port_config */ \
 	-1,                     /* num_execs */ \
-	true					/* acquire_isp_each_stage */\
+	true,					/* acquire_isp_each_stage */\
+	QOS_INVALID             /* pipe_qos_config */\
 }
 
 /* Stage descriptor used to create a new stage in the pipeline */
@@ -197,6 +199,32 @@ void ia_css_pipeline_finalize_stages(struct ia_css_pipeline *pipeline,
 enum ia_css_err ia_css_pipeline_get_stage(struct ia_css_pipeline *pipeline,
 			  int mode,
 			  struct ia_css_pipeline_stage **stage);
+
+/** @brief Gets a pipeline stage corresponding Firmware handle from the pipeline
+ *
+ * @param[in] pipeline
+ * @param[in] fw_handle
+ * @param[out] stage Pointer to Stage
+ *
+ * @return   IA_CSS_SUCCESS or error code upon error.
+ *
+ */
+enum ia_css_err ia_css_pipeline_get_stage_from_fw(struct ia_css_pipeline *pipeline,
+			  uint32_t fw_handle,
+			  struct ia_css_pipeline_stage **stage);
+
+/** @brief Gets the Firmware handle correponding the stage num from the pipeline
+ *
+ * @param[in] pipeline
+ * @param[in] stage_num
+ * @param[out] fw_handle
+ *
+ * @return   IA_CSS_SUCCESS or error code upon error.
+ *
+ */
+enum ia_css_err ia_css_pipeline_get_fw_from_stage(struct ia_css_pipeline *pipeline,
+			  uint32_t stage_num,
+			  uint32_t *fw_handle);
 
 /** @brief gets the output stage from the pipeline
  *

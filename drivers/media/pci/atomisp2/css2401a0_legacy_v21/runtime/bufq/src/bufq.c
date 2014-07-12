@@ -292,8 +292,8 @@ void ia_css_bufq_init(void)
 	/* Setup all the local queue descriptors for Host2SP Buffer Queues */
 	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++)
 		for (j = 0; j < SH_CSS_MAX_NUM_QUEUES; j++) {
-			init_bufq(offsetof(struct host_sp_queues, host2sp_buffer_queues_desc[i][j]),
-				  offsetof(struct host_sp_queues, host2sp_buffer_queues_elems[i][j]),
+			init_bufq((uint32_t)offsetof(struct host_sp_queues, host2sp_buffer_queues_desc[i][j]),
+				  (uint32_t)offsetof(struct host_sp_queues, host2sp_buffer_queues_elems[i][j]),
 				  &css_queues.host2sp_buffer_queue_handles[i][j]);
 		}
 
@@ -305,35 +305,35 @@ void ia_css_bufq_init(void)
 	}
 
 	/* Host2SP event queue*/
-	init_bufq(offsetof(struct host_sp_queues, host2sp_psys_event_queue_desc),
-		  offsetof(struct host_sp_queues, host2sp_psys_event_queue_elems),
+	init_bufq((uint32_t)offsetof(struct host_sp_queues, host2sp_psys_event_queue_desc),
+		  (uint32_t)offsetof(struct host_sp_queues, host2sp_psys_event_queue_elems),
 		  &css_queues.host2sp_psys_event_queue_handle);
 
 	/* SP2Host event queue */
-	init_bufq(offsetof(struct host_sp_queues, sp2host_psys_event_queue_desc),
-		  offsetof(struct host_sp_queues, sp2host_psys_event_queue_elems),
+	init_bufq((uint32_t)offsetof(struct host_sp_queues, sp2host_psys_event_queue_desc),
+		  (uint32_t)offsetof(struct host_sp_queues, sp2host_psys_event_queue_elems),
 		  &css_queues.sp2host_psys_event_queue_handle);
 
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	/* Host2SP ISYS event queue */
-	init_bufq(offsetof(struct host_sp_queues, host2sp_isys_event_queue_desc),
-		  offsetof(struct host_sp_queues, host2sp_isys_event_queue_elems),
+	init_bufq((uint32_t)offsetof(struct host_sp_queues, host2sp_isys_event_queue_desc),
+		  (uint32_t)offsetof(struct host_sp_queues, host2sp_isys_event_queue_elems),
 		  &css_queues.host2sp_isys_event_queue_handle);
 
 	/* SP2Host ISYS event queue*/
-	init_bufq(offsetof(struct host_sp_queues, sp2host_isys_event_queue_desc),
-		  offsetof(struct host_sp_queues, sp2host_isys_event_queue_elems),
+	init_bufq((uint32_t)offsetof(struct host_sp_queues, sp2host_isys_event_queue_desc),
+		  (uint32_t)offsetof(struct host_sp_queues, sp2host_isys_event_queue_elems),
 		  &css_queues.sp2host_isys_event_queue_handle);
 #endif
 
 	/* Host2SP tagger command queue */
-	init_bufq(offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_desc),
-		  offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_elems),
+	init_bufq((uint32_t)offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_desc),
+		  (uint32_t)offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_elems),
 		  &css_queues.host2sp_tag_cmd_queue_handle);
 
 	/* Host2SP Unlock Raw Buffer message queue */
-	init_bufq(offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_desc),
-		  offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_elems),
+	init_bufq((uint32_t)offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_desc),
+		  (uint32_t)offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_elems),
 		  &css_queues.host2sp_unlock_raw_buff_msg_queue_handle);
 
 	IA_CSS_LEAVE_PRIVATE("");
