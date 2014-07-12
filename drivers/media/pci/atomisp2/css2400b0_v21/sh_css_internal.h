@@ -232,6 +232,7 @@ enum sh_css_sp_event_type {
 	SH_CSS_SP_EVENT_INPUT_FRAME_DONE,
 	SH_CSS_SP_EVENT_METADATA_DONE,
 	SH_CSS_SP_EVENT_LACE_STATISTICS_DONE,
+	SH_CSS_SP_EVENT_ACC_STAGE_COMPLETE,
 	SH_CSS_SP_EVENT_PORT_EOF,
 	SH_CSS_SP_EVENT_NR_OF_TYPES		/* must be last */
 };
@@ -526,12 +527,22 @@ enum sh_css_port_type {
 void
 ia_css_metadata_free_multiple(unsigned int num_bufs, struct ia_css_metadata **bufs);
 
+/* Macro for handling pipe_qos_config */
+#define QOS_INVALID                  (~0U)
+#define QOS_STAGE_MASK(num)          (0x00000001 << num)
+#define SH_CSS_IS_QOS_PIPE(pipe)               ((pipe)->pipe_qos_config != QOS_INVALID)
+#define SH_CSS_QOS_STAGE_ENABLE(pipe, num)     ((pipe)->pipe_qos_config |= QOS_STAGE_MASK(num))
+#define SH_CSS_QOS_STAGE_DISABLE(pipe, num)    ((pipe)->pipe_qos_config &= ~QOS_STAGE_MASK(num))
+#define SH_CSS_QOS_STAGE_IS_ENABLED(pipe, num) ((pipe)->pipe_qos_config & QOS_STAGE_MASK(num))
+
 /* Information for a pipeline */
 struct sh_css_sp_pipeline {
 	uint32_t	pipe_id;	/* the pipe ID */
 	uint32_t	pipe_num;	/* the dynamic pipe number */
 	uint32_t	thread_id;	/* the sp thread ID */
 	uint32_t	pipe_config;	/* the pipe config */
+	uint32_t	pipe_qos_config;	/* Bitmap of multiple QOS extension fw state.
+						(0xFFFFFFFF) indicates non QOS pipe.*/
 	uint32_t    inout_port_config;
 	uint32_t	required_bds_factor;
 	uint32_t	dvs_frame_delay;
@@ -752,7 +763,7 @@ struct sh_css_config_on_frame_enqueue {
 #if defined(HAS_SP_2400)
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE    13
 #define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE        13
-#define  IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE    13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE    26 /* holds events for all type of buffers, hence deeper */
 #else
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE    6
 #define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE        6

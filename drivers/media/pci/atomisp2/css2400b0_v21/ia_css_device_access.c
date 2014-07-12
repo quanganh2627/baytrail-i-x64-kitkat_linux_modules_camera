@@ -92,11 +92,11 @@ ia_css_device_store_uint64(const hrt_address addr, const uint64_t data)
 void
 ia_css_device_load(const hrt_address addr, void *data, const size_t size)
 {
-	my_env.load(addr, data, size);
+	my_env.load(addr, data, (uint32_t)size);
 }
 
 void
 ia_css_device_store(const hrt_address addr, const void *data, const size_t size)
 {
-	my_env.store(addr, data, size);
+	my_env.store(addr, data, (uint32_t)size);
 }

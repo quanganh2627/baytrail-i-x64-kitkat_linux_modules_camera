@@ -25,7 +25,7 @@
 #ifndef _dma_settings_hive_h_
 #define _dma_settings_hive_h_
 
-#ifdef __ISP
+#if defined(__ISP) && !defined(IS_ISP_2500_SYSTEM)
 #include "libc.h"
 #define CEIL_DIV_ICACHE(a, b)   _divu_icache((a)+(b)-1, (b))
 #else

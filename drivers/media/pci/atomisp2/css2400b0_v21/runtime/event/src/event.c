@@ -104,6 +104,7 @@ void ia_css_event_decode(
 		payload[3] = (event >> 24) & 0xff;
 		break;
 
+	case SH_CSS_SP_EVENT_ACC_STAGE_COMPLETE:
 	case SH_CSS_SP_EVENT_FRAME_TAGGED:
 		payload[3] = (event >> 24) & 0xff;
 		break;

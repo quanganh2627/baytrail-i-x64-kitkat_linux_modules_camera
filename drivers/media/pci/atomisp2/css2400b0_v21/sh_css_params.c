@@ -1589,7 +1589,11 @@ static void ia_css_process_zoom_and_motion(
 	for (stage = first_stage; stage; stage = stage->next) {
 
 		struct ia_css_binary *binary;
-		struct ia_css_binary tmp_binary;
+		/* note: the var below is made static as it is quite large;
+		   if it is not static it ends up on the stack which could
+		   cause issues for drivers
+		*/
+		static struct ia_css_binary tmp_binary;
 
 		const struct ia_css_binary_xinfo *info = NULL;
 
@@ -4332,10 +4336,11 @@ struct ia_css_shading_table *ia_css_get_shading_table(struct ia_css_stream *stre
 	IA_CSS_LEAVE("table=%p", table);
 
 	return table;
-#endif
+#else
 	(void)(stream);
 	assert(false);
 	return NULL;
+#endif
 }
 
 

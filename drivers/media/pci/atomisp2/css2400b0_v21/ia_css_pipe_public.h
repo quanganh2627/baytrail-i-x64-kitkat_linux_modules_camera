@@ -360,4 +360,57 @@ enum ia_css_err
 ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			   struct ia_css_buffer *buffer);
 
+
+/** @brief  Set the state (Enable or Disable) of the Extension stage in the
+ *          given pipe.
+ * @param[in] pipe         Pipe handle.
+ * @param[in] fw_handle    Extension firmware Handle (ia_css_fw_info.handle)
+ * @param[in] enable       Enable Flag (1 to enable ; 0 to disable)
+ *
+ * @return
+ * IA_CSS_SUCCESS 			: Success
+ * IA_CSS_ERR_INVALID_ARGUMENTS		: Invalid Parameters
+ * IA_CSS_ERR_RESOURCE_NOT_AVAILABLE	: Inactive QOS Pipe
+ * 					(No active stream with this pipe)
+ *
+ * This function will request state change (enable or disable) for the Extension
+ * stage (firmware handle) in the given pipe.
+ *
+ * Note:
+ * 	1. Extension can be enabled/disabled only on QOS Extensions
+ * 	2. Extension can be enabled/disabled only with an active QOS Pipe
+ * 	3. Initial(Default) state of QOS Extensions is Disabled
+ * 	4. State change cannot be guaranteed immediately OR on frame boundary
+ *
+ */
+enum ia_css_err
+ia_css_pipe_set_qos_ext_state (struct ia_css_pipe *pipe,
+                           uint32_t fw_handle,
+                           bool  enable);
+
+/** @brief  Get the state (Enable or Disable) of the Extension stage in the
+ *          given pipe.
+ * @param[in]  pipe        Pipe handle.
+ * @param[in]  fw_handle   Extension firmware Handle (ia_css_fw_info.handle)
+ * @param[out] *enable     Enable Flag
+ *
+ * @return
+ * IA_CSS_SUCCESS 			: Success
+ * IA_CSS_ERR_INVALID_ARGUMENTS		: Invalid Parameters
+ * IA_CSS_ERR_RESOURCE_NOT_AVAILABLE	: Inactive QOS Pipe
+ * 					(No active stream with this pipe)
+ *
+ * This function will query the state of the Extension stage (firmware handle)
+ * in the given Pipe.
+ *
+ * Note:
+ * 	1. Extension state can be queried only on QOS Extensions
+ * 	2. Extension can be enabled/disabled only with an active QOS Pipe
+ * 	3. Initial(Default) state of QOS Extensions is Disabled.
+ *
+ */
+enum ia_css_err
+ia_css_pipe_get_qos_ext_state (struct ia_css_pipe *pipe,
+                           uint32_t fw_handle,
+                           bool * enable);
 #endif /* __IA_CCS_PIPE_PUBLIC_H */

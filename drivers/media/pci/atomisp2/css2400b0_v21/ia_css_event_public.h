@@ -50,8 +50,9 @@ enum ia_css_event_type {
 	IA_CSS_EVENT_TYPE_INPUT_FRAME_DONE	= 1 << 8, /**< Input frame ready. */
 	IA_CSS_EVENT_TYPE_METADATA_DONE		= 1 << 9, /**< Metadata ready. */
 	IA_CSS_EVENT_TYPE_LACE_STATISTICS_DONE	= 1 << 10, /**< Indication that LACE statistics are available. */
+	IA_CSS_EVENT_TYPE_ACC_STAGE_COMPLETE	= 1 << 11, /**< Extension stage complete. */
 	/* NOTE: Add new enums before IA_CSS_EVENT_TYPE_PORT_EOF MUST, see comment below */
-	IA_CSS_EVENT_TYPE_PORT_EOF		= 1 << 11, /**< End Of Frame event, sent when in buffered sensor mode.
+	IA_CSS_EVENT_TYPE_PORT_EOF		= 1 << 12, /**< End Of Frame event, sent when in buffered sensor mode.
 								This enum MUST be last */
 };
 
@@ -77,6 +78,7 @@ struct ia_css_event {
 	enum ia_css_event_type type;   /**< Type of Event, always valid/filled. */
 	uint8_t                port;   /**< Port number for EOF event (not valid for other events). */
 	uint8_t                exp_id; /**< Exposure id for EOF/TAGGED_FRAME event (not valid for other events). */
+	uint32_t               fw_handle; /**< Firmware Handle for ACC_STAGE_COMPLETE event (not valid for other events). */
 };
 
 /** @brief Dequeue a PSYS event from the CSS system.
