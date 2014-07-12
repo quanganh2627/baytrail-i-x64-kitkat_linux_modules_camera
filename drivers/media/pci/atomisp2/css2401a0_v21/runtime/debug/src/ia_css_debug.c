@@ -784,7 +784,11 @@ void ia_css_debug_dump_if_state(void)
 
 void ia_css_debug_dump_dma_state(void)
 {
-	dma_state_t state;
+	/* note: the var below is made static as it is quite large;
+	   if it is not static it ends up on the stack which could
+	   cause issues for drivers
+	*/
+	static dma_state_t state;
 	int i, ch_id;
 
 	const char *fsm_cmd_st_lbl = "FSM Command flag state";
@@ -1621,7 +1625,7 @@ static void debug_print_rx_mipi_port_state(mipi_port_state_t *state)
 
 	assert(state != NULL);
 
-	bits = state->irq_status, infos;
+	bits = state->irq_status;
 	infos = ia_css_isys_rx_translate_irq_infos(bits);
 
 	ia_css_debug_dtrace(2, "\t\t%-32s: (irq reg = 0x%X)\n",
@@ -2718,7 +2722,7 @@ ia_css_debug_pipe_graph_dump_stage(
 				stage->binary->info->blob->name, stage->stage_num);
 	} else if (stage->firmware) {
 		bin_type = "firmware";
-		strncpy(blob_name, IA_CSS_EXT_ISP_PROG_NAME(stage->firmware), sizeof(blob_name));
+		strncpy_s(blob_name, sizeof(blob_name), IA_CSS_EXT_ISP_PROG_NAME(stage->firmware), sizeof(blob_name));
 	}
 
 	/* Guard in case of binaries that don't have any binary_info */

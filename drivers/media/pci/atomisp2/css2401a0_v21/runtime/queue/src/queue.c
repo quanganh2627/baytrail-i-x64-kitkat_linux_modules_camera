@@ -341,7 +341,7 @@ int ia_css_queue_peek(
 			return EINVAL;
 
 		offset = OP_std_modadd(cb_desc.start, offset, cb_desc.size);
-		error = ia_css_queue_item_load(qhandle, offset, &cb_elem);
+		error = ia_css_queue_item_load(qhandle, (uint8_t)offset, &cb_elem);
 		if (error != 0)
 			return error;
 

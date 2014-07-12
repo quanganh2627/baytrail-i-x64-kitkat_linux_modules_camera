@@ -94,7 +94,11 @@ void ia_css_refcount_uninit(void)
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 			    "ia_css_refcount_uninit() entry\n");
 	for (i = 0; i < myrefcount.size; i++) {
-		entry = &myrefcount.items[i];
+		/* driver verifier tool has issues with &arr[i]
+		   and prefers arr + i; as these are actually equivalent
+		   the line below uses + i
+		*/
+		entry = myrefcount.items + i;
 		if (entry->data != mmgr_NULL) {
 			/*	ia_css_debug_dtrace(IA_CSS_DBG_TRACE,
 				"ia_css_refcount_uninit: freeing (%x)\n",
@@ -206,7 +210,11 @@ void ia_css_refcount_clear(int32_t id, clear_func clear_func_ptr)
 			    id);
 
 	for (i = 0; i < myrefcount.size; i++) {
-		entry = &myrefcount.items[i];
+		/* driver verifier tool has issues with &arr[i]
+		   and prefers arr + i; as these are actually equivalent
+		   the line below uses + i
+		*/
+		entry = myrefcount.items + i;
 		if ((entry->data != mmgr_NULL) && (entry->id == id)) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
 					    "ia_css_refcount_clear:"

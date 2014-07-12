@@ -190,13 +190,13 @@ sh_css_sp_get_debug_state(struct sh_css_sp_debug_state *state)
 	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
 	unsigned int HIVE_ADDR_sp_output = fw->info.sp.output;
 	unsigned i;
-	unsigned o = offsetof(struct sh_css_sp_output, debug)/sizeof(int);
+	unsigned offset = (unsigned int)offsetof(struct sh_css_sp_output, debug)/sizeof(int);
 
 	assert(state != NULL);
 
 	(void)HIVE_ADDR_sp_output; /* To get rid of warning in CRUN */
 	for (i = 0; i < sizeof(*state)/sizeof(int); i++)
-		((unsigned *)state)[i] = load_sp_array_uint(sp_output, i+o);
+		((unsigned *)state)[i] = load_sp_array_uint(sp_output, i+offset);
 }
 
 #endif
@@ -221,6 +221,7 @@ sh_css_sp_start_binary_copy(unsigned int pipe_num, struct ia_css_frame *out_fram
 	pipe->pipe_num = pipe_num;
 	pipe->thread_id = thread_id;
 	pipe->pipe_config = 0x0; /* No parameters */
+	pipe->pipe_qos_config = QOS_INVALID;
 
 	if (pipe->inout_port_config == 0) {
 		SH_CSS_PIPE_PORT_CONFIG_SET(pipe->inout_port_config,
@@ -297,6 +298,7 @@ sh_css_sp_start_raw_copy(struct ia_css_frame *out_frame,
 	else
 		pipe->pipe_config = pipe_conf_override;
 
+	pipe->pipe_qos_config = QOS_INVALID;
 
 	if (pipe->inout_port_config == 0) {
 		SH_CSS_PIPE_PORT_CONFIG_SET(pipe->inout_port_config,
@@ -363,6 +365,7 @@ sh_css_sp_start_isys_copy(struct ia_css_frame *out_frame,
 	pipe->num_stages		= 1;
 	pipe->pipe_id			= pipe_id;
 	pipe->pipe_config		= 0x0;	/* No parameters */
+	pipe->pipe_qos_config		= QOS_INVALID;
 
 	initialize_stage_frames(&sh_css_sp_stage.frames);
 	sh_css_sp_stage.num = stage_num;
@@ -387,10 +390,10 @@ sh_css_sp_get_binary_copy_size(void)
 {
 	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
 	unsigned int HIVE_ADDR_sp_output = fw->info.sp.output;
-	unsigned int o = offsetof(struct sh_css_sp_output,
+	unsigned int offset = (unsigned int)offsetof(struct sh_css_sp_output,
 				bin_copy_bytes_copied) / sizeof(int);
 	(void)HIVE_ADDR_sp_output; /* To get rid of warning in CRUN */
-	return load_sp_array_uint(sp_output, o);
+	return load_sp_array_uint(sp_output, offset);
 }
 
 unsigned int
@@ -398,10 +401,10 @@ sh_css_sp_get_sw_interrupt_value(unsigned int irq)
 {
 	const struct ia_css_fw_info *fw = &sh_css_sp_fw;
 	unsigned int HIVE_ADDR_sp_output = fw->info.sp.output;
-	unsigned int o = offsetof(struct sh_css_sp_output, sw_interrupt_value)
+	unsigned int offset = (unsigned int)offsetof(struct sh_css_sp_output, sw_interrupt_value)
 				/ sizeof(int);
 	(void)HIVE_ADDR_sp_output; /* To get rid of warning in CRUN */
-	return load_sp_array_uint(sp_output, o+irq);
+	return load_sp_array_uint(sp_output, offset+irq);
 }
 
 static void
@@ -1054,7 +1057,11 @@ sp_init_stage(struct ia_css_pipeline_stage *stage,
  */
 	const char *binary_name = "";
 	const struct ia_css_binary_xinfo *info = NULL;
-	struct ia_css_binary tmp_binary;
+	/* note: the var below is made static as it is quite large;
+	   if it is not static it ends up on the stack which could
+	   cause issues for drivers
+	*/
+	static struct ia_css_binary tmp_binary;
 	const struct ia_css_blob_info *blob_info = NULL;
 	struct ia_css_isp_param_css_segments isp_mem_if;
 	/* LA: should be ia_css_data, should not contain host pointer.
@@ -1233,6 +1240,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 	sh_css_sp_group.pipe[thread_id].thread_id = thread_id;
 	sh_css_sp_group.pipe[thread_id].pipe_num = pipe_num;
 	sh_css_sp_group.pipe[thread_id].num_execs = me->num_execs;
+	sh_css_sp_group.pipe[thread_id].pipe_qos_config = me->pipe_qos_config;
 	sh_css_sp_group.pipe[thread_id].required_bds_factor = required_bds_factor;
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	sh_css_sp_group.pipe[thread_id].input_system_mode
@@ -1316,13 +1324,13 @@ void
 sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command)
 {
 	unsigned int HIVE_ADDR_host_sp1_com = sh_css_sp1_fw.info.sp1.host_sp_com;
-	unsigned int o = offsetof(struct host_sp_communication, host2sp_command)
+	unsigned int offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_command)
 				/ sizeof(int);
 	(void)HIVE_ADDR_host_sp1_com; /* Suppres warnings in CRUN */
 
 	/* Previous command must be handled by SP1 (by design) */
 	if (host2sp_command == host2sp_cmd_terminate)
-		assert(load_sp1_array_uint(host_sp1_com, o) == host2sp_cmd_ready);
+		assert(load_sp1_array_uint(host_sp1_com, offset) == host2sp_cmd_ready);
 
 	store_sp1_array_uint(host_sp1_com, o, host2sp_command);
 }
@@ -1332,24 +1340,24 @@ void
 sh_css_write_host2sp_command(enum host2sp_commands host2sp_command)
 {
 	unsigned int HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
-	unsigned int o = offsetof(struct host_sp_communication, host2sp_command)
+	unsigned int offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_command)
 				/ sizeof(int);
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
 	/* Previous command must be handled by SP (by design) */
-	assert(load_sp_array_uint(host_sp_com, o) == host2sp_cmd_ready);
+	assert(load_sp_array_uint(host_sp_com, offset) == host2sp_cmd_ready);
 
-	store_sp_array_uint(host_sp_com, o, host2sp_command);
+	store_sp_array_uint(host_sp_com, offset, host2sp_command);
 }
 
 enum host2sp_commands
 sh_css_read_host2sp_command(void)
 {
 	unsigned int HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
-	unsigned int o = offsetof(struct host_sp_communication, host2sp_command)
+	unsigned int offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_command)
 				/ sizeof(int);
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
-	return (enum host2sp_commands)load_sp_array_uint(host_sp_com, o);
+	return (enum host2sp_commands)load_sp_array_uint(host_sp_com, offset);
 }
 
 
@@ -1391,7 +1399,7 @@ sh_css_update_host2sp_offline_frame(
 				struct ia_css_metadata *metadata)
 {
 	unsigned int HIVE_ADDR_host_sp_com;
-	unsigned int o;
+	unsigned int offset;
 
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
@@ -1399,16 +1407,16 @@ sh_css_update_host2sp_offline_frame(
 
 	/* Write new frame data into SP DMEM */
 	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
-	o = offsetof(struct host_sp_communication, host2sp_offline_frames)
+	offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_offline_frames)
 		/ sizeof(int);
-	o += frame_num;
-	store_sp_array_uint(host_sp_com, o, frame ? frame->data : 0);
+	offset += frame_num;
+	store_sp_array_uint(host_sp_com, offset, frame ? frame->data : 0);
 
 	/* Write metadata buffer into SP DMEM */
-	o = offsetof(struct host_sp_communication, host2sp_offline_metadata)
+	offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_offline_metadata)
 		/ sizeof(int);
-	o += frame_num;
-	store_sp_array_uint(host_sp_com, o, metadata ? metadata->address : 0);
+	offset += frame_num;
+	store_sp_array_uint(host_sp_com, offset, metadata ? metadata->address : 0);
 }
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
@@ -1422,7 +1430,7 @@ sh_css_update_host2sp_mipi_frame(
 				struct ia_css_frame *frame)
 {
 	unsigned int HIVE_ADDR_host_sp_com;
-	unsigned int o;
+	unsigned int offset;
 
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
@@ -1431,11 +1439,11 @@ sh_css_update_host2sp_mipi_frame(
 
 	/* Write new frame data into SP DMEM */
 	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
-	o = offsetof(struct host_sp_communication, host2sp_mipi_frames)
+	offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_mipi_frames)
 		/ sizeof(int);
-	o += frame_num;
+	offset += frame_num;
 
-	store_sp_array_uint(host_sp_com, o,
+	store_sp_array_uint(host_sp_com, offset,
 				frame ? frame->data : 0);
 }
 
@@ -1469,16 +1477,16 @@ void
 sh_css_update_host2sp_num_mipi_frames(unsigned num_frames)
 {
 	unsigned int HIVE_ADDR_host_sp_com;
-	unsigned int o;
+	unsigned int offset;
 
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
 	/* Write new frame data into SP DMEM */
 	HIVE_ADDR_host_sp_com = sh_css_sp_fw.info.sp.host_sp_com;
-	o = offsetof(struct host_sp_communication, host2sp_num_mipi_frames)
+	offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_num_mipi_frames)
 		/ sizeof(int);
 
-	store_sp_array_uint(host_sp_com, o, num_frames);
+	store_sp_array_uint(host_sp_com, offset, num_frames);
 }
 #endif
 
@@ -1488,7 +1496,7 @@ sh_css_update_host2sp_cont_num_raw_frames(unsigned num_frames, bool set_avail)
 	const struct ia_css_fw_info *fw;
 	unsigned int HIVE_ADDR_host_sp_com;
 	unsigned int extra_num_frames, avail_num_frames;
-	unsigned int o, o_extra;
+	unsigned int offset, offset_extra;
 
 	(void)HIVE_ADDR_host_sp_com; /* Suppres warnings in CRUN */
 
@@ -1496,18 +1504,18 @@ sh_css_update_host2sp_cont_num_raw_frames(unsigned num_frames, bool set_avail)
 	fw = &sh_css_sp_fw;
 	HIVE_ADDR_host_sp_com = fw->info.sp.host_sp_com;
 	if (set_avail) {
-		o = offsetof(struct host_sp_communication, host2sp_cont_avail_num_raw_frames)
+		offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_cont_avail_num_raw_frames)
 			/ sizeof(int);
-		avail_num_frames = load_sp_array_uint(host_sp_com, o);
+		avail_num_frames = load_sp_array_uint(host_sp_com, offset);
 		extra_num_frames = num_frames - avail_num_frames;
-		o_extra = offsetof(struct host_sp_communication, host2sp_cont_extra_num_raw_frames)
+		offset_extra = (unsigned int)offsetof(struct host_sp_communication, host2sp_cont_extra_num_raw_frames)
 			/ sizeof(int);
-		store_sp_array_uint(host_sp_com, o_extra, extra_num_frames);
+		store_sp_array_uint(host_sp_com, offset_extra, extra_num_frames);
 	} else
-		o = offsetof(struct host_sp_communication, host2sp_cont_target_num_raw_frames)
+		offset = (unsigned int)offsetof(struct host_sp_communication, host2sp_cont_target_num_raw_frames)
 			/ sizeof(int);
 
-	store_sp_array_uint(host_sp_com, o, num_frames);
+	store_sp_array_uint(host_sp_com, offset, num_frames);
 }
 
 void
@@ -1524,7 +1532,7 @@ sh_css_event_init_irq_mask(void)
 
 	assert(sizeof(event_irq_mask_init) % HRT_BUS_BYTES == 0);
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
-		offset = offsetof(struct host_sp_communication,
+		offset = (unsigned int)offsetof(struct host_sp_communication,
 						host2sp_event_irq_mask[i]);
 		assert(offset % HRT_BUS_BYTES == 0);
 		sp_dmem_store(SP0_ID,
@@ -1568,7 +1576,7 @@ ia_css_pipe_set_irq_mask(struct ia_css_pipe *pipe,
 	pipe_num = ia_css_pipe_get_pipe_num(pipe);
 	if (pipe_num >= IA_CSS_PIPE_ID_NUM)
 		return IA_CSS_ERR_INTERNAL_ERROR;
-	offset = offsetof(struct host_sp_communication,
+	offset = (unsigned int)offsetof(struct host_sp_communication,
 					host2sp_event_irq_mask[pipe_num]);
 	assert(offset % HRT_BUS_BYTES == 0);
 	sp_dmem_store(SP0_ID,
@@ -1598,7 +1606,7 @@ ia_css_event_get_irq_mask(const struct ia_css_pipe *pipe,
 	pipe_num = ia_css_pipe_get_pipe_num(pipe);
 	if (pipe_num >= IA_CSS_PIPE_ID_NUM)
 		return IA_CSS_ERR_INTERNAL_ERROR;
-	offset = offsetof(struct host_sp_communication,
+	offset = (unsigned int)offsetof(struct host_sp_communication,
 					host2sp_event_irq_mask[pipe_num]);
 	assert(offset % HRT_BUS_BYTES == 0);
 	sp_dmem_load(SP0_ID,

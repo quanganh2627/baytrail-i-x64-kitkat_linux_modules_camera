@@ -106,7 +106,7 @@ void ia_css_pipe_get_sp_func_stage_desc(
 	stage_desc->firmware = NULL;
 	stage_desc->sp_func = sp_func;
 	stage_desc->max_input_width = max_input_width;
-	stage_desc->mode = -1;
+	stage_desc->mode = (unsigned int)-1;
 	stage_desc->cc_frame = NULL;
 	stage_desc->in_frame = NULL;
 	stage_desc->out_frame[0] = out_frame;

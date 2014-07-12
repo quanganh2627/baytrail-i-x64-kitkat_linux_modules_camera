@@ -29,12 +29,16 @@
 #include "ia_css_binary.h"
 #include "sh_css_legacy.h"
 
+#define PIPE_ENTRY_EMPTY_TOKEN                (~0U)
+#define PIPE_ENTRY_RESERVED_TOKEN             (0x1)
+
 struct ia_css_preview_settings {
 	struct ia_css_binary copy_binary;
 	struct ia_css_binary preview_binary;
 	struct ia_css_binary vf_pp_binary;
 	struct ia_css_pipe *copy_pipe;
 	struct ia_css_pipe *capture_pipe;
+	struct ia_css_pipe *acc_pipe;
 };
 
 #define IA_CSS_DEFAULT_PREVIEW_SETTINGS \
@@ -44,6 +48,7 @@ struct ia_css_preview_settings {
 	IA_CSS_BINARY_DEFAULT_SETTINGS,	/* vf_pp_binary */\
 	NULL,				/* copy_pipe */\
 	NULL,				/* capture_pipe */\
+	NULL,				/* acc_pipe */\
 }
 
 struct ia_css_capture_settings {
@@ -189,8 +194,8 @@ struct ia_css_pipe {
 	DEFAULT_FRAME,				/* vf_frame_struct */ \
 	{ NULL },				/* continuous_frames */ \
 	{ NULL },				/* cont_md_buffers */ \
-	{ IA_CSS_DEFAULT_PREVIEW_SETTINGS },		/* pipe_settings */ \
-	PIPE_ENTRY_EMPTY_TOKEN,				/* pipe_num */\
+	{ IA_CSS_DEFAULT_PREVIEW_SETTINGS },	/* pipe_settings */ \
+	PIPE_ENTRY_EMPTY_TOKEN,			/* pipe_num */\
 }
 
 void ia_css_pipe_map_queue(struct ia_css_pipe *pipe, bool map);

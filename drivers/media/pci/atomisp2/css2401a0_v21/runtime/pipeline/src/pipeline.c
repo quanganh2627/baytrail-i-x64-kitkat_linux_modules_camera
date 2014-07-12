@@ -29,7 +29,7 @@
 #include "ia_css_isp_param.h"
 #include "ia_css_bufq.h"
 
-#define PIPELINE_NUM_UNMAPPED                   (~0)
+#define PIPELINE_NUM_UNMAPPED                   (~0U)
 #define PIPELINE_SP_THREAD_EMPTY_TOKEN          (0x0)
 #define PIPELINE_SP_THREAD_RESERVED_TOKEN       (0x1)
 
@@ -347,6 +347,40 @@ enum ia_css_err ia_css_pipeline_get_stage(struct ia_css_pipeline *pipeline,
 	return IA_CSS_ERR_INTERNAL_ERROR;
 }
 
+enum ia_css_err ia_css_pipeline_get_stage_from_fw(struct ia_css_pipeline *pipeline,
+			  uint32_t fw_handle,
+			  struct ia_css_pipeline_stage **stage)
+{
+	struct ia_css_pipeline_stage *s;
+	assert(pipeline != NULL);
+	assert(stage != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,"%s() \n",__func__);
+	for (s = pipeline->stages; s; s = s->next) {
+		if ((s->firmware) && (s->firmware->handle == fw_handle)) {
+			*stage = s;
+			return IA_CSS_SUCCESS;
+		}
+	}
+	return IA_CSS_ERR_INTERNAL_ERROR;
+}
+
+enum ia_css_err ia_css_pipeline_get_fw_from_stage(struct ia_css_pipeline *pipeline,
+			  uint32_t stage_num,
+			  uint32_t *fw_handle)
+{
+	struct ia_css_pipeline_stage *s;
+	assert(pipeline != NULL);
+	assert(fw_handle != NULL);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,"%s() \n",__func__);
+	for (s = pipeline->stages; s; s = s->next) {
+		if((s->stage_num == stage_num) && (s->firmware)) {
+			*fw_handle = s->firmware->handle;
+			return IA_CSS_SUCCESS;
+		}
+	}
+	return IA_CSS_ERR_INTERNAL_ERROR;
+}
+
 enum ia_css_err ia_css_pipeline_get_output_stage(
 		struct ia_css_pipeline *pipeline,
 		int mode,
@@ -617,7 +651,7 @@ static void pipeline_init_defaults(
 	}
 	pipeline->num_execs = -1;
 	pipeline->acquire_isp_each_stage = true;
-	pipeline->pipe_num = pipe_num;
+	pipeline->pipe_num = (uint8_t)pipe_num;
 	pipeline->dvs_frame_delay = dvs_frame_delay;
 }
 

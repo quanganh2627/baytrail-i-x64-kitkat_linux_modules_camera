@@ -118,6 +118,8 @@ ia_css_init_tnr_state(
 	struct sh_css_isp_tnr_dmem_state *state,
 	size_t size)
 {
+	(void)size;
+
 	assert(NUM_VIDEO_TNR_FRAMES >= 2);
 	assert(sizeof(*state) == size);
 	state->tnr_in_buf_idx = 0;

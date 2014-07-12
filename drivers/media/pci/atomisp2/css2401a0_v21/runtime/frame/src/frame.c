@@ -585,8 +585,8 @@ ia_css_dma_configure_from_info(
 	unsigned elems_b = pix_per_ddrword;
 
 	config->stride = HIVE_ISP_DDR_WORD_BYTES * words_per_line;
-	config->elems  = elems_b;
-	config->width  = info->res.width;
+	config->elems  = (uint8_t)elems_b;
+	config->width  = (uint16_t)info->res.width;
 	config->crop   = 0;
 	assert(config->width <= info->padded_width);
 }
@@ -862,9 +862,9 @@ void ia_css_frame_info_to_frame_sp_info(
 	const struct ia_css_frame_info *from)
 {
 	ia_css_resolution_to_sp_resolution(&to->res, &from->res);
-	to->padded_width = from->padded_width;
-	to->format = from->format;
-	to->raw_bit_depth = from->raw_bit_depth;
+	to->padded_width = (uint16_t)from->padded_width;
+	to->format = (uint8_t)from->format;
+	to->raw_bit_depth = (uint8_t)from->raw_bit_depth;
 	to->raw_bayer_order = from->raw_bayer_order;
 }
 
@@ -872,6 +872,6 @@ void ia_css_resolution_to_sp_resolution(
 	struct ia_css_sp_resolution *to,
 	const struct ia_css_resolution *from)
 {
-	to->width  = from->width;
-	to->height = from->height;
+	to->width  = (uint16_t)from->width;
+	to->height = (uint16_t)from->height;
 }

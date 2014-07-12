@@ -29,6 +29,7 @@
 
 #include "memory_access.h"
 #include "assert_support.h"
+#include "string_support.h"
 
 #include "isp.h"				/* PMEM_WIDTH_LOG2 */
 
@@ -52,10 +53,10 @@ struct fw_param {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140711_1500) is a place holder
+/* The string STR(irci_master_20140712_0614) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char *release_version = STR(irci_master_20140711_1500);
+static const char *release_version = STR(irci_master_20140712_0614);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";
@@ -256,7 +257,11 @@ sh_css_load_firmware(const char *fw_data,
 
 	for (i = 0; i < sh_css_num_binaries; i++) {
 		struct ia_css_fw_info *bi = &binaries[i];
-		struct ia_css_blob_descr bd;
+		/* note: the var below is made static as it is quite large;
+		   if it is not static it ends up on the stack which could
+		   cause issues for drivers
+		*/
+		static struct ia_css_blob_descr bd;
 		enum ia_css_err err;
 
 		err = sh_css_load_blob_info(fw_data, bi, &bd, i);
