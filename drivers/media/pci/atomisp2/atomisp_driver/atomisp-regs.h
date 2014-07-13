@@ -128,6 +128,7 @@
 
 #define ISP_FREQ_457MHZ				0x1C9
 #define ISP_FREQ_400MHZ				0x190
+#define ISP_FREQ_356MHZ				0x164
 #define ISP_FREQ_320MHZ				0x140
 #define ISP_FREQ_266MHZ				0x10a
 #define ISP_FREQ_200MHZ				0xc8

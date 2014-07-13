@@ -163,24 +163,10 @@ static const struct atomisp_freq_scaling_rule dfs_rules_merr_117a[] = {
 		.run_mode = ATOMISP_RUN_MODE_VIDEO,
 	},
 	{
-		.width = 1280,
-		.height = 720,
-		.fps = 60,
-		.isp_freq = ISP_FREQ_266MHZ,
-		.run_mode = ATOMISP_RUN_MODE_VIDEO,
-	},
-	{
-		.width = 720,
-		.height = 1280,
-		.fps = 60,
-		.isp_freq = ISP_FREQ_266MHZ,
-		.run_mode = ATOMISP_RUN_MODE_VIDEO,
-	},
-	{
 		.width = ISP_FREQ_RULE_ANY,
 		.height = ISP_FREQ_RULE_ANY,
 		.fps = 60,
-		.isp_freq = ISP_FREQ_320MHZ,
+		.isp_freq = ISP_FREQ_356MHZ,
 		.run_mode = ATOMISP_RUN_MODE_VIDEO,
 	},
 	{
