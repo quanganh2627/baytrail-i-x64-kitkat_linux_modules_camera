@@ -847,6 +847,40 @@ static struct gc_ctrl_config __gc_default_ctrls[] = {
 
 
 /*******************************************************/
+void reset_v4l2_ctrl_value(struct v4l2_ctrl_handler *hdl)
+{
+	struct v4l2_ctrl *ctrl;
+
+	if (hdl == NULL)
+		return;
+
+	mutex_lock(hdl->lock);
+
+	list_for_each_entry(ctrl, &hdl->ctrls, node)
+		ctrl->done = false;
+
+	list_for_each_entry(ctrl, &hdl->ctrls, node) {
+		struct v4l2_ctrl *master = ctrl->cluster[0];
+		int i;
+
+		/* Skip if this control was already handled by a cluster. */
+		/* Skip button controls and read-only controls. */
+		if (ctrl->done || ctrl->type == V4L2_CTRL_TYPE_BUTTON ||
+		    (ctrl->flags & V4L2_CTRL_FLAG_READ_ONLY))
+			continue;
+
+		for (i = 0; i < master->ncontrols; i++) {
+			if (master->cluster[i]) {
+				master->cluster[i]->is_new = 1;
+				master->cluster[i]->done = true;
+			}
+		}
+		master->cur.val = master->val = master->default_value;
+	}
+
+	mutex_unlock(hdl->lock);
+
+}
 
 static long gc_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 {
@@ -984,6 +1018,14 @@ static int gc_s_power(struct v4l2_subdev *sd, int on)
 	ret = __gc_s_power(sd, on);
 
 	mutex_unlock(&dev->input_lock);
+
+	// as v4l2 framework would cache the value set from upper layer even though exit camera,
+	// it would not call ctrl function because that the cache value is equal with the value
+	// set by upper layer when entry camera again.
+	// So, we will reset the v4l2 ctrl value to be default after power off.
+	if (0 == on) {
+		reset_v4l2_ctrl_value(&dev->ctrl_handler);
+	}
 
 	return ret;
 }
