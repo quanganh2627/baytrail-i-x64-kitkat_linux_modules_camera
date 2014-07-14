@@ -1653,9 +1653,7 @@ static int imx_s_stream(struct v4l2_subdev *sd, int enable)
 			return ret;
 		}
 		dev->streaming = 0;
-		dev->fps_index = 0;
 		dev->targetfps = 0;
-		dev->fps = 0;
 	}
 	mutex_unlock(&dev->input_lock);
 
