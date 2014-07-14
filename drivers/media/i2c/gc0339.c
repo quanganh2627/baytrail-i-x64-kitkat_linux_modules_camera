@@ -87,6 +87,7 @@ static enum atomisp_bayer_order gc0339_bayer_order_mapping[] = {
 
 };
 
+static u8 g_flip = 0x20;
 static int
 gc0339_read_reg(struct i2c_client *client, u16 data_length, u8 reg, u8 *val)
 {
@@ -579,7 +580,7 @@ static int gc0339_init_common(struct v4l2_subdev *sd)
 	gc0339_write_reg(client, MISENSOR_8BIT, 0x0b, 0x02);/*660*/
 	gc0339_write_reg(client, MISENSOR_8BIT, 0x0c, 0x94);
 	gc0339_write_reg(client, MISENSOR_8BIT, 0x0f, 0x02);
-	gc0339_write_reg(client, MISENSOR_8BIT, 0x14, 0x23);
+	gc0339_write_reg(client, MISENSOR_8BIT, 0x14, g_flip);
 	gc0339_write_reg(client, MISENSOR_8BIT, 0x1a, 0x21);
 	gc0339_write_reg(client, MISENSOR_8BIT, 0x1b, 0x08);
 	gc0339_write_reg(client, MISENSOR_8BIT, 0x1c, 0x19);
@@ -1525,16 +1526,19 @@ static int gc0339_t_hflip(struct v4l2_subdev *sd, int value)
 	int err;
 	u8 date_tem;
 	u8 bayer_order_tem;
+	date_tem = g_flip;
+	dev_err(&c->dev, "@%s++ %d, 0x14:0x%x\n", __func__, value, date_tem);
 	/* set for direct mode */
-	err = gc0339_read_reg(c, MISENSOR_8BIT, gc0339_CTRL_FLIP_ADDR, &date_tem);	
+	//err = gc0339_read_reg(c, MISENSOR_8BIT, gc0339_CTRL_FLIP_ADDR, &date_tem);
 	if (value)
-		  date_tem |= gc0339_HFLIP_BIT; 
+		date_tem |= gc0339_HFLIP_BIT;
 	else
-			date_tem &= ~gc0339_HFLIP_BIT;
+		date_tem &= ~gc0339_HFLIP_BIT;
 	err += gc0339_write_reg(c, MISENSOR_8BIT, gc0339_CTRL_FLIP_ADDR, date_tem);
-	udelay(10);	
-	 if (err)   return err;
-      gc0339_info = v4l2_get_subdev_hostdata(sd);
+	udelay(10);
+	if (err)   return err;
+	g_flip = date_tem;
+	gc0339_info = v4l2_get_subdev_hostdata(sd);
         if (gc0339_info) 
         {
                 bayer_order_tem = date_tem & (gc0339_HFLIP_BIT|gc0339_VFLIP_BIT);
@@ -1553,20 +1557,23 @@ static int gc0339_t_vflip(struct v4l2_subdev *sd, int value)
 	int err;
 	u8 date_tem;
 	u8 bayer_order_tem;
+	date_tem = g_flip;
+	dev_err(&c->dev, "@%s++ %d, 0x14:0x%x\n", __func__, value, date_tem);
 	/* set for direct mode */
-	err = gc0339_read_reg(c, MISENSOR_8BIT, gc0339_CTRL_FLIP_ADDR, &date_tem);
+	//err = gc0339_read_reg(c, MISENSOR_8BIT, gc0339_CTRL_FLIP_ADDR, &date_tem);
 	if (value)	
-				date_tem |= gc0339_VFLIP_BIT ;
-		else
-				date_tem &= ~gc0339_VFLIP_BIT	;		
-		err += gc0339_write_reg(c, MISENSOR_8BIT, gc0339_CTRL_FLIP_ADDR, date_tem);
-		udelay(10);
-	 if (err)   return err;
-     gc0339_info = v4l2_get_subdev_hostdata(sd);
+		date_tem |= gc0339_VFLIP_BIT;
+	else
+		date_tem &= ~gc0339_VFLIP_BIT;
+	err += gc0339_write_reg(c, MISENSOR_8BIT, gc0339_CTRL_FLIP_ADDR, date_tem);
+	udelay(10);
+	if (err)   return err;
+	g_flip = date_tem;
+	gc0339_info = v4l2_get_subdev_hostdata(sd);
         if (gc0339_info) {
-				bayer_order_tem = date_tem & (gc0339_HFLIP_BIT|gc0339_VFLIP_BIT);
-                gc0339_info->raw_bayer_order = gc0339_bayer_order_mapping[bayer_order_tem];           
-                dev->format.code = gc0339_translate_bayer_order(gc0339_info->raw_bayer_order);
+		bayer_order_tem = date_tem & (gc0339_HFLIP_BIT|gc0339_VFLIP_BIT);
+		gc0339_info->raw_bayer_order = gc0339_bayer_order_mapping[bayer_order_tem];
+		dev->format.code = gc0339_translate_bayer_order(gc0339_info->raw_bayer_order);
         }
 	return !!err;
 }
