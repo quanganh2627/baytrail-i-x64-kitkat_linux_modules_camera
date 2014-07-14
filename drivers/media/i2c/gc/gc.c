@@ -428,7 +428,7 @@ int __gc_s_exposure(struct v4l2_subdev *sd, s32 value)
 
 int __gc_set_scene_mode(struct v4l2_subdev *sd, s32 value)
 {
-		return __gc_program_ctrl_table(sd, GC_SETTING_SCENE_MODE, value);
+	return __gc_program_ctrl_table(sd, GC_SETTING_SCENE_MODE, value);
 }
 
 int __gc_set_color(struct v4l2_subdev *sd, s32 value)
@@ -1088,12 +1088,6 @@ static int gc_s_mbus_fmt(struct v4l2_subdev *sd,
 	int ret;
 	int mbus_fmt_idx;
 
-
-	/* turn power on */
-	ret = __gc_s_power(sd, 1);
-	if (ret)
-		return ret;
-
 	gc_info = v4l2_get_subdev_hostdata(sd);
 	if (gc_info == NULL)
 		return -EINVAL;
@@ -1142,8 +1136,6 @@ static int gc_s_mbus_fmt(struct v4l2_subdev *sd,
 
 out:
 	mutex_unlock(&dev->input_lock);
-
-	ret = v4l2_ctrl_handler_setup(&dev->ctrl_handler);
 
 	return ret;
 }
@@ -1628,6 +1620,8 @@ static int __gc_init_ctrl_handler(struct gc_device *dev)
 	/* Use same lock for controls as for everything else. */
 	dev->ctrl_handler.lock = &dev->input_lock;
 	dev->sd.ctrl_handler = &dev->ctrl_handler;
+
+	ret = v4l2_ctrl_handler_setup(&dev->ctrl_handler);
 	
 	return ret;
 }
