@@ -311,6 +311,9 @@ int atomisp_exif_makernote(struct atomisp_sub_device *asd,
 
 void atomisp_free_internal_buffers(struct atomisp_sub_device *asd);
 
+int atomisp_s_ae_window(struct atomisp_sub_device *asd,
+			struct atomisp_ae_window *arg);
+
 int  atomisp_flash_enable(struct atomisp_sub_device *asd,
 			  int num_frames);
 

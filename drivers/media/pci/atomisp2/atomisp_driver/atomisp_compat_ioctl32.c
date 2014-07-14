@@ -1054,6 +1054,7 @@ long atomisp_compat_ioctl32(struct file *file,
 	case ATOMISP_IOC_S_ENABLE_DZ_CAPT_PIPE:
 	case ATOMISP_IOC_G_FORMATS_CONFIG:
 	case ATOMISP_IOC_S_FORMATS_CONFIG:
+	case ATOMISP_IOC_S_EXPOSURE_WINDOW:
 		ret = native_ioctl(file, cmd, arg);
 		break;
 

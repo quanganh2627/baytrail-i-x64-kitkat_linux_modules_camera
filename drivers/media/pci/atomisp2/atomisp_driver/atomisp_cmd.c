@@ -5074,6 +5074,29 @@ int atomisp_offline_capture_configure(struct atomisp_sub_device *asd,
 	return 0;
 }
 
+/*
+ * set auto exposure metering window to camera sensor
+ */
+int atomisp_s_ae_window(struct atomisp_sub_device *asd,
+			struct atomisp_ae_window *arg)
+{
+	struct atomisp_device *isp = asd->isp;
+	struct v4l2_subdev_selection sel;
+
+	sel.r.left = arg->x_left;
+	sel.r.top = arg->y_top;
+	sel.r.width = arg->x_right - arg->x_left + 1;
+	sel.r.height = arg->y_bottom - arg->y_top + 1;
+
+	if (v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
+				 pad, set_selection, NULL, &sel)) {
+		dev_err(isp->dev, "failed to call sensor set_selection.\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int atomisp_flash_enable(struct atomisp_sub_device *asd, int num_frames)
 {
 	struct atomisp_device *isp = asd->isp;

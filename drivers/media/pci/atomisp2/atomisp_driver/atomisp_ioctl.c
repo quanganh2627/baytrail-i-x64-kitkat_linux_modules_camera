@@ -237,6 +237,15 @@ static struct v4l2_queryctrl ci_v4l2_controls[] = {
 		.default_value = 0,
 	},
 	{
+		.id = V4L2_CID_EXPOSURE_ZONE_NUM,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "one-time exposure zone number",
+		.minimum = 0x0,
+		.maximum = 0xffff,
+		.step = 1,
+		.default_value = 0,
+	},
+	{
 		.id = V4L2_CID_SCENE_MODE,
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.name = "scene mode",
@@ -277,7 +286,7 @@ static struct v4l2_queryctrl ci_v4l2_controls[] = {
 		.type = V4L2_CTRL_TYPE_MENU,
 		.name = "metering",
 		.minimum = 0,
-		.maximum = 2,
+		.maximum = 3,
 		.step = 1,
 		.default_value = 1,
 	},
@@ -2008,11 +2017,11 @@ static int atomisp_g_ctrl(struct file *file, void *fh,
 	case V4L2_CID_SCENE_MODE:
 	case V4L2_CID_ISO_SENSITIVITY:
 	case V4L2_CID_ISO_SENSITIVITY_AUTO:
-	case V4L2_CID_EXPOSURE_METERING:
 	case V4L2_CID_CONTRAST:
 	case V4L2_CID_SATURATION:
 	case V4L2_CID_SHARPNESS:
 	case V4L2_CID_3A_LOCK:
+	case V4L2_CID_EXPOSURE_ZONE_NUM:
 		rt_mutex_unlock(&isp->mutex);
 		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 				       core, g_ctrl, control);
@@ -2268,6 +2277,7 @@ static int atomisp_camera_s_ext_ctrls(struct file *file, void *fh,
 		ctrl.value = c->controls[i].value;
 		switch (ctrl.id) {
 		case V4L2_CID_EXPOSURE_ABSOLUTE:
+		case V4L2_CID_EXPOSURE_METERING:
 		case V4L2_CID_IRIS_ABSOLUTE:
 		case V4L2_CID_FNUMBER_ABSOLUTE:
 		case V4L2_CID_VCM_TIMEING:
@@ -2715,6 +2725,9 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 
 	case ATOMISP_IOC_S_FORMATS_CONFIG:
 		err = atomisp_formats(asd, 1, arg);
+		break;
+	case ATOMISP_IOC_S_EXPOSURE_WINDOW:
+		err = atomisp_s_ae_window(asd, arg);
 		break;
 	default:
 		rt_mutex_unlock(&isp->mutex);
