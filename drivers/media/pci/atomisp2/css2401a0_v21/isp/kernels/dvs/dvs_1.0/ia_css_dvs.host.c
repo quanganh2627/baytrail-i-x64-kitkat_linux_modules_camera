@@ -70,8 +70,8 @@ convert_coords_to_ispparams(
 	unsigned int x00, x01, x10, x11,
 		     y00, y01, y10, y11;
 
-	unsigned int xmin, ymin;
-	unsigned int topleft_x, topleft_y,
+	unsigned int xmin, ymin, ymax;
+	unsigned int topleft_x, topleft_y, bottomleft_y,
 		     topleft_x_frac, topleft_y_frac;
 
 	/* number of blocks per height and width */
@@ -127,6 +127,7 @@ convert_coords_to_ispparams(
 
 			xmin = min(x00, x10);
 			ymin = min(y00, y01);
+			ymax = max(y10, y11);
 
 			/* Assert that right column's X is greater */
 			assert ( x01 >= xmin);
@@ -136,26 +137,23 @@ convert_coords_to_ispparams(
 			assert ( y11 >= ymin);
 
 #if 0
-			/* TODO: Round width to the multiple of bus width */
+			/* TODO: optimize block width to a minimum to avoid
+			 * unnecessary ISP-DDR bandwidth: */
 			xmax = max(x01, x11);
-			ymax = max(y10, y11);
-			in_block_width  = xmax - xmin;
-			in_block_height = ymax - ymin;
+			in_block_width  = xmax - xmin; */
 #else
-			/*
-			 * For initial testing, we are using constant input
-			 * block size
-			 * */
-			s.in_block_width  = 128;
-			s.in_block_height = 96 >> uv_flag;
+			s.in_block_width = DVS_INPUT_MAX_WIDTH;
 #endif
-
 			topleft_y = ymin >> DVS_COORD_FRAC_BITS;
 			topleft_x = ((xmin >> DVS_COORD_FRAC_BITS)
 					>> XMEM_ALIGN_LOG2)
 					<< (XMEM_ALIGN_LOG2);
-
 			s.in_addr_offset = topleft_y * in_stride + topleft_x;
+
+			/* similar to topleft_y calculation, but round up if ymax
+			 * has any fraction bits */
+			bottomleft_y = CEIL_DIV(ymax, 1 << DVS_COORD_FRAC_BITS);
+			s.in_block_height = bottomleft_y - topleft_y + DVS_INTERPOLATION_ADJUST;
 
 			topleft_x_frac = topleft_x << (DVS_COORD_FRAC_BITS);
 			topleft_y_frac = topleft_y << (DVS_COORD_FRAC_BITS);
