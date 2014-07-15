@@ -1456,8 +1456,12 @@ static unsigned int atomisp_sensor_start_stream(struct atomisp_sub_device *asd)
 	struct atomisp_device *isp = asd->isp;
 
 	if (isp->inputs[asd->input_curr].camera_caps->
-	    sensor[asd->sensor_curr].stream_num > 1)
-		return 2;
+	    sensor[asd->sensor_curr].stream_num > 1) {
+		if (asd->high_speed_mode)
+			return 1;
+		else
+			return 2;
+	}
 
 	if (asd->vfpp->val != ATOMISP_VFPP_ENABLE ||
 	    asd->copy_mode)
@@ -2371,6 +2375,7 @@ static int atomisp_s_parm(struct file *file, void *fh,
 	struct atomisp_sub_device *asd = atomisp_to_video_pipe(vdev)->asd;
 	int mode;
 	int rval;
+	int fps;
 
 	if (parm->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
 		dev_err(isp->dev, "unsupport v4l2 buf type\n");
@@ -2379,6 +2384,7 @@ static int atomisp_s_parm(struct file *file, void *fh,
 
 	rt_mutex_lock(&isp->mutex);
 
+	asd->high_speed_mode = false;
 	switch (parm->parm.capture.capturemode) {
 	case CI_MODE_NONE: {
 		struct v4l2_subdev_frame_interval fi = {0};
@@ -2389,6 +2395,13 @@ static int atomisp_s_parm(struct file *file, void *fh,
 					video, s_frame_interval, &fi);
 		if (!rval)
 			parm->parm.capture.timeperframe = fi.interval;
+
+		if (fi.interval.numerator != 0) {
+			fps = fi.interval.denominator / fi.interval.numerator;
+			if (fps > 30)
+				asd->high_speed_mode = true;
+		}
+
 		goto out;
 	}
 	case CI_MODE_VIDEO:

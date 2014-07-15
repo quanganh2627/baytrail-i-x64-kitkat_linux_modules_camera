@@ -337,6 +337,8 @@ struct atomisp_sub_device {
 
 	int raw_buffer_bitmap[ATOMISP_MAX_EXP_ID/32 + 1]; /* Record each Raw Buffer lock status */
 	spinlock_t raw_buffer_bitmap_lock;
+
+	bool high_speed_mode; /* Indicate whether now is a high speed mode */
 };
 
 extern const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[];

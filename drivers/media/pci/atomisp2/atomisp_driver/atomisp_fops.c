@@ -716,7 +716,7 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 	asd->yuvpp_mode = false;
 
 	asd->stream_prepared = false;
-
+	asd->high_speed_mode = false;
 	atomisp_css_init_struct(asd);
 }
 /*
