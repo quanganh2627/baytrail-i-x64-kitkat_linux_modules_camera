@@ -908,6 +908,7 @@ static int atomisp_release(struct file *file)
 
 	/* clear the asd field to show this camera is not used */
 	isp->inputs[asd->input_curr].asd = NULL;
+	asd->streaming = ATOMISP_DEVICE_STREAMING_DISABLED;
 
 	if (atomisp_dev_users(isp))
 		goto done;
