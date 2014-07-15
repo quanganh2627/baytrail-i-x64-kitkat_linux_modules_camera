@@ -1332,7 +1332,7 @@ sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command)
 	if (host2sp_command == host2sp_cmd_terminate)
 		assert(load_sp1_array_uint(host_sp1_com, offset) == host2sp_cmd_ready);
 
-	store_sp1_array_uint(host_sp1_com, o, host2sp_command);
+	store_sp1_array_uint(host_sp1_com, offset, host2sp_command);
 }
 #endif
 
