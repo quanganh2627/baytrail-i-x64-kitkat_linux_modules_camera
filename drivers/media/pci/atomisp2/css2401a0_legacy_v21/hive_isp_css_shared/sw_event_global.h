@@ -30,25 +30,8 @@
 #define SP_SW_EVENT_ID_3	3	/* for the sp2host_event_queue  */
 #define SP_SW_EVENT_ID_4	4	/* for the start stream cmd */
 #define SP_SW_EVENT_ID_5	5	/* for the stop stream cmd  */
-
-/*********************************************
- *
- * Hack for Baytrail.
- *
- * AUTHOR: zhengjie.lu@intel.com
- * TIME: 2013-01-19, 14:38.
- * LOCATION: Santa Clara, U.S.A.
- * COMMENT:
- * Define a new Host2SP event which indicates
- * the Host has passed the pointers of the
- * empty MIPI buffers to the SP.
- *
- ********************************************/	
-#define SP_SW_EVENT_ID_6	6	/* for the completion of passing the
-					   pointers of the empty MIPI buffers
-					   from the Host to the SP
-					*/
-/** End of hack for Baytrail **/
+#define SP_SW_EVENT_ID_6	6	/* for the host2sp empty mipi buffers */
+#define SP_SW_EVENT_ID_7	7	/* HALv3 Support unlock a raw buffer cmd */
 
 #endif /* __SW_EVENT_GLOBAL_H_INCLUDED__ */
 

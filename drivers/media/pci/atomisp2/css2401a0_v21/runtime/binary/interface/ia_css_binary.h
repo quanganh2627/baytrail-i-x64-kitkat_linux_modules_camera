@@ -53,6 +53,34 @@
  */
 #include "runtime/isp_param/interface/ia_css_isp_param_types.h"
 
+/* now these ports only include output ports but not vf output ports */
+enum {
+	IA_CSS_BINARY_OUTPUT_PORT_0 = 0,
+	IA_CSS_BINARY_OUTPUT_PORT_1,
+	IA_CSS_BINARY_MAX_OUTPUT_PORTS,
+};
+
+struct ia_css_cas_binary_descr {
+	unsigned int num_stage;
+	unsigned int num_output_stage;
+	struct ia_css_frame_info *in_info;
+	struct ia_css_frame_info *internal_out_info;
+	struct ia_css_frame_info *out_info;
+	struct ia_css_frame_info *vf_info;
+	bool *is_output_stage;
+};
+
+#define IA_CSS_DEFAULT_CAS_BINARY_DESCR \
+{ \
+	0,		\
+	0,		\
+	NULL,		\
+	NULL,		\
+	NULL,		\
+	NULL,		\
+	NULL,		\
+}
+
 struct ia_css_binary_descr {
 	int mode;
 	bool online;
@@ -63,12 +91,16 @@ struct ia_css_binary_descr {
 	bool enable_dvs_6axis;
 	bool enable_reduced_pipe;
 	bool enable_dz;
+	bool enable_xnr;
 	bool enable_fractional_ds;
 	struct ia_css_resolution dvs_env;
 	enum ia_css_stream_format stream_format;
-	struct ia_css_frame_info *in_info;
+	struct ia_css_frame_info *original_in_info;	/* the info of the input-frame with the
+							   original resolution. */
+	struct ia_css_frame_info *in_info;		/* the info of the input-frame with the
+							   ISP required resolution. */
 	struct ia_css_frame_info *bds_out_info;
-	struct ia_css_frame_info *out_info;
+	struct ia_css_frame_info *out_info[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_frame_info *vf_info;
 	unsigned int isp_pipe_version;
 	unsigned int required_bds_factor;
@@ -80,12 +112,11 @@ struct ia_css_binary {
 	enum ia_css_stream_format input_format;
 	struct ia_css_frame_info in_frame_info;
 	struct ia_css_frame_info internal_frame_info;
-	struct ia_css_frame_info out_frame_info;
+	struct ia_css_frame_info out_frame_info[IA_CSS_BINARY_MAX_OUTPUT_PORTS];
 	struct ia_css_resolution effective_in_frame_res;
 	struct ia_css_frame_info vf_frame_info;
 	int                      input_buf_vectors;
 	int                      deci_factor_log2;
-	int                      dis_deci_factor_log2;
 	int                      vf_downscale_log2;
 	int                      s3atbl_width;
 	int                      s3atbl_height;
@@ -97,18 +128,7 @@ struct ia_css_binary {
 	int                      sctbl_width_per_color;
 	int                      sctbl_aligned_width_per_color;
 	int                      sctbl_height;
-	int                      dis_hor_grid_num_3a;
-	int                      dis_ver_grid_num_3a;
-	int                      dis_hor_grid_num_isp;
-	int                      dis_ver_grid_num_isp;
-	int                      dis_hor_coef_num_3a;
-	int                      dis_ver_coef_num_3a;
-	int                      dis_hor_coef_num_isp;
-	int                      dis_ver_coef_num_isp;
-	int                      dis_hor_proj_num_3a;
-	int                      dis_ver_proj_num_3a;
-	int                      dis_hor_proj_num_isp;
-	int                      dis_ver_proj_num_isp;
+	struct ia_css_sdis_info	 dis;
 	struct ia_css_resolution dvs_envelope;
 	bool                     online;
 	unsigned int             uds_xc;
@@ -119,28 +139,17 @@ struct ia_css_binary {
 	struct ia_css_isp_param_css_segments  css_params;
 };
 
-#define IA_CSS_BINARY_DEFAULT_FRAME_INFO \
-{ \
-	{0,                      /* width */ \
-	 0},                     /* height */ \
-	0,                       /* padded_width */ \
-	IA_CSS_FRAME_FORMAT_NUM, /* format */ \
-	0,                       /* raw_bit_depth */ \
-	IA_CSS_BAYER_ORDER_NUM   /* raw_bayer_order */ \
-}
-
 #define IA_CSS_BINARY_DEFAULT_SETTINGS \
 { \
 	NULL, \
 	IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY, \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
-	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
-	{ 0,0 },/* effective_in_frame_res */ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO}, \
+	{ 0, 0},/* effective_in_frame_res */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO, \
 	0,	/* input_buf_vectors */ \
 	0,	/* deci_factor_log2 */ \
-	0,	/* dis_deci_factor_log2 */ \
 	0,	/* vf_downscale_log2 */ \
 	0,	/* s3atbl_width */ \
 	0,	/* s3atbl_height */ \
@@ -152,19 +161,8 @@ struct ia_css_binary {
 	0,	/* sctbl_width_per_color */ \
 	0,	/* sctbl_aligned_width_per_color */ \
 	0,	/* sctbl_height */ \
-	0,	/* dis_hor_grid_num_3a */ \
-	0,	/* dis_ver_grid_num_3a */ \
-	0,	/* dis_hor_grid_num_isp */ \
-	0,	/* dis_ver_grid_num_isp */ \
-	0,	/* dis_hor_coef_num_3a */ \
-	0,	/* dis_ver_coef_num_3a */ \
-	0,	/* dis_hor_coef_num_isp */ \
-	0,	/* dis_ver_coef_num_isp */ \
-	0,	/* dis_hor_proj_num_3a */ \
-	0,	/* dis_ver_proj_num_3a */ \
-	0,	/* dis_hor_proj_num_isp */ \
-	0,	/* dis_ver_proj_num_isp */ \
-	{ 0, 0 },/* dvs_envelope_info */ \
+	IA_CSS_DEFAULT_SDIS_INFO, /* dis */ \
+	{ 0, 0},/* dvs_envelope_info */ \
 	false,	/* online */ \
 	0,	/* uds_xc */ \
 	0,	/* uds_yc */ \
@@ -187,7 +185,7 @@ ia_css_binary_fill_info(const struct ia_css_binary_xinfo *xinfo,
 		 enum ia_css_stream_format stream_format,
 		 const struct ia_css_frame_info *in_info,
 		 const struct ia_css_frame_info *bds_out_info,
-		 const struct ia_css_frame_info *out_info,
+		 const struct ia_css_frame_info *out_info[],
 		 const struct ia_css_frame_info *vf_info,
 		 struct ia_css_binary *binary,
 		 struct ia_css_resolution *dvs_env,
@@ -198,14 +196,41 @@ enum ia_css_err
 ia_css_binary_find(struct ia_css_binary_descr *descr,
 		   struct ia_css_binary *binary);
 
+/** @brief Get the shading information of the specified shading correction type.
+ *
+ * @param[in] binary: The isp binary which has the shading correction.
+ * @param[in] type: The shading correction type.
+ * @param[in] required_bds_factor: The bayer downscaling factor required in the pipe.
+ * @param[in] stream_config: The stream configuration.
+ * @param[out] info: The shading information.
+ *		The driver needs to get this information to generate
+ *		the shading table directly required in the isp.
+ * @return	IA_CSS_SUCCESS or error code upon error.
+ *
+ */
+enum ia_css_err
+ia_css_binary_get_shading_info(const struct ia_css_binary *binary,
+			enum ia_css_shading_correction_type type,
+			unsigned int required_bds_factor,
+			const struct ia_css_stream_config *stream_config,
+			struct ia_css_shading_info *info);
+
 void
-ia_css_binary_grid_info(const struct ia_css_binary *binary,
-			struct ia_css_grid_info *info);
+ia_css_binary_3a_grid_info(const struct ia_css_binary *binary,
+			   struct ia_css_grid_info *info);
+
+void
+ia_css_binary_dvs_grid_info(const struct ia_css_binary *binary,
+			   struct ia_css_grid_info *info);
 
 unsigned
 ia_css_binary_max_vf_width(void);
 
 void
 ia_css_binary_destroy_isp_parameters(struct ia_css_binary *binary);
+
+void
+ia_css_binary_get_isp_binaries(struct ia_css_binary_xinfo **binaries,
+	uint32_t *num_isp_binaries);
 
 #endif /* _IA_CSS_BINARY_H_ */

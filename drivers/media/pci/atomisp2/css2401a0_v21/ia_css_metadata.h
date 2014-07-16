@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_METADATA_H
 #define __IA_CSS_METADATA_H
 
+/** @file
+ * This file contains structure for processing sensor metadata.
+ */
+
 #include <type_support.h>
 #include "ia_css_types.h"
 #include "ia_css_stream_format.h"

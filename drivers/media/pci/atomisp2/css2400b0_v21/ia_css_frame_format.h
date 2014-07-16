@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_FRAME_FORMAT_H
 #define __IA_CSS_FRAME_FORMAT_H
 
+/** @file
+ * This file contains information about formats supported in the ISP
+ */
+
 /** Frame formats, some of these come from fourcc.org, others are
    better explained by video4linux2. The NV11 seems to be described only
    on MSDN pages, but even those seem to be gone now.
@@ -32,9 +36,14 @@
    2. YUV411: hor = 4, ver = 1
    3. YUV422: hor = 2, ver = 1
    4. YUV444: hor = 1, ver = 1
- */
+
+  Warning: not all frame formats are supported as input or output to/from ISP.
+    Some of these formats are therefore not defined in the output table module.
+    Modifications in below frame format enum can require modifications in the
+    output table module.
+*/
 enum ia_css_frame_format {
-	IA_CSS_FRAME_FORMAT_NV11=0,     /**< 12 bit YUV 411, Y, UV plane */
+	IA_CSS_FRAME_FORMAT_NV11 = 0,   /**< 12 bit YUV 411, Y, UV plane */
 	IA_CSS_FRAME_FORMAT_NV12,       /**< 12 bit YUV 420, Y, UV plane */
 	IA_CSS_FRAME_FORMAT_NV16,       /**< 16 bit YUV 422, Y, UV plane */
 	IA_CSS_FRAME_FORMAT_NV21,       /**< 12 bit YUV 420, Y, VU plane */
@@ -70,10 +79,12 @@ enum ia_css_frame_format {
 							   interleaved even line */
 	IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8, /**< Legacy YUV420. UY odd
 							   line; VY even line */
-	IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10,       /**< 10 bit per Y/U/V. Y odd
+	IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10       /**< 10 bit per Y/U/V. Y odd
 							   line; UYVY interleaved
 							   even line */
 };
-#define IA_CSS_FRAME_FORMAT_NUM (IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10 + 1)
+#define IA_CSS_FRAME_FORMAT_NUM		(IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10 + 1)
+/** Number of valid output frame formats for ISP **/
+#define IA_CSS_FRAME_OUT_FORMAT_NUM	(IA_CSS_FRAME_FORMAT_RGBA888 + 1)
 
 #endif /* __IA_CSS_FRAME_FORMAT_H */

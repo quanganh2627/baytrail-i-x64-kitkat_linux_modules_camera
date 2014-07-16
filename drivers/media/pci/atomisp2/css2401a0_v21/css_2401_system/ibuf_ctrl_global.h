@@ -42,6 +42,9 @@ struct	ib_buffer_s {
 
 typedef struct ibuf_ctrl_cfg_s ibuf_ctrl_cfg_t;
 struct ibuf_ctrl_cfg_s {
+
+	bool online;
+
 	struct {
 		/* DMA configuration */
 		uint32_t channel;
@@ -57,6 +60,8 @@ struct ibuf_ctrl_cfg_s {
 
 	struct {
 		uint32_t stride;
+		uint32_t start_addr;
+		uint32_t lines;
 	} dest_buf_cfg;
 
 	uint32_t items_per_store;
@@ -67,10 +72,7 @@ struct ibuf_ctrl_cfg_s {
 		uint32_t store_cmd;	/* must be _STREAM2MMIO_CMD_TOKEN_STORE_PACKETS */
 	} stream2mmio_cfg;
 };
-static const uint32_t N_IBUF_CTRL_PROCS[N_IBUF_CTRL_ID] = {
-	8,	/* IBUF_CTRL0_ID supports at most 8 processes */
-	4,	/* IBUF_CTRL1_ID supports at most 4 processes */
-	4	/* IBUF_CTRL2_ID supports at most 4 processes */
-};
+
+extern const uint32_t N_IBUF_CTRL_PROCS[N_IBUF_CTRL_ID];
 
 #endif /* __IBUF_CTRL_GLOBAL_H_INCLUDED__ */

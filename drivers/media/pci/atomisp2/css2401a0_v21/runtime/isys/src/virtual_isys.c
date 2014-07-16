@@ -20,9 +20,13 @@
  */
 
 #include "ia_css_isys.h"
+#include "ia_css_debug.h"
 #include "math_support.h"
+#include "string_support.h"
 #include "virtual_isys.h"
 #include "isp.h"
+#include "sh_css_defs.h"
+
 
 /*************************************************
  *
@@ -32,6 +36,7 @@
 
 static bool create_input_system_channel(
 	input_system_cfg_t	*cfg,
+	bool			metadata,
 	input_system_channel_t	*channel);
 
 static void destroy_input_system_channel(
@@ -48,7 +53,8 @@ static bool calculate_input_system_channel_cfg(
 	input_system_channel_t		*channel,
 	input_system_input_port_t	*input_port,
 	input_system_cfg_t		*isys_cfg,
-	input_system_channel_cfg_t	*channel_cfg);
+	input_system_channel_cfg_t	*channel_cfg,
+	bool metadata);
 
 static bool calculate_input_system_input_port_cfg(
 	input_system_channel_t		*channel,
@@ -68,7 +74,8 @@ static bool acquire_ib_buffer(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
 	int32_t lines_per_frame,
-	int32_t fmt_type,
+	int32_t align_in_bytes,
+	bool online,
 	ib_buffer_t *buf);
 
 static void release_ib_buffer(
@@ -105,57 +112,54 @@ static bool calculate_prbs_cfg(
 	pixelgen_prbs_cfg_t		*cfg);
 
 static bool calculate_fe_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_cfg_t	*isys_cfg,
 	csi_rx_frontend_cfg_t		*cfg);
 
 static bool calculate_be_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_input_port_t	*input_port,
+	const input_system_cfg_t	*isys_cfg,
+	bool				metadata,
 	csi_rx_backend_cfg_t		*cfg);
 
 static bool calculate_stream2mmio_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_cfg_t	*isys_cfg,
+	bool				metadata,
 	stream2mmio_cfg_t		*cfg);
 
 static bool calculate_ibuf_ctrl_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_channel_t	*channel,
+	const input_system_input_port_t	*input_port,
+	const input_system_cfg_t	*isys_cfg,
 	ibuf_ctrl_cfg_t			*cfg);
 
 static bool calculate_isys2401_dma_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_channel_t	*channel,
+	const input_system_cfg_t	*isys_cfg,
 	isys2401_dma_cfg_t		*cfg);
 
 static bool calculate_isys2401_dma_port_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
-	bool				is_compact_mode,
+	const input_system_cfg_t	*isys_cfg,
+	bool				raw_packed,
+	bool				metadata,
 	isys2401_dma_port_cfg_t		*cfg);
 
 static csi_mipi_packet_type_t get_csi_mipi_packet_type(
 	int32_t data_type);
 
-static int32_t calculate_input_system_alignment(
-	int32_t fmt_type,
-        int32_t bytes_per_pixel);
+static int32_t calculate_stride(
+	int32_t bits_per_pixel,
+	int32_t pixels_per_line,
+	bool	raw_packed,
+	int32_t	align_in_bytes);
 
 /** end of Forwarded Declaration */
 
 /**************************************************
  *
- * Public Method
+ * Public Methods
  *
  **************************************************/
- ia_css_isys_error_t ia_css_isys_stream_create(
+ia_css_isys_error_t ia_css_isys_stream_create(
 	ia_css_isys_descr_t	*isys_stream_descr,
 	ia_css_isys_stream_h	isys_stream)
 {
@@ -164,15 +168,31 @@ static int32_t calculate_input_system_alignment(
 	if (isys_stream_descr == NULL || isys_stream == NULL)
 		return	false;
 
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"ia_css_isys_stream_create() enter:\n");
+
+	isys_stream->linked_isys_stream_id = isys_stream_descr->linked_isys_stream_id;
 	rc = create_input_system_input_port(isys_stream_descr, &(isys_stream->input_port));
 	if (rc == false)
 		return false;
 
-	rc = create_input_system_channel(isys_stream_descr, &(isys_stream->channel));
+	rc = create_input_system_channel(isys_stream_descr, false, &(isys_stream->channel));
 	if (rc == false) {
 		destroy_input_system_input_port(&(isys_stream->input_port));
 		return false;
 	}
+
+	/* create metadata channel */
+	if (isys_stream_descr->metadata.enable) {
+		rc = create_input_system_channel(isys_stream_descr, true, &isys_stream->md_channel);
+		if (rc == false) {
+			destroy_input_system_input_port(&isys_stream->input_port);
+			destroy_input_system_channel(&isys_stream->channel);
+			return false;
+		}
+	}
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"ia_css_isys_stream_create() leave:\n");
 
 	return true;
 }
@@ -182,27 +202,48 @@ void ia_css_isys_stream_destroy(
 {
 	destroy_input_system_input_port(&(isys_stream->input_port));
 	destroy_input_system_channel(&(isys_stream->channel));
+	if (isys_stream->enable_metadata) {
+		/* Destroy metadata channel only if its allocated*/
+		destroy_input_system_channel(&isys_stream->md_channel);
+	}
 }
 
- ia_css_isys_error_t ia_css_isys_stream_calculate_cfg(
+ia_css_isys_error_t ia_css_isys_stream_calculate_cfg(
 	ia_css_isys_stream_h		isys_stream,
 	ia_css_isys_descr_t		*isys_stream_descr,
 	ia_css_isys_stream_cfg_t	*isys_stream_cfg)
 {
 	ia_css_isys_error_t rc;
 
-	if (isys_stream_cfg == NULL	||
+	if (isys_stream_cfg == NULL		||
 		isys_stream_descr == NULL	||
 		isys_stream == NULL)
 		return false;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"ia_css_isys_stream_calculate_cfg() enter:\n");
 
 	rc  = calculate_input_system_channel_cfg(
 			&(isys_stream->channel),
 			&(isys_stream->input_port),
 			isys_stream_descr,
-			&(isys_stream_cfg->channel_cfg));
+			&(isys_stream_cfg->channel_cfg),
+			false);
 	if (rc == false)
 		return false;
+
+	/* configure metadata channel */
+	if (isys_stream_descr->metadata.enable) {
+		isys_stream_cfg->enable_metadata = true;
+		rc  = calculate_input_system_channel_cfg(
+				&isys_stream->md_channel,
+				&isys_stream->input_port,
+				isys_stream_descr,
+				&isys_stream_cfg->md_channel_cfg,
+				true);
+		if (rc == false)
+			return false;
+	}
 
 	rc = calculate_input_system_input_port_cfg(
 			&(isys_stream->channel),
@@ -212,18 +253,23 @@ void ia_css_isys_stream_destroy(
 	if (rc == false)
 		return false;
 
-	return true;
+	isys_stream->valid = 1;
+	isys_stream_cfg->valid = 1;
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+		"ia_css_isys_stream_calculate_cfg() leave:\n");
+	return rc;
 }
 
-/** end of Public Method */
+/** end of Public Methods */
 
 /**************************************************
  *
- * Private Method
+ * Private Methods
  *
  **************************************************/
 static bool create_input_system_channel(
 	input_system_cfg_t	*cfg,
+	bool			metadata,
 	input_system_channel_t	*me)
 {
 	bool rc = true;
@@ -256,32 +302,28 @@ static bool create_input_system_channel(
 	if (rc == false)
 		return false;
 
-
-	if (!acquire_sid(me->stream2mmio_id,
-			&(me->stream2mmio_sid_id))) {
+	if (!acquire_sid(me->stream2mmio_id, &(me->stream2mmio_sid_id))) {
 		return false;
 	}
 
 	if (!acquire_ib_buffer(
-			cfg->input_port_resolution.bits_per_pixel,
-			cfg->input_port_resolution.pixels_per_line,
-			cfg->input_port_resolution.lines_per_frame,
-			cfg->csi_port_attr.fmt_type,
+			metadata ? cfg->metadata.bits_per_pixel : cfg->input_port_resolution.bits_per_pixel,
+			metadata ? cfg->metadata.pixels_per_line : cfg->input_port_resolution.pixels_per_line,
+			metadata ? cfg->metadata.lines_per_frame : cfg->input_port_resolution.lines_per_frame,
+			metadata ? cfg->metadata.align_req_in_bytes : cfg->input_port_resolution.align_req_in_bytes,
+			cfg->online,
 			&(me->ib_buffer))) {
-		release_sid(me->stream2mmio_id,
-			&(me->stream2mmio_sid_id));
+		release_sid(me->stream2mmio_id, &(me->stream2mmio_sid_id));
 		return false;
 	}
 
 	if (!acquire_dma_channel(me->dma_id, &(me->dma_channel))) {
-		release_sid(me->stream2mmio_id,
-			&(me->stream2mmio_sid_id));
-
+		release_sid(me->stream2mmio_id, &(me->stream2mmio_sid_id));
 		release_ib_buffer(&(me->ib_buffer));
 		return false;
 	}
 
-	return	true;
+	return true;
 }
 
 static void destroy_input_system_channel(
@@ -300,9 +342,8 @@ static bool create_input_system_input_port(
 	input_system_input_port_t	*me)
 {
 	csi_mipi_packet_type_t packet_type;
-	bool rc;
+	bool rc = true;
 
-	rc = true;
 	switch (cfg->input_port_id) {
 	case INPUT_SYSTEM_CSI_PORT0_ID:
 		me->csi_rx.frontend_id = CSI_RX_FRONTEND0_ID;
@@ -357,6 +398,16 @@ static bool create_input_system_input_port(
 
 	me->source_type = cfg->mode;
 
+	/* for metadata */
+	if (rc && cfg->metadata.enable) {
+		me->metadata.packet_type = get_csi_mipi_packet_type(
+				cfg->metadata.fmt_type);
+		rc = acquire_be_lut_entry(
+				me->csi_rx.backend_id,
+				me->metadata.packet_type,
+				&me->metadata.backend_lut_entry);
+	}
+
 	return rc;
 }
 
@@ -375,14 +426,12 @@ static bool calculate_input_system_channel_cfg(
 	input_system_channel_t		*channel,
 	input_system_input_port_t	*input_port,
 	input_system_cfg_t		*isys_cfg,
-	input_system_channel_cfg_t	*channel_cfg)
+	input_system_channel_cfg_t	*channel_cfg,
+	bool metadata)
 {
 	bool rc;
 
-	rc = calculate_stream2mmio_cfg(
-			channel,
-			input_port,
-			isys_cfg,
+	rc = calculate_stream2mmio_cfg(isys_cfg, metadata,
 			&(channel_cfg->stream2mmio_cfg));
 	if (rc == false)
 		return false;
@@ -394,29 +443,28 @@ static bool calculate_input_system_channel_cfg(
 			&(channel_cfg->ibuf_ctrl_cfg));
 	if (rc == false)
 		return false;
+	if (metadata)
+		channel_cfg->ibuf_ctrl_cfg.stores_per_frame = isys_cfg->metadata.lines_per_frame;
 
 	rc = calculate_isys2401_dma_cfg(
 			channel,
-			input_port,
 			isys_cfg,
 			&(channel_cfg->dma_cfg));
 	if (rc == false)
 		return false;
 
 	rc = calculate_isys2401_dma_port_cfg(
-			channel,
-			input_port,
 			isys_cfg,
 			false,
+			metadata,
 			&(channel_cfg->dma_src_port_cfg));
 	if (rc == false)
 		return false;
 
 	rc = calculate_isys2401_dma_port_cfg(
-			channel,
-			input_port,
 			isys_cfg,
-			false,
+			isys_cfg->raw_packed,
+			metadata,
 			&(channel_cfg->dma_dest_port_cfg));
 	if (rc == false)
 		return false;
@@ -435,16 +483,18 @@ static bool calculate_input_system_input_port_cfg(
 	switch (input_port->source_type) {
 	case INPUT_SYSTEM_SOURCE_TYPE_SENSOR:
 		rc  = calculate_fe_cfg(
-				channel,
-				input_port,
 				isys_cfg,
 				&(input_port_cfg->csi_rx_cfg.frontend_cfg));
 
 		rc &= calculate_be_cfg(
-				channel,
 				input_port,
 				isys_cfg,
+				false,
 				&(input_port_cfg->csi_rx_cfg.backend_cfg));
+
+		if (rc && isys_cfg->metadata.enable)
+			rc &= calculate_be_cfg(input_port, isys_cfg, true,
+					&input_port_cfg->csi_rx_cfg.md_backend_cfg);
 		break;
 	case INPUT_SYSTEM_SOURCE_TYPE_TPG:
 		rc = calculate_tpg_cfg(
@@ -482,47 +532,43 @@ static void release_sid(
 	ia_css_isys_stream2mmio_sid_rmgr_release(stream2mmio, sid);
 }
 
-static int32_t calculate_input_system_alignment(
-	int32_t fmt_type,
-	int32_t bytes_per_pixel)
+/* See also: ia_css_dma_configure_from_info() */
+static int32_t calculate_stride(
+	int32_t bits_per_pixel,
+	int32_t pixels_per_line,
+	bool	raw_packed,
+	int32_t align_in_bytes)
 {
-	int32_t memory_alignment_in_bytes;
+	int32_t bytes_per_line;
+	int32_t pixels_per_word;
+	int32_t words_per_line;
+	int32_t pixels_per_line_padded;
 
-        /* make input system 2401 stride aligned with frame buffer
-           ISP_VEC_NELEMS is 64 for ISP on 2401 css system */
-        if (fmt_type <= MIPI_FORMAT_RAW14 && fmt_type >= MIPI_FORMAT_RAW6)
-                memory_alignment_in_bytes = bytes_per_pixel * 2 * ISP_VEC_NELEMS;
-	/* YUV420 double the Y plane to make all plane aligned
-	   YUV422 2 subpixles per pixel, need double the alignment */
-        else if (fmt_type == MIPI_FORMAT_YUV420_8 ||
-		 fmt_type == MIPI_FORMAT_YUV422_8)
-                memory_alignment_in_bytes = bytes_per_pixel * 2 * HIVE_ISP_DDR_WORD_BYTES;
-        else
-                memory_alignment_in_bytes = bytes_per_pixel * HIVE_ISP_DDR_WORD_BYTES;
+	pixels_per_line_padded = CEIL_MUL(pixels_per_line, align_in_bytes);
 
-	return memory_alignment_in_bytes;
+	if (!raw_packed)
+		bits_per_pixel = CEIL_MUL(bits_per_pixel, 8);
+
+	pixels_per_word = HIVE_ISP_DDR_WORD_BITS / bits_per_pixel;
+	words_per_line  = ceil_div(pixels_per_line_padded, pixels_per_word);
+	bytes_per_line  = HIVE_ISP_DDR_WORD_BYTES * words_per_line;
+
+	return bytes_per_line;
 }
 
 static bool acquire_ib_buffer(
 	int32_t bits_per_pixel,
 	int32_t pixels_per_line,
 	int32_t lines_per_frame,
-	int32_t fmt_type,
+	int32_t align_in_bytes,
+	bool online,
 	ib_buffer_t *buf)
 {
-	const int32_t bits_per_byte = 8;
-	int32_t memory_alignment_in_bytes;
-	int32_t	bytes_per_pixel;
-	int32_t bytes_per_line;
-
-	bytes_per_pixel = ceil_div(bits_per_pixel, bits_per_byte);
-	bytes_per_line  = bytes_per_pixel * pixels_per_line;
-
-	memory_alignment_in_bytes = calculate_input_system_alignment(fmt_type,
-					bytes_per_pixel);
-
-	buf->stride = CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
-	buf->lines = 2; /* ISYS2401 hardware can handle at most 4 lines */
+	buf->stride = calculate_stride(bits_per_pixel, pixels_per_line, false, align_in_bytes);
+	if (online)
+		buf->lines = 4; /* use double buffering for online usecases */
+	else
+		buf->lines = 2;
 
 	(void)(lines_per_frame);
 	return ia_css_isys_ibuf_rmgr_acquire(buf->stride * buf->lines, &buf->start_addr);
@@ -573,11 +619,11 @@ static bool calculate_tpg_cfg(
 	(void)channel;
 	(void)input_port;
 
-	memcpy(
+	memcpy_s(
 		(void *)cfg,
+		sizeof(pixelgen_tpg_cfg_t),
 		(void *)(&(isys_cfg->tpg_port_attr)),
 		sizeof(pixelgen_tpg_cfg_t));
-
 	return true;
 }
 
@@ -590,59 +636,62 @@ static bool calculate_prbs_cfg(
 	(void)channel;
 	(void)input_port;
 
-	memcpy(
+	memcpy_s(
 		(void *)cfg,
+		sizeof(pixelgen_prbs_cfg_t),
 		(void *)(&(isys_cfg->prbs_port_attr)),
 		sizeof(pixelgen_prbs_cfg_t));
-
 	return true;
 }
 
 static bool calculate_fe_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_cfg_t	*isys_cfg,
 	csi_rx_frontend_cfg_t		*cfg)
 {
-	(void)channel;
-	(void)input_port;
-
 	cfg->active_lanes = isys_cfg->csi_port_attr.active_lanes;
 	return true;
 }
 
 static bool calculate_be_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_input_port_t	*input_port,
+	const input_system_cfg_t	*isys_cfg,
+	bool				metadata,
 	csi_rx_backend_cfg_t		*cfg)
 {
-	(void)channel;
 
-	memcpy(
-		(void *)(&(cfg->lut_entry)),
-		(void *)(&(input_port->csi_rx.backend_lut_entry)),
+	memcpy_s(
+		(void *)(&cfg->lut_entry),
+		sizeof(csi_rx_backend_lut_entry_t),
+		metadata ? (void *)(&input_port->metadata.backend_lut_entry) :
+			(void *)(&input_port->csi_rx.backend_lut_entry),
 		sizeof(csi_rx_backend_lut_entry_t));
 
-	cfg->csi_mipi_packet_type =
-		get_csi_mipi_packet_type(isys_cfg->csi_port_attr.fmt_type);
-
-	cfg->csi_mipi_cfg.virtual_channel	= isys_cfg->csi_port_attr.ch_id;
-	cfg->csi_mipi_cfg.data_type		= isys_cfg->csi_port_attr.fmt_type;
+	cfg->csi_mipi_cfg.virtual_channel = isys_cfg->csi_port_attr.ch_id;
+	if (metadata) {
+		cfg->csi_mipi_packet_type = get_csi_mipi_packet_type(isys_cfg->metadata.fmt_type);
+		cfg->csi_mipi_cfg.comp_enable = false;
+		cfg->csi_mipi_cfg.data_type = isys_cfg->metadata.fmt_type;
+	}
+	else {
+		cfg->csi_mipi_packet_type = get_csi_mipi_packet_type(isys_cfg->csi_port_attr.fmt_type);
+		cfg->csi_mipi_cfg.data_type = isys_cfg->csi_port_attr.fmt_type;
+		cfg->csi_mipi_cfg.comp_enable = isys_cfg->csi_port_attr.comp_enable;
+		cfg->csi_mipi_cfg.comp_scheme = isys_cfg->csi_port_attr.comp_scheme;
+		cfg->csi_mipi_cfg.comp_predictor = isys_cfg->csi_port_attr.comp_predictor;
+		cfg->csi_mipi_cfg.comp_bit_idx = cfg->csi_mipi_cfg.data_type - MIPI_FORMAT_CUSTOM0;
+	}
 
 	return true;
 }
 
 static bool calculate_stream2mmio_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
-	stream2mmio_cfg_t		*cfg)
+	const input_system_cfg_t	*isys_cfg,
+	bool				metadata,
+	stream2mmio_cfg_t		*cfg
+)
 {
-	(void)channel;
-	(void)input_port;
-
-	cfg->bits_per_pixel = isys_cfg->input_port_resolution.bits_per_pixel;
+	cfg->bits_per_pixel = metadata ? isys_cfg->metadata.bits_per_pixel :
+		isys_cfg->input_port_resolution.bits_per_pixel;
 
 	cfg->enable_blocking =
 		((isys_cfg->mode == INPUT_SYSTEM_SOURCE_TYPE_TPG) ||
@@ -652,12 +701,25 @@ static bool calculate_stream2mmio_cfg(
 }
 
 static bool calculate_ibuf_ctrl_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_channel_t	*channel,
+	const input_system_input_port_t	*input_port,
+	const input_system_cfg_t	*isys_cfg,
 	ibuf_ctrl_cfg_t			*cfg)
 {
+	const int32_t bits_per_byte = 8;
+	int32_t bits_per_pixel;
+	int32_t bytes_per_pixel;
+	int32_t left_padding;
+
 	(void)input_port;
+
+	bits_per_pixel = isys_cfg->input_port_resolution.bits_per_pixel;
+	bytes_per_pixel = ceil_div(bits_per_pixel, bits_per_byte);
+
+	left_padding = CEIL_MUL(isys_cfg->output_port_attr.left_padding, ISP_VEC_NELEMS)
+			* bytes_per_pixel;
+
+	cfg->online	= isys_cfg->online;
 
 	cfg->dma_cfg.channel	= channel->dma_channel;
 	cfg->dma_cfg.cmd	= _DMA_V2_MOVE_A2B_NO_SYNC_CHK_COMMAND;
@@ -678,7 +740,23 @@ static bool calculate_ibuf_ctrl_cfg(
 	 * TODO: move "dest_buf_cfg" to the input system output
 	 * port configuration.
 	 */
-	cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
+
+	/* input_buf addr only available in sched mode;
+	   this buffer is allocated in isp, crun mode addr
+	   can be passed by after ISP allocation */
+	if (cfg->online) {
+		cfg->dest_buf_cfg.start_addr	= ISP_INPUT_BUF_START_ADDR + left_padding;
+		cfg->dest_buf_cfg.stride	= bytes_per_pixel
+			* isys_cfg->output_port_attr.max_isp_input_width;
+		cfg->dest_buf_cfg.lines		= LINES_OF_ISP_INPUT_BUF;
+	} else if (isys_cfg->raw_packed) {
+		cfg->dest_buf_cfg.stride	= calculate_stride(bits_per_pixel,
+							isys_cfg->input_port_resolution.pixels_per_line,
+							isys_cfg->raw_packed,
+							isys_cfg->input_port_resolution.align_req_in_bytes);
+	} else {
+		cfg->dest_buf_cfg.stride	= channel->ib_buffer.stride;
+	}
 
 	/*
 	 * zhengjie.lu@intel.com:
@@ -695,28 +773,26 @@ static bool calculate_ibuf_ctrl_cfg(
 
 
 	cfg->stream2mmio_cfg.sync_cmd	= _STREAM2MMIO_CMD_TOKEN_SYNC_FRAME;
+
+	/* TODO: Define conditions as when to use store words vs store packets */
 	cfg->stream2mmio_cfg.store_cmd	= _STREAM2MMIO_CMD_TOKEN_STORE_PACKETS;
 
 	return true;
 }
 
 static bool calculate_isys2401_dma_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
+	const input_system_channel_t	*channel,
+	const input_system_cfg_t	*isys_cfg,
 	isys2401_dma_cfg_t		*cfg)
 {
-	(void)input_port;
-	(void)isys_cfg;
-
 	cfg->channel	= channel->dma_channel;
 
-	/**
-	 * zhengjie.lu@intel.com:
-	 * The connection is hard coded to "ibuf => ddr". It is not
-	 * applicable for the offline case.
-	 */
-	cfg->connection = isys2401_dma_ibuf_to_ddr_connection;
+	/* only online/sensor mode goto vmem
+	   offline/buffered_sensor, tpg and prbs will go to ddr */
+	if (isys_cfg->online)
+		cfg->connection = isys2401_dma_ibuf_to_vmem_connection;
+	else
+		cfg->connection = isys2401_dma_ibuf_to_ddr_connection;
 
 	cfg->extension	= isys2401_dma_zero_extension;
 	cfg->height	= 1;
@@ -724,59 +800,37 @@ static bool calculate_isys2401_dma_cfg(
 	return true;
 }
 
+/* See also: ia_css_dma_configure_from_info() */
 static bool calculate_isys2401_dma_port_cfg(
-	input_system_channel_t		*channel,
-	input_system_input_port_t	*input_port,
-	input_system_cfg_t		*isys_cfg,
-	bool				is_compact_mode,
+	const input_system_cfg_t	*isys_cfg,
+	bool				raw_packed,
+	bool				metadata,
 	isys2401_dma_port_cfg_t		*cfg)
 {
-	const int32_t bits_per_byte = 8;
-	const int32_t bits_per_word = 256;
-	int32_t memory_alignment_in_bytes = 32;
-
 	int32_t bits_per_pixel;
 	int32_t pixels_per_line;
+	int32_t align_req_in_bytes;
 
-	int32_t bytes_per_pixel;
-	int32_t bytes_per_line;
-
-	int32_t pixels_per_word;
-	int32_t words_per_line;
-	int32_t bytes_per_word;
-	int32_t fmt_type;
-
-	(void)channel;
-	(void)input_port;
-
-	bits_per_pixel  = isys_cfg->input_port_resolution.bits_per_pixel;
-	pixels_per_line = isys_cfg->input_port_resolution.pixels_per_line;
-	fmt_type        = isys_cfg->csi_port_attr.fmt_type;
-
-	bytes_per_word  = bits_per_word / bits_per_byte;
-
-	if (is_compact_mode) {
-		/* compact as many pixels as possible into a word */
-		pixels_per_word = bits_per_word / bits_per_pixel;
-
-		words_per_line  = ceil_div(pixels_per_line, pixels_per_word);
-		bytes_per_line  = bytes_per_word * words_per_line;
+	/* TODO: Move metadata away from isys_cfg to application layer */
+	if (metadata) {
+		bits_per_pixel = isys_cfg->metadata.bits_per_pixel;
+		pixels_per_line = isys_cfg->metadata.pixels_per_line;
+		align_req_in_bytes = isys_cfg->metadata.align_req_in_bytes;
 	} else {
-		/* up-round "bits_per_pixel" to N times of 8-bit */
-		bytes_per_pixel = ceil_div(bits_per_pixel, bits_per_byte);
-		bits_per_pixel	= bytes_per_pixel *  bits_per_byte;
-
-		bytes_per_line  = bytes_per_pixel * pixels_per_line;
-		pixels_per_word = bits_per_word / bits_per_pixel;
-		words_per_line  = ceil_div(pixels_per_line, pixels_per_word);
-		memory_alignment_in_bytes = calculate_input_system_alignment(fmt_type,
-						bytes_per_pixel);
+		bits_per_pixel = isys_cfg->input_port_resolution.bits_per_pixel;
+		pixels_per_line = isys_cfg->input_port_resolution.pixels_per_line;
+		align_req_in_bytes = isys_cfg->input_port_resolution.align_req_in_bytes;
 	}
 
-	cfg->stride	= CEIL_MUL(bytes_per_line, memory_alignment_in_bytes);
-	cfg->elements	= pixels_per_word;
+	cfg->stride	= calculate_stride(bits_per_pixel, pixels_per_line, raw_packed, align_req_in_bytes);
+
+	if (!raw_packed)
+		bits_per_pixel = CEIL_MUL(bits_per_pixel, 8);
+
+	cfg->elements	= HIVE_ISP_DDR_WORD_BITS / bits_per_pixel;
 	cfg->cropping	= 0;
-	cfg->width	= words_per_line;
+	cfg->width	= CEIL_DIV(cfg->stride, HIVE_ISP_DDR_WORD_BYTES);
+
 	return true;
 }
 
@@ -785,13 +839,14 @@ static csi_mipi_packet_type_t get_csi_mipi_packet_type(
 {
 	csi_mipi_packet_type_t packet_type;
 
-	if (data_type >= 0 && data_type <= 15)
+	packet_type = CSI_MIPI_PACKET_TYPE_RESERVED;
+
+	if (data_type >= 0 && data_type <= MIPI_FORMAT_SHORT8)
 		packet_type = CSI_MIPI_PACKET_TYPE_SHORT;
-	else if (data_type >= 16 && data_type <= 55)
+
+	if (data_type > MIPI_FORMAT_SHORT8 && data_type <= N_MIPI_FORMAT)
 		packet_type = CSI_MIPI_PACKET_TYPE_LONG;
-	else
-		packet_type = CSI_MIPI_PACKET_TYPE_RESERVED;
 
 	return packet_type;
 }
-/** end of Private Method */
+/** end of Private Methods */

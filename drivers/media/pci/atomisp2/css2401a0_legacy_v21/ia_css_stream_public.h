@@ -22,6 +22,10 @@
 #ifndef __IA_CCS_STREAM_PUBLIC_H
 #define __IA_CCS_STREAM_PUBLIC_H
 
+/** @file
+ * This file contains support for configuring and controlling streams
+ */
+
 #include <type_support.h>
 #include "ia_css_types.h"
 #include "ia_css_pipe_public.h"
@@ -48,8 +52,41 @@ struct ia_css_mipi_buffer_config {
 	unsigned int size_mem_words; /**< The frame size in the system memory
 					  words (32B) */
 	bool contiguous;	     /**< Allocated memory physically
-					  contiguously or not */
+					  contiguously or not. \deprecated{Will be false always.}*/
+	unsigned int nof_mipi_buffers; /**< The number of MIPI buffers required for this
+					stream */
 };
+
+enum {
+	IA_CSS_STREAM_ISYS_STREAM_0 = 0,
+	IA_CSS_STREAM_DEFAULT_ISYS_STREAM_IDX = IA_CSS_STREAM_ISYS_STREAM_0,
+	IA_CSS_STREAM_ISYS_STREAM_1,
+	IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH
+};
+
+/** This is input data configuration for one MIPI data type. We can have
+ *  multiple of this in one virtual channel.
+ */
+struct ia_css_stream_isys_stream_config {
+	struct ia_css_resolution  input_res; /**< Resolution of input data */
+	enum ia_css_stream_format format; /**< Format of input stream. This data
+					       format will be mapped to MIPI data
+					       type internally. */
+	int linked_isys_stream_id; /** default value is -1, other value means
+							current isys_stream shares the same buffer with
+							indicated isys_stream*/
+	bool valid; /**< indicate whether other fields have valid value */
+};
+
+struct ia_css_stream_input_config {
+	struct ia_css_resolution  input_res; /**< Resolution of input data */
+	struct ia_css_resolution  effective_res; /**< Resolution of input data */
+	enum ia_css_stream_format format; /**< Format of input stream. This data
+					       format will be mapped to MIPI data
+					       type internally. */
+	enum ia_css_bayer_order bayer_order; /**< Bayer order for RAW streams */
+};
+
 
 /** Input stream description. This describes how input will flow into the
  *  CSS. This is used to program the CSS hardware.
@@ -65,12 +102,9 @@ struct ia_css_stream_config {
 						   will arrive. Use this field
 						   to specify virtual channel id.
 						   Valid values are: 0, 1, 2, 3 */
-	struct ia_css_resolution  input_res; /**< Resolution of input data */
-	struct ia_css_resolution  effective_res; /**< Resolution of input data */
-	enum ia_css_stream_format format; /**< Format of input stream. This data
-					       format will be mapped to MIPI data
-					       type internally. */
-	enum ia_css_bayer_order bayer_order; /**< Bayer order for RAW streams */
+	struct ia_css_stream_isys_stream_config isys_config[IA_CSS_STREAM_MAX_ISYS_STREAM_PER_CH];
+	struct ia_css_stream_input_config input_config;
+
 	unsigned int sensor_binning_factor; /**< Binning factor used by sensor
 						 to produce image data. This is
 						 used for shading correction. */
@@ -85,6 +119,7 @@ struct ia_css_stream_config {
 					    1, 2 or 4. 0 is used as legacy support. */
 	bool online; /**< offline will activate RAW copy on SP, use this for
 			  continuous capture. */
+		/* ISYS2401 usage: ISP receives data directly from sensor, no copy. */
 	unsigned init_num_cont_raw_buf; /**< initial number of raw buffers to
 					     allocate */
 	unsigned target_num_cont_raw_buf; /**< total number of raw buffers to
@@ -97,6 +132,7 @@ struct ia_css_stream_config {
 			  /* -1 for default from binary.*/
 	struct ia_css_mipi_buffer_config mipi_buffer_config; /**< mipi buffer configuration */
 	struct ia_css_metadata_config	metadata_config;     /**< Metadata configuration. */
+	bool ia_css_enable_raw_buffer_locking; /**< Enable Raw Buffer Locking for HALv3 Support */
 };
 
 struct ia_css_stream;
@@ -105,10 +141,6 @@ struct ia_css_stream;
  *  created.
  */
 struct ia_css_stream_info {
-	struct ia_css_resolution raw_info;
-	/**< Info about raw buffer resolution. Mainly for continuous capture */
-	struct ia_css_resolution effective_info;
-	/**< Info about effective input buffer resolution. */
 	struct ia_css_metadata_info metadata_info;
 	/**< Info about the metadata layout, this contains the stride. */
 };
@@ -165,8 +197,12 @@ enum ia_css_err
 ia_css_stream_get_info(const struct ia_css_stream *stream,
 		       struct ia_css_stream_info *stream_info);
 
-/** @brief NOT IMPLEMENTED (remove?)
+/** @brief load (rebuild) a stream that was unloaded.
+ * @param[in]	stream The stream
+ * @return		IA_CSS_SUCCESS or the error code
  *
+ * Rebuild a stream, including allocating structs, setting configuration and
+ * building the required pipes.
  */
 enum ia_css_err
 ia_css_stream_load(struct ia_css_stream *stream);
@@ -203,8 +239,11 @@ ia_css_stream_stop(struct ia_css_stream *stream);
 bool
 ia_css_stream_has_stopped(struct ia_css_stream *stream);
 
-/** @brief NOT IMPLEMENTED (remove?)
+/** @brief	destroy a stream according to the stream seed previosly saved in the seed array.
+ * @param[in]	stream The stream.
+ * @return	IA_CSS_SUCCESS (no other errors are generated now)
  *
+ * Destroy the stream and all the pipes related to it.
  */
 enum ia_css_err
 ia_css_stream_unload(struct ia_css_stream *stream);
@@ -215,19 +254,21 @@ ia_css_stream_unload(struct ia_css_stream *stream);
  *
  * This function will return the stream format.
  */
- enum ia_css_stream_format
+enum ia_css_stream_format
 ia_css_stream_get_format(const struct ia_css_stream *stream);
 
 /** @brief Check if the stream is configured for 2 pixels per clock
  * @param[in]	stream The stream.
  * @return	boolean flag
  *
- * This function will check if the stream is configured for 2 pixels per clock and return the correspondent boolean flag.
+ * This function will check if the stream is configured for 2 pixels per clock and
+ * return the correspondent boolean flag.
  */
 bool
 ia_css_stream_get_two_pixels_per_clock(const struct ia_css_stream *stream);
 
 /** @brief Sets the output frame stride (at the last pipe)
+ * @param[in]	stream The stream
  * @param[in]	output_padded_width - the output buffer stride.
  * @return	ia_css_err
  *
@@ -237,7 +278,7 @@ enum ia_css_err
 ia_css_stream_set_output_padded_width(struct ia_css_stream *stream, unsigned int output_padded_width);
 
 /** @brief Return max number of continuous RAW frames.
- * @param[in]	stream The Stream.
+ * @param[in]	stream The stream.
  * @param[out]	buffer_depth The maximum number of continuous RAW frames.
  * @return	IA_CSS_SUCCESS or IA_CSS_ERR_INVALID_ARGUMENTS
  *
@@ -498,13 +539,37 @@ ia_css_alloc_continuous_frame_remain(struct ia_css_stream *stream);
 
 /** @brief allocate continuous raw frames for continuous capture
  * @param[in]	stream The stream.
- * @return	None
+ * @return	IA_CSS_SUCCESS or error code.
  *
  *  because this allocation takes a long time (around 120ms per frame),
  *  we separate the allocation part and update part to let driver call
  *  this function without locking. This function is the update part
  */
-void
+enum ia_css_err
 ia_css_update_continuous_frames(struct ia_css_stream *stream);
 
+/** @brief ia_css_unlock_raw_frame . unlock a raw frame (HALv3 Support)
+ * @param[in]	stream The stream.
+ * @param[in]   exp_id exposure id that uniquely identifies the locked Raw Frame Buffer
+ * @return      ia_css_err IA_CSS_SUCCESS or error code
+ *
+ * As part of HALv3 Feature requirement, SP locks raw buffer until the Application
+ * releases its reference to a raw buffer (which are managed by SP), this function allows
+ * application to explicitly unlock that buffer in SP.
+ */
+enum ia_css_err
+ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id);
+
+/** @brief ia_css_en_dz_capt_pipe . Enable/Disable digital zoom for capture pipe
+ * @param[in]   stream The stream.
+ * @param[in]   enable - true, disable - false
+ * @return      None
+ *
+ * Enables or disables digital zoom for capture pipe in provided stream, if capture pipe
+ * exists. This function sets enable_zoom flag in CAPTURE_PP stage of the capture pipe.
+ * In process_zoom_and_motion(), decision to enable or disable zoom for every stage depends
+ * on this flag.
+ */
+void
+ia_css_en_dz_capt_pipe(struct ia_css_stream *stream, bool enable);
 #endif /* __IA_CCS_STREAM_PUBLIC_H */

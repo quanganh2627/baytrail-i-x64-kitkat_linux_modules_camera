@@ -22,10 +22,21 @@
 #ifndef __IA_CCS_PIPE_PUBLIC_H
 #define __IA_CCS_PIPE_PUBLIC_H
 
+/** @file
+ * This file contains the public interface for CSS pipes.
+ */
+
 #include <type_support.h>
-#include "ia_css_types.h"
-#include "ia_css_frame_public.h"
-#include "ia_css_buffer.h"
+#include <ia_css_err.h>
+#include <ia_css_types.h>
+#include <ia_css_frame_public.h>
+#include <ia_css_buffer.h>
+
+enum {
+	IA_CSS_PIPE_OUTPUT_STAGE_0 = 0,
+	IA_CSS_PIPE_OUTPUT_STAGE_1,
+	IA_CSS_PIPE_MAX_OUTPUT_STAGE,
+};
 
 /** Enumeration of pipe modes. This mode can be used to create
  *  an image pipe for this mode. These pipes can be combined
@@ -40,15 +51,11 @@ enum ia_css_pipe_mode {
 	IA_CSS_PIPE_MODE_CAPTURE,	/**< Still capture pipe */
 	IA_CSS_PIPE_MODE_ACC,		/**< Accelerated pipe */
 	IA_CSS_PIPE_MODE_COPY,		/**< Copy pipe, only used for embedded/image data copying */
+	IA_CSS_PIPE_MODE_YUVPP,		/**< YUV post processing pipe, used for all use cases with YUV input,
+									for SoC sensor and external ISP */
 };
 /* Temporary define  */
-#define IA_CSS_PIPE_MODE_NUM (IA_CSS_PIPE_MODE_COPY + 1)
-
-struct ia_css_pipe;
-
-/* Temporary hack, hivecc fails to properly compile if this struct is
- * included. */
-#ifndef __HIVECC__
+#define IA_CSS_PIPE_MODE_NUM (IA_CSS_PIPE_MODE_YUVPP + 1)
 
 /**
  * Pipe configuration structure.
@@ -66,9 +73,9 @@ struct ia_css_pipe_config {
 	/**< bayer down scaling */
 	struct ia_css_resolution dvs_crop_out_res;
 	/**< dvs crop, video only, not in use yet. Use dvs_envelope below. */
-	struct ia_css_frame_info output_info;
+	struct ia_css_frame_info output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	/**< output of YUV scaling */
-	struct ia_css_frame_info vf_output_info;
+	struct ia_css_frame_info vf_output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	/**< output of VF YUV scaling */
 	struct ia_css_fw_info *acc_extension;
 	/**< Pipeline extension accelerator */
@@ -90,18 +97,35 @@ struct ia_css_pipe_config {
 	     then setting a zoom factor will have no effect.
 	     In some use cases this provides better performance. */
 };
-#else
-struct ia_css_pipe_config;
-#endif
+
+#define DEFAULT_PIPE_CONFIG \
+{ \
+	IA_CSS_PIPE_MODE_PREVIEW,		/* mode */ \
+	1,					/* isp_pipe_version */ \
+	{ 0, 0 },				/* bayer_ds_out_res */ \
+	{ 0, 0 },				/* vf_pp_in_res */ \
+	{ 0, 0 },				/* capt_pp_in_res */ \
+	{ 0, 0 },				/* dvs_crop_out_res */ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* output_info */ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* vf_output_info */ \
+	NULL,					/* acc_extension */ \
+	NULL,					/* acc_stages */ \
+	0,					/* num_acc_stages */ \
+	DEFAULT_CAPTURE_CONFIG,			/* default_capture_config */ \
+	{ 0, 0 },				/* dvs_envelope */ \
+	IA_CSS_FRAME_DELAY_1,			/* dvs_frame_delay */ \
+	-1,					/* acc_num_execs */ \
+	true					/* enable_dz */ \
+}
 
 /** Pipe info, this struct describes properties of a pipe after it's stream has
  * been created.
  */
 struct ia_css_pipe_info {
-	struct ia_css_frame_info output_info;
+	struct ia_css_frame_info output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	/**< Info about output resolution. This contains the stride which
 	     should be used for memory allocation. */
-	struct ia_css_frame_info vf_output_info;
+	struct ia_css_frame_info vf_output_info[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	/**< Info about viewfinder output resolution (optional). This contains
 	     the stride that should be used for memory allocation. */
 	struct ia_css_frame_info raw_output_info;
@@ -114,10 +138,22 @@ struct ia_css_pipe_info {
 	     pixels normally used to initialize the ISP filters.
 	     This is why the raw output resolution should normally be set to
 	     the input resolution - 8x8. */
+	struct ia_css_shading_info shading_info;
+	/**< After an image pipe is created, this field will contain the info
+	     for the shading correction. */
 	struct ia_css_grid_info  grid_info;
-	/**< After register an image pipe, this field will contain the grid
+	/**< After an image pipe is created, this field will contain the grid
 	     info for 3A and DVS. */
 };
+
+#define DEFAULT_PIPE_INFO \
+{ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* output_info */ \
+	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* vf_output_info */ \
+	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* raw_output_info */ \
+	DEFAULT_SHADING_INFO,			/* shading_info */ \
+	DEFAULT_GRID_INFO			/* grid_info */ \
+}
 
 /** @brief Load default pipe configuration
  * @param[out]	pipe_config The pipe configuration.
@@ -126,14 +162,16 @@ struct ia_css_pipe_info {
  * This function will load the default pipe configuration:
 @code
 	struct ia_css_pipe_config def_config = {
-		IA_CSS_PIPE_MODE_PREVIEW,  //mode
+		IA_CSS_PIPE_MODE_PREVIEW,  // mode
 		1,      // isp_pipe_version
 		{0, 0}, // bayer_ds_out_res
 		{0, 0}, // capt_pp_in_res
 		{0, 0}, // vf_pp_in_res
 		{0, 0}, // dvs_crop_out_res
 		{{0, 0}, 0, 0, 0, 0}, // output_info
+		{{0, 0}, 0, 0, 0, 0}, // second_output_info
 		{{0, 0}, 0, 0, 0, 0}, // vf_output_info
+		{{0, 0}, 0, 0, 0, 0}, // second_vf_output_info
 		NULL,   // acc_extension
 		NULL,   // acc_stages
 		0,      // num_acc_stages

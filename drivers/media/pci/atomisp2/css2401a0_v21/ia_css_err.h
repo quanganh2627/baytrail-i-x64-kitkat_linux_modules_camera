@@ -22,6 +22,11 @@
 #ifndef __IA_CSS_ERR_H
 #define __IA_CSS_ERR_H
 
+/** @file
+ * This file contains possible return values for most
+ * functions in the CSS-API.
+ */
+
 /** Errors, these values are used as the return value for most
  *  functions in this API.
  */
@@ -39,7 +44,8 @@ enum ia_css_err {
 	IA_CSS_ERR_RESOURCE_ITEMS_STILL_ALLOCATED,
 	IA_CSS_ERR_RESOURCE_EXHAUSTED,
 	IA_CSS_ERR_RESOURCE_ALREADY_ALLOCATED,
-	IA_CSS_ERR_VERSION_MISMATCH
+	IA_CSS_ERR_VERSION_MISMATCH,
+	IA_CSS_ERR_NOT_SUPPORTED
 };
 
 #endif /* __IA_CSS_ERR_H */

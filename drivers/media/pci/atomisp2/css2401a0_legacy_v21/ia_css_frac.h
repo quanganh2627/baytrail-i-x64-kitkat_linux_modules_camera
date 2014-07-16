@@ -22,6 +22,12 @@
 #ifndef _IA_CSS_FRAC_H_
 #define _IA_CSS_FRAC_H_
 
+/** @file
+ * This file contains typedefs used for fractional numbers
+ */
+
+#include <type_support.h>
+
 /* Fixed point types.
  * NOTE: the 16 bit fixed point types actually occupy 32 bits
  * to save on extension operations in the ISP code.

@@ -23,7 +23,10 @@
 #define __ISP2600_CONFIG_H_INCLUDED__
 
 #define NUM_BITS 16
+#define ISP_VEC_ELEMBITS NUM_BITS
 #define NUM_SLICE_ELEMS 8
-#define ROUNDMODE           ROUND_NEAREST_INF
+#define ROUNDMODE           ROUND_NEAREST_EVEN
+
+#define HAS_div_unit
 
 #endif /* __ISP2600_CONFIG_H_INCLUDED__ */

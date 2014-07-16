@@ -92,9 +92,20 @@ enum ia_css_err ia_css_spctrl_load_fw(sp_ID_t sp_id,
 	spctrl_cofig_info[sp_id].program_name = spctrl_cfg->program_name;
 
 #ifdef HRT_CSIM
-	hrt_cell_set_icache_base_address(SP, spctrl_cofig_info[sp_id].code_addr);
-	hrt_cell_invalidate_icache(SP);
-	hrt_cell_load_program(SP, spctrl_cofig_info[sp_id].program_name);
+	/* Secondary SP is named as SP2 in SDK, however we are using secondary
+	   SP as SP1 in the HSS and secondary SP Firmware */
+	if (sp_id == SP0_ID) {
+		hrt_cell_set_icache_base_address(SP, spctrl_cofig_info[sp_id].code_addr);
+		hrt_cell_invalidate_icache(SP);
+		hrt_cell_load_program(SP, spctrl_cofig_info[sp_id].program_name);
+	}
+#if defined(ENABLE_SP1)
+	else {
+		hrt_cell_set_icache_base_address(SP2, spctrl_cofig_info[sp_id].code_addr);
+		hrt_cell_invalidate_icache(SP2);
+		hrt_cell_load_program(SP2, spctrl_cofig_info[sp_id].program_name);
+	}
+#endif /* #if defined(ENABLE_SP1) */
 #else
 	/* now we program the base address into the icache and
 	 * invalidate the cache.
@@ -122,10 +133,17 @@ enum ia_css_err ia_css_spctrl_unload_fw(sp_ID_t sp_id)
 enum ia_css_err ia_css_spctrl_start(sp_ID_t sp_id)
 {
 	unsigned int HIVE_ADDR_sp_start_isp_entry;
+#if defined(ENABLE_SP1)
+	unsigned int HIVE_ADDR_sp1_start_entry;
+#endif /* #if defined(ENABLE_SP1) */
 	if ((sp_id >= N_SP_ID) || ((sp_id < N_SP_ID) && (!spctrl_loaded[sp_id])))
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
-
+if (sp_id == SP0_ID)
 	HIVE_ADDR_sp_start_isp_entry = spctrl_cofig_info[sp_id].sp_entry;
+#if defined(ENABLE_SP1)
+else
+	HIVE_ADDR_sp1_start_entry = spctrl_cofig_info[sp_id].sp_entry;
+#endif /* #if defined(ENABLE_SP1) */
 
 #if !defined(C_RUN) && !defined(HRT_UNSCHED)
 	sp_dmem_store(sp_id,
@@ -133,12 +151,18 @@ enum ia_css_err ia_css_spctrl_start(sp_ID_t sp_id)
 		&spctrl_cofig_info[sp_id].dmem_config,
 		sizeof(spctrl_cofig_info[sp_id].dmem_config));
 #endif
-	hrt_cell_start_function(SP, sp_start_isp);
+	if (sp_id == SP0_ID)
+		hrt_cell_start_function(SP, sp_start_isp);
+#if defined(ENABLE_SP1)
+	else
+		/* Secondary SP is named as sp1 in the firmware however in
+		   SDK secondary SP is named as SP2 */
+		hrt_cell_start_function(SP2, sp1_start);
+#endif /* #if defined(ENABLE_SP1) */
+
 	return IA_CSS_SUCCESS;
 }
-
 #else
-
 /* Initialize dmem_cfg in SP dmem  and  start SP program*/
 enum ia_css_err ia_css_spctrl_start(sp_ID_t sp_id)
 {
@@ -163,21 +187,23 @@ enum ia_css_err ia_css_spctrl_start(sp_ID_t sp_id)
 	sp_ctrl_setbit(sp_id, SP_SC_REG, SP_START_BIT);
 	return IA_CSS_SUCCESS;
 }
-
 #endif
-
-/* Query the state of SP */
+/* Query the state of SP1 */
 ia_css_spctrl_sp_sw_state ia_css_spctrl_get_state(sp_ID_t sp_id)
 {
-	ia_css_spctrl_sp_sw_state state;
+	ia_css_spctrl_sp_sw_state state = 0;
 	unsigned int HIVE_ADDR_sp_sw_state;
-
 	if (sp_id >= N_SP_ID)
 		return IA_CSS_SP_SW_TERMINATED;
 
 	HIVE_ADDR_sp_sw_state = spctrl_cofig_info[sp_id].spctrl_state_dmem_addr;
 	(void)HIVE_ADDR_sp_sw_state; /* Suppres warnings in CRUN */
-	state = sp_dmem_load_uint32(sp_id, (unsigned)sp_address_of(sp_sw_state));
+	if (sp_id == SP0_ID)
+		state = sp_dmem_load_uint32(sp_id, (unsigned)sp_address_of(sp_sw_state));
+#if defined(ENABLE_SP1)
+	else
+		state = sp_dmem_load_uint32(sp_id, (unsigned)sp1_address_of(sp_sw_state));
+#endif /* #if defined(ENABLE_SP1) */
 
 	return state;
 }

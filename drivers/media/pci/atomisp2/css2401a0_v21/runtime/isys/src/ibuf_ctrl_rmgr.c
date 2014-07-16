@@ -64,7 +64,7 @@ bool ia_css_isys_ibuf_rmgr_acquire(
 	aligned_size = (size + (IBUF_ALIGN - 1)) & ~(IBUF_ALIGN - 1);
 
 	/* Check if there is an available un-used handle with the size
-	 * that will fulfull the request.
+	 * that will fulfill the request.
 	 */
 	if (ibuf_rsrc.num_active < ibuf_rsrc.num_allocated) {
 		for (i = 0; i < ibuf_rsrc.num_allocated; i++) {
@@ -118,8 +118,10 @@ void ia_css_isys_ibuf_rmgr_release(
 
 	for (i = 0; i < ibuf_rsrc.num_allocated; i++) {
 		handle = getHandle(i);
-		if (handle->start_addr == *start_addr) {
+		if ((handle->start_addr == *start_addr)
+		    && ( true == handle->active)) {
 			handle->active = false;
+			ibuf_rsrc.num_active--;
 			break;
 		}
 	}

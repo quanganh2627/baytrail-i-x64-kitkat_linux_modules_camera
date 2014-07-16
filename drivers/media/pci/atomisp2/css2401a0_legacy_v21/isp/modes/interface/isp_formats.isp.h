@@ -23,6 +23,7 @@
 #define _ISP_FORMATS_ISP_H
 
 #include "assert_support.h"
+#include "ia_css_frame_format.h"
 
 /* internal isp representation for the frame formats.
  * always use the encode and decode functions to translate
@@ -93,7 +94,7 @@
 
 #define SUPPORTS_RGB_IL   (SUPPORT_FMT(FRAME_FORMAT_RGBA888) || SUPPORT_FMT(FRAME_FORMAT_RGB565))
 
-#define SUPPORTS_IL       (SUPPORTS_YUV_IL || SUPPORTS_RGB_IL)
+#define SUPPORTS_IL       (SUPPORTS_YUV_IL || SUPPORTS_RGB_IL || SUPPORTS_UV_IL)
 
 #define SUPPORTS_UYVY     (SUPPORT_FMT(FRAME_FORMAT_UYVY))
 

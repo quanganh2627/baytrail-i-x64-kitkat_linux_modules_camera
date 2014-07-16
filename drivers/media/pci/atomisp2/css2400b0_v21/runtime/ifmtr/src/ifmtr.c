@@ -54,8 +54,8 @@ unsigned int ia_css_ifmtr_lines_needed_for_bayer_order(
 		const struct ia_css_stream_config *config)
 {
 	assert(config != NULL);
-	if ((IA_CSS_BAYER_ORDER_BGGR == config->bayer_order)
-	    || (IA_CSS_BAYER_ORDER_GBRG == config->bayer_order))
+	if ((IA_CSS_BAYER_ORDER_BGGR == config->input_config.bayer_order)
+	    || (IA_CSS_BAYER_ORDER_GBRG == config->input_config.bayer_order))
 		return 1;
 
 	return 0;
@@ -65,8 +65,8 @@ unsigned int ia_css_ifmtr_columns_needed_for_bayer_order(
 		const struct ia_css_stream_config *config)
 {
 	assert(config != NULL);
-	if ((IA_CSS_BAYER_ORDER_RGGB == config->bayer_order)
-	    || (IA_CSS_BAYER_ORDER_GBRG == config->bayer_order))
+	if ((IA_CSS_BAYER_ORDER_RGGB == config->input_config.bayer_order)
+	    || (IA_CSS_BAYER_ORDER_GBRG == config->input_config.bayer_order))
 		return 1;
 
 	return 0;
@@ -110,10 +110,10 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	cropped_width = binary->in_frame_info.res.width;
 	/* This should correspond to the input buffer definition for ISP
 	 * binaries in input_buf.isp.h */
-	if (binary->info->sp.enable.continuous && binary->info->sp.mode != IA_CSS_BINARY_MODE_COPY)
+	if (binary->info->sp.enable.continuous && binary->info->sp.pipeline.mode != IA_CSS_BINARY_MODE_COPY)
 		buffer_width = MAX_VECTORS_PER_INPUT_LINE_CONT * ISP_VEC_NELEMS;
 	else
-		buffer_width = binary->info->sp.max_input_width;
+		buffer_width = binary->info->sp.input.max_width;
 	input_format = binary->input_format;
 	two_ppc = config->pixels_per_clock == 2;
 
@@ -197,6 +197,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 		break;
 	case IA_CSS_STREAM_FORMAT_YUV420_8:
 	case IA_CSS_STREAM_FORMAT_YUV420_10:
+	case IA_CSS_STREAM_FORMAT_YUV420_16:
 		if (two_ppc) {
 			vmem_increment = 1;
 			deinterleaving = 1;
@@ -223,6 +224,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 		break;
 	case IA_CSS_STREAM_FORMAT_YUV422_8:
 	case IA_CSS_STREAM_FORMAT_YUV422_10:
+	case IA_CSS_STREAM_FORMAT_YUV422_16:
 		if (two_ppc) {
 			vmem_increment = 1;
 			deinterleaving = 1;
@@ -298,7 +300,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 			vmem_increment = 1;
 			deinterleaving = 2;
 			if (config->continuous &&
-			    binary->info->sp.mode == IA_CSS_BINARY_MODE_COPY) {
+			    binary->info->sp.pipeline.mode == IA_CSS_BINARY_MODE_COPY) {
 				/* No deinterleaving for sp copy */
 				deinterleaving = 1;
 			}
@@ -378,7 +380,7 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	vectors_per_buffer = buffer_height * buffer_width / ISP_VEC_NELEMS;
 
 	if (config->mode == IA_CSS_INPUT_MODE_TPG &&
-	    binary->info->sp.mode == IA_CSS_BINARY_MODE_VIDEO) {
+	    binary->info->sp.pipeline.mode == IA_CSS_BINARY_MODE_VIDEO) {
 		/* workaround for TPG in video mode */
 		start_line = 0;
 		start_column = 0;
@@ -399,7 +401,8 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 	    buffer_width * bits_per_pixel / 8 - line_width;
 	if_a_config.is_yuv420_format =
 	    (input_format == IA_CSS_STREAM_FORMAT_YUV420_8)
-	    || (input_format == IA_CSS_STREAM_FORMAT_YUV420_10);
+	    || (input_format == IA_CSS_STREAM_FORMAT_YUV420_10)
+	    || (input_format == IA_CSS_STREAM_FORMAT_YUV420_16);
 	if_a_config.block_no_reqs = (config->mode != IA_CSS_INPUT_MODE_SENSOR);
 
 	if (two_ppc) {
@@ -427,7 +430,8 @@ enum ia_css_err ia_css_ifmtr_configure(struct ia_css_stream_config *config,
 		    buffer_width * bits_per_pixel / 8 - line_width;
 		if_b_config.is_yuv420_format =
 		    input_format == IA_CSS_STREAM_FORMAT_YUV420_8
-		    || input_format == IA_CSS_STREAM_FORMAT_YUV420_10;
+		    || input_format == IA_CSS_STREAM_FORMAT_YUV420_10
+		    || input_format == IA_CSS_STREAM_FORMAT_YUV420_16;
 		if_b_config.block_no_reqs =
 		    (config->mode != IA_CSS_INPUT_MODE_SENSOR);
 
@@ -467,13 +471,12 @@ static void ifmtr_set_if_blocking_mode(
 	assert(N_INPUT_FORMATTER_ID <= (sizeof(block) / sizeof(block[0])));
 
 #if !defined(IS_ISP_2400_SYSTEM)
-#error "ifmtr_set_if_blocking_mode: ISP_SYSTEM must be one of \
-	{IS_ISP_2400_SYSTEM}"
+#error "ifmtr_set_if_blocking_mode: ISP_SYSTEM must be one of {IS_ISP_2400_SYSTEM}"
 #endif
 
 	block[INPUT_FORMATTER0_ID] = (bool)config_a->block_no_reqs;
 	if (NULL != config_b)
-	  block[INPUT_FORMATTER1_ID] = (bool)config_b->block_no_reqs;
+		block[INPUT_FORMATTER1_ID] = (bool)config_b->block_no_reqs;
 
 	/* TODO: next could cause issues when streams are started after
 	 * eachother. */
@@ -495,7 +498,7 @@ static enum ia_css_err ifmtr_start_column(
 		unsigned int bin_in,
 		unsigned int *start_column)
 {
-	unsigned int in = config->input_res.width, start,
+	unsigned int in = config->input_config.input_res.width, start,
 	    for_bayer = ia_css_ifmtr_columns_needed_for_bayer_order(config);
 
 	if (bin_in + 2 * for_bayer > in)
@@ -521,7 +524,7 @@ static enum ia_css_err ifmtr_input_start_line(
 		unsigned int bin_in,
 		unsigned int *start_line)
 {
-	unsigned int in = config->input_res.height, start,
+	unsigned int in = config->input_config.input_res.height, start,
 	    for_bayer = ia_css_ifmtr_lines_needed_for_bayer_order(config);
 
 	if (bin_in + 2 * for_bayer > in)

@@ -105,6 +105,9 @@
 #define HRT_BUS_WIDTH		HIVE_ISP_CTRL_DATA_WIDTH
 #define HRT_BUS_BYTES		HIVE_ISP_CTRL_DATA_BYTES
 
+/* per-frame parameter handling support */
+#define SH_CSS_ENABLE_PER_FRAME_PARAMS
+
 typedef uint32_t			hrt_bus_align_t;
 
 /*
@@ -287,5 +290,22 @@ typedef enum {
 #define	N_CAPTURE_UNIT_ID		3
 #define	N_ACQUISITION_UNIT_ID	1
 #define	N_CTRL_UNIT_ID			1
+
+enum ia_css_isp_memories {
+	IA_CSS_ISP_PMEM0 = 0,
+	IA_CSS_ISP_DMEM0,
+	IA_CSS_ISP_VMEM0,
+	IA_CSS_ISP_VAMEM0,
+	IA_CSS_ISP_VAMEM1,
+	IA_CSS_ISP_VAMEM2,
+	IA_CSS_ISP_HMEM0,
+	IA_CSS_SP_DMEM0,
+	IA_CSS_DDR,
+	N_IA_CSS_MEMORIES
+};
+#define IA_CSS_NUM_MEMORIES 9
+/* For driver compatability */
+#define N_IA_CSS_ISP_MEMORIES   IA_CSS_NUM_MEMORIES
+#define IA_CSS_NUM_ISP_MEMORIES IA_CSS_NUM_MEMORIES
 
 #endif /* __SYSTEM_GLOBAL_H_INCLUDED__ */

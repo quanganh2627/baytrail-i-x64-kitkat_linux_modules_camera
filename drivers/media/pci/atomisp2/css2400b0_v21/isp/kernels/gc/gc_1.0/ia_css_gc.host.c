@@ -40,8 +40,10 @@ const struct ia_css_ce_config default_ce_config = {
 void
 ia_css_gc_encode(
 	struct sh_css_isp_gc_params *to,
-	const struct ia_css_gc_config *from)
+	const struct ia_css_gc_config *from,
+	unsigned size)
 {
+	(void)size;
 	to->gain_k1 =
 	    uDIGIT_FITTING((int)from->gain_k1, 16,
 		IA_CSS_GAMMA_GAIN_K_SHIFT);
@@ -53,8 +55,10 @@ ia_css_gc_encode(
 void
 ia_css_ce_encode(
 	struct sh_css_isp_ce_params *to,
-	const struct ia_css_ce_config *from)
+	const struct ia_css_ce_config *from,
+	unsigned size)
 {
+	(void)size;
 	to->uv_level_min = from->uv_level_min;
 	to->uv_level_max = from->uv_level_max;
 }
@@ -62,8 +66,10 @@ ia_css_ce_encode(
 void
 ia_css_gc_vamem_encode(
 	struct sh_css_isp_gc_vamem_params *to,
-	const struct ia_css_gamma_table *from)
+	const struct ia_css_gamma_table *from,
+	unsigned size)
 {
+	(void)size;
 	memcpy (&to->gc,  &from->data, sizeof(to->gc));
 }
 
@@ -72,6 +78,7 @@ ia_css_gc_dump(
 	const struct sh_css_isp_gc_params *gc,
 	unsigned level)
 {
+	if (!gc) return;
 	ia_css_debug_dtrace(level, "Gamma Correction:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
 			"gamma_gain_k1", gc->gain_k1);
