@@ -30,7 +30,18 @@ config VIDEO_WV511
          This is a Video4Linux2 sensor-level driver for the wv511.
 
          It currently only works with the atomisp driver.
+	
+config VIDEO_OV7736
+        tristate "OVT ov7736 sensor support"
+        depends on I2C && VIDEO_V4L2
+        ---help---
+          This is a Video4Linux2 sensor-level driver for the OVT
+          OV7736 soc camera.
 
+          OVT7736 is a VGA soc sensor.
+
+          It currently only works with the atomisp driver.
+	
 config VIDEO_OV9724
        tristate "OVT ov9724 sensor support"
        depends on I2C && VIDEO_V4L2
