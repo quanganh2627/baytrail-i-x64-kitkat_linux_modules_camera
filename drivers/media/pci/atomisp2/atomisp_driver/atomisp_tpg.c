@@ -26,10 +26,6 @@
 #include "atomisp_internal.h"
 #include "atomisp_tpg.h"
 
-#ifndef CSS20
-#include "sh_css.h"
-#endif /* CSS20 */
-
 static int tpg_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	return 0;
@@ -125,20 +121,6 @@ static int tpg_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 
 static int tpg_s_power(struct v4l2_subdev *sd, int on)
 {
-#ifndef CSS20
-	int x_delta = -2;
-	int y_delta = 3;
-	unsigned int x_mask  = (1 << 4) - 1;
-	unsigned int y_mask  = (1 << 4) - 1;
-	unsigned int xy_mask = (1 << 8) - 1;
-
-	sh_css_input_set_bayer_order(sh_css_bayer_order_grbg);
-	sh_css_input_set_format(SH_CSS_INPUT_FORMAT_RAW_10);
-	sh_css_input_configure_port(MIPI_PORT0_ID, 2, 0xffff4);
-	sh_css_tpg_configure(x_mask, x_delta, y_mask, y_delta, xy_mask);
-	sh_css_input_set_mode(SH_CSS_INPUT_MODE_TPG);
-#endif /* CSS20 */
-
 	return 0;
 }
 

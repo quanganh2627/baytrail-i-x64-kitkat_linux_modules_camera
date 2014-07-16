@@ -25,11 +25,7 @@
 #include <linux/atomisp.h>
 #include "atomisp_internal.h"
 
-#ifdef CSS20
 #include "ia_css_types.h"
-#else /* CSS20 */
-#include "sh_css_types.h"
-#endif /* CSS20 */
 
 /*
  * Interface functions for AtomISP driver acceleration API implementation.

@@ -33,15 +33,7 @@
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 #include "memory_access/memory_access.h"
-#ifdef CSS20
 #include "ia_css.h"
-#ifndef CSS21
-#include "ia_css_accelerate.h"
-#endif /* !CSS21 */
-#else /* CSS20 */
-#include "sh_css.h"
-#include "sh_css_accelerate.h"
-#endif /* CSS20 */
 
 static const struct {
 	unsigned int flag;
@@ -200,7 +192,6 @@ int atomisp_acc_load_to_pipe(struct atomisp_device *isp,
 	acc_fw->flags = user_fw->flags;
 	acc_fw->type = user_fw->type;
 
-#ifdef CSS20
 	/*
 	 * correct isp firmware type in order ISP firmware can be appended
 	 * to correct pipe properly
@@ -220,7 +211,6 @@ int atomisp_acc_load_to_pipe(struct atomisp_device *isp,
 			break;
 		}
 	}
-#endif /* CSS20 */
 
 	list_add_tail(&acc_fw->list, &isp->acc.fw);
 	return 0;
@@ -345,24 +335,34 @@ int atomisp_acc_map(struct atomisp_device *isp, struct atomisp_acc_map *map)
 	ia_css_ptr cssptr;
 	int pgnr;
 
-	if (map->flags || !map->user_ptr || map->css_ptr)
+	if (map->css_ptr)
 		return -EINVAL;
 
 	if (isp->acc.pipeline)
 		return -EBUSY;
 
-	/* Buffer to map must be page-aligned */
-	if ((unsigned long)map->user_ptr & ~PAGE_MASK) {
-		dev_err(isp->dev,
-			"%s: mapped buffer address %p is not page aligned\n",
-			__func__, map->user_ptr);
-		return -EINVAL;
+	if (map->user_ptr) {
+		/* Buffer to map must be page-aligned */
+		if ((unsigned long)map->user_ptr & ~PAGE_MASK) {
+			dev_err(isp->dev,
+				"%s: mapped buffer address %p is not page aligned\n",
+				__func__, map->user_ptr);
+			return -EINVAL;
+		}
+
+		pgnr = DIV_ROUND_UP(map->length, PAGE_SIZE);
+		cssptr = hrt_isp_css_mm_alloc_user_ptr(
+				map->length, map->user_ptr,
+				pgnr, HRT_USR_PTR,
+				(map->flags & ATOMISP_MAP_FLAG_CACHED));
+	} else {
+		/* Allocate private buffer. */
+		if (map->flags & ATOMISP_MAP_FLAG_CACHED)
+			cssptr = hrt_isp_css_mm_calloc_cached(map->length);
+		else
+			cssptr = hrt_isp_css_mm_calloc(map->length);
 	}
 
-	pgnr = DIV_ROUND_UP(map->length, PAGE_SIZE);
-	cssptr = hrt_isp_css_mm_alloc_user_ptr(
-			map->length, map->user_ptr,
-			pgnr, HRT_USR_PTR, false);
 	if (!cssptr)
 		return -ENOMEM;
 
@@ -384,9 +384,6 @@ int atomisp_acc_map(struct atomisp_device *isp, struct atomisp_acc_map *map)
 int atomisp_acc_unmap(struct atomisp_device *isp, struct atomisp_acc_map *map)
 {
 	struct atomisp_map *atomisp_map;
-
-	if (map->flags)
-		return -EINVAL;
 
 	if (isp->acc.pipeline)
 		return -EBUSY;

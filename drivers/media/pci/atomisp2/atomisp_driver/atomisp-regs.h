@@ -38,45 +38,6 @@
 #define PCI_INTERRUPT_CTRL	0x9C
 #define PCI_I_CONTROL		0xfc
 
-/* MFLD specific register definitions */
-#define MFLD_IUNITPHY_PORT	0x09
-
-#define MFLD_CSI_RCOMP		0x00
-#define MFLD_CSI_AFE		0x02
-#define MFLD_CSI_CONTROL	0x03
-#define MFLD_CG_DIS		0x36
-#define MFLD_OR1		0x72
-
-#define MFLD_PCI_PMCS		0xd4
-#define MFLD_PCI_CG_DIS		0xd8
-
-/*
- * Enables the combining of adjacent 32-byte read requests to the same
- * cache line. When cleared, each 32-byte read request is sent as a
- * separate request on the IB interface.
- */
-#define MFLD_PCI_I_CONTROL_ENABLE_READ_COMBINING	BIT(16)
-
-/*
- * Enables the combining of adjacent 32-byte write requests to the same
- * cache line. When cleared, each 32-byte write request is sent as a
- * separate request on the IB interface.
- */
-#define MFLD_PCI_I_CONTROL_ENABLE_WRITE_COMBINING	BIT(17)
-
-/* Ensure the correct bits are set for the clock gating disable regster */
-#define MFLD_PCI_CG_DIS_DISABLED_ISPCLK		BIT(0)
-#define MFLD_PCI_CG_DIS_DISABLED_PERF_MON	BIT(2)
-#define MFLD_PCI_CG_DIS_DISABLED_NOA_MON	BIT(3)
-
-/* The MIPI1 and MIPI4 interface and lanes configuration */
-#define MFLD_CSI_CONTROL_DIS_MIPI1_IF	BIT(8)
-#define MFLD_CSI_CONTROL_DIS_MIPI4_IF	BIT(9)
-#define MFLD_CSI_CONTROL_EN_MIPI1_LANE	BIT(10)
-#define MFLD_CSI_CONTROL_EN_MIPI4_LANE	(BIT(11) | BIT(12) | BIT(13) | BIT(14))
-
-#define MFLD_MAX_ZOOM_FACTOR	64
-
 /* MRFLD specific register definitions */
 #define MRFLD_CSI_AFE		0x39
 #define MRFLD_CSI_CONTROL	0x3a
@@ -139,14 +100,6 @@
 
 #define MRFLD_MAX_ZOOM_FACTOR	1024
 
-/* MRFLD ISP POWER related */
-#define MRFLD_ISPSSPM0         0x39
-#define MRFLD_ISPSSPM0_ISPSSC_OFFSET   0
-#define MRFLD_ISPSSPM0_ISPSSS_OFFSET   24
-#define MRFLD_ISPSSPM0_ISPSSC_MASK     0x3
-#define MRFLD_ISPSSPM0_IUNIT_POWER_ON  0
-#define MRFLD_ISPSSPM0_IUNIT_POWER_OFF 0x3
-
 /* MRFLD CSI lane configuration related */
 #define MRFLD_PORT_CONFIG_NUM  8
 #define MRFLD_PORT_NUM         3
@@ -188,5 +141,43 @@
 #endif
 
 #define ISP_DFS_TRY_TIMES	2
+/* ISP2401 CSI2+ receiver delay settings */
+#define CSI2_PORT_A_BASE					0xC0000
+#define CSI2_PORT_B_BASE					0xC2000
+#define CSI2_PORT_C_BASE					0xC4000
+
+#define CSI2_LANE_CL_BASE					0x418
+#define CSI2_LANE_D0_BASE					0x420
+#define CSI2_LANE_D1_BASE					0x428
+#define CSI2_LANE_D2_BASE					0x430
+#define CSI2_LANE_D3_BASE					0x438
+
+#define CSI2_REG_RX_CSI_DLY_CNT_TERMEN				0
+#define CSI2_REG_RX_CSI_DLY_CNT_SETTLE				0x4
+
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_TERMEN_CLANE			0xC0418
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_SETTLE_CLANE			0xC041C
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_TERMEN_DLANE0		0xC0420
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_SETTLE_DLANE0		0xC0424
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_TERMEN_DLANE1		0xC0428
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_SETTLE_DLANE1		0xC042C
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_TERMEN_DLANE2		0xC0430
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_SETTLE_DLANE2		0xC0434
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_TERMEN_DLANE3		0xC0438
+#define CSI2_PORT_A_RX_CSI_DLY_CNT_SETTLE_DLANE3		0xC043C
+
+#define CSI2_PORT_B_RX_CSI_DLY_CNT_TERMEN_CLANE			0xC2418
+#define CSI2_PORT_B_RX_CSI_DLY_CNT_SETTLE_CLANE			0xC241C
+#define CSI2_PORT_B_RX_CSI_DLY_CNT_TERMEN_DLANE0		0xC2420
+#define CSI2_PORT_B_RX_CSI_DLY_CNT_SETTLE_DLANE0		0xC2424
+#define CSI2_PORT_B_RX_CSI_DLY_CNT_TERMEN_DLANE1		0xC2428
+#define CSI2_PORT_B_RX_CSI_DLY_CNT_SETTLE_DLANE1		0xC242C
+
+#define CSI2_PORT_C_RX_CSI_DLY_CNT_TERMEN_CLANE			0xC4418
+#define CSI2_PORT_C_RX_CSI_DLY_CNT_SETTLE_CLANE			0xC441C
+#define CSI2_PORT_C_RX_CSI_DLY_CNT_TERMEN_DLANE0		0xC4420
+#define CSI2_PORT_C_RX_CSI_DLY_CNT_SETTLE_DLANE0		0xC4424
+#define CSI2_PORT_C_RX_CSI_DLY_CNT_TERMEN_DLANE1		0xC4428
+#define CSI2_PORT_C_RX_CSI_DLY_CNT_SETTLE_DLANE1		0xC442C
 
 #endif /* ATOMISP_REGS_H */

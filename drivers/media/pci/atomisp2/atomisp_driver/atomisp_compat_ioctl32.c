@@ -86,7 +86,6 @@ static int get_v4l2_framebuffer32(struct v4l2_framebuffer *kp,
 	return 0;
 }
 
-#ifdef CSS20
 static int get_atomisp_dis_statistics32(struct atomisp_dis_statistics *kp,
 				struct atomisp_dis_statistics32 __user *up)
 {
@@ -213,63 +212,6 @@ static int get_atomisp_dis_coefficients32(struct atomisp_dis_coefficients *kp,
 	return 0;
 }
 
-#else /* CSS20 */
-static int get_atomisp_dis_statistics32(struct atomisp_dis_statistics *kp,
-				struct atomisp_dis_statistics32 __user *up)
-{
-	compat_uptr_t vertical_projections;
-	compat_uptr_t horizontal_projections;
-
-	if (!access_ok(VERIFY_READ, up,
-			sizeof(struct atomisp_dis_statistics32)) ||
-		copy_from_user(kp, up, sizeof(struct atomisp_grid_info)) ||
-		get_user(vertical_projections, &up->vertical_projections) ||
-		get_user(horizontal_projections, &up->horizontal_projections))
-			return -EFAULT;
-
-	kp->vertical_projections = compat_ptr(vertical_projections);
-	kp->horizontal_projections = compat_ptr(horizontal_projections);
-	return 0;
-}
-
-static int put_atomisp_dis_statistics32(struct atomisp_dis_statistics *kp,
-				struct atomisp_dis_statistics32 __user *up)
-{
-	compat_uptr_t vertical_projections =
-		(compat_uptr_t)((uintptr_t)kp->vertical_projections);
-	compat_uptr_t horizontal_projections =
-		(compat_uptr_t)((uintptr_t)kp->horizontal_projections);
-
-	if (!access_ok(VERIFY_WRITE, up,
-			sizeof(struct atomisp_dis_statistics32)) ||
-		copy_to_user(up, kp, sizeof(struct atomisp_dvs_grid_info)) ||
-		put_user(vertical_projections, &up->vertical_projections) ||
-		put_user(horizontal_projections, &up->horizontal_projections))
-			return -EFAULT;
-
-	return 0;
-}
-
-static int get_atomisp_dis_coefficients32(struct atomisp_dis_coefficients *kp,
-				struct atomisp_dis_coefficients32 __user *up)
-{
-	compat_uptr_t vertical_coefficients;
-	compat_uptr_t horizontal_coefficients;
-
-	if (!access_ok(VERIFY_READ, up,
-			sizeof(struct atomisp_dis_coefficients32)) ||
-		copy_from_user(kp, up, sizeof(struct atomisp_grid_info)) ||
-		get_user(vertical_coefficients, &up->vertical_coefficients) ||
-		get_user(horizontal_coefficients,
-				&up->horizontal_coefficients))
-			return -EFAULT;
-
-	kp->vertical_coefficients = compat_ptr(vertical_coefficients);
-	kp->horizontal_coefficients = compat_ptr(horizontal_coefficients);
-	return 0;
-}
-#endif /* CSS20 */
-
 static int get_atomisp_dvs_6axis_config32(struct atomisp_dvs_6axis_config *kp,
 				struct atomisp_dvs_6axis_config32 __user *up)
 {	compat_uptr_t xcoords_y;
@@ -301,23 +243,19 @@ static int get_atomisp_3a_statistics32(struct atomisp_3a_statistics *kp,
 				struct atomisp_3a_statistics32 __user *up)
 {
 	compat_uptr_t data;
-#ifdef CSS20
 	compat_uptr_t rgby_data;
-#endif
 
 	if (!access_ok(VERIFY_READ, up,
 			sizeof(struct atomisp_3a_statistics32)) ||
 		copy_from_user(kp, up, sizeof(struct atomisp_grid_info)) ||
-#ifdef CSS20
 		get_user(rgby_data, &up->rgby_data) ||
-#endif
-		get_user(data, &up->data))
+		get_user(data, &up->data) ||
+		get_user(kp->exp_id, &up->exp_id))
 			return -EFAULT;
 
 	kp->data = compat_ptr(data);
-#ifdef CSS20
 	kp->rgby_data = compat_ptr(rgby_data);
-#endif
+
 	return 0;
 }
 
@@ -325,22 +263,59 @@ static int put_atomisp_3a_statistics32(struct atomisp_3a_statistics *kp,
 				struct atomisp_3a_statistics32 __user *up)
 {
 	compat_uptr_t data = (compat_uptr_t)((uintptr_t)kp->data);
-#ifdef CSS20
 	compat_uptr_t rgby_data = (compat_uptr_t)((uintptr_t)kp->rgby_data);
-#endif
 
 	if (!access_ok(VERIFY_WRITE, up,
 			sizeof(struct atomisp_3a_statistics32)) ||
 		copy_to_user(up, kp, sizeof(struct atomisp_grid_info)) ||
-#ifdef CSS20
 		put_user(rgby_data, &up->rgby_data) ||
-#endif
-		put_user(data, &up->data))
+		put_user(data, &up->data) ||
+		put_user(kp->exp_id, &up->exp_id))
 			return -EFAULT;
 
 	return 0;
 }
 
+
+static int get_atomisp_metadata_stat32(struct atomisp_metadata *kp,
+				struct atomisp_metadata32 __user *up)
+{
+	compat_uptr_t data;
+	compat_uptr_t effective_width;
+
+	if (!access_ok(VERIFY_READ, up,
+			sizeof(struct atomisp_metadata32)) ||
+		get_user(data, &up->data) ||
+		get_user(kp->width, &up->width) ||
+		get_user(kp->height, &up->height) ||
+		get_user(kp->stride, &up->stride) ||
+		get_user(kp->exp_id, &up->exp_id) ||
+		get_user(effective_width, &up->effective_width))
+			return -EFAULT;
+
+	kp->data = compat_ptr(data);
+	kp->effective_width = compat_ptr(effective_width);
+	return 0;
+}
+
+static int put_atomisp_metadata_stat32(struct atomisp_metadata *kp,
+				struct atomisp_metadata32 __user *up)
+{
+	compat_uptr_t data = (compat_uptr_t)((uintptr_t)kp->data);
+	compat_uptr_t effective_width =
+		(compat_uptr_t)((uintptr_t)kp->effective_width);
+	if (!access_ok(VERIFY_WRITE, up,
+			sizeof(struct atomisp_metadata32)) ||
+		put_user(data, &up->data) ||
+		put_user(kp->width, &up->width) ||
+		put_user(kp->height, &up->height) ||
+		put_user(kp->stride, &up->stride) ||
+		put_user(kp->exp_id, &up->exp_id) ||
+		put_user(effective_width, &up->effective_width))
+			return -EFAULT;
+
+	return 0;
+}
 static int get_atomisp_morph_table32(struct atomisp_morph_table *kp,
 				struct atomisp_morph_table32 __user *up)
 {
@@ -348,9 +323,7 @@ static int get_atomisp_morph_table32(struct atomisp_morph_table *kp,
 
 	if (!access_ok(VERIFY_READ, up,
 			sizeof(struct atomisp_morph_table32)) ||
-#ifdef CSS20
 		get_user(kp->enabled, &up->enabled) ||
-#endif
 		get_user(kp->width, &up->width) ||
 		get_user(kp->height, &up->height))
 			return -EFAULT;
@@ -375,9 +348,7 @@ static int put_atomisp_morph_table32(struct atomisp_morph_table *kp,
 
 	if (!access_ok(VERIFY_WRITE, up,
 			sizeof(struct atomisp_morph_table32)) ||
-#ifdef CSS20
 		put_user(kp->enabled, &up->enabled) ||
-#endif
 		put_user(kp->width, &up->width) ||
 		put_user(kp->height, &up->height))
 			return -EFAULT;
@@ -585,9 +556,6 @@ static int get_atomisp_shading_table32(struct atomisp_shading_table *kp,
 
 	if (!access_ok(VERIFY_READ, up,
 			sizeof(struct atomisp_shading_table32)) ||
-#ifndef CSS20
-		get_user(kp->flags, &up->flags) ||
-#endif
 		get_user(kp->enable, &up->enable) ||
 		get_user(kp->sensor_width, &up->sensor_width) ||
 		get_user(kp->sensor_height, &up->sensor_height) ||
@@ -688,14 +656,14 @@ static int get_atomisp_parameters32(struct atomisp_parameters *kp,
 		if (get_user((*dst), src))
 			return -EFAULT;
 	}
+	if (get_user(kp->isp_config_id, &up->isp_config_id))
+		return -EFAULT;
 
 	{
 		union {
 			struct atomisp_shading_table shading_table;
 			struct atomisp_morph_table   morph_table;
-#ifdef CSS20
 			struct atomisp_dis_coefficients dvs2_coefs;
-#endif
 		} karg;
 
 		/* handle shading table */
@@ -733,7 +701,6 @@ static int get_atomisp_parameters32(struct atomisp_parameters *kp,
 				return -EFAULT;
 		}
 
-#ifdef CSS20
 		/* handle dvs2 coefficients */
 		if (up->dvs2_coefs != 0) {
 			if (get_atomisp_dis_coefficients32(&karg.dvs2_coefs,
@@ -750,11 +717,6 @@ static int get_atomisp_parameters32(struct atomisp_parameters *kp,
 				sizeof(struct atomisp_dis_coefficients)))
 				return -EFAULT;
 		}
-		/*
-		 * we do not handle dvs1.0 coefficients, because it is replaced
-		 * by dvs2.0, thus not used any more.
-		 */
-#endif
 	}
 	return 0;
 }
@@ -831,6 +793,7 @@ long atomisp_do_compat_ioctl(struct file *file,
 		struct atomisp_acc_s_mapped_arg acc_map_arg;
 		struct atomisp_parameters param;
 		struct atomisp_acc_fw_load_to_pipe acc_fw_to_pipe;
+		struct atomisp_metadata md;
 	} karg;
 	mm_segment_t old_fs;
 	void __user *up = compat_ptr(arg);
@@ -907,6 +870,9 @@ long atomisp_do_compat_ioctl(struct file *file,
 	case ATOMISP_IOC_ACC_LOAD_TO_PIPE32:
 		cmd = ATOMISP_IOC_ACC_LOAD_TO_PIPE;
 		break;
+	case ATOMISP_IOC_G_METADATA32:
+		cmd = ATOMISP_IOC_G_METADATA;
+		break;
 	}
 
 	switch (cmd) {
@@ -968,6 +934,9 @@ long atomisp_do_compat_ioctl(struct file *file,
 		err = get_atomisp_acc_fw_load_to_pipe32(&karg.acc_fw_to_pipe,
 							up);
 		break;
+	case ATOMISP_IOC_G_METADATA:
+		err = get_atomisp_metadata_stat32(&karg.md, up);
+		break;
 	}
 	if (err)
 		return err;
@@ -1019,6 +988,9 @@ long atomisp_do_compat_ioctl(struct file *file,
 	case ATOMISP_IOC_ACC_LOAD_TO_PIPE:
 		err = put_atomisp_acc_fw_load_to_pipe32(&karg.acc_fw_to_pipe,
 							up);
+		break;
+	case ATOMISP_IOC_G_METADATA:
+		err = put_atomisp_metadata_stat32(&karg.md, up);
 		break;
 	}
 
@@ -1075,6 +1047,13 @@ long atomisp_compat_ioctl32(struct file *file,
 	case ATOMISP_IOC_G_ISP_GAMMA_CORRECTION:
 	case ATOMISP_IOC_S_ISP_GAMMA_CORRECTION:
 	case ATOMISP_IOC_S_CONT_CAPTURE_CONFIG:
+	case ATOMISP_IOC_G_DVS2_BQ_RESOLUTIONS:
+	case ATOMISP_IOC_EXT_ISP_CTRL:
+	case ATOMISP_IOC_EXP_ID_UNLOCK:
+	case ATOMISP_IOC_EXP_ID_CAPTURE:
+	case ATOMISP_IOC_S_ENABLE_DZ_CAPT_PIPE:
+	case ATOMISP_IOC_G_FORMATS_CONFIG:
+	case ATOMISP_IOC_S_FORMATS_CONFIG:
 		ret = native_ioctl(file, cmd, arg);
 		break;
 
@@ -1101,6 +1080,7 @@ long atomisp_compat_ioctl32(struct file *file,
 	case ATOMISP_IOC_ACC_S_MAPPED_ARG32:
 	case ATOMISP_IOC_S_PARAMETERS32:
 	case ATOMISP_IOC_ACC_LOAD_TO_PIPE32:
+	case ATOMISP_IOC_G_METADATA32:
 		ret = atomisp_do_compat_ioctl(file, cmd, arg);
 		break;
 

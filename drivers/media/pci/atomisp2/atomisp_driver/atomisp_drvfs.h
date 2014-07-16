@@ -1,9 +1,7 @@
 /*
- * Support for Medfield PNW Camera Imaging ISP subsystem.
+ * Support for atomisp driver sysfs interface.
  *
- * Copyright (c) 2010 Intel Corporation. All Rights Reserved.
- *
- * Copyright (c) 2010 Silicon Hive www.siliconhive.com.
+ * Copyright (c) 2014 Intel Corporation. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
@@ -21,8 +19,11 @@
  *
  */
 
-#ifndef	__SH_MMU_MFLD_H__
-#define	__SH_MMU_MFLD_H__
+#ifndef	__ATOMISP_DRVFS_H__
+#define	__ATOMISP_DRVFS_H__
 
-extern struct isp_mmu_client sh_mmu_mfld;
-#endif
+extern int atomisp_drvfs_init(struct pci_driver *drv, struct atomisp_device
+				*isp);
+extern void atomisp_drvfs_exit(void);
+
+#endif /* __ATOMISP_DRVFS_H__ */
