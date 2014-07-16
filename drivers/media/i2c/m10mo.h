@@ -174,6 +174,7 @@ struct m10mo_fw_ops {
 	int (*single_capture_process) (struct v4l2_subdev *sd);
 	int (*try_mbus_fmt) (struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt, bool update_fmt);
 	int (*set_mbus_fmt) (struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt);
+	int (*test_pattern) (struct v4l2_subdev *sd, u8 val);
 };
 
 struct m10mo_device {
@@ -247,6 +248,7 @@ int __m10mo_param_mode_set(struct v4l2_subdev *sd);
 int __m10mo_update_stream_info(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt);
 int __m10mo_try_mbus_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt, bool update_fmt);
 int __m10mo_set_mbus_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt);
+int m10mo_test_pattern_start(struct v4l2_subdev *sd);
 
 int get_resolution_index(const struct m10mo_resolution *res,
 			 int entries, int w, int h);
@@ -279,6 +281,7 @@ int m10mo_set_panorama_monitor(struct v4l2_subdev *sd);
 int m10mo_set_zsl_monitor(struct v4l2_subdev *sd);
 int m10mo_set_burst_mode(struct v4l2_subdev *sd, unsigned int val);
 int m10mo_streamoff(struct v4l2_subdev *sd);
+int m10mo_test_pattern(struct v4l2_subdev *sd, u8 val);
 
 extern const struct m10mo_fw_ops fw_type1_5_ops;
 extern const struct m10mo_fw_ops fw_type2_ops;

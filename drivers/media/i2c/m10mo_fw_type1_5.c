@@ -129,4 +129,5 @@ const struct m10mo_fw_ops fw_type1_5_ops = {
 	.single_capture_process = m10mo_single_capture_process,
 	.try_mbus_fmt           =  __m10mo_try_mbus_fmt,
 	.set_mbus_fmt           =  __m10mo_set_mbus_fmt,
+	.test_pattern           = m10mo_test_pattern,
 };

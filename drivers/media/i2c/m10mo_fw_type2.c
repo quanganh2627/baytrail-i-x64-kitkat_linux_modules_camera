@@ -428,6 +428,15 @@ int __m10mo_set_mbus_fmt_fw_type2(struct v4l2_subdev *sd,
 	return 0;
 }
 
+
+int m10mo_test_pattern_fw_type2(struct v4l2_subdev *sd, u8 val)
+{
+	struct m10mo_device *dev = to_m10mo_sensor(sd);
+
+	return m10mo_writeb(&dev->sd, CATEGORY_TEST,
+			    TEST_PATTERN_SENSOR, val ? 2 : 0);
+}
+
 const struct m10mo_fw_ops fw_type2_ops = {
 	.set_run_mode           = m10mo_set_run_mode_fw_type2,
 	.set_burst_mode         = m10mo_set_burst_mode_fw_type2,
@@ -435,4 +444,5 @@ const struct m10mo_fw_ops fw_type2_ops = {
 	.single_capture_process = m10mo_single_capture_process_fw_type2,
 	.try_mbus_fmt           =  __m10mo_try_mbus_fmt_fw_type2,
 	.set_mbus_fmt           =  __m10mo_set_mbus_fmt_fw_type2,
+	.test_pattern           = m10mo_test_pattern_fw_type2,
 };

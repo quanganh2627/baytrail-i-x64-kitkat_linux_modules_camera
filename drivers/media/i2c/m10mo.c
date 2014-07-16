@@ -1998,6 +1998,11 @@ int m10mo_streamoff(struct v4l2_subdev *sd)
 	return __m10mo_param_mode_set(sd);
 }
 
+int m10mo_test_pattern(struct v4l2_subdev *sd, u8 val)
+{
+	return -EINVAL;
+}
+
 static const struct m10mo_fw_ops fw_ops = {
 	.set_run_mode           = m10mo_set_run_mode,
 	.set_burst_mode         = m10mo_set_burst_mode,
@@ -2005,6 +2010,7 @@ static const struct m10mo_fw_ops fw_ops = {
 	.single_capture_process = m10mo_single_capture_process,
 	.try_mbus_fmt           =  __m10mo_try_mbus_fmt,
 	.set_mbus_fmt           =  __m10mo_set_mbus_fmt,
+	.test_pattern           = m10mo_test_pattern,
 };
 
 void m10mo_handlers_init(struct v4l2_subdev *sd)
@@ -2589,9 +2595,7 @@ static int m10mo_s_ctrl(struct v4l2_ctrl *ctrl)
 		ret = m10mo_set_color_effect_cbcr(&dev->sd, ctrl->val);
 		break;
 	case V4L2_CID_TEST_PATTERN:
-		if (dev->fw_type == M10MO_FW_TYPE_2)
-			ret = m10mo_write(&dev->sd, 1, CATEGORY_TEST,
-				TEST_PATTERN_SENSOR, ctrl->val ? 2 : 0);
+		ret = dev->fw_ops->test_pattern(&dev->sd, ctrl->val);
 		break;
 	default:
 		return -EINVAL;
