@@ -135,7 +135,7 @@ int dw9714_t_focus_abs(struct v4l2_subdev *sd, s32 value)
 {
 	int ret;
 
-	value = min(value, DW9714_MAX_FOCUS_POS);
+	value = clamp(value, 0, DW9714_MAX_FOCUS_POS);
 	ret = dw9714_t_focus_vcm(sd, value);
 	if (ret == 0) {
 		dw9714_dev.number_of_steps = value - dw9714_dev.focus;

@@ -25,7 +25,10 @@
 
 /********************** registers define ********************************/
 #define IMX132_PLL_MULTIPLIER			0x0306
-#define IMX132_VT_RGPLTD			0x30A4
+#define IMX132_RGLANESEL			0x3301	/* Number of lanes */
+#define IMX132_RGLANESEL_1LANE			0x01
+#define IMX132_RGLANESEL_2LANES			0x00
+#define IMX132_RGLANESEL_4LANES			0x03
 
 /********************** settings for imx from vendor*********************/
 static struct imx_reg imx132_1080p_30fps[] = {
@@ -102,7 +105,6 @@ static struct imx_reg imx132_1080p_30fps[] = {
 	{IMX_8BIT, 0x315D, 0x3C},
 	{IMX_8BIT, 0x316E, 0x3E},
 	{IMX_8BIT, 0x316F, 0x3D},
-	{IMX_8BIT, 0x3301, 0x01},
 	/* Global timing */
 	{IMX_8BIT, 0x3304, 0x07}, /* RGTLPX[5:0] TLPX */
 	{IMX_8BIT, 0x3305, 0x06}, /* RGTCLKPREPARE[3:0] TCLK-PREPARE */
@@ -209,7 +211,6 @@ static struct imx_reg imx132_1456x1096_30fps[] = {
 	{IMX_8BIT, 0x315D, 0x3C},
 	{IMX_8BIT, 0x316E, 0x3E},
 	{IMX_8BIT, 0x316F, 0x3D},
-	{IMX_8BIT, 0x3301, 0x01},
 	/* Global timing */
 	{IMX_8BIT, 0x3304, 0x07}, /* RGTLPX[5:0] TLPX */
 	{IMX_8BIT, 0x3305, 0x06}, /* RGTCLKPREPARE[3:0] TCLK-PREPARE */
@@ -316,7 +317,6 @@ static struct imx_reg imx132_1636x1096_30fps[] = {
 	{IMX_8BIT, 0x315D, 0x3C},
 	{IMX_8BIT, 0x316E, 0x3E},
 	{IMX_8BIT, 0x316F, 0x3D},
-	{IMX_8BIT, 0x3301, 0x01},
 	/* Global timing */
 	{IMX_8BIT, 0x3304, 0x07}, /* RGTLPX[5:0] TLPX */
 	{IMX_8BIT, 0x3305, 0x06}, /* RGTCLKPREPARE[3:0] TCLK-PREPARE */
@@ -423,7 +423,6 @@ static struct imx_reg imx132_1336x1096_30fps[] = {
 	{IMX_8BIT, 0x315D, 0x3C},
 	{IMX_8BIT, 0x316E, 0x3E},
 	{IMX_8BIT, 0x316F, 0x3D},
-	{IMX_8BIT, 0x3301, 0x01},
 	/* Global timing */
 	{IMX_8BIT, 0x3304, 0x07}, /* RGTLPX[5:0] TLPX */
 	{IMX_8BIT, 0x3305, 0x06}, /* RGTCLKPREPARE[3:0] TCLK-PREPARE */
@@ -530,7 +529,6 @@ static struct imx_reg imx132_1200p_30fps[] = {
 	{IMX_8BIT, 0x315D, 0x3C},
 	{IMX_8BIT, 0x316E, 0x3E},
 	{IMX_8BIT, 0x316F, 0x3D},
-	{IMX_8BIT, 0x3301, 0x01},
 	/* Global timing */
 	{IMX_8BIT, 0x3304, 0x07}, /* RGTLPX[5:0] TLPX */
 	{IMX_8BIT, 0x3305, 0x06}, /* RGTCLKPREPARE[3:0] TCLK-PREPARE */
@@ -607,6 +605,7 @@ struct imx_resolution imx132_res_preview[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1200p_30fps",
@@ -626,6 +625,7 @@ struct imx_resolution imx132_res_preview[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 403200,
 	},
 	{
 		.desc = "imx132_1456x1096_30fps",
@@ -645,6 +645,7 @@ struct imx_resolution imx132_res_preview[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 };
 
@@ -667,6 +668,7 @@ struct imx_resolution imx132_res_still[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1200p_30fps",
@@ -686,6 +688,7 @@ struct imx_resolution imx132_res_still[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 403200,
 	},
 	{
 		.desc = "imx132_1456x1096_30fps",
@@ -705,6 +708,7 @@ struct imx_resolution imx132_res_still[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 };
 
@@ -727,6 +731,7 @@ struct imx_resolution imx132_res_video[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1456x1096_30fps",
@@ -746,6 +751,7 @@ struct imx_resolution imx132_res_video[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1636x1096_30fps",
@@ -765,6 +771,7 @@ struct imx_resolution imx132_res_video[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 	{
 		.desc = "imx132_1080p_30fps",
@@ -784,6 +791,7 @@ struct imx_resolution imx132_res_video[] = {
 		.bin_factor_y = 0,
 		.used = 0,
 		.skip_frames = 2,
+		.mipi_freq = 384000,
 	},
 };
 #endif

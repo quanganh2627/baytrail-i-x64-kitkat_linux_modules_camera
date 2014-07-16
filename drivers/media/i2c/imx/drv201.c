@@ -143,7 +143,7 @@ int drv201_t_focus_abs(struct v4l2_subdev *sd, s32 value)
 {
 	int ret;
 
-	value = min(value, DRV201_MAX_FOCUS_POS);
+	value = clamp(value, 0, DRV201_MAX_FOCUS_POS);
 	ret = drv201_t_focus_vcm(sd, value);
 	if (ret == 0) {
 		drv201_dev.number_of_steps = value - drv201_dev.focus;
