@@ -484,6 +484,7 @@ sh_css_copy_frame_to_spframe(struct ia_css_frame_sp *sp_frame_out,
 		break;
 	case IA_CSS_FRAME_FORMAT_NV11:
 	case IA_CSS_FRAME_FORMAT_NV12:
+	case IA_CSS_FRAME_FORMAT_NV12_TILEY:
 	case IA_CSS_FRAME_FORMAT_NV21:
 	case IA_CSS_FRAME_FORMAT_NV16:
 	case IA_CSS_FRAME_FORMAT_NV61:
@@ -549,6 +550,7 @@ set_input_frame_buffer(const struct ia_css_frame *frame)
 	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
 	case IA_CSS_FRAME_FORMAT_NV12:
+	case IA_CSS_FRAME_FORMAT_NV12_TILEY:
 	case IA_CSS_FRAME_FORMAT_NV21:
 	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 	case IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8:
@@ -579,6 +581,7 @@ set_output_frame_buffer(const struct ia_css_frame *frame,
 	case IA_CSS_FRAME_FORMAT_YUV422_16:
 	case IA_CSS_FRAME_FORMAT_NV11:
 	case IA_CSS_FRAME_FORMAT_NV12:
+	case IA_CSS_FRAME_FORMAT_NV12_TILEY:
 	case IA_CSS_FRAME_FORMAT_NV16:
 	case IA_CSS_FRAME_FORMAT_NV21:
 	case IA_CSS_FRAME_FORMAT_NV61:
@@ -1281,7 +1284,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 #if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
 	sh_css_sp_group.pipe[thread_id].output_frame_queue_id = SH_CSS_INVALID_QUEUE_ID;
 	if (IA_CSS_PIPE_ID_COPY != pipe_id) {
-		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_OUTPUT_FRAME, thread_id, &sh_css_sp_group.pipe[thread_id].output_frame_queue_id);
+		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_OUTPUT_FRAME, thread_id, (enum sh_css_queue_id *)(&sh_css_sp_group.pipe[thread_id].output_frame_queue_id));
 	}
 #endif
 

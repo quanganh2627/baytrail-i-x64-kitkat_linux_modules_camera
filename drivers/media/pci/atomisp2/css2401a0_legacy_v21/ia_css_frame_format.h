@@ -41,10 +41,24 @@
     Some of these formats are therefore not defined in the output table module.
     Modifications in below frame format enum can require modifications in the
     output table module.
+
+  Warning2: Throughout the CSS code assumptions are made on the order
+	of formats in this enumeration type, or some sort of copy is maintained.
+	The following files are identified:
+	- FileSupport.h
+	- css/isp/kernels/fc/fc_1.0/formats.isp.c
+	- css/isp/kernels/output/output_1.0/output_table.isp.c
+	- css/isp/kernels/output/sc_output_1.0/formats.hive.c
+	- css/isp/modes/sc_interface/isp_formats.isp.h
+	- css/isp/modes/interface/isp_formats.isp.h
+	- css/bxt_sandbox/psyspoc/interface/ia_css_pg_info.h
+	- css/bxt_sandbox/psysapi/data/interface/ia_css_program_group_data.h
+	- css/bxt_sandbox/isysapi/interface/ia_css_isysapi_fw_types.h
 */
 enum ia_css_frame_format {
 	IA_CSS_FRAME_FORMAT_NV11 = 0,   /**< 12 bit YUV 411, Y, UV plane */
 	IA_CSS_FRAME_FORMAT_NV12,       /**< 12 bit YUV 420, Y, UV plane */
+	IA_CSS_FRAME_FORMAT_NV12_TILEY, /**< 12 bit YUV 420, Intel proprietary tiled format, TileY */
 	IA_CSS_FRAME_FORMAT_NV16,       /**< 16 bit YUV 422, Y, UV plane */
 	IA_CSS_FRAME_FORMAT_NV21,       /**< 12 bit YUV 420, Y, VU plane */
 	IA_CSS_FRAME_FORMAT_NV61,       /**< 16 bit YUV 422, Y, VU plane */
@@ -83,7 +97,11 @@ enum ia_css_frame_format {
 							   line; UYVY interleaved
 							   even line */
 };
-#define IA_CSS_FRAME_FORMAT_NUM		(IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10 + 1)
+
+/* NOTE: IA_CSS_FRAME_FORMAT_NUM was purposely defined outside of enum type ia_css_frame_format, */
+/*       because of issues this would cause with the Clockwork code checking tool.               */
+#define IA_CSS_FRAME_FORMAT_NUM (IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_10 + 1)
+
 /** Number of valid output frame formats for ISP **/
 #define IA_CSS_FRAME_OUT_FORMAT_NUM	(IA_CSS_FRAME_FORMAT_RGBA888 + 1)
 

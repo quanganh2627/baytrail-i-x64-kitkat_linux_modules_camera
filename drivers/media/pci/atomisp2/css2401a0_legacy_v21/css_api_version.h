@@ -34,7 +34,7 @@ increased (and the minor version number reset) when a non-backwards-compatible
 change is made.
 */
 
-#define CSS_API_VERSION_STRING	"2.1.3.4"
+#define CSS_API_VERSION_STRING	"2.1.3.5"
 
 /*
 Change log
@@ -129,6 +129,9 @@ v2.1.3.3
 v2.1.3.4
 - added new interface to support ACC extension QoS feature.
 - added IA_CSS_EVENT_TYPE_ACC_STAGE_COMPLETE.
+
+v2.1.3.5
+- added tiled frame format IA_CSS_FRAME_FORMAT_NV12_TILEY
 
 */
 

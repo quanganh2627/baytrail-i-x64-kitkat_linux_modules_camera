@@ -107,7 +107,7 @@
 #endif
 
 /* Global variable to store the dtrace verbosity level */
-unsigned int ia_css_debug_trace_level;
+unsigned int ia_css_debug_trace_level = IA_CSS_DEBUG_WARNING;
 
 /* Assumes that IA_CSS_STREAM_FORMAT_BINARY_8 is last */
 #define N_IA_CSS_STREAM_FORMAT (IA_CSS_STREAM_FORMAT_BINARY_8+1)
@@ -250,6 +250,8 @@ static const char *debug_frame_format2str(const enum ia_css_frame_format frame_f
 		return "NV11";
 	case IA_CSS_FRAME_FORMAT_NV12:
 		return "NV12";
+	case IA_CSS_FRAME_FORMAT_NV12_TILEY:
+		return "NV12_TILEY";
 	case IA_CSS_FRAME_FORMAT_NV16:
 		return "NV16";
 	case IA_CSS_FRAME_FORMAT_NV21:
