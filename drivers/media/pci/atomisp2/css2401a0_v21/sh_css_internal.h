@@ -543,19 +543,24 @@ struct sh_css_sp_pipeline {
 	uint32_t	pipe_config;	/* the pipe config */
 	uint32_t	pipe_qos_config;	/* Bitmap of multiple QOS extension fw state.
 						(0xFFFFFFFF) indicates non QOS pipe.*/
-	uint32_t    inout_port_config;
+	uint32_t	inout_port_config;
 	uint32_t	required_bds_factor;
 	uint32_t	dvs_frame_delay;
 #if !defined(HAS_NO_INPUT_SYSTEM)
 	uint32_t	input_system_mode;	/* enum ia_css_input_mode */
-	mipi_port_ID_t	port_id;	/* port_id for input system */
+	uint32_t	port_id;	/* port_id for input system */
 #endif
 	uint32_t	num_stages;		/* the pipe config */
 	uint32_t	running;	/* needed for pipe termination */
 	hrt_vaddress	sp_stage_addr[SH_CSS_MAX_STAGES];
-	CSS_ALIGN(struct sh_css_sp_stage *stage, 8); /* Current stage for this pipeline */
-	CSS_ALIGN(int32_t num_execs, 8); /* number of times to run if this is
-					  an acceleration pipe. */
+#ifndef __SP
+	uint32_t	dummy; /* stage ptr is only used on sp but lives in
+				  this struct; needs cleanup */
+#else
+	struct sh_css_sp_stage *stage; /* Current stage for this pipeline */
+#endif
+	int32_t num_execs; /* number of times to run if this is
+			      an acceleration pipe. */
 #if defined(SH_CSS_ENABLE_METADATA)
 	struct {
 		uint32_t        format;   /* Metadata format in hrt format */
@@ -567,18 +572,18 @@ struct sh_css_sp_pipeline {
 	} metadata;
 #endif
 #if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
-	enum sh_css_queue_id	output_frame_queue_id;
+	uint32_t	output_frame_queue_id;
 #endif
 	union {
 		struct {
-			CSS_ALIGN(unsigned int	bytes_available, 8);
+			uint32_t	bytes_available;
 		} bin;
 		struct {
-			CSS_ALIGN(unsigned int	height, 8);
-			unsigned int	width;
-			unsigned int	padded_width;
-			unsigned int	max_input_width;
-			unsigned int	raw_bit_depth;
+			uint32_t	height;
+			uint32_t	width;
+			uint32_t	padded_width;
+			uint32_t	max_input_width;
+			uint32_t	raw_bit_depth;
 		} raw;
 	} copy;
 };
@@ -793,9 +798,9 @@ struct sh_css_hmm_buffer {
 	 * kernel_ptr is present for host administration purposes only.
 	 * type is uint64_t in order to be 64-bit host compatible.
 	 */
-	CSS_ALIGN(uint64_t cookie_ptr, 8);
-	CSS_ALIGN(uint64_t kernel_ptr, 8);
-	CSS_ALIGN(struct ia_css_time_meas timing_data, 8);
+	CSS_ALIGN(uint64_t cookie_ptr, 8); /* TODO: check if this alignment is needed */
+	uint64_t kernel_ptr;
+	struct ia_css_time_meas timing_data;
 };
 #define SIZE_OF_FRAME_STRUCT						\
 	(SIZE_OF_HRT_VADDRESS +						\
@@ -814,7 +819,7 @@ struct sh_css_hmm_buffer {
 	CALC_ALIGNMENT_MEMBER(SIZE_OF_PAYLOAD_UNION, 8) +		\
 	sizeof(uint64_t) +						\
 	sizeof(uint64_t) +						\
-	(sizeof(struct ia_css_time_meas)))
+	SIZE_OF_IA_CSS_TIME_MEAS_STRUCT)
 
 enum sh_css_queue_type {
 	sh_css_invalid_queue_type = -1,

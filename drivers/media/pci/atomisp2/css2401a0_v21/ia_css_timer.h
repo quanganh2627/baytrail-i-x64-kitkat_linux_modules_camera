@@ -33,7 +33,10 @@ typedef uint32_t clock_value_t;
 
 /* code measurement common struct */
 struct ia_css_time_meas {
-	clock_value_t	start_timer_value, end_timer_value;	/* measured time in ticks */
+	clock_value_t	start_timer_value;	/* measured time in ticks */
+	clock_value_t	end_timer_value;
 };
+
+#define SIZE_OF_IA_CSS_TIME_MEAS_STRUCT (sizeof(uint32_t) + sizeof(uint32_t))
 
 #endif  /* __IA_CSS_TIMER_H__ */

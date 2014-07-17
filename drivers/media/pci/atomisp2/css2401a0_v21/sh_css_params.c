@@ -1745,8 +1745,6 @@ void ia_css_morph_table_free(
 	struct ia_css_morph_table *me)
 {
 
-#if !defined(IS_ISP_2500_SYSTEM)
-
 	unsigned int i;
 
 	if (me == NULL)
@@ -1766,13 +1764,6 @@ void ia_css_morph_table_free(
 	sh_css_free(me);
 	IA_CSS_LEAVE("void");
 
-#else /* defined(IS_ISP_2500_SYSTEM) */
-	(void)me;
-	IA_CSS_ENTER("");
-	IA_CSS_ERROR("api is not supported for isp2500!");
-	IA_CSS_LEAVE("void");
-#endif
-
 }
 
 
@@ -1780,7 +1771,6 @@ struct ia_css_morph_table *ia_css_morph_table_allocate(
 	unsigned int width,
 	unsigned int height)
 {
-#if !defined(IS_ISP_2500_SYSTEM)
 
 	unsigned int i;
 	struct ia_css_morph_table *me;
@@ -1817,15 +1807,6 @@ struct ia_css_morph_table *ia_css_morph_table_allocate(
 	me->height = height;
 	IA_CSS_LEAVE("");
 	return me;
-
-#else /* defined(IS_ISP_2500_SYSTEM) */
-	(void)width;
-	(void)height;
-	IA_CSS_ENTER("");
-	IA_CSS_ERROR("api is not supported for isp2500!");
-	IA_CSS_LEAVE("");
-	return NULL;
-#endif
 
 }
 
@@ -2815,15 +2796,8 @@ union ia_css_dvs_statistics_isp *
 ia_css_dvs_statistics_allocate_isp(enum dvs_statistics_type type,
 			       struct ia_css_dvs_grid_info *params)
 {
-	if (DVS_STATISTICS == type) {
-		return (union ia_css_dvs_statistics_isp *)
-			ia_css_isp_dvs_statistics_allocate(params);
-	}
 
-	if (DVS2_STATISTICS == type) {
-		return (union ia_css_dvs_statistics_isp *)
-			ia_css_isp_dvs2_statistics_allocate(params);
-	}
+	(void)params;
 	if (SKC_DVS_STATISTICS == type) {
 		return (union ia_css_dvs_statistics_isp *)
 			ia_css_skc_dvs_statistics_allocate();
