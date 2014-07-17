@@ -385,6 +385,8 @@ ia_css_dvs_statistics_get(enum dvs_statistics_type type,
 			  union ia_css_dvs_statistics_host  *host_stats,
 			  const union ia_css_dvs_statistics_isp *isp_stats)
 {
+
+#if !defined(IS_ISP_2500_SYSTEM)
 	if (DVS_STATISTICS == type)
 	{
 		ia_css_get_dvs_statistics(host_stats->p_dvs_statistics_host,
@@ -394,8 +396,8 @@ ia_css_dvs_statistics_get(enum dvs_statistics_type type,
 		ia_css_get_dvs2_statistics(host_stats->p_dvs2_statistics_host,
 			isp_stats->p_dvs_statistics_isp);
 	}
-#if defined(IS_ISP_2500_SYSTEM)
-	else if (SKC_DVS_STATISTICS == type)
+#else  /* defined(IS_ISP_2500_SYSTEM) */
+	if (SKC_DVS_STATISTICS == type)
 	{
 		ia_css_get_skc_dvs_statistics(host_stats->p_skc_dvs_statistics_host,
 			(struct ia_css_isp_skc_dvs_statistics *)isp_stats);

@@ -35,25 +35,28 @@ struct ia_css_isp_parameters;
 #include "product_specific.host.h"
 #include "components/include/components_types.host.h"
 #endif
+
 #include "sh_css_defs.h"	/* SH_CSS_MAX_STAGES */
 #include "ia_css_pipeline.h"
 #include "ia_css_isp_params.h"
-#if defined(IS_ISP_2500_SYSTEM)
-#include "ia_css_isp_acc_params.h"
-#endif
-
-#include "ob/ob_1.0/ia_css_ob_param.h"
-#include "crop/crop_1.0/ia_css_crop_types.h"
 #include "uds/uds_1.0/ia_css_uds_param.h"
+#include "crop/crop_1.0/ia_css_crop_types.h"
+
 
 #define PIX_SHIFT_FILTER_RUN_IN_X 12
 #define PIX_SHIFT_FILTER_RUN_IN_Y 12
 
+#if defined(IS_ISP_2500_SYSTEM)
+#include "ia_css_isp_acc_params.h"
+#else
+#include "ob/ob_1.0/ia_css_ob_param.h"
 /* Isp configurations per stream */
 struct sh_css_isp_param_configs {
 	/* OB (Optical Black) */
 	struct sh_css_isp_ob_stream_config ob;
 };
+#endif
+
 
 /* Isp parameters per stream */
 struct ia_css_isp_parameters {

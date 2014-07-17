@@ -1656,7 +1656,6 @@ ia_css_init(const struct ia_css_env *env,
 	    return IA_CSS_ERR_INVALID_ARGUMENTS;
 
 	sh_css_printf = env->print_env.debug_print;
-	ia_css_debug_set_dtrace_level(IA_CSS_DEBUG_WARNING);
 
 	IA_CSS_ENTER("void");
 
@@ -2894,7 +2893,7 @@ load_preview_binaries(struct ia_css_pipe *pipe)
 	 * */
 	need_vf_pp = pipe->config.enable_dz;
 	need_vf_pp |= pipe_out_info->format != IA_CSS_FRAME_FORMAT_YUV_LINE &&
-		      pipe_out_info->format != IA_CSS_FRAME_FORMAT_NV12;
+		      !(pipe_out_info->format == IA_CSS_FRAME_FORMAT_NV12 || pipe_out_info->format == IA_CSS_FRAME_FORMAT_NV12_TILEY);
 
 	/* Preview step 1 */
 	if (pipe->vf_yuv_ds_input_info.res.width)

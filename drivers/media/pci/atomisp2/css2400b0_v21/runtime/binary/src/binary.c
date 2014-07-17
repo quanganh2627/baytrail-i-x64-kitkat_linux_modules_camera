@@ -34,8 +34,8 @@
 #include "sh_css_legacy.h"
 #if !defined(IS_ISP_2500_SYSTEM)
 #include "vf/vf_1.0/ia_css_vf.host.h"
-#endif
 #include "sdis/sdis_1.0/ia_css_sdis.host.h"
+#endif
 #include "camera/pipe/interface/ia_css_pipe_binarydesc.h"
 #if defined(HAS_RES_MGR)
 #include <components/resolutions_mgr/src/host/resolutions_mgr.host.h>
