@@ -558,13 +558,15 @@ static struct ov_res_struct ov2685_res[] = {
 
 static struct misensor_reg ov2685_exp_0[] = {
 	{MISENSOR_8BIT, 0x3503, 0x3},
-	{MISENSOR_8BIT, 0x3501, 0x6},
+	{MISENSOR_8BIT, 0x3501, 0x16},
+	{MISENSOR_8BIT, 0x350b, 0x26},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
 static struct misensor_reg ov2685_exp_1[] = {
 	{MISENSOR_8BIT, 0x3503, 0x3},
-	{MISENSOR_8BIT, 0x3501, 0x16},
+	{MISENSOR_8BIT, 0x3501, 0x26},
+	{MISENSOR_8BIT, 0x350b, 0x36},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
@@ -575,14 +577,14 @@ static struct misensor_reg ov2685_exp_2[] = {
 
 static struct misensor_reg ov2685_exp_3[] = {
 	{MISENSOR_8BIT, 0x3503, 0x3},
-	{MISENSOR_8BIT, 0x3501, 0x36},
+	{MISENSOR_8BIT, 0x3501, 0x46},
 	{MISENSOR_8BIT, 0x350b, 0x46},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
 static struct misensor_reg ov2685_exp_4[] = {
 	{MISENSOR_8BIT, 0x3503, 0x3},
-	{MISENSOR_8BIT, 0x3501, 0x46},
+	{MISENSOR_8BIT, 0x3501, 0x56},
 	{MISENSOR_8BIT, 0x350b, 0x56},
 	{MISENSOR_TOK_TERM, 0, 0}
 };

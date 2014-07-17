@@ -699,8 +699,8 @@ static struct ov_control ov_controls[] = {
 			.id = V4L2_CID_EXPOSURE,
 			.type = V4L2_CTRL_TYPE_INTEGER,
 			.name = "exposure",
-			.min = 0,
-			.max = 4,
+			.min = -2,//0  lkl
+			.max = 2,//4  lkl
 			.step = 1,
 			.def = 0,
 		},
