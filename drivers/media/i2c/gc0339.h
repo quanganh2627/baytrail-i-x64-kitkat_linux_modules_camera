@@ -177,8 +177,8 @@ enum {
 
 #define GC0339_RES_VGA_SIZE_H		640
 #define GC0339_RES_VGA_SIZE_V		480
-#define GC0339_RES_CIF_SIZE_H		352
-#define GC0339_RES_CIF_SIZE_V		288
+#define GC0339_RES_CIF_SIZE_H		528 //528 //352
+#define GC0339_RES_CIF_SIZE_V		432 //432 //288
 #define GC0339_RES_QVGA_SIZE_H		320
 #define GC0339_RES_QVGA_SIZE_V		240
 #define GC0339_RES_QCIF_SIZE_H		176
@@ -339,6 +339,24 @@ static struct gc0339_res_struct gc0339_res[] = {
 
 	.pixels_per_line = 0x01F0,
 	.lines_per_frame = 0x014F,
+	.bin_factor_x = 1,
+	.bin_factor_y = 1,
+	.bin_mode = 0,
+	},
+#endif
+#if 1
+	{
+	.desc	= "550x450",
+	.res	= GC0339_RES_CIF,
+	.width	= 544,
+	.height	= 448,
+	.fps	= 30,
+	.used	= 0,
+	.regs	= NULL,
+	.skip_frames = 2,
+
+	.pixels_per_line = 0x0314,
+	.lines_per_frame = 0x0213,
 	.bin_factor_x = 1,
 	.bin_factor_y = 1,
 	.bin_mode = 0,

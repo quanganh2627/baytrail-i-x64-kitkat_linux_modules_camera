@@ -1035,6 +1035,7 @@ static int gc0339_set_mbus_fmt(struct v4l2_subdev *sd,
 
 	switch (res_index->res) {
 	case GC0339_RES_CIF:
+#if 0
 		gc0339_write_reg(c, MISENSOR_8BIT,  0x15, 0x8A); /*CIF*/
 		gc0339_write_reg(c, MISENSOR_8BIT,  0x62, 0xBD); /*LWC*/
 		gc0339_write_reg(c, MISENSOR_8BIT,  0x63, 0x01);
@@ -1045,6 +1046,7 @@ static int gc0339_set_mbus_fmt(struct v4l2_subdev *sd,
 		gc0339_write_reg(c, MISENSOR_8BIT,  0x0A, 0xD0);
 		gc0339_write_reg(c, MISENSOR_8BIT,  0x0B, 0x02);
 		gc0339_write_reg(c, MISENSOR_8BIT,  0x0C, 0x40);
+#endif
 		break;
 	case GC0339_RES_VGA:
 /*		gc0339_write_reg(c, MISENSOR_8BIT,  0x15, 0x0A);
