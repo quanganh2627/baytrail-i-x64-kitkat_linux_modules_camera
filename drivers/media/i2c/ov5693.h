@@ -1078,9 +1078,28 @@ static struct ov5693_resolution ov5693_res_video[] = {
 
 static struct ov5693_resolution *ov5693_res = ov5693_res_preview;
 static int N_RES = N_RES_PREVIEW;
+ 
 
+/*
+Liteon Module:CONFIG_VIDEO_AD5823
+Foxconn Module:CONFIG_VIDEO_DW9714
+*/
+
+//#define CONFIG_VIDEO_AD5823
 #define CONFIG_VIDEO_DW9714
+#define AD5823  (0x23 - 0x6)
 #define DW9714 0x14
+
+extern int ad5823_vcm_power_up(struct v4l2_subdev *sd);
+extern int ad5823_vcm_power_down(struct v4l2_subdev *sd);
+extern int ad5823_vcm_init(struct v4l2_subdev *sd);
+extern int ad5823_t_focus_vcm(struct v4l2_subdev *sd, u16 val);
+extern int ad5823_t_focus_abs(struct v4l2_subdev *sd, s32 value);
+extern int ad5823_t_focus_rel(struct v4l2_subdev *sd, s32 value);
+extern int ad5823_q_focus_status(struct v4l2_subdev *sd, s32 *value);
+extern int ad5823_q_focus_abs(struct v4l2_subdev *sd, s32 *value);
+extern int ad5823_t_vcm_slew(struct v4l2_subdev *sd, s32 value);
+extern int ad5823_t_vcm_timing(struct v4l2_subdev *sd, s32 value);
 
 extern int dw9714_vcm_power_up(struct v4l2_subdev *sd);
 extern int dw9714_vcm_power_down(struct v4l2_subdev *sd);
@@ -1094,6 +1113,18 @@ extern int dw9714_t_vcm_slew(struct v4l2_subdev *sd, s32 value);
 extern int dw9714_t_vcm_timing(struct v4l2_subdev *sd, s32 value);
 
 struct ov5693_vcm ov5693_vcms[] = {
+	[AD5823] = {
+		.power_up = ad5823_vcm_power_up,
+		.power_down = ad5823_vcm_power_down,
+		.init = ad5823_vcm_init,
+		.t_focus_vcm = ad5823_t_focus_vcm,
+		.t_focus_abs = ad5823_t_focus_abs,
+		.t_focus_rel = ad5823_t_focus_rel,
+		.q_focus_status = ad5823_q_focus_status,
+		.q_focus_abs = ad5823_q_focus_abs,
+		.t_vcm_slew = ad5823_t_vcm_slew,
+		.t_vcm_timing = ad5823_t_vcm_timing,
+	},
 	[DW9714] = {
 		    .power_up = dw9714_vcm_power_up,
 		    .power_down = dw9714_vcm_power_down,

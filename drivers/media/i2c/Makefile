@@ -5,7 +5,7 @@
 obj-$(CONFIG_VIDEO_OV)         += ov/
 obj-$(CONFIG_VIDEO_IMX)        += imx/
 obj-$(CONFIG_VIDEO_IMXVB)      += imx135VB/
-obj-$(CONFIG_VIDEO_OV5693)     += ov5693.o
+obj-$(CONFIG_VIDEO_OV5693)     += ov5693.o ad5823.o
 
 obj-$(CONFIG_VIDEO_GC_CLASS)   += gc/
 

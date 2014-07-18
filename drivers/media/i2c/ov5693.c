@@ -41,12 +41,56 @@
 #include "dw9714.h"
 
 /* i2c read/write stuff */
+
+//#define  ov5693_FLIP_BIT1  0x02
+//#define  ov5693_FLIP_BIT2  0x04
+//#define  ov5693_FLIP_BIT6  ( 0x04<<4 )
+//#define  ov5693_VFLIP_MAKE 0x42
+//#define  ov5693_HFLIP_MAKE 0x06
+#define  ov5693_CTRL_HFLIP_ADDR   0x3821
+#define  ov5693_CTRL_VFLIP_ADDR   0x3820
+//#define to_ov5693_sensor(sd) container_of(sd, struct ov5693_device, sd)
+
+static int ov5693_t_vflip(struct v4l2_subdev *sd, int value);
+static int ov5693_t_hflip(struct v4l2_subdev *sd, int value);
+
+static int  v_flag=0;
+static int  h_flag=0;
+/*
+static enum v4l2_mbus_pixelcode ov5693_translate_bayer_order(enum atomisp_bayer_order code)
+{
+        switch (code) {
+        case atomisp_bayer_order_rggb:
+                return V4L2_MBUS_FMT_SRGGB10_1X10;
+        case atomisp_bayer_order_grbg:
+                return V4L2_MBUS_FMT_SGRBG10_1X10;
+        case atomisp_bayer_order_bggr:
+                return V4L2_MBUS_FMT_SBGGR10_1X10;
+        case atomisp_bayer_order_gbrg:
+                return V4L2_MBUS_FMT_SGBRG10_1X10;
+        }
+        return 0;
+}
+*/
+static enum atomisp_bayer_order ov5693_bayer_order_mapping[] = {
+
+atomisp_bayer_order_bggr,
+atomisp_bayer_order_gbrg,
+atomisp_bayer_order_rggb,
++atomisp_bayer_order_grbg,
+
+};
+
+/* i2c read/write stuff */
 static int ov5693_read_reg(struct i2c_client *client,
 			   u16 data_length, u16 reg, u16 * val)
 {
 	int err;
 	struct i2c_msg msg[2];
 	unsigned char data[6];
+
+	v_flag = 0;
+	h_flag = 0;
 
 	if (!client->adapter) {
 		dev_err(&client->dev, "%s error, no client->adapter\n",
@@ -1060,6 +1104,32 @@ struct ov5693_control ov5693_controls[] = {
 		},
 		.query = ov5693_g_bin_factor_y,
 	},
+	{
+		.qc = {
+			.id = V4L2_CID_VFLIP,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "Image v-Flip",
+			.minimum = 0,
+			.maximum = 1,
+			.step = 1,
+			.default_value = 0,
+			.flags = 0,
+		},
+		.tweak = ov5693_t_vflip,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_HFLIP,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "Image h-Flip",
+			.minimum = 0,
+			.maximum = 1,
+			.step = 1,
+			.default_value = 0,
+			.flags = 0,
+		},
+		.tweak = ov5693_t_hflip,
+	},
 };
 
 #define N_CONTROLS (ARRAY_SIZE(ov5693_controls))
@@ -1089,6 +1159,149 @@ static int ov5693_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
 	return 0;
 }
 
+static struct ov5693_reg const  Normal_full[]={
+//Mirror_on_full
+{OV5693_8BIT, 0x3820, 0x00},
+{OV5693_8BIT, 0x3821, 0x06},
+{OV5693_8BIT, 0x5a01, 0x01},
+{OV5693_8BIT, 0x5a03, 0x00},
+{OV5693_TOK_TERM, 0, 0},
+};
+static struct ov5693_reg const   Mirror_on_full[]={
+//Mirror_Flip_on_full
+{OV5693_8BIT, 0x3820, 0x42},
+{OV5693_8BIT, 0x3821, 0x06},
+{OV5693_8BIT, 0x5a01, 0x01},
+{OV5693_8BIT, 0x5a03, 0x01},
+{OV5693_TOK_TERM, 0, 0},
+};
+static struct ov5693_reg const    Flip_On_full[]={
+//Normal_full
+{OV5693_8BIT, 0x3820, 0x00},
+{OV5693_8BIT, 0x3821, 0x00},
+{OV5693_8BIT, 0x5a01, 0x00},
+{OV5693_8BIT, 0x5a03, 0x00},
+{OV5693_TOK_TERM, 0, 0},
+};
+static struct ov5693_reg const    Mirror_Flip_on_full[]={
+//Flip_On_full
+{OV5693_8BIT, 0x3820, 0x42},
+{OV5693_8BIT, 0x3821, 0x00},
+{OV5693_8BIT, 0x5a01, 0x00},
+{OV5693_8BIT, 0x5a03, 0x01},
+{OV5693_TOK_TERM, 0, 0},
+};
+static struct ov5693_reg const    Normal_1296x972[]={
+//Mirror_on_1296x972
+{OV5693_8BIT, 0x3820, 0x04},
+{OV5693_8BIT, 0x3821, 0x1f},
+{OV5693_8BIT, 0x5a01, 0x00},
+{OV5693_8BIT, 0x5a03, 0x00},
+{OV5693_TOK_TERM, 0, 0},
+};
+static struct ov5693_reg const    Mirror_on_1296x972[]={
+//Mirror_Flip_on_1296x972
+{OV5693_8BIT, 0x3820, 0x06},
+{OV5693_8BIT, 0x3821, 0x1f},
+{OV5693_8BIT, 0x5a01, 0x00},
+{OV5693_8BIT, 0x5a03, 0x00},
+{OV5693_TOK_TERM, 0, 0},
+};
+static struct ov5693_reg const    Flip_On_1296x972[]={
+//Normal_1296x972
+{OV5693_8BIT, 0x3820, 0x04},
+{OV5693_8BIT, 0x3821, 0x19},
+{OV5693_8BIT, 0x5a01, 0x00},
+{OV5693_8BIT, 0x5a03, 0x00},
+{OV5693_TOK_TERM, 0, 0},
+};
+static struct ov5693_reg const    Mirror_Flip_on_1296x972[]={
+//Flip_On_1296x972
+{OV5693_8BIT, 0x3820, 0x06},
+{OV5693_8BIT, 0x3821, 0x19},
+{OV5693_8BIT, 0x5a01, 0x00},
+{OV5693_8BIT, 0x5a03, 0x00},
+{OV5693_TOK_TERM, 0, 0},
+};
+
+/* Horizontal flip the image. */
+static int ov5693_t_hflip(struct v4l2_subdev *sd, int value)
+{
+	struct camera_mipi_info *ov5693_info = NULL;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct ov5693_device *dev = to_ov5693_sensor(sd);
+	int err;
+	u16	val;
+	u16 data_tem_hflip,data_tem_vflip;
+
+	u16 bayer_order_tem_h;
+	/* set for direct mode */
+	u16  data_h_offset,data_v_offset;
+	u16  height_windows_size,data_tem_window_l,data_tem_window_h;
+
+	err=ov5693_read_reg(client, OV5693_8BIT,	0x3808, &data_tem_window_h);
+	err=ov5693_read_reg(client, OV5693_8BIT,	0x3809, &data_tem_window_l);
+	height_windows_size=((data_tem_window_h<<8)&0xff00) |data_tem_window_l;
+
+	if(height_windows_size<=1296)
+	{
+			if (value)
+				err = ov5693_write_reg_array(client, Mirror_on_1296x972);
+
+			if((v_flag & h_flag)==1)
+				err = ov5693_write_reg_array(client, Mirror_Flip_on_1296x972);
+	}
+	else
+	{
+			if (value)
+			err = ov5693_write_reg_array(client, Mirror_on_full);
+
+			if((v_flag & h_flag)==1)
+			err = ov5693_write_reg_array(client, Mirror_Flip_on_full);
+	}
+
+	return !!err;
+}
+
+
+static int ov5693_t_vflip(struct v4l2_subdev *sd, int value)
+{
+	struct camera_mipi_info *ov5693_info = NULL;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct ov5693_device *dev = to_ov5693_sensor(sd);
+	int err;
+	u16	val;
+	u16 data_tem_hflip,data_tem_vflip;
+
+	u16 bayer_order_tem_h;
+	/* set for direct mode */
+	u16  data_h_offset,data_v_offset;
+	u16  height_windows_size,data_tem_window_l,data_tem_window_h;
+
+	err=ov5693_read_reg(client, OV5693_8BIT,	0x3808, &data_tem_window_h);
+	err=ov5693_read_reg(client, OV5693_8BIT,	0x3809, &data_tem_window_l);
+	height_windows_size=((data_tem_window_h<<8)&0xff00) |data_tem_window_l;
+
+	if(height_windows_size<=1296)
+	{
+			if (value)
+			err = ov5693_write_reg_array(client, Flip_On_1296x972);
+
+			if((v_flag & h_flag)==1)
+			err = ov5693_write_reg_array(client, Mirror_Flip_on_1296x972);
+	}
+	else
+	{
+			if (value)
+				err = ov5693_write_reg_array(client, Flip_On_full);
+			if((v_flag & h_flag)==1)
+				err = ov5693_write_reg_array(client, Mirror_Flip_on_full);
+	}
+
+	return !!err;
+}
+
+
 /* ov5693 control set/get */
 static int ov5693_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
@@ -1102,6 +1315,15 @@ static int ov5693_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	s_ctrl = ov5693_find_control(ctrl->id);
 	if ((s_ctrl == NULL) || (s_ctrl->query == NULL))
 		return -EINVAL;
+
+	switch(ctrl->id)
+	{
+		case V4L2_CID_VFLIP:if(ctrl->value) v_flag=1;else  v_flag=0;
+			break;
+		case V4L2_CID_HFLIP:if(ctrl->value) h_flag=1;else  h_flag=0;
+			break;
+		default:break;
+	};
 
 	mutex_lock(&dev->input_lock);
 	ret = s_ctrl->query(sd, &ctrl->value);
@@ -1208,6 +1430,9 @@ static int power_down(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
+	v_flag = 0;
+	h_flag = 0;
+
 	dev->focus = OV5693_INVALID_CONFIG;
 	if (NULL == dev->platform_data) {
 		dev_err(&client->dev, "no camera_sensor_platform_data");
@@ -1295,12 +1520,15 @@ static int ov5693_s_power_always_on(struct v4l2_subdev *sd, int on)
 		//ret = power_down(sd);
 		//dev->power = 0;
 		// For case camera is stream-on, and then closed without a stream-off.
+		v_flag = 0;
+		h_flag = 0;
+
 		ret = ov5693_set_suspend(sd);
 
 		//if (dev->vcm_driver && dev->vcm_driver->power_down)
 		//	ret = dev->vcm_driver->power_down(sd);
 	} else {
-			if (!dev->power) {
+		if (!dev->power) {
 			if (dev->vcm_driver && dev->vcm_driver->power_up)
 				ret = dev->vcm_driver->power_up(sd);
 			if (ret)
@@ -1429,6 +1657,12 @@ static int ov5693_s_mbus_fmt(struct v4l2_subdev *sd,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct camera_mipi_info *ov5693_info = NULL;
 	int ret = 0;
+	int err;
+	u16	val;
+	u16 data_tem_hflip;
+	u16 data_tem_vflip;
+	u16 bayer_order_tem_v;
+	u16  height_windows_size,data_tem_window_l,data_tem_window_h;
 
 	ov5693_info = v4l2_get_subdev_hostdata(sd);
 	if (ov5693_info == NULL)
@@ -1461,10 +1695,31 @@ static int ov5693_s_mbus_fmt(struct v4l2_subdev *sd,
 		goto err;
 	}
 
-	/*ret = startup(sd);
-	   if (ret)
-	   dev_err(&client->dev, "ov5693 startup err\n");
-	 */
+	v4l2_info(client,"\n%s idx %d \n", __func__, dev->fmt_idx);
+
+	ov5693_read_reg(client, OV5693_8BIT,	0x3808, &data_tem_window_h);
+	ov5693_read_reg(client, OV5693_8BIT,	0x3809, &data_tem_window_l);
+	height_windows_size=((data_tem_window_h<<8)&0xff00) |data_tem_window_l;
+
+	if (v_flag)
+		ov5693_t_vflip(sd, v_flag);
+	if (h_flag)
+		ov5693_t_hflip(sd, h_flag);
+/*
+	if (((v_flag & h_flag)==0)|((v_flag | h_flag)==0))
+		if(height_windows_size<=1296)
+		{
+   			ov5693_write_reg_array(client, Normal_1296x972);
+  		}
+  		else 
+		{
+  			ov5693_write_reg_array(client, Normal_full);
+  		}
+	err=ov5693_read_reg(client, OV5693_8BIT,	ov5693_CTRL_HFLIP_ADDR, &data_tem_hflip);
+	err=ov5693_read_reg(client, OV5693_8BIT,	ov5693_CTRL_VFLIP_ADDR, &data_tem_vflip);		
+		
+	ov5693_info = v4l2_get_subdev_hostdata(sd);
+*/
 err:
 	mutex_unlock(&dev->input_lock);
 	return ret;
@@ -1892,9 +2147,13 @@ static int ov5693_probe(struct i2c_client *client,
 		if (ret)
 			goto out_free;
 	}
-
+#ifdef CONFIG_VIDEO_AD5823
+	dev->vcm_driver = &ov5693_vcms[AD5823];
+	dev->vcm_driver->init(&dev->sd);
+#elif defined (CONFIG_VIDEO_DW9714)
 	dev->vcm_driver = &ov5693_vcms[DW9714];
 	dev->vcm_driver->init(&dev->sd);
+#endif
 
 	dev->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	dev->pad.flags = MEDIA_PAD_FL_SOURCE;
