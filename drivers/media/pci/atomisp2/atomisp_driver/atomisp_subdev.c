@@ -998,6 +998,24 @@ static const struct v4l2_ctrl_config ctrl_enable_raw_buffer_lock = {
 };
 
 /*
+ * Control to disable digital zoom of the whole stream
+ *
+ * When it is true, pipe configuation enable_dz will be set to false.
+ * This can help get a better performance by disabling pp binary.
+ *
+ * Note: Make sure set this configuration before creating stream.
+ */
+static const struct v4l2_ctrl_config ctrl_disable_dz = {
+	.id = V4L2_CID_DISABLE_DZ,
+	.type = V4L2_CTRL_TYPE_BOOLEAN,
+	.name = "Disable digital zoom",
+	.min = 0,
+	.max = 1,
+	.step = 1,
+	.def = 0,
+};
+
+/*
  * Control for ISP depth mode
  *
  * When enabled, that means ISP will deal with dual streams and sensors will be
@@ -1169,6 +1187,11 @@ static int isp_subdev_init_entities(struct atomisp_sub_device *asd)
 			v4l2_ctrl_new_custom(&asd->ctrl_handler,
 					     &ctrl_depth_mode,
 					     NULL);
+	asd->disable_dz =
+			v4l2_ctrl_new_custom(&asd->ctrl_handler,
+					     &ctrl_disable_dz,
+					     NULL);
+
 	/* Make controls visible on subdev as well. */
 	asd->subdev.ctrl_handler = &asd->ctrl_handler;
 	spin_lock_init(&asd->raw_buffer_bitmap_lock);

@@ -672,15 +672,16 @@ static void __apply_additional_pipe_config(
 
 	/* apply default pipe config */
 	stream_env->pipe_configs[pipe_id].isp_pipe_version = 2;
-	stream_env->pipe_configs[pipe_id].enable_dz = false;
+	stream_env->pipe_configs[pipe_id].enable_dz =
+				asd->disable_dz->val ? false : true;
 	/* apply isp 2.2 specific config for baytrail*/
 	switch (pipe_id) {
 	case IA_CSS_PIPE_ID_CAPTURE:
 		/* enable capture pp/dz manually or digital zoom would
 		 * fail*/
 		if (stream_env->pipe_configs[pipe_id].
-			default_capture_config.mode != CSS_CAPTURE_MODE_RAW)
-			stream_env->pipe_configs[pipe_id].enable_dz = true;
+			default_capture_config.mode == CSS_CAPTURE_MODE_RAW)
+			stream_env->pipe_configs[pipe_id].enable_dz = false;
 		break;
 	case IA_CSS_PIPE_ID_VIDEO:
 		/* enable reduced pipe to have binary
@@ -699,11 +700,11 @@ static void __apply_additional_pipe_config(
 		}
 		break;
 	case IA_CSS_PIPE_ID_PREVIEW:
-		stream_env->pipe_configs[pipe_id].enable_dz = true;
 		break;
 	case IA_CSS_PIPE_ID_YUVPP:
 	case IA_CSS_PIPE_ID_COPY:
 	case IA_CSS_PIPE_ID_ACC:
+		stream_env->pipe_configs[pipe_id].enable_dz = false;
 		break;
 	default:
 		break;

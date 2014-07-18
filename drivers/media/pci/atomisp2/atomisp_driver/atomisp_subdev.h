@@ -276,6 +276,7 @@ struct atomisp_sub_device {
 	struct v4l2_ctrl *continuous_raw_buffer_size;
 	struct v4l2_ctrl *continuous_viewfinder;
 	struct v4l2_ctrl *enable_raw_buffer_lock;
+	struct v4l2_ctrl *disable_dz;
 
 	struct atomisp_subdev_params params;
 
