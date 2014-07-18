@@ -1910,6 +1910,7 @@ int __atomisp_streamoff(struct file *file, void *fh, enum v4l2_buf_type type)
 	}
 	spin_unlock_irqrestore(&pipe->irq_lock, flags);
 
+	atomisp_subdev_cleanup_pending_events(asd);
 stopsensor:
 	if (atomisp_subdev_streaming_count(asd) + 1
 	    != atomisp_sensor_start_stream(asd))

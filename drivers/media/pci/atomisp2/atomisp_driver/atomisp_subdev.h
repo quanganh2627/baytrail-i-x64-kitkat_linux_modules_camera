@@ -376,6 +376,8 @@ void atomisp_subdev_set_ffmt(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh,
 
 int atomisp_update_run_mode(struct atomisp_sub_device *asd);
 
+void atomisp_subdev_cleanup_pending_events(struct atomisp_sub_device *asd);
+
 void atomisp_subdev_unregister_entities(struct atomisp_sub_device *asd);
 int atomisp_subdev_register_entities(struct atomisp_sub_device *asd,
 	struct v4l2_device *vdev);

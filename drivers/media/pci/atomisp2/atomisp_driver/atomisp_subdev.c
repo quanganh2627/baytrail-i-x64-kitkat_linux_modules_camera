@@ -1186,6 +1186,20 @@ static void atomisp_subdev_cleanup_entities(struct atomisp_sub_device *asd)
 	media_entity_cleanup(&asd->subdev.entity);
 }
 
+void atomisp_subdev_cleanup_pending_events(struct atomisp_sub_device *asd)
+{
+	struct v4l2_fh *fh, *fh_tmp;
+	struct v4l2_event event;
+	unsigned int i, pending_event;
+
+	list_for_each_entry_safe(fh, fh_tmp,
+	                         &asd->subdev.devnode->fh_list, list) {
+		pending_event = v4l2_event_pending(fh);
+		for (i = 0; i < pending_event; i++)
+			v4l2_event_dequeue(fh, &event, 1);
+	}
+}
+
 void atomisp_subdev_unregister_entities(struct atomisp_sub_device *asd)
 {
 	atomisp_subdev_cleanup_entities(asd);
