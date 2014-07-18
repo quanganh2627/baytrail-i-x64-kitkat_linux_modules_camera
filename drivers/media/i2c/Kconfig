@@ -42,6 +42,14 @@ config VIDEO_OV7736
 
           It currently only works with the atomisp driver.
 	
+config VIDEO_AD5823
+       tristate "VCM ad5823 support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the wv511.
+
+         It currently only works with the atomisp driver.
+
 config VIDEO_OV9724
        tristate "OVT ov9724 sensor support"
        depends on I2C && VIDEO_V4L2
