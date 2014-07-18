@@ -671,6 +671,7 @@ static void __apply_additional_pipe_config(
 
 	/* apply default pipe config */
 	stream_env->pipe_configs[pipe_id].isp_pipe_version = 2;
+	stream_env->pipe_configs[pipe_id].enable_dz = false;
 	/* apply isp 2.2 specific config for baytrail*/
 	switch (pipe_id) {
 	case IA_CSS_PIPE_ID_CAPTURE:
@@ -697,9 +698,11 @@ static void __apply_additional_pipe_config(
 		}
 		break;
 	case IA_CSS_PIPE_ID_PREVIEW:
+		stream_env->pipe_configs[pipe_id].enable_dz = true;
+		break;
+	case IA_CSS_PIPE_ID_YUVPP:
 	case IA_CSS_PIPE_ID_COPY:
 	case IA_CSS_PIPE_ID_ACC:
-	case IA_CSS_PIPE_ID_YUVPP:
 		break;
 	default:
 		break;
