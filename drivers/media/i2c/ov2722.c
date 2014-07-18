@@ -799,9 +799,13 @@ static int check_otp(struct i2c_client *client, int index)
 	u16 temp, i;
 	u16 address;
 
+	// clear otp buffer
+	for (i = 0; i < 32; i++)
+		ov2722_write_reg(client, OV2722_8BIT, 0x3d00 + i, 0x00);
+
 	// read otp into buffer
 	ov2722_write_reg(client, OV2722_8BIT, 0x3d81, 0x01);
-	mdelay(10);
+	msleep(10);
 
 	address = 0x3d05 + index*9;
 	ov2722_read_reg(client, OV2722_8BIT, address, &temp);
