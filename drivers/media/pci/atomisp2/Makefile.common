@@ -36,6 +36,7 @@ atomisp-$(postfix)-objs := \
 		css/sh_css_sp.o \
 		css/sh_css_metrics.o \
 		css/sh_css_firmware.o \
+		css/sh_css_host_data.o \
 		css/sh_css_param_shading.o \
 		css/$(css_common_folder)/host/gdc.o \
 		css/$(css_common_folder)/host/irq.o \
