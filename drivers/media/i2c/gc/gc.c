@@ -847,7 +847,7 @@ static struct gc_ctrl_config __gc_default_ctrls[] = {
 
 
 /*******************************************************/
-void reset_v4l2_ctrl_value(struct v4l2_ctrl_handler *hdl)
+static void reset_v4l2_ctrl_value(struct v4l2_ctrl_handler *hdl)
 {
 	struct v4l2_ctrl *ctrl;
 
