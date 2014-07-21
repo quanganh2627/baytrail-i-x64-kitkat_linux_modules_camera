@@ -999,7 +999,9 @@ static const struct v4l2_subdev_ops ov2685_ops = {
 	.pad = &ov2685_pad_ops,
 };
 
-static const struct media_entity_operations ov2685_entity_ops;
+static const struct media_entity_operations ov2685_entity_ops = {
+	.link_setup = NULL,
+};
 
 static int ov2685_remove(struct i2c_client *client)
 {
@@ -1044,6 +1046,7 @@ static int ov2685_probe(struct i2c_client *client,
 	dev->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	dev->pad.flags = MEDIA_PAD_FL_SOURCE;
 	dev->format.code = V4L2_MBUS_FMT_UYVY8_1X16;
+	dev->sd.entity.ops = &ov2685_entity_ops;
 	dev->sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV_SENSOR;
 
 	ret = media_entity_init(&dev->sd.entity, 1, &dev->pad, 0);
