@@ -298,6 +298,7 @@ static int get_atomisp_metadata_stat32(struct atomisp_metadata *kp,
 	return 0;
 }
 
+
 static int put_atomisp_metadata_stat32(struct atomisp_metadata *kp,
 				struct atomisp_metadata32 __user *up)
 {
@@ -316,6 +317,51 @@ static int put_atomisp_metadata_stat32(struct atomisp_metadata *kp,
 
 	return 0;
 }
+
+static int put_atomisp_metadata_by_type_stat32(
+				struct atomisp_metadata_with_type *kp,
+				struct atomisp_metadata_with_type32 __user *up)
+{
+	compat_uptr_t data = (compat_uptr_t)((uintptr_t)kp->data);
+	compat_uptr_t effective_width =
+		(compat_uptr_t)((uintptr_t)kp->effective_width);
+	if (!access_ok(VERIFY_WRITE, up,
+			sizeof(struct atomisp_metadata_with_type32)) ||
+		put_user(data, &up->data) ||
+		put_user(kp->width, &up->width) ||
+		put_user(kp->height, &up->height) ||
+		put_user(kp->stride, &up->stride) ||
+		put_user(kp->exp_id, &up->exp_id) ||
+		put_user(effective_width, &up->effective_width) ||
+		put_user(kp->type, &up->type))
+			return -EFAULT;
+
+	return 0;
+}
+
+static int get_atomisp_metadata_by_type_stat32(
+				struct atomisp_metadata_with_type *kp,
+				struct atomisp_metadata_with_type32 __user *up)
+{
+	compat_uptr_t data;
+	compat_uptr_t effective_width;
+
+	if (!access_ok(VERIFY_READ, up,
+			sizeof(struct atomisp_metadata_with_type32)) ||
+		get_user(data, &up->data) ||
+		get_user(kp->width, &up->width) ||
+		get_user(kp->height, &up->height) ||
+		get_user(kp->stride, &up->stride) ||
+		get_user(kp->exp_id, &up->exp_id) ||
+		get_user(effective_width, &up->effective_width) ||
+		get_user(kp->type, &up->type))
+			return -EFAULT;
+
+	kp->data = compat_ptr(data);
+	kp->effective_width = compat_ptr(effective_width);
+	return 0;
+}
+
 static int get_atomisp_morph_table32(struct atomisp_morph_table *kp,
 				struct atomisp_morph_table32 __user *up)
 {
@@ -794,6 +840,7 @@ long atomisp_do_compat_ioctl(struct file *file,
 		struct atomisp_parameters param;
 		struct atomisp_acc_fw_load_to_pipe acc_fw_to_pipe;
 		struct atomisp_metadata md;
+		struct atomisp_metadata_with_type md_with_type;
 	} karg;
 	mm_segment_t old_fs;
 	void __user *up = compat_ptr(arg);
@@ -873,6 +920,9 @@ long atomisp_do_compat_ioctl(struct file *file,
 	case ATOMISP_IOC_G_METADATA32:
 		cmd = ATOMISP_IOC_G_METADATA;
 		break;
+	case ATOMISP_IOC_G_METADATA_BY_TYPE32:
+		cmd = ATOMISP_IOC_G_METADATA_BY_TYPE;
+		break;
 	}
 
 	switch (cmd) {
@@ -937,6 +987,10 @@ long atomisp_do_compat_ioctl(struct file *file,
 	case ATOMISP_IOC_G_METADATA:
 		err = get_atomisp_metadata_stat32(&karg.md, up);
 		break;
+	case ATOMISP_IOC_G_METADATA_BY_TYPE:
+		err = get_atomisp_metadata_by_type_stat32(&karg.md_with_type,
+		                                          up);
+		break;
 	}
 	if (err)
 		return err;
@@ -991,6 +1045,10 @@ long atomisp_do_compat_ioctl(struct file *file,
 		break;
 	case ATOMISP_IOC_G_METADATA:
 		err = put_atomisp_metadata_stat32(&karg.md, up);
+		break;
+	case ATOMISP_IOC_G_METADATA_BY_TYPE:
+		err = put_atomisp_metadata_by_type_stat32(&karg.md_with_type,
+		                                          up);
 		break;
 	}
 
@@ -1082,6 +1140,7 @@ long atomisp_compat_ioctl32(struct file *file,
 	case ATOMISP_IOC_S_PARAMETERS32:
 	case ATOMISP_IOC_ACC_LOAD_TO_PIPE32:
 	case ATOMISP_IOC_G_METADATA32:
+	case ATOMISP_IOC_G_METADATA_BY_TYPE32:
 		ret = atomisp_do_compat_ioctl(file, cmd, arg);
 		break;
 

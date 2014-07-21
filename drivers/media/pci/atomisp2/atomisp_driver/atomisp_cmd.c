@@ -438,12 +438,13 @@ static void atomisp_3a_stats_ready_event(struct atomisp_sub_device *asd)
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }
 
-static void atomisp_metadata_ready_event(struct atomisp_sub_device *asd)
+static void atomisp_metadata_ready_event(struct atomisp_sub_device *asd,
+						enum atomisp_metadata_type md_type)
 {
 	struct v4l2_event event = {0};
 
 	event.type = V4L2_EVENT_ATOMISP_METADATA_READY;
-	event.u.frame_sync.frame_sequence = atomic_read(&asd->sequence);
+	event.u.data[0] = md_type;
 
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }
@@ -814,6 +815,19 @@ static struct atomisp_video_pipe *__atomisp_get_pipe(
 	return &asd->video_out_capture;
 }
 
+enum atomisp_metadata_type
+atomisp_get_metadata_type(struct atomisp_sub_device *asd,
+			  enum ia_css_pipe_id pipe_id)
+{
+	if (!asd->continuous_mode->val)
+		return ATOMISP_MAIN_METADATA;
+
+	if (pipe_id == IA_CSS_PIPE_ID_CAPTURE) /* online capture pipe */
+		return ATOMISP_SEC_METADATA;
+	else
+		return ATOMISP_MAIN_METADATA;
+}
+
 void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 		      enum atomisp_css_buffer_type buf_type,
 		      enum atomisp_css_pipe_id css_pipe_id,
@@ -828,6 +842,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 	struct atomisp_css_frame *frame = NULL;
 	struct atomisp_s3a_buf *s3a_buf = NULL, *_s3a_buf_tmp;
 	struct atomisp_dis_buf *dis_buf = NULL, *_dis_buf_tmp;
+	struct atomisp_metadata_buf *md_buf = NULL, *_md_buf_tmp;
+	enum atomisp_metadata_type md_type;
 	struct atomisp_device *isp = asd->isp;
 
 	if (
@@ -880,13 +896,21 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			atomisp_3a_stats_ready_event(asd);
 			break;
 		case CSS_BUFFER_TYPE_METADATA:
-			/* update the metadata from ISP */
-			if (!error)
-				atomisp_css_get_metadata(asd, &buffer);
+			if (error)
+				break;
 
+			md_type = atomisp_get_metadata_type(asd, css_pipe_id);
+			list_for_each_entry_safe(md_buf, _md_buf_tmp,
+					&asd->metadata_in_css[md_type], list) {
+				if (md_buf->metadata == buffer.css_buffer.data.metadata) {
+					list_del_init(&md_buf->list);
+					list_add(&md_buf->list, &asd->metadata[md_type]);
+					asd->params.metadata_buf_data_valid[md_type] = true;
+					break;
+				}
+			}
 			asd->metadata_bufs_in_css[stream_id][css_pipe_id]--;
-
-			atomisp_metadata_ready_event(asd);
+			atomisp_metadata_ready_event(asd, md_type);
 			break;
 		case CSS_BUFFER_TYPE_DIS_STATISTICS:
 			list_for_each_entry_safe(dis_buf, _dis_buf_tmp,
@@ -2395,6 +2419,84 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 	struct ia_css_stream_config *stream_config;
 	struct ia_css_stream_info *stream_info;
 	struct camera_mipi_info *mipi_info;
+	struct atomisp_metadata_buf *md_buf;
+	enum atomisp_metadata_type md_type = ATOMISP_MAIN_METADATA;
+	int ret, i;
+
+	if (flag != 0)
+		return -EINVAL;
+
+	stream_config = &asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+		stream_config;
+	stream_info = &asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+		stream_info;
+
+	/* We always return the resolution and stride even if there is
+	 * no valid metadata. This allows the caller to get the information
+	 * needed to allocate user-space buffers. */
+	md->width  = stream_info->metadata_info.resolution.width;
+	md->height = stream_info->metadata_info.resolution.height;
+	md->stride = stream_info->metadata_info.stride;
+
+	/* sanity check to avoid writing into unallocated memory.
+	 * This does not return an error because it is a valid way
+	 * for applications to detect that metadata is not enabled. */
+	if (md->width == 0 || md->height == 0 || !md->data) {
+		printk("%s: %d\n", __func__, __LINE__);
+		return 0;
+	}
+
+	/* This is done in the atomisp_buf_done() */
+	if (!asd->params.metadata_buf_data_valid[md_type] ||
+	    list_empty(&asd->metadata[md_type])) {
+		dev_err(isp->dev, "Metadata is not valid.\n");
+		return -EAGAIN;
+	}
+
+	mipi_info = atomisp_to_sensor_mipi_info(
+		isp->inputs[asd->input_curr].camera);
+	if (mipi_info == NULL)
+		return -EINVAL;
+
+	if (mipi_info->metadata_effective_width != NULL) {
+		for (i = 0; i < md->height; i++)
+			md->effective_width[i] =
+				mipi_info->metadata_effective_width[i];
+	}
+
+	md_buf = list_entry(asd->metadata[md_type].next,
+	                    struct atomisp_metadata_buf, list);
+	md->exp_id = md_buf->metadata->exp_id;
+	if (md_buf->md_vptr) {
+		ret = copy_to_user(md->data,
+		                   md_buf->md_vptr,
+				   stream_info->metadata_info.size);
+	} else {
+		hrt_isp_css_mm_load(md_buf->metadata->address,
+		                    asd->params.metadata_user[md_type],
+		                    stream_info->metadata_info.size);
+
+		ret = copy_to_user(md->data,
+		                   asd->params.metadata_user[md_type],
+				   stream_info->metadata_info.size);
+	}
+	if (ret) {
+		dev_err(isp->dev, "copy to user failed: copied %d bytes\n",
+				ret);
+		return -EFAULT;
+	}
+	return 0;
+}
+
+int atomisp_get_metadata_by_type(struct atomisp_sub_device *asd, int flag,
+				 struct atomisp_metadata_with_type *md)
+{
+	struct atomisp_device *isp = asd->isp;
+	struct ia_css_stream_config *stream_config;
+	struct ia_css_stream_info *stream_info;
+	struct camera_mipi_info *mipi_info;
+	struct atomisp_metadata_buf *md_buf;
+	enum atomisp_metadata_type md_type;
 	int ret, i;
 
 	if (flag != 0)
@@ -2418,8 +2520,13 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 	if (md->width == 0 || md->height == 0 || !md->data)
 		return 0;
 
-	/* This is done in the atomisp_metadata_buf_done() */
-	if (!asd->params.metadata_buf_data_valid) {
+	md_type = md->type;
+	if (md_type >= ATOMISP_METADATA_TYPE_NUM)
+		return -EINVAL;
+
+	/* This is done in the atomisp_buf_done() */
+	if (!asd->params.metadata_buf_data_valid[md_type] ||
+	    list_empty(&asd->metadata[md_type])) {
 		dev_err(isp->dev, "Metadata is not valid.\n");
 		return -EAGAIN;
 	}
@@ -2435,9 +2542,22 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 				mipi_info->metadata_effective_width[i];
 	}
 
-	md->exp_id = asd->params.metadata_exp_id;
-	ret = copy_to_user(md->data, asd->params.metadata_user,
-			   stream_info->metadata_info.size);
+	md_buf = list_entry(asd->metadata[md_type].next,
+	                    struct atomisp_metadata_buf, list);
+	md->exp_id = md_buf->metadata->exp_id;
+	if (md_buf->md_vptr) {
+		ret = copy_to_user(md->data,
+		                   md_buf->md_vptr,
+				   stream_info->metadata_info.size);
+	} else {
+		hrt_isp_css_mm_load(md_buf->metadata->address,
+		                    asd->params.metadata_user[md_type],
+		                    stream_info->metadata_info.size);
+
+		ret = copy_to_user(md->data,
+		                   asd->params.metadata_user[md_type],
+				   stream_info->metadata_info.size);
+	}
 	if (ret) {
 		dev_err(isp->dev, "copy to user failed: copied %d bytes\n",
 				ret);
@@ -3983,6 +4103,7 @@ static int css_input_resolution_changed(struct atomisp_sub_device *asd,
 		struct v4l2_mbus_framefmt *ffmt)
 {
 	struct atomisp_metadata_buf *md_buf = NULL, *_md_buf;
+	unsigned int i;
 
 	dev_dbg(asd->isp->dev, "css_input_resolution_changed to %ux%u\n",
 		ffmt->width, ffmt->height);
@@ -4008,12 +4129,14 @@ static int css_input_resolution_changed(struct atomisp_sub_device *asd,
 	 * together. Release all metadata buffers here to let it re-allocated
 	 * next time in reqbufs.
 	 */
-	list_for_each_entry_safe(md_buf, _md_buf, &asd->metadata, list) {
-		atomisp_css_free_metadata_buffer(md_buf);
-		list_del(&md_buf->list);
-		kfree(md_buf);
+	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
+		list_for_each_entry_safe(md_buf, _md_buf, &asd->metadata[i],
+		                         list) {
+			atomisp_css_free_metadata_buffer(md_buf);
+			list_del(&md_buf->list);
+			kfree(md_buf);
+		}
 	}
-
 	return 0;
 
 	/*

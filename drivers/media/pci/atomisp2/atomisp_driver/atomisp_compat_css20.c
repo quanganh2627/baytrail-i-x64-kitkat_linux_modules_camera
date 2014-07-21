@@ -1470,6 +1470,7 @@ int atomisp_css_allocate_stat_buffers(struct atomisp_sub_device   *asd,
 			dev_err(isp->dev, "metadata buf allocation failed.\n");
 			return -EINVAL;
 		}
+		md_buf->md_vptr = hmm_vmap(md_buf->metadata->address, false);
 	}
 
 	return 0;
@@ -1497,6 +1498,10 @@ void atomisp_css_free_dis_buffer(struct atomisp_dis_buf *dis_buf)
 
 void atomisp_css_free_metadata_buffer(struct atomisp_metadata_buf *metadata_buf)
 {
+	if (metadata_buf->md_vptr) {
+		hmm_vunmap(metadata_buf->metadata->address);
+		metadata_buf->md_vptr = NULL;
+	}
 	ia_css_metadata_free(metadata_buf->metadata);
 }
 
@@ -1505,6 +1510,7 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 	struct atomisp_s3a_buf *s3a_buf, *_s3a_buf;
 	struct atomisp_dis_buf *dis_buf, *_dis_buf;
 	struct atomisp_metadata_buf *md_buf, *_md_buf;
+	unsigned int i;
 
 	/* 3A statistics use vmalloc, DIS use kmalloc */
 	if (asd->params.curr_grid_info.dvs_grid.enable) {
@@ -1554,20 +1560,23 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 		asd->params.css_param.dvs_6axis = NULL;
 	}
 
-	if (asd->params.metadata_allocated) {
-
-		atomisp_kernel_free(asd->params.metadata_user);
-		asd->params.metadata_allocated = false;
-		asd->params.metadata_user = NULL;
-		asd->params.metadata_buf_data_valid = false;
-		asd->params.metadata_width_size = 0;
+	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
+		asd->params.metadata_buf_data_valid[i] = false;
 		list_for_each_entry_safe(md_buf, _md_buf,
-				&asd->metadata, list) {
-			ia_css_metadata_free(md_buf->metadata);
+		                         &asd->metadata[i], list) {
+			atomisp_css_free_metadata_buffer(md_buf);
+			list_del(&md_buf->list);
+			kfree(md_buf);
+		}
+		list_for_each_entry_safe(md_buf, _md_buf,
+		                         &asd->metadata_in_css[i], list) {
+			atomisp_css_free_metadata_buffer(md_buf);
 			list_del(&md_buf->list);
 			kfree(md_buf);
 		}
 	}
+	asd->params.metadata_width_size = 0;
+	atomisp_free_metadata_output_buf(asd);
 }
 
 int atomisp_css_get_grid_info(struct atomisp_sub_device *asd,
@@ -1694,31 +1703,35 @@ int atomisp_alloc_dis_coef_buf(struct atomisp_sub_device *asd)
 
 int atomisp_alloc_metadata_output_buf(struct atomisp_sub_device *asd)
 {
+	unsigned int i;
+
 	/* We allocate the cpu-side buffer used for communication with user
 	 * space */
-	asd->params.metadata_user = atomisp_kernel_malloc(
+	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
+		asd->params.metadata_user[i] = atomisp_kernel_malloc(
 				asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
 				stream_info.metadata_info.size);
-	if (!asd->params.metadata_user)
-		return -ENOMEM;
-	asd->params.metadata_buf_data_valid = false;
-	asd->params.metadata_allocated = true;
+		if (!asd->params.metadata_user[i]) {
+			while (--i >= 0) {
+				atomisp_kernel_free(asd->params.metadata_user[i]);
+				asd->params.metadata_user[i] = NULL;
+			}
+			return -ENOMEM;
+		}
+	}
 
 	return 0;
 }
 
-void atomisp_css_get_metadata(struct atomisp_sub_device *asd,
-			      struct atomisp_css_buffer *isp_css_buffer)
+void atomisp_free_metadata_output_buf(struct atomisp_sub_device *asd)
 {
-	int md_size = asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
-		stream_info.metadata_info.size;
+	unsigned int i;
 
-	if (asd->params.metadata_user && md_size) {
-		atomisp_css2_mm_load(
-			isp_css_buffer->css_buffer.data.metadata->address,
-			asd->params.metadata_user, md_size);
-		asd->params.metadata_exp_id = isp_css_buffer->css_buffer.exp_id;
-		asd->params.metadata_buf_data_valid = true;
+	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
+		if (asd->params.metadata_user[i]) {
+			atomisp_kernel_free(asd->params.metadata_user[i]);
+			asd->params.metadata_user[i] = NULL;
+		}
 	}
 }
 
@@ -2272,7 +2285,9 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	struct atomisp_device *isp = asd->isp;
 	struct atomisp_s3a_buf *s3a_buf;
 	struct atomisp_dis_buf *dis_buf;
+	struct atomisp_metadata_buf *md_buf;
 	unsigned long irqflags;
+	unsigned int i;
 
 	/* if is called in atomisp_reset(), force destroy stream */
 	if (__destroy_streams(asd, true))
@@ -2332,6 +2347,16 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	}
 	asd->params.dis_proj_data_valid = false;
 	spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
+
+	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
+		while (!list_empty(&asd->metadata_in_css[i])) {
+			md_buf = list_entry(asd->metadata_in_css[i].next,
+					struct atomisp_metadata_buf, list);
+			list_del(&md_buf->list);
+			list_add_tail(&md_buf->list, &asd->metadata[i]);
+		}
+		asd->params.metadata_buf_data_valid[i] = false;
+	}
 
 	atomisp_flush_params_queue(&asd->video_out_capture);
 	atomisp_flush_params_queue(&asd->video_out_vf);

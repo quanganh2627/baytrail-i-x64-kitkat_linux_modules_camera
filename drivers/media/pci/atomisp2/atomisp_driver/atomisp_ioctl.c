@@ -954,12 +954,12 @@ static void atomisp_videobuf_free_queue(struct videobuf_queue *q)
 int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd,
 	uint16_t stream_id)
 {
+	struct atomisp_device *isp = asd->isp;
 	struct atomisp_s3a_buf *s3a_buf = NULL, *_s3a_buf;
 	struct atomisp_dis_buf *dis_buf = NULL, *_dis_buf;
 	struct atomisp_metadata_buf *md_buf = NULL, *_md_buf;
-
 	int count;
-	struct atomisp_device *isp = asd->isp;
+	unsigned int i;
 
 	if (list_empty(&asd->s3a_stats)) {
 		count = ATOMISP_CSS_Q_DEPTH + 1;
@@ -1001,27 +1001,29 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd,
 		}
 	}
 
-	if (list_empty(&asd->metadata)) {
-		count = ATOMISP_CSS_Q_DEPTH * ATOMISP_INPUT_STREAM_NUM;
-		dev_dbg(isp->dev, "allocating %d metadata buffers\n", count);
-		while (count--) {
-			md_buf = kzalloc(sizeof(struct atomisp_metadata_buf),
-					 GFP_KERNEL);
-			if (!md_buf) {
-				dev_err(isp->dev, "metadata buf alloc failed\n");
-				goto error;
-			}
+	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
+		if (list_empty(&asd->metadata[i])) {
+			count = ATOMISP_CSS_Q_DEPTH + 1;
+			dev_dbg(isp->dev, "allocating %d metadata buffers for type %d\n",
+			        count, i);
+			while (count--) {
+				md_buf = kzalloc(sizeof(struct atomisp_metadata_buf),
+						 GFP_KERNEL);
+				if (!md_buf) {
+					dev_err(isp->dev, "metadata buf alloc failed\n");
+					goto error;
+				}
 
-			if (atomisp_css_allocate_stat_buffers(
-					asd, stream_id, NULL, NULL, md_buf)) {
-				kfree(md_buf);
-				goto error;
+				if (atomisp_css_allocate_stat_buffers(
+						asd, stream_id, NULL, NULL, md_buf)) {
+					kfree(md_buf);
+					goto error;
+				}
+				list_add_tail(&md_buf->list, &asd->metadata[i]);
 			}
-
-			list_add_tail(&md_buf->list, &asd->metadata);
+			asd->params.metadata_buf_data_valid[i] = false;
 		}
 	}
-
 	return 0;
 
 error:
@@ -1039,12 +1041,14 @@ error:
 		kfree(s3a_buf);
 	}
 
-	list_for_each_entry_safe(md_buf, _md_buf, &asd->metadata, list) {
-		atomisp_css_free_metadata_buffer(md_buf);
-		list_del(&md_buf->list);
-		kfree(md_buf);
+	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
+		list_for_each_entry_safe(md_buf, _md_buf, &asd->metadata[i],
+		                         list) {
+			atomisp_css_free_metadata_buffer(md_buf);
+			list_del(&md_buf->list);
+			kfree(md_buf);
+		}
 	}
-
 	return -ENOMEM;
 }
 
@@ -2705,6 +2709,9 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 	case ATOMISP_IOC_G_METADATA:
 		err = atomisp_get_metadata(asd, 0, arg);
+		break;
+	case ATOMISP_IOC_G_METADATA_BY_TYPE:
+		err = atomisp_get_metadata_by_type(asd, 0, arg);
 		break;
 	case ATOMISP_IOC_EXT_ISP_CTRL:
 		rt_mutex_unlock(&isp->mutex);

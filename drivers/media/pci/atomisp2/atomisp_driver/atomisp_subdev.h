@@ -204,10 +204,8 @@ struct atomisp_subdev_params {
 
 	int s3a_output_bytes;
 	bool s3a_buf_data_valid;
-	bool metadata_buf_data_valid;
 
 	bool dis_proj_data_valid;
-	bool metadata_allocated;
 
 	struct ia_css_dz_config   dz_config;  /**< Digital Zoom */
 	struct ia_css_capture_config   capture_config;
@@ -222,10 +220,10 @@ struct atomisp_subdev_params {
 	 * CSS and user space.
 	 */
 	struct ia_css_3a_statistics *s3a_user_stat;
-	void *metadata_user;
-	/* The metadata_exp_id is used sensor metadata. */
-	uint32_t metadata_exp_id;
+
+	void *metadata_user[ATOMISP_METADATA_TYPE_NUM];
 	uint32_t metadata_width_size;
+	bool metadata_buf_data_valid[ATOMISP_METADATA_TYPE_NUM];
 
 	struct ia_css_dvs2_statistics *dvs_stat;
 	uint32_t exp_id;
@@ -290,7 +288,8 @@ struct atomisp_sub_device {
 
 	unsigned int metadata_bufs_in_css
 		[ATOMISP_INPUT_STREAM_NUM][CSS_PIPE_ID_NUM];
-	struct list_head metadata;
+	struct list_head metadata[ATOMISP_METADATA_TYPE_NUM];
+	struct list_head metadata_in_css[ATOMISP_METADATA_TYPE_NUM];
 
 	struct list_head s3a_stats;
 	struct list_head s3a_stats_in_css;

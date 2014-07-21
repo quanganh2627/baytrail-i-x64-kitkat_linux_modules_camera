@@ -708,6 +708,8 @@ static const struct v4l2_subdev_ops isp_subdev_v4l2_ops = {
 
 static void isp_subdev_init_params(struct atomisp_sub_device *asd)
 {
+	unsigned int i;
+
 	/* parameters initialization */
 	INIT_LIST_HEAD(&asd->s3a_stats);
 	INIT_LIST_HEAD(&asd->s3a_stats_in_css);
@@ -715,7 +717,10 @@ static void isp_subdev_init_params(struct atomisp_sub_device *asd)
 	INIT_LIST_HEAD(&asd->dis_stats);
 	INIT_LIST_HEAD(&asd->dis_stats_in_css);
 	spin_lock_init(&asd->dis_stats_lock);
-	INIT_LIST_HEAD(&asd->metadata);
+	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
+		INIT_LIST_HEAD(&asd->metadata[i]);
+		INIT_LIST_HEAD(&asd->metadata_in_css[i]);
+	}
 }
 
 /*

@@ -207,6 +207,9 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 			 struct atomisp_metadata *config);
 
+int atomisp_get_metadata_by_type(struct atomisp_sub_device *asd, int flag,
+			 struct atomisp_metadata_with_type *config);
+
 int atomisp_set_parameters(struct video_device *vdev,
 			struct atomisp_parameters *arg);
 /*
@@ -367,4 +370,10 @@ void atomisp_init_raw_buffer_bitmap(struct atomisp_sub_device *asd);
 int atomisp_enable_dz_capt_pipe(struct atomisp_sub_device *asd,
 					   unsigned int *enable);
 
+/*
+ * Function to get metadata type bu pipe id
+ */
+enum atomisp_metadata_type
+atomisp_get_metadata_type(struct atomisp_sub_device *asd,
+			  enum ia_css_pipe_id pipe_id);
 #endif /* __ATOMISP_CMD_H__ */

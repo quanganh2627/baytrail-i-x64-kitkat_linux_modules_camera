@@ -126,6 +126,7 @@ enum atomisp_input_stream_id;
 
 struct atomisp_metadata_buf {
 	struct ia_css_metadata *metadata;
+	void *md_vptr;
 	struct list_head list;
 };
 
@@ -228,8 +229,7 @@ int atomisp_alloc_dis_coef_buf(struct atomisp_sub_device *asd);
 
 int atomisp_alloc_metadata_output_buf(struct atomisp_sub_device *asd);
 
-void atomisp_css_get_metadata(struct atomisp_sub_device *asd,
-			      struct atomisp_css_buffer *isp_css_buffer);
+void atomisp_free_metadata_output_buf(struct atomisp_sub_device *asd);
 
 void atomisp_css_get_dis_statistics(struct atomisp_sub_device *asd,
 				    struct atomisp_css_buffer *isp_css_buffer,

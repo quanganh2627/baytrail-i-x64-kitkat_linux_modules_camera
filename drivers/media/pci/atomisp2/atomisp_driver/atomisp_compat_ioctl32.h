@@ -69,6 +69,17 @@ struct atomisp_3a_statistics32 {
 	uint32_t exp_id;
 };
 
+struct atomisp_metadata_with_type32 {
+	/* to specify which type of metadata to get */
+	enum atomisp_metadata_type type;
+	compat_uptr_t data;
+	uint32_t width;
+	uint32_t height;
+	uint32_t stride; /* in bytes */
+	uint32_t exp_id; /* exposure ID */
+	compat_uptr_t effective_width;
+};
+
 struct atomisp_metadata32 {
 	compat_uptr_t data;
 	uint32_t width;
@@ -342,4 +353,6 @@ struct atomisp_dvs_6axis_config32 {
 #define ATOMISP_IOC_G_METADATA32 \
 	_IOWR('v', BASE_VIDIOC_PRIVATE + 34, struct atomisp_metadata32)
 
+#define ATOMISP_IOC_G_METADATA_BY_TYPE32 \
+	_IOWR('v', BASE_VIDIOC_PRIVATE + 34, struct atomisp_metadata_with_type32)
 #endif /* __ATOMISP_COMPAT_IOCTL32_H__ */
