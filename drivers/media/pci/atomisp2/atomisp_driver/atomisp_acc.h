@@ -115,4 +115,16 @@ int atomisp_acc_load_extensions(struct atomisp_sub_device *asd);
  */
 void atomisp_acc_unload_extensions(struct atomisp_sub_device *asd);
 
+/*
+ * Set acceleration firmware flags.
+ */
+int atomisp_acc_set_state(struct atomisp_sub_device *asd,
+			  struct atomisp_acc_state *arg);
+
+/*
+ * Get acceleration firmware flags.
+ */
+int atomisp_acc_get_state(struct atomisp_sub_device *asd,
+			  struct atomisp_acc_state *arg);
+
 #endif /* __ATOMISP_ACC_H__ */

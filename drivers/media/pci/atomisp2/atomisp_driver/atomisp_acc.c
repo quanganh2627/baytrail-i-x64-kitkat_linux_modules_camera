@@ -154,7 +154,7 @@ int atomisp_acc_load_to_pipe(struct atomisp_device *isp,
 	struct atomisp_acc_fw *acc_fw;
 	int handle;
 
-	if (!user_fw->data || user_fw->size == 0)
+	if (!user_fw->data || user_fw->size < sizeof(*acc_fw->fw))
 		return -EINVAL;
 
 	/* Binary has to be enabled at least for one pipeline */
@@ -191,6 +191,7 @@ int atomisp_acc_load_to_pipe(struct atomisp_device *isp,
 	acc_fw->handle = handle;
 	acc_fw->flags = user_fw->flags;
 	acc_fw->type = user_fw->type;
+	acc_fw->fw->handle = handle;
 
 	/*
 	 * correct isp firmware type in order ISP firmware can be appended
@@ -529,4 +530,61 @@ void atomisp_acc_unload_extensions(struct atomisp_sub_device *asd)
 	}
 
 	isp->acc.extension_mode = false;
+}
+
+int atomisp_acc_set_state(struct atomisp_sub_device *asd,
+			  struct atomisp_acc_state *arg)
+{
+	struct atomisp_device *isp = asd->isp;
+	struct atomisp_acc_fw *acc_fw;
+	bool enable = (arg->flags & ATOMISP_STATE_FLAG_ENABLE) != 0;
+	struct ia_css_pipe *pipe;
+	enum ia_css_err r;
+	int i;
+
+	if (!isp->acc.extension_mode)
+		return -EBUSY;
+
+	if (arg->flags & ~ATOMISP_STATE_FLAG_ENABLE)
+		return -EINVAL;
+
+	acc_fw = acc_get_fw(isp, arg->fw_handle);
+	if (!acc_fw)
+		return -EINVAL;
+
+	for (i = 0; i < ARRAY_SIZE(acc_flag_to_pipe); i++) {
+		if (acc_fw->flags & acc_flag_to_pipe[i].flag) {
+			pipe = asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].
+				pipes[acc_flag_to_pipe[i].pipe_id];
+			r = ia_css_pipe_set_qos_ext_state(pipe, acc_fw->handle,
+							  enable);
+			if (r != IA_CSS_SUCCESS)
+				return -EBADRQC;
+		}
+	}
+
+	if (enable)
+		acc_fw->flags |= ATOMISP_ACC_FW_LOAD_FL_ENABLE;
+	else
+		acc_fw->flags &= ~ATOMISP_ACC_FW_LOAD_FL_ENABLE;
+
+	return 0;
+}
+
+int atomisp_acc_get_state(struct atomisp_sub_device *asd,
+			  struct atomisp_acc_state *arg)
+{
+	struct atomisp_device *isp = asd->isp;
+	struct atomisp_acc_fw *acc_fw;
+
+	if (!isp->acc.extension_mode)
+		return -EBUSY;
+
+	acc_fw = acc_get_fw(isp, arg->fw_handle);
+	if (!acc_fw)
+		return -EINVAL;
+
+	arg->flags = acc_fw->flags;
+
+	return 0;
 }

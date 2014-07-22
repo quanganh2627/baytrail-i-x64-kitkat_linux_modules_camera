@@ -2737,6 +2737,12 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 	case ATOMISP_IOC_S_EXPOSURE_WINDOW:
 		err = atomisp_s_ae_window(asd, arg);
 		break;
+	case ATOMISP_IOC_S_ACC_STATE:
+		err = atomisp_acc_set_state(asd, arg);
+		break;
+	case ATOMISP_IOC_G_ACC_STATE:
+		err = atomisp_acc_get_state(asd, arg);
+		break;
 	default:
 		rt_mutex_unlock(&isp->mutex);
 		return -EINVAL;
