@@ -201,8 +201,8 @@ int atomisp_q_s3a_buffers_to_css(struct atomisp_sub_device *asd,
 		if (atomisp_q_s3a_buffer_to_css(asd, s3a_buf,
 						stream_id, css_pipe_id)) {
 			spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
-			/* got from head, so return back to the head */
-			list_add(&s3a_buf->list, &asd->s3a_stats);
+			/* got from tail, so return back to the tail */
+			list_add_tail(&s3a_buf->list, &asd->s3a_stats);
 			spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
 			return -EINVAL;
 		} else {
@@ -242,8 +242,8 @@ int atomisp_q_dis_buffers_to_css(struct atomisp_sub_device *asd,
 		if (atomisp_q_dis_buffer_to_css(asd, dis_buf,
 						stream_id, css_pipe_id)) {
 			spin_lock_irqsave(&asd->dis_stats_lock, irqflags);
-			/* got from head, so return back to the head */
-			list_add(&dis_buf->list, &asd->dis_stats);
+			/* got from tail, so return back to the tail */
+			list_add_tail(&dis_buf->list, &asd->dis_stats);
 			spin_unlock_irqrestore(&asd->dis_stats_lock, irqflags);
 			return -EINVAL;
 		} else {
