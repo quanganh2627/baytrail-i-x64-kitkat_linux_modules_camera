@@ -162,7 +162,7 @@ ia_css_ptr hrt_isp_css_mm_alloc_cached(size_t bytes)
 ia_css_ptr hrt_isp_css_mm_calloc(size_t bytes)
 {
 	ia_css_ptr ptr = hrt_isp_css_mm_alloc(bytes);
-	if (!ptr)
+	if (ptr)
 		hmm_set(ptr, 0, bytes);
 	return ptr;
 }
@@ -170,7 +170,7 @@ ia_css_ptr hrt_isp_css_mm_calloc(size_t bytes)
 ia_css_ptr hrt_isp_css_mm_calloc_cached(size_t bytes)
 {
 	ia_css_ptr ptr = hrt_isp_css_mm_alloc_cached(bytes);
-	if (!ptr)
+	if (ptr)
 		hmm_set(ptr, 0, bytes);
 	return ptr;
 }
