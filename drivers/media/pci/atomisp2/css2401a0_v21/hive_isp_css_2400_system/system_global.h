@@ -32,6 +32,11 @@
 #define HIVE_ISP_MAX_BURST_LENGTH	1024
 
 /*
+ * Maximum allowed burst length in words for the ISP DMA
+ */
+#define ISP_DMA_MAX_BURST_LENGTH	128
+
+/*
  * Create a list of HAS and IS properties that defines the system
  *
  * The configuration assumes the following
