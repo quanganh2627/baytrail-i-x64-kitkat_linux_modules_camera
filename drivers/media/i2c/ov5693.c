@@ -71,15 +71,16 @@ static enum v4l2_mbus_pixelcode ov5693_translate_bayer_order(enum atomisp_bayer_
         }
         return 0;
 }
-*/
+
 static enum atomisp_bayer_order ov5693_bayer_order_mapping[] = {
 
 atomisp_bayer_order_bggr,
 atomisp_bayer_order_gbrg,
 atomisp_bayer_order_rggb,
-+atomisp_bayer_order_grbg,
+atomisp_bayer_order_grbg,
 
 };
+*/
 
 /* i2c read/write stuff */
 static int ov5693_read_reg(struct i2c_client *client,
@@ -88,9 +89,6 @@ static int ov5693_read_reg(struct i2c_client *client,
 	int err;
 	struct i2c_msg msg[2];
 	unsigned char data[6];
-
-	v_flag = 0;
-	h_flag = 0;
 
 	if (!client->adapter) {
 		dev_err(&client->dev, "%s error, no client->adapter\n",
@@ -1316,15 +1314,6 @@ static int ov5693_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	if ((s_ctrl == NULL) || (s_ctrl->query == NULL))
 		return -EINVAL;
 
-	switch(ctrl->id)
-	{
-		case V4L2_CID_VFLIP:if(ctrl->value) v_flag=1;else  v_flag=0;
-			break;
-		case V4L2_CID_HFLIP:if(ctrl->value) h_flag=1;else  h_flag=0;
-			break;
-		default:break;
-	};
-
 	mutex_lock(&dev->input_lock);
 	ret = s_ctrl->query(sd, &ctrl->value);
 	mutex_unlock(&dev->input_lock);
@@ -1340,6 +1329,15 @@ static int ov5693_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 
 	if ((octrl == NULL) || (octrl->tweak == NULL))
 		return -EINVAL;
+
+		switch(ctrl->id)
+		{
+			case V4L2_CID_VFLIP:if(ctrl->value) v_flag=1;else  v_flag=0;
+				break;
+			case V4L2_CID_HFLIP:if(ctrl->value) h_flag=1;else  h_flag=0;
+				break;
+			default:break;
+		};
 
 	mutex_lock(&dev->input_lock);
 	ret = octrl->tweak(sd, ctrl->value);
