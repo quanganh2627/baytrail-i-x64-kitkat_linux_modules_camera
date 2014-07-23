@@ -274,12 +274,11 @@ static int ov680_read_sensor(struct v4l2_subdev *sd, int sid,
 	ret = ov680_i2c_write_reg(sd, OV680_CMD_PARAMETER_2, reg & 0xff);
 	if (ret)
 		dev_dbg(&client->dev, "4%s - reg = %x failed\n", __func__, reg);
-	msleep(20);
 	ret = ov680_i2c_write_reg(sd, OV680_CMD_CIR_REG,
 				  OV680_CMD_CIR_SENSOR_ACCESS_STATE);
 	if (ret)
 		dev_dbg(&client->dev, "5%s - reg = %x failed\n", __func__, reg);
-	msleep(20);
+	usleep_range(8000, 10000);
 	ret = ov680_i2c_read_reg(sd, OV680_CMD_PARAMETER_4, data);
 	if (ret)
 		dev_dbg(&client->dev, "6%s - reg = %x failed\n", __func__, reg);
@@ -395,6 +394,7 @@ static int ov680_write_firmware(struct v4l2_subdev *sd)
 static int ov680_load_firmware(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct ov680_device *dev = to_ov680_device(sd);
 	int ret;
 	u8 read_value;
 	unsigned int read_timeout = 500;
@@ -453,14 +453,15 @@ static int ov680_load_firmware(struct v4l2_subdev *sd)
 		return -EBUSY;
 	}
 
-	/* turn embedded line on */
-	ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
-	if (ret) {
-		dev_err(&client->dev, "%s - turn embedded on failed\n",
-			__func__);
-		return ret;
+	if (dev->probed) {
+		/* turn embedded line on */
+		ret = ov680_write_reg_array(sd, ov680_720p_2s_embedded_line);
+		if (ret) {
+			dev_err(&client->dev, "%s - turn embedded on failed\n",
+					__func__);
+			return ret;
+		}
 	}
-
 	dev_info(&client->dev, "firmware load successfully.\n");
 	return ret;
 }
@@ -565,7 +566,6 @@ static int ov680_s_config(struct v4l2_subdev *sd, void *pdata)
 	if (ret)
 		goto fail_config;
 
-	msleep(200);
 	/* Detect for OV680 */
 	ret = ov680_i2c_read_reg(sd, REG_SC_00, &reg_val);
 	if (ret) {
@@ -1344,6 +1344,8 @@ static int ov680_probe(struct i2c_client *client,
 		ov680_remove(client);
 	}
 	dev_dbg(&client->dev, "%s - driver load done\n", __func__);
+
+	dev->probed = true;
 	return ret;
 
 out_free:

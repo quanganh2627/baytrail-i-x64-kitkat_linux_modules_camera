@@ -243,6 +243,7 @@ struct ov680_device {
 	enum v4l2_mbus_pixelcode mbus_pixelcode;
 	bool sys_activated;
 	bool power_on;
+	bool probed;
 
 	struct v4l2_ctrl_handler ctrl_handler;
 	struct v4l2_ctrl *run_mode;
