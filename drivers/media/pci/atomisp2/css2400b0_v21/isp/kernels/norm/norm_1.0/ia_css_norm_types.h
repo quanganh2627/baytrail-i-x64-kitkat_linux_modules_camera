@@ -19,18 +19,10 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
-
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#ifndef __IA_CSS_NORM_TYPES_H
+#define __IA_CSS_NORM_TYPES_H
 
 
-#define CSS_VERSION_STRING "VER:1.4; REL:20140723_30.3_1601; API:2.1.5.0; GIT:irci_20140723_0356_#5fe8b8becb9866cf034afa30b6e1ad9e37299a24; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
+#endif /* __IA_CSS_NORM_TYPES_H */
 
-
-#endif
 

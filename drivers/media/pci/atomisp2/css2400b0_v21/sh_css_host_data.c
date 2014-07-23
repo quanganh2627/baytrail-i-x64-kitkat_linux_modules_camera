@@ -19,18 +19,30 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#include <stddef.h>
+#include <ia_css_host_data.h>
+#include <sh_css_internal.h>
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+struct ia_css_host_data *ia_css_host_data_allocate(size_t size)
+{
+	struct ia_css_host_data *me;
 
+	me =  sh_css_malloc(sizeof(struct ia_css_host_data));
+	if (!me)
+		return NULL;
+	me->size = (uint32_t)size;
+	me->address = sh_css_malloc(size);
+	if (!me->address) {
+		sh_css_free(me);
+		return NULL;
+	}
+	return me;
+}
 
-#define CSS_VERSION_STRING "VER:1.4; REL:20140723_30.3_1601; API:2.1.5.0; GIT:irci_20140723_0356_#5fe8b8becb9866cf034afa30b6e1ad9e37299a24; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
-
-
-#endif
-
+void ia_css_host_data_free(struct ia_css_host_data *me)
+{
+	if (me) {
+		sh_css_free(me->address);
+		sh_css_free(me);
+	}
+}

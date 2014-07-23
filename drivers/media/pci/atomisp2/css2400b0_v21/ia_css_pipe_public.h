@@ -115,7 +115,7 @@ struct ia_css_pipe_config {
 	{ 0, 0 },				/* dvs_envelope */ \
 	IA_CSS_FRAME_DELAY_1,			/* dvs_frame_delay */ \
 	-1,					/* acc_num_execs */ \
-	true					/* enable_dz */ \
+	false					/* enable_dz */ \
 }
 
 /** Pipe info, this struct describes properties of a pipe after it's stream has

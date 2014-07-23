@@ -24,8 +24,8 @@
 
 #include <type_support.h>
 
-#define SH_CSS_UDS_INFO_IN_BITS (4 * 16)
-#define SH_CSS_CROP_POS_IN_BITS (2 * 16)
+#define SIZE_OF_SH_CSS_UDS_INFO_IN_BITS (4 * 16)
+#define SIZE_OF_SH_CSS_CROP_POS_IN_BITS (2 * 16)
 
 /* Uds types, used in pipeline_global.h and sh_css_internal.h */
 

@@ -23,6 +23,8 @@
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
 
+#include "ia_css_types.h"
+#include "ia_css_host_data.h"
 #include "sh_css_param_dvs.h"
 #include "sh_css_params.h"
 #include "ia_css_binary.h"
@@ -58,7 +60,7 @@ ia_css_dvs_configure(
 
 static void
 convert_coords_to_ispparams(
-	hrt_vaddress ddr_addr,
+	struct ia_css_host_data *gdc_warp_table,
 	const struct ia_css_dvs_6axis_config *config,
 	unsigned int i_stride,
 	unsigned int o_width,
@@ -83,11 +85,15 @@ convert_coords_to_ispparams(
 	unsigned width, height;
 	unsigned int *xbuff = NULL;
 	unsigned int *ybuff = NULL;
+	struct gdc_warp_param_mem_s *ptr;
 
 	assert(config != NULL);
-	assert(ddr_addr != mmgr_NULL);
+	assert(gdc_warp_table != NULL);
+	assert(gdc_warp_table->address != NULL);
 
-	ddr_addr += (2* DVS_6AXIS_COORDS_ELEMS * uv_flag); /* format is Y0 Y1 UV, so UV starts at 3rd position */
+	ptr = (struct gdc_warp_param_mem_s *)gdc_warp_table->address;
+
+	ptr += (2 * uv_flag); /* format is Y0 Y1 UV, so UV starts at 3rd position */
 
 	if(uv_flag == 0)
 	{
@@ -207,38 +213,41 @@ convert_coords_to_ispparams(
 			printf("\n");
 #endif
 
-			/* HMM STORE the struct "s" */
-			mmgr_store(ddr_addr,
-				   (void *)(&s),
-				   sizeof(gdc_warp_param_mem_t));
+			*ptr = s;
 
 			// storage format:
 			// Y0 Y1 UV0 Y2 Y3 UV1
+			/* if uv_flag equals true increment with 2 incase x is odd, this to
+			skip the uv position. */
 			if (uv_flag)
-				ddr_addr += DVS_6AXIS_COORDS_ELEMS * 3;
+				ptr += 3;
 			else
-			    /* increment with 2 incase x is odd, this to
-			       skip the uv position. */
-				ddr_addr += DVS_6AXIS_COORDS_ELEMS * (1 + (i&1));
+				ptr += (1 + (i&1));
 		}
 	}
 }
 
-void
-store_dvs_6axis_config(
+struct ia_css_host_data *
+convert_allocate_dvs_6axis_config(
 	struct ia_css_isp_parameters *params,
-	const struct ia_css_binary *binary,
-	hrt_vaddress ddr_addr_y)
+	const struct ia_css_binary *binary)
 {
 	unsigned int i_stride;
 	unsigned int o_width;
 	unsigned int o_height;
+	struct ia_css_host_data *me;
+	struct gdc_warp_param_mem_s *isp_data_ptr;
 
 	assert(params != NULL);
 	assert(binary != NULL);
-	assert(ddr_addr_y != mmgr_NULL);
 	assert(params->dvs_6axis_config != NULL);
 
+	me = ia_css_host_data_allocate((size_t)((DVS_6AXIS_BYTES(binary) / 2) * 3));
+
+	if (!me)
+		return NULL;
+
+	isp_data_ptr = (struct gdc_warp_param_mem_s *)me->address;
 	/* bgz115: replaced binary->in_frame_info.res.width for
 	   'padded_width=stride' */
 	i_stride  = binary->internal_frame_info.padded_width;
@@ -246,12 +255,40 @@ store_dvs_6axis_config(
 	o_height = binary->out_frame_info[0].res.height;
 
 	/* Y plane */
-	convert_coords_to_ispparams(ddr_addr_y, params->dvs_6axis_config,
+	convert_coords_to_ispparams(me, params->dvs_6axis_config,
 				    i_stride, o_width, o_height, 0);
 	/* UV plane (packed inside the y plane) */
-	convert_coords_to_ispparams(ddr_addr_y, params->dvs_6axis_config,
+	convert_coords_to_ispparams(me, params->dvs_6axis_config,
 				    i_stride/2, o_width/2, o_height/2, 1);
 
+	return me;
+}
+
+enum ia_css_err
+store_dvs_6axis_config(
+	struct ia_css_isp_parameters *params,
+	const struct ia_css_binary *binary,
+	hrt_vaddress ddr_addr_y)
+{
+
+	struct ia_css_host_data *me;
+	assert(params != NULL);
+	assert(ddr_addr_y != mmgr_NULL);
+
+	me = convert_allocate_dvs_6axis_config(params,
+				 binary);
+
+	if (!me) {
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	}
+
+	ia_css_params_store_ia_css_host_data(
+				ddr_addr_y,
+				me);
+	ia_css_host_data_free(me);
 
 	params->isp_params_changed = true;
+	return IA_CSS_SUCCESS;
 }
+

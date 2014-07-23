@@ -27,14 +27,18 @@
  */
 
 /**
-The last two digits of the CSS_API_VERSION_STRING give the major and minor
-versions of the CSS-API. The minor version number will be increased by one when
-a backwards-compatible change is made. The major version number will be
-increased (and the minor version number reset) when a non-backwards-compatible
-change is made.
+
+The version string has four dot-separated numbers, read left to right:
+  The first two are the API version, and should not be changed.
+  The third number is incremented by a CSS firmware developer when the
+    API change is not backwards compatible.
+  The fourth number is incremented by the a CSS firmware developer for
+    every API change.
+    It should be zeroed when the third number changes.
+
 */
 
-#define CSS_API_VERSION_STRING	"2.1.3.5"
+#define CSS_API_VERSION_STRING	"2.1.5.0"
 
 /*
 Change log
@@ -132,6 +136,15 @@ v2.1.3.4
 
 v2.1.3.5
 - added tiled frame format IA_CSS_FRAME_FORMAT_NV12_TILEY
+
+v2.1.3.6
+- added functions ia_css_host_data_allocate and ia_css_host_data_free
+
+v2.1.4.0 default pipe config change
+- disable enable_dz param by default
+
+v2.1.5.0
+- removed mix_range field from yuvp1_y_ee_nr_frng_public_config
 
 */
 

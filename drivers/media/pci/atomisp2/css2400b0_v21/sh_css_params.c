@@ -54,6 +54,7 @@
 #include "ia_css_isp_params.h"
 #include "ia_css_mipi.h"
 #include "ia_css_morph.h"
+#include "ia_css_host_data.h"
 
 #if !defined(IS_ISP_2500_SYSTEM)
 /* Include all kernel host interfaces for ISP1 */
@@ -1290,35 +1291,65 @@ sh_css_params_ddr_address_map(void)
  * 0: Coefficient 0 used bits
  * 1: Coefficient 1 used bits
  * 2: Coefficient 2 used bits
- * 3: Coefficient 3 used bit3
+ * 3: Coefficient 3 used bits
  * x: not used
  *
  * xx33333332222222 | xx11111110000000
  *
  * ***************************************************
  */
-static void
-store_fpntbl(struct ia_css_isp_parameters *params, hrt_vaddress ptr)
+static struct ia_css_host_data *
+convert_allocate_fpntbl(struct ia_css_isp_parameters *params)
 {
 	unsigned int i, j;
 	short *data_ptr;
+	struct ia_css_host_data *me;
+	unsigned int isp_format_data_size;
+	uint32_t *isp_format_data_ptr;
 
 	assert(params != NULL);
-	assert(ptr != mmgr_NULL);
 
 	data_ptr = params->fpn_config.data;
+	isp_format_data_size = params->fpn_config.height * params->fpn_config.width * sizeof(uint32_t);
+
+	me = ia_css_host_data_allocate(isp_format_data_size);
+
+	if (!me)
+		return NULL;
+
+	isp_format_data_ptr = (uint32_t *)me->address;
 
 	for (i = 0; i < params->fpn_config.height; i++) {
 		for (j = 0;
 		     j < params->fpn_config.width;
-		     j += 4, ptr += 4, data_ptr += 4) {
+		     j += 4, data_ptr += 4, isp_format_data_ptr++) {
 			int data = data_ptr[0] << 0 |
 				   data_ptr[1] << 7 |
 				   data_ptr[2] << 16 |
 				   data_ptr[3] << 23;
-			mmgr_store(ptr, (void *)(&data), sizeof(data));
+			*isp_format_data_ptr = data;
 		}
 	}
+	return me;
+}
+
+static enum ia_css_err
+store_fpntbl(struct ia_css_isp_parameters *params, hrt_vaddress ptr)
+{
+	struct ia_css_host_data *isp_data;
+
+	assert(params != NULL);
+	assert(ptr != mmgr_NULL);
+
+	isp_data = convert_allocate_fpntbl(params);
+	if (!isp_data) {
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	}
+	ia_css_params_store_ia_css_host_data(ptr, isp_data);
+
+	ia_css_host_data_free(isp_data);
+	return IA_CSS_SUCCESS;
 }
 #endif
 
@@ -1517,47 +1548,101 @@ sh_css_set_shading_table(struct ia_css_stream *stream,
 
 	IA_CSS_LEAVE_PRIVATE("void");
 }
-#endif
 
-#if !defined(IS_ISP_2500_SYSTEM)
 void
-ia_css_params_store_sctbl(
+ia_css_params_store_ia_css_host_data(
+	hrt_vaddress ddr_addr,
+	struct ia_css_host_data *data)
+{
+	assert(data != NULL);
+	assert(data->address != NULL);
+	assert(ddr_addr != mmgr_NULL);
+
+	IA_CSS_ENTER_PRIVATE("");
+
+	mmgr_store(ddr_addr,
+	   (void *)(data->address),
+	   (size_t)data->size);
+
+	IA_CSS_LEAVE_PRIVATE("void");
+}
+
+struct ia_css_host_data *
+ia_css_params_alloc_convert_sctbl(
 	    const struct ia_css_pipeline_stage *stage,
-	    hrt_vaddress ddr_addr,
 	    const struct ia_css_shading_table *shading_table)
 {
 	const struct ia_css_binary *binary = stage->binary;
+	struct ia_css_host_data    *sctbl;
 	unsigned int i, j, aligned_width, row_padding;
+	unsigned int sctbl_size;
+	short int    *ptr;
 
 	assert(binary != NULL);
 	assert(shading_table != NULL);
-	assert(ddr_addr != mmgr_NULL);
 
 	IA_CSS_ENTER_PRIVATE("");
 
 	if (shading_table == NULL) {
 		IA_CSS_LEAVE_PRIVATE("void");
-		return;
+		return NULL;
 	}
 
 	aligned_width = binary->sctbl_aligned_width_per_color;
 	row_padding = aligned_width - shading_table->width;
+	sctbl_size = shading_table->height * IA_CSS_SC_NUM_COLORS * aligned_width * sizeof(short);
+
+	sctbl = ia_css_host_data_allocate((size_t)sctbl_size);
+
+	if (!sctbl)
+		return NULL;
+	ptr = (short int*)sctbl->address;
+	memset(ptr,
+		0,
+		sctbl_size);
 
 	for (i = 0; i < shading_table->height; i++) {
 		for (j = 0; j < IA_CSS_SC_NUM_COLORS; j++) {
-			mmgr_store(ddr_addr,
+			memcpy(ptr,
 				   &shading_table->data[j]
 					[i*shading_table->width],
 				   shading_table->width * sizeof(short));
-			ddr_addr += shading_table->width * sizeof(short);
-			mmgr_clear(ddr_addr,
-				   row_padding * sizeof(short));
-			ddr_addr += row_padding * sizeof(short);
+			ptr += aligned_width;
 		}
 	}
 
 	IA_CSS_LEAVE_PRIVATE("void");
+	return sctbl;
 }
+
+enum ia_css_err ia_css_params_store_sctbl(
+	const struct ia_css_pipeline_stage *stage,
+	hrt_vaddress sc_tbl,
+	const struct ia_css_shading_table  *sc_config)
+{
+	struct ia_css_host_data *isp_sc_tbl;
+
+	IA_CSS_ENTER_PRIVATE("");
+
+	if (sc_config == NULL) {
+		IA_CSS_LEAVE_PRIVATE("void");
+		return IA_CSS_SUCCESS;
+	}
+
+	isp_sc_tbl = ia_css_params_alloc_convert_sctbl(stage, sc_config);
+	if (!isp_sc_tbl) {
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	}
+	/* store the shading table to ddr */
+	ia_css_params_store_ia_css_host_data(sc_tbl, isp_sc_tbl);
+	ia_css_host_data_free(isp_sc_tbl);
+
+	IA_CSS_LEAVE_PRIVATE("void");
+
+	return IA_CSS_SUCCESS;
+}
+
 #endif
 
 static void
@@ -3400,14 +3485,17 @@ sh_css_params_uninit(void)
 }
 
 #if !defined(IS_ISP_2500_SYSTEM)
-static void write_morph_plane(
+static struct ia_css_host_data *
+convert_allocate_morph_plane(
 	unsigned short *data,
 	unsigned int width,
 	unsigned int height,
-	hrt_vaddress dest,
 	unsigned int aligned_width)
 {
-	unsigned int i, padding, w;
+	unsigned int i, j, padding, w;
+	struct ia_css_host_data *me;
+	unsigned int isp_data_size;
+	uint16_t *isp_data_ptr;
 
 	IA_CSS_ENTER_PRIVATE("void");
 
@@ -3421,17 +3509,53 @@ static void write_morph_plane(
 		padding = aligned_width - width;
 		w = width;
 	}
+	isp_data_size = height * (w + padding) * sizeof(uint16_t);
+
+	me = ia_css_host_data_allocate((size_t) isp_data_size);
+
+	if (!me) {
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+		return NULL;
+	}
+
+	isp_data_ptr = (uint16_t *)me->address;
+
+	memset(isp_data_ptr, 0, (size_t)isp_data_size);
 
 	for (i = 0; i < height; i++) {
-		mmgr_store(dest, data, w * sizeof(short));
-		dest += w * sizeof(short);
-		mmgr_clear(dest, padding * sizeof(short));
-		dest += padding * sizeof(short);
+		for (j = 0; j < w; j++)
+			*isp_data_ptr++ = (uint16_t)data[j];
+		isp_data_ptr += padding;
 		data += width;
 	}
 
 	IA_CSS_LEAVE_PRIVATE("void");
+	return me;
 }
+
+static enum ia_css_err
+store_morph_plane(
+	unsigned short *data,
+	unsigned int width,
+	unsigned int height,
+	hrt_vaddress dest,
+	unsigned int aligned_width)
+{
+	struct ia_css_host_data *isp_data;
+
+	assert(dest != mmgr_NULL);
+
+	isp_data = convert_allocate_morph_plane(data, width, height, aligned_width);
+	if (!isp_data) {
+		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	}
+	ia_css_params_store_ia_css_host_data(dest, isp_data);
+
+	ia_css_host_data_free(isp_data);
+	return IA_CSS_SUCCESS;
+}
+
 #endif
 #if !defined(IS_ISP_2500_SYSTEM)
 static void sh_css_update_isp_params_to_ddr(
@@ -3899,7 +4023,11 @@ sh_css_params_write_to_ddr_internal(
 		}
 		if (params->config_changed[IA_CSS_FPN_ID] || buff_realloced) {
 			if (params->fpn_config.enabled) {
-				store_fpntbl(params, ddr_map->fpn_tbl);
+				err = store_fpntbl(params, ddr_map->fpn_tbl);
+				if (err != IA_CSS_SUCCESS) {
+					IA_CSS_LEAVE_ERR_PRIVATE(err);
+					return err;
+				}
 			}
 #ifdef HRT_CSIM
 			else {
@@ -3935,8 +4063,11 @@ sh_css_params_write_to_ddr_internal(
 			if (enable_conv == 0) {
 				if (params->sc_table) {
 					/* store the shading table to ddr */
-					ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_table);
-
+					err = ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_table);
+					if (err != IA_CSS_SUCCESS) {
+						IA_CSS_LEAVE_ERR_PRIVATE(err);
+						return err;
+					}
 					/* set sc_config to isp */
 					params->sc_config = (struct ia_css_shading_table *)params->sc_table;
 					ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
@@ -3954,7 +4085,11 @@ sh_css_params_write_to_ddr_internal(
 					}
 
 					/* store the shading table to ddr */
-					ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
+					err = ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
+					if (err != IA_CSS_SUCCESS) {
+						IA_CSS_LEAVE_ERR_PRIVATE(err);
+						return err;
+					}
 
 					/* set sc_config to isp */
 					ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
@@ -3981,7 +4116,11 @@ sh_css_params_write_to_ddr_internal(
 				}
 
 				/* store the shading table to ddr */
-				ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
+				err = ia_css_params_store_sctbl(stage, ddr_map->sc_tbl, params->sc_config);
+				if (err != IA_CSS_SUCCESS) {
+					IA_CSS_LEAVE_ERR_PRIVATE(err);
+					return err;
+				}
 
 				/* set sc_config to isp */
 				ia_css_kernel_process_param[IA_CSS_SC_ID](pipe_id, stage, params);
@@ -4069,6 +4208,7 @@ sh_css_params_write_to_ddr_internal(
 					IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 					return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
 				}
+				params->dvs_6axis_config_changed = true;
 			}
 
 			store_dvs_6axis_config(params,
@@ -4161,12 +4301,12 @@ sh_css_params_write_to_ddr_internal(
 			}
 
 			for (i = 0; i < IA_CSS_MORPH_TABLE_NUM_PLANES; i++) {
-				write_morph_plane(table->coordinates_x[i],
+				store_morph_plane(table->coordinates_x[i],
 					table->width,
 					table->height,
 					*virt_addr_tetra_x[i],
 					binary->morph_tbl_aligned_width);
-				write_morph_plane(table->coordinates_y[i],
+				store_morph_plane(table->coordinates_y[i],
 					table->width,
 					table->height,
 					*virt_addr_tetra_y[i],
@@ -4203,6 +4343,7 @@ sh_css_params_write_to_ddr_internal(
 	IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_SUCCESS);
 	return IA_CSS_SUCCESS;
 }
+
 
 /**
  * Currently this function is called from:
@@ -4815,6 +4956,7 @@ ia_css_dvs2_statistics_free(struct ia_css_dvs2_statistics *me)
 		sh_css_free(me);
 	}
 }
+
 
 struct ia_css_dvs2_coefficients *
 ia_css_dvs2_coefficients_allocate(const struct ia_css_dvs_grid_info *grid)
