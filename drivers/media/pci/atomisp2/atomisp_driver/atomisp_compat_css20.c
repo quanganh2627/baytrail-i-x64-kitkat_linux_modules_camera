@@ -34,6 +34,7 @@
 #include "atomisp-regs.h"
 #include "atomisp_fops.h"
 #include "atomisp_ioctl.h"
+#include "atomisp_acc.h"
 
 #include "hrt/hive_isp_css_mm_hrt.h"
 
@@ -4515,6 +4516,9 @@ int atomisp_css_isr_thread(struct atomisp_device *isp,
 			break;
 		case CSS_EVENT_PIPELINE_DONE:
 			css_pipe_done[asd->index] = true;
+			break;
+		case CSS_EVENT_ACC_STAGE_COMPLETE:
+			atomisp_acc_done(asd, current_event.event.fw_handle);
 			break;
 		default:
 			dev_dbg(isp->dev, "unhandled css stored event: 0x%x\n",

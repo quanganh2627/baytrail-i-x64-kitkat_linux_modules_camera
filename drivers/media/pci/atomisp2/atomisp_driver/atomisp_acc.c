@@ -25,6 +25,7 @@
  */
 
 #include <linux/init.h>
+#include <media/v4l2-event.h>
 
 #include "atomisp_acc.h"
 #include "atomisp_internal.h"
@@ -328,6 +329,17 @@ int atomisp_acc_wait(struct atomisp_sub_device *asd, unsigned int *handle)
 	}
 
 	return ret;
+}
+
+void atomisp_acc_done(struct atomisp_sub_device *asd, unsigned int handle)
+{
+	struct v4l2_event event = { 0 };
+
+	event.type = V4L2_EVENT_ATOMISP_ACC_COMPLETE;
+	event.u.frame_sync.frame_sequence = atomic_read(&asd->sequence);
+	event.id = handle;
+
+	v4l2_event_queue(asd->subdev.devnode, &event);
 }
 
 int atomisp_acc_map(struct atomisp_device *isp, struct atomisp_acc_map *map)
