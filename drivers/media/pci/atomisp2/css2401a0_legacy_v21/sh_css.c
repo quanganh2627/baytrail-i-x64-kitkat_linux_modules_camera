@@ -69,6 +69,7 @@
 #endif
 #include "mmu_device.h"		/* mmu_set_page_table_base_index(), ... */
 #include "gdc_device.h"		/* HRT_GDC_N */
+#include "dma.h"		/* dma_set_max_burst_size() */
 #include "irq.h"			/* virq */
 #include "sp.h"				/* cnd_sp_irq_enable() */
 #include "isp.h"			/* cnd_isp_irq_enable, ISP_VEC_NELEMS */
@@ -1807,6 +1808,9 @@ ia_css_init(const struct ia_css_env *env,
 #endif
 
 #if !defined(HAS_NO_INPUT_SYSTEM)
+	dma_set_max_burst_size(DMA0_ID, HIVE_DMA_BUS_DDR_CONN,
+			       ISP_DMA_MAX_BURST_LENGTH);
+
 	if(ia_css_isys_init() != INPUT_SYSTEM_ERR_NO_ERROR)
 		err = IA_CSS_ERR_INVALID_ARGUMENTS;
 #endif
@@ -4732,8 +4736,10 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 		if ((err == IA_CSS_SUCCESS) && (!stream->cont_capt) && (stream->num_pipes > 1)) {
 			int i;
 			for (i = 1; i < stream->num_pipes; i++) {
-				stream->pipes[i]->stop_requested = false;
-				err = preview_start(stream->pipes[i]);
+				if (stream->pipes[i]->mode == IA_CSS_PIPE_ID_PREVIEW) {
+					stream->pipes[i]->stop_requested = false;
+					err = preview_start(stream->pipes[i]);
+				}
 			}
 		}
 		break;
@@ -7740,28 +7746,8 @@ sh_css_init_host_sp_control_vars(void)
  */
 void ia_css_pipe_config_defaults(struct ia_css_pipe_config *pipe_config)
 {
-	struct ia_css_pipe_config def_config = {
-		IA_CSS_PIPE_MODE_PREVIEW, /* mode */
-		1,      /* isp_pipe_version */
-		{0, 0}, /* bayer_ds_out_res */
-		{0, 0}, /* capt_pp_in_res */
-		{0, 0}, /* vf_pp_in_res */
-		{0, 0}, /* dvs_crop_out_res */
-		{IA_CSS_BINARY_DEFAULT_FRAME_INFO}, /* output_info */
-		{IA_CSS_BINARY_DEFAULT_FRAME_INFO}, /* vf_output_info */
-		NULL,   /* acc_extension */
-		NULL,   /* acc_stages */
-		0,      /* num_acc_stages */
-		{
-			IA_CSS_CAPTURE_MODE_RAW, /* mode */
-			false, /* enable_xnr */
-			false  /* enable_raw_output */
-		},      /* default_capture_config */
-		{0, 0}, /* dvs_envelope */
-		IA_CSS_FRAME_DELAY_1, /* dvs_frame_delay */
-		-1,     /* acc_num_execs */
-		true,   /* enable_dz */
-	};
+	struct ia_css_pipe_config def_config = DEFAULT_PIPE_CONFIG;
+
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_pipe_config_defaults()\n");
 	*pipe_config = def_config;
 }

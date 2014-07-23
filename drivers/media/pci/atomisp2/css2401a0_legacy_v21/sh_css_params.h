@@ -92,7 +92,7 @@ struct ia_css_isp_parameters {
 	struct ia_css_ce_config     ce_config;
 	struct ia_css_formats_config     formats_config;
 
-	struct ia_css_dvs_6axis_config	*dvs_6axis_config;
+	struct ia_css_dvs_6axis_config  *dvs_6axis_config;
 
 	struct ia_css_ecd_config    ecd_config;
 	struct ia_css_ynr_config    ynr_config;
@@ -153,10 +153,21 @@ struct ia_css_isp_parameters {
 enum ia_css_err
 sh_css_params_write_to_ddr(struct ia_css_stream *stream,
 			   struct ia_css_pipeline_stage *stage);
+
 void
+ia_css_params_store_ia_css_host_data(
+	hrt_vaddress ddr_addr,
+	struct ia_css_host_data *data);
+
+enum ia_css_err
 ia_css_params_store_sctbl(
 	    const struct ia_css_pipeline_stage *stage,
 	    hrt_vaddress ddr_addr,
+	    const struct ia_css_shading_table *shading_table);
+
+struct ia_css_host_data *
+ia_css_params_alloc_convert_sctbl(
+	    const struct ia_css_pipeline_stage *stage,
 	    const struct ia_css_shading_table *shading_table);
 
 #endif /* _SH_CSS_PARAMS_H_ */

@@ -26,6 +26,7 @@
 #include "ia_css_binary.h"
 #include "sh_css_params.h"
 
+#include "ia_css_types.h"
 #include "ia_css_dvs_types.h"
 #include "ia_css_dvs_param.h"
 
@@ -46,6 +47,16 @@ ia_css_dvs_configure(
 	const struct ia_css_frame_info *from);
 
 void
+convert_dvs_6axis_config(
+	struct ia_css_isp_parameters *params,
+	const struct ia_css_binary *binary);
+
+struct ia_css_host_data *
+convert_allocate_dvs_6axis_config(
+	struct ia_css_isp_parameters *params,
+	const struct ia_css_binary *binary);
+
+enum ia_css_err
 store_dvs_6axis_config(
 	struct ia_css_isp_parameters *params,
 	const struct ia_css_binary *binary,

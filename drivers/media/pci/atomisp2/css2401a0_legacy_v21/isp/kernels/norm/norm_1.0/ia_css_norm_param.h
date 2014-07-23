@@ -19,26 +19,10 @@
  *
  */
 
-#ifndef _SH_CSS_UDS_H_
-#define _SH_CSS_UDS_H_
+#ifndef __IA_CSS_NORM_PARAM_H
+#define __IA_CSS_NORM_PARAM_H
 
-#include <type_support.h>
+#include "type_support.h"
+#include <system_global.h>
 
-#define SIZE_OF_SH_CSS_UDS_INFO_IN_BITS (4 * 16)
-#define SIZE_OF_SH_CSS_CROP_POS_IN_BITS (2 * 16)
-
-/* Uds types, used in pipeline_global.h and sh_css_internal.h */
-
-struct sh_css_uds_info {
-	uint16_t curr_dx;
-	uint16_t curr_dy;
-	uint16_t xc;
-	uint16_t yc;
-};
-
-struct sh_css_crop_pos {
-	uint16_t x;
-	uint16_t y;
-};
-
-#endif /* _SH_CSS_UDS_H_ */
+#endif /* __IA_CSS_NORM_PARAM_H */

@@ -19,26 +19,30 @@
  *
  */
 
-#ifndef _SH_CSS_UDS_H_
-#define _SH_CSS_UDS_H_
+#include <stddef.h>
+#include <ia_css_host_data.h>
+#include <sh_css_internal.h>
 
-#include <type_support.h>
+struct ia_css_host_data *ia_css_host_data_allocate(size_t size)
+{
+	struct ia_css_host_data *me;
 
-#define SIZE_OF_SH_CSS_UDS_INFO_IN_BITS (4 * 16)
-#define SIZE_OF_SH_CSS_CROP_POS_IN_BITS (2 * 16)
+	me =  sh_css_malloc(sizeof(struct ia_css_host_data));
+	if (!me)
+		return NULL;
+	me->size = (uint32_t)size;
+	me->address = sh_css_malloc(size);
+	if (!me->address) {
+		sh_css_free(me);
+		return NULL;
+	}
+	return me;
+}
 
-/* Uds types, used in pipeline_global.h and sh_css_internal.h */
-
-struct sh_css_uds_info {
-	uint16_t curr_dx;
-	uint16_t curr_dy;
-	uint16_t xc;
-	uint16_t yc;
-};
-
-struct sh_css_crop_pos {
-	uint16_t x;
-	uint16_t y;
-};
-
-#endif /* _SH_CSS_UDS_H_ */
+void ia_css_host_data_free(struct ia_css_host_data *me)
+{
+	if (me) {
+		sh_css_free(me->address);
+		sh_css_free(me);
+	}
+}

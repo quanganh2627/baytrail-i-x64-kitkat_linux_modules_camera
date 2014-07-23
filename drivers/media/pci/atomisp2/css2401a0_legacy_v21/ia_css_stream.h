@@ -46,8 +46,9 @@ struct ia_css_stream {
 	struct ia_css_pipe            *continuous_pipe;
 	struct ia_css_isp_parameters  *isp_params_configs;
 	struct ia_css_isp_parameters  *per_frame_isp_params_configs;
+
 	bool                           cont_capt;
-	bool						   started;
+	bool                           started;
 };
 
 /** @brief Get a binary in the stream, which binary has the shading correction.
