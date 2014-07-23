@@ -34,10 +34,6 @@ obj-$(CONFIG_VIDEO_GC2235)     += gc2235f.o
 obj-$(CONFIG_VIDEO_GC5004)     += gc5004.o
 obj-$(CONFIG_VIDEO_GC0339)     += gc0339.o
 obj-$(CONFIG_VIDEO_GC0310)     += gc0310.o
-obj-$(CONFIG_VIDEO_VM149)      += vm149.o
-obj-$(CONFIG_VIDEO_WV511)      += wv511.o
-obj-$(CONFIG_VIDEO_DW9714)     += dw9714.o
-obj-$(CONFIG_VIDEO_AD5823)     += ad5823.o
 obj-$(CONFIG_VIDEO_BF3905)     += bf3905.o
 obj-$(CONFIG_VIDEO_S5K8AAY)    += s5k8aay.o
 CFLAGS_s5k8aay.o += -Werror
@@ -48,6 +44,14 @@ CFLAGS_libmsrlisthelper.o += -Werror
 obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o
 
 obj-$(CONFIG_VIDEO_CSI_XACTOR) += xactor_x.o
+
+#
+# Makefile for vcm drivers
+#
+obj-$(CONFIG_VCM_VM149)      += vm149.o
+obj-$(CONFIG_VCM_WV511)      += wv511.o
+obj-$(CONFIG_VCM_DW9714)     += dw9714.o
+obj-$(CONFIG_VCM_AD5823)     += ad5823.o
 
 #
 # Makefile for flash drivers

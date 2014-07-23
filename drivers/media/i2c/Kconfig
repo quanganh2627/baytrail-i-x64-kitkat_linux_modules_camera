@@ -1,13 +1,7 @@
 #
-# Kconfig for sensor drivers
+# Kconfig for vcm drivers
 #
-
-source "drivers/external_drivers/camera/drivers/media/i2c/ov/Kconfig"
-source "drivers/external_drivers/camera/drivers/media/i2c/mt9e013/Kconfig"
-source "drivers/external_drivers/camera/drivers/media/i2c/imx/Kconfig"
-source "drivers/external_drivers/camera/drivers/media/i2c/imx135VB/Kconfig"
-
-config VIDEO_VM149
+config VCM_VM149
        tristate "VCM vm149 support"
        depends on I2C && VIDEO_V4L2
        ---help---
@@ -15,7 +9,7 @@ config VIDEO_VM149
 
          It currently only works with the atomisp driver.
 
-config VIDEO_DW9714
+config VCM_DW9714
        tristate "VCM dw9714 support"
        depends on I2C && VIDEO_V4L2
        ---help---
@@ -23,7 +17,7 @@ config VIDEO_DW9714
 
          It currently only works with the atomisp driver.
 
-config VIDEO_WV511
+config VCM_WV511
        tristate "VCM wv511 support"
        depends on I2C && VIDEO_V4L2
        ---help---
@@ -31,6 +25,22 @@ config VIDEO_WV511
 
          It currently only works with the atomisp driver.
 	
+config VCM_AD5823
+       tristate "VCM ad5823 support"
+       depends on I2C && VIDEO_V4L2
+       ---help---
+         This is a Video4Linux2 sensor-level driver for the wv511.
+
+         It currently only works with the atomisp driver.
+
+#
+# Kconfig for sensor drivers
+#
+
+source "drivers/external_drivers/camera/drivers/media/i2c/ov/Kconfig"
+source "drivers/external_drivers/camera/drivers/media/i2c/mt9e013/Kconfig"
+source "drivers/external_drivers/camera/drivers/media/i2c/imx/Kconfig"
+source "drivers/external_drivers/camera/drivers/media/i2c/imx135VB/Kconfig"
 config VIDEO_OV7736
         tristate "OVT ov7736 sensor support"
         depends on I2C && VIDEO_V4L2
@@ -42,14 +52,6 @@ config VIDEO_OV7736
 
           It currently only works with the atomisp driver.
 	
-config VIDEO_AD5823
-       tristate "VCM ad5823 support"
-       depends on I2C && VIDEO_V4L2
-       ---help---
-         This is a Video4Linux2 sensor-level driver for the wv511.
-
-         It currently only works with the atomisp driver.
-
 config VIDEO_OV9724
        tristate "OVT ov9724 sensor support"
        depends on I2C && VIDEO_V4L2
