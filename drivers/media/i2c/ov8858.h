@@ -888,6 +888,25 @@ static struct ov8858_resolution ov8858_res_still[] = {
 
 static struct ov8858_resolution ov8858_res_video[] = {
 	{
+		.desc = "ov8858_1080P_60_VIDEO",
+		.width = 1936,
+		.height = 1096,
+		.used = 0,
+		.regs = ov8858_1080P_60,
+		.bin_factor_x = 0,
+		.bin_factor_y = 0,
+		.skip_frames = 1,
+		.fps_options =  {
+			{
+				.fps = 60,
+				.pixels_per_line = 4366,
+				.lines_per_frame = 1151,
+			},
+			{
+			}
+		},
+	},
+	{
 		 .desc = "ov8858_6M_STILL",
 		 .width = 3280,
 		 .height = 1852,
@@ -920,25 +939,6 @@ static struct ov8858_resolution ov8858_res_video[] = {
 				.fps = 30,
 				.pixels_per_line = 3880,
 				.lines_per_frame = 2573,
-			},
-			{
-			}
-		},
-	},
-	{
-		 .desc = "ov8858_1080P_60_VIDEO",
-		 .width = 1936,
-		 .height = 1096,
-		 .used = 0,
-		 .regs = ov8858_1080P_60,
-		 .bin_factor_x = 0,
-		 .bin_factor_y = 0,
-		 .skip_frames = 1,
-		 .fps_options =  {
-			{
-				.fps = 60,
-				.pixels_per_line = 4366,
-				.lines_per_frame = 1151,
 			},
 			{
 			}
