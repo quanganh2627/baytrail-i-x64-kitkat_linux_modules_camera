@@ -26,6 +26,7 @@
 #include "isp/kernels/anr/anr_2/ia_css_anr2.host.h"
 #include "isp/kernels/bh/bh_2/ia_css_bh.host.h"
 #include "isp/kernels/bnr/bnr_1.0/ia_css_bnr.host.h"
+#include "isp/kernels/bnr/bnr_2.2/ia_css_bnr22.host.h"
 #include "isp/kernels/cnr/cnr_2/ia_css_cnr2.host.h"
 #include "isp/kernels/crop/crop_1.0/ia_css_crop.host.h"
 #include "isp/kernels/csc/csc_1.0/ia_css_csc.host.h"

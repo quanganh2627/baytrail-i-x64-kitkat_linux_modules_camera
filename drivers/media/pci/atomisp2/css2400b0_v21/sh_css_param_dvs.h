@@ -62,6 +62,10 @@
 	* DVS_NUM_BLOCKS_X((binary)->out_frame_info[0].res.width) \
 	* DVS_NUM_BLOCKS_Y((binary)->out_frame_info[0].res.height))
 
+/* Bilinear interpolation (HRT_GDC_BLI_MODE) is the supported method currently.
+ * Bicubic interpolation (HRT_GDC_BCI_MODE) is not supported yet */
+#define DVS_GDC_INTERP_METHOD HRT_GDC_BLI_MODE
+
 struct ia_css_dvs_6axis_config *
 generate_dvs_6axis_table(const struct ia_css_resolution	*frame_res, const struct ia_css_resolution *dvs_offset);
 

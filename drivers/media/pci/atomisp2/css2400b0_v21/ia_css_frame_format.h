@@ -49,7 +49,6 @@
 	- css/isp/kernels/fc/fc_1.0/formats.isp.c
 	- css/isp/kernels/output/output_1.0/output_table.isp.c
 	- css/isp/kernels/output/sc_output_1.0/formats.hive.c
-	- css/isp/modes/sc_interface/isp_formats.isp.h
 	- css/isp/modes/interface/isp_formats.isp.h
 	- css/bxt_sandbox/psyspoc/interface/ia_css_pg_info.h
 	- css/bxt_sandbox/psysapi/data/interface/ia_css_program_group_data.h
