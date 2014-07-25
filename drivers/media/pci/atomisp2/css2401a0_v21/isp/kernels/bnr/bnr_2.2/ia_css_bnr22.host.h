@@ -19,18 +19,22 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __IA_CSS_BNR22_HOST_H
+#define __IA_CSS_BNR22_HOST_H
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "ia_css_bnr22_types.h"
+#include "ia_css_bnr22_param.h"
 
+extern const struct ia_css_bnr22_config default_bnr22_config;
 
-#define CSS_VERSION_STRING "VER:1.4; REL:20140725_30.5_1600; API:2.1.5.0; GIT:irci_20140725_0200_#4232c62e6ca3034e1eb206d082e156ba97e60eee; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
+void
+ia_css_bnr22_encode(
+	struct sh_css_isp_bnr22_params *to,
+	const struct ia_css_bnr22_config *from);
 
+void
+ia_css_bnr22_debug_trace(
+	const struct ia_css_bnr22_config *config,
+	unsigned level);
 
-#endif
-
+#endif /* __IA_CSS_BNR22_HOST_H */
