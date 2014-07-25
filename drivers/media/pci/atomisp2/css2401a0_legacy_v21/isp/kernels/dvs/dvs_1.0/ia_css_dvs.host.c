@@ -72,9 +72,11 @@ convert_coords_to_ispparams(
 	unsigned int x00, x01, x10, x11,
 		     y00, y01, y10, y11;
 
-	unsigned int xmin, ymin, ymax;
-	unsigned int topleft_x, topleft_y, bottomleft_y,
+	unsigned int xmin, ymin, xmax, ymax;
+	unsigned int topleft_x, topleft_y, bottom_x, bottom_y,
 		     topleft_x_frac, topleft_y_frac;
+	unsigned int dvs_interp_envelope = (DVS_GDC_INTERP_METHOD == HRT_GDC_BLI_MODE ?
+					   DVS_GDC_BLI_INTERP_ENVELOPE : DVS_GDC_BCI_INTERP_ENVELOPE);
 
 	/* number of blocks per height and width */
 	unsigned int num_blocks_y =  (uv_flag ? DVS_NUM_BLOCKS_Y_CHROMA(o_height) : DVS_NUM_BLOCKS_Y(o_height) );
@@ -132,6 +134,7 @@ convert_coords_to_ispparams(
 			y11 = ybuff[(j+1) * width + (i+1)];
 
 			xmin = min(x00, x10);
+			xmax = max(x01, x11);
 			ymin = min(y00, y01);
 			ymax = max(y10, y11);
 
@@ -142,14 +145,6 @@ convert_coords_to_ispparams(
 			assert ( y10 >= ymin);
 			assert ( y11 >= ymin);
 
-#if 0
-			/* TODO: optimize block width to a minimum to avoid
-			 * unnecessary ISP-DDR bandwidth: */
-			xmax = max(x01, x11);
-			in_block_width  = xmax - xmin; */
-#else
-			s.in_block_width = DVS_INPUT_MAX_WIDTH;
-#endif
 			topleft_y = ymin >> DVS_COORD_FRAC_BITS;
 			topleft_x = ((xmin >> DVS_COORD_FRAC_BITS)
 					>> XMEM_ALIGN_LOG2)
@@ -158,8 +153,11 @@ convert_coords_to_ispparams(
 
 			/* similar to topleft_y calculation, but round up if ymax
 			 * has any fraction bits */
-			bottomleft_y = CEIL_DIV(ymax, 1 << DVS_COORD_FRAC_BITS);
-			s.in_block_height = bottomleft_y - topleft_y + DVS_INTERPOLATION_ADJUST;
+			bottom_y = CEIL_DIV(ymax, 1 << DVS_COORD_FRAC_BITS);
+			s.in_block_height = bottom_y - topleft_y + dvs_interp_envelope;
+
+			bottom_x = CEIL_DIV(xmax, 1 << DVS_COORD_FRAC_BITS);
+			s.in_block_width = bottom_x - topleft_x + dvs_interp_envelope;
 
 			topleft_x_frac = topleft_x << (DVS_COORD_FRAC_BITS);
 			topleft_y_frac = topleft_y << (DVS_COORD_FRAC_BITS);
