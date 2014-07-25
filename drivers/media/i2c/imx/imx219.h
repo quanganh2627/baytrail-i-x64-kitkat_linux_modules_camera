@@ -64,7 +64,6 @@ static struct imx_reg const imx219_STILL_8M_30fps[] = {
 	{IMX_8BIT, 0x4767, 0x0F}, /*CIS Tuning*/
 	{IMX_8BIT, 0x4750, 0x14}, /*CIS Tuning*/
 	{IMX_8BIT, 0x47B4, 0x14}, /*CIS Tuning*/
-	{IMX_8BIT, 0x0100, 0x01}, /*mode_select*/
 	{IMX_TOK_TERM, 0, 0}
 };
 
@@ -114,7 +113,6 @@ static struct imx_reg const imx219_STILL_6M_30fps[] = {
 	{IMX_8BIT, 0x4767, 0x0F}, /*CIS Tuning*/
 	{IMX_8BIT, 0x4750, 0x14}, /*CIS Tuning*/
 	{IMX_8BIT, 0x47B4, 0x14}, /*CIS Tuning*/
-	{IMX_8BIT, 0x0100, 0x01}, /*mode_select*/
 	{IMX_TOK_TERM, 0, 0}
 };
 

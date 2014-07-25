@@ -24,7 +24,6 @@
 #include "common.h"
 
 /********************** registers define ********************************/
-#define IMX132_PLL_MULTIPLIER			0x0306
 #define IMX132_RGLANESEL			0x3301	/* Number of lanes */
 #define IMX132_RGLANESEL_1LANE			0x01
 #define IMX132_RGLANESEL_2LANES			0x00

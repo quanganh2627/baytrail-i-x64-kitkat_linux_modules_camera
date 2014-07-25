@@ -733,8 +733,8 @@ static int imx_get_intg_factor(struct i2c_client *client,
 		pll_multiplier = data[0] & IMX_MASK_8BIT;
 	} else {
 		ret = imx_read_reg(client, 2,
-			(dev->sensor_id == IMX132_ID) ?
-			IMX132_PLL_MULTIPLIER : IMX_PLL_MULTIPLIER, data);
+			((dev->sensor_id == IMX132_ID) || (dev->sensor_id == IMX219_ID)) ?
+			IMX132_219_PLL_MULTIPLIER : IMX_PLL_MULTIPLIER, data);
 		if (ret)
 			return ret;
 		pll_multiplier = data[0] & IMX_MASK_11BIT;
@@ -781,7 +781,8 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	buf->output_height = data[0];
 
 	memset(data, 0, IMX_INTG_BUF_COUNT * sizeof(u16));
-	if (dev->sensor_id == IMX132_ID || dev->sensor_id == IMX208_ID)
+	if (dev->sensor_id == IMX132_ID || dev->sensor_id == IMX208_ID ||
+		dev->sensor_id == IMX219_ID)
 		read_mode = 0;
 	else {
 		ret = imx_read_reg(client, 1, IMX_READ_MODE, data);
@@ -887,7 +888,7 @@ static int imx_v_flip(struct v4l2_subdev *sd, s32 value)
 	int ret;
 	u16 val;
 
-	ret = imx_write_reg_array(client, imx_param_hold);
+	ret = imx_write_reg_array(client, dev->param_hold);
 	if (ret)
 		return ret;
 
@@ -913,7 +914,7 @@ static int imx_v_flip(struct v4l2_subdev *sd, s32 value)
 			imx_info->raw_bayer_order);
 	}
 
-	return imx_write_reg_array(client, imx_param_update);
+	return imx_write_reg_array(client, dev->param_update);
 }
 
 static int imx_h_flip(struct v4l2_subdev *sd, s32 value)
@@ -924,7 +925,7 @@ static int imx_h_flip(struct v4l2_subdev *sd, s32 value)
 	int ret;
 	u16 val;
 
-	ret = imx_write_reg_array(client, imx_param_hold);
+	ret = imx_write_reg_array(client, dev->param_hold);
 	if (ret)
 		return ret;
 	ret = imx_read_reg(client, IMX_8BIT,
@@ -948,7 +949,7 @@ static int imx_h_flip(struct v4l2_subdev *sd, s32 value)
 		imx_info->raw_bayer_order);
 	}
 
-	return imx_write_reg_array(client, imx_param_update);
+	return imx_write_reg_array(client, dev->param_update);
 }
 
 static int imx_g_focal(struct v4l2_subdev *sd, s32 *val)
@@ -1503,7 +1504,7 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	if (ret)
 		goto out;
 
-	ret = imx_write_reg_array(client, imx_param_update);
+	ret = imx_write_reg_array(client, dev->param_update);
 	if (ret)
 		goto out;
 
@@ -2332,12 +2333,17 @@ static int __imx_init_ctrl_handler(struct imx_device *dev)
 	return 0;
 }
 
-static void imx_get_reg_addr(struct imx_device *dev)
+static void imx_update_reg_info(struct imx_device *dev)
 {
-	if (dev->sensor_id == IMX219_ID)
+	if (dev->sensor_id == IMX219_ID) {
 		dev->reg_addr = &imx219_addr;
-	else
+		dev->param_hold = imx219_param_hold;
+		dev->param_update = imx219_param_update;
+	} else {
 		dev->reg_addr = &imx_addr;
+		dev->param_hold = imx_param_hold;
+		dev->param_update = imx_param_update;
+	}
 }
 
 static int imx_probe(struct i2c_client *client,
@@ -2376,7 +2382,7 @@ static int imx_probe(struct i2c_client *client,
 	 * sd->name is updated with sensor driver name by the v4l2.
 	 * change it to sensor name in this case.
 	 */
-	imx_get_reg_addr(dev);
+	imx_update_reg_info(dev);
 	snprintf(dev->sd.name, sizeof(dev->sd.name), "%s%x %d-%04x",
 		IMX_SUBDEV_PREFIX, dev->sensor_id,
 		i2c_adapter_id(client->adapter), client->addr);

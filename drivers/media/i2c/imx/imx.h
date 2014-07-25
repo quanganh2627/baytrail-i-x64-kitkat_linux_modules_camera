@@ -86,6 +86,9 @@
 /* Post Divider setting register for imx132 and imx208 */
 #define IMX132_208_VT_RGPLTD		0x30A4
 
+/* Multiplier setting register for imx132 and imx219 */
+#define IMX132_219_PLL_MULTIPLIER		0x0306
+
 #define IMX_COARSE_INTEGRATION_TIME		0x0202
 #define IMX_TEST_PATTERN_MODE			0x0600
 #define IMX_IMG_ORIENTATION			0x0101
@@ -505,6 +508,8 @@ struct imx_device {
 	int entries_curr_table;
 	const struct firmware *fw;
 	struct imx_reg_addr *reg_addr;
+	const struct imx_reg *param_hold;
+	const struct imx_reg *param_update;
 
 	/* used for h/b blank tuning */
 	struct v4l2_ctrl_handler ctrl_handler;
@@ -546,6 +551,14 @@ static const struct imx_reg imx_param_hold[] = {
 
 static const struct imx_reg imx_param_update[] = {
 	{IMX_8BIT, 0x0104, 0x00},	/* GROUPED_PARAMETER_HOLD */
+	{IMX_TOK_TERM, 0, 0}
+};
+
+static const struct imx_reg imx219_param_hold[] = {
+	{IMX_TOK_TERM, 0, 0}
+};
+
+static const struct imx_reg imx219_param_update[] = {
 	{IMX_TOK_TERM, 0, 0}
 };
 
