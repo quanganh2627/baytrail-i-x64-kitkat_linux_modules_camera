@@ -4306,7 +4306,7 @@ preview_start(struct ia_css_pipe *pipe)
 		sh_css_sp_init_pipeline(&capture_pipe->pipeline,
 			IA_CSS_PIPE_ID_CAPTURE,
 			(uint8_t)ia_css_pipe_get_pipe_num(capture_pipe),
-			pipe->config.default_capture_config.enable_xnr,
+			capture_pipe->config.default_capture_config.enable_xnr,
 			capture_pipe->stream->config.pixels_per_clock == 2,
 			true, /* continuous */
 			false, /* offline */
