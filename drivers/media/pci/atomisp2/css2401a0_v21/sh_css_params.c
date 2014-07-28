@@ -107,6 +107,7 @@
 #include "components/dvs/sc_dvs_1.0/host/dvs.host.h"
 #include <components/stats_3a/src/host/stats_3a.host.h>
 #include <components/include/components_types.host.h>                /* Skylake kernel settings structs */
+#include <components/include/components.host.h>                /* Skylake kernel settings structs */
 #endif
 
 #include "sh_css_frac.h"
@@ -3110,6 +3111,7 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 				ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
 					mmgr_malloc(sizeof(struct isp_acc_param)));
 	succ &= (ddr_ptrs->acc_cluster_params_for_sp != mmgr_NULL);
+	acc_cluster_set_default_params();
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -3196,7 +3198,10 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 
 		ia_css_sdis_clear_coefficients(&params->dvs_coefs);
 		params->dis_coef_table_changed = true;
-#endif /* !defined(IS_ISP_2500_SYSTEM) */
+#else /* !defined(IS_ISP_2500_SYSTEM) */
+		ia_css_lin_set_default_config(&params->lin_2500_config);
+		ia_css_tnr_set_default_config(&params->tnr_2500_config);
+#endif
 	}
 	else
 	{
