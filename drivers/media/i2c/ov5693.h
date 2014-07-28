@@ -1069,7 +1069,7 @@ static struct ov5693_resolution ov5693_res_video[] = {
 	 .bin_factor_x = 0,
 	 .bin_factor_y = 0,
 	 .bin_mode = 0,
-	 .skip_frames = 1,
+	 .skip_frames = 2,
 	 .regs = ov5693_1940x1096,
 	 },
 };
