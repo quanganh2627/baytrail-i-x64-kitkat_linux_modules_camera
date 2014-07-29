@@ -359,19 +359,20 @@ static struct ov680_reg const ov680_dw_fw_change_back_pll[] = {
 };
 
 static struct ov680_reg const ov680_720p_2s_embedded_stream_on[] = {
-	{OV680_8BIT, 0x6003, 0x10},
+
+	{OV680_8BIT, 0x6B18, 0x85},
+	{OV680_8BIT, 0x6B19, 0x90},
+	{OV680_8BIT, 0x6B1A, 0x01},
+	{OV680_8BIT, 0x6B1B, 0x00},
+	{OV680_8BIT, 0x6B1C, 0x01},
+	{OV680_8BIT, 0x6B17, 0xF0},
 
 	{OV680_TOK_DELAY, 0x0, 0x64}, /* sleep 100ms */
-	{OV680_TOK_DELAY, 0x0, 0x64}, /* sleep 100ms */
+	{OV680_8BIT, 0x6011, 0xFF}, /* AEC on */
 
-	{OV680_8BIT, 0x6099, 0x00},
-	{OV680_8BIT, 0x6914, 0x52},
-	{OV680_8BIT, 0x6096, 0x11},
-
-	{OV680_8BIT, 0x600a, 0x00},
-
-	{OV680_TOK_TERM, 0, 0}
+	{OV680_TOK_TERM, 0, 0},
 };
+
 static struct ov680_reg const ov680_720p_2s_embedded_line[] = {
 	/* Embedded Line Additional Setting 05/06/2014 */
 	{OV680_8BIT, 0x6b18, 0x81}, /* TYPE_Sensor_Config */
@@ -589,10 +590,29 @@ static struct ov680_reg const ov680_720p_2s_embedded_line[] = {
 	{OV680_8BIT, 0x6937, 0x0D},
 
 	{OV680_8BIT, 0x6b01, 0x24},
-	{OV680_8BIT, 0x6b02, 0xCC}, /* embedded line interrupt on */
+	{OV680_8BIT, 0x6b02, 0xC0}, /* embedded line interrupt on */
 	{OV680_8BIT, 0x6b03, 0x00},
 
+	{OV680_8BIT, 0x6003, 0x10},
+
 	{OV680_TOK_DELAY, 0x0, 0x64}, /* sleep 100ms */
+	{OV680_TOK_DELAY, 0x0, 0x64}, /* sleep 100ms */
+
+	{OV680_8BIT, 0x6099, 0x00},
+	{OV680_8BIT, 0x6914, 0x52},
+	{OV680_8BIT, 0x6096, 0x11},
+
+	{OV680_8BIT, 0x600a, 0x00},
+
+	{OV680_8BIT, 0x6011, 0xCF}, /* AEC off*/
+	{OV680_TOK_DELAY, 0x0, 0x64}, /* sleep 100ms */
+
+	{OV680_8BIT, 0x6B18, 0x85},
+	{OV680_8BIT, 0x6B19, 0x90},
+	{OV680_8BIT, 0x6B1A, 0x01},
+	{OV680_8BIT, 0x6B1B, 0x00},
+	{OV680_8BIT, 0x6B1C, 0x00},
+	{OV680_8BIT, 0x6B17, 0xF0},
 
 	{OV680_TOK_TERM, 0, 0}
 };
