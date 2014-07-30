@@ -794,7 +794,12 @@ static int gc0339_try_res(u32 *w, u32 *h)
 		    (gc0339_res[i].height >= *h))
 			break;
 	}
-
+	/*
+	* Workaround to choose max resolution(VGA) output for QVGA.
+	* This could ensure VGA/QVGA have same FOV
+	*/
+	if (*w == 320 && *h == 240)
+		i = N_RES - 1;
 	/*
 	 * If no mode was found, it means we can provide only a smaller size.
 	 * Returning the biggest one available in this case.
