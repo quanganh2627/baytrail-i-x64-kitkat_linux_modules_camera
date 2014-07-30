@@ -715,6 +715,7 @@ static void isp_subdev_init_params(struct atomisp_sub_device *asd)
 	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
 		INIT_LIST_HEAD(&asd->metadata[i]);
 		INIT_LIST_HEAD(&asd->metadata_in_css[i]);
+		INIT_LIST_HEAD(&asd->metadata_ready[i]);
 	}
 }
 

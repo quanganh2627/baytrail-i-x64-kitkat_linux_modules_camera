@@ -1039,7 +1039,8 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd,
 
 	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
 		if (list_empty(&asd->metadata[i])) {
-			count = ATOMISP_CSS_Q_DEPTH + 1;
+			count = ATOMISP_CSS_Q_DEPTH +
+				ATOMISP_METADATA_QUEUE_DEPTH_FOR_HAL;
 			dev_dbg(isp->dev, "allocating %d metadata buffers for type %d\n",
 			        count, i);
 			while (count--) {
@@ -1057,7 +1058,6 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd,
 				}
 				list_add_tail(&md_buf->list, &asd->metadata[i]);
 			}
-			asd->params.metadata_buf_data_valid[i] = false;
 		}
 	}
 	return 0;

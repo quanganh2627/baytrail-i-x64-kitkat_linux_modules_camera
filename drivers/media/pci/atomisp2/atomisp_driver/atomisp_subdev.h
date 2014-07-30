@@ -223,7 +223,6 @@ struct atomisp_subdev_params {
 
 	void *metadata_user[ATOMISP_METADATA_TYPE_NUM];
 	uint32_t metadata_width_size;
-	bool metadata_buf_data_valid[ATOMISP_METADATA_TYPE_NUM];
 
 	struct ia_css_dvs2_statistics *dvs_stat;
 	uint32_t exp_id;
@@ -288,8 +287,12 @@ struct atomisp_sub_device {
 
 	unsigned int metadata_bufs_in_css
 		[ATOMISP_INPUT_STREAM_NUM][CSS_PIPE_ID_NUM];
+	/* The list of free and available metadata buffers for CSS */
 	struct list_head metadata[ATOMISP_METADATA_TYPE_NUM];
+	/* The list of metadata buffers which have been en-queued to CSS */
 	struct list_head metadata_in_css[ATOMISP_METADATA_TYPE_NUM];
+	/* The list of metadata buffers which are ready for userspace to get */
+	struct list_head metadata_ready[ATOMISP_METADATA_TYPE_NUM];
 
 	struct list_head s3a_stats;
 	struct list_head s3a_stats_in_css;

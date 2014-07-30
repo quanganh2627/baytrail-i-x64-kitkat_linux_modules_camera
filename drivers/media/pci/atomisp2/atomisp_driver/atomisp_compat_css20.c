@@ -1565,7 +1565,6 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 	}
 
 	for (i = 0; i < ATOMISP_METADATA_TYPE_NUM; i++) {
-		asd->params.metadata_buf_data_valid[i] = false;
 		list_for_each_entry_safe(md_buf, _md_buf,
 		                         &asd->metadata[i], list) {
 			atomisp_css_free_metadata_buffer(md_buf);
@@ -1574,6 +1573,12 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 		}
 		list_for_each_entry_safe(md_buf, _md_buf,
 		                         &asd->metadata_in_css[i], list) {
+			atomisp_css_free_metadata_buffer(md_buf);
+			list_del(&md_buf->list);
+			kfree(md_buf);
+		}
+		list_for_each_entry_safe(md_buf, _md_buf,
+		                         &asd->metadata_ready[i], list) {
 			atomisp_css_free_metadata_buffer(md_buf);
 			list_del(&md_buf->list);
 			kfree(md_buf);
@@ -2359,7 +2364,12 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 			list_del(&md_buf->list);
 			list_add_tail(&md_buf->list, &asd->metadata[i]);
 		}
-		asd->params.metadata_buf_data_valid[i] = false;
+		while (!list_empty(&asd->metadata_ready[i])) {
+			md_buf = list_entry(asd->metadata_ready[i].next,
+					struct atomisp_metadata_buf, list);
+			list_del(&md_buf->list);
+			list_add_tail(&md_buf->list, &asd->metadata[i]);
+		}
 	}
 
 	atomisp_flush_params_queue(&asd->video_out_capture);

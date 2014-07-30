@@ -905,8 +905,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 					&asd->metadata_in_css[md_type], list) {
 				if (md_buf->metadata == buffer.css_buffer.data.metadata) {
 					list_del_init(&md_buf->list);
-					list_add(&md_buf->list, &asd->metadata[md_type]);
-					asd->params.metadata_buf_data_valid[md_type] = true;
+					list_add_tail(&md_buf->list, &asd->metadata_ready[md_type]);
 					break;
 				}
 			}
@@ -2449,8 +2448,7 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 	}
 
 	/* This is done in the atomisp_buf_done() */
-	if (!asd->params.metadata_buf_data_valid[md_type] ||
-	    list_empty(&asd->metadata[md_type])) {
+	if (list_empty(&asd->metadata_ready[md_type])) {
 		dev_err(isp->dev, "Metadata is not valid.\n");
 		return -EAGAIN;
 	}
@@ -2466,7 +2464,7 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 				mipi_info->metadata_effective_width[i];
 	}
 
-	md_buf = list_entry(asd->metadata[md_type].next,
+	md_buf = list_entry(asd->metadata_ready[md_type].next,
 	                    struct atomisp_metadata_buf, list);
 	md->exp_id = md_buf->metadata->exp_id;
 	if (md_buf->md_vptr) {
@@ -2486,7 +2484,11 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 		dev_err(isp->dev, "copy to user failed: copied %d bytes\n",
 				ret);
 		return -EFAULT;
+	} else {
+		list_del_init(&md_buf->list);
+		list_add_tail(&md_buf->list, &asd->metadata[md_type]);
 	}
+
 	return 0;
 }
 
@@ -2527,8 +2529,7 @@ int atomisp_get_metadata_by_type(struct atomisp_sub_device *asd, int flag,
 		return -EINVAL;
 
 	/* This is done in the atomisp_buf_done() */
-	if (!asd->params.metadata_buf_data_valid[md_type] ||
-	    list_empty(&asd->metadata[md_type])) {
+	if (list_empty(&asd->metadata_ready[md_type])) {
 		dev_err(isp->dev, "Metadata is not valid.\n");
 		return -EAGAIN;
 	}
@@ -2544,7 +2545,7 @@ int atomisp_get_metadata_by_type(struct atomisp_sub_device *asd, int flag,
 				mipi_info->metadata_effective_width[i];
 	}
 
-	md_buf = list_entry(asd->metadata[md_type].next,
+	md_buf = list_entry(asd->metadata_ready[md_type].next,
 	                    struct atomisp_metadata_buf, list);
 	md->exp_id = md_buf->metadata->exp_id;
 	if (md_buf->md_vptr) {
@@ -2564,6 +2565,9 @@ int atomisp_get_metadata_by_type(struct atomisp_sub_device *asd, int flag,
 		dev_err(isp->dev, "copy to user failed: copied %d bytes\n",
 				ret);
 		return -EFAULT;
+	} else {
+		list_del_init(&md_buf->list);
+		list_add_tail(&md_buf->list, &asd->metadata[md_type]);
 	}
 	return 0;
 }

@@ -157,23 +157,27 @@ static int atomisp_q_metadata_buffers_to_css(struct atomisp_sub_device *asd,
 	struct atomisp_metadata_buf *metadata_buf;
 	enum atomisp_metadata_type md_type =
 			atomisp_get_metadata_type(asd, css_pipe_id);
+	struct list_head *metadata_list;
 
 	while (asd->metadata_bufs_in_css[stream_id][css_pipe_id]
 	       < ATOMISP_CSS_Q_DEPTH) {
-		if (list_empty(&asd->metadata[md_type])) {
+		if (!list_empty(&asd->metadata[md_type])) {
+			metadata_list = &asd->metadata[md_type];
+		} else if (!list_empty(&asd->metadata_ready[md_type])) {
+			metadata_list = &asd->metadata_ready[md_type];
+		} else {
 			dev_warn(asd->isp->dev, "%s: No metadata buffers available for type %d!\n",
 			         __func__, md_type);
 			return -EINVAL;
 		}
 
-		metadata_buf = list_entry(asd->metadata[md_type].prev,
-				struct atomisp_metadata_buf, list);
+		metadata_buf = list_entry(metadata_list->next,
+					  struct atomisp_metadata_buf, list);
 		list_del_init(&metadata_buf->list);
 
 		if (atomisp_q_metadata_buffer_to_css(asd, metadata_buf,
 					stream_id, css_pipe_id)) {
-			list_add_tail(&metadata_buf->list,
-			              &asd->metadata[md_type]);
+			list_add(&metadata_buf->list, metadata_list);
 			return -EINVAL;
 		} else {
 			list_add_tail(&metadata_buf->list,
