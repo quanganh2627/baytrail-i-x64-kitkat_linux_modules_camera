@@ -410,67 +410,6 @@ struct imx_reg_addr imx219_addr = {
 		.reg_setting = (_reg_setting),\
 	}
 
-struct s_ctrl_id {
-	struct v4l2_queryctrl qc;
-	int (*s_ctrl)(struct v4l2_subdev *sd, u32 val);
-	int (*g_ctrl)(struct v4l2_subdev *sd, u32 *val);
-};
-
-#define	v4l2_queryctrl_entry_integer(_id, _name,\
-		_minimum, _maximum, _step, \
-		_default_value, _flags)	\
-	{\
-		.id = (_id), \
-		.type = V4L2_CTRL_TYPE_INTEGER, \
-		.name = _name, \
-		.minimum = (_minimum), \
-		.maximum = (_maximum), \
-		.step = (_step), \
-		.default_value = (_default_value),\
-		.flags = (_flags),\
-	}
-#define	v4l2_queryctrl_entry_boolean(_id, _name,\
-		_default_value, _flags)	\
-	{\
-		.id = (_id), \
-		.type = V4L2_CTRL_TYPE_BOOLEAN, \
-		.name = _name, \
-		.minimum = 0, \
-		.maximum = 1, \
-		.step = 1, \
-		.default_value = (_default_value),\
-		.flags = (_flags),\
-	}
-
-#define	s_ctrl_id_entry_integer(_id, _name, \
-		_minimum, _maximum, _step, \
-		_default_value, _flags, \
-		_s_ctrl, _g_ctrl)	\
-	{\
-		.qc = v4l2_queryctrl_entry_integer(_id, _name,\
-				_minimum, _maximum, _step,\
-				_default_value, _flags), \
-		.s_ctrl = _s_ctrl, \
-		.g_ctrl = _g_ctrl, \
-	}
-
-#define	s_ctrl_id_entry_boolean(_id, _name, \
-		_default_value, _flags, \
-		_s_ctrl, _g_ctrl)	\
-	{\
-		.qc = v4l2_queryctrl_entry_boolean(_id, _name,\
-				_default_value, _flags), \
-		.s_ctrl = _s_ctrl, \
-		.g_ctrl = _g_ctrl, \
-	}
-
-
-struct imx_control {
-	struct v4l2_queryctrl qc;
-	int (*query)(struct v4l2_subdev *sd, s32 *value);
-	int (*tweak)(struct v4l2_subdev *sd, s32 value);
-};
-
 /* imx device structure */
 struct imx_device {
 	struct v4l2_subdev sd;

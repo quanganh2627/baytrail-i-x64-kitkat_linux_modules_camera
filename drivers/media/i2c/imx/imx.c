@@ -1090,251 +1090,327 @@ int imx_t_vcm_timing(struct v4l2_subdev *sd, s32 value)
 	return 0;
 }
 
-struct imx_control imx_controls[] = {
+static int imx_s_ctrl(struct v4l2_ctrl *ctrl)
+{
+	struct imx_device *dev = container_of(
+		ctrl->handler, struct imx_device, ctrl_handler);
+	struct i2c_client *client = v4l2_get_subdevdata(&dev->sd);
+	int ret = 0;
+
+	switch (ctrl->id) {
+	case V4L2_CID_TEST_PATTERN:
+		ret = imx_test_pattern(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_VFLIP:
+		dev_dbg(&client->dev, "%s: CID_VFLIP:%d.\n", __func__, ctrl->val);
+		ret = imx_v_flip(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_HFLIP:
+		dev_dbg(&client->dev, "%s: CID_HFLIP:%d.\n", __func__, ctrl->val);
+		ret = imx_h_flip(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_FOCUS_ABSOLUTE:
+		ret = imx_t_focus_abs(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_FOCUS_RELATIVE:
+		ret = imx_t_focus_rel(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_VCM_SLEW:
+		ret = imx_t_vcm_slew(&dev->sd, ctrl->val);
+		break;
+	case V4L2_CID_VCM_TIMEING:
+		ret = imx_t_vcm_timing(&dev->sd, ctrl->val);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+static int imx_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
+{
+	struct imx_device *dev = container_of(
+		ctrl->handler, struct imx_device, ctrl_handler);
+	int ret = 0;
+	unsigned int val;
+
+	switch (ctrl->id) {
+	case V4L2_CID_EXPOSURE_ABSOLUTE:
+		ret = imx_q_exposure(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_FOCUS_ABSOLUTE:
+		ret = imx_q_focus_abs(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_FOCUS_STATUS:
+		ret = imx_q_focus_status(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_FOCAL_ABSOLUTE:
+		ret = imx_g_focal(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_FNUMBER_ABSOLUTE:
+		ret = imx_g_fnumber(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_FNUMBER_RANGE:
+		ret = imx_g_fnumber_range(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_BIN_FACTOR_HORZ:
+		ret = imx_g_bin_factor_x(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_BIN_FACTOR_VERT:
+		ret = imx_g_bin_factor_y(&dev->sd, &ctrl->val);
+		break;
+	case V4L2_CID_VBLANK:
+		ctrl->val = dev->lines_per_frame -
+			dev->curr_res_table[dev->fmt_idx].height;
+		break;
+	case V4L2_CID_HBLANK:
+		ctrl->val = dev->pixels_per_line -
+			dev->curr_res_table[dev->fmt_idx].width;
+		break;
+	case V4L2_CID_PIXEL_RATE:
+		ctrl->val = dev->vt_pix_clk_freq_mhz;
+		break;
+	case V4L2_CID_LINK_FREQ:
+		val = dev->curr_res_table[dev->fmt_idx].
+					fps_options[dev->fps_index].mipi_freq;
+		if (val == 0)
+			val = dev->curr_res_table[dev->fmt_idx].mipi_freq;
+		if (val == 0)
+			return -EINVAL;
+		ctrl->val = val * 1000;			/* To Hz */
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+static const struct v4l2_ctrl_ops ctrl_ops = {
+	.s_ctrl = imx_s_ctrl,
+	.g_volatile_ctrl = imx_g_volatile_ctrl
+};
+
+static const struct v4l2_ctrl_config imx_controls[] = {
 	{
-		.qc = {
-			.id = V4L2_CID_EXPOSURE_ABSOLUTE,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "exposure",
-			.minimum = 0x0,
-			.maximum = 0xffff,
-			.step = 0x01,
-			.default_value = 0x00,
-			.flags = 0,
-		},
-		.query = imx_q_exposure,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_EXPOSURE_ABSOLUTE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "exposure",
+		.min = 0x0,
+		.max = 0xffff,
+		.step = 0x01,
+		.def = 0x00,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_TEST_PATTERN,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "Test pattern",
-			.minimum = 0,
-			.maximum = 0xffff,
-			.step = 1,
-			.default_value = 0,
-		},
-		.tweak = imx_test_pattern,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_TEST_PATTERN,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test pattern",
+		.min = 0,
+		.max = 0xffff,
+		.step = 1,
+		.def = 0,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_VFLIP,
-			.type = V4L2_CTRL_TYPE_BOOLEAN,
-			.name = "Flip",
-			.minimum = 0,
-			.maximum = 1,
-			.step = 1,
-			.default_value = 0,
-		},
-		.tweak = imx_v_flip,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_VFLIP,
+		.type = V4L2_CTRL_TYPE_BOOLEAN,
+		.name = "Flip",
+		.min = 0,
+		.max = 1,
+		.step = 1,
+		.def = 0,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_HFLIP,
-			.type = V4L2_CTRL_TYPE_BOOLEAN,
-			.name = "Mirror",
-			.minimum = 0,
-			.maximum = 1,
-			.step = 1,
-			.default_value = 0,
-		},
-		.tweak = imx_h_flip,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_HFLIP,
+		.type = V4L2_CTRL_TYPE_BOOLEAN,
+		.name = "Mirror",
+		.min = 0,
+		.max = 1,
+		.step = 1,
+		.def = 0,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_FOCUS_ABSOLUTE,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "focus move absolute",
-			.minimum = 0,
-			.maximum = IMX_MAX_FOCUS_POS,
-			.step = 1,
-			.default_value = 0,
-			.flags = 0,
-		},
-		.tweak = imx_t_focus_abs,
-		.query = imx_q_focus_abs,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_FOCUS_ABSOLUTE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "focus move absolute",
+		.min = 0,
+		.max = IMX_MAX_FOCUS_POS,
+		.step = 1,
+		.def = 0,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_FOCUS_RELATIVE,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "focus move relative",
-			.minimum = IMX_MAX_FOCUS_NEG,
-			.maximum = IMX_MAX_FOCUS_POS,
-			.step = 1,
-			.default_value = 0,
-			.flags = 0,
-		},
-		.tweak = imx_t_focus_rel,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_FOCUS_RELATIVE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "focus move relative",
+		.min = IMX_MAX_FOCUS_NEG,
+		.max = IMX_MAX_FOCUS_POS,
+		.step = 1,
+		.def = 0,
+		.flags = 0,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_FOCUS_STATUS,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "focus status",
-			.minimum = 0,
-			.maximum = 100, /* allow enum to grow in the future */
-			.step = 1,
-			.default_value = 0,
-			.flags = 0,
-		},
-		.query = imx_q_focus_status,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_FOCUS_STATUS,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "focus status",
+		.min = 0,
+		.max = 100, /* allow enum to grow in the future */
+		.step = 1,
+		.def = 0,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_VCM_SLEW,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "vcm slew",
-			.minimum = 0,
-			.maximum = IMX_VCM_SLEW_STEP_MAX,
-			.step = 1,
-			.default_value = 0,
-			.flags = 0,
-		},
-		.tweak = imx_t_vcm_slew,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_VCM_SLEW,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "vcm slew",
+		.min = 0,
+		.max = IMX_VCM_SLEW_STEP_MAX,
+		.step = 1,
+		.def = 0,
+		.flags = 0,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_VCM_TIMEING,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "vcm step time",
-			.minimum = 0,
-			.maximum = IMX_VCM_SLEW_TIME_MAX,
-			.step = 1,
-			.default_value = 0,
-			.flags = 0,
-		},
-		.tweak = imx_t_vcm_timing,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_VCM_TIMEING,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "vcm step time",
+		.min = 0,
+		.max = IMX_VCM_SLEW_TIME_MAX,
+		.step = 1,
+		.def = 0,
+		.flags = 0,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_FOCAL_ABSOLUTE,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "focal length",
-			.minimum = IMX_FOCAL_LENGTH_DEFAULT,
-			.maximum = IMX_FOCAL_LENGTH_DEFAULT,
-			.step = 0x01,
-			.default_value = IMX_FOCAL_LENGTH_DEFAULT,
-			.flags = 0,
-		},
-		.query = imx_g_focal,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_FOCAL_ABSOLUTE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "focal length",
+		.min = IMX_FOCAL_LENGTH_DEFAULT,
+		.max = IMX_FOCAL_LENGTH_DEFAULT,
+		.step = 0x01,
+		.def = IMX_FOCAL_LENGTH_DEFAULT,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_FNUMBER_ABSOLUTE,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "f-number",
-			.minimum = IMX_F_NUMBER_DEFAULT,
-			.maximum = IMX_F_NUMBER_DEFAULT,
-			.step = 0x01,
-			.default_value = IMX_F_NUMBER_DEFAULT,
-			.flags = 0,
-		},
-		.query = imx_g_fnumber,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_FNUMBER_ABSOLUTE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "f-number",
+		.min = IMX_F_NUMBER_DEFAULT,
+		.max = IMX_F_NUMBER_DEFAULT,
+		.step = 0x01,
+		.def = IMX_F_NUMBER_DEFAULT,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_FNUMBER_RANGE,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "f-number range",
-			.minimum = IMX_F_NUMBER_RANGE,
-			.maximum =  IMX_F_NUMBER_RANGE,
-			.step = 0x01,
-			.default_value = IMX_F_NUMBER_RANGE,
-			.flags = 0,
-		},
-		.query = imx_g_fnumber_range,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_FNUMBER_RANGE,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "f-number range",
+		.min = IMX_F_NUMBER_RANGE,
+		.max =  IMX_F_NUMBER_RANGE,
+		.step = 0x01,
+		.def = IMX_F_NUMBER_RANGE,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_BIN_FACTOR_HORZ,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "horizontal binning factor",
-			.minimum = 0,
-			.maximum = IMX_BIN_FACTOR_MAX,
-			.step = 1,
-			.default_value = 0,
-			.flags = 0,
-		},
-		.query = imx_g_bin_factor_x,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_BIN_FACTOR_HORZ,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "horizontal binning factor",
+		.min = 0,
+		.max = IMX_BIN_FACTOR_MAX,
+		.step = 1,
+		.def = 0,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
 	},
 	{
-		.qc = {
-			.id = V4L2_CID_BIN_FACTOR_VERT,
-			.type = V4L2_CTRL_TYPE_INTEGER,
-			.name = "vertical binning factor",
-			.minimum = 0,
-			.maximum = IMX_BIN_FACTOR_MAX,
-			.step = 1,
-			.default_value = 0,
-			.flags = 0,
-		},
-		.query = imx_g_bin_factor_y,
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_BIN_FACTOR_VERT,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "vertical binning factor",
+		.min = 0,
+		.max = IMX_BIN_FACTOR_MAX,
+		.step = 1,
+		.def = 0,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_LINK_FREQ,
+		.name = "Link Frequency",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 1,
+		.max = 1500000 * 1000,
+		.step = 1,
+		.def = 1,
+		.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_PIXEL_RATE,
+		.name = "Pixel Rate",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.max = INT_MAX,
+		.step = 1,
+		.def = 0,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_HBLANK,
+		.name = "Horizontal Blanking",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.max = SHRT_MAX,
+		.step = 1,
+		.def = 0,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_VBLANK,
+		.name = "Vertical Blanking",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.max = SHRT_MAX,
+		.step = 1,
+		.def = 0,
+		.flags = V4L2_CTRL_FLAG_VOLATILE,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_HFLIP,
+		.name = "Horizontal Flip",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.max = 1,
+		.step = 1,
+		.def = 0,
+		.flags = 0,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_VFLIP,
+		.name = "Vertical Flip",
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.min = 0,
+		.max = 1,
+		.step = 1,
+		.def = 0,
+		.flags = 0,
 	},
 };
-#define N_CONTROLS (ARRAY_SIZE(imx_controls))
-
-static struct imx_control *imx_find_control(u32 id)
-{
-	int i;
-
-	for (i = 0; i < N_CONTROLS; i++)
-		if (imx_controls[i].qc.id == id)
-			return &imx_controls[i];
-	return NULL;
-}
-
-static int imx_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
-{
-	struct imx_control *ctrl = imx_find_control(qc->id);
-	struct imx_device *dev = to_imx_sensor(sd);
-
-	if (ctrl == NULL)
-		return -EINVAL;
-
-	mutex_lock(&dev->input_lock);
-	*qc = ctrl->qc;
-	mutex_unlock(&dev->input_lock);
-
-	return 0;
-}
-
-/* imx control set/get */
-static int imx_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
-{
-	struct imx_control *s_ctrl;
-	struct imx_device *dev = to_imx_sensor(sd);
-	int ret;
-
-	if (!ctrl)
-		return -EINVAL;
-
-	s_ctrl = imx_find_control(ctrl->id);
-	if ((s_ctrl == NULL) || (s_ctrl->query == NULL))
-		return -EINVAL;
-
-	mutex_lock(&dev->input_lock);
-	ret = s_ctrl->query(sd, &ctrl->value);
-	mutex_unlock(&dev->input_lock);
-
-	return ret;
-}
-
-static int imx_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
-{
-	struct imx_control *octrl = imx_find_control(ctrl->id);
-	struct imx_device *dev = to_imx_sensor(sd);
-	int ret;
-
-	if ((octrl == NULL) || (octrl->tweak == NULL))
-		return -EINVAL;
-
-	mutex_lock(&dev->input_lock);
-	ret = octrl->tweak(sd, ctrl->value);
-	mutex_unlock(&dev->input_lock);
-
-	return ret;
-}
 
 /*
  * distance - calculate the distance
@@ -1529,9 +1605,7 @@ static int imx_s_mbus_fmt(struct v4l2_subdev *sd,
 	dev->lines_per_frame = res->fps_options[dev->fps_index].lines_per_frame;
 
 	/* dbg h/v blank time */
-	mutex_lock(dev->ctrl_handler.lock);
 	__adjust_hvblank(sd);
-	mutex_unlock(dev->ctrl_handler.lock);
 
 	ret = __imx_update_exposure_timing(client, dev->coarse_itg,
 		dev->pixels_per_line, dev->lines_per_frame);
@@ -2203,61 +2277,6 @@ static const struct v4l2_subdev_sensor_ops imx_sensor_ops = {
 	.g_skip_frames	= imx_g_skip_frames,
 };
 
-static int imx_set_ctrl(struct v4l2_ctrl *ctrl)
-{
-	struct imx_device *dev = container_of(ctrl->handler, struct imx_device,
-			ctrl_handler);
-	struct i2c_client *client = v4l2_get_subdevdata(&dev->sd);
-
-	switch (ctrl->id) {
-	case V4L2_CID_HFLIP:
-		dev_dbg(&client->dev, "%s: CID_HFLIP:%d.\n", __func__, ctrl->val);
-		return imx_h_flip(&dev->sd, ctrl->val);
-	case V4L2_CID_VFLIP:
-		dev_dbg(&client->dev, "%s: CID_VFLIP:%d.\n", __func__, ctrl->val);
-		return imx_v_flip(&dev->sd, ctrl->val);
-	}
-	return 0;
-}
-
-static int imx_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
-{
-	struct imx_device *dev = container_of(ctrl->handler, struct imx_device,
-			ctrl_handler);
-	unsigned int val;
-
-	switch (ctrl->id) {
-	case V4L2_CID_VBLANK:
-		ctrl->val = dev->lines_per_frame -
-			dev->curr_res_table[dev->fmt_idx].height;
-		break;
-	case V4L2_CID_HBLANK:
-		ctrl->val = dev->pixels_per_line -
-			dev->curr_res_table[dev->fmt_idx].width;
-		break;
-	case V4L2_CID_PIXEL_RATE:
-		ctrl->val = dev->vt_pix_clk_freq_mhz;
-		break;
-	case V4L2_CID_LINK_FREQ:
-		val = dev->curr_res_table[dev->fmt_idx].
-					fps_options[dev->fps_index].mipi_freq;
-		if (val == 0)
-			val = dev->curr_res_table[dev->fmt_idx].mipi_freq;
-		if (val == 0)
-			return -EINVAL;
-		ctrl->val = val * 1000;			/* To Hz */
-		break;
-	default:
-		return -EINVAL;
-	}
-	return 0;
-}
-
-static struct v4l2_ctrl_ops imx_ctrl_ops = {
-	.s_ctrl = imx_set_ctrl,
-	.g_volatile_ctrl = imx_g_volatile_ctrl,
-};
-
 static const struct v4l2_subdev_video_ops imx_video_ops = {
 	.s_stream = imx_s_stream,
 	.enum_framesizes = imx_enum_framesizes,
@@ -2273,9 +2292,9 @@ static const struct v4l2_subdev_video_ops imx_video_ops = {
 
 static const struct v4l2_subdev_core_ops imx_core_ops = {
 	.g_chip_ident = imx_g_chip_ident,
-	.queryctrl = imx_queryctrl,
-	.g_ctrl = imx_g_ctrl,
-	.s_ctrl = imx_s_ctrl,
+	.queryctrl = v4l2_subdev_queryctrl,
+	.g_ctrl = v4l2_subdev_g_ctrl,
+	.s_ctrl = v4l2_subdev_s_ctrl,
 	.s_power = imx_s_power,
 	.ioctl = imx_ioctl,
 	.init = imx_init,
@@ -2299,18 +2318,6 @@ static const struct media_entity_operations imx_entity_ops = {
 	.link_setup = NULL,
 };
 
-static const struct v4l2_ctrl_config v4l2_ctrl_link_freq = {
-	.ops = &imx_ctrl_ops,
-	.id = V4L2_CID_LINK_FREQ,
-	.name = "Link Frequency",
-	.type = V4L2_CTRL_TYPE_INTEGER,
-	.min = 1,
-	.max = 1500000 * 1000,
-	.step = 1,
-	.def = 1,
-	.flags = V4L2_CTRL_FLAG_VOLATILE | V4L2_CTRL_FLAG_READ_ONLY,
-};
-
 static int imx_remove(struct i2c_client *client)
 {
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
@@ -2332,32 +2339,28 @@ static int imx_remove(struct i2c_client *client)
 static int __imx_init_ctrl_handler(struct imx_device *dev)
 {
 	struct v4l2_ctrl_handler *hdl;
+	int i;
 
 	hdl = &dev->ctrl_handler;
 
-	v4l2_ctrl_handler_init(&dev->ctrl_handler, 3);
+	v4l2_ctrl_handler_init(&dev->ctrl_handler, ARRAY_SIZE(imx_controls));
 
-	dev->pixel_rate = v4l2_ctrl_new_std(&dev->ctrl_handler,
-					    &imx_ctrl_ops,
-					    V4L2_CID_PIXEL_RATE,
-					    0, UINT_MAX, 1, 0);
+	for (i = 0; i < ARRAY_SIZE(imx_controls); i++)
+		v4l2_ctrl_new_custom(&dev->ctrl_handler,
+				&imx_controls[i], NULL);
 
-	dev->h_blank = v4l2_ctrl_new_std(&dev->ctrl_handler,
-					  &imx_ctrl_ops,
-					  V4L2_CID_HBLANK, 0, SHRT_MAX, 1, 0);
-
-	dev->v_blank = v4l2_ctrl_new_std(&dev->ctrl_handler,
-					  &imx_ctrl_ops,
-					  V4L2_CID_VBLANK, 0, SHRT_MAX, 1, 0);
-	dev->link_freq = v4l2_ctrl_new_custom(&dev->ctrl_handler,
-					      &v4l2_ctrl_link_freq,
-					      NULL);
-	dev->h_flip = v4l2_ctrl_new_std(&dev->ctrl_handler,
-					  &imx_ctrl_ops,
-					  V4L2_CID_HFLIP, 0, 1, 1, 0);
-	dev->v_flip = v4l2_ctrl_new_std(&dev->ctrl_handler,
-					  &imx_ctrl_ops,
-					  V4L2_CID_VFLIP, 0, 1, 1, 0);
+	dev->pixel_rate = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_PIXEL_RATE);
+	dev->h_blank = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_HBLANK);
+	dev->v_blank = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_VBLANK);
+	dev->link_freq = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_LINK_FREQ);
+	dev->h_flip = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_HFLIP);
+	dev->v_flip = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_VFLIP);
 
 	if (dev->ctrl_handler.error || dev->pixel_rate == NULL
 		|| dev->h_blank == NULL || dev->v_blank == NULL
@@ -2366,11 +2369,9 @@ static int __imx_init_ctrl_handler(struct imx_device *dev)
 		return dev->ctrl_handler.error;
 	}
 
+	dev->ctrl_handler.lock = &dev->input_lock;
 	dev->sd.ctrl_handler = hdl;
-
-	dev->pixel_rate->flags |= V4L2_CTRL_FLAG_VOLATILE;
-	dev->h_blank->flags |= V4L2_CTRL_FLAG_VOLATILE;
-	dev->v_blank->flags |= V4L2_CTRL_FLAG_VOLATILE;
+	v4l2_ctrl_handler_setup(&dev->ctrl_handler);
 
 	return 0;
 }
