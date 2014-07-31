@@ -877,11 +877,37 @@ static int imx_q_exposure(struct v4l2_subdev *sd, s32 *value)
 	return ret;
 }
 
-static int imx_test_pattern(struct v4l2_subdev *sd, s32 value)
+static int imx_test_pattern(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct imx_device *dev = to_imx_sensor(sd);
+	int ret;
 
-	return imx_write_reg(client, IMX_16BIT, IMX_TEST_PATTERN_MODE, value);
+	if (dev->power == 0)
+		return 0;
+
+	ret = imx_write_reg(client, IMX_16BIT, IMX_TEST_PATTERN_COLOR_R,
+		(u16)(dev->tp_r->val >> 22));
+	if (ret)
+		return ret;
+
+	ret = imx_write_reg(client, IMX_16BIT, IMX_TEST_PATTERN_COLOR_GR,
+		(u16)(dev->tp_gr->val >> 22));
+	if (ret)
+		return ret;
+
+	ret = imx_write_reg(client, IMX_16BIT, IMX_TEST_PATTERN_COLOR_GB,
+		(u16)(dev->tp_gb->val >> 22));
+	if (ret)
+		return ret;
+
+	ret = imx_write_reg(client, IMX_16BIT, IMX_TEST_PATTERN_COLOR_B,
+		(u16)(dev->tp_b->val >> 22));
+	if (ret)
+		return ret;
+
+	return imx_write_reg(client, IMX_16BIT, IMX_TEST_PATTERN_MODE,
+		(u16)(dev->tp_mode->val));
 }
 
 static enum v4l2_mbus_pixelcode
@@ -1099,7 +1125,7 @@ static int imx_s_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_TEST_PATTERN:
-		ret = imx_test_pattern(&dev->sd, ctrl->val);
+		ret = imx_test_pattern(&dev->sd);
 		break;
 	case V4L2_CID_VFLIP:
 		dev_dbg(&client->dev, "%s: CID_VFLIP:%d.\n", __func__, ctrl->val);
@@ -1121,8 +1147,6 @@ static int imx_s_ctrl(struct v4l2_ctrl *ctrl)
 	case V4L2_CID_VCM_TIMEING:
 		ret = imx_t_vcm_timing(&dev->sd, ctrl->val);
 		break;
-	default:
-		return -EINVAL;
 	}
 
 	return ret;
@@ -1211,6 +1235,46 @@ static const struct v4l2_ctrl_config imx_controls[] = {
 		.name = "Test pattern",
 		.min = 0,
 		.max = 0xffff,
+		.step = 1,
+		.def = 0,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_TEST_PATTERN_COLOR_R,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test pattern solid color R",
+		.min = INT_MIN,
+		.max = INT_MAX,
+		.step = 1,
+		.def = 0,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_TEST_PATTERN_COLOR_GR,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test pattern solid color GR",
+		.min = INT_MIN,
+		.max = INT_MAX,
+		.step = 1,
+		.def = 0,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_TEST_PATTERN_COLOR_GB,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test pattern solid color GB",
+		.min = INT_MIN,
+		.max = INT_MAX,
+		.step = 1,
+		.def = 0,
+	},
+	{
+		.ops = &ctrl_ops,
+		.id = V4L2_CID_TEST_PATTERN_COLOR_B,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test pattern solid color B",
+		.min = INT_MIN,
+		.max = INT_MAX,
 		.step = 1,
 		.def = 0,
 	},
@@ -1775,6 +1839,12 @@ static int imx_s_stream(struct v4l2_subdev *sd, int enable)
 				mutex_unlock(&dev->input_lock);
 				return ret;
 			}
+		}
+		ret = imx_test_pattern(sd);
+		if (ret) {
+			v4l2_err(client, "Configure test pattern failed.\n");
+			mutex_unlock(&dev->input_lock);
+			return ret;
 		}
 		__imx_print_timing(sd);
 		ret = imx_write_reg_array(client, imx_streaming);
@@ -2361,6 +2431,16 @@ static int __imx_init_ctrl_handler(struct imx_device *dev)
 				V4L2_CID_HFLIP);
 	dev->v_flip = v4l2_ctrl_find(&dev->ctrl_handler,
 				V4L2_CID_VFLIP);
+	dev->tp_mode = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_TEST_PATTERN);
+	dev->tp_r = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_TEST_PATTERN_COLOR_R);
+	dev->tp_gr = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_TEST_PATTERN_COLOR_GR);
+	dev->tp_gb = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_TEST_PATTERN_COLOR_GB);
+	dev->tp_b = v4l2_ctrl_find(&dev->ctrl_handler,
+				V4L2_CID_TEST_PATTERN_COLOR_B);
 
 	if (dev->ctrl_handler.error || dev->pixel_rate == NULL
 		|| dev->h_blank == NULL || dev->v_blank == NULL

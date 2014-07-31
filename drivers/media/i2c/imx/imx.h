@@ -91,6 +91,10 @@
 
 #define IMX_COARSE_INTEGRATION_TIME		0x0202
 #define IMX_TEST_PATTERN_MODE			0x0600
+#define IMX_TEST_PATTERN_COLOR_R		0x0602
+#define IMX_TEST_PATTERN_COLOR_GR		0x0604
+#define IMX_TEST_PATTERN_COLOR_B		0x0606
+#define IMX_TEST_PATTERN_COLOR_GB		0x0608
 #define IMX_IMG_ORIENTATION			0x0101
 #define IMX_VFLIP_BIT			2
 #define IMX_HFLIP_BIT			1
@@ -458,6 +462,13 @@ struct imx_device {
 	struct v4l2_ctrl *link_freq;
 	struct v4l2_ctrl *h_flip;
 	struct v4l2_ctrl *v_flip;
+
+	/* Test pattern control */
+	struct v4l2_ctrl *tp_mode;
+	struct v4l2_ctrl *tp_r;
+	struct v4l2_ctrl *tp_gr;
+	struct v4l2_ctrl *tp_gb;
+	struct v4l2_ctrl *tp_b;
 };
 
 #define to_imx_sensor(x) container_of(x, struct imx_device, sd)
