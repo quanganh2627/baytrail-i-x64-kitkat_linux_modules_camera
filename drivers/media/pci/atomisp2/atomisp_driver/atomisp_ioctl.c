@@ -305,7 +305,43 @@ static struct v4l2_queryctrl ci_v4l2_controls[] = {
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.name = "Test Pattern",
 		.minimum = 0,
-		.maximum = 1,
+		.maximum = 0xffff,
+		.step = 1,
+		.default_value = 0,
+	},
+	{
+		.id = V4L2_CID_TEST_PATTERN_COLOR_R,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test Pattern Solid Color R",
+		.minimum = INT_MIN,
+		.maximum = INT_MAX,
+		.step = 1,
+		.default_value = 0,
+	},
+	{
+		.id = V4L2_CID_TEST_PATTERN_COLOR_GR,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test Pattern Solid Color GR",
+		.minimum = INT_MIN,
+		.maximum = INT_MAX,
+		.step = 1,
+		.default_value = 0,
+	},
+	{
+		.id = V4L2_CID_TEST_PATTERN_COLOR_GB,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test Pattern Solid Color GB",
+		.minimum = INT_MIN,
+		.maximum = INT_MAX,
+		.step = 1,
+		.default_value = 0,
+	},
+	{
+		.id = V4L2_CID_TEST_PATTERN_COLOR_B,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Test Pattern Solid Color B",
+		.minimum = INT_MIN,
+		.maximum = INT_MAX,
 		.step = 1,
 		.default_value = 0,
 	},
@@ -2027,6 +2063,11 @@ static int atomisp_g_ctrl(struct file *file, void *fh,
 	case V4L2_CID_SHARPNESS:
 	case V4L2_CID_3A_LOCK:
 	case V4L2_CID_EXPOSURE_ZONE_NUM:
+	case V4L2_CID_TEST_PATTERN:
+	case V4L2_CID_TEST_PATTERN_COLOR_R:
+	case V4L2_CID_TEST_PATTERN_COLOR_GR:
+	case V4L2_CID_TEST_PATTERN_COLOR_GB:
+	case V4L2_CID_TEST_PATTERN_COLOR_B:
 		rt_mutex_unlock(&isp->mutex);
 		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 				       core, g_ctrl, control);
@@ -2100,6 +2141,10 @@ static int atomisp_s_ctrl(struct file *file, void *fh,
 	case V4L2_CID_3A_LOCK:
 	case V4L2_CID_COLORFX_CBCR:
 	case V4L2_CID_TEST_PATTERN:
+	case V4L2_CID_TEST_PATTERN_COLOR_R:
+	case V4L2_CID_TEST_PATTERN_COLOR_GR:
+	case V4L2_CID_TEST_PATTERN_COLOR_GB:
+	case V4L2_CID_TEST_PATTERN_COLOR_B:
 		rt_mutex_unlock(&isp->mutex);
 		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 				       core, s_ctrl, control);
@@ -2183,6 +2228,11 @@ static int atomisp_camera_g_ext_ctrls(struct file *file, void *fh,
 		case V4L2_CID_BIN_FACTOR_HORZ:
 		case V4L2_CID_BIN_FACTOR_VERT:
 		case V4L2_CID_3A_LOCK:
+		case V4L2_CID_TEST_PATTERN:
+		case V4L2_CID_TEST_PATTERN_COLOR_R:
+		case V4L2_CID_TEST_PATTERN_COLOR_GR:
+		case V4L2_CID_TEST_PATTERN_COLOR_GB:
+		case V4L2_CID_TEST_PATTERN_COLOR_B:
 			/*
 			 * Exposure related control will be handled by sensor
 			 * driver
@@ -2287,8 +2337,12 @@ static int atomisp_camera_s_ext_ctrls(struct file *file, void *fh,
 		case V4L2_CID_FNUMBER_ABSOLUTE:
 		case V4L2_CID_VCM_TIMEING:
 		case V4L2_CID_VCM_SLEW:
-		case V4L2_CID_TEST_PATTERN:
 		case V4L2_CID_3A_LOCK:
+		case V4L2_CID_TEST_PATTERN:
+		case V4L2_CID_TEST_PATTERN_COLOR_R:
+		case V4L2_CID_TEST_PATTERN_COLOR_GR:
+		case V4L2_CID_TEST_PATTERN_COLOR_GB:
+		case V4L2_CID_TEST_PATTERN_COLOR_B:
 			ret = v4l2_subdev_call(
 				isp->inputs[asd->input_curr].camera,
 				core, s_ctrl, &ctrl);
