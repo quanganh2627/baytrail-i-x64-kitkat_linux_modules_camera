@@ -300,26 +300,6 @@ static struct gc2235_reg const gc2235_still_1600x1200_30fps[] = {
 	{GC2235_TOK_TERM, 0, 0},
 };
 
-
-/* TODO settings of preview/still/video will be updated with new use case */
-
-struct gc2235_resolution gc2235_res_still[] = {
-	{
-		.desc = "gc2235_1600x1200_30fps",
-		.regs = gc2235_still_1600x1200_30fps,
-		.width = 1616,
-		.height = 1216,
-		.fps = 23,
-		.pixels_per_line = 0x8c0,
-		.lines_per_frame = 0x500,
-		.bin_factor_x = 1,
-		.bin_factor_y = 1,
-		.used = 0,
-		.skip_frames = 2,
-		.bin_mode = 0,
-	},
-};
-
 static struct gc2235_reg const gc2235_1280_30fps[] = {
 	{GC2235_8BIT, 0xfe, 0x00},
 	{GC2235_8BIT, 0x0a, 0x98},
@@ -339,7 +319,53 @@ static struct gc2235_reg const gc2235_1280_30fps[] = {
 	{GC2235_TOK_TERM, 0, 0},
 };
 
+/* TODO settings of preview/still/video will be updated with new use case */
+
+struct gc2235_resolution gc2235_res_still[] = {
+	{
+		.desc = "gc2235_1280_1_30fps",
+		.regs = gc2235_1280_30fps,
+		.width = 1552,//.width = 1616,
+		.height = 880,//.height = 916,
+		.fps = 30,
+		.pixels_per_line = 0x8c0,
+		.lines_per_frame = 0x3c4,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 4,
+	},
+	{
+		.desc = "gc2235_1600x1200_30fps",
+		.regs = gc2235_still_1600x1200_30fps,
+		.width = 1616,
+		.height = 1216,
+		.fps = 23,
+		.pixels_per_line = 0x8c0,
+		.lines_per_frame = 0x500,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 2,
+		.bin_mode = 0,
+	},
+};
+
+
 struct gc2235_resolution gc2235_res_preview[] = {
+	{
+		.desc = "gc2235_1280_1_30fps",
+		.regs = gc2235_1280_30fps,
+		.width = 1552,//.width = 1616,
+		.height = 880,//.height = 916,
+		.fps = 30,
+		.pixels_per_line = 0x8c0,
+		.lines_per_frame = 0x3c4,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 4,
+	},
 	{
 		.desc = "gc2235_1600x1200_30fps",
 		.regs = gc2235_1600x1200_30fps,
@@ -370,6 +396,7 @@ struct gc2235_resolution gc2235_res_video[] = {
 		.used = 0,
 		.skip_frames = 4,
 	},
+#if 0
 	{
 		.desc = "gc2235_1280_2_30fps",
 		.regs = gc2235_1280_30fps,
@@ -383,6 +410,7 @@ struct gc2235_resolution gc2235_res_video[] = {
 		.used = 0,
 		.skip_frames = 4,
 	},
+#endif
 };
 
 /********************** settings for imx - reference *********************/

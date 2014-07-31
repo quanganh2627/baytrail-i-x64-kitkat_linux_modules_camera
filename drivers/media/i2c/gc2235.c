@@ -1058,40 +1058,79 @@ static int get_resolution_index(struct v4l2_subdev *sd, int w, int h)
 	return -1;
 }
 
+/*
+ * distance - calculate the distance
+ * @res: resolution
+ * @w: width
+ * @h: height
+ *
+ * Get the gap between resolution and w/h.
+ * res->width/height smaller than w/h wouldn't be considered.
+ * Returns the value of gap or -1 if fail.
+ */
+#define LARGEST_ALLOWED_RATIO_MISMATCH 800
+static int distance(struct gc2235_resolution *res, u32 w, u32 h)
+{
+	unsigned int w_ratio = ((res->width << 13) / w);
+	unsigned int h_ratio;
+	int match;
+
+	if (h == 0)
+		return -1;
+	h_ratio = ((res->height << 13) / h);
+	if (h_ratio == 0)
+		return -1;
+	match = abs(((w_ratio << 13) / h_ratio) - ((int)8192));
+
+	if ((w_ratio < (int)8192) || (h_ratio < (int)8192) ||
+	    (match > LARGEST_ALLOWED_RATIO_MISMATCH))
+		return -1;
+
+	return w_ratio + h_ratio;
+}
+
+/* Return the nearest higher resolution index */
+static int nearest_resolution_index(struct v4l2_subdev *sd, int w, int h)
+{
+	struct gc2235_device *dev = to_gc2235_sensor(sd);
+	int i;
+	int idx = -1;
+	int dist;
+	int min_dist = INT_MAX;
+	struct gc2235_resolution *tmp_res = NULL;
+
+	for (i = 0; i < dev->entries_curr_table; i++) {
+		tmp_res = &dev->curr_res_table[i];
+		dist = distance(tmp_res, w, h);
+		if (dist == -1)
+			continue;
+		if (dist < min_dist) {
+			min_dist = dist;
+			idx = i;
+		}
+	}
+
+	return idx;
+}
+
 static int gc2235_try_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
 	struct gc2235_device *dev = to_gc2235_sensor(sd);
 	int idx = 0;
-	const struct gc2235_resolution *tmp_res = NULL;
 
 	mutex_lock(&dev->input_lock);
 
-	if ((fmt->width > gc2235_max_res[0].res_max_width)
-		|| (fmt->height > gc2235_max_res[0].res_max_height)) {
-		fmt->width =  gc2235_max_res[0].res_max_width;
-		fmt->height = gc2235_max_res[0].res_max_height;
+	idx = nearest_resolution_index(sd, fmt->width, fmt->height);
+	if (idx == -1) {
+		/* return the largest resolution */
+		idx = dev->entries_curr_table;
+		fmt->width = dev->curr_res_table[idx-1].width;
+		fmt->height = dev->curr_res_table[idx-1].height;
 	} else {
-		for (idx = 0; idx < dev->entries_curr_table; idx++) {
-				tmp_res = &dev->curr_res_table[idx];
-				if ((tmp_res[idx].width >= fmt->width) &&
-					(tmp_res[idx].height >= fmt->height))
-					break;
-		}
-
-		/*
-		 * nearest_resolution_index() doesn't return smaller
-		 *  resolutions. If it fails, it means the requested
-		 *  resolution is higher than wecan support. Fallback
-		 *  to highest possible resolution in this case.
-		 */
-		if (idx == dev->entries_curr_table)
-			idx = dev->entries_curr_table - 1;
-
 		fmt->width = dev->curr_res_table[idx].width;
 		fmt->height = dev->curr_res_table[idx].height;
 	}
-
 	fmt->code = dev->format.code;
 
 	mutex_unlock(&dev->input_lock);
