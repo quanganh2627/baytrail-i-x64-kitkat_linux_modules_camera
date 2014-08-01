@@ -2631,8 +2631,8 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 
 	/* find out the yuv decimation factor */
 	for (i = 0; i < ARRAY_SIZE(yuv_dec_fct); i++) {
-		if (yuv_ds_in_width > out_width * yuv_dec_fct[i] &&
-		    yuv_ds_in_height > out_height * yuv_dec_fct[i]) {
+		if (yuv_ds_in_width >= out_width * yuv_dec_fct[i] &&
+		    yuv_ds_in_height >= out_height * yuv_dec_fct[i]) {
 			vf_pp_in_res->width = yuv_ds_in_width / yuv_dec_fct[i];
 			vf_pp_in_res->height = yuv_ds_in_height / yuv_dec_fct[i];
 			break;
