@@ -2552,7 +2552,12 @@ static void __configure_preview_pp_input(struct atomisp_sub_device *asd,
 
 	const struct bayer_ds_factor bds_fct[] =
 		{{2, 1}, {3, 2}, {5, 4}};
-	const unsigned int yuv_dec_fct[] = {4, 2};
+	/*
+	 * BZ201033: YUV decimation factor of 4 causes couple of rightmost
+	 * columns to be shaded. Remove this factor to work around the CSS bug.
+	 * const unsigned int yuv_dec_fct[] = {4, 2};
+	 */
+	const unsigned int yuv_dec_fct[] = { 2 };
 	unsigned int i;
 
 	if (width == 0 && height == 0)
