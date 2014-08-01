@@ -359,10 +359,11 @@ static int __ov8858_set_exposure(struct v4l2_subdev *sd, int exposure, int gain,
 
 	if (*vts < exposure + OV8858_INTEGRATION_TIME_MARGIN) {
 		*vts = (u16) exposure + OV8858_INTEGRATION_TIME_MARGIN;
-		ret = __ov8858_update_frame_timing(sd, hts, vts);
-		if (ret)
-			return ret;
 	}
+
+	ret = __ov8858_update_frame_timing(sd, hts, vts);
+	if (ret)
+		return ret;
 
 	/* For ov8858, the low 4 bits are fraction bits and must be kept 0 */
 	exp_val = exposure << 4;
