@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef __IA_CSS_TIMER_H__
-#define __IA_CSS_TIMER_H__
+#ifndef __IA_CSS_TIMER_H
+#define __IA_CSS_TIMER_H
 
 /** @file
  * Timer interface definitions
@@ -39,4 +39,4 @@ struct ia_css_time_meas {
 
 #define SIZE_OF_IA_CSS_TIME_MEAS_STRUCT (sizeof(uint32_t) + sizeof(uint32_t))
 
-#endif  /* __IA_CSS_TIMER_H__ */
+#endif  /* __IA_CSS_TIMER_H */

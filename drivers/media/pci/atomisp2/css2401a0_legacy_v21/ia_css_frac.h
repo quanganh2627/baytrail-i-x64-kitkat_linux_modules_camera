@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _IA_CSS_FRAC_H_
-#define _IA_CSS_FRAC_H_
+#ifndef _IA_CSS_FRAC_H
+#define _IA_CSS_FRAC_H
 
 /** @file
  * This file contains typedefs used for fractional numbers
@@ -41,4 +41,4 @@ typedef uint32_t ia_css_u8_8;
 /** Signed fixed point value, 0 integer bits, 15 fractional bits */
 typedef int32_t ia_css_s0_15;
 
-#endif /* _IA_CSS_FRAC_H_ */
+#endif /* _IA_CSS_FRAC_H */

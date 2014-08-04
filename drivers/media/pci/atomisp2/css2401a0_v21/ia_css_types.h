@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140802_0205 */
+/* Release Version: irci_master_20140805_1755 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _IA_CSS_TYPES_H_
-#define _IA_CSS_TYPES_H_
+#ifndef _IA_CSS_TYPES_H
+#define _IA_CSS_TYPES_H
 
 /** @file
  * This file contains types used for the ia_css parameters.
@@ -438,4 +438,4 @@ struct ia_css_isp_config {
 	uint32_t			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
 };
 
-#endif /* _IA_CSS_TYPES_H_ */
+#endif /* _IA_CSS_TYPES_H */

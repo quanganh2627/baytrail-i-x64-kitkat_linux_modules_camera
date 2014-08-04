@@ -118,7 +118,6 @@ STORAGE_CLASS_INLINE unsigned int ceil_shift_mul(unsigned int a, unsigned int b)
 
 #if !defined(__KERNEL__)
 #define clamp(a, min_val, max_val) MIN(MAX((a), (min_val)), (max_val))
-#define bound(min_val, x, max_val) MIN(MAX((x), (min_val)), (max_val))
 #endif /* !defined(__KERNEL__) */
 
 #endif /* __MATH_SUPPORT_H */

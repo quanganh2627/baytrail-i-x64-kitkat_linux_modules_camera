@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _IA_CSS_ACC_TYPES_H_
-#define _IA_CSS_ACC_TYPES_H_
+#ifndef _IA_CSS_ACC_TYPES_H
+#define _IA_CSS_ACC_TYPES_H
 
 /** @file
  * This file contains types used for acceleration
@@ -461,4 +461,4 @@ enum ia_css_sp_sleep_mode {
 	SP_SLEEP_AFTER_FRAME = 1 << 0,
 	SP_SLEEP_AFTER_IRQ = 1 << 1
 };
-#endif /* _IA_CSS_TYPES_H_ */
+#endif /* _IA_CSS_ACC_TYPES_H */

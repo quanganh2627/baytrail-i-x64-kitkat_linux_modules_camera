@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef __IA_CCS_PIPE_PUBLIC_H
-#define __IA_CCS_PIPE_PUBLIC_H
+#ifndef __IA_CSS_PIPE_PUBLIC_H
+#define __IA_CSS_PIPE_PUBLIC_H
 
 /** @file
  * This file contains the public interface for CSS pipes.
@@ -413,4 +413,4 @@ enum ia_css_err
 ia_css_pipe_get_qos_ext_state (struct ia_css_pipe *pipe,
                            uint32_t fw_handle,
                            bool * enable);
-#endif /* __IA_CCS_PIPE_PUBLIC_H */
+#endif /* __IA_CSS_PIPE_PUBLIC_H */

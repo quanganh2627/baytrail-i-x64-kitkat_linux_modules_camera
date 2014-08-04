@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef __IA_CCS_STREAM_PUBLIC_H
-#define __IA_CCS_STREAM_PUBLIC_H
+#ifndef __IA_CSS_STREAM_PUBLIC_H
+#define __IA_CSS_STREAM_PUBLIC_H
 
 /** @file
  * This file contains support for configuring and controlling streams
@@ -572,4 +572,4 @@ ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id);
  */
 void
 ia_css_en_dz_capt_pipe(struct ia_css_stream *stream, bool enable);
-#endif /* __IA_CCS_STREAM_PUBLIC_H */
+#endif /* __IA_CSS_STREAM_PUBLIC_H */
