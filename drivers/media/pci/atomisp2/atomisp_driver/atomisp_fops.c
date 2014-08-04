@@ -34,6 +34,7 @@
 #include "atomisp_ioctl.h"
 #include "atomisp_compat.h"
 #include "atomisp_subdev.h"
+#include "atomisp_v4l2.h"
 #include "atomisp-regs.h"
 #include "hmm/hmm.h"
 
@@ -760,6 +761,25 @@ static int atomisp_open(struct file *file)
 
 	rt_mutex_lock(&isp->mutex);
 
+	/* Deferred firmware loading case. */
+	if (isp->css_env.isp_css_fw.bytes == 0) {
+		isp->firmware = atomisp_load_firmware(isp);
+		if (!isp->firmware) {
+			dev_err(isp->dev, "Failed to load ISP firmware.\n");
+			ret = -ENOENT;
+			goto error;
+		}
+		ret = atomisp_css_load_firmware(isp);
+		if (ret) {
+			dev_err(isp->dev, "Failed to init css.\n");
+			goto error;
+		}
+		/* No need to keep FW in memory anymore. */
+		release_firmware(isp->firmware);
+		isp->firmware = NULL;
+		isp->css_env.isp_css_fw.data = NULL;
+	}
+
 	if (!isp->input_cnt) {
 		dev_err(isp->dev, "no camera attached\n");
 		ret = -EINVAL;
@@ -921,6 +941,12 @@ static int atomisp_release(struct file *file)
 	atomisp_acc_release(isp);
 	atomisp_destroy_pipes_stream_force(asd);
 	atomisp_css_uninit(isp);
+
+	if (defer_fw_load) {
+		atomisp_css_unload_firmware(isp);
+		isp->css_env.isp_css_fw.data = NULL;
+		isp->css_env.isp_css_fw.bytes = 0;
+	}
 
 	hmm_cleanup_mmu_l2();
 	hmm_pool_unregister(HMM_POOL_TYPE_DYNAMIC);

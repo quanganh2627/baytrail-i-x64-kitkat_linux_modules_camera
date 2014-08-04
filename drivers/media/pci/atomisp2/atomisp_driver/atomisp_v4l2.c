@@ -65,6 +65,12 @@ module_param(dypool_enable, bool, 0644);
 MODULE_PARM_DESC(dypool_enable,
 		"dynamic memory pool enable/disable (default:disable)");
 
+/* memory optimization: deferred firmware loading */
+bool defer_fw_load;
+module_param(defer_fw_load, bool, 0644);
+MODULE_PARM_DESC(defer_fw_load,
+		"Defer FW loading until device is opened (default:disable)");
+
 /* cross componnet debug message flag */
 int dbg_level = 0;
 module_param(dbg_level, int, 0644);
@@ -917,8 +923,8 @@ static void atomisp_uninitialize_modules(struct atomisp_device *isp)
 	atomisp_mipi_csi2_cleanup(isp);
 }
 
-static const struct firmware *
-load_firmware(struct atomisp_device *isp)
+const struct firmware *
+atomisp_load_firmware(struct atomisp_device *isp)
 {
 	const struct firmware *fw;
 	int rc;
@@ -1135,10 +1141,12 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	}
 
 	/* Load isp firmware from user space */
-	isp->firmware = load_firmware(isp);
-	if (!isp->firmware) {
-		err = -ENOENT;
-		goto load_fw_fail;
+	if (!defer_fw_load) {
+		isp->firmware = atomisp_load_firmware(isp);
+		if (!isp->firmware) {
+			err = -ENOENT;
+			goto load_fw_fail;
+		}
 	}
 
 	err = atomisp_css_check_firmware_version(isp);
@@ -1245,10 +1253,14 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	}
 
 	/* Load firmware into ISP memory */
-	err = atomisp_css_load_firmware(isp);
-	if (err) {
-		dev_err(&dev->dev, "Failed to init css.\n");
-		goto css_init_fail;
+	if (!defer_fw_load) {
+		err = atomisp_css_load_firmware(isp);
+		if (err) {
+			dev_err(&dev->dev, "Failed to init css.\n");
+			goto css_init_fail;
+		}
+	} else {
+		dev_dbg(&dev->dev, "Skip css init.\n");
 	}
 	/* Clear FW image from memory */
 	release_firmware(isp->firmware);
