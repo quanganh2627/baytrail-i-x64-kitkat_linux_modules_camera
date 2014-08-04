@@ -32,6 +32,7 @@
 #include "isp/kernels/csc/csc_1.0/ia_css_csc.host.h"
 #include "isp/kernels/ctc/ctc_1.0/ia_css_ctc.host.h"
 #include "isp/kernels/ctc/ctc_2/ia_css_ctc2.host.h"
+#include "isp/kernels/ctc/ctc_v2/ia_css_ctcv2.host.h"
 #include "isp/kernels/de/de_1.0/ia_css_de.host.h"
 #include "isp/kernels/de/de_2/ia_css_de2.host.h"
 #include "isp/kernels/dp/dp_1.0/ia_css_dp.host.h"

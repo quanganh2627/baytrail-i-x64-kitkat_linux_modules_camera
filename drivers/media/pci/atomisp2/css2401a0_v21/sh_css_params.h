@@ -28,7 +28,6 @@
 struct ia_css_isp_parameters;
 
 #include "ia_css_types.h"
-#include "ia_css.h"
 #include "sh_css_internal.h"
 #include "sh_css_legacy.h"
 #if defined(IS_ISP_2500_SYSTEM)

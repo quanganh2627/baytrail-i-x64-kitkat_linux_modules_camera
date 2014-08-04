@@ -176,7 +176,7 @@
 #define SIZE_OF_IA_CSS_PTR		sizeof(uint32_t)
 
 /* Number of SP's */
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 #define NUM_OF_SPS 2
 #else
 #define NUM_OF_SPS 1
@@ -185,7 +185,7 @@
 /* Enum for Number of Binaries */
 enum sh_css_num_binaries {
 	SP_FIRMWARE = 0,
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	SP1_FIRMWARE,
 #endif
 	ISP_FIRMWARE
@@ -767,7 +767,7 @@ struct sh_css_config_on_frame_enqueue {
 
 #if defined(HAS_SP_2400)
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE    13
-#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE        13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE        19
 #define  IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE    26 /* holds events for all type of buffers, hence deeper */
 #else
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE    6

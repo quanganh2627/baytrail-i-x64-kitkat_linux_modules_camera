@@ -22,7 +22,6 @@
 #include "sh_css_param_shading.h"
 #include "ia_css_shading.h"
 #include "assert_support.h"
-#include "ia_css.h"
 #include "sh_css_defs.h"
 #include "sh_css_internal.h"
 #include "ia_css_debug.h"

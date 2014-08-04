@@ -526,56 +526,51 @@ free_mipi_frames(struct ia_css_pipe *pipe)
 				pipe, port);
 			return err;
 		}
-	#if defined(USE_INPUT_SYSTEM_VERSION_2)
-		assert(ref_count_mipi_allocation[port] == 1);
-		if (ref_count_mipi_allocation[port] != 1) {
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-				"free_mipi_frames(%p) exit: error: wrong ref_count (ref_count=%d).\n",
-				pipe, ref_count_mipi_allocation[port]);
-			return err;
-		}
-	#else
-		/* 2401 system allows multiple streams to use same physical port. This is not
-		 * true for 2400 system. Currently 2401 uses MIPI buffers as a temporary solution.
-		 * TODO AM: Once that is changed (removed) this code should be removed as well.
-		 * In that case only 2400 related code should remain.
-		 */
-		if (ref_count_mipi_allocation[port] > 1) {
-			ref_count_mipi_allocation[port]--;
-			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-				"free_mipi_frames(%p) leave: nothing to do, other streams still use this port (port=%d).\n",
-				pipe, port);
-			return IA_CSS_SUCCESS;
-		}
-	#endif
-
-		{ /* limit the scope of variables */
-			unsigned int i;
-			for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
-				if (my_css.mipi_frames[port][i] != NULL) {
-					ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-						"free_mipi_frames(port=%d, num=%d).\n", port, i);
-					ia_css_frame_free(my_css.mipi_frames[port][i]);
-					my_css.mipi_frames[port][i] = NULL;
-				} else {
-					ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-						"free_mipi_frames(%p) exit: error: pointer null (port=%d,i=%d).\n",
-						pipe, port, i);
-					return err;
-				}
-				if (my_css.mipi_metadata[port][i] != NULL) {
-					ia_css_metadata_free(my_css.mipi_metadata[port][i]);
-					my_css.mipi_metadata[port][i] = NULL;
-				}
+		if (ref_count_mipi_allocation[port] > 0) {
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
+			assert(ref_count_mipi_allocation[port] == 1);
+			if (ref_count_mipi_allocation[port] != 1) {
+				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+					"free_mipi_frames(%p) exit: error: wrong ref_count (ref_count=%d).\n",
+					pipe, ref_count_mipi_allocation[port]);
+				return err;
 			}
-		} /* limit the scope of variables */
+#endif
 
-		ref_count_mipi_allocation[port]--;
+			ref_count_mipi_allocation[port]--;
 
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"free_mipi_frames(%p) exit (deallocated).\n", pipe);
+			if (ref_count_mipi_allocation[port] == 0) {
+				/* no streams are using this buffer, so free it */
+				unsigned int i;
+				for (i = 0; i < my_css.num_mipi_frames[port]; i++) {
+					if (my_css.mipi_frames[port][i] != NULL) {
+						ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+							"free_mipi_frames(port=%d, num=%d).\n", port, i);
+						ia_css_frame_free(my_css.mipi_frames[port][i]);
+						my_css.mipi_frames[port][i] = NULL;
+					}
+					if (my_css.mipi_metadata[port][i] != NULL) {
+						ia_css_metadata_free(my_css.mipi_metadata[port][i]);
+						my_css.mipi_metadata[port][i] = NULL;
+					}
+				}
 
-		return IA_CSS_ERR_INTERNAL_ERROR;
+				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+					"free_mipi_frames(%p) exit (deallocated).\n", pipe);
+			}
+#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+			else {
+				/* 2401 system allows multiple streams to use same physical port. This is not
+				 * true for 2400 system. Currently 2401 uses MIPI buffers as a temporary solution.
+				 * TODO AM: Once that is changed (removed) this code should be removed as well.
+				 * In that case only 2400 related code should remain.
+				 */
+				ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
+					"free_mipi_frames(%p) leave: nothing to do, other streams still use this port (port=%d).\n",
+					pipe, port);
+			}
+#endif
+		}
 	} else { /* pipe ==NULL */
 		/* AM TEMP: free-ing all mipi buffers just like a legacy code. */
 		for (port = CSI_PORT0_ID; port < N_CSI_PORTS; port++) {

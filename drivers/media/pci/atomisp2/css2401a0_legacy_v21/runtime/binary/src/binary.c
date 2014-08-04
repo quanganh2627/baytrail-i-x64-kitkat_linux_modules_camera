@@ -23,7 +23,6 @@
 #include "isp.h"	/* ISP_VEC_NELEMS */
 
 #include "ia_css_binary.h"
-#include "ia_css.h"
 #include "ia_css_debug.h"
 #include "ia_css_util.h"
 #include "ia_css_isp_param.h"

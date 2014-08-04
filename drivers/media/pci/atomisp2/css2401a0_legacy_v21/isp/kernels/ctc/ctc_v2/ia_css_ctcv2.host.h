@@ -19,18 +19,19 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __IA_CSS_CTCV2_HOST_H
+#define __IA_CSS_CTCV2_HOST_H
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "ia_css_ctcv2_param.h"
+#include "ia_css_ctcv2_types.h"
 
+#define INEFFECTIVE_VAL 4096
+#define BASIC_VAL 819
 
-#define CSS_VERSION_STRING "VER:1.4; REL:20140802_31.6_0256; API:2.1.5.0; GIT:irci_20140801_1500__7ad454#7ad4548011c30cf3ef6fb2f74bc8a30f738161d0; SDK:/p/siliconhive/hivepkgs/releases/css/Css_ROC_A0t/int_css_roc_a0t_20140507_1602; USER:viedifw; "
+extern const struct ia_css_ctcv2_config default_ctcv2_config;
 
+/*Encode Function to translate parameters from userspace into ISP space*/
+void ia_css_ctcv2_encode(struct sh_css_isp_ctcv2_params *to,
+			 struct ia_css_ctcv2_config *from);
 
-#endif
-
+#endif /* __IA_CSS_CTCV2_HOST_H */

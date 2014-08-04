@@ -3111,7 +3111,7 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 				ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
 					mmgr_malloc(sizeof(struct isp_acc_param)));
 	succ &= (ddr_ptrs->acc_cluster_params_for_sp != mmgr_NULL);
-	acc_cluster_set_default_params();
+	acc_cluster_set_default_params(stream);
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)

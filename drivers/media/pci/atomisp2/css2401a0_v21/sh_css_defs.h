@@ -39,7 +39,7 @@
 #if defined(IS_ISP_2500_SYSTEM)
 #define SWITCH_GACS_TO_SP1	/* Enabling this macro switches the GACs to SP1 */
 
-#if !defined(ENABLE_SP1)
+#if !defined(C_ENABLE_SP1)
 #undef SWITCH_GACS_TO_SP1
 #endif
 

@@ -102,7 +102,7 @@ static int thread_alive;
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 #define SP1_PROG_NAME "sp1"
 #endif
 /* Size of Refcount List */
@@ -1602,7 +1602,7 @@ ia_css_init(const struct ia_css_env *env,
 {
 	enum ia_css_err err;
 	ia_css_spctrl_cfg spctrl_cfg;
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	ia_css_spctrl_cfg sp1ctrl_cfg;
 #endif
 
@@ -1758,7 +1758,7 @@ ia_css_init(const struct ia_css_env *env,
 		IA_CSS_LEAVE_ERR(err);
 		return err;
 	}
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	if(!sh_css_setup_spctrl_config(&sh_css_sp1_fw,SP1_PROG_NAME,&sp1ctrl_cfg))
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	err = ia_css_spctrl_load_fw(SP1_ID, &sp1ctrl_cfg);
@@ -2477,12 +2477,12 @@ ia_css_uninit(void)
 		ia_css_unload_firmware();
 	}
 	ia_css_spctrl_unload_fw(SP0_ID);
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	ia_css_spctrl_unload_fw(SP1_ID);
 #endif
 
 	sh_css_sp_set_sp_running(false);
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	sh_css_sp1_set_sp1_running(false);
 #endif
 
@@ -4301,7 +4301,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 {
 	enum ia_css_err return_err;
 	enum sh_css_queue_id queue_id;
-	hrt_vaddress ddr_buffer_addr;
+	hrt_vaddress ddr_buffer_addr = (hrt_vaddress)0;
 	struct sh_css_hmm_buffer ddr_buffer;
 	unsigned int i, found_record;
 	enum ia_css_buffer_type buf_type;
@@ -4356,6 +4356,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 
 		if (found_record == 0)
 		{
+			IA_CSS_LEAVE_ERR(IA_CSS_ERR_INTERNAL_ERROR);
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		}
 
@@ -4384,7 +4385,10 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 				if ((pipe) && (pipe->stop_requested == true))
 				{
 
-#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
+					/* free mipi frames only for old input system
+					 * for 2401 it is done in ia_css_stream_destroy call
+					 */
 					return_err = free_mipi_frames(pipe);
 					if (return_err != IA_CSS_SUCCESS) {
 						ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -8507,7 +8511,6 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 	if ((stream->last_pipe != NULL) &&
 		ia_css_pipeline_is_mapped(stream->last_pipe->pipe_num)) {
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
-#if defined(HAS_ISYS_CSI_RSRC_RELEASE)
 		for (i = 0; i < stream->num_pipes; i++) {
 			struct ia_css_pipe *entry = stream->pipes[i];
 			unsigned int sp_thread_id;
@@ -8529,7 +8532,17 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 				}
 			}
 		}
-#endif
+		if (stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
+			for (i = 0; i < stream->num_pipes; i++) {
+				struct ia_css_pipe *entry = stream->pipes[i];
+				/* free any mipi frames that are remaining:
+				 * some test stream create-destroy cycles do not generate output frames
+				 * and the mipi buffer is not freed in the deque function
+				 */
+				if (entry != NULL)
+					free_mipi_frames(entry);
+			}
+		}
 		stream_unregister_with_csi_rx(stream);
 #endif
 
@@ -9033,7 +9046,7 @@ ia_css_pipe_get_isp_pipe_version(const struct ia_css_pipe *pipe)
 
 #define SP_START_TIMEOUT_US 30000000
 
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 void
 ia_css_start_sp1(void)
 {
@@ -9085,7 +9098,7 @@ ia_css_start_sp(void)
 
 	sh_css_setup_queues();
 
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	/* Start the SP1 Core */
 	ia_css_start_sp1();
 #endif
@@ -9101,7 +9114,7 @@ ia_css_start_sp(void)
  */
 #define SP_SHUTDOWN_TIMEOUT_US 200000
 
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 enum ia_css_err
 ia_css_stop_sp1(void)
 {
@@ -9181,7 +9194,7 @@ ia_css_stop_sp(void)
 	/* clear pending param sets from refcount */
 	sh_css_param_clear_param_sets();
 
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	/* Stop SP1 Core */
 	ia_css_stop_sp1();
 #endif
