@@ -1250,6 +1250,10 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		dev_err(&dev->dev, "Failed to init css.\n");
 		goto css_init_fail;
 	}
+	/* Clear FW image from memory */
+	release_firmware(isp->firmware);
+	isp->firmware = NULL;
+	isp->css_env.isp_css_fw.data = NULL;
 
 	atomisp_drvfs_init(&atomisp_pci_driver, isp);
 
