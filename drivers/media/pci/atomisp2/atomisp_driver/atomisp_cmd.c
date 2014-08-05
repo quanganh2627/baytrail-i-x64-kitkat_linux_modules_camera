@@ -302,7 +302,7 @@ done:
 	if ((new_freq == isp->sw_contex.running_freq) && !force)
 		return 0;
 
-	dev_info(isp->dev, "Programming DFS frequency to %d\n", new_freq);
+	dev_dbg(isp->dev, "Programming DFS frequency to %d\n", new_freq);
 
 	ret = write_target_freq_to_hw(isp, new_freq);
 	if (!ret)
