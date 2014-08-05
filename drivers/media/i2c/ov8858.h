@@ -49,10 +49,12 @@
 #define OV8858_OTP_MODE_CTRL		0x3D84
 #define OV8858_OTP_START_ADDR_REG	0x3D88
 #define OV8858_OTP_END_ADDR_REG		0x3D8A
+#define OV8858_OTP_ISP_CTRL2		0x5002
 
-#define OV8858_OTP_MODE_MANUAL		BIT(0)
+#define OV8858_OTP_MODE_MANUAL		BIT(6)
 #define OV8858_OTP_MODE_PROGRAM_DISABLE	BIT(7)
 #define OV8858_OTP_LOAD_ENABLE		BIT(0)
+#define OV8858_OTP_DPC_ENABLE		BIT(3)
 
 #define OV8858_PLL1_PREDIV0		0x030A
 #define OV8858_PLL1_PREDIV		0x0300
@@ -331,13 +333,6 @@ static struct ov8858_vcm ov8858_vcms[] = {
 
 #define OV8858_RES_WIDTH_MAX	3280
 #define OV8858_RES_HEIGHT_MAX	2464
-
-static const struct ov8858_reg ov8858_module_detection[] = {
-	{OV8858_8BIT, OV8858_STREAM_MODE, 0x01}, /* Stream on */
-	{OV8858_8BIT, 0x3d84, 0xc0}, /* Select Bank 0 */
-	{OV8858_8BIT, 0x3d81, 0x01}, /* OTP read enable */
-	{OV8858_TOK_TERM, 0, 0}
-};
 
 static const struct ov8858_reg ov8858_BasicSettings[] = {
 	{OV8858_8BIT, 0x0103, 0x01}, /* software_reset */

@@ -472,6 +472,7 @@ static int ov8858_g_priv_int_data(struct v4l2_subdev *sd,
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	u32 size = OV8858_OTP_END_ADDR - OV8858_OTP_START_ADDR + 1;
 	int r;
+	u16 isp_ctrl2 = 0;
 
 	mutex_lock(&dev->input_lock);
 	if (!dev->otp_data) {
@@ -489,12 +490,25 @@ static int ov8858_g_priv_int_data(struct v4l2_subdev *sd,
 		if (r)
 			goto error2;
 
+		/* Turn off Dead Pixel Correction */
+		r = ov8858_read_reg(client, OV8858_8BIT,
+				    OV8858_OTP_ISP_CTRL2, &isp_ctrl2);
+		if (r)
+			goto error1;
+
+		r = ov8858_write_reg(client, OV8858_8BIT, OV8858_OTP_ISP_CTRL2,
+				     isp_ctrl2 & ~OV8858_OTP_DPC_ENABLE);
+		if (r)
+			goto error1;
+
+		/* Enable partial OTP read mode */
 		r = ov8858_write_reg(client, OV8858_8BIT, OV8858_OTP_MODE_CTRL,
 				     OV8858_OTP_MODE_PROGRAM_DISABLE |
 				     OV8858_OTP_MODE_MANUAL);
 		if (r)
 			goto error1;
 
+		/* Set address range of OTP memory to read */
 		r = ov8858_write_reg(client, OV8858_16BIT,
 				     OV8858_OTP_START_ADDR_REG,
 				     OV8858_OTP_START_ADDR);
@@ -507,20 +521,34 @@ static int ov8858_g_priv_int_data(struct v4l2_subdev *sd,
 		if (r)
 			goto error1;
 
+		/* Load the OTP data into the OTP buffer */
 		r = ov8858_write_reg(client, OV8858_8BIT, OV8858_OTP_LOAD_CTRL,
 				     OV8858_OTP_LOAD_ENABLE);
 		if (r)
 			goto error1;
 
+		/* Wait for the data to load into the buffer */
+		usleep_range(5000, 5500);
+
+		/* Read the OTP data from the buffer */
 		r = ov8858_i2c_read(client, size, OV8858_OTP_START_ADDR,
 				    dev->otp_data);
 		if (r)
 			goto error1;
 
-		r = ov8858_write_reg(client, 1, OV8858_STREAM_MODE, 0x00);
+		/* Turn on Dead Pixel Correction */
+		r = ov8858_write_reg(client, OV8858_8BIT, OV8858_OTP_ISP_CTRL2,
+				     isp_ctrl2 | OV8858_OTP_DPC_ENABLE);
 		if (r)
-			dev_warn(&client->dev, "%s: cannot turn off streaming.",
-				 __func__);
+			goto error1;
+
+		/* Stop streaming */
+		r = ov8858_write_reg(client, 1, OV8858_STREAM_MODE, 0x00);
+		if (r) {
+			dev_err(&client->dev, "%s: cannot turn off streaming\n",
+				__func__);
+			goto error1;
+		}
 	}
 
 	if (copy_to_user(priv->data, dev->otp_data,
@@ -535,16 +563,16 @@ static int ov8858_g_priv_int_data(struct v4l2_subdev *sd,
 	return 0;
 
 error1:
-	r = ov8858_write_reg(client, 1, OV8858_STREAM_MODE, 0x00);
-	if (r)
-		dev_warn(&client->dev, "%s: cannot turn off streaming.",
-			 __func__);
+	/* Turn on Dead Pixel Correction and set streaming off */
+	ov8858_write_reg(client, OV8858_8BIT, OV8858_OTP_ISP_CTRL2,
+			     isp_ctrl2 | OV8858_OTP_DPC_ENABLE);
+	ov8858_write_reg(client, 1, OV8858_STREAM_MODE, 0x00);
 error2:
 	devm_kfree(&client->dev, dev->otp_data);
 	dev->otp_data = NULL;
 error3:
 	mutex_unlock(&dev->input_lock);
-
+	dev_err(&client->dev, "%s: OTP reading failed\n", __func__);
 	return r;
 }
 
