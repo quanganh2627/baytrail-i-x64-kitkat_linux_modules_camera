@@ -2980,7 +2980,7 @@ int atomisp_cp_dvs_6axis_config(struct atomisp_sub_device *asd,
 			asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream;
 	int ret = -EFAULT;
 
-	if (!user_6axis_config)
+	if (!user_6axis_config || !asd->params.curr_grid_info.dvs_grid.enable)
 		return 0;
 
 	/* check whether need to reallocate for 6 axis config */
