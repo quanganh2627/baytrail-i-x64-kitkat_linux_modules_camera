@@ -4253,11 +4253,13 @@ int atomisp_css_set_acc_parameters(struct atomisp_acc_fw *acc_fw)
 
 /* Load acc binary extension */
 int atomisp_css_load_acc_extension(struct atomisp_sub_device *asd,
-					struct atomisp_css_fw_info *fw,
-					enum atomisp_css_pipe_id pipe_id,
-					unsigned int type)
+				   struct atomisp_css_fw_info *fw,
+				   enum atomisp_css_pipe_id pipe_id,
+				   unsigned int type)
 {
 	struct atomisp_css_fw_info **hd;
+
+	fw->next = NULL;
 	hd = &(asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
 			.pipe_configs[pipe_id].acc_extension);
 	while (*hd)
@@ -4274,14 +4276,21 @@ void atomisp_css_unload_acc_extension(struct atomisp_sub_device *asd,
 					struct atomisp_css_fw_info *fw,
 					enum atomisp_css_pipe_id pipe_id)
 {
-	struct atomisp_css_fw_info *hd, *hdn;
-	hd = (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+	struct atomisp_css_fw_info **hd;
+
+	hd = &(asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
 			.pipe_configs[pipe_id].acc_extension);
-	while (hd) {
-		hdn = (hd->next) ? &(*hd->next) : NULL;
-		hd->next = NULL;
-		hd = hdn;
+	while (*hd && *hd != fw)
+		hd = &(*hd)->next;
+	if (!*hd) {
+		dev_err(asd->isp->dev, "did not find acc fw for removal\n");
+		return;
 	}
+	*hd = fw->next;
+	fw->next = NULL;
+
+	asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+		.update_pipe[pipe_id] = true;
 }
 
 int atomisp_css_create_acc_pipe(struct atomisp_sub_device *asd)
