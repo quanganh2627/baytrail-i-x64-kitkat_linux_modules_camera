@@ -147,8 +147,8 @@
 
 /* frame control reg */
 #define OV7736_REG_FRAME_CTRL	0x4202
-#define OV7736_FRAME_START		0x00
-#define OV7736_FRAME_STOP		0x0f
+//#define OV7736_FRAME_START		0x00
+//#define OV7736_FRAME_STOP		0x0f
 
 
 /*register */
@@ -205,9 +205,10 @@ enum ov7736_tok_type {
 	OV7736_8BIT  = 0x0001,
 	OV7736_16BIT = 0x0002,
 	OV7736_32BIT = 0x0004,
+	OV7736_RMW_AND = 0x0008,
+	OV7736_RMW_OR = 0x0010,
 	OV7736_TOK_TERM   = 0xf000,	/* terminating token for reg list */
-	OV7736_TOK_DELAY  = 0xfe00,	/* delay token for reg list */
-	OV7736_TOK_MASK = 0xfff0
+	OV7736_TOK_DELAY  = 0xfe00	/* delay token for reg list */
 };
 
 
@@ -318,6 +319,7 @@ enum {
 };
 
 static struct ov7736_res_struct ov7736_res[] = {
+#if 0
 	{
 	.desc	= "QVGA",
 	.res	= OV7736_RES_QVGA,
@@ -328,6 +330,7 @@ static struct ov7736_res_struct ov7736_res[] = {
 	.regs	= NULL,
 	.skip_frames = 1,
 	},
+#endif
 	{
 	.desc	= "VGA",
 	.res	= OV7736_RES_VGA,
@@ -340,6 +343,26 @@ static struct ov7736_res_struct ov7736_res[] = {
 	},
 };
 #define N_RES (ARRAY_SIZE(ov7736_res))
+
+static struct misensor_reg const ov7736_hflip_on_table[] = {
+{OV7736_8BIT | OV7736_RMW_OR, 0x3818, 0x40},
+{OV7736_TOK_TERM, 0, 0}
+};
+
+static struct misensor_reg const ov7736_hflip_off_table[] = {
+{OV7736_8BIT | OV7736_RMW_AND, 0x3818, ~0x40},
+{OV7736_TOK_TERM, 0, 0}
+};
+
+static struct misensor_reg const ov7736_vflip_on_table[] = {
+{OV7736_8BIT | OV7736_RMW_OR, 0x3818, 0x20},
+{OV7736_TOK_TERM, 0, 0}
+};
+
+static struct misensor_reg const ov7736_vflip_off_table[] = {
+{OV7736_8BIT | OV7736_RMW_AND, 0x3818, ~0x20},
+{OV7736_TOK_TERM, 0, 0}
+};
 
 static struct misensor_reg const ov7736_auto_scene[] = {
 {OV7736_8BIT, 0x3212, 0x00}, // enable group 0
@@ -764,7 +787,7 @@ static struct misensor_reg const ov7736_vga_init[] = {
 {OV7736_8BIT, 0x380e, 0x01},
 {OV7736_8BIT, 0x380f, 0xf4},
 {OV7736_8BIT, 0x3622, 0x00},
-{OV7736_8BIT, 0x3818, 0x80},
+{OV7736_8BIT | OV7736_RMW_OR, 0x3818, 0x80},
 {OV7736_8BIT, 0x3a08, 0x00},
 {OV7736_8BIT, 0x3a09, 0x96},
 {OV7736_8BIT, 0x3a0a, 0x00}, 
@@ -774,7 +797,7 @@ static struct misensor_reg const ov7736_vga_init[] = {
 {OV7736_TOK_TERM, 0, 0}
 };
 
-
+#if 0
 static struct misensor_reg const ov7736_qvga_init[] = {
 {OV7736_8BIT, 0x4004, 0x02},
 {OV7736_8BIT, 0x3800, 0x01},
@@ -794,7 +817,7 @@ static struct misensor_reg const ov7736_qvga_init[] = {
 {OV7736_8BIT, 0x380e, 0x01},
 {OV7736_8BIT, 0x380f, 0x00},
 {OV7736_8BIT, 0x3622, 0x08},
-{OV7736_8BIT, 0x3818, 0x81},
+{OV7736_8BIT | OV7736_RMW_OR, 0x3818, 0x81},
 {OV7736_8BIT, 0x3a08, 0x00},
 {OV7736_8BIT, 0x3a09, 0x4c},
 {OV7736_8BIT, 0x3a0a, 0x00},
@@ -807,6 +830,7 @@ static struct misensor_reg const ov7736_qvga_init[] = {
 {OV7736_8BIT, 0x4837, 0x31},//31~3c
 {OV7736_TOK_TERM, 0, 0}
 };
+#endif
 
 static struct misensor_reg const ov7736_common[] = {
 	 {OV7736_TOK_TERM, 0, 0}

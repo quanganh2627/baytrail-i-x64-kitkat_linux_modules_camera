@@ -182,19 +182,46 @@ static int ov7736_write_reg_array(struct i2c_client *client,
 {
 	const struct misensor_reg *next = reglist;
 	int err;
+	u32 tmp_val;
+	u32 targetVal;
+	u16 bitLen = OV7736_8BIT;
 
 	for (; next->length != OV7736_TOK_TERM; next++) {
 		if (next->length == OV7736_TOK_DELAY) {
 			msleep(next->val);
 		} else {
-			err = ov7736_write_reg(client, next->length, next->reg,
-						next->val);
+			targetVal = next->val;
+			bitLen = (next->length & OV7736_8BIT) ? (OV7736_8BIT) :
+						((next->length & OV7736_16BIT) ? OV7736_16BIT : OV7736_32BIT);
+
+			if (next->length & OV7736_RMW_AND) {
+				err = ov7736_read_reg(client, bitLen, next->reg, &tmp_val);
+				if (err) {
+					dev_err(&client->dev, "%s err. read %0x aborted\n", __func__, next->reg);
+					continue;
+				}
+
+				targetVal = tmp_val & next->val;
+			}
+
+			if (next->length & OV7736_RMW_OR) {
+				err = ov7736_read_reg(client, bitLen, next->reg, &tmp_val);
+				if (err) {
+					dev_err(&client->dev, "%s err. read %0x aborted\n", __func__, next->reg);
+					continue;
+				}
+
+				targetVal = tmp_val | next->val;
+			}
+
+			err = ov7736_write_reg(client, bitLen, next->reg, targetVal);
+
 			/* REVISIT: Do we need this delay? */
 			udelay(10);
+
 			if (err) {
-				dev_err(&client->dev, "%s err. aborted\n",
-					__func__);
-				return err;
+				dev_err(&client->dev, "%s err. write %0x aborted\n", __func__, next->reg);
+				continue;
 			}
 		}
 	}
@@ -207,19 +234,37 @@ static int ov7736_g_hflip(struct v4l2_subdev *sd, s32 * val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
-	
-	ov7736_write_reg(client, OV7736_8BIT,0x3818,0xc0);
-	
-	return 0;
+	int err;
+	u32 tmp;
+
+	err = ov7736_read_reg(client, OV7736_8BIT, 0x3818, &tmp);
+	if (!err) {
+		if (tmp & 0x40)
+			*val = 1;
+		else
+			*val = 0;
+	}
+
+	return err;
 }
+
 /* *****Original image.***** */
 static int ov7736_g_vflip(struct v4l2_subdev *sd, s32 * val)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
-	
-	ov7736_write_reg(client, OV7736_8BIT,0x3818,0x80);
-	return 0;
+	int err;
+	u32 tmp;
+
+	err = ov7736_read_reg(client, OV7736_8BIT, 0x3818, &tmp);
+	if (!err) {
+		if (tmp & 0x20)
+			*val = 1;
+		else
+			*val = 0;
+	}
+
+	return err;
 }
 
 /* *****Vertical flip the image.***** */
@@ -227,8 +272,12 @@ static int ov7736_t_hflip(struct v4l2_subdev *sd, int value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
-	
-    ov7736_write_reg(client, OV7736_8BIT,0x3818,0xa0);
+
+	if (value)
+		ov7736_write_reg_array(client, ov7736_hflip_on_table);
+	else
+		ov7736_write_reg_array(client, ov7736_hflip_off_table);
+
 	return 0;
 }
 
@@ -237,8 +286,12 @@ static int ov7736_t_vflip(struct v4l2_subdev *sd, int value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
-	
-    ov7736_write_reg(client, OV7736_8BIT,0x3818,0xe0);
+
+	if (value)
+		ov7736_write_reg_array(client, ov7736_vflip_on_table);
+	else
+		ov7736_write_reg_array(client, ov7736_vflip_off_table);
+
 	return 0;
 }
 
@@ -764,11 +817,11 @@ static int ov7736_s_mbus_fmt(struct v4l2_subdev *sd,
 	switch(res_index->res) {
 		case OV7736_RES_VGA:
 			//if (dev->res != res_index->res)
-				ret = ov7736_write_reg_array(c, ov7736_vga_init);
-			break;
+			//	ret = ov7736_write_reg_array(c, ov7736_vga_init);
+			//break;
 		case OV7736_RES_QVGA:
 			//if (dev->res != res_index->res)
-				ret = ov7736_write_reg_array(c, ov7736_qvga_init);
+				ret = ov7736_write_reg_array(c, ov7736_vga_init);
 			break;
 		default:
 			dev_err(&c->dev, "%s: can not support the resolution!!!\n", __func__);
