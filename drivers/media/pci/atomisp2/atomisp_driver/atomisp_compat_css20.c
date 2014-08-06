@@ -703,7 +703,10 @@ static void __apply_additional_pipe_config(
 		break;
 	case IA_CSS_PIPE_ID_YUVPP:
 	case IA_CSS_PIPE_ID_COPY:
+		stream_env->pipe_configs[pipe_id].enable_dz = false;
+		break;
 	case IA_CSS_PIPE_ID_ACC:
+		stream_env->pipe_configs[pipe_id].mode = IA_CSS_PIPE_MODE_ACC;
 		stream_env->pipe_configs[pipe_id].enable_dz = false;
 		break;
 	default:
@@ -717,7 +720,7 @@ static bool is_pipe_valid_to_current_run_mode(struct atomisp_sub_device *asd,
 	if (!asd)
 		return false;
 
-	if (pipe_id == CSS_PIPE_ID_YUVPP)
+	if (pipe_id == CSS_PIPE_ID_ACC || pipe_id == CSS_PIPE_ID_YUVPP)
 		return true;
 
 	if (asd->vfpp) {
@@ -787,12 +790,20 @@ static int __create_pipe(struct atomisp_sub_device *asd,
 	struct atomisp_device *isp = asd->isp;
 	struct ia_css_pipe_extra_config extra_config;
 	enum ia_css_err ret;
-	if (!stream_env->pipe_configs[pipe_id].output_info[0].res.width ||
-	    !is_pipe_valid_to_current_run_mode(asd, pipe_id))
-		return 0;
 
 	if (pipe_id >= IA_CSS_PIPE_ID_NUM)
 		return -EINVAL;
+
+	if (pipe_id != CSS_PIPE_ID_ACC &&
+	    !stream_env->pipe_configs[pipe_id].output_info[0].res.width)
+		return 0;
+
+	if (pipe_id == CSS_PIPE_ID_ACC &&
+	    !stream_env->pipe_configs[pipe_id].acc_extension)
+		return 0;
+
+	if (!is_pipe_valid_to_current_run_mode(asd, pipe_id))
+		return 0;
 
 	ia_css_pipe_extra_config_defaults(&extra_config);
 
