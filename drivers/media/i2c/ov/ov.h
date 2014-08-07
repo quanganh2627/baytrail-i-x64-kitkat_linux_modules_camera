@@ -170,7 +170,10 @@ struct ov_product_info {
 	int i2c_val_len;
 
 	/* sensor features */
-
+	s32 focal;
+	s32 f_number;
+	s32 f_number_range;
+	u16 reg_expo_coarse;
 	/* awb/scene mode/coloreffect/flip/exposure/... */
 	struct ov_table_info settings_tbl[OV_NUM_SETTINGS];
 	struct ov_res_struct* ov_init;	/* initialize */

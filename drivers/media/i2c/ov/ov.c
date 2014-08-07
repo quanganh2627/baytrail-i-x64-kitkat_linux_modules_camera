@@ -415,6 +415,31 @@ static int ov_s_scene(struct v4l2_subdev *sd, int value)
 	return ret;
 }
 
+int ov_g_focal_absolute(struct v4l2_subdev *sd, s32 *val)
+{
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	*val = dev->product_info->focal;
+
+	return 0;
+}
+
+int ov_g_fnumber(struct v4l2_subdev *sd, s32 *val)
+{
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	*val = dev->product_info->f_number;
+	return 0;
+}
+
+int ov_g_fnumber_range(struct v4l2_subdev *sd, s32 *val)
+{
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	*val = dev->product_info->f_number_range;
+	return 0;
+}
+
 static int ov_g_wb(struct v4l2_subdev *sd, s32 *value)
 {
 	struct ov_device *dev = to_ov_sensor(sd);
@@ -437,8 +462,27 @@ static int ov_s_wb(struct v4l2_subdev *sd, int value)
 static int ov_g_exposure(struct v4l2_subdev *sd, s32 *value)
 {
 	struct ov_device *dev = to_ov_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	u16 coarse;
+	u32 reg_val_h, reg_val_m, reg_val_l;
+	int ret;
 
-	*value = dev->id_exposure;
+	ret = __ov_read_reg(client, MISENSOR_8BIT, dev->product_info->reg_expo_coarse, &reg_val_h);
+	if (ret)
+		return ret;
+	coarse = ((u16)(reg_val_h & 0x0000000f)) << 12;
+
+	ret =__ov_read_reg(client, MISENSOR_8BIT, dev->product_info->reg_expo_coarse+1, &reg_val_m);
+	if (ret)
+		return ret;
+	coarse |= ((u16)(reg_val_m & 0x000000ff)) << 4;
+
+	ret = __ov_read_reg(client, MISENSOR_8BIT, dev->product_info->reg_expo_coarse+2, &reg_val_l);
+	if (ret)
+		return ret;
+	coarse |= ((u16)(reg_val_l & 0x000000ff)) >> 4;
+
+	*value = coarse;
 	return 0;
 }
 
@@ -687,13 +731,24 @@ static int ov_s_mbus_fmt(struct v4l2_subdev *sd,
 	fmt->width = width;
 	fmt->height = height;
 	mutex_unlock(&dev->input_lock);
-	/*FixME: ignore if ctrl handler failed, as not all ctrls we supportted*/
-	v4l2_ctrl_handler_setup(&dev->ctrl_handler);
 	return 0;
 }
 
 static struct ov_control ov_controls[] = {
 	{
+		.config = {
+			.ops = NULL,
+			.id = V4L2_CID_EXPOSURE_ABSOLUTE,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "exposure",
+			.min = -2,//0  lkl
+			.max = 2,//4  lkl
+			.step = 1,
+			.def = 0,
+		},
+		.g_ctrl = ov_g_exposure,
+		.s_ctrl = ov_s_exposure,
+	}, {
 		.config = {
 			.ops = NULL,
 			.id = V4L2_CID_EXPOSURE,
@@ -719,6 +774,45 @@ static struct ov_control ov_controls[] = {
 		},
 		.g_ctrl = ov_g_scene,
 		.s_ctrl = ov_s_scene,
+	}, {
+		.config = {
+			.ops = NULL,
+			.id = V4L2_CID_FOCAL_ABSOLUTE,
+			.name = "Focal length",
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.min = OV_FOCAL_LENGTH_DEFAULT,
+			.max = OV_FOCAL_LENGTH_DEFAULT,
+			.step = 1,
+			.def = OV_FOCAL_LENGTH_DEFAULT,
+		},
+		.s_ctrl = NULL,
+		.g_ctrl = ov_g_focal_absolute,
+	}, {
+		.config = {
+			.ops = NULL,
+			.id = V4L2_CID_FNUMBER_ABSOLUTE,
+			.name = "F-number",
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.min = 1,
+			.max = OV_F_NUMBER_DEFAULT,
+			.step = 1,
+			.def = 1,
+		},
+		.s_ctrl = NULL,
+		.g_ctrl = ov_g_fnumber,
+	}, {
+		.config = {
+			.ops = NULL,
+			.id = V4L2_CID_FNUMBER_RANGE,
+			.name = "F-number range",
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.min = 1,
+			.max = OV_F_NUMBER_RANGE,
+			.step = 1,
+			.def = 1,
+		},
+		.s_ctrl = NULL,
+		.g_ctrl = ov_g_fnumber_range,
 	}, {
 		.config = {
 			.ops = NULL,
@@ -1086,6 +1180,7 @@ static int __ov_init_ctrl_handler(struct ov_device *dev)
 
 	for (i = 0; i < dev->num_ctrls; i++) {
 		dev->ctrl_config[i].config.ops = &ov_ctrl_ops;
+		dev->ctrl_config[i].config.flags |= V4L2_CTRL_FLAG_VOLATILE;
 
 		v4l2_ctrl_new_custom(&dev->ctrl_handler,
 					&(dev->ctrl_config[i].config), NULL);
@@ -1094,6 +1189,8 @@ static int __ov_init_ctrl_handler(struct ov_device *dev)
 			return dev->ctrl_handler.error;
 	}
 	dev->sd.ctrl_handler = &dev->ctrl_handler;
+	/*FixME: ignore if ctrl handler failed, as not all ctrls we supportted*/
+	v4l2_ctrl_handler_setup(&dev->ctrl_handler);
 	return ret;
 }
 

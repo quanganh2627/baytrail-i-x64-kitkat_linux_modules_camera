@@ -22,6 +22,40 @@
 #ifndef __OV2685_H__
 #define __OV2685_H__
 
+#define OV2685_FOCAL_LENGTH_NUM	208	/*2.08mm*/
+#define OV2685_FOCAL_LENGTH_DEM	100
+#define OV_F_NUMBER_DEFAULT_NUM	24
+#define OV2685_F_NUMBER_DEM	10
+/*
+ * focal length bits definition:
+ * bits 31-16: numerator, bits 15-0: denominator
+ */
+
+#define OV_FOCAL_LENGTH_DEFAULT 0x1710064
+/*
+ * current f-number bits definition:
+ * bits 31-16: numerator, bits 15-0: denominator
+ */
+#define OV_F_NUMBER_DEFAULT 0x16000a
+
+/*
+ * f-number range bits definition:
+ * bits 31-24: max f-number numerator
+ * bits 23-16: max f-number denominator
+ * bits 15-8: min f-number numerator
+ * bits 7-0: min f-number denominator
+ */
+#define OV_F_NUMBER_RANGE 0x160a160a
+
+#define OV2685_FOCAL_VALUE ((OV2685_FOCAL_LENGTH_NUM << 16) | OV2685_FOCAL_LENGTH_DEM)
+
+#define OV2685_FNUMBER_VALUE ((OV_F_NUMBER_DEFAULT_NUM << 16) | OV2685_F_NUMBER_DEM)
+
+#define OV2685_FNUMBER_RANGE_VALUE ((OV_F_NUMBER_DEFAULT_NUM << 24) | \
+		(OV2685_F_NUMBER_DEM << 16) |\
+		(OV_F_NUMBER_DEFAULT_NUM << 8) | OV2685_F_NUMBER_DEM)
+
+
 /************************************
 	resolution reglist
 
@@ -1031,6 +1065,10 @@ struct ov_product_info ov2685_product_info = {
 	.clk_id = 0,
 	.clk_freq = 0,
 
+	.focal	= OV2685_FOCAL_VALUE,
+	.f_number =  OV2685_FNUMBER_VALUE,
+	.f_number_range = OV2685_FNUMBER_RANGE_VALUE,
+	.reg_expo_coarse = 0x3500,
 	/* sensor functionality: init/streaming/exposure/flip/scene/color/awb/fmt/res */
 	.ov_init = &ov2685_init,
 	.settings_tbl = {
