@@ -199,19 +199,15 @@ int atomisp_acc_load_to_pipe(struct atomisp_device *isp,
 	 * to correct pipe properly
 	 */
 	if (acc_fw->fw->type == ia_css_isp_firmware) {
-		switch (acc_fw->type) {
-		case ATOMISP_ACC_FW_LOAD_TYPE_OUTPUT:
-			acc_fw->fw->info.isp.type = IA_CSS_ACC_OUTPUT;
-			break;
-
-		case ATOMISP_ACC_FW_LOAD_TYPE_VIEWFINDER:
-			acc_fw->fw->info.isp.type = IA_CSS_ACC_VIEWFINDER;
-			break;
-
-		case ATOMISP_ACC_FW_LOAD_TYPE_STANDALONE:
-			acc_fw->fw->info.isp.type = IA_CSS_ACC_STANDALONE;
-			break;
-		}
+		static const int type_to_css[] = {
+			[ATOMISP_ACC_FW_LOAD_TYPE_OUTPUT] =
+				IA_CSS_ACC_OUTPUT,
+			[ATOMISP_ACC_FW_LOAD_TYPE_VIEWFINDER] =
+				IA_CSS_ACC_VIEWFINDER,
+			[ATOMISP_ACC_FW_LOAD_TYPE_STANDALONE] =
+				IA_CSS_ACC_STANDALONE,
+		};
+		acc_fw->fw->info.isp.type = type_to_css[acc_fw->type];
 	}
 
 	list_add_tail(&acc_fw->list, &isp->acc.fw);
