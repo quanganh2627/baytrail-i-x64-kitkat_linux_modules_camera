@@ -24,6 +24,7 @@ CFFLAGS_ov5640.o = -Werror
 obj-$(CONFIG_VIDEO_BF3A20)     += bf3a20.o
 obj-$(CONFIG_VIDEO_GC2235)     += gc2235.o
 obj-$(CONFIG_VIDEO_OV7736)     += ov7736.o
+obj-$(CONFIG_VIDEO_OV5670)     += ov5670.o
 obj-$(CONFIG_VIDEO_OV9724)     += ov9724.o
 obj-$(CONFIG_VIDEO_OV2722)     += ov2722.o
 obj-$(CONFIG_VIDEO_OV8830)     += ov8830.o
