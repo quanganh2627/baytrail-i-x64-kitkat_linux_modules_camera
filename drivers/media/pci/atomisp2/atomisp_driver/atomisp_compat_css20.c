@@ -2422,7 +2422,7 @@ static enum ia_css_pipe_mode __pipe_id_to_pipe_mode(
 		 * Revert this when other pipe modes can support
 		 * YUV420_Legacy format.
 		 */
-		if (mipi_info->input_format ==
+		if (mipi_info && mipi_info->input_format ==
 			ATOMISP_INPUT_FORMAT_YUV420_8_LEGACY)
 			return IA_CSS_PIPE_MODE_YUVPP;
 		if (asd->copy_mode_format_conv)
