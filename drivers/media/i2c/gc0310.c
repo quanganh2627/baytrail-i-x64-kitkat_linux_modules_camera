@@ -523,17 +523,18 @@ static int gc0310_init_common(struct v4l2_subdev *sd)
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x0b,0x00);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x0c,0x00);//06
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x0d,0x01);//502
-	gc0310_write_reg(client, MISENSOR_8BIT, 0x0e,0xf6);
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x0e,0xf2);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x0f,0x02);//662
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x10,0x96);
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x15,0x41);	//add
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x17,0x14);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x17, g_flip);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x18,0x1a);
-	gc0310_write_reg(client, MISENSOR_8BIT, 0x19,0x14);
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x19,0x12);//0x14 AD pipe
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x1b,0x48);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x1e,0x6b);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x1f,0x28);
-	gc0310_write_reg(client, MISENSOR_8BIT, 0x20,0x89);
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x20,0x8b);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x21,0x49);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x22,0xb0);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x23,0x04);
@@ -546,8 +547,9 @@ static int gc0310_init_common(struct v4l2_subdev *sd)
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x26,0x23);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x28,0xff);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x29,0x00);
-	gc0310_write_reg(client, MISENSOR_8BIT, 0x33,0x18); //offset ratio
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x33,0x10); //offset ratio
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x37,0x20); //darkcurrent ratio
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x38,0x10);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x2a,0x00);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x2b,0x00);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x2c,0x00);
@@ -630,6 +632,10 @@ static int gc0310_init_common(struct v4l2_subdev *sd)
 	///////////////////   MIPI	 ////////////////////
 	/////////////////////////////////////////////////
 	gc0310_write_reg(client, MISENSOR_8BIT, 0xfe, 0x03);
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x40, 0x08);
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x42, 0x00);
+	gc0310_write_reg(client, MISENSOR_8BIT, 0x43, 0x00);
+
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x01, 0x03); ///mipi 1lane
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x02, 0x22);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x03, 0x94);
@@ -641,8 +647,6 @@ static int gc0310_init_common(struct v4l2_subdev *sd)
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x13, 0x02); //05 //LWC[15:8]
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x15, 0x12); //DPHYY_MODE read_ready
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x17, 0x01); //f0
-	gc0310_write_reg(client, MISENSOR_8BIT, 0x42, 0x90);
-	gc0310_write_reg(client, MISENSOR_8BIT, 0x43, 0x02);
 
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x21, 0x02);
 	gc0310_write_reg(client, MISENSOR_8BIT, 0x22, 0x02);
