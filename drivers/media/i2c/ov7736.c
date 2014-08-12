@@ -43,7 +43,7 @@
 
 #define ov7736_debug dev_err
 
-
+static int awb_index = V4L2_WHITE_BALANCE_AUTO;
 
 static int
 ov7736_read_reg(struct i2c_client *client, u16 data_length, u16 reg, u32 *val)
@@ -314,6 +314,7 @@ static int ov7736_s_scene(struct v4l2_subdev *sd, int value)
 
 static int ov7736_g_wb(struct v4l2_subdev *sd, s32 *value)
 {
+	*value = awb_index;
 	return 0;
 }
 
@@ -327,15 +328,35 @@ static int ov7736_s_wb(struct v4l2_subdev *sd, int value)
 	
 	switch (value) {
 		case V4L2_WHITE_BALANCE_MANUAL:
+			awb_index = V4L2_WHITE_BALANCE_MANUAL;
+			break;
 		case V4L2_WHITE_BALANCE_AUTO:
+			awb_index = V4L2_WHITE_BALANCE_AUTO;
+			break;
 		case V4L2_WHITE_BALANCE_INCANDESCENT:
-		case V4L2_WHITE_BALANCE_FLUORESCENT:			
+			awb_index = V4L2_WHITE_BALANCE_INCANDESCENT;
+			break;
+		case V4L2_WHITE_BALANCE_FLUORESCENT:
+			awb_index = V4L2_WHITE_BALANCE_FLUORESCENT;
+			break;
 		case V4L2_WHITE_BALANCE_FLUORESCENT_H:
+			awb_index = V4L2_WHITE_BALANCE_FLUORESCENT_H;
+			break;
 		case V4L2_WHITE_BALANCE_HORIZON:
+			awb_index = V4L2_WHITE_BALANCE_HORIZON;
+			break;
 		case V4L2_WHITE_BALANCE_DAYLIGHT:
+			awb_index = V4L2_WHITE_BALANCE_DAYLIGHT;
+			break;
 		case V4L2_WHITE_BALANCE_FLASH:
+			awb_index = V4L2_WHITE_BALANCE_FLASH;
+			break;
 		case V4L2_WHITE_BALANCE_CLOUDY:
+			awb_index = V4L2_WHITE_BALANCE_CLOUDY;
+			break;
 		case V4L2_WHITE_BALANCE_SHADE:
+			awb_index = V4L2_WHITE_BALANCE_SHADE;
+			break;
 		default:
 			printk("ov7736_s_wb: %d\n", value);
 		break;
