@@ -203,7 +203,6 @@ struct atomisp_subdev_params {
 	enum atomisp_css_pipe_id s3a_enabled_pipe;
 
 	int s3a_output_bytes;
-	bool s3a_buf_data_valid;
 
 	bool dis_proj_data_valid;
 
@@ -295,9 +294,13 @@ struct atomisp_sub_device {
 	/* The list of metadata buffers which are ready for userspace to get */
 	struct list_head metadata_ready[ATOMISP_METADATA_TYPE_NUM];
 
+	/* The list of free and available s3a stat buffers for CSS */
 	struct list_head s3a_stats;
+	/* The list of s3a stat buffers which have been en-queued to CSS */
 	struct list_head s3a_stats_in_css;
-	spinlock_t s3a_stats_lock;
+	/* The list of s3a stat buffers which are ready for userspace to get */
+	struct list_head s3a_stats_ready;
+
 	struct list_head dis_stats;
 	struct list_head dis_stats_in_css;
 	spinlock_t dis_stats_lock;

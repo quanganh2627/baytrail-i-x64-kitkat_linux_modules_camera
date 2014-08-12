@@ -1558,7 +1558,6 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 	if (asd->params.curr_grid_info.s3a_grid.enable) {
 		ia_css_3a_statistics_free(asd->params.s3a_user_stat);
 		asd->params.s3a_user_stat = NULL;
-		asd->params.s3a_buf_data_valid = false;
 		asd->params.s3a_output_bytes = 0;
 		list_for_each_entry_safe(s3a_buf, _s3a_buf,
 						&asd->s3a_stats, list) {
@@ -1568,6 +1567,12 @@ void atomisp_css_free_stat_buffers(struct atomisp_sub_device *asd)
 		}
 		list_for_each_entry_safe(s3a_buf, _s3a_buf,
 						&asd->s3a_stats_in_css, list) {
+			atomisp_css_free_3a_buffer(s3a_buf);
+			list_del(&s3a_buf->list);
+			kfree(s3a_buf);
+		}
+		list_for_each_entry_safe(s3a_buf, _s3a_buf,
+						&asd->s3a_stats_ready, list) {
 			atomisp_css_free_3a_buffer(s3a_buf);
 			list_del(&s3a_buf->list);
 			kfree(s3a_buf);
@@ -1678,8 +1683,6 @@ int atomisp_alloc_3a_output_buf(struct atomisp_sub_device *asd)
 	    asd->params.curr_grid_info.s3a_grid.width *
 	    asd->params.curr_grid_info.s3a_grid.height *
 	    sizeof(*asd->params.s3a_user_stat->data);
-
-	asd->params.s3a_buf_data_valid = false;
 
 	return 0;
 }
@@ -2350,15 +2353,18 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	}
 
 	/* move stats buffers to free queue list */
-	spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
 	while (!list_empty(&asd->s3a_stats_in_css)) {
 		s3a_buf = list_entry(asd->s3a_stats_in_css.next,
 				struct atomisp_s3a_buf, list);
 		list_del(&s3a_buf->list);
 		list_add_tail(&s3a_buf->list, &asd->s3a_stats);
 	}
-	asd->params.s3a_buf_data_valid = false;
-	spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
+	while (!list_empty(&asd->s3a_stats_ready)) {
+		s3a_buf = list_entry(asd->s3a_stats_ready.next,
+				struct atomisp_s3a_buf, list);
+		list_del(&s3a_buf->list);
+		list_add_tail(&s3a_buf->list, &asd->s3a_stats);
+	}
 
 	spin_lock_irqsave(&asd->dis_stats_lock, irqflags);
 	while (!list_empty(&asd->dis_stats_in_css)) {

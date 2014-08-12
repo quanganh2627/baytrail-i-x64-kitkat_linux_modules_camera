@@ -899,12 +899,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			list_for_each_entry_safe(s3a_buf, _s3a_buf_tmp,
 							&asd->s3a_stats_in_css, list) {
 				if (s3a_buf->s3a_data == buffer.css_buffer.data.stats_3a) {
-					spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
 					list_del_init(&s3a_buf->list);
-					s3a_buf->exp_id = buffer.css_buffer.exp_id;
-					list_add(&s3a_buf->list, &asd->s3a_stats);
-					asd->params.s3a_buf_data_valid = true;
-					spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
+					list_add_tail(&s3a_buf->list, &asd->s3a_stats_ready);
 					break;
 				}
 			}
@@ -2406,7 +2402,6 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 {
 	struct atomisp_device *isp = asd->isp;
 	struct atomisp_s3a_buf *s3a_buf;
-	unsigned long irqflags;
 	unsigned long ret;
 
 	if (flag != 0)
@@ -2423,18 +2418,13 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 		return -EAGAIN;
 	}
 
-	spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
-	if (!asd->params.s3a_buf_data_valid || list_empty(&asd->s3a_stats)) {
-		spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
+	if (list_empty(&asd->s3a_stats_ready)) {
 		dev_err(isp->dev, "3a statistics is not valid.\n");
 		return -EAGAIN;
 	}
 
-	s3a_buf = list_entry(asd->s3a_stats.next,
+	s3a_buf = list_entry(asd->s3a_stats_ready.next,
 			struct atomisp_s3a_buf, list);
-	list_del_init(&s3a_buf->list);
-	spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
-
 	if (s3a_buf->s3a_map)
 		ia_css_translate_3a_statistics(
 			asd->params.s3a_user_stat, s3a_buf->s3a_map);
@@ -2442,12 +2432,7 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 		ia_css_get_3a_statistics(asd->params.s3a_user_stat,
 			s3a_buf->s3a_data);
 
-	config->exp_id = s3a_buf->exp_id;
-
-	spin_lock_irqsave(&asd->s3a_stats_lock, irqflags);
-	list_add_tail(&s3a_buf->list, &asd->s3a_stats);
-	spin_unlock_irqrestore(&asd->s3a_stats_lock, irqflags);
-
+	config->exp_id = s3a_buf->s3a_data->exp_id;
 	ret = copy_to_user(config->data, asd->params.s3a_user_stat->data,
 			   asd->params.s3a_output_bytes);
 	if (ret) {
@@ -2455,6 +2440,12 @@ int atomisp_3a_stat(struct atomisp_sub_device *asd, int flag,
 				ret);
 		return -EFAULT;
 	}
+
+	/* Move to free buffer list */
+	list_del_init(&s3a_buf->list);
+	list_add_tail(&s3a_buf->list, &asd->s3a_stats);
+	dev_dbg(isp->dev, "%s: finish getting exp_id %d 3a stat\n", __func__,
+		config->exp_id);
 	return 0;
 }
 
@@ -3778,7 +3769,6 @@ int atomisp_3a_config_param(struct atomisp_sub_device *asd, int flag,
 				sizeof(asd->params.css_param.s3a_config));
 		atomisp_css_set_3a_config(asd, &asd->params.css_param.s3a_config);
 		asd->params.css_update_params_needed = true;
-		/* isp_subdev->params.s3a_buf_data_valid = false; */
 	}
 
 	dev_dbg(isp->dev, "<%s %d\n", __func__, flag);

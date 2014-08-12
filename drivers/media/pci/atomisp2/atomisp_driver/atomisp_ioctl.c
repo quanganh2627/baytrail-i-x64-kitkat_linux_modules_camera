@@ -980,7 +980,8 @@ int atomisp_alloc_css_stat_bufs(struct atomisp_sub_device *asd,
 	unsigned int i;
 
 	if (list_empty(&asd->s3a_stats)) {
-		count = ATOMISP_CSS_Q_DEPTH + 1;
+		count = ATOMISP_CSS_Q_DEPTH +
+		        ATOMISP_S3A_BUF_QUEUE_DEPTH_FOR_HAL;
 		dev_dbg(isp->dev, "allocating %d 3a buffers\n", count);
 		while (count--) {
 			s3a_buf = kzalloc(sizeof(struct atomisp_s3a_buf), GFP_KERNEL);
