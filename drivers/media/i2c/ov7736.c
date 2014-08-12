@@ -1016,10 +1016,10 @@ static int ov7736_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	if (!octrl || !octrl->query) {
 		dev_err(&client->dev,  "%s unsupported control id or no query func!\n",
 			__func__);
-		return 0;
+		return -EINVAL;
 	}
 	ret = octrl->query(sd, &ctrl->value);
-	return 0;
+	return ret;
 }
 
 static int ov7736_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
