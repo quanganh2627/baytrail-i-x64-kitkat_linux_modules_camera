@@ -74,11 +74,32 @@ enum ia_css_event_type {
  * filled.
  */
 struct ia_css_event {
-	struct ia_css_pipe    *pipe;   /**< Pipe handle on which event happened, NULL for non pipe related events. */
-	enum ia_css_event_type type;   /**< Type of Event, always valid/filled. */
-	uint8_t                port;   /**< Port number for EOF event (not valid for other events). */
-	uint8_t                exp_id; /**< Exposure id for EOF/TAGGED_FRAME event (not valid for other events). */
-	uint32_t               fw_handle; /**< Firmware Handle for ACC_STAGE_COMPLETE event (not valid for other events). */
+	struct ia_css_pipe    *pipe;
+	/**< Pipe handle on which event happened, NULL for non pipe related
+	     events. */
+	enum ia_css_event_type type;
+	/**< Type of Event, always valid/filled. */
+	uint8_t                port;
+	/**< Port number for EOF event (not valid for other events). */
+	uint8_t                exp_id;
+	/**< Exposure id for EOF/TAGGED_FRAME event (not valid for other events)
+	     The exposure ID is unique only within a logical stream and it is
+	     only generated on systems that have an input system (such as 2400
+	     and 2401, not on 2500 aka skycam).
+	     Most outputs produced by the CSS are tagged with an exposure ID.
+	     This allows users of the CSS API to keep track of which buffer
+	     was generated from which sensor output frame. This includes:
+	     EOF event, output frames, 3A statistics, DVS statistics and
+	     sensor metadata.
+	     Exposure IDs start at IA_CSS_MIN_EXPOSURE_ID, increment by one
+	     until IA_CSS_MAX_EXPOSURE_ID is reached, after that they wrap
+	     around to IA_CSS_MIN_EXPOSURE_ID again.
+	     Note that in case frames are dropped, this will not be reflected
+	     in the exposure IDs. Therefor applications should not use this
+	     to detect frame drops. */
+	uint32_t               fw_handle;
+	/**< Firmware Handle for ACC_STAGE_COMPLETE event (not valid for other
+	     events). */
 };
 
 /** @brief Dequeue a PSYS event from the CSS system.

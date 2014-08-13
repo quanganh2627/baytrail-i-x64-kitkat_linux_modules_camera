@@ -50,7 +50,8 @@ struct ia_css_metadata_info {
 struct ia_css_metadata {
 	struct ia_css_metadata_info info;    /**< Layout info */
 	ia_css_ptr	            address; /**< CSS virtual address */
-	uint32_t	            exp_id;  /**< Exposure ID */
+	uint32_t	            exp_id;
+	/**< Exposure ID, see ia_css_event_public.h for more detail */
 };
 #define SIZE_OF_IA_CSS_METADATA_STRUCT sizeof(struct ia_css_metadata)
 

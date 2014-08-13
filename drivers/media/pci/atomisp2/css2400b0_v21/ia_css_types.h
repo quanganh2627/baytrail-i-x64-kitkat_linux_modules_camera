@@ -1,4 +1,4 @@
-/* Release Version: irci_master_20140726_1500 */
+/* Release Version: irci_master_20140812_1507 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _IA_CSS_TYPES_H_
-#define _IA_CSS_TYPES_H_
+#ifndef _IA_CSS_TYPES_H
+#define _IA_CSS_TYPES_H
 
 /** @file
  * This file contains types used for the ia_css parameters.
@@ -72,6 +72,12 @@
 #define IA_CSS_VERSION_REVISION 2
 
 #define IA_CSS_MORPH_TABLE_NUM_PLANES  6
+
+/* Min and max exposure IDs. These macros are here to allow
+ * the drivers to get this information. Changing these macros
+ * constitutes a CSS API change. */
+#define IA_CSS_ISYS_MIN_EXPOSURE_ID 1   /**< Minimum exposure ID */
+#define IA_CSS_ISYS_MAX_EXPOSURE_ID 250 /**< Maximum exposure ID */
 
 /* opaque types */
 struct ia_css_isp_parameters;
@@ -266,6 +272,7 @@ struct ia_css_morph_table {
 
 struct ia_css_dvs_6axis_config {
 	unsigned int exp_id;
+	/**< Exposure ID, see ia_css_event_public.h for more detail */
 	uint32_t width_y;
 	uint32_t height_y;
 	uint32_t width_uv;
@@ -438,4 +445,4 @@ struct ia_css_isp_config {
 	uint32_t			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */
 };
 
-#endif /* _IA_CSS_TYPES_H_ */
+#endif /* _IA_CSS_TYPES_H */

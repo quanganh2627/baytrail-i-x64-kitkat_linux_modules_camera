@@ -22,6 +22,15 @@
 #ifndef _IA_CSS_BINARY_H_
 #define _IA_CSS_BINARY_H_
 
+#include <type_support.h>
+#include "ia_css_types.h"
+#include "ia_css_err.h"
+#include "ia_css_stream_format.h"
+#include "ia_css_stream_public.h"
+#include "ia_css_frame_public.h"
+#include "sh_css_metrics.h"
+#include "isp/kernels/fixedbds/fixedbds_1.0/ia_css_fixedbds_types.h"
+
 /* The binary mode is used in pre-processor expressions so we cannot
  * use an enum here. */
 #define IA_CSS_BINARY_MODE_COPY       0
@@ -41,11 +50,6 @@
 #define IA_CSS_BINARY_INPUT_SENSOR   0
 #define IA_CSS_BINARY_INPUT_MEMORY   1
 #define IA_CSS_BINARY_INPUT_VARIABLE 2
-
-
-#include "ia_css.h"
-#include "sh_css_metrics.h"
-#include "isp/kernels/fixedbds/fixedbds_1.0/ia_css_fixedbds_types.h"
 
 /* Should be included without the path.
    However, that requires adding the path to numerous makefiles

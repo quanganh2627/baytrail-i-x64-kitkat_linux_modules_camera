@@ -19,18 +19,19 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __IA_CSS_CTCV2_HOST_H
+#define __IA_CSS_CTCV2_HOST_H
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "ia_css_ctcv2_param.h"
+#include "ia_css_ctcv2_types.h"
 
+#define INEFFECTIVE_VAL 4096
+#define BASIC_VAL 819
 
-#define CSS_VERSION_STRING "VER:1.4; REL:20140812_33.2_1631; API:2.1.6.1; GIT:irci_20140812_0514_#deabead1ac967167235961ee0171368546564009; SDK:/p/siliconhive/hivepkgs/releases/css/Css_Mizuchi/int_css_mizuchi_20140407_0814; USER:viedifw; "
+extern const struct ia_css_ctcv2_config default_ctcv2_config;
 
+/*Encode Function to translate parameters from userspace into ISP space*/
+void ia_css_ctcv2_encode(struct sh_css_isp_ctcv2_params *to,
+			 struct ia_css_ctcv2_config *from);
 
-#endif
-
+#endif /* __IA_CSS_CTCV2_HOST_H */

@@ -23,6 +23,7 @@
 #define _SH_CSS_INTERNAL_H_
 
 #include <system_global.h>
+#include <math_support.h>
 #include <type_support.h>
 #include <platform_support.h>
 #include <stdarg.h>
@@ -39,7 +40,9 @@
 #include "ia_css_buffer.h"
 
 #include "ia_css_binary.h"
-#include "sh_css_firmware.h"
+#if !defined(__ISP) && !defined(__SP)
+#include "sh_css_firmware.h" /* not needed/desired on SP/ISP */
+#endif
 #include "sh_css_legacy.h"
 #include "sh_css_defs.h"
 #include "sh_css_uds.h"
@@ -142,7 +145,11 @@
 	#define SH_CSS_MAX_SP_THREADS			0
 #else
 	#if defined(IS_ISP_2500_SYSTEM)
-		#define SH_CSS_MAX_SP_THREADS		2
+		#if defined(SWITCH_GACS_TO_SP1)
+			#define SH_CSS_MAX_SP_THREADS		4
+		#else
+			#define SH_CSS_MAX_SP_THREADS		2
+		#endif
 	#else
 		#define SH_CSS_MAX_SP_THREADS		5
 	#endif
@@ -176,7 +183,7 @@
 #define SIZE_OF_IA_CSS_PTR		sizeof(uint32_t)
 
 /* Number of SP's */
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 #define NUM_OF_SPS 2
 #else
 #define NUM_OF_SPS 1
@@ -185,7 +192,7 @@
 /* Enum for Number of Binaries */
 enum sh_css_num_binaries {
 	SP_FIRMWARE = 0,
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	SP1_FIRMWARE,
 #endif
 	ISP_FIRMWARE
@@ -767,7 +774,7 @@ struct sh_css_config_on_frame_enqueue {
 
 #if defined(HAS_SP_2400)
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE    13
-#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE        13
+#define  IA_CSS_NUM_ELEMS_SP2HOST_BUFFER_QUEUE        19
 #define  IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE    26 /* holds events for all type of buffers, hence deeper */
 #else
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PSYS_EVENT_QUEUE    6
@@ -991,6 +998,12 @@ sh_css_vprint(const char *fmt, va_list args)
 }
 #endif
 
+/* The following #if is there because this header file is also included
+   by SP and ISP code but they do not need this data and HIVECC has alignment
+   issue with the firmware struct/union's.
+   More permanent solution will be to refactor this include.
+*/
+#if !defined(__ISP) && !defined(__SP)
 hrt_vaddress
 sh_css_params_ddr_address_map(void);
 
@@ -1107,5 +1120,6 @@ ia_css_get_crop_offsets(
 		struct ia_css_pipe *pipe,
 		struct ia_css_frame_info *in_frame);
 #endif
+#endif /* !defined(__ISP) && !defined(__SP) */
 
 #endif /* _SH_CSS_INTERNAL_H_ */

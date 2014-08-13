@@ -45,6 +45,8 @@
 #include "sh_css_param_dvs.h"
 #include "ia_css_refcount.h"
 #include "sh_css_internal.h"
+#include "ia_css_control.h"
+#include "ia_css_shading.h"
 #include "sh_css_defs.h"
 #include "sh_css_sp.h"
 #include "ia_css_pipeline.h"
@@ -1255,8 +1257,12 @@ sh_css_params_write_to_ddr_internal(
 		struct sh_css_ddr_address_map_size *ddr_map_size);
 
 static struct ia_css_isp_parameters *
-sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
-	bool use_default_config);
+sh_css_create_isp_params(struct ia_css_stream *stream);
+
+static bool
+sh_css_init_isp_params_from_global(struct ia_css_stream *stream,
+		struct ia_css_isp_parameters *params,
+		bool use_default_config);
 
 static enum ia_css_err
 sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
@@ -2580,7 +2586,7 @@ sh_css_set_per_frame_isp_config_on_pipe(
 	*/
 	if (!stream->per_frame_isp_params_configs)
 	{
-		stream->per_frame_isp_params_configs = sh_css_create_and_init_isp_params(stream, false);
+		stream->per_frame_isp_params_configs = sh_css_create_isp_params(stream);
 		if (!stream->per_frame_isp_params_configs) {
 			IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_INTERNAL_ERROR);
 			return IA_CSS_ERR_INTERNAL_ERROR;
@@ -2591,6 +2597,7 @@ sh_css_set_per_frame_isp_config_on_pipe(
 	params = stream->per_frame_isp_params_configs;
 
 	/* update new ISP params object with the new config */
+	sh_css_init_isp_params_from_global(stream, params, false);
 	sh_css_init_isp_params_from_config(stream, params, config);
 
 	if (per_frame_config_created)
@@ -2999,7 +3006,7 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 #endif
 
 	stream->per_frame_isp_params_configs = NULL;
-	stream->isp_params_configs = sh_css_create_and_init_isp_params(stream, true);
+	stream->isp_params_configs = sh_css_create_isp_params(stream);
 	if (!stream->isp_params_configs) {
 		IA_CSS_ERROR("out of memory");
 		IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
@@ -3007,6 +3014,8 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 	}
 
 	params = stream->isp_params_configs;
+	sh_css_init_isp_params_from_global(stream, params, true);
+
 	ddr_ptrs = &params->ddr_ptrs;
 	ddr_ptrs_size = &params->ddr_ptrs_size;
 
@@ -3055,14 +3064,12 @@ ia_css_set_sdis2_config(
 #endif
 
 static struct ia_css_isp_parameters *
-sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
-	bool use_default_config)
+sh_css_create_isp_params(struct ia_css_stream *stream)
 {
 	bool succ = true;
-	unsigned i, isp_pipe_version = 1;
+	unsigned i;
 	struct sh_css_ddr_address_map *ddr_ptrs;
 	struct sh_css_ddr_address_map_size *ddr_ptrs_size;
-	struct ia_css_isp_parameters *stream_params;
 #if !defined(IS_ISP_2500_SYSTEM)
 	size_t params_size;
 #endif
@@ -3079,11 +3086,6 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 
 	ddr_ptrs = &params->ddr_ptrs;
 	ddr_ptrs_size = &params->ddr_ptrs_size;
-	isp_pipe_version = ia_css_pipe_get_isp_pipe_version(stream->pipes[0]);
-	stream_params = stream->isp_params_configs;
-
-	if (!use_default_config && !stream_params)
-		return NULL;
 
 	for (i = 0; i < IA_CSS_PIPE_ID_NUM; i++) {
 		memset(&params->pipe_ddr_ptrs[i], 0,
@@ -3111,7 +3113,9 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 				ia_css_refcount_increment(IA_CSS_REFCOUNT_PARAM_BUFFER,
 					mmgr_malloc(sizeof(struct isp_acc_param)));
 	succ &= (ddr_ptrs->acc_cluster_params_for_sp != mmgr_NULL);
-	acc_cluster_set_default_params();
+	acc_cluster_set_default_params(stream);
+#else
+	(void)stream;
 #endif
 
 #if !defined(IS_ISP_2500_SYSTEM)
@@ -3122,6 +3126,21 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 	succ &= (ddr_ptrs->macc_tbl != mmgr_NULL);
 #endif
 
+	return params;
+}
+
+static bool
+sh_css_init_isp_params_from_global(struct ia_css_stream *stream,
+		struct ia_css_isp_parameters *params,
+		bool use_default_config)
+{
+#if !defined(IS_ISP_2500_SYSTEM)
+	unsigned isp_pipe_version = ia_css_pipe_get_isp_pipe_version(stream->pipes[0]);
+#endif
+	struct ia_css_isp_parameters *stream_params = stream->isp_params_configs;
+
+	if (!use_default_config && !stream_params)
+		return false;
 
 	params->output_frame = NULL;
 	params->isp_parameters_id = 0;
@@ -3188,7 +3207,6 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 
 		params->sc_table = NULL;
 		params->sc_table_changed = true;
-
 
 		params->dvs_6axis_config = NULL;
 		params->dvs_6axis_config_changed = true;
@@ -3259,7 +3277,15 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 
 		sh_css_set_motion_vector(params, &stream_params->motion_config);
 		sh_css_set_morph_table(params, stream_params->morph_table);
-		sh_css_set_shading_table(stream, params, stream_params->sc_table);
+
+		if (stream_params->sc_table) {
+			sh_css_set_shading_table(stream, params, stream_params->sc_table);
+		}
+		else {
+			params->sc_table = NULL;
+			params->sc_table_changed = true;
+		}
+
 		if (stream_params->dvs_6axis_config)
 			params->dvs_6axis_config = generate_dvs_6axis_table_from_config(stream_params->dvs_6axis_config);
 
@@ -3271,7 +3297,7 @@ sh_css_create_and_init_isp_params(struct ia_css_stream *stream,
 #endif /* !defined(IS_ISP_2500_SYSTEM) */
 	}
 
-	return params;
+	return true;
 }
 
 enum ia_css_err

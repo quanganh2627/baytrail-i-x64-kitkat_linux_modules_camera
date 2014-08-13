@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef __IA_CCS_STREAM_PUBLIC_H
-#define __IA_CCS_STREAM_PUBLIC_H
+#ifndef __IA_CSS_STREAM_PUBLIC_H
+#define __IA_CSS_STREAM_PUBLIC_H
 
 /** @file
  * This file contains support for configuring and controlling streams
@@ -80,7 +80,10 @@ struct ia_css_stream_isys_stream_config {
 
 struct ia_css_stream_input_config {
 	struct ia_css_resolution  input_res; /**< Resolution of input data */
-	struct ia_css_resolution  effective_res; /**< Resolution of input data */
+	struct ia_css_resolution  effective_res; /**< Resolution of input data.
+							Used for CSS 2400/1 System and deprecated for other
+							systems (replaced by input_effective_res in
+							ia_css_pipe_config) */
 	enum ia_css_stream_format format; /**< Format of input stream. This data
 					       format will be mapped to MIPI data
 					       type internally. */
@@ -572,4 +575,4 @@ ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id);
  */
 void
 ia_css_en_dz_capt_pipe(struct ia_css_stream *stream, bool enable);
-#endif /* __IA_CCS_STREAM_PUBLIC_H */
+#endif /* __IA_CSS_STREAM_PUBLIC_H */

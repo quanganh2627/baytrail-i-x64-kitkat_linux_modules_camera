@@ -38,7 +38,7 @@ The version string has four dot-separated numbers, read left to right:
 
 */
 
-#define CSS_API_VERSION_STRING	"2.1.5.0"
+#define CSS_API_VERSION_STRING	"2.1.6.1"
 
 /*
 Change log
@@ -146,6 +146,17 @@ v2.1.4.0 default pipe config change
 v2.1.5.0
 - removed mix_range field from yuvp1_y_ee_nr_frng_public_config
 
+v2.1.5.1
+- added MIN/MAX exposure ID macros and made exposure ID sequence
+  per-stream instead of global (across all streams).
+
+v2.1.6.0
+ - rename ia_css_output_config.enable_mirror
+ - add new interface to enable vertical output flipping
+
+v2.1.6.1
+- Added input_effective_res to struct ia_css_pipe_config
+  in ia_css_pipe_public.h.
 */
 
 #endif /*__CSS_API_VERSION_H*/

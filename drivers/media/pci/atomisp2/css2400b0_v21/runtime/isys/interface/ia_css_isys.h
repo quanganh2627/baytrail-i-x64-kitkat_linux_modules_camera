@@ -22,8 +22,12 @@
 #ifndef __IA_CSS_ISYS_H__
 #define __IA_CSS_ISYS_H__
 
-#include "input_system.h"
-#include "ia_css.h"
+#include <type_support.h>
+#include <input_system.h>
+#include <ia_css_input_port.h>
+#include <ia_css_stream_format.h>
+#include <ia_css_stream_public.h>
+#include <system_global.h>
 #include "ia_css_isys_comm.h"
 
 #ifdef USE_INPUT_SYSTEM_VERSION_2401

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _IA_CSS_ACC_TYPES_H_
-#define _IA_CSS_ACC_TYPES_H_
+#ifndef _IA_CSS_ACC_TYPES_H
+#define _IA_CSS_ACC_TYPES_H
 
 /** @file
  * This file contains types used for acceleration
@@ -344,6 +344,12 @@ struct ia_css_sp_info {
 	uint32_t sp_entry;	/**< The SP entry function */
 };
 
+/* The following #if is there because this header file is also included
+   by SP and ISP code but they do not need this data and HIVECC has alignment
+   issue with the firmware struct/union's.
+   More permanent solution will be to refactor this include.
+*/
+#if !defined(__ISP) && !defined(__SP)
 /** Accelerator firmware information.
  */
 struct ia_css_acc_info {
@@ -456,9 +462,11 @@ struct ia_css_acc_fw {
 #define IA_CSS_EXT_ISP_MEM_OFFSETS(f) \
 	((const struct ia_css_memory_offsets *)((const char *)(f)+(f)->blob.mem_offsets))
 
+#endif /* !defined(__ISP) && !defined(__SP) */
+
 enum ia_css_sp_sleep_mode {
 	SP_DISABLE_SLEEP_MODE = 0,
 	SP_SLEEP_AFTER_FRAME = 1 << 0,
 	SP_SLEEP_AFTER_IRQ = 1 << 1
 };
-#endif /* _IA_CSS_TYPES_H_ */
+#endif /* _IA_CSS_ACC_TYPES_H */

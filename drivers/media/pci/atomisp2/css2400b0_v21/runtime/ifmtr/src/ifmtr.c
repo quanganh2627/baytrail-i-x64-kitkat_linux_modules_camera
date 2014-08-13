@@ -20,6 +20,7 @@
  */
 
 #include "ia_css_ifmtr.h"
+#include <math_support.h>
 #include "sh_css_internal.h"
 #include "input_formatter.h"
 #include "assert_support.h"

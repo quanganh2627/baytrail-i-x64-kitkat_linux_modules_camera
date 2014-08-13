@@ -104,10 +104,12 @@ typedef struct s_isp_addresses {
     unsigned                        ISP_DMEM *isp_continuous;
     unsigned                        ISP_DMEM *required_bds_factor;
     unsigned                        ISP_DMEM *isp_raw_stride_b;
-	unsigned			            ISP_DMEM *isp_raw_block_width_b;
-	unsigned			            ISP_DMEM *isp_raw_line_width_b;
-	unsigned			            ISP_DMEM *isp_raw_stripe_offset_b;
-	uint8_t	                        ISP_DMEM *enable_output_mirror;
+    unsigned                        ISP_DMEM *isp_raw_block_width_b;
+    unsigned                        ISP_DMEM *isp_raw_line_width_b;
+    unsigned                        ISP_DMEM *isp_raw_stripe_offset_b;
+    uint32_t                        ISP_DMEM *isp_output_stride_b;
+    uint8_t                         ISP_DMEM *enable_output_hflip;
+    uint8_t                         ISP_DMEM *enable_output_vflip;
   } dmem;
   struct {
     PVECTOR  input_buf;
@@ -138,10 +140,15 @@ extern s_isp_addresses NO_SYNC NO_HOIST isp_addresses;
 #define isp_envelope_height        isp_dmem_configurations.iterator.dvs_envelope.height
 #define isp_bits_per_pixel         isp_dmem_configurations.iterator.input_info.raw_bit_depth
 #define isp_deinterleaved          isp_dmem_configurations.raw.deinterleaved
-#define isp_2ppc                   isp_dmem_configurations.raw.two_ppc
 #define isp_vectors_per_line       iterator_config.vectors_per_line
 #define isp_vectors_per_input_line iterator_config.vectors_per_input_line
 #define isp_uv_internal_width_vecs iterator_config.uv_internal_width_vecs
+
+#if ENABLE_RAW_INPUT
+#define isp_2ppc                   isp_dmem_configurations.raw.two_ppc
+#else
+#define isp_2ppc                   false
+#endif
 
 /* Still used by SP */
 #define isp_vf_output_width_vecs   vf_config.output_width_vecs
@@ -177,30 +184,10 @@ extern NO_HOIST struct sh_css_sp_uds_params uds_params[SH_CSS_MAX_STAGES];
 extern unsigned g_isp_do_zoom;
 
 #if MODE != IA_CSS_BINARY_MODE_COPY
-
-typedef struct {
-  tmemvectoru raw[INPUT_BUF_HEIGHT][RAW_BUF_LINES][RAW_BUF_STRIDE]; /* 2 bayer lines */
-} raw_line_type;
-
-#if ENABLE_CONTINUOUS
-#define OUTPUT_BUF_LINES 4
-#else
-#define OUTPUT_BUF_LINES 2
-#endif
-
-typedef struct {
-  tmemvectoru raw[OUTPUT_BUF_HEIGHT][OUTPUT_BUF_LINES][MAX_VECTORS_PER_LINE]; /* 2 bayer lines */
-} output_line_type;
-
-#if !defined(IS_ISP_2500_SYSTEM) || \
-    (defined(IS_ISP_2500_SYSTEM) && ENABLE_RAW == 1)
+#if !defined(IS_ISP_2500_SYSTEM)
 extern input_line_type SYNC_WITH (INPUT_BUF) MEM (VMEM) input_buf;
 #endif
-extern output_line_type SYNC_WITH (OUTPUT_BUF) MEM (VMEM) raw_output_buf;
-
 #endif /* MODE != IA_CSS_BINARY_MODE_COPY */
-
-/* DMA proxy buffer */
 
 /* striped-ISP information */
 extern unsigned stripe_id;

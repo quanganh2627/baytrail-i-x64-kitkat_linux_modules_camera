@@ -20,6 +20,7 @@
  */
 
 #include "ia_css_frame.h"
+#include <math_support.h>
 #include "assert_support.h"
 #include "ia_css_debug.h"
 #include "isp.h"

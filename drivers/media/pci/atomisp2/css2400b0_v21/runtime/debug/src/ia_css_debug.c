@@ -40,6 +40,7 @@
 
 #include "ia_css_debug.h"
 #include "ia_css_debug_pipe.h"
+#include "ia_css_irq.h"
 #include "ia_css_stream.h"
 #include "ia_css_pipeline.h"
 #include "ia_css_isp_param.h"

@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef __IA_CCS_PIPE_PUBLIC_H
-#define __IA_CCS_PIPE_PUBLIC_H
+#ifndef __IA_CSS_PIPE_PUBLIC_H
+#define __IA_CSS_PIPE_PUBLIC_H
 
 /** @file
  * This file contains the public interface for CSS pipes.
@@ -65,6 +65,8 @@ struct ia_css_pipe_config {
 	/**< mode, indicates which mode the pipe should use. */
 	unsigned int isp_pipe_version;
 	/**< pipe version, indicates which imaging pipeline the pipe should use. */
+	struct ia_css_resolution input_effective_res;
+	/**< input effective resolution */
 	struct ia_css_resolution bayer_ds_out_res;
 	/**< bayer down scaling */
 	struct ia_css_resolution capt_pp_in_res;
@@ -102,6 +104,7 @@ struct ia_css_pipe_config {
 { \
 	IA_CSS_PIPE_MODE_PREVIEW,		/* mode */ \
 	1,					/* isp_pipe_version */ \
+	{ 0, 0 },				/* pipe_effective_input_res */ \
 	{ 0, 0 },				/* bayer_ds_out_res */ \
 	{ 0, 0 },				/* vf_pp_in_res */ \
 	{ 0, 0 },				/* capt_pp_in_res */ \
@@ -413,4 +416,4 @@ enum ia_css_err
 ia_css_pipe_get_qos_ext_state (struct ia_css_pipe *pipe,
                            uint32_t fw_handle,
                            bool * enable);
-#endif /* __IA_CCS_PIPE_PUBLIC_H */
+#endif /* __IA_CSS_PIPE_PUBLIC_H */

@@ -27,9 +27,9 @@
 /* Forward declaration to break mutual dependency */
 struct ia_css_isp_parameters;
 
+#include <type_support.h>
 #include "ia_css_types.h"
-#include "ia_css.h"
-#include "sh_css_internal.h"
+#include "ia_css_binary.h"
 #include "sh_css_legacy.h"
 #if defined(IS_ISP_2500_SYSTEM)
 #include "product_specific.host.h"

@@ -36,7 +36,8 @@ struct sh_css_isp_output_isp_config {
 };
 
 struct sh_css_isp_output_params {
-	uint8_t enable_mirror;
+	uint8_t enable_hflip;
+	uint8_t enable_vflip;
 };
 
 #endif /* __IA_CSS_OUTPUT_PARAM_H */

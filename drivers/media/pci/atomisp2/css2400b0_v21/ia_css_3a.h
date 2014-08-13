@@ -55,7 +55,8 @@ struct ia_css_isp_3a_statistics {
 	struct {
 		ia_css_ptr rgby_tbl;
 	} data_hmem;
-	uint32_t exp_id;     /**< exposure id, to match statistics to a frame */
+	uint32_t exp_id;     /**< exposure id, to match statistics to a frame,
+			          see ia_css_event_public.h for more detail. */
 	ia_css_ptr data_ptr; /**< pointer to base of all data */
 	uint32_t   size;     /**< total size of all data */
 	uint32_t   dmem_size;

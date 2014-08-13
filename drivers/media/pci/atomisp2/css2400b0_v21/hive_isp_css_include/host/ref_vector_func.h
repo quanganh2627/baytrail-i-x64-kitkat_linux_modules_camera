@@ -510,7 +510,6 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean4x4m(
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean2x3m(
 	s_1w_2x3_matrix m);
 
-
 /** @brief Mean of 1x6 matrix
  *
  *  @param[in] m 1x6 matrix with pixels
@@ -522,6 +521,44 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean2x3m(
 */
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x6m(
 	s_1w_1x6_matrix m);
+
+/** @brief SAD between two 3x3 matrices
+ *
+ *  @param[in] a 3x3 matrix with pixels
+ *
+ *  @param[in] b 3x3 matrix with pixels
+ *
+ *  @return 3x3 matrix SAD
+ *
+ * This function calculates the sum of absolute difference between two matrices.
+ * Both input pixels and SAD are normalized by a factor of SAD3x3_IN_SHIFT and
+ * SAD3x3_OUT_SHIFT respectively.
+ * Computed SAD is 1/(2 ^ (SAD3x3_IN_SHIFT + SAD3x3_OUT_SHIFT)) ie 1/16 factor
+ * of original SAD and it's more precise than sad3x3m()
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w sad3x3m_precise(
+	s_1w_3x3_matrix a,
+	s_1w_3x3_matrix b);
+
+/** @brief SAD between two 3x3 matrices
+ *
+ *  @param[in] a 3x3 matrix with pixels
+ *
+ *  @param[in] b 3x3 matrix with pixels
+ *
+ *  @return 3x3 matrix SAD
+ *
+ * This function calculates the sum of absolute difference between two matrices.
+ * This version saves cycles by avoiding input normalization and wide vector
+ * operation during sum computation
+ * Input pixel differences are computed by absolute of rounded, halved
+ * subtraction. Normalized sum is computed by rounded averages.
+ * Computed SAD is (1/2)*(1/16) = 1/32 factor of original SAD. Factor 1/2 comes
+ * from input halving operation and factor 1/16 comes from mean operation
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w sad3x3m(
+	s_1w_3x3_matrix a,
+	s_1w_3x3_matrix b);
 
 /** @brief Bi-linear Interpolation optimized(approximate)
  *
@@ -587,6 +624,117 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol(
 	tvector1w a,
 	tvector1w b,
 	tscalar1w_signed_positive c);
+
+/** @brief Generic Block Matching Algorithm
+ * @param[in] search_window pointer to input search window of 16x16 pixels
+ * @param[in] ref_block pointer to input reference block of 8x8 pixels, where N<=M
+ * @param[in] output pointer to output sads
+ * @param[in] search_sz search size for SAD computation
+ * @param[in] ref_sz block size
+ * @param[in] pixel_shift pixel shift to search the data
+ * @param[in] search_block_sz search window block size
+ * @param[in] shift shift value, with which the output is shifted right
+ *
+ * @return   0 when the computation is successful.
+
+ * * This function compares the reference block with a block of size NxN in the search
+ * window. Sum of absolute differences for each pixel in the reference block and the
+ * corresponding pixel in the search block. Whole search window os traversed with the
+ * reference block with the given pixel shift.
+ *
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H int generic_block_matching_algorithm(
+	tscalar1w **search_window,
+	tscalar1w **ref_block,
+	tscalar1w *output,
+	int search_sz,
+	int ref_sz,
+	int pixel_shift,
+	int search_block_sz,
+	tscalar1w_4bit_bma_shift shift);
+
+/** @brief OP_1w_asp_bma_16_1_32way
+ *
+ * @param[in] search_area input search window of 16x16 pixels
+ * @param[in] input_block input reference block of 8x8 pixels, where N<=M
+ * @param[in] shift shift value, with which the output is shifted right
+ *
+ * @return   81 SADs for all the search blocks.
+
+ * This function compares the reference block with a block of size 8x8 pixels in the
+ * search window of 16x16 pixels. Sum of absolute differences for each pixel in the
+ * reference block and the corresponding pixel in the search block is calculated.
+ * Whole search window is traversed with the reference block with the pixel shift of 1
+ * pixels. The output is right shifted with the given shift value. The shift value is
+ * a 4 bit value.
+ *
+ */
+
+STORAGE_CLASS_REF_VECTOR_FUNC_H bma_output_16_1 OP_1w_asp_bma_16_1_32way(
+	bma_16x16_search_window search_area,
+	ref_block_8x8 input_block,
+	tscalar1w_4bit_bma_shift shift);
+
+/** @brief OP_1w_asp_bma_16_2_32way
+ *
+ * @param[in] search_area input search window of 16x16 pixels
+ * @param[in] input_block input reference block of 8x8 pixels, where N<=M
+ * @param[in] shift shift value, with which the output is shifted right
+ *
+ * @return   25 SADs for all the search blocks.
+ * This function compares the reference block with a block of size 8x8 in the search
+ * window of 16x61. Sum of absolute differences for each pixel in the reference block
+ * and the corresponding pixel in the search block is computed. Whole search window is
+ * traversed with the reference block with the given pixel shift of 2 pixels. The output
+ * is right shifted with the given shift value. The shift value is a 4 bit value.
+ *
+ */
+
+STORAGE_CLASS_REF_VECTOR_FUNC_H bma_output_16_2 OP_1w_asp_bma_16_2_32way(
+	bma_16x16_search_window search_area,
+	ref_block_8x8 input_block,
+	tscalar1w_4bit_bma_shift shift);
+/** @brief OP_1w_asp_bma_14_1_32way
+ *
+ * @param[in] search_area input search block of 16x16 pixels with search window of 14x14 pixels
+ * @param[in] input_block input reference block of 8x8 pixels, where N<=M
+ * @param[in] shift shift value, with which the output is shifted right
+ *
+ * @return   49 SADs for all the search blocks.
+ * This function compares the reference block with a block of size 8x8 in the search
+ * window of 14x14. Sum of absolute differences for each pixel in the reference block
+ * and the corresponding pixel in the search block. Whole search window is traversed
+ * with the reference block with 2 pixel shift. The output is right shifted with the
+ * given shift value. The shift value is a 4 bit value. Input is always a 16x16 block
+ * but the search window is 14x14, with last 2 pixels of row and column are not used
+ * for computation.
+ *
+ */
+
+STORAGE_CLASS_REF_VECTOR_FUNC_H bma_output_14_1 OP_1w_asp_bma_14_1_32way(
+	bma_16x16_search_window search_area,
+	ref_block_8x8 input_block,
+	tscalar1w_4bit_bma_shift shift);
+
+/** @brief OP_1w_asp_bma_14_2_32way
+ *
+ * @param[in] search_area input search block of 16x16 pixels with search window of 14x14 pixels
+ * @param[in] input_block input reference block of 8x8 pixels, where N<=M
+ * @param[in] shift shift value, with which the output is shifted right
+ *
+ * @return   16 SADs for all the search blocks.
+ * This function compares the reference block with a block of size 8x8 in the search
+ * window of 14x14. Sum of absolute differences for each pixel in the reference block
+ * and the corresponding pixel in the search block. Whole search window is traversed
+ * with the reference block with 2 pixels shift. The output is right shifted with the
+ * given shift value. The shift value is a 4 bit value.
+ *
+ */
+
+STORAGE_CLASS_REF_VECTOR_FUNC_H bma_output_14_2 OP_1w_asp_bma_14_2_32way(
+	bma_16x16_search_window search_area,
+	ref_block_8x8 input_block,
+	tscalar1w_4bit_bma_shift shift);
 
 #ifndef INLINE_VECTOR_FUNC
 #define STORAGE_CLASS_REF_VECTOR_FUNC_C

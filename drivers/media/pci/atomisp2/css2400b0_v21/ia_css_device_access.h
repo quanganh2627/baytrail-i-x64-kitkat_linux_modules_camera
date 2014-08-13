@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _IA_CSS_DEVICE_ACCESS_H_
-#define _IA_CSS_DEVICE_ACCESS_H_
+#ifndef _IA_CSS_DEVICE_ACCESS_H
+#define _IA_CSS_DEVICE_ACCESS_H
 
 /** @file
  * File containing internal functions for the CSS-API to access the CSS device.
@@ -63,4 +63,4 @@ ia_css_device_load(const hrt_address addr, void *data, const size_t size);
 void
 ia_css_device_store(const hrt_address addr, const void *data, const size_t size);
 
-#endif /* _IA_CSS_DEVICE_ACCESS_H_ */
+#endif /* _IA_CSS_DEVICE_ACCESS_H */

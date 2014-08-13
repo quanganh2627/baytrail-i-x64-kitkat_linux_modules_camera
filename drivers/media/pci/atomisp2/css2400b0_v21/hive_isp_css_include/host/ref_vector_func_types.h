@@ -35,11 +35,6 @@
 #include "isp_op1w_types.h"
 #include "isp_op2w_types.h"
 
-/*
- * Struct type specification
- */
-
-
 #define MAX_CONFIG_POINTS 5
 #define INPUT_OFFSET_FACTOR 10
 #define INPUT_SCALE_FACTOR 10
@@ -47,9 +42,39 @@
 #define SLOPE_A_RESOLUTION 10
 #define CONFIG_UNIT_LUT_SIZE 32
 
+#define SAD3x3_IN_SHIFT      (2) /* input right shift value for SAD3x3 */
+#define SAD3x3_OUT_SHIFT     (2) /* output right shift value for SAD3x3 */
+
 #define ONE_IN_Q14 (1<<(NUM_BITS-2))
 #define Q29_TO_Q15_SHIFT_VAL (NUM_BITS-2)
 #define Q28_TO_Q15_SHIFT_VAL (NUM_BITS-3)
+
+/* Block matching algorithm related data */
+/* NUM_OF_SADS = ((SEARCH_AREA_HEIGHT - REF_BLOCK_HEIGHT)/PIXEL_SHIFT + 1)* \
+					((SEARCH_AREA_WIDTH - REF_BLOCK_WIDTH)/PIXEL_SHIFT + 1) */
+
+#define SADS(sw_h,sw_w, ref_h, ref_w, p_sh) (((sw_h - ref_h)/p_sh + 1)*((sw_w - ref_w)/p_sh + 1))
+#define SADS_16x16_1	SADS(16, 16, 8, 8, 1)
+#define SADS_16x16_2	SADS(16, 16, 8, 8, 2)
+#define SADS_14x14_1	SADS(14, 14, 8, 8, 1)
+#define SADS_14x14_2	SADS(14, 14, 8, 8, 2)
+
+#define BMA_OUTPUT_MATRIX_DIM(sw_h, ref_h, p_sh)	((sw_h - ref_h)/p_sh + 1)
+#define BMA_OUT_16x16_2_32		BMA_OUTPUT_MATRIX_DIM(16, 8, 2)
+#define BMA_OUT_14x14_2_32		BMA_OUTPUT_MATRIX_DIM(14, 8, 2)
+#define BMA_OUT_16x16_1_32 		BMA_OUTPUT_MATRIX_DIM(16, 8, 1)
+#define BMA_OUT_14x14_1_32 		BMA_OUTPUT_MATRIX_DIM(14, 8, 1)
+#define BMA_SEARCH_BLOCK_SZ_16 	16
+#define BMA_REF_BLOCK_SZ_8    	8
+#define PIXEL_SHIFT_2         	2
+#define PIXEL_SHIFT_1         	1
+#define BMA_SEARCH_WIN_SZ_16  	16
+#define BMA_SEARCH_WIN_SZ_14  	14
+
+
+/*
+ * Struct type specification
+ */
 
 typedef unsigned short tscalar1w_3bit;
 typedef short tscalar1w_5bit_signed;
@@ -63,6 +88,7 @@ typedef unsigned int   tvector2w_unsigned;
 typedef short tscalar1w_signed_positive;
 typedef short tvector1w_signed_positive;
 typedef unsigned short tscalar1w_16bit;
+typedef unsigned short tscalar1w_4bit_bma_shift;
 
 typedef struct {
   tvector1w     v0  ;
@@ -157,5 +183,28 @@ typedef struct {
 	tscalar1w_16bit exponent;
 } ref_config_point_vectors;
 
+typedef struct {
+	tscalar1w search[BMA_SEARCH_BLOCK_SZ_16][BMA_SEARCH_BLOCK_SZ_16];
+} bma_16x16_search_window;
+
+typedef struct {
+	tscalar1w ref[BMA_REF_BLOCK_SZ_8][BMA_REF_BLOCK_SZ_8];
+} ref_block_8x8;
+
+typedef struct {
+	tscalar1w sads[SADS_16x16_1];
+} bma_output_16_1;
+
+typedef struct {
+	tscalar1w sads[SADS_16x16_2];
+} bma_output_16_2;
+
+typedef struct {
+	tscalar1w sads[SADS_14x14_2];
+} bma_output_14_2;
+
+typedef struct {
+	tscalar1w sads[SADS_14x14_1];
+} bma_output_14_1;
 
 #endif /* __REF_VECTOR_FUNC_TYPES_H_INCLUDED__ */

@@ -19,6 +19,7 @@
  *
  */
 
+#include <math_support.h>
 #include "platform_support.h"
 #include "sh_css_firmware.h"
 
@@ -53,16 +54,16 @@ struct fw_param {
 /* Warning: same order as SH_CSS_BINARY_ID_* */
 static struct firmware_header *firmware_header;
 
-/* The string STR(irci_master_20140726_1500) is a place holder
+/* The string STR(irci_master_20140812_1507) is a place holder
  * which will be replaced with the actual RELEASE_VERSION
  * during package generation. Please do not modify  */
-static const char *release_version = STR(irci_master_20140726_1500);
+static const char *release_version = STR(irci_master_20140812_1507);
 
 #define MAX_FW_REL_VER_NAME	300
 static char FW_rel_ver_name[MAX_FW_REL_VER_NAME] = "---";
 
 struct ia_css_fw_info	  sh_css_sp_fw;
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 struct ia_css_fw_info	  sh_css_sp1_fw;
 #endif
 struct ia_css_blob_descr *sh_css_blob_info; /* Only ISP blob info (no SP) */
@@ -137,7 +138,7 @@ sh_css_load_blob_info(const char *fw, const struct ia_css_fw_info *bi, struct ia
 	bd->header = *bi;
 
 	if ((bi->type == ia_css_isp_firmware) || (bi->type == ia_css_sp_firmware)
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	|| (bi->type == ia_css_sp1_firmware)
 #endif
 	)
@@ -278,7 +279,7 @@ sh_css_load_firmware(const char *fw_data,
 			err = setup_sp(bi, fw_data, &sh_css_sp_fw, i);
 			if (err != IA_CSS_SUCCESS)
 				return err;
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 		} else if (bi->type == ia_css_sp1_firmware) {
 			if (i != SP1_FIRMWARE)
 				return IA_CSS_ERR_INTERNAL_ERROR;
@@ -318,7 +319,7 @@ void sh_css_unload_firmware(void)
 	}
 
 	memset(&sh_css_sp_fw, 0, sizeof(sh_css_sp_fw));
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	memset(&sh_css_sp1_fw, 0, sizeof(sh_css_sp1_fw));
 #endif
 	if (sh_css_blob_info) {

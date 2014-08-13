@@ -102,7 +102,7 @@ static int thread_alive;
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 #define SP1_PROG_NAME "sp1"
 #endif
 /* Size of Refcount List */
@@ -308,11 +308,6 @@ create_host_acc_pipeline(struct ia_css_pipe *pipe);
 
 static unsigned int
 sh_css_get_sw_interrupt_value(unsigned int irq);
-
-#if 0
-static enum ia_css_err
-sh_css_pipeline_stop(struct ia_css_pipe *pipe);
-#endif
 
 static bool
 ia_css_binary_is_3a(const struct ia_css_binary *s3a_binary);
@@ -1602,7 +1597,7 @@ ia_css_init(const struct ia_css_env *env,
 {
 	enum ia_css_err err;
 	ia_css_spctrl_cfg spctrl_cfg;
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	ia_css_spctrl_cfg sp1ctrl_cfg;
 #endif
 
@@ -1758,7 +1753,7 @@ ia_css_init(const struct ia_css_env *env,
 		IA_CSS_LEAVE_ERR(err);
 		return err;
 	}
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	if(!sh_css_setup_spctrl_config(&sh_css_sp1_fw,SP1_PROG_NAME,&sp1ctrl_cfg))
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	err = ia_css_spctrl_load_fw(SP1_ID, &sp1ctrl_cfg);
@@ -2477,12 +2472,12 @@ ia_css_uninit(void)
 		ia_css_unload_firmware();
 	}
 	ia_css_spctrl_unload_fw(SP0_ID);
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	ia_css_spctrl_unload_fw(SP1_ID);
 #endif
 
 	sh_css_sp_set_sp_running(false);
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	sh_css_sp1_set_sp1_running(false);
 #endif
 
@@ -4301,7 +4296,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 {
 	enum ia_css_err return_err;
 	enum sh_css_queue_id queue_id;
-	hrt_vaddress ddr_buffer_addr;
+	hrt_vaddress ddr_buffer_addr = (hrt_vaddress)0;
 	struct sh_css_hmm_buffer ddr_buffer;
 	unsigned int i, found_record;
 	enum ia_css_buffer_type buf_type;
@@ -4356,6 +4351,7 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 
 		if (found_record == 0)
 		{
+			IA_CSS_LEAVE_ERR(IA_CSS_ERR_INTERNAL_ERROR);
 			return IA_CSS_ERR_INTERNAL_ERROR;
 		}
 
@@ -4384,7 +4380,10 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 				if ((pipe) && (pipe->stop_requested == true))
 				{
 
-#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
+					/* free mipi frames only for old input system
+					 * for 2401 it is done in ia_css_stream_destroy call
+					 */
 					return_err = free_mipi_frames(pipe);
 					if (return_err != IA_CSS_SUCCESS) {
 						ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -4868,18 +4867,6 @@ sh_css_pipe_start(struct ia_css_stream *stream)
 		"sh_css_pipe_start() leave: return_err=%d\n", err);
 	return err;
 }
-
-#if 0
-static enum ia_css_err sh_css_pipeline_stop(
-	struct ia_css_pipe *pipe)
-{
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_pipeline_stop() enter\n");
-	(void)pipe;
-	/* TO BE IMPLEMENTED */
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "sh_css_pipeline_stop() exit\n");
-	return IA_CSS_SUCCESS;
-}
-#endif
 
 void
 sh_css_enable_cont_capt(bool enable, bool stop_copy_preview)
@@ -6076,7 +6063,7 @@ need_yuv_scaler(const struct ia_css_pipe *pipe)
 	assert(pipe->mode == IA_CSS_PIPE_ID_YUVPP);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE, "need_yuv_scaler() enter:\n");
 
-	in_res = pipe->stream->config.input_config.effective_res;
+	in_res = pipe->config.input_effective_res;
 
 	if (pipe->config.enable_dz)
 		return true;
@@ -6232,7 +6219,7 @@ static enum ia_css_err ia_css_pipe_create_cas_scaler_desc(struct ia_css_pipe *pi
 		ver_ds_factor[i] = 0;
 	}
 
-	in_info.res = pipe->stream->config.input_config.effective_res;
+	in_info.res = pipe->config.input_effective_res;
 	in_info.padded_width = in_info.res.width;
 	descr->num_output_stage = 0;
 	for (i = 0; i < IA_CSS_PIPE_MAX_OUTPUT_STAGE; i++) {
@@ -6335,7 +6322,7 @@ static enum ia_css_err ia_css_pipe_create_cas_scaler_desc(struct ia_css_pipe *pi
 	}
 #endif
 
-	tmp_in_info.res = pipe->stream->config.input_config.effective_res;
+	tmp_in_info.res = pipe->config.input_effective_res;
 	tmp_in_info.format = IA_CSS_FRAME_FORMAT_YUV420;
 	for (i = 0, j = 0; i < descr->num_stage; i++) {
 		assert(j < 2);
@@ -7559,50 +7546,36 @@ enum ia_css_err ia_css_stream_capture_frame(struct ia_css_stream *stream,
 				unsigned int exp_id)
 {
 	struct sh_css_tag_descr tag_descr;
-	unsigned int encoded_tag_descr;
-	enum ia_css_err return_err;
+	uint32_t encoded_tag_descr;
+	enum ia_css_err err;
 
-	(void)stream;
 	assert(stream != NULL);
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_stream_capture_frame() enter: exp_id=%d\n",
-		exp_id);
+	IA_CSS_ENTER("exp_id=%d", exp_id);
 
-	if (exp_id == 0) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_stream_capture_frame() "
-			"leave: return_err=%d\n",
-			IA_CSS_ERR_INVALID_ARGUMENTS);
+	/* Only continuous streams have a tagger */
+	if (exp_id == 0 || !stream->config.continuous) {
+		IA_CSS_LEAVE_ERR(IA_CSS_ERR_INVALID_ARGUMENTS);
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	}
+
+	if (!sh_css_sp_is_running()) {
+		/* SP is not running. The queues are not valid */
+		IA_CSS_LEAVE_ERR(IA_CSS_ERR_RESOURCE_NOT_AVAILABLE);
+		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
 	}
 
 	/* Create the tag descriptor from the parameters */
 	sh_css_create_tag_descr(0, 0, 0, exp_id, &tag_descr);
-
-
 	/* Encode the tag descriptor into a 32-bit value */
 	encoded_tag_descr = sh_css_encode_tag_descr(&tag_descr);
-
-	if (!sh_css_sp_is_running()) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-			"ia_css_stream_capture_frame() leaving:"
-			"queue unavailable\n");
-		/* SP is not running. The queues are not valid */
-		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
-	}
-
-
 	/* Enqueue the encoded tag to the host2sp queue.
 	 * Note: The pipe and stage IDs for tag_cmd queue are hard-coded to 0
 	 * on both host and the SP side.
 	 * It is mainly because it is enough to have only one tag_cmd queue */
-	return_err= ia_css_bufq_enqueue_tag_cmd((uint32_t)encoded_tag_descr);
+	err= ia_css_bufq_enqueue_tag_cmd(encoded_tag_descr);
 
-	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-		"ia_css_stream_capture_frame() leave: return_err=%d\n",
-		return_err);
-
-	return return_err;
+	IA_CSS_LEAVE_ERR(err);
+	return err;
 }
 
 /**
@@ -8116,6 +8089,7 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	int i, j;
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
 	struct ia_css_metadata_info md_info;
+	struct ia_css_resolution effective_res;
 
 	IA_CSS_ENTER("num_pipes=%d", num_pipes);
 	ia_css_debug_dump_stream_config(stream_config, num_pipes);
@@ -8295,6 +8269,23 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 	default:
 		IA_CSS_LOG("mode sensor/default");
 	}
+
+	for (i = 0; i < num_pipes; i++) {
+		curr_pipe = pipes[i];
+		/* set current stream */
+		curr_pipe->stream = curr_stream;
+		/* take over effective info */
+
+		effective_res = curr_pipe->config.input_effective_res;
+		if (effective_res.height == 0 || effective_res.width == 0) {
+			effective_res = curr_pipe->stream->config.input_config.effective_res;
+			curr_pipe->config.input_effective_res = effective_res;
+		}
+		IA_CSS_LOG("effective_res=%dx%d",
+					effective_res.width,
+					effective_res.height);
+	}
+
 	err = ia_css_stream_isp_parameters_init(curr_stream);
 	if (err != IA_CSS_SUCCESS)
 		goto ERR;
@@ -8386,13 +8377,11 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		curr_pipe->stream = curr_stream;
 		/* take over effective info */
 
-		IA_CSS_LOG("effective_res=%dx%d",
-			curr_stream->config.input_config.effective_res.width,
-			curr_stream->config.input_config.effective_res.height);
+		effective_res = curr_pipe->config.input_effective_res;
 
 		err = ia_css_util_check_res(
-			curr_stream->config.input_config.effective_res.width,
-			curr_stream->config.input_config.effective_res.height);
+					effective_res.width,
+					effective_res.height);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
 		/* sensor binning per pipe */
@@ -8507,7 +8496,6 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 	if ((stream->last_pipe != NULL) &&
 		ia_css_pipeline_is_mapped(stream->last_pipe->pipe_num)) {
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
-#if defined(HAS_ISYS_CSI_RSRC_RELEASE)
 		for (i = 0; i < stream->num_pipes; i++) {
 			struct ia_css_pipe *entry = stream->pipes[i];
 			unsigned int sp_thread_id;
@@ -8529,7 +8517,17 @@ ia_css_stream_destroy(struct ia_css_stream *stream)
 				}
 			}
 		}
-#endif
+		if (stream->config.mode == IA_CSS_INPUT_MODE_BUFFERED_SENSOR) {
+			for (i = 0; i < stream->num_pipes; i++) {
+				struct ia_css_pipe *entry = stream->pipes[i];
+				/* free any mipi frames that are remaining:
+				 * some test stream create-destroy cycles do not generate output frames
+				 * and the mipi buffer is not freed in the deque function
+				 */
+				if (entry != NULL)
+					free_mipi_frames(entry);
+			}
+		}
 		stream_unregister_with_csi_rx(stream);
 #endif
 
@@ -9033,7 +9031,7 @@ ia_css_pipe_get_isp_pipe_version(const struct ia_css_pipe *pipe)
 
 #define SP_START_TIMEOUT_US 30000000
 
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 void
 ia_css_start_sp1(void)
 {
@@ -9085,7 +9083,7 @@ ia_css_start_sp(void)
 
 	sh_css_setup_queues();
 
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	/* Start the SP1 Core */
 	ia_css_start_sp1();
 #endif
@@ -9101,7 +9099,7 @@ ia_css_start_sp(void)
  */
 #define SP_SHUTDOWN_TIMEOUT_US 200000
 
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 enum ia_css_err
 ia_css_stop_sp1(void)
 {
@@ -9181,7 +9179,7 @@ ia_css_stop_sp(void)
 	/* clear pending param sets from refcount */
 	sh_css_param_clear_param_sets();
 
-#if defined(ENABLE_SP1)
+#if defined(C_ENABLE_SP1)
 	/* Stop SP1 Core */
 	ia_css_stop_sp1();
 #endif
@@ -9369,7 +9367,9 @@ ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id)
 
 	IA_CSS_ENTER("");
 
-	if (stream == NULL) {
+	/* Only continuous streams have a tagger to which we can send the
+	 * unlock message. */
+	if (stream == NULL || !stream->config.continuous) {
 		IA_CSS_ERROR("invalid stream pointer");
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
