@@ -41,11 +41,13 @@
 #include "ov.h"
 #ifdef CONFIG_VIDEO_OV2685
 #include "ov_2685.h"
+#include "ov_2685f.h"
 #endif
 
 static const struct i2c_device_id ov_ids[] = {
 #ifdef CONFIG_VIDEO_OV2685
 	{"ov2685", (kernel_ulong_t)&ov2685_product_info},
+	{"ov2685f", (kernel_ulong_t)&ov2685f_product_info},
 #endif
 	{},
 };
