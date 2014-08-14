@@ -122,6 +122,11 @@
 #define OV5648_TIMING_VTS_H		0x380e	/*VTS High 8-bit */
 #define OV5648_TIMING_VTS_L		0x380f	/*VTS Low 8-bit*/
 
+#define OV5648_VFLIP_REG		0x3820
+#define OV5648_HFLIP_REG		0x3821
+#define OV5648_VFLIP_VALUE		0x06
+#define OV5648_HFLIP_VALUE		0x06
+
 #define OV5648_MWB_RED_GAIN_H		0x5186
 #define OV5648_MWB_GREEN_GAIN_H		0x5188
 #define OV5648_MWB_BLUE_GAIN_H		0x518A
@@ -459,7 +464,7 @@ static struct ov5648_reg const ov5648_720p_30fps_2lanes[] = {
 	{OV5648_8BIT, 0x3814, 0x31},/* x inc */
 	{OV5648_8BIT, 0x3815, 0x31},/* y inc */
 	{OV5648_8BIT, 0x3817, 0x00},/* hsync start */
-	{OV5648_8BIT, 0x3820, 0x0e},/* flip on; v bin off */
+	{OV5648_8BIT, 0x3820, 0x08},/* flip off; v bin off */
 	{OV5648_8BIT, 0x3821, 0x01},/* mirror off; h bin on */
 	{OV5648_8BIT, 0x4004, 0x02},/* black line number */
 	{OV5648_8BIT, 0x4005, 0x18},/* blc level trigger */
@@ -516,7 +521,7 @@ static struct ov5648_reg const ov5648_1296x864_30fps_2lanes[] = {
 	{OV5648_8BIT, 0x3814, 0x31},/* x inc */
 	{OV5648_8BIT, 0x3815, 0x31},/* y inc */
 	{OV5648_8BIT, 0x3817, 0x00},/* hsync start */
-	{OV5648_8BIT, 0x3820, 0x0e},/* flip on; v bin off */
+	{OV5648_8BIT, 0x3820, 0x08},/* flip off; v bin off */
 	{OV5648_8BIT, 0x3821, 0x01},/* mirror off; h bin on */
 	{OV5648_8BIT, 0x4004, 0x02},/* black line number */
 	{OV5648_8BIT, 0x4005, 0x18},/* blc level trigger */
@@ -572,7 +577,7 @@ static struct ov5648_reg const ov5648_1304_976_30fps_2lanes[] = {
 	{OV5648_8BIT, 0x3814, 0x31},/* x inc */
 	{OV5648_8BIT, 0x3815, 0x31},/* y inc */
 	{OV5648_8BIT, 0x3817, 0x00},/* hsync start */
-	{OV5648_8BIT, 0x3820, 0x0e},/* flip on; v bin off */
+	{OV5648_8BIT, 0x3820, 0x08},/* flip off; v bin off */
 	{OV5648_8BIT, 0x3821, 0x01},/* mirror off; h bin on */
 	{OV5648_8BIT, 0x4004, 0x02},/* black line number */
 	{OV5648_8BIT, 0x4005, 0x18},/* blc level trigger */
@@ -642,7 +647,7 @@ static struct ov5648_reg const ov5648_5M_15fps_2lanes[] = {
 	{OV5648_8BIT, 0x3814, 0x11},/* x inc */
 	{OV5648_8BIT, 0x3815, 0x11},/* y inc */
 	{OV5648_8BIT, 0x3817, 0x00},/* hsync start */
-	{OV5648_8BIT, 0x3820, 0x46},/* flip on; v bin off */
+	{OV5648_8BIT, 0x3820, 0x40},/* flip off; v bin off */
 	{OV5648_8BIT, 0x3821, 0x00},/* mirror off; v bin off */
 	{OV5648_8BIT, 0x4004, 0x04},/* black line number */
 	{OV5648_8BIT, 0x4005, 0x1a},/* blc always update */

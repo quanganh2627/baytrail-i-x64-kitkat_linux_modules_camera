@@ -41,9 +41,10 @@
 #include "ov5648.h"
 
 
-#define OV5648_DEBUG_EN 1
-#define ov5648_debug dev_err
-
+#define OV5648_DEBUG_EN 0
+#define ov5648_debug dev_dbg
+static int h_flag = 0;
+static int v_flag = 0;
 /* i2c read/write stuff */
 static int ov5648_read_reg(struct i2c_client *client,
 			   u16 data_length, u16 reg, u16 *val)
@@ -654,6 +655,56 @@ int ov5648_t_vcm_timing(struct v4l2_subdev *sd, s32 value)
 	return 0;
 }
 
+static int ov5648_v_flip(struct v4l2_subdev *sd, s32 value)
+{
+	struct ov5648_device *dev = to_ov5648_sensor(sd);
+	struct camera_mipi_info *ov5648_info = NULL;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+	u16 val;
+	u8 flip_flag;
+	ov5648_debug(&client->dev, "@%s: value:%d\n", __func__, value);
+	ret = ov5648_read_reg(client, OV5648_8BIT, OV5648_VFLIP_REG, &val);
+	if (ret)
+		return ret;
+	if (value) {
+		val |= OV5648_VFLIP_VALUE;
+	} else {
+		val &= ~OV5648_VFLIP_VALUE;
+	}
+	ret = ov5648_write_reg(client, OV5648_8BIT,
+			OV5648_VFLIP_REG, val);
+	if (ret)
+		return ret;
+	return ret;
+}
+
+static int ov5648_h_flip(struct v4l2_subdev *sd, s32 value)
+{
+	struct ov5648_device *dev = to_ov5648_sensor(sd);
+	struct camera_mipi_info *ov5648_info = NULL;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+	u16 val;
+	u8 flip_flag;
+	ov5648_debug(&client->dev, "@%s: value:%d\n", __func__, value);
+
+	ret = ov5648_read_reg(client, OV5648_8BIT, OV5648_HFLIP_REG, &val);
+	if (ret)
+		return ret;
+	if (value) {
+		val |= OV5648_HFLIP_VALUE;
+	} else {
+		val &= ~OV5648_HFLIP_VALUE;
+	}
+	ret = ov5648_write_reg(client, OV5648_8BIT,
+			OV5648_HFLIP_REG, val);
+	if (ret)
+		return ret;
+	return ret;
+}
+
+
 struct ov5648_control ov5648_controls[] = {
 	{
 		.qc = {
@@ -799,6 +850,30 @@ struct ov5648_control ov5648_controls[] = {
 		},
 		.query = ov5648_g_bin_factor_y,
 	},
+	{
+		.qc = {
+			.id = V4L2_CID_VFLIP,
+			.type = V4L2_CTRL_TYPE_BOOLEAN,
+			.name = "Flip",
+			.minimum = 0,
+			.maximum = 1,
+			.step = 1,
+			.default_value = 0,
+		},
+		.tweak = ov5648_v_flip,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_HFLIP,
+			.type = V4L2_CTRL_TYPE_BOOLEAN,
+			.name = "Mirror",
+			.minimum = 0,
+			.maximum = 1,
+			.step = 1,
+			.default_value = 0,
+		},
+		.tweak = ov5648_h_flip,
+	},
 };
 #define N_CONTROLS (ARRAY_SIZE(ov5648_controls))
 
@@ -856,6 +931,23 @@ static int ov5648_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 
 	if ((octrl == NULL) || (octrl->tweak == NULL))
 		return -EINVAL;
+
+	switch(ctrl->id)
+	{
+		case V4L2_CID_VFLIP:
+			if(ctrl->value)
+				v_flag=1;
+			else
+				v_flag=0;
+			break;
+		case V4L2_CID_HFLIP:
+			if(ctrl->value)
+				h_flag=1;
+			else
+				h_flag=0;
+			break;
+		default:break;
+	};
 
 	mutex_lock(&dev->input_lock);
 	ret = octrl->tweak(sd, ctrl->value);
@@ -1277,6 +1369,8 @@ static int power_down(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
+	h_flag = 0;
+	v_flag = 0;
 	dev_dbg(&client->dev, "@%s:\n", __func__);
 	if (NULL == dev->platform_data) {
 		dev_err(&client->dev,
@@ -1463,8 +1557,6 @@ static int ov5648_s_mbus_fmt(struct v4l2_subdev *sd,
 		dev_err(&client->dev, "try fmt fail\n");
 		goto err;
 	}
-	printk(KERN_INFO"@%s:width:%d, height:%d\n",
-			__func__, fmt->width, fmt->height);
 	dev->fmt_idx = get_resolution_index(fmt->width,
 					      fmt->height);
 	if (dev->fmt_idx == -1) {
@@ -1476,6 +1568,14 @@ static int ov5648_s_mbus_fmt(struct v4l2_subdev *sd,
 	ret = startup(sd);
 	if (ret)
 		dev_err(&client->dev, "ov5648 startup err\n");
+
+	/*recall flip functions to avoid flip registers
+	 * were overrided by default setting
+	 */
+	if (h_flag)
+		ov5648_h_flip(sd, h_flag);
+	if (v_flag)
+		ov5648_v_flip(sd, v_flag);
 
 	ret = ov5648_get_intg_factor(client, ov5648_info,
 					&ov5648_res[dev->fmt_idx]);
