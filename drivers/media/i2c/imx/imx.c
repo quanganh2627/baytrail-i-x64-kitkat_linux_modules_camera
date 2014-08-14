@@ -813,7 +813,11 @@ static int imx_get_intg_factor(struct i2c_client *client,
 	if (div == 0)
 		return -EINVAL;
 
-	vt_pix_clk_freq_mhz = 2 * ext_clk_freq_hz / div;
+	if (dev->sensor_id == IMX132_ID || dev->sensor_id == IMX208_ID)
+		vt_pix_clk_freq_mhz = ext_clk_freq_hz / div;
+	else
+		vt_pix_clk_freq_mhz = 2 * ext_clk_freq_hz / div;
+
 	vt_pix_clk_freq_mhz *= pll_multiplier;
 	if (dev->sensor_id == IMX132_ID && lanes > 0)
 		vt_pix_clk_freq_mhz *= lanes;
