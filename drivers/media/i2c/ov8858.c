@@ -51,9 +51,9 @@ static enum atomisp_bayer_order ov8858_bayer_order_mapping[] = {
 	atomisp_bayer_order_grbg,
 	atomisp_bayer_order_rggb
 };
+#endif
 static int g_vflip_flag = 0;
 static int g_hflip_flag = 0;
-#endif
 extern int update_awb_gain(struct v4l2_subdev *sd);
 
 /* i2c read/write stuff */
@@ -677,10 +677,10 @@ static int ov8858_v_flip(struct v4l2_subdev *sd, s32 value)
 		return ret;
 	if (value) {
 		val |= OV8858_VFLIP_VALUE;
-		//g_vflip_flag = 1;
+		g_vflip_flag = 1;
 	} else {
 		val &= ~OV8858_VFLIP_VALUE;
-		//g_vflip_flag = 0;
+		g_vflip_flag = 0;
 	}
 	ret = ov8858_write_reg(client, OV8858_8BIT,
 			OV8858_VFLIP_REG, val);
@@ -713,10 +713,10 @@ static int ov8858_h_flip(struct v4l2_subdev *sd, s32 value)
 		return ret;
 	if (value) {
 		val |= OV8858_HFLIP_VALUE;
-		//g_hflip_flag = 1;
+		g_hflip_flag = 1;
 	} else {
 		val &= ~OV8858_HFLIP_VALUE;
-		//g_hflip_flag = 0;
+		g_hflip_flag = 0;
 	}
 	ret = ov8858_write_reg(client, OV8858_8BIT,
 			OV8858_HFLIP_REG, val);
@@ -734,6 +734,18 @@ static int ov8858_h_flip(struct v4l2_subdev *sd, s32 value)
 	return ret;
 }
 
+static int ov8858_flip(struct v4l2_subdev *sd)
+{
+	int ret = 0;
+
+	if(g_hflip_flag){
+		ret = ov8858_h_flip(sd,1);
+	}else if(g_vflip_flag){
+		ret = ov8858_v_flip(sd,1);
+	}
+
+	return ret;
+}
 
 struct ov8858_control ov8858_controls[] = {
 	{
@@ -1342,6 +1354,11 @@ static int ov8858_s_stream(struct v4l2_subdev *sd, int enable)
 	int ret;
 	printk("@%s:\n", __func__);
 	mutex_lock(&dev->input_lock);
+
+    ret = ov8858_flip(sd);
+	if(ret){
+		dev_info(&client->dev, "Set flip failed!\n");
+	}
 
 	ret = ov8858_write_reg(client, OV8858_8BIT, OV8858_SW_STREAM,
 				enable ? OV8858_START_STREAMING :
