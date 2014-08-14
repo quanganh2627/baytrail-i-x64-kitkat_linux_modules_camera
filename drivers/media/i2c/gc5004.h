@@ -481,6 +481,19 @@ static struct gc5004_reg const gc5004_2592x1944_12fps[] = {
 struct gc5004_resolution gc5004_res_preview[] = {
 	{
 		.desc = "gc5004_720p_30fps",
+		.regs = gc5004_1296x736_30fps,
+		.width = 1296,
+		.height = 736,
+		.fps = 26,
+		.pixels_per_line = 4800,
+		.lines_per_frame = 780,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 3,
+	},
+	{
+		.desc = "gc5004_720p_30fps",
 		.regs = gc5004_1296x976_30fps,
 		.width = 1296,
 		.height = 976,
