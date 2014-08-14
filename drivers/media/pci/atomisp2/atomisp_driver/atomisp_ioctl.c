@@ -2544,7 +2544,18 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 	struct atomisp_sub_device *asd = atomisp_to_video_pipe(vdev)->asd;
 	int err;
 
-	rt_mutex_lock(&isp->mutex);
+	switch (cmd) {
+	case ATOMISP_IOC_G_MOTOR_PRIV_INT_DATA:
+	case ATOMISP_IOC_S_EXPOSURE:
+	case ATOMISP_IOC_G_SENSOR_CALIBRATION_GROUP:
+	case ATOMISP_IOC_G_SENSOR_PRIV_INT_DATA:
+	case ATOMISP_IOC_EXT_ISP_CTRL:
+		/* we do not need take isp->mutex for these IOCTLs */
+		break;
+	default:
+		rt_mutex_lock(&isp->mutex);
+		break;
+	}
 	switch (cmd) {
 	case ATOMISP_IOC_G_XNR:
 		err = atomisp_xnr(asd, 0, arg);
@@ -2694,7 +2705,6 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 
 	case ATOMISP_IOC_G_MOTOR_PRIV_INT_DATA:
-		rt_mutex_unlock(&isp->mutex);
 		if (isp->inputs[asd->input_curr].motor)
 			return v4l2_subdev_call(
 					isp->inputs[asd->input_curr].motor,
@@ -2707,7 +2717,6 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 	case ATOMISP_IOC_S_EXPOSURE:
 	case ATOMISP_IOC_G_SENSOR_CALIBRATION_GROUP:
 	case ATOMISP_IOC_G_SENSOR_PRIV_INT_DATA:
-		rt_mutex_unlock(&isp->mutex);
 		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 					core, ioctl, cmd, arg);
 
@@ -2769,7 +2778,6 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		err = atomisp_get_metadata_by_type(asd, 0, arg);
 		break;
 	case ATOMISP_IOC_EXT_ISP_CTRL:
-		rt_mutex_unlock(&isp->mutex);
 		return v4l2_subdev_call(isp->inputs[asd->input_curr].camera,
 					core, ioctl, cmd, arg);
 	case ATOMISP_IOC_EXP_ID_UNLOCK:
@@ -2801,7 +2809,18 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		rt_mutex_unlock(&isp->mutex);
 		return -EINVAL;
 	}
-	rt_mutex_unlock(&isp->mutex);
+
+	switch (cmd) {
+	case ATOMISP_IOC_G_MOTOR_PRIV_INT_DATA:
+	case ATOMISP_IOC_S_EXPOSURE:
+	case ATOMISP_IOC_G_SENSOR_CALIBRATION_GROUP:
+	case ATOMISP_IOC_G_SENSOR_PRIV_INT_DATA:
+	case ATOMISP_IOC_EXT_ISP_CTRL:
+		break;
+	default:
+		rt_mutex_unlock(&isp->mutex);
+		break;
+	}
 	return err;
 }
 
