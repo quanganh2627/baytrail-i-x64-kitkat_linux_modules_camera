@@ -93,24 +93,6 @@ static struct v4l2_queryctrl ci_v4l2_controls[] = {
 		.default_value = 0x00,
 	},
 	{
-		.id = V4L2_CID_HFLIP,
-		.type = V4L2_CTRL_TYPE_INTEGER,
-		.name = "Image h-flip",
-		.minimum = 0,
-		.maximum = 1,
-		.step = 1,
-		.default_value = 0,
-	},
-	{
-		.id = V4L2_CID_VFLIP,
-		.type = V4L2_CTRL_TYPE_INTEGER,
-		.name = "Image v-flip",
-		.minimum = 0,
-		.maximum = 1,
-		.step = 1,
-		.default_value = 0,
-	},
-	{
 		.id = V4L2_CID_POWER_LINE_FREQUENCY,
 		.type = V4L2_CTRL_TYPE_MENU,
 		.name = "Light frequency filter",
@@ -2050,8 +2032,6 @@ static int atomisp_g_ctrl(struct file *file, void *fh,
 	case V4L2_CID_IRIS_ABSOLUTE:
 	case V4L2_CID_EXPOSURE_ABSOLUTE:
 	case V4L2_CID_FNUMBER_ABSOLUTE:
-	case V4L2_CID_HFLIP:
-	case V4L2_CID_VFLIP:
 	case V4L2_CID_2A_STATUS:
 	case V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE:
 	case V4L2_CID_EXPOSURE:
@@ -2131,8 +2111,6 @@ static int atomisp_s_ctrl(struct file *file, void *fh,
 	case V4L2_CID_SCENE_MODE:
 	case V4L2_CID_ISO_SENSITIVITY:
 	case V4L2_CID_ISO_SENSITIVITY_AUTO:
-	case V4L2_CID_HFLIP:
-	case V4L2_CID_VFLIP:
 	case V4L2_CID_POWER_LINE_FREQUENCY:
 	case V4L2_CID_EXPOSURE_METERING:
 	case V4L2_CID_CONTRAST:
