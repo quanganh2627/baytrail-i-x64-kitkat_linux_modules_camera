@@ -2494,6 +2494,7 @@ static int imx_probe(struct i2c_client *client,
 	dev->fmt_idx = 0;
 	dev->sensor_id = IMX_ID_DEFAULT;
 	dev->vcm_driver = &imx_vcms[IMX_ID_DEFAULT];
+	dev->digital_gain = 256;
 
 	v4l2_i2c_subdev_init(&(dev->sd), client, &imx_ops);
 
