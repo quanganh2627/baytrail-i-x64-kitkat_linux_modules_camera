@@ -895,6 +895,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 
 			asd->s3a_bufs_in_css[css_pipe_id]--;
 			atomisp_3a_stats_ready_event(asd);
+			dev_dbg(isp->dev, "%s: s3a stat with exp_id %d is ready\n",
+				__func__, buffer.css_buffer.exp_id);
 			break;
 		case CSS_BUFFER_TYPE_METADATA:
 			if (error)
@@ -911,6 +913,9 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			}
 			asd->metadata_bufs_in_css[stream_id][css_pipe_id]--;
 			atomisp_metadata_ready_event(asd, md_type);
+			dev_dbg(isp->dev, "%s: metadata with exp_id %d is ready\n",
+				__func__,
+				buffer.css_buffer.data.metadata->exp_id);
 			break;
 		case CSS_BUFFER_TYPE_DIS_STATISTICS:
 			list_for_each_entry_safe(dis_buf, _dis_buf_tmp,
@@ -926,6 +931,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 				}
 			}
 			asd->dis_bufs_in_css--;
+			dev_dbg(isp->dev, "%s: dis stat with exp_id %d is ready\n",
+				__func__, buffer.css_buffer.exp_id);
 			break;
 		case CSS_BUFFER_TYPE_VF_OUTPUT_FRAME:
 		case CSS_BUFFER_TYPE_SEC_VF_OUTPUT_FRAME:
@@ -945,6 +952,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			if (!frame->valid)
 				error = true;
 
+			dev_dbg(isp->dev, "%s: vf frame with exp_id %d is ready\n",
+				__func__, frame->exp_id);
 			if (asd->params.flash_state ==
 			    ATOMISP_FLASH_ONGOING) {
 				if (frame->flash_state
@@ -982,6 +991,8 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			if (!frame->valid)
 				error = true;
 
+			dev_dbg(isp->dev, "%s: main frame with exp_id %d is ready\n",
+				__func__, frame->exp_id);
 			vb = atomisp_css_frame_to_vbuf(pipe, frame);
 			if (!vb) {
 				WARN_ON(1);
@@ -1328,6 +1339,16 @@ void atomisp_wdt_work(struct work_struct *work)
 				asd->metadata_bufs_in_css
 				[ATOMISP_INPUT_STREAM_GENERAL]
 				[CSS_PIPE_ID_VIDEO]);
+			if (asd->enable_raw_buffer_lock->val) {
+				unsigned int j;
+
+				for (j = 0; j <= ATOMISP_MAX_EXP_ID/32; j++) {
+					dev_err(isp->dev,
+						"%s, raw_buffer_bitmap[%d]: 0x%x\n",
+						__func__, j,
+						asd->raw_buffer_bitmap[j]);
+				}
+			}
 		}
 
 		/*sh_css_dump_sp_state();*/
@@ -1508,6 +1529,8 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 		}
 
 		atomisp_eof_event(asd, eof_event.event.exp_id);
+		dev_dbg(isp->dev, "%s EOF exp_id %d\n", __func__,
+			eof_event.event.exp_id);
 
 		/* signal streamon after delayed init is done */
 		if (asd->delayed_init ==
@@ -2449,7 +2472,7 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 
 	/* This is done in the atomisp_buf_done() */
 	if (list_empty(&asd->metadata_ready[md_type])) {
-		dev_err(isp->dev, "Metadata is not valid.\n");
+		dev_warn(isp->dev, "Metadata queue is empty now!\n");
 		return -EAGAIN;
 	}
 
@@ -2489,6 +2512,8 @@ int atomisp_get_metadata(struct atomisp_sub_device *asd, int flag,
 		list_add_tail(&md_buf->list, &asd->metadata[md_type]);
 	}
 
+	dev_dbg(isp->dev, "%s: HAL de-queued metadata type %d with exp_id %d\n",
+		__func__, md_type, md->exp_id);
 	return 0;
 }
 
@@ -2530,7 +2555,7 @@ int atomisp_get_metadata_by_type(struct atomisp_sub_device *asd, int flag,
 
 	/* This is done in the atomisp_buf_done() */
 	if (list_empty(&asd->metadata_ready[md_type])) {
-		dev_err(isp->dev, "Metadata is not valid.\n");
+		dev_warn(isp->dev, "Metadata queue is empty now!\n");
 		return -EAGAIN;
 	}
 
@@ -2569,6 +2594,8 @@ int atomisp_get_metadata_by_type(struct atomisp_sub_device *asd, int flag,
 		list_del_init(&md_buf->list);
 		list_add_tail(&md_buf->list, &asd->metadata[md_type]);
 	}
+	dev_dbg(isp->dev, "%s: HAL de-queued metadata type %d with exp_id %d\n",
+		__func__, md_type, md->exp_id);
 	return 0;
 }
 
