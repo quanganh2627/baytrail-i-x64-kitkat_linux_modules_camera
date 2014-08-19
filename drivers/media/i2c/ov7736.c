@@ -365,6 +365,33 @@ static int ov7736_s_scene(struct v4l2_subdev *sd, int value)
 	return 0;
 }
 
+int ov7736_g_focal_absolute(struct v4l2_subdev *sd, s32 *val)
+{
+	struct ov7736_device *dev = to_ov7736_sensor(sd);
+
+	*val = (OV7736_FOCAL_LENGTH_NUM << 16) | OV7736_FOCAL_LENGTH_DEM;
+
+	return 0;
+}
+
+int ov7736_g_fnumber(struct v4l2_subdev *sd, s32 *val)
+{
+	struct ov7736_device *dev = to_ov7736_sensor(sd);
+
+	*val = (OV7736_F_NUMBER_DEFAULT_NUM << 16) | OV7736_F_NUMBER_DEM;
+	return 0;
+}
+
+int ov7736_g_fnumber_range(struct v4l2_subdev *sd, s32 *val)
+{
+	struct ov7736_device *dev = to_ov7736_sensor(sd);
+
+	*val = (OV7736_F_NUMBER_DEFAULT_NUM << 24) |
+		(OV7736_F_NUMBER_DEM << 16) |
+		(OV7736_F_NUMBER_DEFAULT_NUM << 8) | OV7736_F_NUMBER_DEM;
+	return 0;
+}
+
 static int ov7736_g_wb(struct v4l2_subdev *sd, s32 *value)
 {
 	*value = awb_index;
@@ -965,6 +992,45 @@ static struct ov7736_control ov7736_controls[] = {
 		},
 		.query = ov7736_g_exposure,
 		.tweak = ov7736_s_exposure,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_FOCAL_ABSOLUTE,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "focal length",
+			.minimum = OV7736_FOCAL_LENGTH_DEFAULT,
+			.maximum = OV7736_FOCAL_LENGTH_DEFAULT,
+			.step = 0x01,
+			.default_value = OV7736_FOCAL_LENGTH_DEFAULT,
+			.flags = 0,
+		},
+		.query = ov7736_g_focal_absolute,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_FNUMBER_ABSOLUTE,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "f-number",
+			.minimum = OV7736_F_NUMBER_DEFAULT,
+			.maximum = OV7736_F_NUMBER_DEFAULT,
+			.step = 0x01,
+			.default_value = OV7736_F_NUMBER_DEFAULT,
+			.flags = 0,
+		},
+		.query = ov7736_g_fnumber,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_FNUMBER_RANGE,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "f-number range",
+			.minimum = OV7736_F_NUMBER_RANGE,
+			.maximum =  OV7736_F_NUMBER_RANGE,
+			.step = 0x01,
+			.default_value = OV7736_F_NUMBER_RANGE,
+			.flags = 0,
+		},
+		.query = ov7736_g_fnumber_range,
 	},
 	{
 		.qc = {
