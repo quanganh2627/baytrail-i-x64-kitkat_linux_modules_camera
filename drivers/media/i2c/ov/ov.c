@@ -730,6 +730,9 @@ static int ov_s_mbus_fmt(struct v4l2_subdev *sd,
 	dev->cur_res = ov_res->res_id;
 	fmt->width = width;
 	fmt->height = height;
+
+	ov_s_exposure(sd, dev->id_exposure);
+
 	mutex_unlock(&dev->input_lock);
 	return 0;
 }
