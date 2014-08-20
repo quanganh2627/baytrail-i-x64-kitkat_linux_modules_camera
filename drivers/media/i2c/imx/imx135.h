@@ -995,63 +995,6 @@ static struct imx_reg const imx135_1m[] = {
 	{IMX_TOK_TERM, 0, 0},
 };
 
-static struct imx_reg const imx135_976x736[] = {
-	GROUPED_PARAMETER_HOLD_ENABLE,
-	PLL_SETTINGS_FOR_MIPI_209_6MHZ_SALTBAY,
-	/* mode setting */
-	{IMX_8BIT, 0x0108, 0x03},
-	{IMX_8BIT, 0x0112, 0x0A},
-	{IMX_8BIT, 0x0113, 0x0A},
-	{IMX_8BIT, 0x0381, 0x01},
-	{IMX_8BIT, 0x0383, 0x01},
-	{IMX_8BIT, 0x0385, 0x01},
-	{IMX_8BIT, 0x0387, 0x01},
-	{IMX_8BIT, 0x0390, 0x01},
-	{IMX_8BIT, 0x0391, 0x22},
-	{IMX_8BIT, 0x0392, 0x00},
-	{IMX_8BIT, 0x0401, 0x02}, /* Scaling */
-	{IMX_8BIT, 0x0404, 0x00},
-	{IMX_8BIT, 0x0405, 0x21},
-	{IMX_8BIT, 0x4082, 0x00},
-	{IMX_8BIT, 0x4083, 0x00},
-	{IMX_8BIT, 0x4203, 0xFF},
-	{IMX_8BIT, 0x7006, 0x04},
-	/* Size setting */
-	{IMX_8BIT, 0x0344, 0x00},
-	{IMX_8BIT, 0x0345, 0x58},
-	{IMX_8BIT, 0x0346, 0x00},
-	{IMX_8BIT, 0x0347, 0x28},
-	{IMX_8BIT, 0x0348, 0x10},
-	{IMX_8BIT, 0x0349, 0x17},
-	{IMX_8BIT, 0x034A, 0x0C},
-	{IMX_8BIT, 0x034B, 0x07}, /* 88,40  4119,3079  4032,3040*/
-	{IMX_8BIT, 0x034C, 0x03}, /* 976x736 */
-	{IMX_8BIT, 0x034D, 0xD0},
-	{IMX_8BIT, 0x034E, 0x02},
-	{IMX_8BIT, 0x034F, 0xE0},
-	{IMX_8BIT, 0x0350, 0x00}, /* No Dig crop */
-	{IMX_8BIT, 0x0351, 0x00},
-	{IMX_8BIT, 0x0352, 0x00},
-	{IMX_8BIT, 0x0353, 0x00},
-	{IMX_8BIT, 0x0354, 0x07}, /* 2016,1520 */
-	{IMX_8BIT, 0x0355, 0xE0},
-	{IMX_8BIT, 0x0356, 0x05},
-	{IMX_8BIT, 0x0357, 0xF0},
-	{IMX_8BIT, 0x301D, 0x30}, /* ?? */
-	{IMX_8BIT, 0x3310, 0x03},
-	{IMX_8BIT, 0x3311, 0xD0},
-	{IMX_8BIT, 0x3312, 0x02},
-	{IMX_8BIT, 0x3313, 0xE0},
-	{IMX_8BIT, 0x331C, 0x02}, /* ?? */
-	{IMX_8BIT, 0x331D, 0x4E},
-	{IMX_8BIT, 0x4084, 0x03}, /* Scaling related? */
-	{IMX_8BIT, 0x4085, 0xD0},
-	{IMX_8BIT, 0x4086, 0x02},
-	{IMX_8BIT, 0x4087, 0xE0},
-	{IMX_8BIT, 0x4400, 0x00}, /* STATS off */
-	{IMX_TOK_TERM, 0, 0},
-};
-
 static struct imx_reg const imx135_3m_binning[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
 	PLL_SETTINGS_FOR_MIPI_209_6MHZ_SALTBAY,
@@ -2030,44 +1973,6 @@ struct imx_resolution imx135_res_preview[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
-		.mipi_freq = 209600,
-	},
-	{
-		.desc = "imx135_976x736_preview",
-		.regs = imx135_976x736,
-		.width = 976,
-		.height = 736,
-		.fps_options = {
-			{
-				 .fps = 30,
-				 .pixels_per_line = 5464,
-				 .lines_per_frame = 2046,
-			},
-			{
-			}
-		},
-		.bin_factor_x = 1,
-		.bin_factor_y = 1,
-		.used = 0,
-		.mipi_freq = 209600,
-	},
-	{
-		.desc = "imx135_1m_preview",
-		.regs = imx135_1m,
-		.width = 1040,
-		.height = 784,
-		.fps_options = {
-			{
-				 .fps = 30,
-				 .pixels_per_line = 5464,
-				 .lines_per_frame = 2046,
-			},
-			{
-			}
-		},
-		.bin_factor_x = 1,
-		.bin_factor_y = 1,
-		.used = 0,
 		.mipi_freq = 209600,
 	},
 	{
