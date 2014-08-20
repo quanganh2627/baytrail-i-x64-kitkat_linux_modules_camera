@@ -274,6 +274,16 @@ static int __ov_init(struct v4l2_subdev *sd)
 	return 0;
 }
 
+static int __ov_init_devid(struct v4l2_subdev *sd)
+{
+	struct ov_device *dev = to_ov_sensor(sd);
+
+	dev->id_exposure = 0;
+	dev->id_awb = V4L2_WHITE_BALANCE_AUTO;
+
+	return 0;
+}
+
 static int __ov_power_up(struct v4l2_subdev *sd)
 {
 	struct ov_device *dev = to_ov_sensor(sd);
@@ -298,6 +308,8 @@ static int __ov_power_up(struct v4l2_subdev *sd)
 	ret = dev->platform_data->gpio_ctrl(sd, 1);
 	if (ret)
 		dev_err(&client->dev, "gpio failed\n");
+
+	__ov_init_devid(sd);
 
 	/*
 	 * according to DS, 20ms is needed between power up and first i2c
@@ -685,6 +697,18 @@ static int ov_g_mbus_fmt(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int __ov_reset_control(struct v4l2_subdev *sd)
+{
+	struct ov_device *dev = to_ov_sensor(sd);
+	int ret = 0;
+
+	ret = ov_s_exposure(sd, dev->id_exposure);
+	ret |= ov_s_wb(sd, dev->id_awb);
+	
+	return ret;
+}
+
+
 static int ov_s_mbus_fmt(struct v4l2_subdev *sd,
 			      struct v4l2_mbus_framefmt *fmt)
 {
@@ -730,9 +754,7 @@ static int ov_s_mbus_fmt(struct v4l2_subdev *sd,
 	dev->cur_res = ov_res->res_id;
 	fmt->width = width;
 	fmt->height = height;
-
-	ov_s_exposure(sd, dev->id_exposure);
-
+	__ov_reset_control(sd);
 	mutex_unlock(&dev->input_lock);
 	return 0;
 }
