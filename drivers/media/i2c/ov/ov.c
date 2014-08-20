@@ -51,7 +51,8 @@ static const struct i2c_device_id ov_ids[] = {
 };
 
 #define to_ov_sensor(sd) container_of(sd, struct ov_device, sd)
-
+static int v_flag = 0;
+static int h_flag = 0;
 static int
 __ov_read_reg(struct i2c_client *client,
 			u16 data_length,
@@ -332,6 +333,8 @@ static int __ov_power_down(struct v4l2_subdev *sd)
 	struct ov_device *dev = to_ov_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
+	h_flag = 0;
+	v_flag = 0;
 	if (NULL == dev->platform_data) {
 		dev_err(&client->dev, "no camera_sensor_platform_data");
 		return -ENODEV;
@@ -509,6 +512,44 @@ static int ov_s_exposure(struct v4l2_subdev *sd, int value)
 	return ret;
 }
 
+/* NOTE:
+ * v4l2_ctrl_handler_setup must be called before this function
+ */
+static void reset_v4l2_ctrl_value(struct v4l2_ctrl_handler *hdl)
+{
+	struct v4l2_ctrl *ctrl;
+
+	if (hdl == NULL)
+		return;
+
+	mutex_lock(hdl->lock);
+
+	list_for_each_entry(ctrl, &hdl->ctrls, node)
+		ctrl->done = false;
+
+	list_for_each_entry(ctrl, &hdl->ctrls, node) {
+		struct v4l2_ctrl *master = ctrl->cluster[0];
+		int i;
+
+		/* Skip if this control was already handled by a cluster. */
+		/* Skip button controls and read-only controls. */
+		if (ctrl->done || ctrl->type == V4L2_CTRL_TYPE_BUTTON ||
+		    (ctrl->flags & V4L2_CTRL_FLAG_READ_ONLY))
+			continue;
+
+		for (i = 0; i < master->ncontrols; i++) {
+			if (master->cluster[i]) {
+				master->cluster[i]->is_new = 1;
+				master->cluster[i]->done = true;
+			}
+		}
+		master->cur.val = master->val = master->default_value;
+	}
+
+	mutex_unlock(hdl->lock);
+
+}
+
 static int ov_s_power(struct v4l2_subdev *sd, int power)
 {
 	int ret;
@@ -518,6 +559,13 @@ static int ov_s_power(struct v4l2_subdev *sd, int power)
 	if (power == 0) {
 		ret = __ov_power_down(sd);
 		mutex_unlock(&dev->input_lock);
+		/* as v4l2 framework would cache the value set from upper layer
+		* even though exit camera,it would not call ctrl function because
+                * that the cache value is equal with the value set by upper layer
+                * when entry camera again.
+                * So, we will reset the v4l2 ctrl value to be default after power off.
+		*/
+		reset_v4l2_ctrl_value(&dev->ctrl_handler);
 		return ret;
 	}
 
@@ -743,6 +791,14 @@ static int ov_s_mbus_fmt(struct v4l2_subdev *sd,
 	mipi_info->num_lanes = ov_res->csi_lanes;
 	__ov_write_reg_array(c, ov_res->regs);
 
+	/*recall flip functions to avoid flip registers
+	 * were overrided by default setting
+	 */
+	if (h_flag)
+		ov_s_hflip(sd, h_flag);
+	if (v_flag)
+		ov_s_vflip(sd, v_flag);
+
 	if (dev->cur_res != ov_res->res_id) {
 
 		for (index = 0; index < dev->product_info->num_res; index++)
@@ -928,6 +984,23 @@ static int ov_set_ctrl(struct v4l2_ctrl *ctrl)
 							struct ov_device, ctrl_handler);
 
 	mutex_lock(&dev->input_lock);
+	switch(ctrl->id)
+	{
+		case V4L2_CID_VFLIP:
+			if(ctrl->val)
+				v_flag=1;
+			else
+				v_flag=0;
+			break;
+		case V4L2_CID_HFLIP:
+			if(ctrl->val)
+				h_flag=1;
+			else
+				h_flag=0;
+			break;
+		default:break;
+	};
+
 	for (i = 0; i < dev->num_ctrls; i++) {
 		if (dev->ctrl_config[i].config.id == ctrl->id) {
 
@@ -1291,7 +1364,7 @@ __ov_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 	if (ret)
 		goto fail_csi_cfg;
 
-	ret = ov_s_power(sd, 0);
+	ret = __ov_power_down(sd);
 	if (ret)
 		dev_err(&client->dev, "sensor power-gating failed\n");
 
@@ -1300,7 +1373,7 @@ __ov_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 fail_csi_cfg:
 	dev->platform_data->csi_cfg(sd, 0);
 fail_detect:
-	ov_s_power(sd, 0);
+	__ov_power_down(sd);
 	dev_err(&client->dev, "sensor power-gating failed\n");
 	return ret;
 }

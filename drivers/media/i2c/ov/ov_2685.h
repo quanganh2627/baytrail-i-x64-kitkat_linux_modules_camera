@@ -655,20 +655,26 @@ static struct ov_reglist_map ov2685_stream_table[] = {
 	flip reglist
 
 ************************************/
-
+/* FIXME: vflip/hflip tables just suit for
+ * more then quarter of full size(>800x600)
+ */
 static struct misensor_reg  ov2685_vflip_0[] = {
+	{MISENSOR_8BIT, 0x3820, 0xc0},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
 static struct misensor_reg  ov2685_vflip_1[] = {
+	{MISENSOR_8BIT, 0x3820, 0xc4},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
 static struct misensor_reg  ov2685_hflip_0[] = {
+	{MISENSOR_8BIT, 0x3821, 0x00},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
 static struct misensor_reg  ov2685_hflip_1[] = {
+	{MISENSOR_8BIT, 0x3821, 0x04},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
