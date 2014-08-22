@@ -446,6 +446,8 @@ int atomisp_acc_load_extensions(struct atomisp_sub_device *asd)
 {
 	struct atomisp_acc_fw *acc_fw;
 	bool ext_loaded = false;
+	bool continuous = asd->continuous_mode->val &&
+			  asd->run_mode->val == ATOMISP_RUN_MODE_PREVIEW;
 	int ret = 0, i = -1;
 	struct atomisp_device *isp = asd->isp;
 
@@ -461,6 +463,14 @@ int atomisp_acc_load_extensions(struct atomisp_sub_device *asd)
 			continue;
 
 		for (i = 0; i < ARRAY_SIZE(acc_flag_to_pipe); i++) {
+			/* QoS (ACC pipe) acceleration stages are currently
+			 * allowed only in continuous mode. Skip them for
+			 * all other modes. */
+			if (!continuous &&
+			    acc_flag_to_pipe[i].flag ==
+			    ATOMISP_ACC_FW_LOAD_FL_ACC)
+				continue;
+
 			if (acc_fw->flags & acc_flag_to_pipe[i].flag) {
 				ret = atomisp_css_load_acc_extension(asd,
 					acc_fw->fw,acc_flag_to_pipe[i].pipe_id,
@@ -505,6 +515,10 @@ error:
 			continue;
 
 		for (i = ARRAY_SIZE(acc_flag_to_pipe) - 1; i >= 0; i--) {
+			if (!continuous &&
+			    acc_flag_to_pipe[i].flag ==
+			    ATOMISP_ACC_FW_LOAD_FL_ACC)
+				continue;
 			if (acc_fw->flags & acc_flag_to_pipe[i].flag) {
 				atomisp_css_unload_acc_extension(asd,
 					acc_fw->fw,
