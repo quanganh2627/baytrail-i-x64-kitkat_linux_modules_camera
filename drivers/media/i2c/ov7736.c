@@ -892,7 +892,7 @@ static int ov7736_s_mbus_fmt(struct v4l2_subdev *sd,
 static int ov7736_detect(struct i2c_client *client,  u16 *id, u8 *revision)
 {
 	struct i2c_adapter *adapter = client->adapter;
-	u16 high, low;
+	u32 high, low;
 	int ret;
 
 	if (!i2c_check_functionality(adapter, I2C_FUNC_I2C))
