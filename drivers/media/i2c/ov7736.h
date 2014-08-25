@@ -585,6 +585,7 @@ static struct misensor_reg const ov7736_wakeup_reg[] = {
 
 static struct misensor_reg const ov7736_basic_init[] = {
 {OV7736_8BIT, 0x3008, 0x82},
+{OV7736_TOK_DELAY, 0x3008, 0x5},// sleep 5ms
 {OV7736_8BIT, 0x3008, 0x42},
 {OV7736_8BIT, 0x3630, 0x11},
 {OV7736_8BIT, 0x3104, 0x03},
