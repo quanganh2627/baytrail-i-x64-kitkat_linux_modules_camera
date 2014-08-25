@@ -49,6 +49,7 @@ static enum atomisp_bayer_order gc2235f_bayer_order_mapping[] = {
 };
 
 static u16 g_gain = 0, g_exposure = 0;
+static u8 g_flip = 0x14;
 
 static int
 gc2235f_read_reg(struct i2c_client *client, u8 len, u8 reg, u8 *val)
@@ -493,8 +494,8 @@ static int gc2235f_init_common(struct v4l2_subdev *sd)
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0xf6, 0x00);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0xfc, 0x06);
  
-	gc2235f_write_reg(client, GCSENSOR_8BIT, 0xf7, 0x15); //pll enable
-	gc2235f_write_reg(client, GCSENSOR_8BIT, 0xf8, 0x86);
+	gc2235f_write_reg(client, GCSENSOR_8BIT, 0xf7, 0x15);
+	gc2235f_write_reg(client, GCSENSOR_8BIT, 0xf8, 0x85);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0xfa, 0x11); //div
  
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0xf9, 0xfe); //[0] pll enable
@@ -502,11 +503,12 @@ static int gc2235f_init_common(struct v4l2_subdev *sd)
  
 	//   ANALOG & CISCTL
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x03, 0x04);
-	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x04, 0xb0);
+	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x04, 0x1c);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x05, 0x01);
-	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x06, 0x26);
+	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x06, 0x0d);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x07, 0x00);
-	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x08, 0x30);
+
+	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x08, 0x14);
  
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x0a, 0x02);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x0c, 0x00);
@@ -515,7 +517,8 @@ static int gc2235f_init_common(struct v4l2_subdev *sd)
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x0f, 0x06);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x10, 0x58);//58->50
  
-	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x17, 0x15);//14 //[0]mirror [1]flip
+	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x17, 0x14);
+	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x17, g_flip);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x18, 0x12); //  0x1e
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x19, 0x0d); //06  AD pipe number
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x1a, 0x01);
@@ -591,7 +594,7 @@ static int gc2235f_init_common(struct v4l2_subdev *sd)
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x21, 0x01);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x22, 0x02);
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x23, 0x01);
-	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x29, 0x02);
+	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x29, 0x01);//0x02
 	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x2a, 0x01);
 
 //	gc2235f_write_reg(client, GCSENSOR_8BIT, 0x10, 0x94);  // 92  line_sync_mode
@@ -661,6 +664,7 @@ static int gc2235f_get_intg_factor(struct i2c_client *client,
 	u32 coarse_integration_time_min;
 	u32 coarse_integration_time_max_margin;
 	u16 tmp;
+	u8 pll_div;
 
 	if (info == NULL)
 		return -EINVAL;
@@ -822,18 +826,17 @@ static int gc2235f_v_flip(struct v4l2_subdev *sd, s32 value)
 	int ret;
 	u8 val;
 
-	ret = gc2235f_read_reg(client, GC2235_8BIT, GC2235_IMG_ORIENTATION, &val);
-	if (ret)
-		return ret;
-	if (value)
+	val = g_flip;
+	if (value) {
 		val |= GC2235_VFLIP_BIT;
-	else
+	} else {
 		val &= ~GC2235_VFLIP_BIT;
+	}
 	ret = gc2235f_write_reg(client, GC2235_8BIT,
-			GC2235_IMG_ORIENTATION, val);
+		GC2235_IMG_ORIENTATION, val);
 	if (ret)
 		return ret;
-
+	g_flip = val;
 	gc2235f_info = v4l2_get_subdev_hostdata(sd);
 	if (gc2235f_info) {
 		val &= (GC2235_VFLIP_BIT|GC2235_HFLIP_BIT);
@@ -853,18 +856,18 @@ static int gc2235f_h_flip(struct v4l2_subdev *sd, s32 value)
 	int ret;
 	u8 val;
 
-	ret = gc2235f_read_reg(client, GC2235_8BIT, GC2235_IMG_ORIENTATION, &val);
-	if (ret)
-		return ret;
-	if (value)
+	val = g_flip;
+	if (value){
 		val |= GC2235_HFLIP_BIT;
-	else
+	} else {
 		val &= ~GC2235_HFLIP_BIT;
+	}
 	ret = gc2235f_write_reg(client, GC2235_8BIT,
-			GC2235_IMG_ORIENTATION, val);
+		GC2235_IMG_ORIENTATION, val);
 	if (ret)
 		return ret;
 
+	g_flip = val;
 	gc2235f_info = v4l2_get_subdev_hostdata(sd);
 	if (gc2235f_info) {
 		val &= (GC2235_VFLIP_BIT|GC2235_HFLIP_BIT);
@@ -1096,36 +1099,75 @@ static int get_resolution_index(struct v4l2_subdev *sd, int w, int h)
 	return -1;
 }
 
+/*
+ * distance - calculate the distance
+ * @res: resolution
+ * @w: width
+ * @h: height
+ *
+ * Get the gap between resolution and w/h.
+ * res->width/height smaller than w/h wouldn't be considered.
+ * Returns the value of gap or -1 if fail.
+ */
+#define LARGEST_ALLOWED_RATIO_MISMATCH 800
+static int distance(struct gc2235f_resolution *res, u32 w, u32 h)
+{
+	unsigned int w_ratio = ((res->width << 13) / w);
+	unsigned int h_ratio;
+	int match;
+
+	if (h == 0)
+		return -1;
+	h_ratio = ((res->height << 13) / h);
+	if (h_ratio == 0)
+		return -1;
+	match = abs(((w_ratio << 13) / h_ratio) - ((int)8192));
+
+	if ((w_ratio < (int)8192) || (h_ratio < (int)8192) ||
+	    (match > LARGEST_ALLOWED_RATIO_MISMATCH))
+		return -1;
+
+	return w_ratio + h_ratio;
+}
+
+/* Return the nearest higher resolution index */
+static int nearest_resolution_index(struct v4l2_subdev *sd, int w, int h)
+{
+	struct gc2235f_device *dev = to_gc2235f_sensor(sd);
+	int i;
+	int idx = -1;
+	int dist;
+	int min_dist = INT_MAX;
+	struct gc2235f_resolution *tmp_res = NULL;
+
+	for (i = 0; i < dev->entries_curr_table; i++) {
+		tmp_res = &dev->curr_res_table[i];
+		dist = distance(tmp_res, w, h);
+		if (dist == -1)
+			continue;
+		if (dist < min_dist) {
+			min_dist = dist;
+			idx = i;
+		}
+	}
+
+	return idx;
+}
 static int gc2235f_try_mbus_fmt(struct v4l2_subdev *sd,
 				struct v4l2_mbus_framefmt *fmt)
 {
 	struct gc2235f_device *dev = to_gc2235f_sensor(sd);
 	int idx = 0;
-	const struct gc2235f_resolution *tmp_res = NULL;
 
 	mutex_lock(&dev->input_lock);
 
-	if ((fmt->width > gc2235f_max_res[0].res_max_width)
-		|| (fmt->height > gc2235f_max_res[0].res_max_height)) {
-		fmt->width =  gc2235f_max_res[0].res_max_width;
-		fmt->height = gc2235f_max_res[0].res_max_height;
+	idx = nearest_resolution_index(sd, fmt->width, fmt->height);
+	if (idx == -1) {
+		/* return the largest resolution */
+		idx = dev->entries_curr_table;
+		fmt->width = dev->curr_res_table[idx-1].width;
+		fmt->height = dev->curr_res_table[idx-1].height;
 	} else {
-		for (idx = 0; idx < dev->entries_curr_table; idx++) {
-				tmp_res = &dev->curr_res_table[idx];
-				if ((tmp_res[idx].width >= fmt->width) &&
-		   		 (tmp_res[idx].height >= fmt->height))
-					break;
-		}
-		
-		/*
-		 * nearest_resolution_index() doesn't return smaller
-		 *  resolutions. If it fails, it means the requested
-		 *  resolution is higher than wecan support. Fallback
-		 *  to highest possible resolution in this case.
-		 */
-		if (idx == dev->entries_curr_table)
-			idx = dev->entries_curr_table - 1;
-
 		fmt->width = dev->curr_res_table[idx].width;
 		fmt->height = dev->curr_res_table[idx].height;
 	}

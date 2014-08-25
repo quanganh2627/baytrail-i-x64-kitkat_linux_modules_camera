@@ -320,15 +320,61 @@ static struct gc2235f_reg const gc2235f_1280_30fps[] = {
 	{GC2235_TOK_TERM, 0, 0},
 };
 
+
+/* TODO settings of preview/still/video will be updated with new use case */
+
+struct gc2235f_resolution gc2235f_res_still[] = {
+	{
+		.desc = "gc2235f_1280_1_30fps",
+		.regs = gc2235f_1280_30fps,
+		.width = 1552,//.width = 1616,
+		.height = 880,//.height = 916,
+		.fps = 30,
+		.pixels_per_line = 0x8c0,
+		.lines_per_frame = 0x3c4,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 4,
+	},
+	{
+		.desc = "gc2235f_1600x1200_30fps",
+		.regs = gc2235f_still_1600x1200_30fps,
+		.width = 1616,
+		.height = 1216,
+		.fps = 21,
+		.pixels_per_line = 0x88e,
+		.lines_per_frame = 0x4e4,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 2,
+		.bin_mode = 0,
+	},
+};
+
 struct gc2235f_resolution gc2235f_res_preview[] = {
+	{
+		.desc = "gc2235f_1280_1_30fps",
+		.regs = gc2235f_1280_30fps,
+		.width = 1552,//.width = 1616,
+		.height = 880,//.height = 916,
+		.fps = 30,
+		.pixels_per_line = 0x8c0,
+		.lines_per_frame = 0x3c4,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 4,
+	},
 	{
 		.desc = "gc2235f_1600x1200_30fps",
 		.regs = gc2235f_1600x1200_30fps,
 		.width = 1616,
 		.height = 1216,
-		.fps = 23,
-		.pixels_per_line = 0x8c0,//0x7da,
-		.lines_per_frame = 0x500,
+		.fps = 21,
+		.pixels_per_line = 0x88e,
+		.lines_per_frame = 0x4e4,
 		.bin_factor_x = 1,
 		.bin_factor_y = 1,
 		.used = 0,
@@ -338,6 +384,20 @@ struct gc2235f_resolution gc2235f_res_preview[] = {
 };
 
 struct gc2235f_resolution gc2235f_res_video[] = {
+	{
+		.desc = "gc2235f_1280_1_30fps",
+		.regs = gc2235f_1280_30fps,
+		.width = 1552,//.width = 1616,
+		.height = 880,//.height = 916,
+		.fps = 30,
+		.pixels_per_line = 0x8c0,
+		.lines_per_frame = 0x3c4,
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.used = 0,
+		.skip_frames = 4,
+	},
+#if 0
 	{
 		.desc = "gc2235f_1280_30fps",
 		.regs = gc2235f_1280_30fps,
@@ -351,27 +411,9 @@ struct gc2235f_resolution gc2235f_res_video[] = {
 		.used = 0,
 		.skip_frames = 4,
 	},
+#endif
 };
 
-/* TODO settings of preview/still/video will be updated with new use case */
-struct gc2235f_resolution gc2235f_res_still[] = {
-	{
-		.desc = "gc2235f_still_1600x1200_30fps",
-		.regs = gc2235f_still_1600x1200_30fps,
-		.width = 1616,
-		.height = 1216,
-		 
-		.fps = 23,
-		.pixels_per_line = 0x8c0,
-		.lines_per_frame = 0x500,
-
-		.bin_factor_x = 1,
-		.bin_factor_y = 1,
-		.used = 0,
-		.skip_frames = 2,
-		.bin_mode = 0,
-	},
-};
 
 /********************** settings for imx - reference *********************/
 static struct gc2235f_reg const gc2235f_init_settings[] = {
