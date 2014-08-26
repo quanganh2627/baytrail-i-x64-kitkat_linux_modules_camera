@@ -41,7 +41,7 @@
 
 #include "ov7736.h"
 
-#define ov7736_debug dev_err
+#define ov7736_debug dev_dbg
 
 static int awb_index = V4L2_WHITE_BALANCE_AUTO;
 
@@ -490,6 +490,32 @@ static int ov7736_s_effect(struct v4l2_subdev *sd, int value)
 
 static int ov7736_g_exposure(struct v4l2_subdev *sd, s32 *value)
 {
+	struct ov7736_device *dev = to_ov7736_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	u32 coarse;
+	u32 reg_val_h, reg_val_m, reg_val_l;
+	int ret;
+
+	ret = ov7736_read_reg(client, OV7736_8BIT, OV7736_REG_EXPOSURE_0, &reg_val_h);
+	if (ret)
+		return ret;
+	coarse = ((u32)(reg_val_h & 0x0000000f)) << 16;
+
+	ret = ov7736_read_reg(client, OV7736_8BIT, OV7736_REG_EXPOSURE_1, &reg_val_m);
+	if (ret)
+		return ret;
+	coarse |= ((u32)(reg_val_m & 0x000000ff)) << 8;
+
+	ret = ov7736_read_reg(client, OV7736_8BIT, OV7736_REG_EXPOSURE_2, &reg_val_l);
+	if (ret)
+		return ret;
+	coarse |= ((u32)(reg_val_l & 0x000000ff));
+	/*WA: max exposure time is 1/30s for 30fps, max coarse line is 7200.
+	match expression: 7200 * 10 / 72 /3 / 10000(denominator in hal) = 1/30s*/
+	coarse = coarse * 10 / 72 / 3;
+	ov7736_debug(&client->dev, "@%s: exp_h:0x%x, exp_m:0x%x, exp_l:0x%x, coarse:%d\n",
+		__func__, reg_val_h, reg_val_m, reg_val_l, coarse);
+	*value = coarse;
 	return 0;
 }
 
@@ -662,7 +688,7 @@ static int ov7736_s_power(struct v4l2_subdev *sd, int on)
  * Returns the value of gap or -1 if fail.
  */
 #define LARGEST_ALLOWED_RATIO_MISMATCH 800
-static int distance(struct ov7736_resolution *res, u32 w, u32 h)
+static int distance(struct ov7736_res_struct *res, u32 w, u32 h)
 {
 	unsigned int w_ratio = ((res->width << 13)/w);
 	unsigned int h_ratio;
@@ -689,7 +715,7 @@ static int nearest_resolution_index(int w, int h)
 	int idx = -1;
 	int dist;
 	int min_dist = INT_MAX;
-	struct ov7736_resolution *tmp_res = NULL;
+	struct ov7736_res_struct *tmp_res = NULL;
 
 	for (i = 0; i < N_RES; i++) {
 		tmp_res = &ov7736_res[i];
@@ -1031,6 +1057,20 @@ static struct ov7736_control ov7736_controls[] = {
 			.flags = 0,
 		},
 		.query = ov7736_g_fnumber_range,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_EXPOSURE_ABSOLUTE,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "exposure",
+			.minimum = -2,
+			.maximum = 2,
+			.step = 1,
+			.default_value = 0,
+			.flags = 0,
+		},
+		.query = ov7736_g_exposure,
+		.tweak = ov7736_s_exposure,
 	},
 	{
 		.qc = {
