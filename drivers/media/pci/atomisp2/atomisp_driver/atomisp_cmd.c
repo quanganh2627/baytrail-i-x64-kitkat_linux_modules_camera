@@ -5489,3 +5489,32 @@ int atomisp_enable_dz_capt_pipe(struct atomisp_sub_device *asd,
 
 	return 0;
 }
+
+int atomisp_inject_a_fake_event(struct atomisp_sub_device *asd, int *event)
+{
+	if (!event || asd->streaming != ATOMISP_DEVICE_STREAMING_ENABLED)
+		return -EINVAL;
+
+	dev_dbg(asd->isp->dev, "%s: trying to inject a fake event 0x%x\n",
+	        __func__, *event);
+
+	switch (*event) {
+	case V4L2_EVENT_FRAME_SYNC:
+		atomisp_sof_event(asd);
+		break;
+	case V4L2_EVENT_FRAME_END:
+		atomisp_eof_event(asd, 0);
+		break;
+	case V4L2_EVENT_ATOMISP_3A_STATS_READY:
+		atomisp_3a_stats_ready_event(asd);
+		break;
+	case V4L2_EVENT_ATOMISP_METADATA_READY:
+		atomisp_metadata_ready_event(asd, 0);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+

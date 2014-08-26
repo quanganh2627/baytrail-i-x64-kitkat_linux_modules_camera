@@ -376,4 +376,10 @@ int atomisp_enable_dz_capt_pipe(struct atomisp_sub_device *asd,
 enum atomisp_metadata_type
 atomisp_get_metadata_type(struct atomisp_sub_device *asd,
 			  enum ia_css_pipe_id pipe_id);
+
+/*
+ * Function for HAL to inject a fake event to wake up poll thread
+ */
+int atomisp_inject_a_fake_event(struct atomisp_sub_device *asd, int *event);
+
 #endif /* __ATOMISP_CMD_H__ */

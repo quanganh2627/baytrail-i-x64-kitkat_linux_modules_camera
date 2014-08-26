@@ -1115,6 +1115,7 @@ long atomisp_compat_ioctl32(struct file *file,
 	case ATOMISP_IOC_S_EXPOSURE_WINDOW:
 	case ATOMISP_IOC_S_ACC_STATE:
 	case ATOMISP_IOC_G_ACC_STATE:
+	case ATOMISP_IOC_INJECT_A_FAKE_EVENT:
 		ret = native_ioctl(file, cmd, arg);
 		break;
 

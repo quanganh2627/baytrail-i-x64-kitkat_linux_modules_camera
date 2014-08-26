@@ -2792,6 +2792,9 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 	case ATOMISP_IOC_G_ACC_STATE:
 		err = atomisp_acc_get_state(asd, arg);
 		break;
+	case ATOMISP_IOC_INJECT_A_FAKE_EVENT:
+		err = atomisp_inject_a_fake_event(asd, arg);
+		break;
 	default:
 		rt_mutex_unlock(&isp->mutex);
 		return -EINVAL;
