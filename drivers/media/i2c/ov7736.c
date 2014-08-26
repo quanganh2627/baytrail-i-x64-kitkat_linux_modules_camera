@@ -412,12 +412,15 @@ static int ov7736_s_wb(struct v4l2_subdev *sd, int value)
 			break;
 		case V4L2_WHITE_BALANCE_AUTO:
 			awb_index = V4L2_WHITE_BALANCE_AUTO;
+			ov7736_write_reg_array(client, ov7736_auto_wb);
 			break;
 		case V4L2_WHITE_BALANCE_INCANDESCENT:
 			awb_index = V4L2_WHITE_BALANCE_INCANDESCENT;
+			ov7736_write_reg_array(client, ov7736_home_wb);
 			break;
 		case V4L2_WHITE_BALANCE_FLUORESCENT:
 			awb_index = V4L2_WHITE_BALANCE_FLUORESCENT;
+			ov7736_write_reg_array(client, ov7736_office_wb);
 			break;
 		case V4L2_WHITE_BALANCE_FLUORESCENT_H:
 			awb_index = V4L2_WHITE_BALANCE_FLUORESCENT_H;
@@ -427,12 +430,14 @@ static int ov7736_s_wb(struct v4l2_subdev *sd, int value)
 			break;
 		case V4L2_WHITE_BALANCE_DAYLIGHT:
 			awb_index = V4L2_WHITE_BALANCE_DAYLIGHT;
+			ov7736_write_reg_array(client, ov7736_sunny_wb);
 			break;
 		case V4L2_WHITE_BALANCE_FLASH:
 			awb_index = V4L2_WHITE_BALANCE_FLASH;
 			break;
 		case V4L2_WHITE_BALANCE_CLOUDY:
 			awb_index = V4L2_WHITE_BALANCE_CLOUDY;
+			ov7736_write_reg_array(client, ov7736_cloudy_wb);
 			break;
 		case V4L2_WHITE_BALANCE_SHADE:
 			awb_index = V4L2_WHITE_BALANCE_SHADE;

@@ -555,6 +555,75 @@ static struct misensor_reg const ov7736_Negative_effect[] = {
 {OV7736_TOK_TERM, 0, 0}
 };
 
+static struct misensor_reg const ov7736_auto_wb[] = {
+{OV7736_8BIT, 0x3212, 0x00},
+{OV7736_8BIT, 0x5186, 0x02},
+{OV7736_8BIT, 0x504e, 0x04},
+{OV7736_8BIT, 0x504f, 0x00},
+{OV7736_8BIT, 0x5050, 0x04},
+{OV7736_8BIT, 0x5051, 0x00},
+{OV7736_8BIT, 0x5052, 0x04},
+{OV7736_8BIT, 0x5053, 0x00},
+{OV7736_8BIT, 0x3212, 0x10},
+{OV7736_8BIT, 0x3212, 0xa0},
+{OV7736_TOK_TERM, 0, 0}
+};
+
+static struct misensor_reg const ov7736_sunny_wb[] = {
+{OV7736_8BIT, 0x3212, 0x00}, // enable group 0
+{OV7736_8BIT, 0x5186, 0x03},
+{OV7736_8BIT, 0x504e, 0x06},
+{OV7736_8BIT, 0x504f, 0x1c},
+{OV7736_8BIT, 0x5050, 0x04},
+{OV7736_8BIT, 0x5051, 0x00},
+{OV7736_8BIT, 0x5052, 0x04},
+{OV7736_8BIT, 0x5053, 0xf3},
+{OV7736_8BIT, 0x3212, 0x10}, // end group 0
+{OV7736_8BIT, 0x3212, 0xa0}, // launch group 0
+{OV7736_TOK_TERM, 0, 0}
+};
+
+static struct misensor_reg const ov7736_cloudy_wb[] = {
+{OV7736_8BIT, 0x3212, 0x00}, // enable group 0
+{OV7736_8BIT, 0x5186, 0x03},
+{OV7736_8BIT, 0x504e, 0x06},
+{OV7736_8BIT, 0x504f, 0x48},
+{OV7736_8BIT, 0x5050, 0x04},
+{OV7736_8BIT, 0x5051, 0x00},
+{OV7736_8BIT, 0x5052, 0x04},
+{OV7736_8BIT, 0x5053, 0xd3},
+{OV7736_8BIT, 0x3212, 0x10}, // end group 0
+{OV7736_8BIT, 0x3212, 0xa0}, // launch group 0
+{OV7736_TOK_TERM, 0, 0}
+};
+
+static struct misensor_reg const ov7736_office_wb[] = {
+{OV7736_8BIT, 0x3212, 0x00}, // enable group 0
+{OV7736_8BIT, 0x5186, 0x03},
+{OV7736_8BIT, 0x504e, 0x05},
+{OV7736_8BIT, 0x504f, 0x48},
+{OV7736_8BIT, 0x5050, 0x04},
+{OV7736_8BIT, 0x5051, 0x00},
+{OV7736_8BIT, 0x5052, 0x07},
+{OV7736_8BIT, 0x5053, 0xcf},
+{OV7736_8BIT, 0x3212, 0x10}, // end group 0
+{OV7736_8BIT, 0x3212, 0xa0}, // launch group 0
+{OV7736_TOK_TERM, 0, 0}
+};
+
+static struct misensor_reg const ov7736_home_wb[] = {
+{OV7736_8BIT, 0x3212, 0x00}, // enable group 0
+{OV7736_8BIT, 0x5186, 0x03},
+{OV7736_8BIT, 0x504e, 0x04},
+{OV7736_8BIT, 0x504f, 0x10},
+{OV7736_8BIT, 0x5050, 0x04},
+{OV7736_8BIT, 0x5051, 0x00},
+{OV7736_8BIT, 0x5052, 0x08},
+{OV7736_8BIT, 0x5053, 0x40},
+{OV7736_8BIT, 0x3212, 0x10}, // end group 0
+{OV7736_8BIT, 0x3212, 0xa0}, // launch group 0
+{OV7736_TOK_TERM, 0, 0}
+};
 static const struct i2c_device_id ov7736_id[] = {
 	{"ov7736", 0},
 	{}
