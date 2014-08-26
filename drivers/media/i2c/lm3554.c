@@ -425,6 +425,7 @@ static int lm3554_g_flash_status(struct v4l2_subdev *sd, s32 *val)
 	return 0;
 }
 
+#ifndef CSS15
 static int lm3554_g_flash_status_register(struct v4l2_subdev *sd, s32 *val)
 {
 	struct lm3554 *flash = to_lm3554(sd);
@@ -438,6 +439,7 @@ static int lm3554_g_flash_status_register(struct v4l2_subdev *sd, s32 *val)
 	*val = ret;
 	return 0;
 }
+#endif
 
 static const struct lm3554_ctrl_id lm3554_ctrls[] = {
 	s_ctrl_id_entry_integer(V4L2_CID_FLASH_TIMEOUT,
@@ -500,6 +502,7 @@ static const struct lm3554_ctrl_id lm3554_ctrls[] = {
 				0,
 				NULL,
 				lm3554_g_flash_status),
+#ifndef CSS15
 	s_ctrl_id_entry_integer(V4L2_CID_FLASH_STATUS_REGISTER,
 				"Flash Status Register",
 				0,   /* don't assume any enum ID is first */
@@ -509,6 +512,7 @@ static const struct lm3554_ctrl_id lm3554_ctrls[] = {
 				0,
 				NULL,
 				lm3554_g_flash_status_register),
+#endif
 };
 
 static const struct lm3554_ctrl_id *find_ctrl_id(unsigned int id)

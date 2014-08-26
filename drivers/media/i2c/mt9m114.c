@@ -899,6 +899,7 @@ static int mt9m114_g_exposure(struct v4l2_subdev *sd, s32 *value)
 	return 0;
 }
 
+#ifndef CSS15
 /*
  * This function will return the sensor supported max exposure zone number.
  * the sensor which supports max exposure zone number is 1.
@@ -1007,6 +1008,7 @@ static int mt9m114_s_exposure_selection(struct v4l2_subdev *sd,
 
 	return 0;
 }
+#endif
 
 static struct mt9m114_control mt9m114_controls[] = {
 	{
@@ -1114,6 +1116,7 @@ static struct mt9m114_control mt9m114_controls[] = {
 		},
 		.query = mt9m114_g_exposure,
 	},
+#ifndef CSS15
 	{
 		.qc = {
 			.id = V4L2_CID_EXPOSURE_ZONE_NUM,
@@ -1140,6 +1143,7 @@ static struct mt9m114_control mt9m114_controls[] = {
 		},
 		.tweak = mt9m114_s_exposure_metering,
 	},
+#endif
 
 };
 #define N_CONTROLS (ARRAY_SIZE(mt9m114_controls))
@@ -1554,7 +1558,9 @@ static const struct v4l2_subdev_pad_ops mt9m114_pad_ops = {
 	.enum_frame_size = mt9m114_enum_frame_size,
 	.get_fmt = mt9m114_get_pad_format,
 	.set_fmt = mt9m114_set_pad_format,
+#ifndef CSS15
 	.set_selection = mt9m114_s_exposure_selection,
+#endif
 };
 
 static const struct v4l2_subdev_ops mt9m114_ops = {
