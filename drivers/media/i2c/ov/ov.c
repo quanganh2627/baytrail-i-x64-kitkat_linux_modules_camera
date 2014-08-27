@@ -281,6 +281,8 @@ static int __ov_init_devid(struct v4l2_subdev *sd)
 
 	dev->id_exposure = 0;
 	dev->id_awb = V4L2_WHITE_BALANCE_AUTO;
+	dev->id_scene = V4L2_SCENE_MODE_NONE;
+	dev->id_coloreffect = V4L2_COLORFX_NONE;
 
 	return 0;
 }
@@ -423,7 +425,6 @@ static int ov_s_scene(struct v4l2_subdev *sd, int value)
 {
 	int ret;
 	struct ov_device *dev = to_ov_sensor(sd);
-
 	ret = __ov_program_reglist(sd, OV_SETTING_SCENE_MODE, value);
 	if (!ret)
 		dev->id_scene = value;
@@ -496,7 +497,6 @@ static int ov_g_exposure(struct v4l2_subdev *sd, s32 *value)
 	if (ret)
 		return ret;
 	coarse |= ((u16)(reg_val_l & 0x000000ff)) >> 4;
-
 	*value = coarse;
 	return 0;
 }
@@ -752,6 +752,7 @@ static int __ov_reset_control(struct v4l2_subdev *sd)
 
 	ret = ov_s_exposure(sd, dev->id_exposure);
 	ret |= ov_s_wb(sd, dev->id_awb);
+	ret |= ov_s_scene(sd, dev->id_scene);
 	
 	return ret;
 }

@@ -692,7 +692,7 @@ static struct ov_reglist_map ov2685_hflip_table[] = {
 	scene mode reglist
 
 ************************************/
-
+/*
 static struct misensor_reg  ov2685_scene_0[] = {
 	{MISENSOR_8BIT, 0x3208, 0x00},
 	{MISENSOR_8BIT, 0x5600, 0x06},
@@ -849,7 +849,32 @@ static struct ov_reglist_map ov2685_scenemode_table[] = {
 	{ V4L2_SCENE_MODE_SUNSET, ov2685_scene_12 },
 	{ V4L2_SCENE_MODE_TEXT, ov2685_scene_13 },
 };
+*/
+static struct misensor_reg ov2685_scene_nightmode_off[] = {
+	{MISENSOR_8BIT, 0x3208, 0x00},
+	{MISENSOR_8BIT, 0x3a00, 0x41},
+	{MISENSOR_8BIT, 0x382a, 0x00},
+	{MISENSOR_8BIT, 0x3208, 0x10},
+	{MISENSOR_8BIT, 0x3208, 0xa0},
+	{MISENSOR_TOK_TERM, 0, 0}
+};
 
+static struct misensor_reg ov2685_scene_nightmode_on[] = {
+	{MISENSOR_8BIT, 0x3208, 0x00},
+	{MISENSOR_8BIT, 0x3a00, 0x43},
+	{MISENSOR_8BIT, 0x3a0a, 0x07},
+	{MISENSOR_8BIT, 0x3a0b, 0x8c},
+	{MISENSOR_8BIT, 0x3a0c, 0x07},
+	{MISENSOR_8BIT, 0x3a0d, 0x8c},
+	{MISENSOR_8BIT, 0x382a, 0x08},
+	{MISENSOR_8BIT, 0x3208, 0x10},
+	{MISENSOR_8BIT, 0x3208, 0xa0},
+	{MISENSOR_TOK_TERM, 0, 0}
+};
+static struct ov_reglist_map ov2685_scenemode_table[] = {
+	{ V4L2_SCENE_MODE_NONE, ov2685_scene_nightmode_off},
+	{ V4L2_SCENE_MODE_NIGHT, ov2685_scene_nightmode_on},
+};
 /************************************
 	white balance reglist
 
