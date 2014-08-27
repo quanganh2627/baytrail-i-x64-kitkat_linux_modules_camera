@@ -334,24 +334,29 @@ static int ov7736_s_scene(struct v4l2_subdev *sd, int value)
 	
 	switch (value) {
 		case V4L2_SCENE_MODE_NONE:
-			ret = ov7736_write_reg_array(client, ov7736_auto_scene);
-		    break;
-	    case V4L2_SCENE_MODE_SUNSET:
-			ret = ov7736_write_reg_array(client, ov7736_sunny_scene);
-		    break;	
+			printk("V4L2_SCENE_MODE_NONE:\n");
+			ret = ov7736_write_reg_array(client, ov7736_night_mode_off);
+			break;
+		case V4L2_SCENE_MODE_SUNSET:
+			//ret = ov7736_write_reg_array(client, ov7736_sunny_scene);
+			break;
 		case V4L2_SCENE_MODE_CANDLE_LIGHT:
-			ret = ov7736_write_reg_array(client, ov7736_home_scene);
-		    break;
+			//ret = ov7736_write_reg_array(client, ov7736_home_scene);
+			break;
 		case V4L2_SCENE_MODE_DAWN_DUSK:
-			ret = ov7736_write_reg_array(client, ov7736_cloudy_scene);
-		    break;	
+			//ret = ov7736_write_reg_array(client, ov7736_cloudy_scene);
+			break;
 		case V4L2_SCENE_MODE_PARTY_INDOOR:
-			ret = ov7736_write_reg_array(client, ov7736_office_scene);
-		    break;
+			//ret = ov7736_write_reg_array(client, ov7736_office_scene);
+			break;
 		case V4L2_SCENE_MODE_FALL_COLORS:		
 		case V4L2_SCENE_MODE_FIREWORKS:
 		case V4L2_SCENE_MODE_LANDSCAPE:
+			break;
 		case V4L2_SCENE_MODE_NIGHT:
+			printk("V4L2_SCENE_MODE_NIGHT:\n");
+			ret = ov7736_write_reg_array(client, ov7736_night_mode_on);
+			break;
 		case V4L2_SCENE_MODE_PORTRAIT:
 		case V4L2_SCENE_MODE_SPORTS:
 		case V4L2_SCENE_MODE_BACKLIGHT:

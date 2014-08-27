@@ -428,6 +428,16 @@ static struct misensor_reg const ov7736_home_scene[] = {
 {OV7736_TOK_TERM, 0, 0}
 };
 
+static struct misensor_reg const ov7736_night_mode_on[] = {
+{OV7736_8BIT, 0x3a00, 0x7e},
+{OV7736_TOK_TERM, 0, 0}
+};
+
+static struct misensor_reg const ov7736_night_mode_off[] = {
+{OV7736_8BIT, 0x3a00, 0x7a},
+{OV7736_TOK_TERM, 0, 0}
+};
+
 static struct misensor_reg const ov7736_exposure_negative2[] = {
 {OV7736_8BIT,0x3a0f, 0x18},
 {OV7736_8BIT,0x3a10, 0x10},
