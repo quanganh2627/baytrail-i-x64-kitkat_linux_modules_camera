@@ -497,6 +497,12 @@ static int ov_g_exposure(struct v4l2_subdev *sd, s32 *value)
 	if (ret)
 		return ret;
 	coarse |= ((u16)(reg_val_l & 0x000000ff)) >> 4;
+	/*WA: exposure time of max coarse lines is 1/fps,
+	 *so curent exposure time = coarse / fps / max_exposure_lines.
+	 *Additional, 10000 is as denominater in hal. So multiply 10000 here.
+	 */
+	if (dev->cur_fps * dev->max_exposure_lines)
+		coarse = coarse * 10000 / (dev->cur_fps * dev->max_exposure_lines);
 	*value = coarse;
 	return 0;
 }
@@ -809,6 +815,7 @@ static int ov_s_mbus_fmt(struct v4l2_subdev *sd,
 
 	dev->cur_fps = ov_res->fps;
 	dev->cur_res = ov_res->res_id;
+	dev->max_exposure_lines = ov_res->max_exposure_lines;
 	fmt->width = width;
 	fmt->height = height;
 	__ov_reset_control(sd);

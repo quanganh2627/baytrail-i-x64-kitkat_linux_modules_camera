@@ -124,6 +124,7 @@ struct ov_res_struct {
 	bool used;
 	int aspt_ratio;
 	int csi_lanes;
+	int max_exposure_lines;
 	struct misensor_reg* regs;
 };
 
@@ -198,6 +199,7 @@ struct ov_device {
 	struct ov_product_info *product_info;
 	enum res_type cur_res;
 	u32 cur_fps;
+	int max_exposure_lines;
 	struct ov_res_struct* ov_res;
 	struct ov_mbus_fmt* ov_format;
 

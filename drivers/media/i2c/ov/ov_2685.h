@@ -570,6 +570,7 @@ static struct ov_res_struct ov2685_res[] = {
 		.regs = ov2685_720p,
 		.aspt_ratio = RATIO_16_9,
 		.csi_lanes = 1,
+		.max_exposure_lines = 1290,
 	}, {
 		.desc	= "2M",
 		.res_id	= RES_2M,
@@ -582,6 +583,7 @@ static struct ov_res_struct ov2685_res[] = {
 		.regs = ov2685_2M,
 		.aspt_ratio = RATIO_4_3,
 		.csi_lanes = 2,
+		.max_exposure_lines = 1290,
 	},
 };
 
