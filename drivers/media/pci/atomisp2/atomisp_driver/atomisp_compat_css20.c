@@ -592,6 +592,9 @@ static int __create_stream(struct atomisp_sub_device *asd,
 static int __create_streams(struct atomisp_sub_device *asd)
 {
 	int ret, i;
+
+	ia_css_mipi_frame_specify(asd->isp->mipi_frame_size, false);
+
 	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
 		ret = __create_stream(asd, &asd->stream_env[i]);
 		if (ret)
@@ -2115,8 +2118,6 @@ void atomisp_css_input_set_mode(struct atomisp_sub_device *asd,
 		asd->isp->mipi_frame_size = size_mem_words;
 
 	asd->mipi_frame_size = asd->isp->mipi_frame_size;
-
-	ia_css_mipi_frame_specify(asd->isp->mipi_frame_size, false);
 }
 
 void atomisp_css_capture_enable_online(struct atomisp_sub_device *asd,
