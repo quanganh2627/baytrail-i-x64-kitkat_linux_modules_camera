@@ -688,6 +688,7 @@ static int ov2722_init(struct v4l2_subdev *sd)
 	int ret = ov2722_write_reg_array(client, ov2722_BaseInit);
 	if (ret) {
 		dev_err(&client->dev, "ov2722 write register err.\n");
+		mutex_unlock(&dev->input_lock);
 		return ret;
 	}
 	mutex_unlock(&dev->input_lock);
