@@ -166,10 +166,13 @@ static struct gc_table_map gc0310_exposure_tables[] = {
 	{4, gc0310_exposure_pos4},
 };
 
-
-
 /* 640x480 settings */
 static struct gc_register const gc0310_640x480[] = {
+	{ GC_TOK_TERM, 0, 0}
+};
+
+/* global settings, 640x480 */
+static struct gc_register const gc0310_global_settings[] = {
 
 	{ GC_8BIT, 0xfe, 0xf0 },
 	{ GC_8BIT, 0xfe, 0xf0 },
@@ -584,7 +587,7 @@ struct gc_resolution gc0310_res_video[] = {
 
 struct gc_mode_info gc0310_mode_info[] = {
 	[0] = {
-		.init_settings = NULL,
+		.init_settings = gc0310_global_settings,
 		.res_preview = gc0310_res_preview,
 		.res_still = gc0310_res_still,
 		.res_video = gc0310_res_video,
