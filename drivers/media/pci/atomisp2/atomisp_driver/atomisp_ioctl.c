@@ -1677,23 +1677,6 @@ static int atomisp_streamon(struct file *file, void *fh,
 	if (ret)
 		goto out;
 
-	if (asd->continuous_mode->val) {
-		struct v4l2_mbus_framefmt *sink;
-
-		sink = atomisp_subdev_get_ffmt(&asd->subdev, NULL,
-				       V4L2_SUBDEV_FORMAT_ACTIVE,
-				       ATOMISP_SUBDEV_PAD_SINK);
-
-#ifndef CONFIG_GMIN_INTEL_MID
-		INIT_COMPLETION(asd->init_done);
-#else
-		reinit_completion(&asd->init_done);
-#endif
-		asd->delayed_init = ATOMISP_DELAYED_INIT_QUEUED;
-		queue_work(asd->delayed_init_workq, &asd->delayed_init_work);
-		atomisp_css_set_cont_prev_start_time(isp,
-				ATOMISP_CALC_CSS_PREV_OVERLAP(sink->height));
-	}
 
 	/* Make sure that update_isp_params is called at least once.*/
 	asd->params.css_update_params_needed = true;
@@ -1766,6 +1749,24 @@ start_sensor:
 		goto out;
 	}
 wdt_start:
+	if (asd->continuous_mode->val) {
+		struct v4l2_mbus_framefmt *sink;
+
+		sink = atomisp_subdev_get_ffmt(&asd->subdev, NULL,
+				       V4L2_SUBDEV_FORMAT_ACTIVE,
+				       ATOMISP_SUBDEV_PAD_SINK);
+
+#ifndef CONFIG_GMIN_INTEL_MID
+		INIT_COMPLETION(asd->init_done);
+#else
+		reinit_completion(&asd->init_done);
+#endif
+		asd->delayed_init = ATOMISP_DELAYED_INIT_QUEUED;
+		queue_work(asd->delayed_init_workq, &asd->delayed_init_work);
+		atomisp_css_set_cont_prev_start_time(isp,
+				ATOMISP_CALC_CSS_PREV_OVERLAP(sink->height));
+	}
+
 	if (atomisp_buffers_queued(asd))
 		atomisp_wdt_refresh(isp, wdt_duration);
 out:
