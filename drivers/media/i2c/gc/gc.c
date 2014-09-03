@@ -1273,9 +1273,14 @@ static int gc_enum_frameintervals(struct v4l2_subdev *sd,
 {
 	int i;
 	struct gc_device *dev = to_gc_sensor(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	const struct gc_resolution *tmp_res = NULL;
 
-
+	if (dev->curr_res_table == NULL) {
+		dev_warn(&client->dev, "null res table, set default table\n");
+		dev->curr_res_table = dev->product_info->mode_info->res_video;
+		dev->entries_curr_table = dev->product_info->mode_info->n_res_video;
+	}
 	for (i = 0; i < dev->entries_curr_table; i++) {
 		tmp_res = &dev->curr_res_table[i];
 
