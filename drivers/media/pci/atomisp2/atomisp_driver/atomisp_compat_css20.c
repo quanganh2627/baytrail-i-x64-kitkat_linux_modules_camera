@@ -95,14 +95,31 @@ unsigned int atomisp_css_debug_get_dtrace_level(void)
 
 static ia_css_ptr atomisp_css2_mm_alloc(size_t bytes, uint32_t attr)
 {
-	if (attr & IA_CSS_MEM_ATTR_CACHED)
-		return (ia_css_ptr) hrt_isp_css_mm_calloc_cached(bytes);
-	else if (attr & IA_CSS_MEM_ATTR_ZEROED)
-		return (ia_css_ptr) hrt_isp_css_mm_calloc(bytes);
-	else if (attr & IA_CSS_MEM_ATTR_CONTIGUOUS)
-		return (ia_css_ptr) hrt_isp_css_mm_calloc_contiguous(bytes);
-	else
-		return (ia_css_ptr) hrt_isp_css_mm_calloc(bytes);
+	if (attr & IA_CSS_MEM_ATTR_ZEROED) {
+		if (attr & IA_CSS_MEM_ATTR_CACHED) {
+			if (attr & IA_CSS_MEM_ATTR_CONTIGUOUS)
+				return (ia_css_ptr) hrt_isp_css_mm_calloc_contiguous(bytes);
+			else
+				return (ia_css_ptr) hrt_isp_css_mm_calloc_cached(bytes);
+		} else {
+			if (attr & IA_CSS_MEM_ATTR_CONTIGUOUS)
+				return (ia_css_ptr) hrt_isp_css_mm_calloc_contiguous(bytes);
+			else
+				return (ia_css_ptr) hrt_isp_css_mm_calloc(bytes);
+		}
+	} else {
+		if (attr & IA_CSS_MEM_ATTR_CACHED) {
+			if (attr & IA_CSS_MEM_ATTR_CONTIGUOUS)
+				return (ia_css_ptr) hrt_isp_css_mm_alloc_contiguous(bytes);
+			else
+				return (ia_css_ptr) hrt_isp_css_mm_alloc_cached(bytes);
+		} else {
+			if (attr & IA_CSS_MEM_ATTR_CONTIGUOUS)
+				return (ia_css_ptr) hrt_isp_css_mm_alloc_contiguous(bytes);
+			else
+				return (ia_css_ptr) hrt_isp_css_mm_alloc(bytes);
+		}
+	}
 }
 
 static void atomisp_css2_mm_free(ia_css_ptr ptr)
