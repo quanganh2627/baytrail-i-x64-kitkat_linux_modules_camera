@@ -450,9 +450,15 @@ int atomisp_subdev_set_selection(struct v4l2_subdev *sd,
 					  ATOM_ISP_STEP_WIDTH);
 			dvs_h = rounddown(crop[pad]->height / 5,
 					  ATOM_ISP_STEP_HEIGHT);
-		} else {
+		} else if (!isp_sd->params.video_dis_en &&
+			   isp_sd->run_mode->val == ATOMISP_RUN_MODE_VIDEO) {
+			/*
+			 * For CSS2.0, digital zoom needs to set dvs envelope to 12
+			 * when dvs is disabled.
+			 */
+			dvs_w = dvs_h = 12;
+		} else
 			dvs_w = dvs_h = 0;
-		}
 
 		atomisp_css_video_set_dis_envelope(isp_sd, dvs_w, dvs_h);
 		atomisp_css_input_set_effective_resolution(isp_sd, stream_id,

@@ -2253,8 +2253,14 @@ int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
 		                             pipe_cfg->dvs_envelope.width / 2;
 		bq_res->source_bq.height_bq = bq_res->output_bq.height_bq +
 		                            pipe_cfg->dvs_envelope.height / 2;
-		bq_res->ispfilter_bq.width_bq = 0;
-		bq_res->ispfilter_bq.height_bq = 0;
+		/*
+		 * Bad pixels caused by spatial filter processing
+		 * ISP filter resolution should be given by CSS/FW, but for now
+		 * there is not such API to query, and it is fixed value, so
+		 * hardcoded here.
+		 */
+		bq_res->ispfilter_bq.width_bq = 12 / 2;
+		bq_res->ispfilter_bq.height_bq = 12 / 2;
 		/* spatial filter shift, always 4 pixels */
 		bq_res->gdc_shift_bq.width_bq = 4 / 2;
 		bq_res->gdc_shift_bq.height_bq = 4 / 2;
