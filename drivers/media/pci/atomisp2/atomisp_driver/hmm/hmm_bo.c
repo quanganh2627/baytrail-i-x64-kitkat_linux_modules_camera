@@ -79,7 +79,7 @@ struct hmm_buffer_object *hmm_bo_create(struct hmm_bo_device *bdev, int pgnr)
 	struct hmm_buffer_object *bo;
 	int ret;
 
-	bo = kzalloc(sizeof(*bo), GFP_KERNEL);
+	bo = kmalloc(sizeof(*bo), GFP_KERNEL);
 	if (!bo) {
 		dev_err(atomisp_dev, "out of memory for bo\n");
 		return NULL;
