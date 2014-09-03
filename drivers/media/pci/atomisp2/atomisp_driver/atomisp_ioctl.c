@@ -1473,6 +1473,8 @@ static int atomisp_streamon(struct file *file, void *fh,
 
 	if (strncmp(isp->inputs[asd->input_curr].camera->name,sensor_name, sizeof(sensor_name)-1) == 0)
 		isp_timeout_duration = ATOMISP_ISP_TIMEOUT_DURATION / 2;
+	else if (strncmp(isp->inputs[asd->input_curr].camera->name, "ov7736", sizeof("ov7736")-1) == 0)
+		isp_timeout_duration = ATOMISP_ISP_TIMEOUT_DURATION / 2;
 	else
 		isp_timeout_duration = ATOMISP_ISP_TIMEOUT_DURATION;
 

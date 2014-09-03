@@ -179,8 +179,8 @@ bool ia_css_refcount_decrement(int32_t id, hrt_vaddress ptr)
 
 	//assert(false);
 	refcount_dcount++;
-	if (refcount_dcount != 0)
-		printk("refcount_decrement: refcount_dcount = 0x%x\n", refcount_dcount);
+//	if (refcount_dcount != 0)
+//		printk("refcount_decrement: refcount_dcount = 0x%x\n", refcount_dcount);
 
 	return false;
 }

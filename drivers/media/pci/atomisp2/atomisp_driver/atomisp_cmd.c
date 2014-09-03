@@ -1094,6 +1094,10 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 		if (ret)
 			dev_warn(isp->dev,
 					"can't stop streaming on sensor!\n");
+		if (strncmp(isp->inputs[asd->input_curr].camera->name, "ov7736", sizeof("ov7736")-1) == 0)
+			ret = v4l2_subdev_call(
+				isp->inputs[asd->input_curr].
+				camera, core, s_power, 0);
 
 		atomisp_clear_css_buffer_counters(asd);
 		asd->streaming = ATOMISP_DEVICE_STREAMING_DISABLED;
@@ -1160,6 +1164,10 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 		if (!stream_restart[i])
 			continue;
 
+		if (strncmp(isp->inputs[asd->input_curr].camera->name, "ov7736", sizeof("ov7736")-1) == 0)
+			ret = v4l2_subdev_call(
+				isp->inputs[asd->input_curr].
+				camera, core, s_power, 1);
 		ret = v4l2_subdev_call(
 				isp->inputs[asd->input_curr].camera, video,
 				s_stream, 1);

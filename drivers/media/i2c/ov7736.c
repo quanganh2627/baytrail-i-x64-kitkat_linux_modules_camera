@@ -44,6 +44,10 @@
 #define ov7736_debug dev_dbg
 
 static int awb_index = V4L2_WHITE_BALANCE_AUTO;
+static int scene_index = V4L2_SCENE_MODE_NONE;
+static int vflag = 0;
+static int hflag = 0;
+static bool mbus_fmt_called = true;
 
 static int
 ov7736_read_reg(struct i2c_client *client, u16 data_length, u16 reg, u32 *val)
@@ -272,7 +276,7 @@ static int ov7736_t_hflip(struct v4l2_subdev *sd, int value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
-
+	hflag = value;
 	if (value)
 		ov7736_write_reg_array(client, ov7736_hflip_on_table);
 	else
@@ -286,7 +290,7 @@ static int ov7736_t_vflip(struct v4l2_subdev *sd, int value)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
-
+	vflag = value;
 	if (value)
 		ov7736_write_reg_array(client, ov7736_vflip_on_table);
 	else
@@ -330,12 +334,11 @@ static int ov7736_s_scene(struct v4l2_subdev *sd, int value)
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
 	int ret=0;
 
-	printk("\n%s",__func__);
-	
 	switch (value) {
 		case V4L2_SCENE_MODE_NONE:
-			printk("V4L2_SCENE_MODE_NONE:\n");
+			scene_index = ov7736_night_mode_off;
 			ret = ov7736_write_reg_array(client, ov7736_night_mode_off);
+			//ret |= ov7736_write_reg_array(client, ov7736_vga_init);
 			break;
 		case V4L2_SCENE_MODE_SUNSET:
 			//ret = ov7736_write_reg_array(client, ov7736_sunny_scene);
@@ -354,7 +357,7 @@ static int ov7736_s_scene(struct v4l2_subdev *sd, int value)
 		case V4L2_SCENE_MODE_LANDSCAPE:
 			break;
 		case V4L2_SCENE_MODE_NIGHT:
-			printk("V4L2_SCENE_MODE_NIGHT:\n");
+			scene_index = ov7736_night_mode_on;
 			ret = ov7736_write_reg_array(client, ov7736_night_mode_on);
 			break;
 		case V4L2_SCENE_MODE_PORTRAIT:
@@ -409,8 +412,6 @@ static int ov7736_s_wb(struct v4l2_subdev *sd, int value)
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
 	int ret=0;
 
-	printk("\n%s",__func__);
-	
 	switch (value) {
 		case V4L2_WHITE_BALANCE_MANUAL:
 			awb_index = V4L2_WHITE_BALANCE_MANUAL;
@@ -647,7 +648,7 @@ static int power_down(struct v4l2_subdev *sd)
 	int ret;
 
 
-	
+	mbus_fmt_called = false;
 	if (NULL == dev->platform_data) {
 		dev_err(&client->dev, "no camera_sensor_platform_data");
 		return -ENODEV;
@@ -675,7 +676,6 @@ static int power_down(struct v4l2_subdev *sd)
 static int ov7736_s_power(struct v4l2_subdev *sd, int on)
 {
     int ret;
-
 	if (on == 0) {
 		ret = power_down(sd);
 	} else {
@@ -860,6 +860,7 @@ static int ov7736_s_mbus_fmt(struct v4l2_subdev *sd,
 	u32 width = fmt->width;
 	u32 height = fmt->height;
 	int ret;
+	dev_dbg(&c->dev, "DEBUG@%s:\n", __func__);
 	mipi_info = v4l2_get_subdev_hostdata(sd);
 	if (mipi_info == NULL) {
 		dev_err(&c->dev, "%s: can not find mipi info!!!\n", __func__);
@@ -918,7 +919,7 @@ static int ov7736_s_mbus_fmt(struct v4l2_subdev *sd,
 	dev->res = res_index->res;
 	fmt->width = width;
 	fmt->height = height;
-
+	mbus_fmt_called = true;
 	return 0;
 	
 	//return ov7736_wakeup(sd);
@@ -1213,7 +1214,7 @@ static int ov7736_s_stream(struct v4l2_subdev *sd, int enable)
 	struct ov7736_device *dev = to_ov7736_sensor(sd);
 	int ret;
 
-
+	dev_dbg(&client->dev, "DEBUG@%s: enable:%d", __func__, enable);
 	dev->streaming = enable;	
 
 #if 0
@@ -1221,7 +1222,16 @@ static int ov7736_s_stream(struct v4l2_subdev *sd, int enable)
 				enable ? OV7736_START_STREAMING :
 				OV7736_STOP_STREAMING);
 #else
-
+#if 1
+	if (enable && !mbus_fmt_called) {
+		dev_dbg(&client->dev, "DEBUG@%s: RESET", __func__);
+		ov7736_t_vflip(sd, vflag);
+		ov7736_t_hflip(sd, hflag);
+		ov7736_s_scene(sd, scene_index);
+		ov7736_s_wb(sd, awb_index);
+	}
+#endif
+	msleep(20);
 	ret = ov7736_write_reg(client, OV7736_8BIT, 0x3003,enable ? 0x00 : 0x02);
 	
 	//ret = ov7736_write_reg(client, OV7736_8BIT, 0x3103,enable ? 0x02 : 0x06);
