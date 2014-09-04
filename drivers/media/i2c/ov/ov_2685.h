@@ -897,15 +897,15 @@ static struct misensor_reg  ov2685_awb_0[] = {
 };
 
 static struct misensor_reg  ov2685_awb_1[] = {
-	{MISENSOR_8BIT, 0x3208, 0x00},
+	//{MISENSOR_8BIT, 0x3208, 0x00},
 	{MISENSOR_8BIT, 0x5180, 0xf4},
-	{MISENSOR_8BIT, 0x3208, 0x10},
-	{MISENSOR_8BIT, 0x3208, 0xa0},
+	//{MISENSOR_8BIT, 0x3208, 0x10},
+	//{MISENSOR_8BIT, 0x3208, 0xa0},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
 static struct misensor_reg  ov2685_awb_2[] = {
-	{MISENSOR_8BIT, 0x3208, 0x00},
+	//{MISENSOR_8BIT, 0x3208, 0x00},
 	{MISENSOR_8BIT, 0x5180, 0xf6},
 	{MISENSOR_8BIT, 0x5195, 0x04},
 	{MISENSOR_8BIT, 0x5196, 0x90},
@@ -913,13 +913,13 @@ static struct misensor_reg  ov2685_awb_2[] = {
 	{MISENSOR_8BIT, 0x5198, 0x00},
 	{MISENSOR_8BIT, 0x5199, 0x09},
 	{MISENSOR_8BIT, 0x519a, 0x20},
-	{MISENSOR_8BIT, 0x3208, 0x10},
-	{MISENSOR_8BIT, 0x3208, 0xa0},
+	//{MISENSOR_8BIT, 0x3208, 0x10},
+	//{MISENSOR_8BIT, 0x3208, 0xa0},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
 static struct misensor_reg  ov2685_awb_3[] = {
-	{MISENSOR_8BIT, 0x3208, 0x00},
+	//{MISENSOR_8BIT, 0x3208, 0x00},
 	{MISENSOR_8BIT, 0x5180, 0xf6},
 	{MISENSOR_8BIT, 0x5195, 0x06},
 	{MISENSOR_8BIT, 0x5196, 0xb8},
@@ -927,8 +927,8 @@ static struct misensor_reg  ov2685_awb_3[] = {
 	{MISENSOR_8BIT, 0x5198, 0x00},
 	{MISENSOR_8BIT, 0x5199, 0x06},
 	{MISENSOR_8BIT, 0x519a, 0x5f},
-	{MISENSOR_8BIT, 0x3208, 0x10},
-	{MISENSOR_8BIT, 0x3208, 0xa0},
+	//{MISENSOR_8BIT, 0x3208, 0x10},
+	//{MISENSOR_8BIT, 0x3208, 0xa0},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
@@ -961,7 +961,7 @@ static struct misensor_reg  ov2685_awb_5[] = {
 };
 
 static struct misensor_reg  ov2685_awb_6[] = {
-	{MISENSOR_8BIT, 0x3208, 0x00},
+	//{MISENSOR_8BIT, 0x3208, 0x00},
 	{MISENSOR_8BIT, 0x5180, 0xf6},
 	{MISENSOR_8BIT, 0x5195, 0x07},
 	{MISENSOR_8BIT, 0x5196, 0x9c},
@@ -969,13 +969,13 @@ static struct misensor_reg  ov2685_awb_6[] = {
 	{MISENSOR_8BIT, 0x5198, 0x00},
 	{MISENSOR_8BIT, 0x5199, 0x05},
 	{MISENSOR_8BIT, 0x519a, 0xf3},
-	{MISENSOR_8BIT, 0x3208, 0x10},
-	{MISENSOR_8BIT, 0x3208, 0xa0},
+	//{MISENSOR_8BIT, 0x3208, 0x10},
+	//{MISENSOR_8BIT, 0x3208, 0xa0},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
 static struct misensor_reg  ov2685_awb_7[] = {
-	{MISENSOR_8BIT, 0x3208, 0x00},
+	//{MISENSOR_8BIT, 0x3208, 0x00},
 	{MISENSOR_8BIT, 0x5180, 0xf6},
 	{MISENSOR_8BIT, 0x5195, 0x07},
 	{MISENSOR_8BIT, 0x5196, 0xdc},
@@ -983,8 +983,8 @@ static struct misensor_reg  ov2685_awb_7[] = {
 	{MISENSOR_8BIT, 0x5198, 0x00},
 	{MISENSOR_8BIT, 0x5199, 0x05},
 	{MISENSOR_8BIT, 0x519a, 0xd3},
-	{MISENSOR_8BIT, 0x3208, 0x10},
-	{MISENSOR_8BIT, 0x3208, 0xa0},
+	//{MISENSOR_8BIT, 0x3208, 0x10},
+	//{MISENSOR_8BIT, 0x3208, 0xa0},
 	{MISENSOR_TOK_TERM, 0, 0}
 };
 
