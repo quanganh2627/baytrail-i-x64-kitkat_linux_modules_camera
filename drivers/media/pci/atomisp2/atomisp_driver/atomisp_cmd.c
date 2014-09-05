@@ -469,12 +469,12 @@ void atomisp_eof_event(struct atomisp_sub_device *asd, uint8_t exp_id)
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }
 
-static void atomisp_3a_stats_ready_event(struct atomisp_sub_device *asd)
+static void atomisp_3a_stats_ready_event(struct atomisp_sub_device *asd, uint8_t exp_id)
 {
 	struct v4l2_event event = {0};
 
 	event.type = V4L2_EVENT_ATOMISP_3A_STATS_READY;
-	event.u.frame_sync.frame_sequence = atomic_read(&asd->sequence);
+	event.u.frame_sync.frame_sequence = exp_id;
 
 	v4l2_event_queue(asd->subdev.devnode, &event);
 }
@@ -931,7 +931,7 @@ void atomisp_buf_done(struct atomisp_sub_device *asd, int error,
 			}
 
 			asd->s3a_bufs_in_css[css_pipe_id]--;
-			atomisp_3a_stats_ready_event(asd);
+			atomisp_3a_stats_ready_event(asd, buffer.css_buffer.exp_id);
 			dev_dbg(isp->dev, "%s: s3a stat with exp_id %d is ready\n",
 				__func__, buffer.css_buffer.exp_id);
 			break;
@@ -5545,7 +5545,7 @@ int atomisp_inject_a_fake_event(struct atomisp_sub_device *asd, int *event)
 		atomisp_eof_event(asd, 0);
 		break;
 	case V4L2_EVENT_ATOMISP_3A_STATS_READY:
-		atomisp_3a_stats_ready_event(asd);
+		atomisp_3a_stats_ready_event(asd, 0);
 		break;
 	case V4L2_EVENT_ATOMISP_METADATA_READY:
 		atomisp_metadata_ready_event(asd, 0);
