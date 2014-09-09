@@ -2594,13 +2594,18 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 		break;
 	case ATOMISP_IOC_S_DIS_COEFS:
 		err = atomisp_set_dis_coefs(asd, arg);
+		if (!err && arg) {
+			atomisp_css_update_isp_params(asd);
+			asd->params.css_update_params_needed = false;
+		}
 		break;
 
 	case ATOMISP_IOC_S_DIS_VECTOR:
 		err = atomisp_cp_dvs_6axis_config(asd, arg, &asd->params.css_param);
 		if (!err && arg) {
 			atomisp_css_set_dvs_6axis(asd, asd->params.css_param.dvs_6axis);
-			asd->params.css_update_params_needed = true;
+			atomisp_css_update_isp_params(asd);
+			asd->params.css_update_params_needed = false;
 		}
 		break;
 
