@@ -285,6 +285,11 @@ struct atomisp_dvs_6axis_config32 {
 	compat_uptr_t ycoords_uv;
 };
 
+struct atomisp_sensor_ae_bracketing_lut32 {
+	compat_uptr_t lut;
+	unsigned int lut_size;
+};
+
 #define ATOMISP_IOC_G_HISTOGRAM32 \
 	_IOWR('v', BASE_VIDIOC_PRIVATE + 3, struct atomisp_histogram32)
 #define ATOMISP_IOC_S_HISTOGRAM32 \
@@ -355,4 +360,8 @@ struct atomisp_dvs_6axis_config32 {
 
 #define ATOMISP_IOC_G_METADATA_BY_TYPE32 \
 	_IOWR('v', BASE_VIDIOC_PRIVATE + 34, struct atomisp_metadata_with_type32)
+
+#define ATOMISP_IOC_S_SENSOR_AE_BRACKETING_LUT32 \
+	_IOW('v', BASE_VIDIOC_PRIVATE + 43, struct atomisp_sensor_ae_bracketing_lut32)
+
 #endif /* __ATOMISP_COMPAT_IOCTL32_H__ */

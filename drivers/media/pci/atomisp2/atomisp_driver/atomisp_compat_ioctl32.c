@@ -808,6 +808,21 @@ static int put_atomisp_acc_fw_load_to_pipe32(
 	return 0;
 }
 
+static int get_atomisp_sensor_ae_bracketing_lut(
+			struct atomisp_sensor_ae_bracketing_lut *kp,
+			struct atomisp_sensor_ae_bracketing_lut32 __user *up)
+{
+	compat_uptr_t lut;
+	if (!access_ok(VERIFY_READ, up,
+			sizeof(struct atomisp_sensor_ae_bracketing_lut32)) ||
+		get_user(kp->lut_size, &up->lut_size) ||
+		get_user(lut, &up->lut))
+			return -EFAULT;
+
+	kp->lut = compat_ptr(lut);
+	return 0;
+}
+
 static long native_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	long ret = -ENOIOCTLCMD;
@@ -841,6 +856,7 @@ long atomisp_do_compat_ioctl(struct file *file,
 		struct atomisp_acc_fw_load_to_pipe acc_fw_to_pipe;
 		struct atomisp_metadata md;
 		struct atomisp_metadata_with_type md_with_type;
+		struct atomisp_sensor_ae_bracketing_lut lut;
 	} karg;
 	mm_segment_t old_fs;
 	void __user *up = compat_ptr(arg);
@@ -923,6 +939,9 @@ long atomisp_do_compat_ioctl(struct file *file,
 	case ATOMISP_IOC_G_METADATA_BY_TYPE32:
 		cmd = ATOMISP_IOC_G_METADATA_BY_TYPE;
 		break;
+	case ATOMISP_IOC_S_SENSOR_AE_BRACKETING_LUT32:
+		cmd = ATOMISP_IOC_S_SENSOR_AE_BRACKETING_LUT;
+		break;
 	}
 
 	switch (cmd) {
@@ -990,6 +1009,9 @@ long atomisp_do_compat_ioctl(struct file *file,
 	case ATOMISP_IOC_G_METADATA_BY_TYPE:
 		err = get_atomisp_metadata_by_type_stat32(&karg.md_with_type,
 		                                          up);
+		break;
+	case ATOMISP_IOC_S_SENSOR_AE_BRACKETING_LUT:
+		err = get_atomisp_sensor_ae_bracketing_lut(&karg.lut, up);
 		break;
 	}
 	if (err)
@@ -1116,6 +1138,9 @@ long atomisp_compat_ioctl32(struct file *file,
 	case ATOMISP_IOC_S_ACC_STATE:
 	case ATOMISP_IOC_G_ACC_STATE:
 	case ATOMISP_IOC_INJECT_A_FAKE_EVENT:
+	case ATOMISP_IOC_G_SENSOR_AE_BRACKETING_INFO:
+	case ATOMISP_IOC_S_SENSOR_AE_BRACKETING_MODE:
+	case ATOMISP_IOC_G_SENSOR_AE_BRACKETING_MODE:
 		ret = native_ioctl(file, cmd, arg);
 		break;
 
@@ -1144,6 +1169,7 @@ long atomisp_compat_ioctl32(struct file *file,
 	case ATOMISP_IOC_ACC_LOAD_TO_PIPE32:
 	case ATOMISP_IOC_G_METADATA32:
 	case ATOMISP_IOC_G_METADATA_BY_TYPE32:
+	case ATOMISP_IOC_S_SENSOR_AE_BRACKETING_LUT32:
 		ret = atomisp_do_compat_ioctl(file, cmd, arg);
 		break;
 
