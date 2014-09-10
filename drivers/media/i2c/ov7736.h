@@ -339,7 +339,7 @@ static struct ov7736_res_struct ov7736_res[] = {
 	.fps	= 30,
 	.used	= 0,
 	.regs	= NULL,
-	.skip_frames = 1,
+	.skip_frames = 2,
 	},
 };
 #define N_RES (ARRAY_SIZE(ov7736_res))
