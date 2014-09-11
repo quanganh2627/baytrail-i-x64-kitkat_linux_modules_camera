@@ -21,7 +21,11 @@
  *
  */
 #include <linux/firmware.h>
+#ifndef CONFIG_GMIN_INTEL_MID
 #include <linux/intel_mid_pm.h>
+#else
+#include <linux/pci.h>
+#endif
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/kfifo.h>

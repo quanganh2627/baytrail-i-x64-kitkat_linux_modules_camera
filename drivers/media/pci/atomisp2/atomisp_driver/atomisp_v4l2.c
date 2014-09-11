@@ -27,7 +27,9 @@
 #include <linux/timer.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-
+#ifdef CONFIG_GMIN_INTEL_MID
+#include <linux/intel_mid_pm.h>
+#endif
 #include <asm/intel-mid.h>
 
 #include "atomisp_cmd.h"
@@ -47,6 +49,11 @@
 #include "device_access.h"
 #include <linux/intel_mid_pm.h>
 #include <asm/intel-mid.h>
+
+#ifdef CONFIG_GMIN_INTEL_MID
+/* G-Min addition: pull this in from intel_mid_pm.h */
+#define CSTATE_EXIT_LATENCY_C1  1
+#endif
 
 /* set reserved memory pool size in page */
 unsigned int repool_pgnr;

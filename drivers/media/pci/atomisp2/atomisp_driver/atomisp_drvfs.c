@@ -21,6 +21,7 @@
 
 #include <linux/err.h>
 #include <linux/kernel.h>
+#include <linux/pci.h>
 
 #include "atomisp_compat.h"
 #include "atomisp_internal.h"
