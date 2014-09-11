@@ -562,6 +562,7 @@ static int atomisp_querycap(struct file *file, void *fh,
 	return ret;
 }
 
+#ifndef CONFIG_GMIN_INTEL_MID
 /*
  * return sensor chip identification
  */
@@ -581,7 +582,7 @@ static int atomisp_g_chip_ident(struct file *file, void *fh,
 		dev_err(isp->dev, "failed to g_chip_ident for sensor\n");
 	return ret;
 }
-
+#endif
 /*
  * enum input are used to check primary/secondary camera
  */
@@ -2805,7 +2806,9 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 
 const struct v4l2_ioctl_ops atomisp_ioctl_ops = {
 	.vidioc_querycap = atomisp_querycap,
+#ifndef CONFIG_GMIN_INTEL_MID
 	.vidioc_g_chip_ident = atomisp_g_chip_ident,
+#endif
 	.vidioc_enum_input = atomisp_enum_input,
 	.vidioc_g_input = atomisp_g_input,
 	.vidioc_s_input = atomisp_s_input,
