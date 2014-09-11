@@ -580,7 +580,11 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 {
 	const struct atomisp_platform_data *pdata;
 	struct intel_v4l2_subdev_table *subdevs;
+#ifdef CONFIG_GMIN_INTEL_MID
+	int ret, raw_index = -1;
+#else
 	int raw_index = -1;
+#endif
 
 	pdata = atomisp_get_platform_data();
 	if (pdata == NULL) {
@@ -604,8 +608,21 @@ static int atomisp_subdev_probe(struct atomisp_device *isp)
 			break;
 		}
 
+#ifdef CONFIG_GMIN_INTEL_MID
+		/* In G-Min, the sensor devices will already be probed
+		 * (via ACPI) and registered, do not create new
+		 * ones */
+		subdev = atomisp_gmin_find_subdev(adapter, board_info);
+		ret = v4l2_device_register_subdev(&isp->v4l2_dev, subdev);
+		if (ret) {
+			dev_warn(isp->dev, "Subdev %s detection fail\n",
+				 board_info->type);
+			continue;
+		}
+#else
 		subdev = v4l2_i2c_new_subdev_board(&isp->v4l2_dev, adapter,
 				board_info, NULL);
+#endif
 
 		if (subdev == NULL) {
 			dev_warn(isp->dev, "Subdev %s detection fail\n",
