@@ -46,12 +46,25 @@
 #include "gp_device.h"
 #include "irq.h"
 
+#ifdef CONFIG_GMIN_INTEL_MID
+
+#define __IS_SOC(x) (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL && \
+		     boot_cpu_data.x86 == 6 &&			     \
+		     boot_cpu_data.x86_model == x)
+
+#define IS_MFLD	__IS_SOC(0x27)
+#define IS_BYT	__IS_SOC(0x37)
+#define IS_CHT	__IS_SOC(0x4C)
+#define IS_MOFD	__IS_SOC(0x5A)
+
+#else /* !CONFIG_GMIN_INTEL_MID */
 #define IS_CHT (INTEL_MID_BOARD(1, PHONE, CHT) || \
 	INTEL_MID_BOARD(1, TABLET, CHT))
 #define IS_MOFD (INTEL_MID_BOARD(1, PHONE, MOFD) || \
 	INTEL_MID_BOARD(1, TABLET, MOFD))
 #define IS_BYT (INTEL_MID_BOARD(1, PHONE, BYT) || \
 	INTEL_MID_BOARD(1, TABLET, BYT))
+#endif /* CONFIG_GMIN_INTEL_MID */
 
 #define IS_HWREVISION(isp, rev) \
 	(((isp)->media_dev.hw_revision & ATOMISP_HW_REVISION_MASK) == \

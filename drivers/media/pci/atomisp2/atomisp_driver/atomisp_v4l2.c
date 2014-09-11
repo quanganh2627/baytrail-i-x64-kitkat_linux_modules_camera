@@ -1139,6 +1139,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 	}
 
 	isp->max_isr_latency = ATOMISP_MAX_ISR_LATENCY;
+#ifndef CONFIG_GMIN_INTEL_MID /* No spid in gmin, nor CLVT support */
 	if (pdata &&
 	    (pdata->spid->platform_family_id == INTEL_CLVTP_PHONE ||
 	     pdata->spid->platform_family_id == INTEL_CLVT_TABLET) &&
@@ -1146,6 +1147,7 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		/* Workaround for Cloverview(+) older than stepping B0 */
 		isp->max_isr_latency = CSTATE_EXIT_LATENCY_C1;
 	}
+#endif
 
 	/* Load isp firmware from user space */
 	if (!defer_fw_load) {
