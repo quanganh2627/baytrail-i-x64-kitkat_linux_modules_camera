@@ -162,6 +162,10 @@ static unsigned short atomisp_get_sensor_fps(struct atomisp_sub_device *asd)
 	}
 	return fps;
 }
+
+#ifdef CONFIG_GMIN_INTEL_MID
+	int atomisp_punit_hpll_freq;
+#endif
 /*
  * DFS progress is shown as follows:
  * 1. Target frequency is calculated according to FPS/Resolution/ISP running
@@ -178,6 +182,9 @@ static int write_target_freq_to_hw(struct atomisp_device *isp,
 {
 	unsigned int ratio, timeout, guar_ratio;
 	unsigned int hpll_freq;
+#ifdef CONFIG_GMIN_INTEL_MID
+	static unsigned int base_freq = atomisp_punit_hpll_freq;
+#endif
 	u32 isp_sspm1 = 0;
 	int i;
 
@@ -193,7 +200,11 @@ static int write_target_freq_to_hw(struct atomisp_device *isp,
 		hpll_freq = HPLL_FREQ_CR;
 	else
 		hpll_freq = HPLL_FREQ;
+#ifndef CONFIG_GMIN_INTEL_MID
 	ratio = (2 * hpll_freq + new_freq / 2) / new_freq - 1;
+#else
+	ratio =  (2 * base_freq + new_freq / 2) / new_freq - 1;
+#endif
 	guar_ratio = (2 * hpll_freq + 200 / 2) / 200 - 1;
 	isp_sspm1 = intel_mid_msgbus_read32(PUNIT_PORT, ISPSSPM1);
 	isp_sspm1 &= ~(0x1F << ISP_REQ_FREQ_OFFSET);

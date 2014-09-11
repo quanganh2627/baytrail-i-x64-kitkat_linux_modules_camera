@@ -1035,6 +1035,9 @@ static struct pci_driver atomisp_pci_driver;
 
 #define ATOM_ISP_PCI_BAR	0
 
+#ifdef CONFIG_GMIN_INTEL_MID
+extern int atomisp_punit_hpll_freq; /* atomisp_cmd.c */
+#endif
 static int atomisp_pci_probe(struct pci_dev *dev,
 				       const struct pci_device_id *id)
 {
@@ -1051,7 +1054,15 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 
 	if (!is_valid_device(dev, id))
 		return -ENODEV;
-
+#ifdef CONFIG_GMIN_INTEL_MID
+	/* HPLL frequency is known to be device-specific, but we don't
+	 * have specs yet for exactly how it varies.  Default to
+	 * BYT-CR but let provisioning set it via EFI variable */
+	atomisp_punit_hpll_freq = gmin_get_var_int(&dev->dev, "HpllFreq",
+			HPLL_FREQ_CR);
+	dev_info(&dev->dev, "ISP HPLL frequency base = %d MHz\n",
+			atomisp_punit_hpll_freq);
+#endif
 	/* Pointer to struct device. */
 	atomisp_dev = &dev->dev;
 
