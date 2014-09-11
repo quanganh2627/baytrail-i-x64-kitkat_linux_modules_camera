@@ -32,6 +32,10 @@
 #endif
 #include <asm/intel-mid.h>
 
+#ifdef CONFIG_GMIN_INTEL_MID
+#include <linux/atomisp_gmin_platform.h>
+#endif
+
 #include "atomisp_cmd.h"
 #include "atomisp_common.h"
 #include "atomisp_fops.h"
