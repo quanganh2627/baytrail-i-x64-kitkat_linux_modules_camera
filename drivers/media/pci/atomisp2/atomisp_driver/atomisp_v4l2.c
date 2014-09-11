@@ -59,6 +59,12 @@
 #define CSTATE_EXIT_LATENCY_C1  1
 #endif
 
+#ifdef CONFIG_GMIN_INTEL_MID
+/* Moorefield lacks PCI PM, BYT advertises it but it's broken, use PUNIT */
+/* FIXME: broken again as of rebase, this is no longer the mechanism */
+#define ATOMISP_INTERNAL_PM	(IS_MOFD || IS_BYT)
+#endif
+
 /* set reserved memory pool size in page */
 unsigned int repool_pgnr;
 module_param(repool_pgnr, uint, 0644);
