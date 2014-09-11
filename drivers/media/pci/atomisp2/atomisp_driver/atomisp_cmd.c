@@ -1254,7 +1254,11 @@ static void __atomisp_css_recover(struct atomisp_device *isp)
 
 		if (asd->continuous_mode->val &&
 		    asd->delayed_init == ATOMISP_DELAYED_INIT_NOT_QUEUED) {
+#ifndef CONFIG_GMIN_INTEL_MID
 			INIT_COMPLETION(asd->init_done);
+#else
+			reinit_completion(&asd->init_done);
+#endif
 			asd->delayed_init = ATOMISP_DELAYED_INIT_QUEUED;
 			queue_work(asd->delayed_init_workq,
 					&asd->delayed_init_work);
