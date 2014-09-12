@@ -22,6 +22,9 @@
  */
 
 #include <linux/delay.h>
+#ifdef CONFIG_GMIN_INTEL_MID
+#include <linux/pci.h>
+#endif
 
 #include <asm/intel-mid.h>
 

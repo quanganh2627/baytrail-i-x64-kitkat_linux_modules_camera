@@ -47,7 +47,7 @@
 #include "irq.h"
 
 #ifdef CONFIG_GMIN_INTEL_MID
-
+/* redefine include/linux/atomisp_platform.h
 #define __IS_SOC(x) (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL && \
 		     boot_cpu_data.x86 == 6 &&			     \
 		     boot_cpu_data.x86_model == x)
@@ -56,7 +56,7 @@
 #define IS_BYT	__IS_SOC(0x37)
 #define IS_CHT	__IS_SOC(0x4C)
 #define IS_MOFD	__IS_SOC(0x5A)
-
+*/
 #else /* !CONFIG_GMIN_INTEL_MID */
 #define IS_CHT (INTEL_MID_BOARD(1, PHONE, CHT) || \
 	INTEL_MID_BOARD(1, TABLET, CHT))
