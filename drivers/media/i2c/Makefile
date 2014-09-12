@@ -30,6 +30,11 @@ m10mo_isp-objs := m10mo.o m10mo_fw.o m10mo_tables.o m10mo_fw_type2.o m10mo_fw_ty
 obj-$(CONFIG_VIDEO_M10MO)    += m10mo_isp.o
 obj-$(CONFIG_VIDEO_M10MO)    += m10mo_spi.o
 
+obj-$(CONFIG_VIDEO_AR0543_RAW)     += ar0543_raw.o
+CFFLAGS_ar0543_raw.o = -Werror
+obj-$(CONFIG_VIDEO_HM2056_RAW) += hm2056_raw.o
+CFFLAGS_hm2056_raw.o = -Werror
+
 obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o
 
 obj-$(CONFIG_VIDEO_AP1302)     += ap1302.o

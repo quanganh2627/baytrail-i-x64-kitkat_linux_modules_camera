@@ -708,13 +708,32 @@ void atomisp_set_term_en_count(struct atomisp_device *isp)
 
 	/* set TERM_EN_COUNT_1LANE to 0xf */
 	val &= ~TERM_EN_COUNT_1LANE_MASK;
+#if defined(CONFIG_A400CG) || defined(CONFIG_A450CG)
+	/* GC0339 */
+	val |= 0x1f << TERM_EN_COUNT_1LANE_OFFSET;
+#elif defined(CONFIG_PF450CL)
+	/* HM2056 */
+	val |= 0x24 << TERM_EN_COUNT_1LANE_OFFSET;
+#else
 	val |= 0xf << TERM_EN_COUNT_1LANE_OFFSET;
+#endif
 
 	/* set TERM_EN_COUNT_4LANE to 0xf */
 	val &= pwn_b0 ? ~TERM_EN_COUNT_4LANE_PWN_B0_MASK :
 				~TERM_EN_COUNT_4LANE_MASK;
+
+#if defined(CONFIG_ME175CG) || defined(CONFIG_A400CG) || defined(CONFIG_ME372CL) || defined(CONFIG_PF450CL)
+	/* AR0543 */
+	val |= 0x14 << (pwn_b0 ? TERM_EN_COUNT_4LANE_PWN_B0_OFFSET :
+				TERM_EN_COUNT_4LANE_OFFSET);
+#elif defined(CONFIG_A450CG)
+	/* IMX219 */
+	val |= 0x1A << (pwn_b0 ? TERM_EN_COUNT_4LANE_PWN_B0_OFFSET :
+				TERM_EN_COUNT_4LANE_OFFSET);
+#else
 	val |= 0xf << (pwn_b0 ? TERM_EN_COUNT_4LANE_PWN_B0_OFFSET :
 				TERM_EN_COUNT_4LANE_OFFSET);
+#endif
 
 	intel_mid_msgbus_write32(MFLD_IUNITPHY_PORT, MFLD_CSI_CONTROL, val);
 }

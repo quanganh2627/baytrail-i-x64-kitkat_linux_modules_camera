@@ -151,6 +151,28 @@ config VIDEO_OV5640
 
          It currently only works with the atomisp driver.
 
+config VIDEO_AR0543_RAW
+        tristate "Aptina ar5693_raw with raw sensor support"
+        depends on I2C && VIDEO_V4L2
+        ---help---
+           This is a Video4Linux2 sensor-level driver for the Aptina
+           ar0543 5 Mpixel camera.
+
+           ar0543 is video camrea sensor.
+
+           It currently only works with the atomisp driver.
+
+config VIDEO_HM2056_RAW
+        tristate "Himax hm2056_raw with raw sensor support"
+        depends on I2C && VIDEO_V4L2
+        ---help---
+           This is a Video4Linux2 sensor-level driver for the Himax
+           hm2056_raw 2 Mpixel camera.
+
+           hm2056_raw is video camrea sensor.
+
+           It currently only works with the atomisp driver.
+
 config VIDEO_AP1302
        tristate "AP1302 external ISP support"
        depends on I2C && VIDEO_V4L2
