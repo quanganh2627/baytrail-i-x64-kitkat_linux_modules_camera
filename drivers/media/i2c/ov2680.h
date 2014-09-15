@@ -125,6 +125,12 @@
 #define OV2680_TIMING_VTS_L							0x380f  /*High 8-bit, and low 8-bit HTS address is 0x380f*/
 #define OV2680_FRAME_OFF_NUM						0x4202
 
+/*Flip/Mirror*/
+#define OV2680_FLIP_REG				0x3820
+#define OV2680_MIRROR_REG			0x3821
+#define OV2680_FLIP_BIT				1
+#define OV2680_MIRROR_BIT			2
+#define OV2680_FLIP_MIRROR_BIT_ENABLE		4
 
 #define OV2680_MWB_RED_GAIN_H			0x5004/*0x3400*/
 #define OV2680_MWB_GREEN_GAIN_H			0x5006/*0x3402*/
@@ -283,6 +289,29 @@ struct ov2680_control {
 	    {OV2680_8BIT, 0x5008, 0x04},
 	    {OV2680_8BIT, 0x5009, 0x00},
 	    {OV2680_8BIT, 0x5080, 0x00},
+	    {OV2680_8BIT, 0x3701, 0x64},  //add on 14/05/13
+	    {OV2680_8BIT, 0x3784, 0x0c},  //based OV2680_R1A_AM10.ovt add on 14/06/13
+	    {OV2680_8BIT, 0x5780, 0x3e},  //based OV2680_R1A_AM10.ovt,Adjust DPC setting (57xx) on 14/06/13
+	    {OV2680_8BIT, 0x5781, 0x0f},
+	    {OV2680_8BIT, 0x5782, 0x04},
+	    {OV2680_8BIT, 0x5783, 0x02},
+	    {OV2680_8BIT, 0x5784, 0x01},
+	    {OV2680_8BIT, 0x5785, 0x01},
+	    {OV2680_8BIT, 0x5786, 0x00},
+	    {OV2680_8BIT, 0x5787, 0x04},
+	    {OV2680_8BIT, 0x5788, 0x02},
+	    {OV2680_8BIT, 0x5789, 0x00},
+	    {OV2680_8BIT, 0x578a, 0x01},
+	    {OV2680_8BIT, 0x578b, 0x02},
+	    {OV2680_8BIT, 0x578c, 0x03},
+	    {OV2680_8BIT, 0x578d, 0x03},
+	    {OV2680_8BIT, 0x578e, 0x08},
+	    {OV2680_8BIT, 0x578f, 0x0c},
+	    {OV2680_8BIT, 0x5790, 0x08},
+	    {OV2680_8BIT, 0x5791, 0x04},
+	    {OV2680_8BIT, 0x5792, 0x00},
+	    {OV2680_8BIT, 0x5793, 0x00},
+	    {OV2680_8BIT, 0x5794, 0x03}, //based OV2680_R1A_AM10.ovt,Adjust DPC setting (57xx) on 14/06/13
 		{OV2680_8BIT, 0x0100, 0x00},	//stream off
 	 
 		{OV2680_TOK_TERM, 0, 0}
@@ -318,15 +347,18 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x04},
 	{OV2680_8BIT, 0x3814, 0x31},
 	{OV2680_8BIT, 0x3815, 0x31},
-	{OV2680_8BIT, 0x3820, 0xc2},
-	{OV2680_8BIT, 0x3821, 0x01},
 	{OV2680_8BIT, 0x4000, 0x81},
 	{OV2680_8BIT, 0x4001, 0x40},
 	{OV2680_8BIT, 0x4008, 0x00},
 	{OV2680_8BIT, 0x4009, 0x03},
 	{OV2680_8BIT, 0x5081, 0x41},
-       //{OV2680_8BIT, 0x3820, 0xc6},
-       //{OV2680_8BIT, 0x3821, 0x05},
+	{OV2680_8BIT, 0x5708, 0x00}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x10},
+	{OV2680_8BIT, 0x5705, 0xa0},
+	{OV2680_8BIT, 0x5706, 0x0c},
+	{OV2680_8BIT, 0x5707, 0x78},
+	{OV2680_8BIT, 0x3820, 0xc2},
+	{OV2680_8BIT, 0x3821, 0x01},
 		{OV2680_TOK_TERM, 0, 0}
 	};
 
@@ -359,13 +391,16 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x04},
 	{OV2680_8BIT, 0x3814, 0x31},
 	{OV2680_8BIT, 0x3815, 0x31},
-	{OV2680_8BIT, 0x3820, 0xc2},
-	{OV2680_8BIT, 0x3821, 0x01},
 	{OV2680_8BIT, 0x4008, 0x00},
 	{OV2680_8BIT, 0x4009, 0x03},
 	{OV2680_8BIT, 0x5081, 0x41},
-       //{OV2680_8BIT, 0x3820, 0xc6},
-       //{OV2680_8BIT, 0x3821, 0x05},
+	{OV2680_8BIT, 0x5708, 0x00}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x10},
+	{OV2680_8BIT, 0x5705, 0xa0},
+	{OV2680_8BIT, 0x5706, 0x0c},
+	{OV2680_8BIT, 0x5707, 0x78},
+	{OV2680_8BIT, 0x3820, 0xc2},
+	{OV2680_8BIT, 0x3821, 0x01},
 		{OV2680_TOK_TERM, 0, 0}
 	};
 
@@ -398,13 +433,16 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x04},
 	{OV2680_8BIT, 0x3814, 0x31},
 	{OV2680_8BIT, 0x3815, 0x31},
-	{OV2680_8BIT, 0x3820, 0xc2},
-	{OV2680_8BIT, 0x3821, 0x01},
 	{OV2680_8BIT, 0x4008, 0x00},
 	{OV2680_8BIT, 0x4009, 0x03},
 	{OV2680_8BIT, 0x5081, 0x41},
-       //{OV2680_8BIT, 0x3820, 0xc6},
-       //{OV2680_8BIT, 0x3821, 0x05},
+	{OV2680_8BIT, 0x5708, 0x00}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x10},
+	{OV2680_8BIT, 0x5705, 0xa0},
+	{OV2680_8BIT, 0x5706, 0x0c},
+	{OV2680_8BIT, 0x5707, 0x78},
+	{OV2680_8BIT, 0x3820, 0xc2},
+	{OV2680_8BIT, 0x3821, 0x01},
 		{OV2680_TOK_TERM, 0, 0}
 	};
 
@@ -438,13 +476,16 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x04},
 	{OV2680_8BIT, 0x3814, 0x31},
 	{OV2680_8BIT, 0x3815, 0x31},
-	{OV2680_8BIT, 0x3820, 0xc2},
-	{OV2680_8BIT, 0x3821, 0x01},
 	{OV2680_8BIT, 0x4008, 0x00},
 	{OV2680_8BIT, 0x4009, 0x03},
 	{OV2680_8BIT, 0x5081, 0x41},
-        //{OV2680_8BIT, 0x3820, 0xc6},
-        //{OV2680_8BIT, 0x3821, 0x05},
+	{OV2680_8BIT, 0x5708, 0x00}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x10},
+	{OV2680_8BIT, 0x5705, 0xa0},
+	{OV2680_8BIT, 0x5706, 0x0c},
+	{OV2680_8BIT, 0x5707, 0x78},
+	{OV2680_8BIT, 0x3820, 0xc2},
+	{OV2680_8BIT, 0x3821, 0x01},
 		{OV2680_TOK_TERM, 0, 0}
 	};
 
@@ -477,13 +518,16 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x06},
 	{OV2680_8BIT, 0x3814, 0x11},
 	{OV2680_8BIT, 0x3815, 0x11},
-	{OV2680_8BIT, 0x3820, 0xc0},
-	{OV2680_8BIT, 0x3821, 0x00},
 	{OV2680_8BIT, 0x4008, 0x02},
 	{OV2680_8BIT, 0x4009, 0x09},
 	{OV2680_8BIT, 0x5081, 0x41},
-       // {OV2680_8BIT, 0x3820, 0xc4},
-       // {OV2680_8BIT, 0x3821, 0x04},
+	{OV2680_8BIT, 0x5708, 0x00}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x10},
+	{OV2680_8BIT, 0x5705, 0xa0},
+	{OV2680_8BIT, 0x5706, 0x0c},
+	{OV2680_8BIT, 0x5707, 0x78},
+	{OV2680_8BIT, 0x3820, 0xc0},
+	{OV2680_8BIT, 0x3821, 0x00},
 		{OV2680_TOK_TERM, 0, 0}
 	};
 
@@ -516,13 +560,16 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x08},
 	{OV2680_8BIT, 0x3814, 0x11},
 	{OV2680_8BIT, 0x3815, 0x11},
-	{OV2680_8BIT, 0x3820, 0xc0},
-	{OV2680_8BIT, 0x3821, 0x00},
 	{OV2680_8BIT, 0x4008, 0x02},
 	{OV2680_8BIT, 0x4009, 0x09},
 	{OV2680_8BIT, 0x5081, 0x41},
-       // {OV2680_8BIT, 0x3820, 0xc4},
-        //{OV2680_8BIT, 0x3821, 0x04}, miror/flip
+	{OV2680_8BIT, 0x5708, 0x00}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x10},
+	{OV2680_8BIT, 0x5705, 0xa0},
+	{OV2680_8BIT, 0x5706, 0x0c},
+	{OV2680_8BIT, 0x5707, 0x78},
+	{OV2680_8BIT, 0x3820, 0xc0},
+	{OV2680_8BIT, 0x3821, 0x00}, //miror/flip
 		{OV2680_TOK_TERM, 0, 0}
  	};
 
@@ -555,13 +602,16 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x00},
 	{OV2680_8BIT, 0x3814, 0x11},
 	{OV2680_8BIT, 0x3815, 0x11},
-	{OV2680_8BIT, 0x3820, 0xc0},
-	{OV2680_8BIT, 0x3821, 0x00},
 	{OV2680_8BIT, 0x4008, 0x02},
 	{OV2680_8BIT, 0x4009, 0x09},
 	{OV2680_8BIT, 0x5081, 0x41},
-       //{OV2680_8BIT, 0x3820, 0xc4},
-       //{OV2680_8BIT, 0x3821, 0x04},
+	{OV2680_8BIT, 0x5708, 0x00}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x10},
+	{OV2680_8BIT, 0x5705, 0xa0},
+	{OV2680_8BIT, 0x5706, 0x0c},
+	{OV2680_8BIT, 0x5707, 0x78},
+	{OV2680_8BIT, 0x3820, 0xc0},
+	{OV2680_8BIT, 0x3821, 0x00},
 	{OV2680_TOK_TERM, 0, 0}
 	};
    
@@ -596,11 +646,16 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x08},
 	{OV2680_8BIT, 0x3814, 0x11},
 	{OV2680_8BIT, 0x3815, 0x11},
-	//{OV2680_8BIT, 0x3820, 0xc4},
-	//{OV2680_8BIT, 0x3821, 0x04},
 	{OV2680_8BIT, 0x4008, 0x02},
 	{OV2680_8BIT, 0x4009, 0x09},
 	{OV2680_8BIT, 0x5081, 0x41},
+	{OV2680_8BIT, 0x5708, 0x01}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x06},
+	{OV2680_8BIT, 0x5705, 0x50},
+	{OV2680_8BIT, 0x5706, 0x03},
+	{OV2680_8BIT, 0x5707, 0x94},
+	{OV2680_8BIT, 0x3820, 0xc0},
+	{OV2680_8BIT, 0x3821, 0x00},
 		{OV2680_TOK_TERM, 0, 0}
 	};
        
@@ -633,8 +688,13 @@ struct ov2680_control {
        {OV2680_8BIT, 0x3813, 0x00},
        {OV2680_8BIT, 0x3814, 0x11},
        {OV2680_8BIT, 0x3815, 0x11},
-      // {OV2680_8BIT, 0x3820, 0xc4},
-       //{OV2680_8BIT, 0x3821, 0x04},
+       {OV2680_8BIT, 0x5708, 0x01}, //add for full size flip off and mirror off 2014/09/11
+       {OV2680_8BIT, 0x5704, 0x06},
+       {OV2680_8BIT, 0x5705, 0x50},
+       {OV2680_8BIT, 0x5706, 0x04},
+       {OV2680_8BIT, 0x5707, 0x3a},
+       {OV2680_8BIT, 0x3820, 0xc0},
+       {OV2680_8BIT, 0x3821, 0x00},
        {OV2680_8BIT, 0x4008, 0x00},
        {OV2680_8BIT, 0x4009, 0x0b},
        {OV2680_8BIT, 0x5081, 0x01},
@@ -669,13 +729,16 @@ struct ov2680_control {
 	{OV2680_8BIT, 0x3813, 0x00},
 	{OV2680_8BIT, 0x3814, 0x11},
 	{OV2680_8BIT, 0x3815, 0x11},
-  	{OV2680_8BIT, 0x3820, 0xc0},
- 	{OV2680_8BIT, 0x3821, 0x00},
 	{OV2680_8BIT, 0x4008, 0x00},
 	{OV2680_8BIT, 0x4009, 0x0b},
 	{OV2680_8BIT, 0x5081, 0x01},
-//	{OV2680_8BIT, 0x3820, 0xc4},
-//	{OV2680_8BIT, 0x3821, 0x04},
+	{OV2680_8BIT, 0x5708, 0x01}, //add for full size flip off and mirror off 2014/09/11
+	{OV2680_8BIT, 0x5704, 0x06},
+	{OV2680_8BIT, 0x5705, 0x50},
+	{OV2680_8BIT, 0x5706, 0x04},
+	{OV2680_8BIT, 0x5707, 0xcc},
+	{OV2680_8BIT, 0x3820, 0xc0},
+	{OV2680_8BIT, 0x3821, 0x00},
 		{OV2680_TOK_TERM, 0, 0}
 	};
 

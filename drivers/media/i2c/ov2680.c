@@ -40,6 +40,14 @@
 #include "ov2680.h"
 
 #define ov2680_debug //dev_err
+static int h_flag = 0;
+static int v_flag = 0;
+static enum atomisp_bayer_order ov2680_bayer_order_mapping[] = {
+	atomisp_bayer_order_bggr,
+	atomisp_bayer_order_grbg,
+	atomisp_bayer_order_gbrg,
+	atomisp_bayer_order_rggb,
+};
 
 /* i2c read/write stuff */
 static int ov2680_read_reg(struct i2c_client *client,
@@ -575,7 +583,84 @@ err:
 	return ret;
 }
 
+static enum v4l2_mbus_pixelcode
+ov2680_translate_bayer_order(enum atomisp_bayer_order code)
+{
+	switch (code) {
+	case atomisp_bayer_order_rggb:
+		return V4L2_MBUS_FMT_SRGGB10_1X10;
+	case atomisp_bayer_order_grbg:
+		return V4L2_MBUS_FMT_SGRBG10_1X10;
+	case atomisp_bayer_order_bggr:
+		return V4L2_MBUS_FMT_SBGGR10_1X10;
+	case atomisp_bayer_order_gbrg:
+		return V4L2_MBUS_FMT_SGBRG10_1X10;
+	}
+	return 0;
+}
 
+static int ov2680_v_flip(struct v4l2_subdev *sd, s32 value)
+{
+	struct ov2680_device *dev = to_ov2680_sensor(sd);
+	struct camera_mipi_info *ov2680_info = NULL;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+	u16 val;
+	u8 index;
+	ov2680_debug(&client->dev, "@%s: value:%d\n", __func__, value);
+	ret = ov2680_read_reg(client, OV2680_8BIT, OV2680_FLIP_REG, &val);
+	if (ret)
+		return ret;
+	if (value) {
+		val |= OV2680_FLIP_MIRROR_BIT_ENABLE;
+	} else {
+		val &= ~OV2680_FLIP_MIRROR_BIT_ENABLE;
+	}
+	ret = ov2680_write_reg(client, OV2680_8BIT,
+			OV2680_FLIP_REG, val);
+	if (ret)
+		return ret;
+	index = (v_flag>0?OV2680_FLIP_BIT:0) | (h_flag>0?OV2680_MIRROR_BIT:0);
+	ov2680_info = v4l2_get_subdev_hostdata(sd);
+	if (ov2680_info) {
+		ov2680_info->raw_bayer_order = ov2680_bayer_order_mapping[index];
+		dev->format.code = ov2680_translate_bayer_order(
+			ov2680_info->raw_bayer_order);
+	}
+	return ret;
+}
+
+static int ov2680_h_flip(struct v4l2_subdev *sd, s32 value)
+{
+	struct ov2680_device *dev = to_ov2680_sensor(sd);
+	struct camera_mipi_info *ov2680_info = NULL;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	int ret;
+	u16 val;
+	u8 index;
+	ov2680_debug(&client->dev, "@%s: value:%d\n", __func__, value);
+
+	ret = ov2680_read_reg(client, OV2680_8BIT, OV2680_MIRROR_REG, &val);
+	if (ret)
+		return ret;
+	if (value) {
+		val |= OV2680_FLIP_MIRROR_BIT_ENABLE;
+	} else {
+		val &= ~OV2680_FLIP_MIRROR_BIT_ENABLE;
+	}
+	ret = ov2680_write_reg(client, OV2680_8BIT,
+			OV2680_MIRROR_REG, val);
+	if (ret)
+		return ret;
+	index = (v_flag>0?OV2680_FLIP_BIT:0) | (h_flag>0?OV2680_MIRROR_BIT:0);
+	ov2680_info = v4l2_get_subdev_hostdata(sd);
+	if (ov2680_info) {
+		ov2680_info->raw_bayer_order = ov2680_bayer_order_mapping[index];
+		dev->format.code = ov2680_translate_bayer_order(
+			ov2680_info->raw_bayer_order);
+	}
+	return ret;
+}
 struct ov2680_control ov2680_controls[] = {
 	{
 		.qc = {
@@ -655,6 +740,30 @@ struct ov2680_control ov2680_controls[] = {
 		},
 		.query = ov2680_g_bin_factor_y,
 	},
+	{
+		.qc = {
+			.id = V4L2_CID_VFLIP,
+			.type = V4L2_CTRL_TYPE_BOOLEAN,
+			.name = "Flip",
+			.minimum = 0,
+			.maximum = 1,
+			.step = 1,
+			.default_value = 0,
+		},
+		.tweak = ov2680_v_flip,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_HFLIP,
+			.type = V4L2_CTRL_TYPE_BOOLEAN,
+			.name = "Mirror",
+			.minimum = 0,
+			.maximum = 1,
+			.step = 1,
+			.default_value = 0,
+		},
+		.tweak = ov2680_h_flip,
+	},
 };
 #define N_CONTROLS (ARRAY_SIZE(ov2680_controls))
 
@@ -712,6 +821,23 @@ static int ov2680_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 
 	if ((octrl == NULL) || (octrl->tweak == NULL))
 		return -EINVAL;
+
+	switch(ctrl->id)
+	{
+		case V4L2_CID_VFLIP:
+			if(ctrl->value)
+				v_flag=1;
+			else
+				v_flag=0;
+			break;
+		case V4L2_CID_HFLIP:
+			if(ctrl->value)
+				h_flag=1;
+			else
+				h_flag=0;
+			break;
+		default:break;
+	};
 
 	mutex_lock(&dev->input_lock);
 	ret = octrl->tweak(sd, ctrl->value);
@@ -804,6 +930,8 @@ static int power_down(struct v4l2_subdev *sd)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
+	h_flag = 0;
+	v_flag = 0;
 	if (NULL == dev->platform_data) {
 		dev_err(&client->dev,
 			"no camera_sensor_platform_data");
@@ -983,6 +1111,14 @@ static int ov2680_s_mbus_fmt(struct v4l2_subdev *sd,
 		dev_err(&client->dev, "failed to get integration_factor\n");
 		goto err;
 	}
+
+	/*recall flip functions to avoid flip registers
+	 * were overrided by default setting
+	 */
+	if (h_flag)
+		ov2680_h_flip(sd, h_flag);
+	if (v_flag)
+		ov2680_v_flip(sd, v_flag);
 
 	v4l2_info(client,"\n%s idx %d \n", __func__, dev->fmt_idx);
 
