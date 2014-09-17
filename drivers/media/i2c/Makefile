@@ -4,8 +4,11 @@
 
 obj-$(CONFIG_VIDEO_IMX)        += imx/
 obj-$(CONFIG_VIDEO_IMXVB)      += imx135VB/
+ifdef CONFIG_GMIN_INTEL_MID
+obj-$(CONFIG_VIDEO_OV5693)     += ov5693-ecs/
+else
 obj-$(CONFIG_VIDEO_OV5693)     += ov5693/
-
+endif
 obj-$(CONFIG_VIDEO_MT9M114)    += mt9m114.o
 obj-$(CONFIG_VIDEO_MT9E013)    += mt9e013/
 
