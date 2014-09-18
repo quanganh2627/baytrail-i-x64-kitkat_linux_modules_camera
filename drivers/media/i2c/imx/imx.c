@@ -38,7 +38,9 @@
 #include <linux/string.h>
 #include <linux/slab.h>
 #include <linux/types.h>
+#ifndef CONFIG_GMIN_INTEL_MID /* FIXME! for non-gmin*/
 #include <media/v4l2-chip-ident.h>
+#endif
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-device.h>
 #include "imx.h"
@@ -686,7 +688,7 @@ static int imx_s_power(struct v4l2_subdev *sd, int on)
 
 	return ret;
 }
-
+#ifndef CONFIG_GMIN_INTEL_MID /* FIXME! for non-gmin*/
 static int imx_g_chip_ident(struct v4l2_subdev *sd,
 				struct v4l2_dbg_chip_ident *chip)
 {
@@ -699,7 +701,7 @@ static int imx_g_chip_ident(struct v4l2_subdev *sd,
 
 	return 0;
 }
-
+#endif
 static int imx_get_intg_factor(struct i2c_client *client,
 				struct camera_mipi_info *info,
 				const struct imx_reg *reglist)
@@ -1945,6 +1947,7 @@ static int imx_enum_mbus_fmt(struct v4l2_subdev *sd, unsigned int index,
 
 static int __update_imx_device_settings(struct imx_device *dev, u16 sensor_id)
 {
+#ifndef CONFIG_GMIN_INTEL_MID /* FIXME! for non-gmin*/
 	switch (sensor_id) {
 	case IMX175_ID:
 		if (INTEL_MID_BOARD(1, TABLET, CHT) ||
@@ -1996,6 +1999,10 @@ static int __update_imx_device_settings(struct imx_device *dev, u16 sensor_id)
 	}
 
 	return dev->vcm_driver->init(&dev->sd);
+#else
+	/* IMX on other platform is not supported yet */
+	return -EINVAL;
+#endif
 }
 
 static int imx_s_config(struct v4l2_subdev *sd,
@@ -2365,7 +2372,9 @@ static const struct v4l2_subdev_video_ops imx_video_ops = {
 };
 
 static const struct v4l2_subdev_core_ops imx_core_ops = {
+#ifndef CONFIG_GMIN_INTEL_MID /* FIXME! for non-gmin*/
 	.g_chip_ident = imx_g_chip_ident,
+#endif
 	.queryctrl = v4l2_subdev_queryctrl,
 	.g_ctrl = v4l2_subdev_g_ctrl,
 	.s_ctrl = v4l2_subdev_s_ctrl,
