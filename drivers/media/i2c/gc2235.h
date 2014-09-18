@@ -29,7 +29,9 @@
 #include <linux/spinlock.h>
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-device.h>
+#ifndef CONFIG_GMIN_INTEL_MID /* FIXME! for non-gmin*/
 #include <media/v4l2-chip-ident.h>
+#endif
 #include <linux/v4l2-mediabus.h>
 #include <media/media-entity.h>
 
