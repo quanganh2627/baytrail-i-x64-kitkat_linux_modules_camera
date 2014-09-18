@@ -51,8 +51,6 @@ static const struct i2c_device_id ov_ids[] = {
 };
 
 #define to_ov_sensor(sd) container_of(sd, struct ov_device, sd)
-static int v_flag = 0;
-static int h_flag = 0;
 static int
 __ov_read_reg(struct i2c_client *client,
 			u16 data_length,
@@ -197,20 +195,45 @@ __ov_write_reg_array(struct i2c_client *client,
 {
 	const struct misensor_reg *next = reglist;
 	int err;
+	u32 tmp_val;
+	u32 targetVal;
+	u16 bitLen = MISENSOR_8BIT;
 
 	for (; next->length != MISENSOR_TOK_TERM; next++) {
 		if (next->length == MISENSOR_TOK_DELAY) {
 			msleep(next->val);
 		} else {
-			err = __ov_write_reg(client, next->length, next->reg,
-						next->val);
-			/* REVISIT: Do we need this delay? */
-			udelay(10);
-			if (err) {
-				dev_err(&client->dev, "%s err. aborted\n",
-					__func__);
-				return err;
-			}
+            targetVal = next->val;
+            bitLen = (next->length & MISENSOR_8BIT) ? (MISENSOR_8BIT) :
+                                                    ((next->length & MISENSOR_16BIT) ? MISENSOR_16BIT : MISENSOR_32BIT);
+
+            if (next->length & MISENSOR_RMW_AND) {
+			    err = __ov_read_reg(client, bitLen, next->reg, &tmp_val);
+                if (err) {
+                    dev_err(&client->dev, "%s err. read %0x aborted\n", __func__, next->reg);
+                    continue;
+                }
+
+                targetVal = tmp_val & next->val;
+            }
+
+            if (next->length & MISENSOR_RMW_OR) {
+			    err = __ov_read_reg(client, bitLen, next->reg, &tmp_val);
+                if (err) {
+                    dev_err(&client->dev, "%s err. read %0x aborted\n", __func__, next->reg);
+                    continue;
+                }
+
+                targetVal = tmp_val | next->val;
+            }
+
+            err = __ov_write_reg(client, bitLen, next->reg, targetVal);
+            if (err) {
+                dev_err(&client->dev, "%s err. write %0x aborted\n", __func__, next->reg);
+                continue;
+            }
+
+            udelay(10);
 		}
 	}
 
@@ -335,8 +358,6 @@ static int __ov_power_down(struct v4l2_subdev *sd)
 	struct ov_device *dev = to_ov_sensor(sd);
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
-	h_flag = 0;
-	v_flag = 0;
 	if (NULL == dev->platform_data) {
 		dev_err(&client->dev, "no camera_sensor_platform_data");
 		return -ENODEV;
@@ -795,16 +816,9 @@ static int ov_s_mbus_fmt(struct v4l2_subdev *sd,
 
 	pr_info("%s: set ov: res id %d, w%d, h%d\n",
 		__func__, ov_res->res_id, ov_res->width, ov_res->height);
+
 	mipi_info->num_lanes = ov_res->csi_lanes;
 	__ov_write_reg_array(c, ov_res->regs);
-
-	/*recall flip functions to avoid flip registers
-	 * were overrided by default setting
-	 */
-	if (h_flag)
-		ov_s_hflip(sd, h_flag);
-	if (v_flag)
-		ov_s_vflip(sd, v_flag);
 
 	if (dev->cur_res != ov_res->res_id) {
 
@@ -992,22 +1006,6 @@ static int ov_set_ctrl(struct v4l2_ctrl *ctrl)
 							struct ov_device, ctrl_handler);
 
 	mutex_lock(&dev->input_lock);
-	switch(ctrl->id)
-	{
-		case V4L2_CID_VFLIP:
-			if(ctrl->val)
-				v_flag=1;
-			else
-				v_flag=0;
-			break;
-		case V4L2_CID_HFLIP:
-			if(ctrl->val)
-				h_flag=1;
-			else
-				h_flag=0;
-			break;
-		default:break;
-	};
 
 	for (i = 0; i < dev->num_ctrls; i++) {
 		if (dev->ctrl_config[i].config.id == ctrl->id) {
@@ -1395,6 +1393,7 @@ static int ov_remove(struct i2c_client *client)
 	dev->platform_data->csi_cfg(sd, 0);
 	v4l2_device_unregister_subdev(sd);
 	media_entity_cleanup(&dev->sd.entity);
+	v4l2_ctrl_handler_free(&dev->ctrl_handler);
 	kfree(dev);
 
 	return 0;

@@ -39,9 +39,11 @@
 
 #define V4L2_IDENT_OV 1111
 /* #defines for i2c register writes and register array processing */
-#define MISENSOR_8BIT		1
-#define MISENSOR_16BIT		2
-#define MISENSOR_32BIT		4
+#define MISENSOR_8BIT		0x0001
+#define MISENSOR_16BIT		0x0002
+#define MISENSOR_32BIT		0x0004
+#define MISENSOR_RMW_AND    0x0008
+#define MISENSOR_RMW_OR     0x0010
 
 #define MISENSOR_TOK_TERM	0xf000	/* terminating token for reg list */
 #define MISENSOR_TOK_DELAY	0xfe00	/* delay token for reg list */
@@ -84,6 +86,7 @@ enum res_type {
 	RES_QVGA,	/* 320x240 */
 	RES_VGA,	/* 640x480 */
 	RES_480P,	/* 720x480 */
+	RES_SVGA,	/* 800x600 */
 	RES_720P,	/* 1280x720 */
 	RES_2M,		/* 1600x1200 */
 	RES_1080P,	/* 1920x1080 */
