@@ -1288,12 +1288,12 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			err = -ENOENT;
 			goto load_fw_fail;
 		}
-	}
 
-	err = atomisp_css_check_firmware_version(isp);
-	if (err) {
-		dev_dbg(&dev->dev, "Firmware version check failed\n");
-		goto fw_validation_fail;
+		err = atomisp_css_check_firmware_version(isp);
+		if (err) {
+			dev_dbg(&dev->dev, "Firmware version check failed\n");
+			goto fw_validation_fail;
+		}
 	}
 
 	isp->wdt_work_queue = alloc_workqueue(isp->v4l2_dev.name, 0, 1);
