@@ -219,6 +219,15 @@ config VIDEO_OV8830
 
          It currently only works with the atomisp driver.
 
+config VIDEO_HM2056
+  tristate "Himax hm2056 sensor support"
+  depends on I2C && VIDEO_V4L2
+  ---help---
+    This is a Video4Linux2 sensor-level driver for the Himax
+    hm2056 2MP RAW sensor.
+
+    It currently only works with the atomisp driver.
+
 config VIDEO_BF3905
          tristate "BYD bf3905 sensor support"
          depends on I2C && VIDEO_V4L2

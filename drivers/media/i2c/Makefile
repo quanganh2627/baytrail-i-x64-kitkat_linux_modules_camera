@@ -37,6 +37,7 @@ obj-$(CONFIG_VIDEO_GC0339)     += gc0339.o
 obj-$(CONFIG_VIDEO_GC0310)     += gc0310.o
 obj-$(CONFIG_VIDEO_BF3905)     += bf3905.o
 obj-$(CONFIG_VIDEO_S5K8AAY)    += s5k8aay.o
+obj-$(CONFIG_VIDEO_HM2056)     += hm2056.o
 CFLAGS_s5k8aay.o += -Werror
 
 obj-$(CONFIG_VIDEO_MSRLIST_HELPER) += libmsrlisthelper.o 
