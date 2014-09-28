@@ -308,6 +308,10 @@ STORAGE_CLASS_MPMATH_FUNC_H mpsdata_t mp_const (
     const mp_const_ID_t         ID,
     const bitdepth_t            bitdepth);
 
+STORAGE_CLASS_MPMATH_FUNC_H mpudata_t mp_sqrt_u(
+	const mpudata_t     in0,
+	const bitdepth_t    bitdepth);
+
 #ifndef INLINE_MPMATH
 #define STORAGE_CLASS_MPMATH_FUNC_C 
 #define STORAGE_CLASS_MPMATH_DATA_C const

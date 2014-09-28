@@ -28,7 +28,7 @@
 
 #include <ia_css_err.h>
 
-/* a common size for the version arrays */
+/** a common size for the version arrays */
 #define MAX_VERSION_SIZE	500
 
 /** @brief Retrieves the current CSS version

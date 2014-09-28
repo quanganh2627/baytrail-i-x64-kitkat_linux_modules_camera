@@ -72,7 +72,7 @@ struct ia_css_stream_isys_stream_config {
 	enum ia_css_stream_format format; /**< Format of input stream. This data
 					       format will be mapped to MIPI data
 					       type internally. */
-	int linked_isys_stream_id; /** default value is -1, other value means
+	int linked_isys_stream_id; /**< default value is -1, other value means
 							current isys_stream shares the same buffer with
 							indicated isys_stream*/
 	bool valid; /**< indicate whether other fields have valid value */
@@ -80,7 +80,10 @@ struct ia_css_stream_isys_stream_config {
 
 struct ia_css_stream_input_config {
 	struct ia_css_resolution  input_res; /**< Resolution of input data */
-	struct ia_css_resolution  effective_res; /**< Resolution of input data */
+	struct ia_css_resolution  effective_res; /**< Resolution of input data.
+							Used for CSS 2400/1 System and deprecated for other
+							systems (replaced by input_effective_res in
+							ia_css_pipe_config) */
 	enum ia_css_stream_format format; /**< Format of input stream. This data
 					       format will be mapped to MIPI data
 					       type internally. */
@@ -113,6 +116,7 @@ struct ia_css_stream_config {
 	 *  Effectively below two lines are implemented internally:
 	 *  if ( pixels_per_clock == 0 )
 	 *	pixels_per_clock = two_pixels_per_clock ? 2 : 1;
+	 * @deprecated{Replaced by pixels_per_clock for CSS API 2.1}
 	 */
 	bool two_pixels_per_clock; /**< Enable/disable 2 pixels per clock */
 	unsigned int pixels_per_clock; /**< Number of pixels per clock, which can be
@@ -128,11 +132,15 @@ struct ia_css_stream_config {
 	bool continuous; /**< Use SP copy feature to continuously capture frames
 			      to system memory and run pipes in offline mode */
 	int32_t flash_gpio_pin; /**< pin on which the flash is connected, -1 for no flash */
-	int left_padding; /** The number of input-formatter left-paddings, */
-			  /* -1 for default from binary.*/
+	int left_padding; /**< The number of input-formatter left-paddings, -1 for default from binary.*/
 	struct ia_css_mipi_buffer_config mipi_buffer_config; /**< mipi buffer configuration */
 	struct ia_css_metadata_config	metadata_config;     /**< Metadata configuration. */
 	bool ia_css_enable_raw_buffer_locking; /**< Enable Raw Buffer Locking for HALv3 Support */
+	bool lock_all;
+	/**< Lock all RAW buffers (true) or lock only buffers processed by
+	     video or preview pipe (false).
+	     This setting needs to be enabled to allow raw buffer locking
+	     without continuous viewfinder. */
 };
 
 struct ia_css_stream;
@@ -479,6 +487,8 @@ void
 ia_css_stream_request_flash(struct ia_css_stream *stream);
 
 /** @brief Configure a stream with filter coefficients.
+ *  	   @deprecated {Replaced by
+ *  				   ia_css_pipe_set_isp_config_on_pipe()}
  *
  * @param[in]	stream The stream.
  * @param[in]	config	The set of filter coefficients.
@@ -499,6 +509,8 @@ ia_css_stream_set_isp_config_on_pipe(struct ia_css_stream *stream,
 			     struct ia_css_pipe *pipe);
 
 /** @brief Configure a stream with filter coefficients.
+ *  	   @deprecated {Replaced by
+ *  				   ia_css_pipe_set_isp_config()}
  * @param[in]	stream	The stream.
  * @param[in]	config	The set of filter coefficients.
  * @return		IA_CSS_SUCCESS or error code upon error.

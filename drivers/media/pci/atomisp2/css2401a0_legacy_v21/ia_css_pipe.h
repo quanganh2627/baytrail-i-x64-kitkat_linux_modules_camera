@@ -83,7 +83,7 @@ struct ia_css_video_settings {
 	struct ia_css_binary video_binary;
 	struct ia_css_binary vf_pp_binary;
 	struct ia_css_binary *yuv_scaler_binary;
-	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES];
+	struct ia_css_frame *delay_frames[MAX_NUM_VIDEO_DELAY_FRAMES];
 	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];
 	struct ia_css_frame *vf_pp_in_frame;
 	struct ia_css_pipe *copy_pipe;
@@ -144,8 +144,8 @@ struct ia_css_pipe {
 	struct ia_css_frame_info	vf_yuv_ds_input_info;
 	struct ia_css_fw_info		*output_stage;	/* extra output stage */
 	struct ia_css_fw_info		*vf_stage;	/* extra vf_stage */
-	unsigned int				required_bds_factor;
-	enum ia_css_frame_delay		dvs_frame_delay;
+	unsigned int			required_bds_factor;
+	unsigned int			dvs_frame_delay;
 	int				num_invalid_frames;
 	bool				enable_viewfinder[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	struct ia_css_stream		*stream;
@@ -185,7 +185,7 @@ struct ia_css_pipe {
 	NULL,					/* output_stage */ \
 	NULL,					/* vf_stage */ \
 	SH_CSS_BDS_FACTOR_1_00,			/* required_bds_factor */ \
-	IA_CSS_FRAME_DELAY_1,			/* dvs_frame_delay */ \
+	1,					/* dvs_frame_delay */ \
 	0,					/* num_invalid_frames */ \
 	{true},					/* enable_viewfinder */ \
 	NULL,					/* stream */ \
@@ -199,5 +199,12 @@ struct ia_css_pipe {
 }
 
 void ia_css_pipe_map_queue(struct ia_css_pipe *pipe, bool map);
+
+enum ia_css_err
+sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
+				struct ia_css_isp_parameters *params,
+				bool commit, struct ia_css_pipe *pipe);
+
+
 
 #endif /* __IA_CSS_PIPE_H__ */

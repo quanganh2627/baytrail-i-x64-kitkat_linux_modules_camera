@@ -64,75 +64,53 @@
 
 #if defined(_MSC_VER)
 #ifdef _KERNEL_MODE
-/*Windows kernel mode compilation*/
+/* Windows kernel mode compilation */
 #include <wdm.h>
 #define assert(cnd) ASSERT(cnd)
 #else
-/*Windows usermode compilation*/
+/* Windows usermode compilation */
 #include <assert.h>
 #endif
 
-#define OP___assert(cnd) assert(cnd)
-#define OP_std_break()	OP___assert(0)
-#define OP___BUG() OP___assert(0)
-
 #elif defined(__HIVECC)
 
-/*
- * Enabling assert on cells has too many side effects, it should
- * by default be limited to the unsched CSIM mode, or to only
- * controller type processors. Presently there are not controls
- * in place for that
- */
+/* enable assert for unsched, disable assert for sched and target */
 #if defined(HRT_SCHED)
-#define OP___assert(cnd) ((void)0)
+#define assert(cnd) ((void)0)
 #else
-#define OP___assert(cnd) OP___csim_assert(cnd)
+#define assert(cnd) OP___csim_assert(cnd)
 #endif
 
-#define OP___BUG() OP___csim_assert(0)
-
-#elif defined(__KERNEL__) /* a.o. Android builds */
+#elif defined(__KERNEL__)
 #include <linux/bug.h>
 
-/*Workaround: removed ia_css_debug_dtrace
- *to avoid circular dependency of ia_css_debug.h
- *need to find a better solution
- */
-
-#define assert(cnd)							\
-	do {								\
-		if (!(cnd)) {						\
-			BUG();						\
-		}							\
+/* TODO: it would be cleaner to use this:
+ * #define assert(cnd) BUG_ON(cnd)
+ * but that causes many compiler warnings (==errors) under Android
+ * because it seems that the BUG_ON() macro is not seen as a check by
+ * gcc like the BUG() macro is. */
+#define assert(cnd) \
+	do { \
+		if (!(cnd)) \
+			BUG(); \
 	} while (0)
 
-#define OP___assert(cnd) assert(cnd)
-#define OP_std_break()	OP___assert(0)
-#define OP___BUG() OP___assert(0)
+#elif defined(__FIST__) || defined(__GNUC__)
 
-#elif defined(__FIST__)
-
+/* enable assert for crun */
 #include "assert.h"
-#define OP___assert(cnd) assert(cnd)
 
-#elif defined(__GNUC__)
-
-#include "assert.h"
-#define OP___assert(cnd) assert(cnd)
-#define OP___BUG() OP___assert(0)
-#if !defined(__ISP) && !defined(__SP)
-/*
- * For SP and ISP, SDK provides the definition of OP_std_break
- * We need it only for host
- */
-#define OP_std_break()	OP___assert(0)
-#endif
-
-#else /* default is for unknown environments */
+#else /* default for unknown environments */
 #define assert(cnd) ((void)0)
 #endif
 
 #endif /* NDEBUG */
+
+#ifndef PIPE_GENERATION
+/* Deprecated OP___assert, this is still used in ~1000 places
+ * in the code. This will be removed over time.
+ * The implemenation for the pipe generation tool is in see support.isp.h */
+#define OP___assert(cnd) assert(cnd)
+#endif
 
 #endif /* __ASSERT_SUPPORT_H_INCLUDED__ */

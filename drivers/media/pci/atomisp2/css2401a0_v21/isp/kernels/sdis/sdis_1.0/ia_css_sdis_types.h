@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_SDIS_TYPES_H
 #define __IA_CSS_SDIS_TYPES_H
 
+/** @file
+* CSS-API header file for DVS statistics parameters.
+*/
+
 /** Number of DVS coefficient types */
 #define IA_CSS_DVS_NUM_COEF_TYPES      6
 

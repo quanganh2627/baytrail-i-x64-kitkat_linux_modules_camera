@@ -22,6 +22,11 @@
 #ifndef __IA_CSS_SC_TYPES_H
 #define __IA_CSS_SC_TYPES_H
 
+/** @file
+* CSS-API header file for Lens Shading Correction (SC) parameters.
+*/
+
+
 /** Number of color planes in the shading table. */
 #define IA_CSS_SC_NUM_COLORS           4
 

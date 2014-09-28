@@ -19,6 +19,7 @@
  *
  */
 
+#include <math_support.h>
 #include "sh_css_param_shading.h"
 #include "ia_css_shading.h"
 #include "assert_support.h"

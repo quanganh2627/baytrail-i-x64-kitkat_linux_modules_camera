@@ -23,12 +23,12 @@
 #define _SH_CSS_SP_H_
 
 #include <system_global.h>
+#include <type_support.h>
 #if !defined(HAS_NO_INPUT_FORMATTER)
 #include "input_formatter.h"
 #endif
 
 #include "ia_css_binary.h"
-#include "sh_css_internal.h"
 #include "ia_css_types.h"
 #include "ia_css_pipeline.h"
 
@@ -202,7 +202,7 @@ void
 sh_css_sp_configure_prbs(int seed);
 
 void
-sh_css_sp_configure_enable_raw_pool_locking(void);
+sh_css_sp_configure_enable_raw_pool_locking(bool lock_all);
 
 void
 sh_css_sp_enable_isys_event_queue(bool enable);

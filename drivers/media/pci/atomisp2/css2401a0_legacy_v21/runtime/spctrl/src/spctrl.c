@@ -19,7 +19,7 @@
  *
  */
 
-#include "ia_css_acc_types.h"
+#include "ia_css_types.h"
 #define __INLINE_SP__
 #include "sp.h"
 

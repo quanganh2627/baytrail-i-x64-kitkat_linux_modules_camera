@@ -214,6 +214,7 @@ struct ia_css_binary_info {
 	struct {
 #if defined(IS_ISP_2500_SYSTEM)
 		uint8_t	input_feeder;
+		uint8_t output_system;
 		uint8_t	obgrid;
 		uint8_t	lin;
 		uint8_t	dpc_acc;
@@ -240,10 +241,11 @@ struct ia_css_binary_info {
 		uint8_t	rgb2yuv;
 		uint8_t	high_quality;
 		uint8_t	kerneltest;
-		uint8_t	routing_bnr_to_anr;
-		uint8_t	routing_anr_to_de;
-		uint8_t	routing_rgb_to_yuvp1;
-		uint8_t	routing_yuvp1_to_yuvp2;
+		uint8_t	routing_shd_to_bnr;/**< connect SHD with BNR ACCs*/
+		uint8_t	routing_bnr_to_anr;/**< connect BNR with ANR ACCs*/
+		uint8_t	routing_anr_to_de;/**< connect ANR with DE ACCs */
+		uint8_t	routing_rgb_to_yuvp1;/**< connect RGB with YUVP1 ACCs*/
+		uint8_t	routing_yuvp1_to_yuvp2;/**< connect YUVP1 with YUVP2 ACCs*/
 #endif
 		uint8_t	reduced_pipe;
 		uint8_t	vf_veceven;
@@ -344,6 +346,12 @@ struct ia_css_sp_info {
 	uint32_t sp_entry;	/**< The SP entry function */
 };
 
+/* The following #if is there because this header file is also included
+   by SP and ISP code but they do not need this data and HIVECC has alignment
+   issue with the firmware struct/union's.
+   More permanent solution will be to refactor this include.
+*/
+#if !defined(__ISP) && !defined(__SP)
 /** Accelerator firmware information.
  */
 struct ia_css_acc_info {
@@ -455,6 +463,8 @@ struct ia_css_acc_fw {
 #define IA_CSS_EXT_ISP_PROG_NAME(f)   ((const char *)(f)+(f)->blob.prog_name_offset)
 #define IA_CSS_EXT_ISP_MEM_OFFSETS(f) \
 	((const struct ia_css_memory_offsets *)((const char *)(f)+(f)->blob.mem_offsets))
+
+#endif /* !defined(__ISP) && !defined(__SP) */
 
 enum ia_css_sp_sleep_mode {
 	SP_DISABLE_SLEEP_MODE = 0,

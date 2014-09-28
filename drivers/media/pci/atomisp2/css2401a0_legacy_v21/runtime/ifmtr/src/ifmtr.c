@@ -19,7 +19,12 @@
  *
  */
 
+#include "system_global.h"
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2
+
 #include "ia_css_ifmtr.h"
+#include <math_support.h>
 #include "sh_css_internal.h"
 #include "input_formatter.h"
 #include "assert_support.h"
@@ -545,3 +550,5 @@ static enum ia_css_err ifmtr_input_start_line(
 	*start_line = start;
 	return IA_CSS_SUCCESS;
 }
+
+#endif

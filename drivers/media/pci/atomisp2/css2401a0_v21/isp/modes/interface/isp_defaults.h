@@ -87,8 +87,8 @@
 #define NUM_OUTPUT_PINS         0
 #endif
 
-#if !defined(ENABLE_MIRROR)
-#define ENABLE_MIRROR           0
+#if !defined(ENABLE_FLIP)
+#define ENABLE_FLIP           0
 #endif
 
 #if !defined(ENABLE_BAYER_OUTPUT)

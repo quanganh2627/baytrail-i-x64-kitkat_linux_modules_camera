@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_OUTPUT_TYPES_H
 #define __IA_CSS_OUTPUT_TYPES_H
 
+/** @file
+* CSS-API header file for parameters of output frames.
+*/
+
 /** Output frame
  *
  *  ISP block: output frame
@@ -43,7 +47,8 @@ struct ia_css_output1_configuration {
 };
 
 struct ia_css_output_config {
-	uint8_t enable_mirror;  /**< enable output mirroring */
+	uint8_t enable_hflip;  /**< enable horizontal output mirroring */
+	uint8_t enable_vflip;  /**< enable vertical output mirroring */
 };
 
 #endif /* __IA_CSS_OUTPUT_TYPES_H */

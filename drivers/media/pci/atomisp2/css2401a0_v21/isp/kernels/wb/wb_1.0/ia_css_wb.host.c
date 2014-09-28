@@ -22,7 +22,9 @@
 
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
+#ifndef IA_CSS_NO_DEBUG
 #include "ia_css_debug.h"
+#endif
 #include "sh_css_frac.h"
 
 #include "ia_css_wb.host.h"
@@ -58,6 +60,7 @@ ia_css_wb_encode(
 			   to->gain_shift);
 }
 
+#ifndef IA_CSS_NO_DEBUG
 void
 ia_css_wb_dump(
 	const struct sh_css_isp_wb_params *wb,
@@ -90,3 +93,5 @@ ia_css_wb_debug_dtrace(
 		config->gr, config->r,
 		config->b, config->gb);
 }
+#endif
+

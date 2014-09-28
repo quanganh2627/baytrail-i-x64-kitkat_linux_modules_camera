@@ -30,6 +30,15 @@
 				 * etc.
 				 */
 
+/* Definition of contents of main controller state register is lacking
+ * in ibuf_cntrl_defs.h, so define these here:
+ */
+#define _IBUF_CNTRL_MAIN_CNTRL_FSM_MASK			0xf
+#define _IBUF_CNTRL_MAIN_CNTRL_FSM_NEXT_COMMAND_CHECK	0x9
+#define _IBUF_CNTRL_MAIN_CNTRL_MEM_INP_BUF_ALLOC	(1 << 8)
+#define _IBUF_CNTRL_DMA_SYNC_WAIT_FOR_SYNC		1
+#define _IBUF_CNTRL_DMA_SYNC_FSM_WAIT_FOR_ACK		(0x3 << 1)
+
 typedef struct ib_buffer_s	ib_buffer_t;
 struct	ib_buffer_s {
 	uint32_t	start_addr;	/* start address of the buffer in the

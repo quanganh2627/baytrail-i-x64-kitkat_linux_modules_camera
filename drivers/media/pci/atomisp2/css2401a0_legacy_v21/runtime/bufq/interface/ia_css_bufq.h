@@ -188,5 +188,12 @@ enum ia_css_err ia_css_bufq_enqueue_unlock_raw_buff_msg(
 */
 enum ia_css_err ia_css_bufq_deinit(void);
 
+/**
+* @brief  Dump queue states
+ *
+ * @return	None
+ *
+*/
+void ia_css_bufq_dump_queue_info(void);
 
 #endif	/* _IA_CSS_BUFQ_H */

@@ -22,6 +22,7 @@
 #ifndef _SH_CSS_PARAMS_DVS_H_
 #define _SH_CSS_PARAMS_DVS_H_
 
+#include <math_support.h>
 #include <ia_css_types.h>
 #include "gdc_global.h" /* gdc_warp_param_mem_t */
 

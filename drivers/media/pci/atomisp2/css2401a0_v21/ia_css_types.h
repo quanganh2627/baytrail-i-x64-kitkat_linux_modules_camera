@@ -1,4 +1,5 @@
-/* Release Version: irci_master_20140806_1510 */
+/* Release Version: irci_master_20140927_1500 */
+/* Release Version: irci_master_20140927_1500 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -73,6 +74,12 @@
 
 #define IA_CSS_MORPH_TABLE_NUM_PLANES  6
 
+/* Min and max exposure IDs. These macros are here to allow
+ * the drivers to get this information. Changing these macros
+ * constitutes a CSS API change. */
+#define IA_CSS_ISYS_MIN_EXPOSURE_ID 1   /**< Minimum exposure ID */
+#define IA_CSS_ISYS_MAX_EXPOSURE_ID 250 /**< Maximum exposure ID */
+
 /* opaque types */
 struct ia_css_isp_parameters;
 struct ia_css_pipe;
@@ -80,7 +87,7 @@ struct ia_css_memory_offsets;
 struct ia_css_config_memory_offsets;
 struct ia_css_state_memory_offsets;
 
-/* Virtual address within the CSS address space. */
+/** Virtual address within the CSS address space. */
 typedef uint32_t ia_css_ptr;
 
 /** Generic resolution structure.
@@ -104,20 +111,20 @@ struct ia_css_vector {
 
 /** CSS data descriptor */
 struct ia_css_data {
-	ia_css_ptr address; /* CSS virtual address */
-	uint32_t   size;    /* Disabled if 0 */
+	ia_css_ptr address; /**< CSS virtual address */
+	uint32_t   size;    /**< Disabled if 0 */
 };
 
 /** Host data descriptor */
 struct ia_css_host_data {
-	char      *address; /* Host address */
-	uint32_t   size;    /* Disabled if 0 */
+	char      *address; /**< Host address */
+	uint32_t   size;    /**< Disabled if 0 */
 };
 
 /** ISP data descriptor */
 struct ia_css_isp_data {
-	uint32_t   address; /* ISP address */
-	uint32_t   size;    /* Disabled if 0 */
+	uint32_t   address; /**< ISP address */
+	uint32_t   size;    /**< Disabled if 0 */
 };
 
 /** Shading Correction types. */
@@ -239,6 +246,7 @@ struct ia_css_grid_info {
 	enum ia_css_vamem_type vamem_type;
 };
 
+/** defaults for ia_css_grid_info structs */
 #define DEFAULT_GRID_INFO \
 { \
 	0,				/* isp_in_width */ \
@@ -266,6 +274,7 @@ struct ia_css_morph_table {
 
 struct ia_css_dvs_6axis_config {
 	unsigned int exp_id;
+	/**< Exposure ID, see ia_css_event_public.h for more detail */
 	uint32_t width_y;
 	uint32_t height_y;
 	uint32_t width_uv;
@@ -306,6 +315,7 @@ struct ia_css_capture_config {
 	uint32_t enable_raw_output;
 };
 
+/** default settings for ia_css_capture_config structs */
 #define DEFAULT_CAPTURE_CONFIG \
 { \
 	IA_CSS_CAPTURE_MODE_PRIMARY,	/* mode (capture) */ \
@@ -400,9 +410,8 @@ struct ia_css_isp_config {
 	struct ia_css_dvs2_coefficients *dvs2_coefs; /**< DVS 2.0 coefficients */
 	struct ia_css_capture_config   *capture_config;
 	struct ia_css_anr_thres   *anr_thres;
-/* ------ deprecated(bz675) : from ------ */
+	/** @deprecated{Old shading settings, see bugzilla bz675 for details} */
 	struct ia_css_shading_settings *shading_settings;
-/* ------ deprecated(bz675) : to ------ */
 	struct ia_css_xnr3_config *xnr3_config; /**< eXtreme Noise Reduction v3 */
 	/** comment from Lasse: Be aware how this feature will affect coordinate
 	 *  normalization in different parts of the system. (e.g. face detection,

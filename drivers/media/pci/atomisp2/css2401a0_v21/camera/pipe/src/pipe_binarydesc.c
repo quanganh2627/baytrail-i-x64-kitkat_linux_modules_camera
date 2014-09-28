@@ -277,7 +277,7 @@ enum ia_css_err ia_css_pipe_get_preview_binarydesc(
 	 * Set up the info of the input frame with
 	 * the ISP required resolution
 	 */
-	in_info->res = pipe->stream->config.input_config.effective_res;
+	in_info->res = pipe->config.input_effective_res;
 	in_info->padded_width = in_info->res.width;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
 
@@ -410,7 +410,7 @@ enum ia_css_err ia_css_pipe_get_video_binarydesc(
 		mode = IA_CSS_BINARY_MODE_COPY;
 #endif
 
-	in_info->res = pipe->stream->config.input_config.effective_res;
+	in_info->res = pipe->config.input_effective_res;
 	in_info->padded_width = in_info->res.width;
 	in_info->format = IA_CSS_FRAME_FORMAT_RAW;
 	in_info->raw_bit_depth = ia_css_pipe_util_pipe_input_format_bpp(pipe);
@@ -638,7 +638,7 @@ void ia_css_pipe_get_primary_binarydesc(
 	if (ia_css_util_is_input_format_yuv(pipe->stream->config.input_config.format))
 		mode = IA_CSS_BINARY_MODE_COPY;
 
-	in_info->res = pipe->stream->config.input_config.effective_res;
+	in_info->res = pipe->config.input_effective_res;
 	in_info->padded_width = in_info->res.width;
 
 #if !defined(HAS_NO_PACKED_RAW_PIXELS)

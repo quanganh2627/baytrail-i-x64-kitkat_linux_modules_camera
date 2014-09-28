@@ -21,7 +21,9 @@
 
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
+#ifndef IA_CSS_NO_DEBUG
 #include "ia_css_debug.h"
+#endif
 #include "sh_css_frac.h"
 #include "assert_support.h"
 
@@ -138,6 +140,7 @@ ia_css_process_s3a(
 }
 #endif
 
+#ifndef IA_CSS_NO_DEBUG
 void
 ia_css_ae_dump(
 	const struct sh_css_isp_ae_params *ae,
@@ -224,6 +227,7 @@ ia_css_s3a_debug_dtrace(
 		config->ae_y_coef_b, config->awb_lg_high_raw,
 		config->awb_lg_low, config->awb_lg_high);
 }
+#endif
 
 void
 ia_css_s3a_hmem_decode(

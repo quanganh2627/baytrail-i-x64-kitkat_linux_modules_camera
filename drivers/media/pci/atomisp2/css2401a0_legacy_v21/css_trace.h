@@ -24,16 +24,19 @@
 */
 
 /* offsets for master_port read/write */
-#define HDR_HDR_OFFSET		0	/* offset of the header */
-#define HDR_COMMAND_OFFSET	4	/* offset of the command */
-#define HDR_DATA_OFFSET		8	/* offset of the command data */
-
+#define HDR_HDR_OFFSET              0	/* offset of the header */
+#define HDR_COMMAND_OFFSET          4	/* offset of the command */
+#define HDR_DATA_OFFSET             8	/* offset of the command data */
+#define HDR_DEBUG_SIGNATURE_OFFSET  16	/* offset of the param debug signature in trace_header_t */
+#define HDR_DEBUG_POINTER_OFFSET    20	/* offset of the param debug pointer in trace_header_t */
 
 /* common majors */
 #define MAJOR_MAIN		1
 #define MAJOR_ISP_STAGE_ENTRY	2
 #define MAJOR_DMA_PRXY		3
 #define MAJOR_START_ISP		4
+
+#define DEBUG_PTR_SIGNATURE     0xABCD	/* signature for the debug parameter pointer */
 
 /* command codes (1st byte) */
 typedef enum {

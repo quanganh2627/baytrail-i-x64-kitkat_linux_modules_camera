@@ -201,18 +201,20 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_subasr1(
 STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_abs(
     const tvector1w     _a);
 
-/** @brief subabs
+/** @brief subabssat
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		abs(a-b);
+ * @return		sat(abs(a-b));
  *
  * This function will calculate the absolute value
- * of the difference of both inputs
- * result = abs(_a - _b);
+ * of the difference of both inputs. Values are
+ * saturated both during substraction and absolute
+ * result = sat(abs(sat(_a - _b)));
+ * Temporary results could be more than input/output size
  */
-STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_subabs(
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_subabssat(
     const tvector1w     _a,
     const tvector1w     _b);
 
@@ -383,6 +385,8 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tflags OP_1w_gt(
  *
  * This function will shift _a with _b bits to the right.
  * preserving the sign bit.
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asr(
     const tvector1w     _a,
@@ -398,7 +402,8 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asr(
  * This function will shift _a with _b bits to the right.
  * and depending on the rounding mode of the core
  * it will round to nearest or to nearest even.
- *
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asrrnd(
     const tvector1w     _a,
@@ -412,7 +417,8 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asrrnd(
  * @return		_a << _b
  *
  * This function will shift _a with _b bits to the left.
- *
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asl(
     const tvector1w     _a,
@@ -426,7 +432,8 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asl(
  * @return		_a << _b
  *
  * This function will shift _a with _b bits to the left.
- *
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_aslsat(
     const tvector1w     _a,
@@ -441,6 +448,8 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_aslsat(
  *
  * This function will shift _a with _b bits to the left.
  * It will insert zero's on the right.
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_lsl(
     const tvector1w     _a,
@@ -454,7 +463,9 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_lsl(
  * @return		_a >> _b
  *
  * This function will shift _a with _b bits to the right.
- * It will insert zero's on the left
+ * It will insert zero's on the left.
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_lsr(
     const tvector1w     _a,
@@ -602,16 +613,16 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_mod(
     const tvector1w     _a,
     const tvector1w     _b);
 
-/** @brief Square root
+/** @brief Unsigned integer Square root
  *
  * @param[in] _a	input
  *
- * @return		square root of _a
+ * @return		Integer square root of _a
  *
- * This function will calculate the square root of _a
+ * This function will calculate the Integer square root of _a
  */
-STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_sqrt(
-    const tvector1w     _a);
+STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w_unsigned OP_1w_sqrt_u(
+	const tvector1w_unsigned     _a);
 
 /* Miscellaneous */
 

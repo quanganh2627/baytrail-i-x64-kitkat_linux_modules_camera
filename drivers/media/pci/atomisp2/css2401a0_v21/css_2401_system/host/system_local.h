@@ -72,18 +72,18 @@ static const hrt_address ISP_CTRL_BASE[N_ISP_ID] = {
 	0x0000000000020000ULL};
 
 static const hrt_address ISP_DMEM_BASE[N_ISP_ID] = {
-	0xffffffffffffffffULL};
+	0x0000000000200000ULL};
 
 static const hrt_address ISP_BAMEM_BASE[N_BAMEM_ID] = {
-	0xffffffffffffffffULL};
+	0x0000000000100000ULL};
 
 static const hrt_address ISP_VAMEM_BASE[N_VAMEM_ID] = {
-	0xffffffffffffffffULL,
-	0xffffffffffffffffULL,
-	0xffffffffffffffffULL};
+	0x00000000001C0000ULL,
+	0x00000000001D0000ULL,
+	0x00000000001E0000ULL};
 
 static const hrt_address ISP_HMEM_BASE[N_HMEM_ID] = {
-	0xffffffffffffffffULL};
+	0x00000000001F0000ULL};
 
 /* SP */
 static const hrt_address SP_CTRL_BASE[N_SP_ID] = {

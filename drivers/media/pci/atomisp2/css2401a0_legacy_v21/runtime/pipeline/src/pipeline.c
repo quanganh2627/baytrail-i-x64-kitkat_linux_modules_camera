@@ -50,7 +50,7 @@ static void pipeline_init_defaults(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
 	unsigned int pipe_num,
-	enum ia_css_frame_delay dvs_frame_delay);
+	unsigned int dvs_frame_delay);
 
 static void pipeline_stage_destroy(struct ia_css_pipeline_stage *stage);
 static enum ia_css_err pipeline_stage_create(
@@ -72,7 +72,7 @@ enum ia_css_err ia_css_pipeline_create(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
 	unsigned int pipe_num,
-	enum ia_css_frame_delay dvs_frame_delay)
+	unsigned int dvs_frame_delay)
 {
 	assert(pipeline != NULL);
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
@@ -177,6 +177,17 @@ bool ia_css_pipeline_get_sp_thread_id(unsigned int key, unsigned int *val)
 	      "ia_css_pipeline_get_sp_thread_id() leave: return_val=%d\n",
 	      *val);
 	return true;
+}
+
+void ia_css_pipeline_dump_thread_map_info(void)
+{
+	unsigned int i;
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+		"pipeline_num_to_sp_thread_map:\n");
+	for (i = 0; i < IA_CSS_PIPELINE_NUM_MAX; i++) {
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+			"pipe_num: %u, tid: 0x%x\n", i, pipeline_num_to_sp_thread_map[i]);
+	}
 }
 
 enum ia_css_err ia_css_pipeline_request_stop(struct ia_css_pipeline *pipeline)
@@ -635,7 +646,7 @@ static void pipeline_init_defaults(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
 	unsigned int pipe_num,
-	enum ia_css_frame_delay dvs_frame_delay)
+	unsigned int dvs_frame_delay)
 {
 	struct ia_css_frame init_frame = DEFAULT_FRAME;
 	unsigned int i;

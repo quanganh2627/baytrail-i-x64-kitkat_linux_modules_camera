@@ -21,7 +21,9 @@
 
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
+#ifndef IA_CSS_NO_DEBUG
 #include "ia_css_debug.h"
+#endif
 
 #include "ia_css_aa2.host.h"
 
@@ -45,6 +47,7 @@ ia_css_aa_encode(
 	to->strength = from->strength;
 }
 
+#ifndef IA_CSS_NO_DEBUG
 void
 ia_css_aa_dump(
 	const struct sh_css_isp_aa_params *aa,
@@ -59,4 +62,4 @@ ia_css_aa_debug_dtrace(
 		"config.strength=%d\n",
 		config->strength);
 }
-
+#endif /* IA_CSS_NO_DEBUG */

@@ -30,6 +30,9 @@
 #include <sp.h>
 #include "ia_css_circbuf_comm.h"
 #include "ia_css_circbuf_desc.h"
+#ifdef __SP
+#include "event_handler.sp.h" /* sp_error */
+#endif
 
 /****************************************************************
  *
@@ -290,7 +293,11 @@ STORAGE_CLASS_INLINE void ia_css_circbuf_write(
 
 	if (ia_css_circbuf_is_full(cb)) {
 		/* Cannot continue as the queue is full*/
-		OP_std_break();
+#ifdef __SP
+		sp_error(IA_CSS_FW_ERR_CIRCBUF_FULL);
+#else
+		assert(0);
+#endif
 	}
 
 	ia_css_circbuf_elem_cpy(&elem, &cb->elems[cb->desc->end]);

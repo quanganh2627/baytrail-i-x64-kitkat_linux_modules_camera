@@ -105,6 +105,10 @@
 /*#define HAS_NO_PACKED_RAW_PIXELS*/
 /*#define HAS_NO_DVS_6AXIS_CONFIG_UPDATE*/
 
+#define DMA_DDR_TO_VAMEM_WORKAROUND
+#define DMA_DDR_TO_HMEM_WORKAROUND
+
+
 /*
  * Semi global. "HRT" is accessible from SP, but
  * the HRT types do not fully apply

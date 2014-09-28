@@ -28,15 +28,15 @@
 
 /** Reference frame */
 struct ia_css_ref_configuration {
-	const struct ia_css_frame *ref_frames[NUM_VIDEO_DELAY_FRAMES];
+	const struct ia_css_frame *ref_frames[MAX_NUM_VIDEO_DELAY_FRAMES];
 	uint32_t dvs_frame_delay;
 };
 
 struct sh_css_isp_ref_isp_config {
 	uint32_t width_a_over_b;
 	struct dma_port_config port_b;
-	hrt_vaddress ref_frame_addr_y[NUM_VIDEO_DELAY_FRAMES];
-	hrt_vaddress ref_frame_addr_c[NUM_VIDEO_DELAY_FRAMES];
+	hrt_vaddress ref_frame_addr_y[MAX_NUM_VIDEO_DELAY_FRAMES];
+	hrt_vaddress ref_frame_addr_c[MAX_NUM_VIDEO_DELAY_FRAMES];
 	uint32_t dvs_frame_delay;
 };
 

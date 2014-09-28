@@ -50,9 +50,9 @@ struct ia_css_isp_dvs_statistics {
 	ia_css_ptr ver_proj;
 	uint32_t   hor_size;
 	uint32_t   ver_size;
-	uint32_t   exp_id;
-	ia_css_ptr data_ptr;	/* base pointer containing all memory */
-	uint32_t   size;	/* size of allocated memory in data_ptr */
+	uint32_t   exp_id;   /**< see ia_css_event_public.h for more detail */
+	ia_css_ptr data_ptr; /* base pointer containing all memory */
+	uint32_t   size;     /* size of allocated memory in data_ptr */
 };
 
 /** Structure that holds SKC DVS statistics in the ISP internal

@@ -22,6 +22,11 @@
 #ifndef __STORAGE_CLASS_H_INCLUDED__
 #define __STORAGE_CLASS_H_INCLUDED__
 
+/**
+* @file
+* Platform specific includes and functionality.
+*/
+
 #define STORAGE_CLASS_EXTERN extern
 
 #if defined(_MSC_VER)

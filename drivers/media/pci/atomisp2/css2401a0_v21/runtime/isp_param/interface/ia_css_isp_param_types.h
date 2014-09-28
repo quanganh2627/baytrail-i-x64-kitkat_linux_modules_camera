@@ -23,6 +23,8 @@
 #define _IA_CSS_ISP_PARAM_TYPES_H_
 
 #include "ia_css_types.h"
+#include <platform_support.h>
+#include <system_global.h>
 
 /* Short hands */
 #define IA_CSS_ISP_DMEM IA_CSS_ISP_DMEM0

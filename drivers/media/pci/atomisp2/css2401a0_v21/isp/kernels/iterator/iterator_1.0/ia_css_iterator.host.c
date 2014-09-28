@@ -36,6 +36,7 @@ ia_css_iterator_config(
 	ia_css_frame_info_to_frame_sp_info(&to->input_info,    from->input_info);
 	ia_css_frame_info_to_frame_sp_info(&to->internal_info, from->internal_info);
 	ia_css_frame_info_to_frame_sp_info(&to->output_info,   from->output_info);
+	ia_css_frame_info_to_frame_sp_info(&to->vf_info,       from->vf_info);
 	ia_css_resolution_to_sp_resolution(&to->dvs_envelope,  from->dvs_envelope);
 }
 
@@ -49,6 +50,7 @@ ia_css_iterator_configure(
 		&binary->in_frame_info,
 		&binary->internal_frame_info,
 		&binary->out_frame_info[0],
+		&binary->vf_frame_info,
 		&binary->dvs_envelope };
 	/* Use in_info iso binary->in_frame_info.
 	 * They can differ in padded width in case of scaling, e.g. for capture_pp.

@@ -23,6 +23,7 @@
 #include "input_system.h"
 #include "assert_support.h"
 #include "ia_css_isys.h"
+#include "ia_css_irq.h"
 #include "sh_css_internal.h"
 
 #if !defined(USE_INPUT_SYSTEM_VERSION_2401)

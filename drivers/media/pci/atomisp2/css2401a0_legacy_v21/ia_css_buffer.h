@@ -58,7 +58,9 @@ enum ia_css_buffer_type {
  */
 struct ia_css_buffer {
 	enum ia_css_buffer_type type; /**< Buffer type. */
-	unsigned int exp_id; /**< exposure id for this buffer; 0 = not available; currently only implemented for buffered sensor mode */
+	unsigned int exp_id;
+	/**< exposure id for this buffer; 0 = not available
+	     see ia_css_event_public.h for more detail. */
 	union {
 		struct ia_css_isp_3a_statistics  *stats_3a;    /**< 3A statistics & optionally RGBY statistics. */
 		struct ia_css_isp_dvs_statistics *stats_dvs;   /**< DVS statistics. */

@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_XNR3_TYPES_H
 #define __IA_CSS_XNR3_TYPES_H
 
+/** @file
+* CSS-API header file for Extra Noise Reduction (XNR) parameters.
+*/
+
 /**
  * \brief Scale of the XNR sigma parameters.
  * \details The define specifies which fixed-point value represents 1.0.

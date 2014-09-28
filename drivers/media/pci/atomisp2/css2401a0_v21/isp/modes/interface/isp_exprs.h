@@ -52,7 +52,7 @@
 #define LOG_VECTOR_STEP        _ISP_LOG_VECTOR_STEP(MODE)
 /* should be even and multiple of vf downscaling */
 #define ISP_OUTPUT_CHUNK_LOG_FACTOR (MAX_VF_LOG_DOWNSCALE<=1 ? LOG_VECTOR_STEP : \
-					max(VF_LOG_DOWNSCALE,LOG_VECTOR_STEP))
+					umax(VF_LOG_DOWNSCALE, LOG_VECTOR_STEP))
 
 #define CEIL_DIV_CHUNKS(n,c)    ((c) == 1 ? (n) \
 		  		          : CEIL_SHIFT(CEIL_DIV((n), (c)), ISP_OUTPUT_CHUNK_LOG_FACTOR)<<ISP_OUTPUT_CHUNK_LOG_FACTOR)
@@ -95,6 +95,9 @@
 #define IMAGEFORMAT_IS_RGBA(fmt)		((fmt) == IA_CSS_FRAME_FORMAT_RGBA888)
 
 #define IMAGEFORMAT_IS_NV11(fmt)		((fmt) == IA_CSS_FRAME_FORMAT_NV11)
+
+#define IMAGEFORMAT_IS_16BIT(fmt)               ((fmt) == IA_CSS_FRAME_FORMAT_YUV420_16 || (fmt) == IA_CSS_FRAME_FORMAT_YUV422_16)
+
 #endif
 
 

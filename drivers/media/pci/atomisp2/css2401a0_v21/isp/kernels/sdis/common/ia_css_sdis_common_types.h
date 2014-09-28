@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_SDIS_COMMON_TYPES_H
 #define __IA_CSS_SDIS_COMMON_TYPES_H
 
+/** @file
+* CSS-API header file for DVS statistics parameters.
+*/
+
 #include <type_support.h>
 
 /** DVS statistics grid dimensions in number of cells.

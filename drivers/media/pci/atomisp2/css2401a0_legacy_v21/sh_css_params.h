@@ -27,8 +27,9 @@
 /* Forward declaration to break mutual dependency */
 struct ia_css_isp_parameters;
 
+#include <type_support.h>
 #include "ia_css_types.h"
-#include "sh_css_internal.h"
+#include "ia_css_binary.h"
 #include "sh_css_legacy.h"
 #if defined(IS_ISP_2500_SYSTEM)
 #include "product_specific.host.h"
@@ -168,5 +169,8 @@ struct ia_css_host_data *
 ia_css_params_alloc_convert_sctbl(
 	    const struct ia_css_pipeline_stage *stage,
 	    const struct ia_css_shading_table *shading_table);
+
+struct ia_css_isp_config *
+sh_css_pipe_isp_config_get(struct ia_css_pipe *pipe);
 
 #endif /* _SH_CSS_PARAMS_H_ */

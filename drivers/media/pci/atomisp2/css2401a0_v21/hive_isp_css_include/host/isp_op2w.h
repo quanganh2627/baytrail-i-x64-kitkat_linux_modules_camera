@@ -200,18 +200,20 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_subasr1(
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_abs(
     const tvector2w     _a);
 
-/** @brief subabs
+/** @brief subabssat
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		abs(a-b);
+ * @return		sat(abs(a-b));
  *
  * This function will calculate the absolute value
- * of the difference of both inputs
- * result = abs(_a - _b);
+ * of the difference of both inputs. Values are
+ * saturated both during substraction and absolute
+ * result = sat(abs(sat(_a - _b)));
+ * Temporary results could be more than input/output size
  */
-STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_subabs(
+STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_subabssat(
     const tvector2w     _a,
     const tvector2w     _b);
 
@@ -365,6 +367,8 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tflags OP_2w_gt(
  *
  * This function will shift _a with _b bits to the right.
  * preserving the sign bit.
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asr(
     const tvector2w     _a,
@@ -380,7 +384,8 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asr(
  * This function will shift _a with _b bits to the right.
  * and depending on the rounding mode of the core
  * it will round to nearest or to nearest even.
- *
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asrrnd(
     const tvector2w     _a,
@@ -394,7 +399,8 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asrrnd(
  * @return		_a << _b
  *
  * This function will shift _a with _b bits to the left.
- *
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asl(
     const tvector2w     _a,
@@ -408,7 +414,8 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asl(
  * @return		_a << _b
  *
  * This function will shift _a with _b bits to the left.
- *
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_aslsat(
     const tvector2w     _a,
@@ -423,6 +430,8 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_aslsat(
  *
  * This function will shift _a with _b bits to the left.
  * It will insert zero's on the right.
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_lsl(
     const tvector2w     _a,
@@ -437,6 +446,8 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_lsl(
  *
  * This function will shift _a with _b bits to the right.
  * It will insert zero's on the left
+ * The operation count for this function assumes that
+ * the shift amount is a cloned scalar input.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_lsr(
     const tvector2w     _a,

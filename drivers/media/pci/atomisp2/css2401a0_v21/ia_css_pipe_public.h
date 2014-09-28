@@ -65,6 +65,8 @@ struct ia_css_pipe_config {
 	/**< mode, indicates which mode the pipe should use. */
 	unsigned int isp_pipe_version;
 	/**< pipe version, indicates which imaging pipeline the pipe should use. */
+	struct ia_css_resolution input_effective_res;
+	/**< input effective resolution */
 	struct ia_css_resolution bayer_ds_out_res;
 	/**< bayer down scaling */
 	struct ia_css_resolution capt_pp_in_res;
@@ -96,12 +98,18 @@ struct ia_css_pipe_config {
 	/**< Disabling digital zoom for a pipeline, if this is set to false,
 	     then setting a zoom factor will have no effect.
 	     In some use cases this provides better performance. */
+	struct ia_css_isp_config *p_isp_config;
+	/**< Pointer to ISP configuration */
 };
 
+/**
+ * Default settings for newly created pipe configurations.
+ */
 #define DEFAULT_PIPE_CONFIG \
 { \
 	IA_CSS_PIPE_MODE_PREVIEW,		/* mode */ \
 	1,					/* isp_pipe_version */ \
+	{ 0, 0 },				/* pipe_effective_input_res */ \
 	{ 0, 0 },				/* bayer_ds_out_res */ \
 	{ 0, 0 },				/* vf_pp_in_res */ \
 	{ 0, 0 },				/* capt_pp_in_res */ \
@@ -115,7 +123,8 @@ struct ia_css_pipe_config {
 	{ 0, 0 },				/* dvs_envelope */ \
 	IA_CSS_FRAME_DELAY_1,			/* dvs_frame_delay */ \
 	-1,					/* acc_num_execs */ \
-	false					/* enable_dz */ \
+	false,					/* enable_dz */ \
+	NULL					/* p_isp_config */\
 }
 
 /** Pipe info, this struct describes properties of a pipe after it's stream has
@@ -144,15 +153,25 @@ struct ia_css_pipe_info {
 	struct ia_css_grid_info  grid_info;
 	/**< After an image pipe is created, this field will contain the grid
 	     info for 3A and DVS. */
+	int num_invalid_frames;
+	/**< The very first frames in a started stream do not contain valid data.
+	     In this field, the CSS-firmware communicates to the host-driver how
+	     many initial frames will contain invalid data; this allows the
+	     host-driver to discard those initial invalid frames and start it's
+	     output at the first valid frame. */
 };
 
+/**
+ * Defaults for ia_css_pipe_info structs.
+ */
 #define DEFAULT_PIPE_INFO \
 { \
 	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* output_info */ \
 	{IA_CSS_BINARY_DEFAULT_FRAME_INFO},	/* vf_output_info */ \
 	IA_CSS_BINARY_DEFAULT_FRAME_INFO,	/* raw_output_info */ \
 	DEFAULT_SHADING_INFO,			/* shading_info */ \
-	DEFAULT_GRID_INFO			/* grid_info */ \
+	DEFAULT_GRID_INFO,			/* grid_info */ \
+	0					/* num_invalid_frames */ \
 }
 
 /** @brief Load default pipe configuration
@@ -184,6 +203,7 @@ struct ia_css_pipe_info {
 		1,      // dvs_frame_delay
 		-1,     // acc_num_execs
 		true,   // enable_dz
+		NULL,   // p_isp_config
 	};
 @endcode
  */
@@ -194,7 +214,8 @@ void ia_css_pipe_config_defaults(struct ia_css_pipe_config *pipe_config);
  * @param[out]	pipe The pipe.
  * @return	IA_CSS_SUCCESS or the error code.
  *
- * This function will create a pipe with the given configuration.
+ * This function will create a pipe with the given
+ * configuration.
  */
 enum ia_css_err
 ia_css_pipe_create(const struct ia_css_pipe_config *config,
@@ -219,6 +240,18 @@ ia_css_pipe_destroy(struct ia_css_pipe *pipe);
 enum ia_css_err
 ia_css_pipe_get_info(const struct ia_css_pipe *pipe,
 		     struct ia_css_pipe_info *pipe_info);
+
+/** @brief Configure a pipe with filter coefficients.
+ * @param[in]	pipe	The pipe.
+ * @param[in]	config	The pointer to ISP configuration.
+ * @return		IA_CSS_SUCCESS or error code upon error.
+ *
+ * This function configures the filter coefficients for an image
+ * pipe.
+ */
+enum ia_css_err
+ia_css_pipe_set_isp_config(struct ia_css_pipe *pipe,
+						   struct ia_css_isp_config *config);
 
 /** @brief Controls when the Event generator raises an IRQ to the Host.
  *
@@ -413,4 +446,13 @@ enum ia_css_err
 ia_css_pipe_get_qos_ext_state (struct ia_css_pipe *pipe,
                            uint32_t fw_handle,
                            bool * enable);
+
+/** @brief Get selected configuration settings
+ * @param[in]	pipe	The pipe.
+ * @param[out]	config	Configuration settings.
+ * @return		None
+ */
+void
+ia_css_pipe_get_isp_config(struct ia_css_pipe *pipe,
+			     struct ia_css_isp_config *config);
 #endif /* __IA_CSS_PIPE_PUBLIC_H */

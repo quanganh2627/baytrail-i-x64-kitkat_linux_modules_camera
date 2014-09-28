@@ -215,10 +215,12 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 /* Each line of this table is aligned to the maximum line width. */
 #define SH_CSS_MAX_S3ATBL_WIDTH              SH_CSS_MAX_BQ_GRID_WIDTH
 
-
-#define MAX_DVS_FRAME_DELAY         2
-#define NUM_VIDEO_DELAY_FRAMES	(MAX_DVS_FRAME_DELAY + 1)  /* SN: Should this not always match NUM_REF_FRAMES ?*/
-#define NUM_VIDEO_TNR_FRAMES	2
+/* The video binary supports a delay of 1 or 2 */
+#define MAX_DVS_FRAME_DELAY		2
+/* We always need one additional frame because the video binary
+ * reads the previous and writes the current frame concurrently */
+#define MAX_NUM_VIDEO_DELAY_FRAMES	(MAX_DVS_FRAME_DELAY + 1)
+#define NUM_VIDEO_TNR_FRAMES		2
 
 /* Rules: these implement logic shared between the host code and ISP firmware.
    The ISP firmware needs these rules to be applied at pre-processor time,
@@ -374,7 +376,11 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 #define _ISP_INPUT_HEIGHT(internal_height, ds_input_height, enable_ds) \
 	((enable_ds) ? (ds_input_height) : (internal_height))
 
+#ifdef IS_ISP_2500_SYSTEM
+#define SH_CSS_MAX_STAGES 3 /* 2 stages for split isp pipelin, 1 for scaling */
+#else
 #define SH_CSS_MAX_STAGES 6 /* copy, preisp, anr, postisp, capture_pp, vf_pp */
+#endif
 
 /* For CSI2+ input system, it requires extra paddinga from vmem */
 #ifdef CONFIG_CSI2_PLUS

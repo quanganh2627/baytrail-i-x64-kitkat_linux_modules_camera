@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_ANR_TYPES_H
 #define __IA_CSS_ANR_TYPES_H
 
+/** @file
+* CSS-API header file for Advanced Noise Reduction kernel v1
+*/
+
 /* Application specific DMA settings  */
 #define ANR_BPP                 10
 #define ANR_ELEMENT_BITS        ((CEIL_DIV(ANR_BPP, 8))*8)

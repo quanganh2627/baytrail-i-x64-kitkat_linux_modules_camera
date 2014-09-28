@@ -24,52 +24,34 @@
 
 #include "type_support.h"
 
-/* BNR22 filter size. Must be 5x5. */
-#define BNR_FILTER_SIZE		5
-
-/* BNR22 enable disparity correction. */
-#define BNR_DISPARITY_CORRECTION	1
-
-/* BNR22 Mode (#number of directions) */
-/* Currently only mode 4 is supported (ISP2.6.1.) */
-#define BNR_MODE		4
-
-/* TEMP, for implementation purpose.... */
-#define SCALER_IMPLEMENTATION	1
-
 /* TEMP: for implementation purpose.... */
-#define STATE_IMPLEMENTATION	1
-
-/* TEMP: for implementation purpose.... */
-#define BYPASS_BNR22		0
-
-/* Define boundary behavior */
-#define MIRROR_CORNER
+#define BYPASS_BNR22		1
 
 /* BNR (Bayer Noise Reduction) ISP parameters */
 struct sh_css_isp_bnr22_params {
-	int32_t BnrDVarGain_R0;		/**Directional variance gain for R, in dark region. */
-	int32_t BnrDVarGain_G0;		/**Directional variance gain for R, in dark region. */
-	int32_t BnrDVarGain_B0;		/**Directional variance gain for R, in dark region. */
-	int32_t BnrDVarGain_R1;		/**Directional variance gain for R, in bright region. */
-	int32_t BnrDVarGain_G1;		/**Directional variance gain for R, in bright region. */
-	int32_t BnrDVarGain_B1;		/**Directional variance gain for R, in bright region. */
-	int32_t BnrNVarGain_R0;		/**Non-Directional variance gain for R, in dark region. */
-	int32_t BnrNVarGain_G0;		/**Non-Directional variance gain for R, in dark region. */
-	int32_t BnrNVarGain_B0;		/**Non-Directional variance gain for R, in dark region. */
-	int32_t BnrNVarGain_R1;		/**Non-Directional variance gain for R, in bright region. */
-	int32_t BnrNVarGain_G1;		/**Non-Directional variance gain for R, in bright region. */
-	int32_t BnrNVarGain_B1;		/**Non-Directional variance gain for R, in bright region. */
-	int32_t BnrDThres;		/**Threshold for directional filtering */
-	int32_t BnrDThresW;		/**Threshold width for directional filtering */
-	int32_t BnrVarOffsetCoef;	/**Variance offset coefficient noise subtraction level */
-	int32_t BnrDGain;		/**Gain for directional coefficient */
-	int32_t BnrDetailThreshold;	/**Threshold for low contrast texture control */
-	int32_t BnrDetailLevelOffset;	/**Offset value for low contrast texture control */
-	int32_t BnrDValThMin;		/**Minimum clipping value for directional variance*/
-	int32_t BnrDVarThMax;		/**Maximum clipping value for diretional variance*/
-	int32_t BnrNVarThMin;		/**Minimum clipping value for non-directional variance*/
-	int32_t BnrNVarThMax;		/**Maximum clipping value for non-directional variance*/
+	int32_t d_var_gain_r;
+	int32_t d_var_bias_r;
+	int32_t d_var_gain_g;
+	int32_t d_var_bias_g;
+	int32_t d_var_gain_b;
+	int32_t d_var_bias_b;
+	int32_t n_var_gain_r;
+	int32_t n_var_bias_r;
+	int32_t n_var_gain_g;
+	int32_t n_var_bias_g;
+	int32_t n_var_gain_b;
+	int32_t n_var_bias_b;
+	int32_t d_thres;
+	int32_t d_thres_w;
+	int32_t d_var_th_min;
+	int32_t d_var_th_max;
+	int32_t n_var_th_min;
+	int32_t n_var_th_max;
+	int32_t coeff_var_th_gain;
+	int32_t d_gain;
+	int32_t detail_gain;
+	int32_t detail_gain_asr;
+	int32_t detail_level_bias;
 };
 
 #endif /* __IA_CSS_BNR22_PARAM_H */

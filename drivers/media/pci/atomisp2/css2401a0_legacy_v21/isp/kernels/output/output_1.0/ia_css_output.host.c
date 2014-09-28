@@ -20,7 +20,6 @@
  */
 
 #include "ia_css_frame.h"
-#include "ia_css.h"
 #include "ia_css_debug.h"
 #define IA_CSS_INCLUDE_CONFIGURATIONS
 #include "ia_css_isp_configs.h"
@@ -30,6 +29,7 @@
 #include "assert_support.h"
 
 const struct ia_css_output_config default_output_config = {
+	0,
 	0
 };
 
@@ -40,7 +40,8 @@ ia_css_output_encode(
 	unsigned size)
 {
 	(void)size;
-	to->enable_mirror = from->enable_mirror;
+	to->enable_hflip = from->enable_hflip;
+	to->enable_vflip = from->enable_vflip;
 }
 
 void
@@ -121,9 +122,12 @@ ia_css_output_dump(
 	unsigned level)
 {
 	if (!output) return;
-	ia_css_debug_dtrace(level, "Output Mirror:\n");
+	ia_css_debug_dtrace(level, "Horizontal Output Flip:\n");
 	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
-			"enable", output->enable_mirror);
+			"enable", output->enable_hflip);
+	ia_css_debug_dtrace(level, "Vertical Output Flip:\n");
+	ia_css_debug_dtrace(level, "\t%-32s = %d\n",
+			"enable", output->enable_vflip);
 }
 
 void
@@ -132,6 +136,9 @@ ia_css_output_debug_dtrace(
 	unsigned level)
 {
 	ia_css_debug_dtrace(level,
-		"config.enable_mirror=%d",
-		config->enable_mirror);
+		"config.enable_hflip=%d",
+		config->enable_hflip);
+	ia_css_debug_dtrace(level,
+		"config.enable_vflip=%d",
+		config->enable_vflip);
 }

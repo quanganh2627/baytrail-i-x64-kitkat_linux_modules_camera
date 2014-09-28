@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_GC_TYPES_H
 #define __IA_CSS_GC_TYPES_H
 
+/** @file
+* CSS-API header file for Gamma Correction parameters.
+*/
+
 /** Fractional bits for GAMMA gain */
 #define IA_CSS_GAMMA_GAIN_K_SHIFT      13
 

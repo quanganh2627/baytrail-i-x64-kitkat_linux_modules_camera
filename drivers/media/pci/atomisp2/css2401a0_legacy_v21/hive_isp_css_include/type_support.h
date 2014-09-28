@@ -22,10 +22,14 @@
 #ifndef __TYPE_SUPPORT_H_INCLUDED__
 #define __TYPE_SUPPORT_H_INCLUDED__
 
-/* Per the DLI spec, types are in "type_support.h" and
- * "platform_support.h" is for unclassified/to be refactored
- * platform specific definitions.
- */
+/**
+* @file
+* Platform specific types.
+*
+* Per the DLI spec, types are in "type_support.h" and
+* "platform_support.h" is for unclassified/to be refactored
+* platform specific definitions.
+*/
 
 #define IA_CSS_UINT8_T_BITS						8
 #define IA_CSS_UINT16_T_BITS					16

@@ -23,6 +23,7 @@
 #define _SH_CSS_INTERNAL_H_
 
 #include <system_global.h>
+#include <math_support.h>
 #include <type_support.h>
 #include <platform_support.h>
 #include <stdarg.h>
@@ -39,7 +40,9 @@
 #include "ia_css_buffer.h"
 
 #include "ia_css_binary.h"
-#include "sh_css_firmware.h"
+#if !defined(__ISP) && !defined(__SP)
+#include "sh_css_firmware.h" /* not needed/desired on SP/ISP */
+#endif
 #include "sh_css_legacy.h"
 #include "sh_css_defs.h"
 #include "sh_css_uds.h"
@@ -142,7 +145,11 @@
 	#define SH_CSS_MAX_SP_THREADS			0
 #else
 	#if defined(IS_ISP_2500_SYSTEM)
-		#define SH_CSS_MAX_SP_THREADS		2
+		#if defined(SWITCH_GACS_TO_SP1)
+			#define SH_CSS_MAX_SP_THREADS		2
+		#else
+			#define SH_CSS_MAX_SP_THREADS		2
+		#endif
 	#else
 		#define SH_CSS_MAX_SP_THREADS		5
 	#endif
@@ -219,6 +226,12 @@ enum host2sp_commands {
 
 /** Enumeration used to indicate the events that are produced by
  *  the SP and consumed by the Host.
+ *
+ * !!!IMPORTANT!!! KEEP THE FOLLOWING IN SYNC:
+ * 1) "enum ia_css_event_type"					(ia_css_event_public.h)
+ * 2) "enum sh_css_sp_event_type"				(sh_css_internal.h)
+ * 3) "enum ia_css_event_type event_id_2_event_mask"		(event_handler.sp.c)
+ * 4) "enum ia_css_event_type convert_event_sp_to_host_domain"	(sh_css.c)
  */
 enum sh_css_sp_event_type {
 	SH_CSS_SP_EVENT_OUTPUT_FRAME_DONE,
@@ -234,6 +247,7 @@ enum sh_css_sp_event_type {
 	SH_CSS_SP_EVENT_LACE_STATISTICS_DONE,
 	SH_CSS_SP_EVENT_ACC_STAGE_COMPLETE,
 	SH_CSS_SP_EVENT_PORT_EOF,
+	SH_CSS_SP_EVENT_FW_ERROR,
 	SH_CSS_SP_EVENT_NR_OF_TYPES		/* must be last */
 };
 
@@ -313,7 +327,7 @@ struct ia_css_isp_parameter_set_info {
 struct sh_css_binary_args {
 	struct ia_css_frame *cc_frame;       /* continuous capture frame */
 	struct ia_css_frame *in_frame;	     /* input frame */
-	struct ia_css_frame *delay_frames[NUM_VIDEO_DELAY_FRAMES];   /* reference input frame */
+	struct ia_css_frame *delay_frames[MAX_NUM_VIDEO_DELAY_FRAMES];   /* reference input frame */
 	struct ia_css_frame *tnr_frames[NUM_VIDEO_TNR_FRAMES];   /* tnr frames */
 	struct ia_css_frame *out_frame[IA_CSS_BINARY_MAX_OUTPUT_PORTS];      /* output frame */
 	struct ia_css_frame *out_vf_frame;   /* viewfinder output frame */
@@ -424,6 +438,11 @@ struct sh_css_sp_input_formatter_set {
 struct sh_css_sp_config {
 	uint8_t			no_isp_sync; /* Signal host immediately after start */
 	uint8_t			enable_raw_pool_locking; /**< Enable Raw Buffer Locking for HALv3 Support */
+	uint8_t			lock_all;
+	/**< If raw buffer locking is enabled, this flag indicates whether raw
+	     frames are locked when their EOF event is successfully sent to the
+	     host (true) or when they are passed to the preview/video pipe
+	     (false). */
 #if !defined(HAS_NO_INPUT_FORMATTER)
 	struct {
 		uint8_t					a_changed;
@@ -479,9 +498,13 @@ struct sh_css_sp_pipeline_io {
 	/*struct sh_css_sp_pipeline_terminal	output;*/
 };
 
+/** This struct tracks how many streams are registered per CSI port.
+ * This is used to track which streams have already been configured.
+ * Only when all streams are configured, the CSI RX is started for that port.
+ */
 struct sh_css_sp_pipeline_io_status {
-	uint32_t	active[N_INPUT_SYSTEM_CSI_PORT];
-	uint32_t	running[N_INPUT_SYSTEM_CSI_PORT];
+	uint32_t	active[N_INPUT_SYSTEM_CSI_PORT];	/**< registered streams */
+	uint32_t	running[N_INPUT_SYSTEM_CSI_PORT];	/**< configured streams */
 };
 
 #endif
@@ -755,8 +778,8 @@ struct sh_css_config_on_frame_enqueue {
 /* sp-to-host queue is expected to be emptied in ISR since
  * it is used instead of HW interrupts (due to HW design issue).
  * We need one queue element per CSI port. */
-#define  IA_CSS_NUM_ELEMS_SP2HOST_ISYS_EVENT_QUEUE N_CSI_PORTS
-/* The host-to-sp queue needs to be deeper to allow for some delay
+#define  IA_CSS_NUM_ELEMS_SP2HOST_ISYS_EVENT_QUEUE (2 * N_CSI_PORTS)
+/* The host-to-sp queue needs to allow for some delay
  * in the emptying of this queue in the SP since there is no
  * separate SP thread for this. */
 #define  IA_CSS_NUM_ELEMS_HOST2SP_ISYS_EVENT_QUEUE (2 * N_CSI_PORTS)
@@ -991,6 +1014,12 @@ sh_css_vprint(const char *fmt, va_list args)
 }
 #endif
 
+/* The following #if is there because this header file is also included
+   by SP and ISP code but they do not need this data and HIVECC has alignment
+   issue with the firmware struct/union's.
+   More permanent solution will be to refactor this include.
+*/
+#if !defined(__ISP) && !defined(__SP)
 hrt_vaddress
 sh_css_params_ddr_address_map(void);
 
@@ -1099,7 +1128,7 @@ bool
 sh_css_continuous_is_enabled(uint8_t pipe_num);
 
 struct ia_css_pipe *
-find_pipe_by_num(uint8_t pipe_num);
+find_pipe_by_num(uint32_t pipe_num);
 
 #ifdef USE_INPUT_SYSTEM_VERSION_2401
 void
@@ -1107,5 +1136,6 @@ ia_css_get_crop_offsets(
 		struct ia_css_pipe *pipe,
 		struct ia_css_frame_info *in_frame);
 #endif
+#endif /* !defined(__ISP) && !defined(__SP) */
 
 #endif /* _SH_CSS_INTERNAL_H_ */

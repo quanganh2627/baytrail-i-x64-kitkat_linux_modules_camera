@@ -24,6 +24,12 @@
 
 #include <stdio.h>
 
+typedef struct {
+	int bbb_cnt;   /* number of bbb      */
+	int bbb_op;    /* operations per bbb */
+	int total_cnt; /* bbb_cnt * bbb_op   */
+} bbb_stat_t;
+
 typedef enum {
 	bbb_func_OP_1w_and,
 	bbb_func_OP_1w_or,
@@ -35,7 +41,7 @@ typedef enum {
 	bbb_func_OP_1w_subsat,
 	bbb_func_OP_1w_subasr1,
 	bbb_func_OP_1w_abs,
-	bbb_func_OP_1w_subabs,
+	bbb_func_OP_1w_subabssat,
 	bbb_func_OP_1w_muld,
 	bbb_func_OP_1w_mul,
 	bbb_func_OP_1w_qmul,
@@ -62,7 +68,7 @@ typedef enum {
 	bbb_func_OP_1w_div,
 	bbb_func_OP_1w_qdiv,
 	bbb_func_OP_1w_mod,
-	bbb_func_OP_1w_sqrt,
+	bbb_func_OP_1w_sqrt_u,
 	bbb_func_OP_1w_mux,
 	bbb_func_OP_1w_avgrnd,
 	bbb_func_OP_1w_min,
@@ -77,7 +83,7 @@ typedef enum {
 	bbb_func_OP_2w_subsat,
 	bbb_func_OP_2w_subasr1,
 	bbb_func_OP_2w_abs,
-	bbb_func_OP_2w_subabs,
+	bbb_func_OP_2w_subabssat,
 	bbb_func_OP_2w_mul,
 	bbb_func_OP_2w_qmul,
 	bbb_func_OP_2w_qrmul,
@@ -103,6 +109,7 @@ typedef enum {
 	bbb_func_OP_2w_avgrnd,
 	bbb_func_OP_2w_min,
 	bbb_func_OP_2w_max,
+	bbb_func_OP_1w_mul_realigning,
 
 	bbb_func_num_functions
 } bbb_functions_t;
@@ -118,7 +125,7 @@ typedef enum {
 	core_func_OP_subsat,
 	core_func_OP_subasr1,
 	core_func_OP_abs,
-	core_func_OP_subabs,
+	core_func_OP_subabssat,
 	core_func_OP_muld,
 	core_func_OP_mul,
 	core_func_OP_qrmul,
@@ -149,10 +156,24 @@ typedef enum {
 
 } core_functions_t;
 
+/* inc_bbb_count() can be used for building blocks that are implemented with one operation
+   inc_bbb_count_ext() will be used in case the operation count is not known or greater than one.
+
+   For some operations there is a difference in operation count for the cloned version and the
+   not cloned version. this difference is not vissible on the reference code side.
+   We could add a min and max operation count for those operations, and keep track of those counts
+   separately. That way in the report the impact can be seen. */
+
 #ifdef DISABLE_OPCNT
 #define inc_bbb_count(func)
+#define inc_bbb_count_ext(func, cnt)
+#define enable_bbb_count()
+#define disable_bbb_count()
 #else
 #define inc_bbb_count(func) _inc_bbb_count(func)
+#define inc_bbb_count_ext(func, cnt) _inc_bbb_count_ext(func, cnt)
+#define enable_bbb_count() _enable_bbb_count()
+#define disable_bbb_count() _disable_bbb_count()
 #endif
 
 void
@@ -161,8 +182,19 @@ inc_core_count_n(
 	unsigned n);
 
 void
+_enable_bbb_count(void);
+
+void
+_disable_bbb_count(void);
+
+void
 _inc_bbb_count(
 	bbb_functions_t func);
+
+void
+_inc_bbb_count_ext(
+	bbb_functions_t func,
+	int op_count);
 
 void
 bbb_func_reset_count(void);

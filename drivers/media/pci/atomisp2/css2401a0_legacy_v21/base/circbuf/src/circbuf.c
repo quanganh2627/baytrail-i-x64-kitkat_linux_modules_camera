@@ -121,7 +121,7 @@ uint32_t ia_css_circbuf_pop(ia_css_circbuf_t *cb)
 
 	if (ia_css_circbuf_is_empty(cb))
 #ifdef __SP
-		OP_std_break();
+		sp_error(IA_CSS_FW_ERR_CIRCBUF_EMPTY);
 #else
 		assert(0);
 #endif
