@@ -32,8 +32,8 @@
 #include "ia_css_util.h"		/* ia_css_convert_errno()*/
 #include "sh_css_firmware.h"		/* sh_css_sp_fw*/
 
-
-
+#define BUFQ_DUMP_FILE_NAME_PREFIX_SIZE 256
+static char prefix[BUFQ_DUMP_FILE_NAME_PREFIX_SIZE] = {0};
 
 /*********************************************************/
 /* Global Queue objects used by CSS                      */
@@ -544,4 +544,54 @@ enum ia_css_err ia_css_bufq_enqueue_unlock_raw_buff_msg(
 enum ia_css_err ia_css_bufq_deinit(void)
 {
 	return IA_CSS_SUCCESS;
+}
+
+static void bufq_dump_queue_info(const char *prefix, ia_css_queue_t *qhandle)
+{
+	uint32_t free = 0, used = 0;
+	assert(prefix != NULL && qhandle != NULL);
+	ia_css_queue_get_used_space(qhandle, &used);
+	ia_css_queue_get_free_space(qhandle, &free);
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "%s: used=%u free=%u\n",
+		prefix, used, free);
+
+}
+
+void ia_css_bufq_dump_queue_info(void)
+{
+	int i, j;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "Queue Information:\n");
+
+	for (i = 0; i < SH_CSS_MAX_SP_THREADS; i++) {
+		for (j = 0; j < SH_CSS_MAX_NUM_QUEUES; j++) {
+			snprintf(prefix, BUFQ_DUMP_FILE_NAME_PREFIX_SIZE,
+				"host2sp_buffer_queue[%u][%u]", i, j);
+			bufq_dump_queue_info(prefix,
+				&css_queues.host2sp_buffer_queue_handles[i][j]);
+		}
+	}
+
+	for (i = 0; i < SH_CSS_MAX_NUM_QUEUES; i++) {
+		snprintf(prefix, BUFQ_DUMP_FILE_NAME_PREFIX_SIZE,
+			"sp2host_buffer_queue[%u]", i);
+		bufq_dump_queue_info(prefix,
+			&css_queues.sp2host_buffer_queue_handles[i]);
+	}
+	bufq_dump_queue_info("host2sp_psys_event",
+		&css_queues.host2sp_psys_event_queue_handle);
+	bufq_dump_queue_info("sp2host_psys_event",
+		&css_queues.sp2host_psys_event_queue_handle);
+
+#if !defined(HAS_NO_INPUT_SYSTEM)
+	bufq_dump_queue_info("host2sp_isys_event",
+		&css_queues.host2sp_isys_event_queue_handle);
+	bufq_dump_queue_info("sp2host_isys_event",
+		&css_queues.sp2host_isys_event_queue_handle);
+#endif
+
+	bufq_dump_queue_info("host2sp_tag_cmd",
+		&css_queues.host2sp_tag_cmd_queue_handle);
+	bufq_dump_queue_info("host2sp_unlock_raw_buff_msg",
+		&css_queues.host2sp_unlock_raw_buff_msg_queue_handle);
 }

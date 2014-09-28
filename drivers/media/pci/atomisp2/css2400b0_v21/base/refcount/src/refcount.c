@@ -178,7 +178,11 @@ bool ia_css_refcount_decrement(int32_t id, hrt_vaddress ptr)
 
 	/* SHOULD NOT HAPPEN: ptr not managed by refcount, or not
 	   valid anymore */
-
+	if (entry)
+		IA_CSS_ERROR("id %x, ptr 0x%x entry %p entry->id %x entry->count %d\n",
+			id, ptr, entry, entry->id, entry->count);
+	else
+		IA_CSS_ERROR("entry NULL\n");
 	assert(false);
 
 	return false;

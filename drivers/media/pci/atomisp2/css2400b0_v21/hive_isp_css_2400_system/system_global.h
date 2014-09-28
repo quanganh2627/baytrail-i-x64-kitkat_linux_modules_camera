@@ -96,6 +96,9 @@
 #define HAS_TIMED_CTRL_VERSION_1
 #define HAS_RX_VERSION_2
 
+#define DMA_DDR_TO_VAMEM_WORKAROUND
+#define DMA_DDR_TO_HMEM_WORKAROUND
+
 /*
  * Semi global. "HRT" is accessible from SP, but the HRT types do not fully apply
  */

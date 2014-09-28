@@ -57,7 +57,7 @@ struct ia_css_pipeline {
 	struct ia_css_frame in_frame;
 	struct ia_css_frame out_frame[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
 	struct ia_css_frame vf_frame[IA_CSS_PIPE_MAX_OUTPUT_STAGE];
-	enum ia_css_frame_delay dvs_frame_delay;
+	unsigned int dvs_frame_delay;
 	unsigned inout_port_config;
 	int num_execs;
 	bool acquire_isp_each_stage;
@@ -119,7 +119,7 @@ enum ia_css_err ia_css_pipeline_create(
 	struct ia_css_pipeline *pipeline,
 	enum ia_css_pipe_id pipe_id,
 	unsigned int pipe_num,
-	enum ia_css_frame_delay dvs_frame_delay);
+	unsigned int dvs_frame_delay);
 
 /** @brief destroy a pipeline
  *
@@ -287,5 +287,14 @@ void ia_css_pipeline_map(unsigned int pipe_num, bool map);
  *	false, pipeline is not mapped to SP threads
  */
 bool ia_css_pipeline_is_mapped(unsigned int key);
+
+/**
+ * @brief Print pipeline thread mapping
+ *
+ * @param[in]	none
+ *
+ * return none
+ */
+void ia_css_pipeline_dump_thread_map_info(void);
 
 #endif /*__IA_CSS_PIPELINE_H__*/

@@ -45,6 +45,7 @@
 #include "ia_css_pipeline.h"
 #include "ia_css_isp_param.h"
 #include "sh_css_params.h"
+#include "ia_css_bufq.h"
 
 #include "ia_css_isp_params.h"
 
@@ -1837,6 +1838,8 @@ void ia_css_debug_dump_sp_sw_debug_info(void)
 	sh_css_sp_get_debug_state(&state);
 	ia_css_debug_print_sp_debug_state(&state);
 #endif
+	ia_css_bufq_dump_queue_info();
+	ia_css_pipeline_dump_thread_map_info();
 	return;
 }
 
@@ -2908,7 +2911,7 @@ ia_css_debug_pipe_graph_dump_stage(
 		}
 	}
 
-	for (i = 0; i < NUM_VIDEO_DELAY_FRAMES; i++) {
+	for (i = 0; i < MAX_NUM_VIDEO_DELAY_FRAMES; i++) {
 		if (stage->args.delay_frames[i]) {
 			ia_css_debug_pipe_graph_dump_frame(
 					stage->args.delay_frames[i], id,

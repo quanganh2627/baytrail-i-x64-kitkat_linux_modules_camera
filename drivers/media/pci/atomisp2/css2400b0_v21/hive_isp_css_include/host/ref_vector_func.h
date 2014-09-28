@@ -522,6 +522,54 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean2x3m(
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean1x6m(
 	s_1w_1x6_matrix m);
 
+/** @brief Mean of 5x5 matrix
+ *
+ *  @param[in] m 5x5 matrix with pixels
+ *
+ *  @return mean of 5x5 matrix
+ *
+ * This function calculates the mean of 5x5 matrix with pixels
+ * with a factor of 32/25.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean5x5m(
+	s_1w_5x5_matrix m);
+
+/** @brief Mean of 6x6 matrix
+ *
+ *  @param[in] m 6x6 matrix with pixels
+ *
+ *  @return mean of 6x6 matrix
+ *
+ * This function calculates the mean of 6x6 matrix with pixels
+ * with a factor of 64/36.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w mean6x6m(
+	s_1w_6x6_matrix m);
+
+/** @brief Minimum of 4x4 matrix
+ *
+ *  @param[in] m 4x4 matrix with pixels
+ *
+ *  @return minimum of 4x4 matrix
+ *
+ * This function calculates the  minimum of
+ * 4x4 matrix with pixels.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w min4x4m(
+	s_1w_4x4_matrix m);
+
+/** @brief Maximum of 4x4 matrix
+ *
+ *  @param[in] m 4x4 matrix with pixels
+ *
+ *  @return maximum of 4x4 matrix
+ *
+ * This function calculates the  maximum of
+ * 4x4 matrix with pixels.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w max4x4m(
+	s_1w_4x4_matrix m);
+
 /** @brief SAD between two 3x3 matrices
  *
  *  @param[in] a 3x3 matrix with pixels
@@ -560,6 +608,20 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w sad3x3m(
 	s_1w_3x3_matrix a,
 	s_1w_3x3_matrix b);
 
+/** @brief SAD between two 5x5 matrices
+ *
+ *  @param[in] a 5x5 matrix with pixels
+ *
+ *  @param[in] b 5x5 matrix with pixels
+ *
+ *  @return 5x5 matrix SAD
+ *
+ * Computed SAD is = 1/32 factor of original SAD.
+*/
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w sad5x5m(
+	s_1w_5x5_matrix a,
+	s_1w_5x5_matrix b);
+
 /** @brief Bi-linear Interpolation optimized(approximate)
  *
  * @param[in] a input0
@@ -580,7 +642,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w sad3x3m(
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol_approx_c(
 	tvector1w a,
 	tvector1w b,
-	tscalar1w_signed_positive c);
+	tscalar1w_weight c);
 
 /** @brief Bi-linear Interpolation optimized(approximate)
  *
@@ -602,7 +664,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol_approx_c(
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol_approx(
 	tvector1w a,
 	tvector1w b,
-	tvector1w_signed_positive c);
+	tvector1w_weight c);
 
 /** @brief Bi-linear Interpolation
  *
@@ -623,7 +685,7 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol_approx(
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_bilinear_interpol(
 	tvector1w a,
 	tvector1w b,
-	tscalar1w_signed_positive c);
+	tscalar1w_weight c);
 
 /** @brief Generic Block Matching Algorithm
  * @param[in] search_window pointer to input search window of 16x16 pixels
@@ -735,6 +797,105 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H bma_output_14_2 OP_1w_asp_bma_14_2_32way(
 	bma_16x16_search_window search_area,
 	ref_block_8x8 input_block,
 	tscalar1w_4bit_bma_shift shift);
+
+#ifdef HAS_bfa_unit
+/** @brief OP_1w_single_bfa_9x9_reduced
+ *
+ * @param[in] weights - spatial and range weight lut
+ * @param[in] threshold - threshold plane, for range weight scaling
+ * @param[in] central_pix - central pixel plane
+ * @param[in] src_plane - src pixel plane
+ *
+ * @return   Bilateral filter output pixel
+ *
+ * This function implements, reduced 9x9 single bilateral filter.
+ * Output = sum(pixel * weight) / sum(weight)
+ * Where sum is summation over reduced 9x9 block set. Reduced because few
+ * corner pixels are not taken.
+ * weight = spatial weight * range weight
+ * spatial weights are loaded from spatial_weight_lut depending on src pixel
+ * position in the 9x9 block
+ * range weights are computed by table look up from range_weight_lut depending
+ * on scaled absolute difference between src and central pixels.
+ * threshold is used as scaling factor. range_weight_lut consists of
+ * BFA_RW_LUT_SIZE numbers of LUT entries to model any distribution function.
+ * Piecewise linear approximation technique is used to compute range weight
+ * It computes absolute difference between central pixel and 61 src pixels.
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_single_bfa_9x9_reduced(
+	bfa_weights weights,
+	tvector1w threshold,
+	tvector1w central_pix,
+	s_1w_9x9_matrix src_plane);
+
+/** @brief OP_1w_joint_bfa_9x9_reduced
+ *
+ * @param[in] weights - spatial and range weight lut
+ * @param[in] threshold0 - 1st threshold plane, for range weight scaling
+ * @param[in] central_pix0 - 1st central pixel plane
+ * @param[in] src0_plane - 1st pixel plane
+ * @param[in] threshold1 - 2nd threshold plane, for range weight scaling
+ * @param[in] central_pix1 - 2nd central pixel plane
+ * @param[in] src1_plane - 2nd pixel plane
+ *
+ * @return   Joint bilateral filter output pixel
+ *
+ * This function implements, reduced 9x9 joint bilateral filter.
+ * Output = sum(pixel * weight) / sum(weight)
+ * Where sum is summation over reduced 9x9 block set. Reduced because few
+ * corner pixels are not taken.
+ * weight = spatial weight * range weight
+ * spatial weights are loaded from spatial_weight_lut depending on src pixel
+ * position in the 9x9 block
+ * range weights are computed by table look up from range_weight_lut depending
+ * on sum of scaled absolute difference between central pixel and two src pixel
+ * planes. threshold is used as scaling factor. range_weight_lut consists of
+ * BFA_RW_LUT_SIZE numbers of LUT entries to model any distribution function.
+ * Piecewise linear approximation technique is used to compute range weight
+ * It computes absolute difference between central pixel and 61 src pixels.
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_joint_bfa_9x9_reduced(
+	bfa_weights weights,
+	tvector1w threshold0,
+	tvector1w central_pix0,
+	s_1w_9x9_matrix src0_plane,
+	tvector1w threshold1,
+	tvector1w central_pix1,
+	s_1w_9x9_matrix src1_plane);
+
+/** @brief bbb_bfa_gen_spatial_weight_lut
+ *
+ * @param[in] in - 9x9 matrix of spatial weights
+ * @param[in] out - generated LUT
+ *
+ * @return   None
+ *
+ * This function implements, creates spatial weight look up table used
+ * for bilaterl filter instruction.
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H void bbb_bfa_gen_spatial_weight_lut(
+	s_1w_9x9_matrix in,
+	tvector1w out[BFA_MAX_KWAY]);
+
+/** @brief bbb_bfa_gen_range_weight_lut
+ *
+ * @param[in] in - input range weight,
+ * @param[in] out - generated LUT
+ *
+ * @return   None
+ *
+ * This function implements, creates range weight look up table used
+ * for bilaterl filter instruction.
+ * 8 unsigned 7b weights are represented in 7 16bits LUT
+ * LUT formation is done as follows:
+ * higher 8 bit: Point(N) = Point(N+1) - Point(N)
+ * lower 8 bit: Point(N) = Point(N)
+ * Weight function can be any monotonic decreasing function for x >= 0
+ */
+STORAGE_CLASS_REF_VECTOR_FUNC_H void bbb_bfa_gen_range_weight_lut(
+	tvector1w in[BFA_RW_LUT_SIZE+1],
+	tvector1w out[BFA_RW_LUT_SIZE]);
+#endif
 
 #ifndef INLINE_VECTOR_FUNC
 #define STORAGE_CLASS_REF_VECTOR_FUNC_C

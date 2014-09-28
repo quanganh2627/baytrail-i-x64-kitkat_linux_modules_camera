@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_OUTPUT_TYPES_H
 #define __IA_CSS_OUTPUT_TYPES_H
 
+/** @file
+* CSS-API header file for parameters of output frames.
+*/
+
 /** Output frame
  *
  *  ISP block: output frame

@@ -361,14 +361,10 @@ enum ia_css_err ia_css_frame_init_planes(struct ia_css_frame *frame)
 	case IA_CSS_FRAME_FORMAT_YUYV:
 	case IA_CSS_FRAME_FORMAT_UYVY:
 	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
-		frame_init_single_plane(frame, &frame->planes.yuyv,
-			frame->info.res.height,
-			frame->info.padded_width * 2, 1);
-		break;
 	case IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8:
 		frame_init_single_plane(frame, &frame->planes.yuyv,
 			frame->info.res.height,
-			(((frame->info.padded_width) / 2) * 3), 1);
+			frame->info.padded_width * 2, 1);
 		break;
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
 		/* Needs 3 extra lines to allow vf_pp prefetching */

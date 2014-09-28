@@ -19,6 +19,10 @@
  *
  */
 
+#include "system_global.h"
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2
+
 #include "input_system.h"
 #include <type_support.h>
 #include "gp_device.h"
@@ -1823,3 +1827,4 @@ static input_system_error_t input_system_multiplexer_cfg(
 	*flags |= INPUT_SYSTEM_CFG_FLAG_SET;
 	return INPUT_SYSTEM_ERR_NO_ERROR;
 }
+#endif

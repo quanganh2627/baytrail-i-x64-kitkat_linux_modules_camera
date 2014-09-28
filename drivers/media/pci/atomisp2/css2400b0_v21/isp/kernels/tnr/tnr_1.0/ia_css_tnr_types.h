@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_TNR_TYPES_H
 #define __IA_CSS_TNR_TYPES_H
 
+/** @file
+* CSS-API header file for Temporal Noise Reduction (TNR) parameters.
+*/
+
 /** Temporal Noise Reduction (TNR) configuration.
  *
  *  When difference between current frame and previous frame is less than or

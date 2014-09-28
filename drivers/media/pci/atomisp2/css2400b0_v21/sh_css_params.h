@@ -170,4 +170,7 @@ ia_css_params_alloc_convert_sctbl(
 	    const struct ia_css_pipeline_stage *stage,
 	    const struct ia_css_shading_table *shading_table);
 
+struct ia_css_isp_config *
+sh_css_pipe_isp_config_get(struct ia_css_pipe *pipe);
+
 #endif /* _SH_CSS_PARAMS_H_ */

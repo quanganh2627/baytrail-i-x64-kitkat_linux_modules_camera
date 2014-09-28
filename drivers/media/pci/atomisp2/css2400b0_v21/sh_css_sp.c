@@ -339,7 +339,7 @@ sh_css_sp_start_isys_copy(struct ia_css_frame *out_frame,
 	uint8_t stage_num = 0;
 	struct sh_css_sp_pipeline *pipe;
 #if defined SH_CSS_ENABLE_METADATA
-	int queue_id;
+	enum sh_css_queue_id queue_id;
 #endif
 
 	assert(out_frame != NULL);
@@ -708,9 +708,10 @@ sh_css_sp_configure_prbs(int seed)
 #endif
 
 void
-sh_css_sp_configure_enable_raw_pool_locking(void)
+sh_css_sp_configure_enable_raw_pool_locking(bool lock_all)
 {
 	sh_css_sp_group.config.enable_raw_pool_locking = true;
+	sh_css_sp_group.config.lock_all = lock_all;
 }
 
 void
@@ -1285,7 +1286,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 #endif
 
 #if defined(SH_CSS_ENABLE_PER_FRAME_PARAMS)
-	sh_css_sp_group.pipe[thread_id].output_frame_queue_id = SH_CSS_INVALID_QUEUE_ID;
+	sh_css_sp_group.pipe[thread_id].output_frame_queue_id = (uint32_t)SH_CSS_INVALID_QUEUE_ID;
 	if (IA_CSS_PIPE_ID_COPY != pipe_id) {
 		ia_css_query_internal_queue_id(IA_CSS_BUFFER_TYPE_OUTPUT_FRAME, thread_id, (enum sh_css_queue_id *)(&sh_css_sp_group.pipe[thread_id].output_frame_queue_id));
 	}

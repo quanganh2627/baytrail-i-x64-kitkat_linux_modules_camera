@@ -38,6 +38,7 @@ ia_css_s3a_encode(
 	const struct ia_css_3a_config *from,
 	unsigned size);
 
+#ifndef IA_CSS_NO_DEBUG
 void
 ia_css_ae_dump(
 	const struct sh_css_isp_ae_params *ae,
@@ -62,6 +63,7 @@ void
 ia_css_s3a_debug_dtrace(
 	const struct ia_css_3a_config *config,
 	unsigned level);
+#endif
 
 void
 ia_css_s3a_hmem_decode(

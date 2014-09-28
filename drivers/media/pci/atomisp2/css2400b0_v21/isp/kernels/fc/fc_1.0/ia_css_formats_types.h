@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_FORMATS_TYPES_H
 #define __IA_CSS_FORMATS_TYPES_H
 
+/** @file
+* CSS-API header file for output format parameters.
+*/
+
 #include "type_support.h"
 
 /** Formats configuration.

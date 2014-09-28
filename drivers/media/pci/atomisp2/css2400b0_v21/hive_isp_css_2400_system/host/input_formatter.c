@@ -19,6 +19,10 @@
  *
  */
 
+#include "system_global.h"
+
+#ifdef USE_INPUT_SYSTEM_VERSION_2
+
 #include "input_formatter.h"
 #include <type_support.h>
 #include "gp_device.h"
@@ -234,3 +238,4 @@ void input_formatter_bin_get_state(
 		HIVE_STR2MEM_EN_STAT_UPDATE_ADDRESS);
 	return;
 }
+#endif

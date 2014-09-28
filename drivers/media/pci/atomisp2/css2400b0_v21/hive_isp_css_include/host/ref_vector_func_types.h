@@ -32,6 +32,7 @@
  *
  */
 #include "mpmath.h"
+#include "bbb_config.h"
 #include "isp_op1w_types.h"
 #include "isp_op2w_types.h"
 
@@ -42,12 +43,11 @@
 #define SLOPE_A_RESOLUTION 10
 #define CONFIG_UNIT_LUT_SIZE 32
 
-#define SAD3x3_IN_SHIFT      (2) /* input right shift value for SAD3x3 */
-#define SAD3x3_OUT_SHIFT     (2) /* output right shift value for SAD3x3 */
 
 #define ONE_IN_Q14 (1<<(NUM_BITS-2))
 #define Q29_TO_Q15_SHIFT_VAL (NUM_BITS-2)
 #define Q28_TO_Q15_SHIFT_VAL (NUM_BITS-3)
+#define MAX_ELEM(width_in_bits) ((1<<(width_in_bits))-1)
 
 /* Block matching algorithm related data */
 /* NUM_OF_SADS = ((SEARCH_AREA_HEIGHT - REF_BLOCK_HEIGHT)/PIXEL_SHIFT + 1)* \
@@ -83,10 +83,7 @@ typedef short tscalar1w_range1wbit;
 typedef short tscalar1w_unsigned_range1wbit;
 typedef unsigned short tvector_5bit;
 typedef unsigned short tvector_4bit;
-typedef unsigned short tvector1w_unsigned;
 typedef unsigned int   tvector2w_unsigned;
-typedef short tscalar1w_signed_positive;
-typedef short tvector1w_signed_positive;
 typedef unsigned short tscalar1w_16bit;
 typedef unsigned short tscalar1w_4bit_bma_shift;
 
@@ -171,6 +168,38 @@ typedef struct {
 } s_1w_1x6_matrix;
 
 typedef struct {
+	tvector1w v00; tvector1w v01; tvector1w v02; tvector1w v03; tvector1w v04; tvector1w v05;
+	tvector1w v10; tvector1w v11; tvector1w v12; tvector1w v13; tvector1w v14; tvector1w v15;
+	tvector1w v20; tvector1w v21; tvector1w v22; tvector1w v23; tvector1w v24; tvector1w v25;
+	tvector1w v30; tvector1w v31; tvector1w v32; tvector1w v33; tvector1w v34; tvector1w v35;
+	tvector1w v40; tvector1w v41; tvector1w v42; tvector1w v43; tvector1w v44; tvector1w v45;
+	tvector1w v50; tvector1w v51; tvector1w v52; tvector1w v53; tvector1w v54; tvector1w v55;
+} s_1w_6x6_matrix;
+
+typedef struct {
+	tvector1w v00; tvector1w v01; tvector1w v02; tvector1w v03; tvector1w v04;
+	tvector1w v05; tvector1w v06; tvector1w v07; tvector1w v08;
+	tvector1w v10; tvector1w v11; tvector1w v12; tvector1w v13; tvector1w v14;
+	tvector1w v15; tvector1w v16; tvector1w v17; tvector1w v18;
+	tvector1w v20; tvector1w v21; tvector1w v22; tvector1w v23; tvector1w v24;
+	tvector1w v25; tvector1w v26; tvector1w v27; tvector1w v28;
+	tvector1w v30; tvector1w v31; tvector1w v32; tvector1w v33; tvector1w v34;
+	tvector1w v35; tvector1w v36; tvector1w v37; tvector1w v38;
+	tvector1w v40; tvector1w v41; tvector1w v42; tvector1w v43; tvector1w v44;
+	tvector1w v45; tvector1w v46; tvector1w v47; tvector1w v48;
+	tvector1w v50; tvector1w v51; tvector1w v52; tvector1w v53; tvector1w v54;
+	tvector1w v55; tvector1w v56; tvector1w v57; tvector1w v58;
+	tvector1w v60; tvector1w v61; tvector1w v62; tvector1w v63; tvector1w v64;
+	tvector1w v65; tvector1w v66; tvector1w v67; tvector1w v68;
+	tvector1w v70; tvector1w v71; tvector1w v72; tvector1w v73; tvector1w v74;
+	tvector1w v75; tvector1w v76; tvector1w v77; tvector1w v78;
+	tvector1w v80; tvector1w v81; tvector1w v82; tvector1w v83; tvector1w v84;
+	tvector1w v85; tvector1w v86; tvector1w v87; tvector1w v88;
+} s_1w_9x9_matrix;
+
+
+
+typedef struct {
 	tvector1w x_cord[MAX_CONFIG_POINTS];
 	tvector1w slope[MAX_CONFIG_POINTS-1];
 	tvector1w y_offset[MAX_CONFIG_POINTS-1];
@@ -206,5 +235,14 @@ typedef struct {
 typedef struct {
 	tscalar1w sads[SADS_14x14_1];
 } bma_output_14_1;
+
+typedef struct {
+	tvector1w spatial_weight_lut[BFA_MAX_KWAY]; /* spatial weight LUT */
+	/* range weight LUT, (BFA_RW_LUT_SIZE + 1) numbers of LUT values are compressed in BFA_RW_LUT_SIZE buffer.
+	 * range_weight_lut[k] = packed(drop[k], range_weight[k])
+	 * where, drop[k] = range_weight[k+1] - range_weight[k]
+	 * pack(msb, lsb): two 8bits numbers packed in one 16bits number */
+	tvector1w range_weight_lut[BFA_RW_LUT_SIZE];
+} bfa_weights;
 
 #endif /* __REF_VECTOR_FUNC_TYPES_H_INCLUDED__ */

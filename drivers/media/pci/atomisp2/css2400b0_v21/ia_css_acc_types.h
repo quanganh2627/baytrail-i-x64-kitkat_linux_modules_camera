@@ -214,6 +214,7 @@ struct ia_css_binary_info {
 	struct {
 #if defined(IS_ISP_2500_SYSTEM)
 		uint8_t	input_feeder;
+		uint8_t output_system;
 		uint8_t	obgrid;
 		uint8_t	lin;
 		uint8_t	dpc_acc;
@@ -240,10 +241,11 @@ struct ia_css_binary_info {
 		uint8_t	rgb2yuv;
 		uint8_t	high_quality;
 		uint8_t	kerneltest;
-		uint8_t	routing_bnr_to_anr;
-		uint8_t	routing_anr_to_de;
-		uint8_t	routing_rgb_to_yuvp1;
-		uint8_t	routing_yuvp1_to_yuvp2;
+		uint8_t	routing_shd_to_bnr;/**< connect SHD with BNR ACCs*/
+		uint8_t	routing_bnr_to_anr;/**< connect BNR with ANR ACCs*/
+		uint8_t	routing_anr_to_de;/**< connect ANR with DE ACCs */
+		uint8_t	routing_rgb_to_yuvp1;/**< connect RGB with YUVP1 ACCs*/
+		uint8_t	routing_yuvp1_to_yuvp2;/**< connect YUVP1 with YUVP2 ACCs*/
 #endif
 		uint8_t	reduced_pipe;
 		uint8_t	vf_veceven;

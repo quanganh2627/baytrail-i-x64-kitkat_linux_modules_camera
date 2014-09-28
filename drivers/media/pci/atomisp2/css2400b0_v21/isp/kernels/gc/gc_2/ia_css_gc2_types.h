@@ -22,6 +22,10 @@
 #ifndef __IA_CSS_GC2_TYPES_H
 #define __IA_CSS_GC2_TYPES_H
 
+/** @file
+* CSS-API header file for Gamma Correction parameters.
+*/
+
 /** sRGB Gamma table, used for sRGB Gamma Correction.
  *
  *  ISP block: GC2 (sRGB Gamma Correction)

@@ -1098,10 +1098,11 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 				__LINE__, candidate->enable.ds, (int)need_ds);
 			continue;
 		}
-		if (!candidate->enable.uds && need_dz) {
+		if (!candidate->enable.uds && !candidate->enable.dvs_6axis && need_dz) {
 			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
-				"ia_css_binary_find() [%d] continue: !%d && %d\n",
-				__LINE__, candidate->enable.uds, (int)need_dz);
+				"ia_css_binary_find() [%d] continue: !%d && !%d && %d\n",
+				__LINE__, candidate->enable.uds,
+				candidate->enable.dvs_6axis, (int)need_dz);
 			continue;
 		}
 		if (online && candidate->input.source == IA_CSS_BINARY_INPUT_MEMORY) {

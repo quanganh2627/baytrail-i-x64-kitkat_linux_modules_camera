@@ -46,13 +46,37 @@ mipi_port_ID_t ia_css_isys_port_to_mipi_port(
 #endif
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2401)
+
+/**
+ * @brief Register one (virtual) stream. This is used to track when all
+ * virtual streams are configured inside the input system. The CSI RX is
+ * only started when all registered streams are configured.
+ *
+ * @param[in]	port		CSI port
+ * @param[in]	stream_handle	Stream handle generated with ia_css_isys_generate_stream_handle()
+ *				Must be lower than SH_CSS_MAX_ISYS_CHANNEL_NODES
+ * @return			IA_CSS_SUCCESS if successful, IA_CSS_ERR_INTERNAL_ERROR if
+ *				there is already a stream registered with the same handle
+ */
 enum ia_css_err ia_css_isys_csi_rx_register_stream(
 	enum ia_css_csi2_port port,
-	uint32_t sp_thread_id);
+	uint32_t stream_handle);
 
+/**
+ * @brief Unregister one (virtual) stream. This is used to track when all
+ * virtual streams are configured inside the input system. The CSI RX is
+ * only started when all registered streams are configured.
+ *
+ * @param[in]	port		CSI port
+ * @param[in]	stream_handle	Stream handle generated with ia_css_isys_generate_stream_handle()
+ *				Must be lower than SH_CSS_MAX_ISYS_CHANNEL_NODES
+ * @return			IA_CSS_SUCCESS if successful, IA_CSS_ERR_INTERNAL_ERROR if
+ *				there is no stream registered with that handle
+ */
 enum ia_css_err ia_css_isys_csi_rx_unregister_stream(
 	enum ia_css_csi2_port port,
-	uint32_t sp_thread_id);
+	uint32_t stream_handle);
+
 enum ia_css_err ia_css_isys_convert_compressed_format(
 		struct ia_css_csi2_compression *comp,
 		struct input_system_cfg_s *cfg);

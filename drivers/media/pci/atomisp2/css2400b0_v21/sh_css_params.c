@@ -57,6 +57,7 @@
 #include "ia_css_mipi.h"
 #include "ia_css_morph.h"
 #include "ia_css_host_data.h"
+#include "ia_css_pipe.h"
 
 #if !defined(IS_ISP_2500_SYSTEM)
 /* Include all kernel host interfaces for ISP1 */
@@ -1265,13 +1266,13 @@ sh_css_init_isp_params_from_global(struct ia_css_stream *stream,
 		bool use_default_config);
 
 static enum ia_css_err
-sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
+sh_css_init_isp_params_from_config(struct ia_css_pipe *pipe,
 		struct ia_css_isp_parameters *params,
 		const struct ia_css_isp_config *config);
 
 static enum ia_css_err
 sh_css_set_global_isp_config_on_pipe(
-	struct ia_css_stream *stream,
+	struct ia_css_pipe *curr_pipe,
 	const struct ia_css_isp_config *config,
 	struct ia_css_pipe *pipe);
 
@@ -1976,25 +1977,6 @@ sh_css_set_morph_table(struct ia_css_isp_parameters *params,
 	params->morph_table_changed = true;
 	IA_CSS_LEAVE_PRIVATE("void");
 }
-#if 0
-/* TODO: connect this properly. The table would have to be copied
- * out.
- * */
-static void
-sh_css_get_morph_table(struct ia_css_isp_parameters *params,
-			const struct ia_css_morph_table **table)
-{
-	if (table == NULL)
-		return;
-
-	IA_CSS_ENTER_PRIVATE("table=%p", table);
-
-	assert(params != NULL);
-	*table = params->morph_table;
-
-	IA_CSS_LEAVE_PRIVATE("void");
-}
-#endif
 #endif
 
 
@@ -2006,6 +1988,7 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 
 	struct ia_css_4a_private_config stats_config;
 	struct stats_3a_bubble_info_per_stripe stats_bubble_info;
+	struct ff_status stats_enable;
 	ae_private_raw_buffer_aligned_t	ae_raw_buffer_s;
 	unsigned int ae_join_buffers;
 
@@ -2030,6 +2013,9 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 
 	hrt_vaddress ae_pp_info_addr = (hrt_vaddress)(long int)
 	  &((struct stats_4a_private_raw_buffer *)(long int)isp_stats->data.dmem.s3a_tbl)->ae_join_buffers;
+
+	hrt_vaddress stats_3a_enable = (hrt_vaddress)(long int)
+	  &((struct stats_4a_private_raw_buffer *)(long int)isp_stats->data.dmem.s3a_tbl)->stats_3a_status;
 
 	IA_CSS_ENTER("host_stats=%p, isp_stats=%p", host_stats, isp_stats);
 
@@ -2071,6 +2057,10 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 		  (void *)&(host_stats->data->awb_fr_raw_buffer),
 		  sizeof(awb_fr_public_raw_buffer_t));
 
+	mmgr_load(stats_3a_enable,
+		  (void *)&(stats_enable),
+		  sizeof(struct ff_status));
+
 	/* decode must be prior to debubbling! */
 	ia_css_3a_grid_config_ddr_decode(host_stats->stats_4a_config, &stats_config);
 
@@ -2079,7 +2069,8 @@ ia_css_get_4a_statistics(struct ia_css_4a_statistics *host_stats,
 		ia_css_3a_join_ae_buffers(&host_stats->data->ae_raw_buffer , &ae_raw_buffer_s);
 
 	ia_css_3a_debubble(host_stats->data,
-			   &stats_bubble_info);
+			   &stats_bubble_info,
+			   &stats_enable);
 
 	IA_CSS_LEAVE("void");
 }
@@ -2509,6 +2500,17 @@ sh_css_get_motion_vector(const struct ia_css_isp_parameters *params,
 }
 #endif
 
+struct ia_css_isp_config *
+sh_css_pipe_isp_config_get(struct ia_css_pipe *pipe)
+{
+	if (pipe == NULL)
+	{
+		IA_CSS_ERROR("pipe=%p", NULL);
+		return NULL;
+	}
+	return pipe->config.p_isp_config;
+}
+
 enum ia_css_err
 ia_css_stream_set_isp_config(
 	struct ia_css_stream *stream,
@@ -2535,7 +2537,29 @@ ia_css_stream_set_isp_config_on_pipe(
 		err = sh_css_set_per_frame_isp_config_on_pipe(stream, config, pipe);
 	else
 #endif
-		err = sh_css_set_global_isp_config_on_pipe(stream, config, pipe);
+		err = sh_css_set_global_isp_config_on_pipe(stream->pipes[0], config, pipe);
+
+	IA_CSS_LEAVE_ERR(err);
+	return err;
+}
+
+enum ia_css_err
+ia_css_pipe_set_isp_config(struct ia_css_pipe *pipe,
+	struct ia_css_isp_config *config)
+{
+	enum ia_css_err err = IA_CSS_SUCCESS;
+
+	IA_CSS_ENTER("pipe=%p", pipe);
+
+	if ((pipe == NULL) || (pipe->stream == NULL))
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "config=%p\n", config);
+
+	sh_css_init_isp_params_from_config(pipe, pipe->stream->isp_params_configs, config);
+
+	/* Now commit all changes to the SP */
+	err = sh_css_param_update_isp_params(pipe, pipe->stream->isp_params_configs, sh_css_sp_is_running(), NULL);
 
 	IA_CSS_LEAVE_ERR(err);
 	return err;
@@ -2543,18 +2567,18 @@ ia_css_stream_set_isp_config_on_pipe(
 
 static enum ia_css_err
 sh_css_set_global_isp_config_on_pipe(
-	struct ia_css_stream *stream,
+	struct ia_css_pipe *curr_pipe,
 	const struct ia_css_isp_config *config,
 	struct ia_css_pipe *pipe)
 {
 	enum ia_css_err err = IA_CSS_SUCCESS;
 
-	IA_CSS_ENTER_PRIVATE("stream=%p, config=%p, pipe=%p", stream, config, pipe);
+	IA_CSS_ENTER_PRIVATE("stream=%p, config=%p, pipe=%p", curr_pipe, config, pipe);
 
-	sh_css_init_isp_params_from_config(stream, stream->isp_params_configs, config);
+	sh_css_init_isp_params_from_config(curr_pipe, curr_pipe->stream->isp_params_configs, config);
 
 	/* Now commit all changes to the SP */
-	err = sh_css_param_update_isp_params(stream, stream->isp_params_configs, sh_css_sp_is_running(), pipe);
+	err = sh_css_param_update_isp_params(curr_pipe, curr_pipe->stream->isp_params_configs, sh_css_sp_is_running(), pipe);
 
 	IA_CSS_LEAVE_ERR_PRIVATE(err);
 	return err;
@@ -2598,7 +2622,7 @@ sh_css_set_per_frame_isp_config_on_pipe(
 
 	/* update new ISP params object with the new config */
 	sh_css_init_isp_params_from_global(stream, params, false);
-	sh_css_init_isp_params_from_config(stream, params, config);
+	sh_css_init_isp_params_from_config(stream->pipes[0], params, config);
 
 	if (per_frame_config_created)
 	{
@@ -2612,7 +2636,7 @@ sh_css_set_per_frame_isp_config_on_pipe(
 	}
 
 	/* now commit to ddr */
-	err = sh_css_param_update_isp_params(stream, params, sh_css_sp_is_running(), pipe);
+	err = sh_css_param_update_isp_params(stream->pipes[0], params, sh_css_sp_is_running(), pipe);
 
 exit:
 	IA_CSS_LEAVE_ERR_PRIVATE(err);
@@ -2621,17 +2645,17 @@ exit:
 #endif
 
 static enum ia_css_err
-sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
+sh_css_init_isp_params_from_config(struct ia_css_pipe *pipe,
 		struct ia_css_isp_parameters *params,
 		const struct ia_css_isp_config *config)
 {
 	enum ia_css_err err = IA_CSS_ERR_INTERNAL_ERROR;
-	IA_CSS_ENTER_PRIVATE("stream=%p, config=%p, params=%p", stream, config, params);
+	IA_CSS_ENTER_PRIVATE("pipe=%p, config=%p, params=%p", pipe, config, params);
 
 	ia_css_set_configs(params, config);
 
 #if defined(IS_ISP_2500_SYSTEM)
-	err = sh_css_set_config_product_specific(config);
+	err = sh_css_set_config_product_specific(pipe, config);
 #else
 	sh_css_set_nr_config(params, config->nr_config);
 	sh_css_set_ee_config(params, config->ee_config);
@@ -2640,7 +2664,7 @@ sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
 		sh_css_set_dvs_6axis_config(params, config->dvs_6axis_config);
 	sh_css_set_dz_config(params, config->dz_config);
 	sh_css_set_motion_vector(params, config->motion_vector);
-	sh_css_set_shading_table(stream, params, config->shading_table);
+	sh_css_set_shading_table(pipe->stream, params, config->shading_table);
 	sh_css_set_morph_table(params, config->morph_table);
 	sh_css_set_macc_table(params, config->macc_table);
 	sh_css_set_gamma_table(params, config->gamma_table);
@@ -2663,11 +2687,19 @@ sh_css_init_isp_params_from_config(struct ia_css_stream *stream,
 	return err;
 }
 
-/* TODO: make a direct implementation and remove the partial ones */
 void
 ia_css_stream_get_isp_config(
 	const struct ia_css_stream *stream,
 	struct ia_css_isp_config *config)
+{
+	IA_CSS_ENTER("void");
+	ia_css_pipe_get_isp_config(stream->pipes[0], config);
+	IA_CSS_LEAVE("void");
+}
+
+void
+ia_css_pipe_get_isp_config(struct ia_css_pipe *pipe,
+						   struct ia_css_isp_config *config)
 {
 	struct ia_css_isp_parameters *params = NULL;
 
@@ -2675,13 +2707,13 @@ ia_css_stream_get_isp_config(
 
 	IA_CSS_ENTER("config=%p", config);
 
-	params = stream->isp_params_configs;
+	params = pipe->stream->isp_params_configs;
 	assert(params != NULL);
 
 	ia_css_get_configs(params, config);
 
 #if defined(IS_ISP_2500_SYSTEM)
-	sh_css_get_config_product_specific(config);
+	sh_css_get_config_product_specific(pipe, config);
 #else
 	sh_css_get_ee_config(params, config->ee_config);
 	sh_css_get_baa_config(params, config->baa_config);
@@ -3024,7 +3056,7 @@ ia_css_stream_isp_parameters_init(struct ia_css_stream *stream)
 #endif
 
 	/* now commit to ddr */
-	err = sh_css_param_update_isp_params(stream, params, false, NULL);
+	err = sh_css_param_update_isp_params(stream->pipes[0], params, false, NULL);
 	if (err != IA_CSS_SUCCESS)
 		return err;
 
@@ -3458,7 +3490,7 @@ ia_css_stream_isp_parameters_uninit(struct ia_css_stream *stream)
 #endif
 
 #if defined(IS_ISP_2500_SYSTEM)
-	destroy_acc_cluster();
+	destroy_acc_cluster(stream);
 	free_dvs_2500_6axis_table();
 #endif
 
@@ -3678,6 +3710,7 @@ void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 	}
 
 	for (i = 0; SH_CSS_INVALID_QUEUE_ID != param_queue_ids[i]; i++) {
+		cpy = (hrt_vaddress)0;
 		/* clean-up old copy */
 		while (IA_CSS_SUCCESS == ia_css_bufq_dequeue_buffer(param_queue_ids[i], (uint32_t *)&cpy)) {
 			/* TMP: keep track of dequeued param set count
@@ -3691,6 +3724,7 @@ void ia_css_dequeue_param_buffers(/*unsigned int pipe_num*/)
 
 			IA_CSS_LOG("dequeued param set %x from %d, release ref", cpy, 0);
 			free_ia_css_isp_parameter_set_info(cpy);
+			cpy = (hrt_vaddress)0;
 		}
 	}
 
@@ -3738,7 +3772,7 @@ process_kernel_parameters(unsigned int pipe_id,
 }
 
 enum ia_css_err
-sh_css_param_update_isp_params(struct ia_css_stream *stream,
+sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 	struct ia_css_isp_parameters *params,
 	bool commit,
 	struct ia_css_pipe *pipe_in)
@@ -3752,18 +3786,18 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 
 	(void)acc_cluster_params_changed;
 
-	assert(stream != NULL);
+	assert(curr_pipe != NULL);
 
 	IA_CSS_ENTER_PRIVATE("pipe=%p, isp_parameters_id=%d", pipe_in, params->isp_parameters_id);
-	raw_bit_depth = ia_css_stream_input_format_bits_per_pixel(stream);
-	isp_pipe_version = ia_css_pipe_get_isp_pipe_version(stream->pipes[0]);
+	raw_bit_depth = ia_css_stream_input_format_bits_per_pixel(curr_pipe->stream);
+	isp_pipe_version = ia_css_pipe_get_isp_pipe_version(curr_pipe);
 	/* this code assuemes that all the pipes have the same pipeversion. */
-	for (i = 1; i < stream->num_pipes; i++) {
-		assert(isp_pipe_version == ia_css_pipe_get_isp_pipe_version(stream->pipes[i]));
+	for (i = 1; i < curr_pipe->stream->num_pipes; i++) {
+		assert(isp_pipe_version == ia_css_pipe_get_isp_pipe_version(curr_pipe->stream->pipes[i]));
 	}
 
 #if defined(IS_ISP_2500_SYSTEM)
-	err = sh_css_process_acc_cluster_parameters(stream, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed);
+	err = sh_css_process_acc_cluster_parameters(curr_pipe, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed);
 	if (err != IA_CSS_SUCCESS) {
 		IA_CSS_LOG("sh_css_process_acc_cluster_parameters() returned INVALID KERNEL CONFIGURATION\n");
 		IA_CSS_LEAVE_ERR_PRIVATE(err);
@@ -3778,7 +3812,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 	}
 	/* enqueue a copies of the mem_map to
 	   the designated pipelines */
-	for (i = 0; i < stream->num_pipes; i++) {
+	for (i = 0; i < curr_pipe->stream->num_pipes; i++) {
 		struct ia_css_pipe *pipe;
 		struct sh_css_ddr_address_map *cur_map;
 		struct sh_css_ddr_address_map_size *cur_map_size;
@@ -3790,7 +3824,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 		enum sh_css_queue_id queue_id;
 
 		(void)stage;
-		pipe = stream->pipes[i];
+		pipe = curr_pipe->stream->pipes[i];
 		pipeline = ia_css_pipe_get_pipeline(pipe);
 		pipe_num = ia_css_pipe_get_pipe_num(pipe);
 		ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
@@ -3817,16 +3851,7 @@ sh_css_param_update_isp_params(struct ia_css_stream *stream,
 		 * Therefore, move the zoom config elsewhere (e.g. shading
 		 * table can be taken as an example! @GC
 		 * */
-#if 0
-		if (params->isp_params_changed || params->dz_config_changed ||
-				params->motion_config_changed) {
-#else
-			/* This should be unconditional, since the sh_css_params_write_to_ddr_internal below
-			 * is also unconditional. Otherwise, the old uds parameters, e.g. for
-			 * another pipeline, can be taken.
-			 */
 		{
-#endif
 			/* we have to do this per pipeline because */
 			/* the processing is a.o. resolution dependent */
 			ia_css_process_zoom_and_motion(params,
@@ -5076,8 +5101,10 @@ ia_css_dvs2_6axis_config_allocate(const struct ia_css_stream *stream)
 
 	assert(stream != NULL);
 	params = stream->isp_params_configs;
-	assert(params != NULL);
-	assert(params->dvs_6axis_config != NULL);
+
+	if (!params || (params && !params->dvs_6axis_config)) {
+		goto err;
+	}
 
 	dvs_config = (struct ia_css_dvs_6axis_config *)sh_css_calloc(1, sizeof(struct ia_css_dvs_6axis_config));
 	if (!dvs_config)
@@ -5149,3 +5176,4 @@ ia_css_en_dz_capt_pipe(struct ia_css_stream *stream, bool enable)
 		}
 	}
 }
+

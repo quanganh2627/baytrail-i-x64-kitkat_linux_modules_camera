@@ -202,7 +202,7 @@ void
 sh_css_sp_configure_prbs(int seed);
 
 void
-sh_css_sp_configure_enable_raw_pool_locking(void);
+sh_css_sp_configure_enable_raw_pool_locking(bool lock_all);
 
 void
 sh_css_sp_enable_isys_event_queue(bool enable);

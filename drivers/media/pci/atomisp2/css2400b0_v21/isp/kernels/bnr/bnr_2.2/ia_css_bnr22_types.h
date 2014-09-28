@@ -29,28 +29,28 @@
  * from the CSS API.
  */
 struct ia_css_bnr22_config {
-	int32_t BnrDVarGain_R0;		/**Directional variance gain for R, in dark region. */
-	int32_t BnrDVarGain_G0;		/**Directional variance gain for G, in dark region. */
-	int32_t BnrDVarGain_B0;		/**Directional variance gain for B, in dark region. */
-	int32_t BnrDVarGain_R1;		/**Directional variance gain for R, in bright region. */
-	int32_t BnrDVarGain_G1;		/**Directional variance gain for G, in bright region. */
-	int32_t BnrDVarGain_B1;		/**Directional variance gain for B, in bright region. */
-	int32_t BnrNVarGain_R0;		/**Non-Directional variance gain for R, in dark region. */
-	int32_t BnrNVarGain_G0;		/**Non-Directional variance gain for G, in dark region. */
-	int32_t BnrNVarGain_B0;		/**Non-Directional variance gain for B, in dark region. */
-	int32_t BnrNVarGain_R1;		/**Non-Directional variance gain for R, in bright region. */
-	int32_t BnrNVarGain_G1;		/**Non-Directional variance gain for G, in bright region. */
-	int32_t BnrNVarGain_B1;		/**Non-Directional variance gain for B, in bright region. */
-	int32_t BnrDThres;		/**Threshold for directional filtering */
-	int32_t BnrDThresW;		/**Threshold width for directional filtering */
-	int32_t BnrVarOffsetCoef;	/**Variance offset coefficient noise subtraction level */
-	int32_t BnrDGain;		/**Gain for directional coefficient */
-	int32_t BnrDetailThreshold;	/**Threshold for low contrast texture control */
-	int32_t BnrDetailLevelOffset;	/**Offset value for low contrast texture control */
-	int32_t BnrDValThMin;		/**Minimum clipping value for directional variance*/
-	int32_t BnrDVarThMax;		/**Maximum clipping value for diretional variance*/
-	int32_t BnrNVarThMin;		/**Minimum clipping value for non-directional variance*/
-	int32_t BnrNVarThMax;		/**Maximum clipping value for non-directional variance*/
+	int32_t d_var_gain_r0;		/**Directional variance gain for R, in dark region. */
+	int32_t d_var_gain_g0;		/**Directional variance gain for G, in dark region. */
+	int32_t d_var_gain_b0;		/**Directional variance gain for B, in dark region. */
+	int32_t d_var_gain_r1;		/**Directional variance gain for R, in bright region. */
+	int32_t d_var_gain_g1;		/**Directional variance gain for G, in bright region. */
+	int32_t d_var_gain_b1;		/**Directional variance gain for B, in bright region. */
+	int32_t n_var_gain_r0;		/**Non-Directional variance gain for R, in dark region. */
+	int32_t n_var_gain_g0;		/**Non-Directional variance gain for G, in dark region. */
+	int32_t n_var_gain_b0;		/**Non-Directional variance gain for B, in dark region. */
+	int32_t n_var_gain_r1;		/**Non-Directional variance gain for R, in bright region. */
+	int32_t n_var_gain_g1;		/**Non-Directional variance gain for G, in bright region. */
+	int32_t n_var_gain_b1;		/**Non-Directional variance gain for B, in bright region. */
+	int32_t d_thres;		/**Threshold for directional filtering */
+	int32_t d_thres_w;		/**Threshold width for directional filtering */
+	int32_t var_offset_coef;	/**Variance offset coefficient noise subtraction level */
+	int32_t d_gain;			/**Gain for directional coefficient */
+	int32_t detail_threshold;	/**Threshold for low contrast texture control */
+	int32_t detail_level_offset;	/**Offset value for low contrast texture control */
+	int32_t d_var_th_min;		/**Minimum clipping value for directional variance*/
+	int32_t d_var_th_max;		/**Maximum clipping value for diretional variance*/
+	int32_t n_var_th_min;		/**Minimum clipping value for non-directional variance*/
+	int32_t n_var_th_max;		/**Maximum clipping value for non-directional variance*/
 };
 
 #endif /* __IA_CSS_BNR22_TYPES_H */
