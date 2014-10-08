@@ -79,9 +79,9 @@ static struct sh_css_sp_per_frame_data per_frame_data;
 /* For the moment there is only code that sets this bool to true */
 /* TODO: add code that sets this bool to false */
 static bool sp_running;
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 static bool sp1_running;
-#endif
+#endif /* HAS_SEC_SP */
 
 static enum ia_css_err
 set_output_frame_buffer(const struct ia_css_frame *frame,
@@ -154,11 +154,11 @@ store_sp_per_frame_data(const struct ia_css_fw_info *fw)
 	case ia_css_sp_firmware:
 		HIVE_ADDR_sp_per_frame_data = fw->info.sp.per_frame_data;
 		break;
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 	case ia_css_sp1_firmware:
 		(void)fw;
 		break;
-#endif
+#endif /* HAS_SEC_SP */
 	case ia_css_acc_firmware:
 		HIVE_ADDR_sp_per_frame_data = fw->info.acc.per_frame_data;
 		break;
@@ -1326,7 +1326,7 @@ sh_css_sp_uninit_pipeline(unsigned int pipe_num)
 	sh_css_sp_group.pipe[thread_id].num_stages = 0;
 }
 
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 void
 sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command)
 {
@@ -1341,7 +1341,7 @@ sh_css_write_host2sp1_command(enum host2sp_commands host2sp_command)
 
 	store_sp1_array_uint(host_sp1_com, offset, host2sp_command);
 }
-#endif
+#endif /* HAS_SEC_SP */
 
 void
 sh_css_write_host2sp_command(enum host2sp_commands host2sp_command)
@@ -1634,20 +1634,22 @@ sh_css_sp_set_sp_running(bool flag)
 {
 	sp_running = flag;
 }
-#if defined(C_ENABLE_SP1)
+
+#if defined(HAS_SEC_SP)
 void
 sh_css_sp1_set_sp1_running(bool flag)
 {
 	sp1_running = flag;
 }
-#endif
+#endif /* HAS_SEC_SP */
+
 bool
 sh_css_sp_is_running(void)
 {
 	return sp_running;
 }
 
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 void
 sh_css_sp1_start(void)
 {
@@ -1692,7 +1694,7 @@ sh_css_sp1_start(void)
 	ia_css_spctrl_start(SP1_ID);
 
 }
-#endif
+#endif /* HAS_SEC_SP */
 
 void
 sh_css_sp_start_isp(void)

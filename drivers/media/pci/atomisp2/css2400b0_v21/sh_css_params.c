@@ -139,7 +139,7 @@
 	 (binary)->morph_tbl_height)
 
 #if defined(IS_ISP_2500_SYSTEM)
-static struct isp_acc_param sh_css_acc_cluster_parameters;
+struct isp_acc_param sh_css_acc_cluster_parameters_pool[SH_CSS_MAX_SP_THREADS];
 #endif
 
 /* We keep a second copy of the ptr struct for the SP to access.
@@ -1213,7 +1213,11 @@ static const int zoom_table[4][HRT_GDC_N] = {
 
 static const struct ia_css_dz_config default_dz_config = {
 	HRT_GDC_N,
-	HRT_GDC_N
+	HRT_GDC_N,
+	{ \
+		{0, 0}, \
+		{0, 0}, \
+	}
 };
 
 static const struct ia_css_vector default_motion_config = {
@@ -1251,6 +1255,7 @@ free_ia_css_isp_parameter_set_info(hrt_vaddress ptr);
 
 static enum ia_css_err
 sh_css_params_write_to_ddr_internal(
+		struct ia_css_pipe *pipe,
 		unsigned pipe_id,
 		struct ia_css_isp_parameters *params,
 		const struct ia_css_pipeline_stage *stage,
@@ -1282,6 +1287,21 @@ sh_css_set_per_frame_isp_config_on_pipe(
 	struct ia_css_stream *stream,
 	const struct ia_css_isp_config *config,
 	struct ia_css_pipe *pipe);
+#endif
+
+#if !defined(IS_ISP_2500_SYSTEM)
+static enum ia_css_err
+sh_css_update_uds_and_crop_info_based_on_zoom_region(
+	const struct ia_css_binary_info *info,
+	const struct ia_css_frame_info *in_frame_info,
+	const struct ia_css_frame_info *out_frame_info,
+	const struct ia_css_resolution *dvs_env,
+	const struct ia_css_dz_config *zoom,
+	const struct ia_css_vector *motion_vector,
+	struct sh_css_uds_info *uds,		/* out */
+	struct sh_css_crop_pos *sp_out_crop_pos,	/* out */
+	struct ia_css_resolution pipe_in_res,
+	bool enable_zoom);
 #endif
 
 hrt_vaddress
@@ -1667,12 +1687,17 @@ sh_css_enable_pipeline(const struct ia_css_binary *binary)
 }
 
 #if !defined(IS_ISP_2500_SYSTEM)
-static void ia_css_process_zoom_and_motion(
+static enum ia_css_err
+ia_css_process_zoom_and_motion(
 	struct ia_css_isp_parameters *params,
 	const struct ia_css_pipeline_stage *first_stage)
 {
 	/* first_stage can be  NULL */
 	const struct ia_css_pipeline_stage *stage;
+	enum ia_css_err err = IA_CSS_SUCCESS;
+	struct ia_css_resolution pipe_in_res;
+	pipe_in_res.width = 0;
+	pipe_in_res.height = 0;
 
 	assert(params != NULL);
 
@@ -1713,21 +1738,44 @@ static void ia_css_process_zoom_and_motion(
 			binary->info = info;
 		}
 
+		if (stage == first_stage) {
+			/* we will use pipe_in_res to scale the zoom crop region if needed */
+			pipe_in_res = binary->effective_in_frame_res;
+		}
+
 		assert(stage->stage_num < SH_CSS_MAX_STAGES);
-		sh_css_update_uds_and_crop_info(
-			&info->sp,
-			&binary->in_frame_info,
-			&binary->out_frame_info[0],
-			&binary->dvs_envelope,
-			&params->dz_config,
-			&params->motion_config,
-			&params->uds[stage->stage_num].uds,
-			&params->uds[stage->stage_num].crop_pos,
-			stage->enable_zoom);
+		if (params->dz_config.zoom_region.resolution.width == 0 &&
+		    params->dz_config.zoom_region.resolution.height == 0) {
+			sh_css_update_uds_and_crop_info(
+				&info->sp,
+				&binary->in_frame_info,
+				&binary->out_frame_info[0],
+				&binary->dvs_envelope,
+				&params->dz_config,
+				&params->motion_config,
+				&params->uds[stage->stage_num].uds,
+				&params->uds[stage->stage_num].crop_pos,
+				stage->enable_zoom);
+		} else {
+			err = sh_css_update_uds_and_crop_info_based_on_zoom_region(
+				&info->sp,
+				&binary->in_frame_info,
+				&binary->out_frame_info[0],
+				&binary->dvs_envelope,
+				&params->dz_config,
+				&params->motion_config,
+				&params->uds[stage->stage_num].uds,
+				&params->uds[stage->stage_num].crop_pos,
+				pipe_in_res,
+				stage->enable_zoom);
+			if (err != IA_CSS_SUCCESS)
+			    return err;
+		}
 	}
 	params->isp_params_changed = true;
 
 	IA_CSS_LEAVE_PRIVATE("void");
+	return err;
 }
 #endif
 
@@ -3671,7 +3719,9 @@ static void sh_css_update_isp_mem_params_to_ddr(
 
 #if defined(IS_ISP_2500_SYSTEM)
 void
-sh_css_update_acc_cluster_params_to_ddr(hrt_vaddress ddr_ptr)
+sh_css_update_acc_cluster_params_to_ddr(
+	hrt_vaddress ddr_ptr,
+	struct isp_acc_param *p_acc_params)
 {
 	size_t size = sizeof(struct isp_acc_param);
 #if defined(HRT_CSIM)
@@ -3687,9 +3737,7 @@ sh_css_update_acc_cluster_params_to_ddr(hrt_vaddress ddr_ptr)
 	pad_ptr = ddr_ptr + size;
 	mmgr_clear(pad_ptr, padding_bytes);
 #endif
-	mmgr_store(ddr_ptr,
-	     &sh_css_acc_cluster_parameters,
-	     size);
+	mmgr_store(ddr_ptr, p_acc_params, size);
 }
 #endif
 
@@ -3783,6 +3831,10 @@ sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 	unsigned int raw_bit_depth = 10;
 	unsigned int isp_pipe_version = 1;
 	bool acc_cluster_params_changed = false;
+	unsigned int thread_id, pipe_num;
+#if defined(IS_ISP_2500_SYSTEM)
+	struct isp_acc_param *sh_css_acc_cluster_parameters;
+#endif
 
 	(void)acc_cluster_params_changed;
 
@@ -3797,7 +3849,18 @@ sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 	}
 
 #if defined(IS_ISP_2500_SYSTEM)
-	err = sh_css_process_acc_cluster_parameters(curr_pipe, &sh_css_acc_cluster_parameters, &acc_cluster_params_changed);
+	pipe_num = ia_css_pipe_get_pipe_num(curr_pipe);
+	if (ia_css_pipeline_is_mapped(pipe_num) == false) {
+		thread_id = 0;
+	} else
+	{
+		ia_css_pipeline_get_sp_thread_id(pipe_num, &thread_id);
+	}
+	sh_css_acc_cluster_parameters = &(sh_css_acc_cluster_parameters_pool[thread_id]);
+	if (sh_css_acc_cluster_parameters == NULL) {
+		return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
+	}
+	err = sh_css_process_acc_cluster_parameters(curr_pipe, sh_css_acc_cluster_parameters, &acc_cluster_params_changed);
 	if (err != IA_CSS_SUCCESS) {
 		IA_CSS_LOG("sh_css_process_acc_cluster_parameters() returned INVALID KERNEL CONFIGURATION\n");
 		IA_CSS_LEAVE_ERR_PRIVATE(err);
@@ -3819,7 +3882,6 @@ sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 		struct ia_css_isp_parameter_set_info isp_params_info;
 		struct ia_css_pipeline *pipeline;
 		struct ia_css_pipeline_stage *stage;
-		unsigned int thread_id, pipe_num;
 
 		enum sh_css_queue_id queue_id;
 
@@ -3854,8 +3916,10 @@ sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 		{
 			/* we have to do this per pipeline because */
 			/* the processing is a.o. resolution dependent */
-			ia_css_process_zoom_and_motion(params,
+			err = ia_css_process_zoom_and_motion(params,
 					pipeline->stages);
+			if (err != IA_CSS_SUCCESS)
+			    return err;
 		}
 #endif
 
@@ -3872,6 +3936,7 @@ sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 					isp_pipe_version, raw_bit_depth);
 
 			err = sh_css_params_write_to_ddr_internal(
+					pipe,
 					pipeline->pipe_id,
 					params,
 					stage,
@@ -3907,7 +3972,9 @@ sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 					cur_map_size->acc_cluster_params_for_sp ,
 					true,
 					&err);
-			sh_css_update_acc_cluster_params_to_ddr(cur_map->acc_cluster_params_for_sp);
+			sh_css_update_acc_cluster_params_to_ddr(
+				cur_map->acc_cluster_params_for_sp,
+				sh_css_acc_cluster_parameters);
 		}
 #endif
 
@@ -4002,6 +4069,7 @@ sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 
 static enum ia_css_err
 sh_css_params_write_to_ddr_internal(
+	struct ia_css_pipe *pipe,
 	unsigned pipe_id,
 	struct ia_css_isp_parameters *params,
 	const struct ia_css_pipeline_stage *stage,
@@ -4018,6 +4086,7 @@ sh_css_params_write_to_ddr_internal(
 #if !defined(IS_ISP_2500_SYSTEM)
 	/* struct is > 128 bytes so it should not be on stack (see checkpatch) */
 	static struct ia_css_macc_table converted_macc_table;
+	(void)pipe;
 #endif
 
 	IA_CSS_ENTER_PRIVATE("void");
@@ -4035,7 +4104,7 @@ sh_css_params_write_to_ddr_internal(
 	(void)buff_realloced;
 
 	/* pass call to product specific to handle copying of tables to DDR */
-	err = sh_css_params_to_ddr(binary, ddr_map, ddr_map_size);
+	err = sh_css_params_to_ddr(pipe, binary, ddr_map, ddr_map_size);
 	if (err != IA_CSS_SUCCESS) {
 		IA_CSS_LEAVE_ERR_PRIVATE(err);
 		return err;
@@ -4424,6 +4493,7 @@ sh_css_params_write_to_ddr(struct ia_css_stream *stream,
 		struct ia_css_pipeline *pipeline;
 		pipeline = ia_css_pipe_get_pipeline(pipe);
 		err = sh_css_params_write_to_ddr_internal(
+				pipe,
 				pipeline->pipe_id,
 				params,
 				stage,
@@ -4807,6 +4877,94 @@ sh_css_update_uds_and_crop_info(
 		sp_out_crop_pos->y = (uint16_t)info->pipeline.top_cropping;
 	}
 	IA_CSS_LEAVE_PRIVATE("void");
+}
+
+static enum ia_css_err
+sh_css_update_uds_and_crop_info_based_on_zoom_region(
+	const struct ia_css_binary_info *info,
+	const struct ia_css_frame_info *in_frame_info,
+	const struct ia_css_frame_info *out_frame_info,
+	const struct ia_css_resolution *dvs_env,
+	const struct ia_css_dz_config *zoom,
+	const struct ia_css_vector *motion_vector,
+	struct sh_css_uds_info *uds,		/* out */
+	struct sh_css_crop_pos *sp_out_crop_pos,	/* out */
+	struct ia_css_resolution pipe_in_res,
+	bool enable_zoom)
+{
+	unsigned int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+	enum ia_css_err err = IA_CSS_SUCCESS;
+	/* Note:
+	* Filter_Envelope = 0 for NND/LUT
+	* Filter_Envelope = 1 for BCI
+	* Filter_Envelope = 3 for BLI
+	* Currently, not considering this filter envelope because, In uds.sp.c is recalculating
+	* the dx/dy based on filter envelope and other information (ia_css_uds_sp_scale_params)
+	* Ideally, That should be done on host side not on sp side.
+	*/
+	unsigned int filter_envelope = 0;
+	IA_CSS_ENTER_PRIVATE("void");
+
+	assert(info != NULL);
+	assert(in_frame_info != NULL);
+	assert(out_frame_info != NULL);
+	assert(dvs_env != NULL);
+	assert(zoom != NULL);
+	assert(motion_vector != NULL);
+	assert(uds != NULL);
+	assert(sp_out_crop_pos != NULL);
+	x0 = zoom->zoom_region.origin.x;
+	y0 = zoom->zoom_region.origin.y;
+	x1 = zoom->zoom_region.resolution.width + x0;
+	y1 = zoom->zoom_region.resolution.height + y0;
+
+	if ((x0 > x1) || (y0 > y1) || (x1 > pipe_in_res.width) || (y1 > pipe_in_res.height))
+	    return IA_CSS_ERR_INVALID_ARGUMENTS;
+
+	if (!enable_zoom) {
+	    uds->curr_dx = HRT_GDC_N;
+	    uds->curr_dy = HRT_GDC_N;
+	}
+
+	if (info->enable.dvs_envelope) {
+		/* Zoom region is only supported by the UDS module on ISP
+		 * 2 and higher. It is not supported in video mode on ISP 1 */
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	} else {
+		if (enable_zoom) {
+			/* A. Calculate dx/dy based on crop region using in_frame_info
+			* Scale the crop region if in_frame_info to the stage is not same as
+			* actual effective input of the pipeline
+			*/
+			if (in_frame_info->res.width != pipe_in_res.width ||
+			    in_frame_info->res.height != pipe_in_res.height) {
+				x0 = (x0 * in_frame_info->res.width) / (pipe_in_res.width);
+				y0 = (y0 * in_frame_info->res.height) / (pipe_in_res.height);
+				x1 = (x1 * in_frame_info->res.width) / (pipe_in_res.width);
+				y1 = (y1 * in_frame_info->res.height) / (pipe_in_res.height);
+			}
+			uds->curr_dx =
+				((x1 - x0 - filter_envelope) * HRT_GDC_N) / in_frame_info->res.width;
+			uds->curr_dy =
+				((y1 - y0 - filter_envelope) * HRT_GDC_N) / in_frame_info->res.height;
+
+			/* B. Calculate xc/yc based on crop region */
+			uds->xc = (uint16_t) x0 + (((x1)-(x0)) / 2);
+			uds->yc = (uint16_t) y0 + (((y1)-(y0)) / 2);
+		} else {
+			uds->xc = (uint16_t)in_frame_info->res.width / 2;
+			uds->yc = (uint16_t)in_frame_info->res.height / 2;
+		}
+
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "uds->curr_dx=%d, uds->xc=%d, uds->yc=%d\n",
+				uds->curr_dx, uds->xc, uds->yc);
+		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "x0=%d, y0=%d, x1=%d, y1=%d\n",
+				x0, y0, x1, y1);
+		sp_out_crop_pos->x = (uint16_t)info->pipeline.left_cropping;
+		sp_out_crop_pos->y = (uint16_t)info->pipeline.top_cropping;
+	}
+	IA_CSS_LEAVE_PRIVATE("void");
+	return err;
 }
 #endif
 

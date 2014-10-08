@@ -42,7 +42,7 @@ The version string has four dot-separated numbers, read left to right:
 
 */
 
-#define CSS_API_VERSION_STRING	"2.1.8.1"
+#define CSS_API_VERSION_STRING	"2.1.8.3"
 
 /*
 Change log
@@ -190,7 +190,7 @@ v2.1.7.2, Add feature to lock all RAW buffers
 - will be locked. If continuous viewfinder is disabled, the flag should be set
 - to true.
 
-v2.1.8.0 (1 changes parallel), Various changes to support ACC configuration per pipe
+v2.1.8.0 (2 changes parallel), Various changes to support ACC configuration per pipe
 - Add ia_css_pipe_get_isp_config()
 - Remove ia_css_pipe_set_isp_config_on_pipe (duplicated
 - by ia_css_pipe_set_isp_config)
@@ -199,10 +199,19 @@ v2.1.8.0 (1 changes parallel), Various changes to support ACC configuration per 
 - Remove ia_css_pipe_isp_config_set()
 - Remove ia_css_pipe_isp_config_get()
 
-v2.1.8.1 (1 changes parallel), Added member num_invalid_frames to ia_css_pipe_info structure.
+v2.1.8.2 (2 changes parallel), Added member num_invalid_frames to ia_css_pipe_info structure.
 - Added member num_invalid_frames to ia_css_pipe_info structure.
 - This helps the driver make sure that the first valid output
 - frame goes into the first user-supplied output buffer.
+
+v2.1.8.3 (3 changes parallel), display_config
+- Added formats- and output config parameters for configuration of the (optional) display output.
+
+v2.1.8.3 (1 changes parallel), Adding zoom region parameters to CSS API
+- Adding ia_css_point and ia_css_region structures to css-api.
+- Adding zoom_region(type ia_css_region) parameter to ia_css_dz_config structure.
+- By using this user can do the zoom based on zoom region and
+- the center of the zoom region is not restricted at the center of the input frame.
 
 */
 

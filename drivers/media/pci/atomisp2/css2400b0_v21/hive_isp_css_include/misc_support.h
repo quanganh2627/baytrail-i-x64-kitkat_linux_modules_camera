@@ -27,9 +27,4 @@
 #define NOT_USED(a) ((void)(a))
 #endif
 
-/* Complile time assertion */
-#ifndef CT_ASSERT
-#define CT_ASSERT(cnd) ((void)sizeof(char[(cnd)?1:-1]))
-#endif /* CT_ASSERT */
-
 #endif /* __MISC_SUPPORT_H_INCLUDED__ */

@@ -1,5 +1,3 @@
-/* Release Version: irci_master_20141007_1709 */
-/* Release Version: irci_master_20141007_1709 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -21,18 +19,19 @@
  *
  */
 
-#ifndef __IA_CSS_HDR_HOST_H
-#define __IA_CSS_HDR_HOST_H
+#ifndef __IA_CSS_OB2_PARAM_H
+#define __IA_CSS_OB2_PARAM_H
 
-#include "ia_css_hdr_param.h"
-#include "ia_css_hdr_types.h"
+#include "type_support.h"
+#include "vmem.h"
 
-extern const struct ia_css_hdr_config default_hdr_config;
 
-void
-ia_css_hdr_init_config(
-	struct sh_css_isp_hdr_params *to,
-	const struct ia_css_hdr_config *from,
-	unsigned size);
+/* OB2 (Optical Black) */
+struct sh_css_isp_ob2_params {
+	int32_t blacklevel_gr;
+	int32_t blacklevel_r;
+	int32_t blacklevel_b;
+	int32_t blacklevel_gb;
+};
 
-#endif /* __IA_CSS_HDR_HOST_H */
+#endif /* __IA_CSS_OB2_PARAM_H */

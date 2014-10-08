@@ -22,6 +22,8 @@
 #ifndef __ASSERT_SUPPORT_H_INCLUDED__
 #define __ASSERT_SUPPORT_H_INCLUDED__
 
+#include "storage_class.h"
+
 #ifdef __KLOCWORK__
 /* Klocwork does not see that assert will lead to abortion
  * as there is no good way to tell this to KW and the code
@@ -55,6 +57,11 @@
  * BUILD_BUG_ON to find other methods.
  */
 #define COMPILATION_ERROR_IF(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
+
+/* Compile time assertion */
+#ifndef CT_ASSERT
+#define CT_ASSERT(cnd) ((void)sizeof(char[(cnd)?1:-1]))
+#endif /* CT_ASSERT */
 
 #ifdef NDEBUG
 
@@ -111,6 +118,17 @@
  * in the code. This will be removed over time.
  * The implemenation for the pipe generation tool is in see support.isp.h */
 #define OP___assert(cnd) assert(cnd)
+
+#ifdef C_RUN
+#define compile_time_assert(cond) OP___assert(cond)
+#else
+STORAGE_CLASS_INLINE void compile_time_assert (unsigned cond)
+{
+	/* Call undefined function if cond is false */
+	extern void _compile_time_assert (void);
+	if (!cond) _compile_time_assert();
+}
 #endif
+#endif /* PIPE_GENERATION */
 
 #endif /* __ASSERT_SUPPORT_H_INCLUDED__ */

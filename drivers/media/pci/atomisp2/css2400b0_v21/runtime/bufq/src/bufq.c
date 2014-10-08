@@ -62,9 +62,6 @@ struct sh_css_queues {
 
 	/* Tagger command queue */
 	ia_css_queue_t host2sp_tag_cmd_queue_handle;
-
-	/* Unlock Raw Buffer Command Queue */
-	ia_css_queue_t host2sp_unlock_raw_buff_msg_queue_handle;
 };
 
 struct sh_css_queues  css_queues;
@@ -245,9 +242,6 @@ static ia_css_queue_t *bufq_get_qhandle(
 	case sh_css_host2sp_tag_cmd_queue:
 		q = &css_queues.host2sp_tag_cmd_queue_handle;
 		break;
-	case sh_css_host2sp_unlock_buff_msg_queue:
-		q = &css_queues.host2sp_unlock_raw_buff_msg_queue_handle;
-		break;
 	default:
 		break;
 	}
@@ -330,11 +324,6 @@ void ia_css_bufq_init(void)
 	init_bufq((uint32_t)offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_desc),
 		  (uint32_t)offsetof(struct host_sp_queues, host2sp_tag_cmd_queue_elems),
 		  &css_queues.host2sp_tag_cmd_queue_handle);
-
-	/* Host2SP Unlock Raw Buffer message queue */
-	init_bufq((uint32_t)offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_desc),
-		  (uint32_t)offsetof(struct host_sp_queues, host2sp_unlock_raw_buff_msg_queue_elems),
-		  &css_queues.host2sp_unlock_raw_buff_msg_queue_handle);
 
 	IA_CSS_LEAVE_PRIVATE("");
 }
@@ -521,26 +510,6 @@ enum ia_css_err ia_css_bufq_enqueue_tag_cmd(
 	return return_err;
 }
 
-enum ia_css_err ia_css_bufq_enqueue_unlock_raw_buff_msg(
-	uint32_t exp_id)
-{
-	enum ia_css_err return_err;
-	int error = 0;
-	ia_css_queue_t *q;
-
-	IA_CSS_ENTER_PRIVATE("exposure ID=%d", exp_id);
-	q = bufq_get_qhandle(sh_css_host2sp_unlock_buff_msg_queue, -1, -1);
-	if (NULL == q) {
-		IA_CSS_ERROR("queue is not initialized");
-		return IA_CSS_ERR_RESOURCE_NOT_AVAILABLE;
-	}
-	error = ia_css_queue_enqueue(q, exp_id);
-
-	return_err = ia_css_convert_errno(error);
-	IA_CSS_LEAVE_ERR_PRIVATE(return_err);
-	return return_err;
-}
-
 enum ia_css_err ia_css_bufq_deinit(void)
 {
 	return IA_CSS_SUCCESS;
@@ -592,6 +561,4 @@ void ia_css_bufq_dump_queue_info(void)
 
 	bufq_dump_queue_info("host2sp_tag_cmd",
 		&css_queues.host2sp_tag_cmd_queue_handle);
-	bufq_dump_queue_info("host2sp_unlock_raw_buff_msg",
-		&css_queues.host2sp_unlock_raw_buff_msg_queue_handle);
 }

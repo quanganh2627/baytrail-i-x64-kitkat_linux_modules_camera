@@ -1,5 +1,3 @@
-/* Release Version: irci_master_20141007_1709 */
-/* Release Version: irci_master_20141007_1709 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -21,18 +19,29 @@
  *
  */
 
-#ifndef __IA_CSS_HDR_HOST_H
-#define __IA_CSS_HDR_HOST_H
+#include "ia_css_dpc2.host.h"
 
-#include "ia_css_hdr_param.h"
-#include "ia_css_hdr_types.h"
-
-extern const struct ia_css_hdr_config default_hdr_config;
-
+/* TODO: See if some functionality can be embedded in encode
+ * See also for range and precision of parameters etc.. */
 void
-ia_css_hdr_init_config(
-	struct sh_css_isp_hdr_params *to,
-	const struct ia_css_hdr_config *from,
-	unsigned size);
+ia_css_dpc2_encode(
+	struct ia_css_isp_dpc2_params *to,
+	const struct ia_css_dpc2_config *from,
+	size_t size)
+{
+	(void)size;
+	/* TODO: Implement following encode functions
+	* one_plus_metric1;
+	* one_minus_metric1;
+	* one_plus_metric3;
+	* wb_gain_gr;
+	* wb_gain_r;
+	* wb_gain_b;
+	* wb_gain_gb;
+	* wb_gain_gr_scaled_by_metric2;
+	* wb_gain_r_scaled_by_metric2;
+	* wb_gain_b_scaled_by_metric2;
+	* wb_gain_gb_scaled_by_metric2;
+	*/
+}
 
-#endif /* __IA_CSS_HDR_HOST_H */

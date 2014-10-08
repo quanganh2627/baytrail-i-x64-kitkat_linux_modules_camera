@@ -45,6 +45,8 @@
 
 #include "assert_support.h"
 
+#define IMPLIES(a, b)           (!(a) || (b))   /* A => B */
+
 static struct ia_css_binary_xinfo *all_binaries; /* ISP binaries only (no SP) */
 static struct ia_css_binary_xinfo
 	*binary_infos[IA_CSS_BINARY_NUM_MODES] = { NULL, };
@@ -109,10 +111,8 @@ ia_css_binary_internal_res(const struct ia_css_frame_info *in_info,
 		info->pipeline.top_cropping,
 		binary_dvs_env.height);
 #if defined(HAS_RES_MGR)
-	/* note - resolutions mgr flow does not yet support left/top cropping
-	   regarding dvs envelope - it is included in the bds resolution already */
-	internal_res->height = res_mgr_host_get_bds_height();
-	internal_res->width = res_mgr_host_get_bds_width();
+	internal_res->height = bds_out_info->res.height;
+	internal_res->width = bds_out_info->res.width;
 #endif
 }
 
@@ -1196,7 +1196,39 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 unsigned
 ia_css_binary_max_vf_width(void)
 {
-	return binary_infos[IA_CSS_BINARY_MODE_VF_PP]->sp.output.max_width;
+	/* This is (should be) true for IPU1 and IPU2 */
+	/* For IPU3 (SkyCam) this pointer is guarenteed to be NULL simply because such a binary does not exist  */
+	if (binary_infos[IA_CSS_BINARY_MODE_VF_PP])
+		return binary_infos[IA_CSS_BINARY_MODE_VF_PP]->sp.output.max_width;
+
+	/**
+	 * For IPU3 (SkyCam) there are 3 possible binary modes with viewfinder output.
+	 * These binary modes are mutual exclusive, so just return the max width of the first
+	 * non-null binary info for these 3 possible modes.
+	 *
+	 * Note the the returned max_width does not specify to which output it applies (main or vf)
+	 * ASSUMPTION: max_width applies to both main and vf output. As long this is true, no seperate new field is
+	 * required.
+	 */
+	assert(IMPLIES(binary_infos[IA_CSS_BINARY_MODE_VIDEO] != NULL,
+		binary_infos[IA_CSS_BINARY_MODE_PRIMARY] == NULL && binary_infos[IA_CSS_BINARY_MODE_PREVIEW] == NULL));
+
+	assert(IMPLIES(binary_infos[IA_CSS_BINARY_MODE_PRIMARY] != NULL,
+		binary_infos[IA_CSS_BINARY_MODE_VIDEO] == NULL && binary_infos[IA_CSS_BINARY_MODE_PREVIEW] == NULL));
+
+	assert(IMPLIES(binary_infos[IA_CSS_BINARY_MODE_PREVIEW] != NULL,
+		binary_infos[IA_CSS_BINARY_MODE_VIDEO] == NULL && binary_infos[IA_CSS_BINARY_MODE_PRIMARY] == NULL));
+
+	if (binary_infos[IA_CSS_BINARY_MODE_VIDEO])
+		return binary_infos[IA_CSS_BINARY_MODE_VIDEO]->sp.output.max_width;
+	if (binary_infos[IA_CSS_BINARY_MODE_PRIMARY])
+		return binary_infos[IA_CSS_BINARY_MODE_PRIMARY]->sp.output.max_width;
+	if (binary_infos[IA_CSS_BINARY_MODE_PREVIEW])
+		return binary_infos[IA_CSS_BINARY_MODE_PREVIEW]->sp.output.max_width;
+
+	/* Instead of assert, just return 0 (this will/should trigger an assert or error at the caller side) */
+	return 0;
+
 }
 
 void

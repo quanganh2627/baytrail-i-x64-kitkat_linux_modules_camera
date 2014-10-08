@@ -27,7 +27,7 @@
  */
 
 /*
- * Single-precision vector operations
+ * Double-precision vector operations
  */
 
 /*
@@ -45,13 +45,13 @@
 #endif  /* INLINE_ISP_OP2W */
 
 /*
- * Single-precision data type specification
+ * Double-precision data type specification
  */
 
 #include "isp_op2w_types.h"
 
 /*
- * Single-precision prototype specification
+ * Double-precision prototype specification
  */
 
 /* Arithmetic */
@@ -127,14 +127,14 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_add(
     const tvector2w     _a,
     const tvector2w     _b);
 
-/** @brief substraction
+/** @brief subtraction
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		_b substracted from _a.
+ * @return		_b subtracted from _a.
  *
- * This function will substract _b from _a.
+ * This function will subtract _b from _a.
  * in case of overflow it will wrap around.
  * result = _a - _b
  */
@@ -157,14 +157,14 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_addsat(
     const tvector2w     _a,
     const tvector2w     _b);
 
-/** @brief saturated substraction
+/** @brief saturated subtraction
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		saturated substraction of both input arguments
+ * @return		saturated subtraction of both input arguments
  *
- * This function will substract _b from _a.
+ * This function will subtract _b from _a.
  * in case of overflow it will saturate
  * result = CLIP(_a - _b, MIN_RANGE, MAX_RANGE);
  */
@@ -172,46 +172,46 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_subsat(
     const tvector2w     _a,
     const tvector2w     _b);
 
-/** @brief substraction with shift right
+/** @brief subtraction with shift right
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
  * @return		(a - b) >> 1
  *
- * This function will substract _b from _a.
- * and right shift the result with 1 bit.
+ * This function will subtract _b from _a at full
+ * precision, and right shift the result with 1 bit.
+ * No overflow can occur.
  * result = (_a - _b) >> 1
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_subasr1(
     const tvector2w     _a,
     const tvector2w     _b);
 
-/** @brief saturated substraction
+/** @brief saturated absolute value
  *
  * @param[in] _a	input
  *
- * @return		absolute value of the input
+ * @return		saturated absolute value of the input
  *
- * This function will calculate the absolute value of the input
+ * This function will calculate the saturated absolute value of the input.
+ * In case of overflow it will saturate.
  * if (_a > 0) return _a;<br>
- * else return -_a;<br>
+ * else return CLIP(-_a, MIN_RANGE, MAX_RANGE);<br>
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_abs(
     const tvector2w     _a);
 
-/** @brief subabssat
+/** @brief saturated absolute difference
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		sat(abs(a-b));
+ * @return		sat(abs(sat(a-b)));
  *
- * This function will calculate the absolute value
- * of the difference of both inputs. Values are
- * saturated both during substraction and absolute
+ * This function will calculate the saturated absolute value
+ * of the saturated difference of both inputs.
  * result = sat(abs(sat(_a - _b)));
- * Temporary results could be more than input/output size
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_subabssat(
     const tvector2w     _a,
@@ -228,30 +228,32 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_subabssat(
  *
  * This function will calculate the product
  * of the input arguments and returns the LSB
- * aligned single precison result.
+ * aligned double precision result.
+ * In case of overflow it will wrap around.
  * result = _a * _b;
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_mul(
     const tvector2w     _a,
     const tvector2w     _b);
 
-/** @brief fractional multiply
+/** @brief fractional saturating multiply
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		product of _a and _b
+ * @return		saturated product of _a and _b
  *
- * This function will calculate the product
- * of the input arguments and returns the MSB
- * aligned double precison result.
+ * This function will calculate the fixed point
+ * product of the input arguments
+ * and returns a double precision result.
+ * In case of overflow it will saturate.
  * result =((_a * _b) << 1) >> (2*NUM_BITS);
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_qmul(
     const tvector2w     _a,
     const tvector2w     _b);
 
-/** @brief fractional multiply with rounding
+/** @brief fractional saturating multiply with rounding
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
@@ -260,9 +262,10 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_qmul(
  *
  * This function will calculate the fixed point
  * product of the input arguments
- * and returns a double precison result.
+ * and returns a double precision result.
  * Depending on the rounding mode of the core
  * it will round to nearest or to nearest even.
+ * In case of overflow it will saturate.
  * result = ((_a * _b) << 1) >> (2*NUM_BITS);
  */
 
@@ -365,8 +368,9 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tflags OP_2w_gt(
  *
  * @return		_a >> _b
  *
- * This function will shift _a with _b bits to the right.
+ * If _b >= 0, this function will shift _a with _b bits to the right,
  * preserving the sign bit.
+ * If _b < 0, this function will give the same result as OP_2w_asl(_a, -_b)
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */
@@ -381,9 +385,11 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asr(
  *
  * @return		_a >> _b
  *
- * This function will shift _a with _b bits to the right.
- * and depending on the rounding mode of the core
+ * If 0 <= _b < 2*NUM_BITS, this function will shift _a with _b bits to the right,
+ * preserving the sign bit, and depending on the rounding mode of the core
  * it will round to nearest or to nearest even.
+ * If _b >= 2*NUM_BITS, this function will return 0.
+ * If _b <  0, this function will give the same result as OP_2w_asl(_a, -_b)
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */
@@ -391,14 +397,19 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asrrnd(
     const tvector2w     _a,
     const tvector2w     _b);
 
-/** @brief aritmetic shift left
+/** @brief saturating aritmetic shift left
  *
  * @param[in] _a	input
  * @param[in] _b	shift amount
  *
  * @return		_a << _b
  *
- * This function will shift _a with _b bits to the left.
+ * If 0 <= _b < MAX_BITDEPTH, this function will shift _a with _b bits to the left,
+ * saturating at MIN_RANGE/MAX_RANGE in case of overflow.
+ * If b >= MAX_BITDEPTH, this function will return MIN_RANGE if _a < 0,
+ * MAX_RANGE if _a > 0, 0 if _a == 0.
+ * If b < 0, this function will be identical to OP_2w_asr(_a, -_b).
+ * (with MAX_BITDEPTH=64)
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */
@@ -413,9 +424,7 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_asl(
  *
  * @return		_a << _b
  *
- * This function will shift _a with _b bits to the left.
- * The operation count for this function assumes that
- * the shift amount is a cloned scalar input.
+ * This function is identical to OP_2w_asl( )
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_aslsat(
     const tvector2w     _a,
@@ -428,8 +437,9 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_aslsat(
  *
  * @return		_a << _b
  *
- * This function will shift _a with _b bits to the left.
- * It will insert zero's on the right.
+ * If b >= 0, this function will shift _a with _b bits to the left.
+ * It will insert zeroes on the right.
+ * If b <  0, this function will be identical to OP_2w_lsr(_a, -_b).
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */
@@ -444,8 +454,9 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_lsl(
  *
  * @return		_a >> _b
  *
- * This function will shift _a with _b bits to the right.
- * It will insert zero's on the left
+ * If b >= 0, this function will shift _a with _b bits to the right.
+ * It will insert zeroes on the left.
+ * If b <  0, this function will be identical to OP_2w_lsl(_a, -_b).
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */
@@ -455,7 +466,7 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_lsr(
 
 /* clipping */
 
-/** @brief Clip asymetrical
+/** @brief Clip asymmetrical
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
@@ -463,7 +474,8 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_lsr(
  * @return		_a clipped between ~_b and b
  *
  * This function will clip the first argument between
- * the negated version of _b and _b.
+ * (-_b - 1) and _b.
+ * It asserts _b >= 0.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_clip_asym(
     const tvector2w     _a,
@@ -478,6 +490,7 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_clip_asym(
  *
  * This function will clip the first argument between
  * zero and _b.
+ * It asserts _b >= 0.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_clipz(
     const tvector2w     _a,
@@ -485,28 +498,36 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_clipz(
 
 /* division */
 
-/** @brief Divide
+/** @brief Truncated division
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		_a / _b
+ * @return		trunc( _a / _b )
  *
  * This function will divide the first argument by
- * the second argument.
+ * the second argument, with rounding toward 0.
+ * If _b == 0 and _a <  0, the function will return MIN_RANGE.
+ * If _b == 0 and _a == 0, the function will return 0.
+ * If _b == 0 and _a >  0, the function will return MAX_RANGE.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_div(
     const tvector2w     _a,
     const tvector2w     _b);
-/** @brief Divide
+
+/** @brief Saturating truncated division
  *
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		_a / _b
+ * @return		CLIP( trunc( _a / _b ), MIN_RANGE1w, MAX_RANGE1w )
  *
- * This function will perform halving division of
- * the first argument by the second argument.
+ * This function will divide the first argument by
+ * the second argument, with rounding toward 0, and
+ * saturate the result to the range of single precision.
+ * If _b == 0 and _a <  0, the function will return MIN_RANGE.
+ * If _b == 0 and _a == 0, the function will return 0.
+ * If _b == 0 and _a >  0, the function will return MAX_RANGE.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector1w OP_2w_divh(
     const tvector2w     _a,
@@ -517,24 +538,24 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector1w OP_2w_divh(
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		_a % _b
+ * @return		n/a
  *
- * This function will return _a modulo _b.
+ * This function has not yet been implemented.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_mod(
     const tvector2w     _a,
     const tvector2w     _b);
 
-/** @brief Square root
+/** @brief Unsigned Integer Square root
  *
  * @param[in] _a	input
  *
  * @return		square root of _a
  *
- * This function will calculate the square root of _a
+ * This function will calculate the unsigned integer square root of _a
  */
-STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_sqrt(
-    const tvector2w     _a);
+STORAGE_CLASS_ISP_OP2W_FUNC_H tvector1w_unsigned OP_2w_sqrt_u(
+	const tvector2w_unsigned     _a);
 
 /* Miscellaneous */
 
@@ -559,11 +580,11 @@ STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_mux(
  * @param[in] _a	first argument
  * @param[in] _b	second argument
  *
- * @return		average(_a,_b)
+ * @return		(_a + _b) >> 1
  *
- * This function will calculate the average of
- * the two input arguments.
- * And depending on the rounding mode of the core
+ * This function will add _a and _b at full precision,
+ * and right shift with rounding the result with 1 bit.
+ * Depending on the rounding mode of the core
  * it will round to nearest or to nearest even.
  */
 STORAGE_CLASS_ISP_OP2W_FUNC_H tvector2w OP_2w_avgrnd(

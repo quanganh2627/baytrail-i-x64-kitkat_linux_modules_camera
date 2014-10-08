@@ -102,9 +102,9 @@ static int thread_alive;
 
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 #define SP1_PROG_NAME "sp1"
-#endif
+#endif /* HAS_SEC_SP */
 /* Size of Refcount List */
 #define REFCOUNT_SIZE 1000
 
@@ -1607,9 +1607,9 @@ ia_css_init(const struct ia_css_env *env,
 {
 	enum ia_css_err err;
 	ia_css_spctrl_cfg spctrl_cfg;
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 	ia_css_spctrl_cfg sp1ctrl_cfg;
-#endif
+#endif /* HAS_SEC_SP */
 
 	void *(*malloc_func) (size_t size, bool zero_mem);
 	void (*free_func) (void *ptr);
@@ -1763,7 +1763,7 @@ ia_css_init(const struct ia_css_env *env,
 		IA_CSS_LEAVE_ERR(err);
 		return err;
 	}
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 	if(!sh_css_setup_spctrl_config(&sh_css_sp1_fw,SP1_PROG_NAME,&sp1ctrl_cfg))
 		return IA_CSS_ERR_INTERNAL_ERROR;
 	err = ia_css_spctrl_load_fw(SP1_ID, &sp1ctrl_cfg);
@@ -1771,7 +1771,7 @@ ia_css_init(const struct ia_css_env *env,
 		IA_CSS_LEAVE_ERR(err);
 		return err;
 	}
-#endif
+#endif /* HAS_SEC_SP */
 
 #if defined(HRT_CSIM)
 	/**
@@ -2485,14 +2485,11 @@ ia_css_uninit(void)
 		ia_css_unload_firmware();
 	}
 	ia_css_spctrl_unload_fw(SP0_ID);
-#if defined(C_ENABLE_SP1)
-	ia_css_spctrl_unload_fw(SP1_ID);
-#endif
-
 	sh_css_sp_set_sp_running(false);
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
+	ia_css_spctrl_unload_fw(SP1_ID);
 	sh_css_sp1_set_sp1_running(false);
-#endif
+#endif /* HAS_SEC_SP */
 
 #if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
 	/* check and free any remaining mipi frames */
@@ -4527,6 +4524,7 @@ ia_css_dequeue_psys_event(struct ia_css_event *event)
 	event->port = IA_CSS_CSI2_PORT0;
 	event->exp_id = 0;
 	event->fw_error = IA_CSS_FW_SUCCESS;
+	event->fw_warning = IA_CSS_FW_WARNING_NONE;
 	event->fw_handle = 0;
 
 	if (event->type == IA_CSS_EVENT_TYPE_PORT_EOF) {
@@ -4534,6 +4532,8 @@ ia_css_dequeue_psys_event(struct ia_css_event *event)
 		event->exp_id = payload[3];
 	} else if (event->type == IA_CSS_EVENT_TYPE_FW_ERROR) {
 		event->fw_error = (enum ia_css_fw_err)payload[1];
+	} else if (event->type == IA_CSS_EVENT_TYPE_FW_WARNING) {
+		event->fw_warning = (enum ia_css_fw_warning)payload[1];
 	} else {
 		/* pipe related events.
 		 * payload[1] contains the pipe_num,
@@ -8967,10 +8967,10 @@ ia_css_pipe_get_isp_pipe_version(const struct ia_css_pipe *pipe)
 
 #define SP_START_TIMEOUT_US 30000000
 
-#if defined(C_ENABLE_SP1)
 void
 ia_css_start_sp1(void)
 {
+#if defined(HAS_SEC_SP)
 	unsigned long timeout;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_start_sp1() enter\n");
@@ -8988,8 +8988,11 @@ ia_css_start_sp1(void)
 	sh_css_write_host2sp1_command(host2sp_cmd_ready);
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_start_sp1() exit\n");
+#else
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_start_sp1() Secondary SP is not supported!!!\n");
+#endif /** HAS_SEC_SP */
 }
-#endif
+
 enum ia_css_err
 ia_css_start_sp(void)
 {
@@ -9020,10 +9023,10 @@ ia_css_start_sp(void)
 	sh_css_setup_queues();
 	ia_css_bufq_dump_queue_info();
 
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 	/* Start the SP1 Core */
 	ia_css_start_sp1();
-#endif
+#endif /* HAS_SEC_SP */
 
 	IA_CSS_LEAVE_ERR(IA_CSS_SUCCESS);
 	return IA_CSS_SUCCESS;
@@ -9036,10 +9039,10 @@ ia_css_start_sp(void)
  */
 #define SP_SHUTDOWN_TIMEOUT_US 200000
 
-#if defined(C_ENABLE_SP1)
 enum ia_css_err
 ia_css_stop_sp1(void)
 {
+#if defined(HAS_SEC_SP)
 	unsigned long timeout;
 
 	IA_CSS_ENTER("");
@@ -9059,10 +9062,13 @@ ia_css_stop_sp1(void)
 	}
 
 	IA_CSS_LEAVE("");
-
 	return IA_CSS_SUCCESS;
+#else
+	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE, "ia_css_stop_sp1() Secondary SP is not supported!!!\n");
+	return IA_CSS_ERR_NOT_SUPPORTED;
+#endif /** HAS_SEC_SP */
+
 }
-#endif /* #if defined(ENABLE_SP1) */
 
 enum ia_css_err
 ia_css_stop_sp(void)
@@ -9116,10 +9122,10 @@ ia_css_stop_sp(void)
 	/* clear pending param sets from refcount */
 	sh_css_param_clear_param_sets();
 
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 	/* Stop SP1 Core */
 	ia_css_stop_sp1();
-#endif
+#endif /* HAS_SEC_SP */
 
 	IA_CSS_LEAVE_ERR(err);
 	return err;
@@ -9311,14 +9317,16 @@ ia_css_unlock_raw_frame(struct ia_css_stream *stream, uint32_t exp_id)
 		return IA_CSS_ERR_INVALID_ARGUMENTS;
 	}
 
-	/* Enqueue the Exposure ID */
-	ret = ia_css_bufq_enqueue_unlock_raw_buff_msg(exp_id);
-	if (ret != IA_CSS_SUCCESS)
-		return ret;
+	if (exp_id > IA_CSS_ISYS_MAX_EXPOSURE_ID ||
+	    exp_id < IA_CSS_ISYS_MIN_EXPOSURE_ID) {
+		IA_CSS_ERROR("invalid expsure ID: %d\n", exp_id);
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	}
 
-	/* Send an event */
+	/* Send the event. Since we verified that the exp_id is valid,
+	 * we can safely assign it to an 8-bit argument here. */
 	ret = ia_css_bufq_enqueue_psys_event(
-			IA_CSS_PSYS_SW_EVENT_UNLOCK_RAW_BUFFER, 0, 0, 0);
+			IA_CSS_PSYS_SW_EVENT_UNLOCK_RAW_BUFFER, exp_id, 0, 0);
 
 	IA_CSS_LEAVE_ERR(ret);
 	return ret;

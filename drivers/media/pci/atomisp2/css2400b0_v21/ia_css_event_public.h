@@ -68,6 +68,8 @@ enum ia_css_event_type {
 	/**< End Of Frame event, sent when in buffered sensor mode. */
 	IA_CSS_EVENT_TYPE_FW_ERROR			= 1 << 13,
 	/**< Unrecoverable error encounter by FW */
+	IA_CSS_EVENT_TYPE_FW_WARNING			= 1 << 14,
+	/**< Performance warning encounter by FW */
 };
 
 #define IA_CSS_EVENT_TYPE_NONE 0
@@ -125,6 +127,8 @@ struct ia_css_event {
 	     events). */
 	enum ia_css_fw_err     fw_error;
 	/**< Firmware error code, only for ERROR events. */
+	enum ia_css_fw_warning fw_warning;
+	/**< Firmware warning code, only for WARNING events. */
 };
 
 /** @brief Dequeue a PSYS event from the CSS system.

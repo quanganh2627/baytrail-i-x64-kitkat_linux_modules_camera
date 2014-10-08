@@ -104,7 +104,7 @@ typedef enum {
 	bbb_func_OP_2w_div,
 	bbb_func_OP_2w_divh,
 	bbb_func_OP_2w_mod,
-	bbb_func_OP_2w_sqrt,
+	bbb_func_OP_2w_sqrt_u,
 	bbb_func_OP_2w_mux,
 	bbb_func_OP_2w_avgrnd,
 	bbb_func_OP_2w_min,

@@ -1,5 +1,3 @@
-/* Release Version: irci_master_20141007_1709 */
-/* Release Version: irci_master_20141007_1709 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -21,18 +19,17 @@
  *
  */
 
-#ifndef __IA_CSS_HDR_HOST_H
-#define __IA_CSS_HDR_HOST_H
+#ifndef __IA_CSS_DPC2_HOST_H
+#define __IA_CSS_DPC2_HOST_H
 
-#include "ia_css_hdr_param.h"
-#include "ia_css_hdr_types.h"
-
-extern const struct ia_css_hdr_config default_hdr_config;
+#include "ia_css_dpc2_types.h"
+#include "ia_css_dpc2_param.h"
+#include "ia_css_dpc2_default.host.h"
 
 void
-ia_css_hdr_init_config(
-	struct sh_css_isp_hdr_params *to,
-	const struct ia_css_hdr_config *from,
-	unsigned size);
+ia_css_dpc2_encode(
+	struct ia_css_isp_dpc2_params *to,
+	const struct ia_css_dpc2_config *from,
+	size_t size);
 
-#endif /* __IA_CSS_HDR_HOST_H */
+#endif /* __IA_CSS_DPC2_HOST_H */

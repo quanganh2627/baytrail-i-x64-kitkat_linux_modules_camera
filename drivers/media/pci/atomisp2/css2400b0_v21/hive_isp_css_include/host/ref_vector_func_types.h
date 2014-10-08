@@ -83,7 +83,6 @@ typedef short tscalar1w_range1wbit;
 typedef short tscalar1w_unsigned_range1wbit;
 typedef unsigned short tvector_5bit;
 typedef unsigned short tvector_4bit;
-typedef unsigned int   tvector2w_unsigned;
 typedef unsigned short tscalar1w_16bit;
 typedef unsigned short tscalar1w_4bit_bma_shift;
 

@@ -65,4 +65,15 @@ enum ia_css_fw_err {
 	IA_CSS_FW_ERR_OUT_OF_SP_DMEM,
 };
 
+/** FW warnings. This enum contains a value for each warning that
+ * the SP FW could indicate potential performance issue
+ */
+enum ia_css_fw_warning {
+	IA_CSS_FW_WARNING_NONE,
+	IA_CSS_FW_WARNING_ISYS_QUEUE_FULL,
+	IA_CSS_FW_WARNING_PSYS_QUEUE_FULL,
+	IA_CSS_FW_WARNING_CIRCBUF_ALL_LOCKED,
+	IA_CSS_FW_WARNING_EXP_ID_LOCKED,
+};
+
 #endif /* __IA_CSS_ERR_H */
