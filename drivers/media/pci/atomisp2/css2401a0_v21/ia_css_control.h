@@ -139,7 +139,6 @@ ia_css_sp_has_initialized(void);
 bool
 ia_css_sp_has_terminated(void);
 
-#if defined(C_ENABLE_SP1)
 /** @brief start SP1 hardware
  *
  * @return			IA_CSS_SUCCESS or error code upon error.
@@ -150,7 +149,15 @@ ia_css_sp_has_terminated(void);
  */
 void
 ia_css_start_sp1(void);
-#endif
+
+/** @brief stop SP1 hardware
+ *
+ * @return			IA_CSS_SUCCESS or error code upon error.
+ *
+ * This function will shut down SP1.
+ */
+enum ia_css_err
+ia_css_stop_sp1(void);
 
 /** @brief start SP hardware
  *
@@ -163,16 +170,6 @@ ia_css_start_sp1(void);
 enum ia_css_err
 ia_css_start_sp(void);
 
-#if defined(C_ENABLE_SP1)
-/** @brief stop SP1 hardware
- *
- * @return			IA_CSS_SUCCESS or error code upon error.
- *
- * This function will shut down SP1.
- */
-enum ia_css_err
-ia_css_stop_sp1(void);
-#endif
 
 /** @brief stop SP hardware
  *

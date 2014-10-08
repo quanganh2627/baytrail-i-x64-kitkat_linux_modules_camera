@@ -127,12 +127,6 @@
   *	 these threads can't be used as image pipe
   */
 
-#if !defined(SWITCH_GACS_TO_SP1) && defined(IS_ISP_2500_SYSTEM)
-#define SH_CSS_SP_INTERNAL_SWITCH_GACS_TO_SP1_THREAD	1
-#else
-#define SH_CSS_SP_INTERNAL_SWITCH_GACS_TO_SP1_THREAD	0
-#endif
-
 #if defined(SH_CSS_ENABLE_METADATA_THREAD)
 #define SH_CSS_SP_INTERNAL_METADATA_THREAD	1
 #else
@@ -145,11 +139,7 @@
 	#define SH_CSS_MAX_SP_THREADS			0
 #else
 	#if defined(IS_ISP_2500_SYSTEM)
-		#if defined(SWITCH_GACS_TO_SP1)
-			#define SH_CSS_MAX_SP_THREADS		2
-		#else
-			#define SH_CSS_MAX_SP_THREADS		2
-		#endif
+		#define SH_CSS_MAX_SP_THREADS		4
 	#else
 		#define SH_CSS_MAX_SP_THREADS		5
 	#endif
@@ -183,18 +173,18 @@
 #define SIZE_OF_IA_CSS_PTR		sizeof(uint32_t)
 
 /* Number of SP's */
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 #define NUM_OF_SPS 2
 #else
 #define NUM_OF_SPS 1
-#endif
+#endif /* HAS_SEC_SP */
 
 /* Enum for Number of Binaries */
 enum sh_css_num_binaries {
 	SP_FIRMWARE = 0,
-#if defined(C_ENABLE_SP1)
+#if defined(HAS_SEC_SP)
 	SP1_FIRMWARE,
-#endif
+#endif /* HAS_SEC_SP */
 	ISP_FIRMWARE
 };
 
@@ -248,6 +238,7 @@ enum sh_css_sp_event_type {
 	SH_CSS_SP_EVENT_ACC_STAGE_COMPLETE,
 	SH_CSS_SP_EVENT_PORT_EOF,
 	SH_CSS_SP_EVENT_FW_ERROR,
+	SH_CSS_SP_EVENT_FW_WARNING,
 	SH_CSS_SP_EVENT_NR_OF_TYPES		/* must be last */
 };
 
@@ -773,7 +764,6 @@ struct sh_css_config_on_frame_enqueue {
 #define  IA_CSS_NUM_ELEMS_HOST2SP_BUFFER_QUEUE    6
 #define  IA_CSS_NUM_ELEMS_HOST2SP_PARAM_QUEUE    3
 #define  IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE  6
-#define  IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE 6
 #if !defined(HAS_NO_INPUT_SYSTEM)
 /* sp-to-host queue is expected to be emptied in ISR since
  * it is used instead of HW interrupts (due to HW design issue).
@@ -855,7 +845,6 @@ enum sh_css_queue_type {
 	sh_css_host2sp_isys_event_queue,
 #endif
 	sh_css_host2sp_tag_cmd_queue,
-	sh_css_host2sp_unlock_buff_msg_queue,
 };
 
 struct sh_css_event_irq_mask {
@@ -956,13 +945,6 @@ struct host_sp_queues {
 	ia_css_circbuf_desc_t host2sp_tag_cmd_queue_desc;
 	ia_css_circbuf_elem_t host2sp_tag_cmd_queue_elems
 		[IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE];
-
-	/*
-	 * The queue for the Unlock Raw Buffer messages
-	 */
-	ia_css_circbuf_desc_t host2sp_unlock_raw_buff_msg_queue_desc;
-	ia_css_circbuf_elem_t host2sp_unlock_raw_buff_msg_queue_elems
-		[IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE];
 };
 
 #define SIZE_OF_QUEUES_ELEMS							\
@@ -973,13 +955,12 @@ struct host_sp_queues {
 	(IA_CSS_NUM_ELEMS_SP2HOST_PSYS_EVENT_QUEUE) +				\
 	(IA_CSS_NUM_ELEMS_HOST2SP_ISYS_EVENT_QUEUE) +				\
 	(IA_CSS_NUM_ELEMS_SP2HOST_ISYS_EVENT_QUEUE) +				\
-	(IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE) +				\
-	(IA_CSS_NUM_ELEMS_HOST2SP_UNLOCK_RAW_MSG_QUEUE)))
+	(IA_CSS_NUM_ELEMS_HOST2SP_TAG_CMD_QUEUE)))
 
 #if !defined(HAS_NO_INPUT_SYSTEM)
-#define IA_CSS_NUM_CIRCBUF_DESCS 6
+#define IA_CSS_NUM_CIRCBUF_DESCS 5
 #else
-#define IA_CSS_NUM_CIRCBUF_DESCS 4
+#define IA_CSS_NUM_CIRCBUF_DESCS 3
 #endif
 
 #define SIZE_OF_QUEUES_DESC \
@@ -989,7 +970,7 @@ struct host_sp_queues {
 	 (IA_CSS_NUM_CIRCBUF_DESCS * SIZE_OF_IA_CSS_CIRCBUF_DESC_S_STRUCT))
 
 #define SIZE_OF_HOST_SP_QUEUES_STRUCT		\
-	(SIZE_OF_QUEUES_ELEMS) + (SIZE_OF_QUEUES_DESC)
+	(SIZE_OF_QUEUES_ELEMS + SIZE_OF_QUEUES_DESC)
 
 extern int (*sh_css_printf)(const char *fmt, va_list args);
 

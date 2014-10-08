@@ -1,5 +1,5 @@
-/* Release Version: irci_master_20140927_1500 */
-/* Release Version: irci_master_20140927_1500 */
+/* Release Version: irci_master_20141007_1709 */
+/* Release Version: irci_master_20141007_1709 */
 /*
  * Support for Intel Camera Imaging ISP subsystem.
  *
@@ -286,16 +286,42 @@ struct ia_css_dvs_6axis_config {
 };
 
 /**
+ * This specifies the coordinates (x,y)
+ */
+struct ia_css_point {
+	int32_t x; /**< x coordinate */
+	int32_t y; /**< y coordinate */
+};
+
+/**
+ * This specifies the region
+ */
+struct ia_css_region {
+	struct ia_css_point origin; /**< Starting point coordinates for the region */
+	struct ia_css_resolution resolution; /**< Region resolution */
+};
+
+/**
  * Digital zoom:
  * This feature is currently available only for video, but will become
  * available for preview and capture as well.
  * Set the digital zoom factor, this is a logarithmic scale. The actual zoom
  * factor will be 64/x.
  * Setting dx or dy to 0 disables digital zoom for that direction.
+ * New API change for Digital zoom:(added struct ia_css_region zoom_region)
+ * zoom_region specifies the origin of the zoom region and width and
+ * height of that region.
+ * origin : This is the coordinate (x,y) within the effective input resolution
+ * of the stream. where, x >= 0 and y >= 0. (0,0) maps to the upper left of the
+ * effective input resolution.
+ * resolution : This is resolution of zoom region.
+ * where, x + width <= effective input width
+ * y + height <= effective input height
  */
 struct ia_css_dz_config {
-	uint32_t dx;
-	uint32_t dy;
+	uint32_t dx; /**< Horizontal zoom factor */
+	uint32_t dy; /**< Vertical zoom factor */
+	struct ia_css_region zoom_region; /**< region for zoom */
 };
 
 /** The still capture mode, this can be RAW (simply copy sensor input to DDR),
@@ -351,7 +377,7 @@ struct ia_css_isp_config {
 							[YNR2&YEE2, 2only] */
 	struct ia_css_fc_config   *fc_config;	/**< Fringe Control
 							[FC2, 2only] */
-	struct ia_css_formats_config   *formats_config;	/**< Formats Control
+	struct ia_css_formats_config   *formats_config;	/**< Formats Control for main output
 							[FORMATS, 1&2] */
 	struct ia_css_cnr_config  *cnr_config;	/**< Chroma Noise Reduction
 							[CNR2, 2only] */
@@ -419,7 +445,7 @@ struct ia_css_isp_config {
 	 *  DVS, GDC) from IQ tool level and application level down-to ISP FW level.
 	 *  the risk for regression is not in the individual blocks, but how they
 	 *  integrate together. */
-	struct ia_css_output_config   *output_config;  /**< Ouput Mirroring */
+	struct ia_css_output_config   *output_config;	/**< Main Output Mirroring, flipping */
 
 	struct ia_css_2500_lin_kernel_config     *lin_2500_config;       /**< Skylake: Linearization config */
 	struct ia_css_2500_obgrid_kernel_config  *obgrid_2500_config;    /**< Skylake: OBGRID config */
@@ -442,6 +468,9 @@ struct ia_css_isp_config {
 	struct ia_css_2500_bds_kernel_config     *bds_2500_config;       /**< Skylake: bayer downscaler config */
 	struct ia_css_2500_dvs_kernel_config     *dvs_2500_config;       /**< Skylake: digital video stabilization config */
 	struct ia_css_2500_res_mgr_config        *res_mgr_2500_config;
+	struct ia_css_formats_config             *formats_config_display;/**< Formats control for viewfinder/display output (optional)
+										[OSYS, n/a] */
+	struct ia_css_output_config              *output_config_display; /**< Viewfinder/display output mirroring, flipping (optional) */
 
 	struct ia_css_frame	*output_frame;	/**< Output frame the config is to be applied to (optional) */
 	uint32_t			isp_config_id;	/**< Unique ID to track which config was actually applied to a particular frame */

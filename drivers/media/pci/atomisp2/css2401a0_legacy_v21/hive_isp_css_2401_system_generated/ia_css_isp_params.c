@@ -42,6 +42,7 @@
 #include "isp/kernels/gc/gc_2/ia_css_gc2.host.h"
 #include "isp/kernels/macc/macc_1.0/ia_css_macc.host.h"
 #include "isp/kernels/ob/ob_1.0/ia_css_ob.host.h"
+#include "isp/kernels/ob/ob2/ia_css_ob2.host.h"
 #include "isp/kernels/output/output_1.0/ia_css_output.host.h"
 #include "isp/kernels/iefd2_6/ia_css_iefd2_6.host.h"
 #include "isp/kernels/raw/raw_1.0/ia_css_raw.host.h"
@@ -58,6 +59,8 @@
 #include "isp/kernels/ynr/ynr_1.0/ia_css_ynr.host.h"
 #include "isp/kernels/ynr/ynr_2/ia_css_ynr2.host.h"
 #include "isp/kernels/tdf/tdf_1.0/ia_css_tdf.host.h"
+#include "isp/kernels/dpc2/ia_css_dpc2.host.h"
+#include "isp/kernels/eed1_8/ia_css_eed1_8.host.h"
 /* Generated code: do not edit or commmit. */
 
 #include "ia_css_pipeline.h"

@@ -28,6 +28,7 @@
 #define ROUNDMODE           ROUND_NEAREST_EVEN
 
 #define HAS_div_unit
+#define HAS_sqrt_unit
 #define HAS_bfa_unit
 
 
@@ -65,6 +66,5 @@
 #define BFA_SUBABSSAT_BIT_CNT       (9)
 #define BFA_SUBABSSAT_MAX           ((1<<BFA_SUBABSSAT_BIT_CNT)-1)
 #define BFA_WEIGHT_SHIFT            (6)
-
 
 #endif /* __ISP2601_CONFIG_H_INCLUDED__ */

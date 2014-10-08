@@ -189,7 +189,7 @@ static const hrt_address ISP_DMEM_BASE[N_ISP_ID] = {
 	(hrt_address)0xffffffffUL};
 
 static const hrt_address ISP_BAMEM_BASE[N_BAMEM_ID] = {
-	(hrt_address)0xffffffffUL};
+	(hrt_address)0x100000UL};
 
 static const hrt_address ISP_VAMEM_BASE[N_VAMEM_ID] = {
 	(hrt_address)0xffffffffUL,

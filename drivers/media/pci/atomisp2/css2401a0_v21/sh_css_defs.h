@@ -31,20 +31,6 @@
 
 #include "math_support.h"	/* max(), min, etc etc */
 
-/* Macros for Controlling SP1 enabling and compilation */
-/* CHECK_IF_SH_CSS_DEFS_INCLUDED is to test whether all SP1 dependent files have included
-	sh_css_defs.h file or not */
-#define CHECK_IF_SH_CSS_DEFS_INCLUDED
-
-#if defined(IS_ISP_2500_SYSTEM)
-#define SWITCH_GACS_TO_SP1	/* Enabling this macro switches the GACs to SP1 */
-
-#if !defined(C_ENABLE_SP1)
-#undef SWITCH_GACS_TO_SP1
-#endif
-
-#endif /*defined(IS_ISP_2500_SYSTEM)*/
-
 /* ID's for refcount */
 #define IA_CSS_REFCOUNT_PARAM_SET_POOL  0xCAFE0001
 #define IA_CSS_REFCOUNT_PARAM_BUFFER    0xCAFE0002
@@ -280,10 +266,8 @@ RGB[0,8191],coef[-8192,8191] -> RGB[0,8191]
 #define __ISP_MAX_VF_OUTPUT_WIDTH(width, left_crop) \
 	(width - 2*ISP_VEC_NELEMS + ((left_crop) ? 2 * ISP_VEC_NELEMS : 0))
 
-/* Number of vectors per vf line is determined by the chroma width,
- * the luma width is derived from that. That's why we have the +1. */
 #define __ISP_VF_OUTPUT_WIDTH_VECS(out_width, vf_log_downscale) \
-	(_ISP_VECS((out_width) >> ((vf_log_downscale)+1)) * 2)
+	(_ISP_VECS((out_width) >> (vf_log_downscale)))
 
 #define _ISP_VF_OUTPUT_WIDTH(vf_out_vecs) ((vf_out_vecs) * ISP_VEC_NELEMS)
 #define _ISP_VF_OUTPUT_HEIGHT(out_height, vf_log_ds) \

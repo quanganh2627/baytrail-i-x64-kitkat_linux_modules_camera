@@ -170,17 +170,6 @@ enum ia_css_err ia_css_bufq_enqueue_tag_cmd(
 	uint32_t item);
 
 /**
- * @brief   Enqueue a Unlock Raw buffer message into the queue..
- *
- * @param exp_id	Exposure ID - which uniquely identifies a raw buffer
- * @return		IA_CSS_SUCCESS or error code upon error.
- *
- */
-enum ia_css_err ia_css_bufq_enqueue_unlock_raw_buff_msg(
-	uint32_t exp_id);
-
-
-/**
 * @brief  Uninitializes bufq module.
  *
  * @return	IA_CSS_SUCCESS or error code upon error.

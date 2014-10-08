@@ -52,11 +52,15 @@ static int32_t
 compute_alpha(int sigma)
 {
 	int32_t alpha;
+#if defined(XNR_ATE_ROUNDING_BUG)
 	int32_t alpha_unscaled;
-
+#else
+	int offset = sigma/2;
+#endif
 	if (sigma < XNR_MIN_SIGMA) {
 		alpha = XNR_MAX_ALPHA;
 	} else {
+#if defined(XNR_ATE_ROUNDING_BUG)
 		/* The scale factor for alpha must be the same as on the ISP,
 		 * For sigma, it must match the public interface. The code
 		 * below mimics the rounding and unintended loss of precision
@@ -66,6 +70,9 @@ compute_alpha(int sigma)
 		 * round after scaling. */
 		alpha_unscaled = IA_CSS_XNR3_SIGMA_SCALE / sigma;
 		alpha = alpha_unscaled * XNR_ALPHA_SCALE_FACTOR;
+#else
+		alpha = ((IA_CSS_XNR3_SIGMA_SCALE * XNR_ALPHA_SCALE_FACTOR) + offset)/ sigma;
+#endif
 
 		if (alpha > XNR_MAX_ALPHA) {
 			alpha = XNR_MAX_ALPHA;
