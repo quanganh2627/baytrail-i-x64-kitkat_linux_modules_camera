@@ -2959,8 +2959,8 @@ static int __get_frame_info(struct atomisp_sub_device *asd,
 			*info = p_info.raw_output_info;
 			dev_dbg(isp->dev, "getting raw frame info.\n");
 		}
-		dev_dbg(isp->dev, "get frame info: w=%d, h=%d.\n",
-			info->res.width, info->res.height);
+		dev_dbg(isp->dev, "get frame info: w=%d, h=%d, num_invalid_frames %d.\n",
+			info->res.width, info->res.height, p_info.num_invalid_frames);
 		return 0;
 	}
 

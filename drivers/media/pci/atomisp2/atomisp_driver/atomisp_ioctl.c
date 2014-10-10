@@ -2811,6 +2811,9 @@ static long atomisp_vidioc_default(struct file *file, void *fh,
 	case ATOMISP_IOC_INJECT_A_FAKE_EVENT:
 		err = atomisp_inject_a_fake_event(asd, arg);
 		break;
+	case ATOMISP_IOC_G_INVALID_FRAME_NUM:
+		err = atomisp_get_invalid_frame_num(vdev, arg);
+		break;
 	default:
 		rt_mutex_unlock(&isp->mutex);
 		return -EINVAL;

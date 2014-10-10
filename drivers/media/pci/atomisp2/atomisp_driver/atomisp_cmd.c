@@ -5593,3 +5593,70 @@ int atomisp_inject_a_fake_event(struct atomisp_sub_device *asd, int *event)
 	return 0;
 }
 
+int atomisp_get_pipe_id(struct atomisp_video_pipe *pipe)
+{
+	struct atomisp_sub_device *asd = pipe->asd;
+
+	if (ATOMISP_USE_YUVPP(asd))
+		return CSS_PIPE_ID_YUVPP;
+	else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_SCALER)
+		return CSS_PIPE_ID_VIDEO;
+	else if (asd->vfpp->val == ATOMISP_VFPP_DISABLE_LOWLAT)
+		return CSS_PIPE_ID_CAPTURE;
+	else if (pipe == &asd->video_out_video_capture)
+		return CSS_PIPE_ID_VIDEO;
+	else if (pipe == &asd->video_out_vf)
+		return CSS_PIPE_ID_CAPTURE;
+	else if (pipe == &asd->video_out_preview) {
+		if (asd->run_mode->val == ATOMISP_RUN_MODE_VIDEO)
+			return CSS_PIPE_ID_VIDEO;
+		else
+			return CSS_PIPE_ID_PREVIEW;
+	} else if (pipe == &asd->video_out_capture) {
+		if (asd->copy_mode && !asd->copy_mode_format_conv)
+			return IA_CSS_PIPE_ID_COPY;
+		else
+			return CSS_PIPE_ID_CAPTURE;
+	}
+
+	/* fail through */
+	dev_warn(asd->isp->dev, "%s failed to find proper pipe\n",
+	         __func__);
+	return CSS_PIPE_ID_CAPTURE;
+}
+
+int atomisp_get_invalid_frame_num(struct video_device *vdev,
+					int *invalid_frame_num)
+{
+	struct atomisp_video_pipe *pipe = atomisp_to_video_pipe(vdev);
+	struct atomisp_sub_device *asd = pipe->asd;
+	enum atomisp_css_pipe_id pipe_id;
+	struct ia_css_pipe_info p_info;
+	int ret;
+
+	if (asd->isp->inputs[asd->input_curr].camera_caps->
+		sensor[asd->sensor_curr].stream_num > 1) {
+		/* External ISP */
+		*invalid_frame_num = 0;
+		return 0;
+	}
+
+	pipe_id = atomisp_get_pipe_id(pipe);
+	if (!asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].pipes[pipe_id]) {
+		dev_warn(asd->isp->dev, "%s pipe %d has not been created yet, do SET_FMT first!\n",
+		         __func__, pipe_id);
+		return -EINVAL;
+	}
+
+	ret = ia_css_pipe_get_info(
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL]
+		.pipes[pipe_id], &p_info);
+	if (ret == IA_CSS_SUCCESS) {
+		*invalid_frame_num = p_info.num_invalid_frames;
+		return 0;
+	} else {
+		dev_warn(asd->isp->dev, "%s get pipe infor failed %d\n",
+		         __func__, ret);
+		return -EINVAL;
+	}
+}
