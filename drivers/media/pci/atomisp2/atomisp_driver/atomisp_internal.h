@@ -173,6 +173,9 @@
 
 #define ATOMISP_DEPTH_SENSOR_STREAMON_COUNT 2
 
+#define DIV_NEAREST_STEP(n, d, step) \
+	round_down((2 * (n) + (d) * (step))/(2 * (d)), (step))
+
 struct atomisp_input_subdev {
 	unsigned int type;
 	enum atomisp_camera_port port;
