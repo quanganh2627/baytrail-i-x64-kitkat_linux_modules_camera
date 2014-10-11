@@ -940,6 +940,9 @@ static int imx_v_flip(struct v4l2_subdev *sd, s32 value)
 	int ret;
 	u16 val;
 
+	if (dev->power == 0)
+		return -EIO;
+
 	ret = imx_write_reg_array(client, dev->param_hold);
 	if (ret)
 		return ret;
@@ -976,6 +979,9 @@ static int imx_h_flip(struct v4l2_subdev *sd, s32 value)
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret;
 	u16 val;
+
+	if (dev->power == 0)
+		return -EIO;
 
 	ret = imx_write_reg_array(client, dev->param_hold);
 	if (ret)
