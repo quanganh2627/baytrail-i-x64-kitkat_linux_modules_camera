@@ -332,7 +332,7 @@ sh_css_sp_start_raw_copy(struct ia_css_frame *out_frame,
 
 static void
 sh_css_sp_start_isys_copy(struct ia_css_frame *out_frame,
-	unsigned pipe_num, unsigned max_input_width)
+	unsigned pipe_num, unsigned max_input_width, unsigned int if_config_index)
 {
 	enum ia_css_pipe_id pipe_id;
 	unsigned int thread_id;
@@ -375,6 +375,7 @@ sh_css_sp_start_isys_copy(struct ia_css_frame *out_frame,
 	sh_css_sp_stage.xmem_bin_addr = 0x0;
 	sh_css_sp_stage.stage_type = SH_CSS_SP_STAGE_TYPE;
 	sh_css_sp_stage.func = (unsigned int)IA_CSS_PIPELINE_ISYS_COPY;
+	sh_css_sp_stage.if_config_index = (uint8_t) if_config_index;
 
 	set_output_frame_buffer(out_frame, 0);
 
@@ -621,6 +622,7 @@ set_view_finder_buffer(const struct ia_css_frame *frame)
 	case IA_CSS_FRAME_FORMAT_UYVY:
 	case IA_CSS_FRAME_FORMAT_CSI_MIPI_YUV420_8:
 	case IA_CSS_FRAME_FORMAT_CSI_MIPI_LEGACY_YUV420_8:
+	case IA_CSS_FRAME_FORMAT_YUV420:
 
 	/* for vf_veceven */
 	case IA_CSS_FRAME_FORMAT_YUV_LINE:
@@ -1159,7 +1161,7 @@ sp_init_sp_stage(struct ia_css_pipeline_stage *stage,
 		assert(false); /* TBI */
 	case IA_CSS_PIPELINE_ISYS_COPY:
 		sh_css_sp_start_isys_copy(args->out_frame[0],
-				pipe_num, stage->max_input_width);
+				pipe_num, stage->max_input_width, if_config_index);
 		break;
 	case IA_CSS_PIPELINE_NO_FUNC:
 		assert(false);
@@ -1232,7 +1234,7 @@ sh_css_sp_init_pipeline(struct ia_css_pipeline *me,
 				     offline, if_config_index);
 	} /* if (first_binary != NULL) */
 
-#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+#if defined(USE_INPUT_SYSTEM_VERSION_2401) || defined(USE_INPUT_SYSTEM_VERSION_2)
 	/* Signal the host immediately after start for SP_ISYS_COPY only */
 	if ((me->num_stages == 1) && me->stages &&
 	    (me->stages->sp_func == IA_CSS_PIPELINE_ISYS_COPY))

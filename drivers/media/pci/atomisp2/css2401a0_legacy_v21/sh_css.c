@@ -100,6 +100,9 @@ static int thread_alive;
 #include "sh_css_struct.h"
 #include "ia_css_bufq.h"
 
+#include "isp/modes/interface/input_buf.isp.h"
+
+
 /* Name of the sp program: should not be built-in */
 #define SP_PROG_NAME "sp"
 #if defined(HAS_SEC_SP)
@@ -500,7 +503,8 @@ sh_css_config_input_network(struct ia_css_stream *stream)
 					stream->config.channel_id,
 					stream->config.mode);
 
-	if (binary && (binary->online || stream->config.continuous)) {
+	if ((binary && (binary->online || stream->config.continuous)) ||
+			pipe->config.mode == IA_CSS_PIPE_MODE_COPY) {
 		err = ia_css_ifmtr_configure(&stream->config,
 			binary);
 		if (err != IA_CSS_SUCCESS)
@@ -2134,9 +2138,16 @@ create_host_pipeline(struct ia_css_stream *stream)
 #endif
 	}
 
-#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	if ((pipe_id != IA_CSS_PIPE_ID_ACC)
-			&& (main_pipe->config.mode != IA_CSS_PIPE_MODE_COPY)) {
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
+	/* old isys: need to allocate_mipi_frames() even in IA_CSS_PIPE_MODE_COPY */
+	if (pipe_id != IA_CSS_PIPE_ID_ACC) {
+		err = allocate_mipi_frames(main_pipe, &stream->info);
+		if (err != IA_CSS_SUCCESS)
+			goto ERR;
+	}
+#elif defined(USE_INPUT_SYSTEM_VERSION_2401)
+	if ((pipe_id != IA_CSS_PIPE_ID_ACC) &&
+		(main_pipe->config.mode != IA_CSS_PIPE_MODE_COPY)) {
 		err = allocate_mipi_frames(main_pipe, &stream->info);
 		if (err != IA_CSS_SUCCESS)
 			goto ERR;
@@ -5342,7 +5353,7 @@ enum ia_css_err sh_css_pipe_get_viewfinder_frame_info(
 	     pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_BAYER))
 		return IA_CSS_ERR_MODE_HAS_NO_VIEWFINDER;
 	/* offline video does not generate viewfinder output */
-#if defined(USE_INPUT_SYSTEM_VERSION_2401)
+#if defined(USE_INPUT_SYSTEM_VERSION_2401) || defined(IS_ISP_2500_SYSTEM)
 	/* pqiao TODO: temporary hack for  PO, should be removed after offline YUVPP is enabled */
 	*info = pipe->vf_output_info[idx];
 #else
@@ -5468,6 +5479,9 @@ static enum ia_css_err load_primary_binaries(
 				 capt_pp_out_info, vf_info,
 				 *vf_pp_in_info, *pipe_out_info,
 				 *pipe_vf_out_info;
+#if defined(HAS_RES_MGR)
+	struct ia_css_frame_info bds_out_info;
+#endif
 	enum ia_css_err err = IA_CSS_SUCCESS;
 	struct ia_css_capture_settings *mycs;
 	unsigned int i;
@@ -5491,10 +5505,16 @@ static enum ia_css_err load_primary_binaries(
 	if (mycs->primary_binary.info)
 		return IA_CSS_SUCCESS;
 
-	err = ia_css_util_check_vf_out_info(pipe_out_info,
-			pipe_vf_out_info);
-	if (err != IA_CSS_SUCCESS)
-		return err;
+	if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0]) {
+		err = ia_css_util_check_vf_out_info(pipe_out_info, pipe_vf_out_info);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
+	else{
+		err = ia_css_frame_check_info(pipe_out_info);
+		if (err != IA_CSS_SUCCESS)
+			return err;
+	}
 	need_pp = need_capture_pp(pipe);
 
 	/* we use the vf output info to get the primary/capture_pp binary
@@ -5545,6 +5565,10 @@ static enum ia_css_err load_primary_binaries(
 				&cas_scaler_descr.out_info[i],
 				&cas_scaler_descr.internal_out_info[i],
 				&cas_scaler_descr.vf_info[i]);
+#if defined(HAS_RES_MGR)
+			bds_out_info.res = pipe->config.bayer_ds_out_res;
+			yuv_scaler_descr.bds_out_info = &bds_out_info;
+#endif
 			err = ia_css_binary_find(&yuv_scaler_descr,
 						&mycs->yuv_scaler_binary[i]);
 			if (err != IA_CSS_SUCCESS)
@@ -5563,6 +5587,10 @@ static enum ia_css_err load_primary_binaries(
 		ia_css_pipe_get_capturepp_binarydesc(pipe,
 			&capture_pp_descr, &prim_out_info,
 			&capt_pp_out_info, &vf_info);
+#if defined(HAS_RES_MGR)
+			bds_out_info.res = pipe->config.bayer_ds_out_res;
+			capture_pp_descr.bds_out_info = &bds_out_info;
+#endif
 		err = ia_css_binary_find(&capture_pp_descr,
 					&mycs->capture_pp_binary);
 		if (err != IA_CSS_SUCCESS)
@@ -5575,8 +5603,16 @@ static enum ia_css_err load_primary_binaries(
 	{
 		struct ia_css_binary_descr prim_descr;
 
-		ia_css_pipe_get_primary_binarydesc(pipe,
-			&prim_descr, &prim_in_info, &prim_out_info, &vf_info);
+		if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0]){
+			ia_css_pipe_get_primary_binarydesc(pipe, &prim_descr, &prim_in_info, &prim_out_info, &vf_info);
+		}
+		else{
+			ia_css_pipe_get_primary_binarydesc(pipe, &prim_descr, &prim_in_info, &prim_out_info, NULL);
+		}
+#if defined(HAS_RES_MGR)
+			bds_out_info.res = pipe->config.bayer_ds_out_res;
+			prim_descr.bds_out_info = &bds_out_info;
+#endif
 		err = ia_css_binary_find(&prim_descr, &mycs->primary_binary);
 		if (err != IA_CSS_SUCCESS)
 			return err;
@@ -5591,11 +5627,16 @@ static enum ia_css_err load_primary_binaries(
 		    &mycs->primary_binary.vf_frame_info;
 	}
 
+	if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0])
 	{
 		struct ia_css_binary_descr vf_pp_descr;
 
 		ia_css_pipe_get_vfpp_binarydesc(pipe,
 			&vf_pp_descr, vf_pp_in_info, pipe_vf_out_info);
+#if defined(HAS_RES_MGR)
+			bds_out_info.res = pipe->config.bayer_ds_out_res;
+			vf_pp_descr.bds_out_info = &bds_out_info;
+#endif
 		err = ia_css_binary_find(&vf_pp_descr, &mycs->vf_pp_binary);
 		if (err != IA_CSS_SUCCESS)
 			return err;
@@ -5609,6 +5650,7 @@ static enum ia_css_err load_primary_binaries(
 #else
 	need_isp_copy_binary = !online && !continuous && !memory;
 #endif
+
 	/* ISP Copy */
 	if (need_isp_copy_binary) {
 		err = load_copy_binary(pipe,
@@ -6835,6 +6877,7 @@ create_host_isyscopy_capture_pipeline(struct ia_css_pipe *pipe)
 	struct ia_css_pipeline_stage *out_stage = NULL;
 	unsigned int thread_id;
 	enum sh_css_queue_id queue_id;
+	unsigned int max_input_width = MAX_VECTORS_PER_INPUT_LINE_CONT * ISP_VEC_NELEMS;
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"create_host_isyscopy_capture_pipeline() enter:\n");
@@ -6855,7 +6898,7 @@ create_host_isyscopy_capture_pipeline(struct ia_css_pipe *pipe)
 	me->pipe_id = IA_CSS_PIPE_ID_CAPTURE;
 	pipe->mode  = IA_CSS_PIPE_ID_CAPTURE;
 	ia_css_pipe_get_sp_func_stage_desc(&stage_desc, out_frame,
-		IA_CSS_PIPELINE_ISYS_COPY, 0);
+		IA_CSS_PIPELINE_ISYS_COPY, max_input_width);
 	err = ia_css_pipeline_create_and_add_stage(me,
 		&stage_desc, &out_stage);
 	if(err != IA_CSS_SUCCESS)
@@ -6953,13 +6996,18 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 	out_frame = &me->out_frame[0];
 
 	/* Construct vf_frame info (only in case we have VF) */
-	if (mode == IA_CSS_CAPTURE_MODE_RAW ||
-			mode == IA_CSS_CAPTURE_MODE_BAYER) {
-		/* These modes don't support viewfinder output */
+	if (pipe->enable_viewfinder[IA_CSS_PIPE_OUTPUT_STAGE_0]){
+		if (mode == IA_CSS_CAPTURE_MODE_RAW || mode == IA_CSS_CAPTURE_MODE_BAYER) {
+			/* These modes don't support viewfinder output */
+			vf_frame = NULL;
+		} else {
+			init_vf_frameinfo_defaults(pipe, &me->vf_frame[0], 0);
+			vf_frame = &me->vf_frame[0];
+		}
+	}
+	else
+	{
 		vf_frame = NULL;
-	} else {
-		init_vf_frameinfo_defaults(pipe, &me->vf_frame[0], 0);
-		vf_frame = &me->vf_frame[0];
 	}
 
 	copy_stage = NULL;
@@ -7109,7 +7157,7 @@ create_host_regular_capture_pipeline(struct ia_css_pipe *pipe)
 		}
 	}
 
-	if (mode != IA_CSS_CAPTURE_MODE_RAW && mode != IA_CSS_CAPTURE_MODE_BAYER && post_stage) {
+	if (mode != IA_CSS_CAPTURE_MODE_RAW && mode != IA_CSS_CAPTURE_MODE_BAYER && post_stage && vf_frame) {
 		err = add_vf_pp_stage(pipe, vf_frame, vf_pp_binary,
 				      post_stage, &vf_pp_stage);
 		if (err != IA_CSS_SUCCESS)
@@ -7166,13 +7214,18 @@ static enum ia_css_err capture_start(
 		}
 	}
 
-#if defined(USE_INPUT_SYSTEM_VERSION_2) || defined(USE_INPUT_SYSTEM_VERSION_2401)
-	/* multi stream video needs mipi buffers */
+#if defined(USE_INPUT_SYSTEM_VERSION_2)
+	/* old isys: need to send_mipi_frames() in all pipe modes */
+	err = send_mipi_frames(pipe);
+	if (err != IA_CSS_SUCCESS)
+		return err;
+#elif defined(USE_INPUT_SYSTEM_VERSION_2401)
 	if (pipe->config.mode != IA_CSS_PIPE_MODE_COPY) {
 		err = send_mipi_frames(pipe);
 		if (err != IA_CSS_SUCCESS)
 			return err;
 	}
+
 #endif
 
 	{
@@ -7183,6 +7236,18 @@ static enum ia_css_err capture_start(
 
 	}
 	err = start_pipe(pipe, copy_ovrd, pipe->stream->config.mode);
+
+#if !defined(HAS_NO_INPUT_SYSTEM) && !defined(USE_INPUT_SYSTEM_VERSION_2401)
+	/*
+	 * old isys: for IA_CSS_PIPE_MODE_COPY pipe, isys rx has to be configured,
+	 * which is currently done in start_binary(); but COPY pipe contains no binary,
+	 * and does not call start_binary(); so we need to configure the rx here.
+	 */
+	if (pipe->config.mode == IA_CSS_PIPE_MODE_COPY && pipe->stream->reconfigure_css_rx) {
+		ia_css_isys_rx_configure(&pipe->stream->csi_rx_config, pipe->stream->config.mode);
+		pipe->stream->reconfigure_css_rx = false;
+	}
+#endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"capture_start() leave: return (%d)\n", err);

@@ -140,9 +140,9 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_piecewise_estimation(
 	tvector1w a,
 	ref_config_points test_config_points);
 
-/** @brief XCU (Fast Config Unit Piecewise linear estimation
+/** @brief XCU Fast Config Unit Piecewise linear estimation
  *
- * @param[in] a input
+ * @param[in] x input
  * @param[in] test_config_points   config parameter structure
  *
  * @return		     	   piecewise linear estimated output
