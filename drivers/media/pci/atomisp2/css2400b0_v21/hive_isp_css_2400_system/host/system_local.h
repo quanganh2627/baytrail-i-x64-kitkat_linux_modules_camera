@@ -186,7 +186,7 @@ static const hrt_address ISP_CTRL_BASE[N_ISP_ID] = {
 	(hrt_address)0x00020000UL};
 
 static const hrt_address ISP_DMEM_BASE[N_ISP_ID] = {
-	(hrt_address)0xffffffffUL};
+	(hrt_address)0x00200000UL};
 
 static const hrt_address ISP_BAMEM_BASE[N_BAMEM_ID] = {
 	(hrt_address)0x100000UL};

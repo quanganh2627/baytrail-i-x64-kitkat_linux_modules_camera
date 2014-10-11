@@ -19,18 +19,23 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __IA_CSS_XNRVIDEO4_HOST_H
+#define __IA_CSS_XNRVIDEO4_HOST_H
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "ia_css_xnrvideo4_param.h"
+#include "ia_css_xnrvideo4_types.h"
 
+extern const struct ia_css_xnrvideo4_config default_xnrvideo4_config;
 
-#define CSS_VERSION_STRING "REL:20141009_41.4_1539; API:2.1.8.3; GIT:scci_20141008_1432__12992d#12992d96d6a8f9ac97960786367c27dafd6102da; SDK:/nfs/iir/disks/iir_hivepackages_003/iir_hivepkgs_disk017/Css_Mizuchi/packages/Css_Mizuchi/int_css_mizuchi_20140829_1053; USER:viedifw; "
+void
+ia_css_xnrvideo4_encode(
+	struct sh_css_isp_xnrvideo4_params *to,
+	const struct ia_css_xnrvideo4_config *from,
+	unsigned size);
 
+void
+ia_css_xnrvideo4_debug_dtrace(
+	const struct ia_css_xnrvideo4_config *config,
+	unsigned level);
 
-#endif
-
+#endif /* __IA_CSS_XNRVIDEO4_HOST_H */

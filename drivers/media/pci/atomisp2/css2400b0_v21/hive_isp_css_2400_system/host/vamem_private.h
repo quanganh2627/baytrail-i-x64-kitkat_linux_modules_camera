@@ -19,18 +19,27 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __VAMEM_PRIVATE_H_INCLUDED__
+#define __VAMEM_PRIVATE_H_INCLUDED__
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "vamem_public.h"
 
+#include <hrt/api.h>
 
-#define CSS_VERSION_STRING "REL:20141009_41.4_1539; API:2.1.8.3; GIT:scci_20141008_1432__12992d#12992d96d6a8f9ac97960786367c27dafd6102da; SDK:/nfs/iir/disks/iir_hivepackages_003/iir_hivepkgs_disk017/Css_Mizuchi/packages/Css_Mizuchi/int_css_mizuchi_20140829_1053; USER:viedifw; "
+#include "assert_support.h"
 
 
-#endif
+STORAGE_CLASS_ISP_C void isp_vamem_store(
+	const vamem_ID_t	ID,
+	vamem_data_t		*addr,
+	const vamem_data_t	*data,
+	const size_t		size) /* in vamem_data_t */
+{
+	assert(ID < N_VAMEM_ID);
+	assert(ISP_VAMEM_BASE[ID] != (hrt_address)-1);
+	hrt_master_port_store(ISP_VAMEM_BASE[ID] + (unsigned)addr, data, size * sizeof(vamem_data_t));
+	return;
+}
 
+
+#endif /* __VAMEM_PRIVATE_H_INCLUDED__ */

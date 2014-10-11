@@ -631,7 +631,8 @@ void ia_css_pipe_get_primary_binarydesc(
 	assert(pipe != NULL);
 	assert(in_info != NULL);
 	assert(out_info != NULL);
-	assert(vf_info != NULL);
+	/* vf_info can be NULL - example video_binarydescr */
+	/*assert(vf_info != NULL);*/
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 			    "ia_css_pipe_get_primary_binarydesc() enter:\n");
 

@@ -56,6 +56,7 @@
 #include "isp/kernels/wb/wb_1.0/ia_css_wb.host.h"
 #include "isp/kernels/xnr/xnr_1.0/ia_css_xnr.host.h"
 #include "isp/kernels/xnr/xnr_3.0/ia_css_xnr3.host.h"
+#include "isp/kernels/xnr/xnrvideo4/ia_css_xnrvideo4.host.h"
 #include "isp/kernels/ynr/ynr_1.0/ia_css_ynr.host.h"
 #include "isp/kernels/ynr/ynr_2/ia_css_ynr2.host.h"
 #include "isp/kernels/tdf/tdf_1.0/ia_css_tdf.host.h"
