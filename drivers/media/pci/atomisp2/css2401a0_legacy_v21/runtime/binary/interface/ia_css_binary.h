@@ -89,6 +89,7 @@ struct ia_css_binary_descr {
 	int mode;
 	bool online;
 	bool continuous;
+	bool striped;
 	bool two_ppc;
 	bool enable_yuv_ds;
 	bool enable_high_speed;

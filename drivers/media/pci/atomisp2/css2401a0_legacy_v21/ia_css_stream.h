@@ -48,6 +48,7 @@ struct ia_css_stream {
 	struct ia_css_isp_parameters  *per_frame_isp_params_configs;
 
 	bool                           cont_capt;
+	bool                           stop_copy_preview;
 	bool                           started;
 };
 

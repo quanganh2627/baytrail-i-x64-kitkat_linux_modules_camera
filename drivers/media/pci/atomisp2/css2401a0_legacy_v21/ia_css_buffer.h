@@ -72,6 +72,7 @@ struct ia_css_buffer {
 	} data; /**< Buffer data pointer. */
 	uint64_t driver_cookie; /**< cookie for the driver */
 	struct ia_css_time_meas timing_data; /**< timing data (readings from the timer) */
+	struct ia_css_clock_tick isys_eof_clock_tick; /**< ISYS's end of frame timer tick*/
 };
 
 /** @brief Dequeue param buffers from sp2host_queue

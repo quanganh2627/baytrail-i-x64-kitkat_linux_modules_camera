@@ -99,6 +99,7 @@ static int thread_alive;
 #include "ia_css_version_data.h"
 #include "sh_css_struct.h"
 #include "ia_css_bufq.h"
+#include "ia_css_timer.h" /* clock_value_t */
 
 #include "isp/modes/interface/input_buf.isp.h"
 
@@ -4341,6 +4342,11 @@ ia_css_pipe_dequeue_buffer(struct ia_css_pipe *pipe,
 			buffer->driver_cookie = ddr_buffer.cookie_ptr;
 			buffer->timing_data = ddr_buffer.timing_data;
 
+			if ((buf_type == IA_CSS_BUFFER_TYPE_OUTPUT_FRAME) ||
+				(buf_type == IA_CSS_BUFFER_TYPE_VF_OUTPUT_FRAME)) {
+				buffer->isys_eof_clock_tick.ticks = ddr_buffer.isys_eof_clock_tick;
+			}
+
 			switch (buf_type) {
 			case IA_CSS_BUFFER_TYPE_INPUT_FRAME:
 			case IA_CSS_BUFFER_TYPE_OUTPUT_FRAME:
@@ -5353,20 +5359,7 @@ enum ia_css_err sh_css_pipe_get_viewfinder_frame_info(
 	     pipe->config.default_capture_config.mode == IA_CSS_CAPTURE_MODE_BAYER))
 		return IA_CSS_ERR_MODE_HAS_NO_VIEWFINDER;
 	/* offline video does not generate viewfinder output */
-#if defined(USE_INPUT_SYSTEM_VERSION_2401) || defined(IS_ISP_2500_SYSTEM)
-	/* pqiao TODO: temporary hack for  PO, should be removed after offline YUVPP is enabled */
 	*info = pipe->vf_output_info[idx];
-#else
-	if ( pipe->mode == IA_CSS_PIPE_ID_VIDEO &&
-	    !pipe->stream->config.online && !pipe->stream->config.continuous) {
-		ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
-			"sh_css_pipe_get_viewfinder_frame_info() leave: return_err=%d\n",
-			IA_CSS_ERR_MODE_HAS_NO_VIEWFINDER);
-		return IA_CSS_ERR_MODE_HAS_NO_VIEWFINDER;
-	} else {
-		*info = pipe->vf_output_info[idx];
-	}
-#endif
 
 	ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE_PRIVATE,
 		"sh_css_pipe_get_viewfinder_frame_info() leave: \
@@ -8318,8 +8311,10 @@ ia_css_stream_create(const struct ia_css_stream_config *stream_config,
 		struct ia_css_pipe *capture_pipe = NULL;
 		struct ia_css_pipe *copy_pipe = NULL;
 
-		if (num_pipes >= 2)
+		if (num_pipes >= 2) {
 			curr_stream->cont_capt = true;
+			curr_stream->stop_copy_preview = my_css.stop_copy_preview;
+		}
 
 		/* Create copy pipe here, since it may not be exposed to the driver */
 		preview_pipe = find_pipe(pipes, num_pipes,

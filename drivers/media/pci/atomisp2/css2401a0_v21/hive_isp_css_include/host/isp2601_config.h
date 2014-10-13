@@ -26,11 +26,15 @@
 #define ISP_VEC_ELEMBITS NUM_BITS
 #define NUM_SLICE_ELEMS 4
 #define ROUNDMODE           ROUND_NEAREST_EVEN
+#define MAX_SHIFT_1W        (NUM_BITS-1)   /* Max number of bits a 1w input can be shifted */
+#define MAX_SHIFT_2W        (2*NUM_BITS-1) /* Max number of bits a 2w input can be shifted */
 
 #define HAS_div_unit
-#define HAS_sqrt_unit
 #define HAS_bfa_unit
+#define HAS_1w_sqrt_u_unit
+#define HAS_2w_sqrt_u_unit
 
+#define HAS_vec_sub
 
 /* Bit widths and element widths defined in HW implementation of BFA */
 #define BFA_THRESHOLD_BIT_CNT       (4)

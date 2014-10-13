@@ -893,6 +893,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 
 	struct ia_css_binary_xinfo *xcandidate;
 	bool need_ds, need_dz, need_dvs, need_xnr;
+	bool striped;
 	bool enable_yuv_ds;
 	bool enable_high_speed;
 	bool enable_dvs_6axis;
@@ -936,6 +937,7 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 	enable_dvs_6axis  = descr->enable_dvs_6axis;
 	enable_reduced_pipe = descr->enable_reduced_pipe;
 	continuous = descr->continuous;
+	striped = descr->striped;
 	isp_pipe_version = descr->isp_pipe_version;
 
 	dvs_env.width = 0;
@@ -988,6 +990,12 @@ ia_css_binary_find(struct ia_css_binary_descr *descr,
 					__LINE__, candidate->enable.continuous,
 					continuous, mode,
 					IA_CSS_BINARY_MODE_COPY);
+			continue;
+		}
+		if (striped && candidate->iterator.num_stripes == 1) {
+			ia_css_debug_dtrace(IA_CSS_DEBUG_TRACE,
+				"ia_css_binary_find() [%d] continue: binary is not striped\n",
+					__LINE__);
 			continue;
 		}
 
@@ -1234,9 +1242,10 @@ ia_css_binary_max_vf_width(void)
 void
 ia_css_binary_destroy_isp_parameters(struct ia_css_binary *binary)
 {
-	ia_css_isp_param_destroy_isp_parameters(
-		&binary->mem_params,
-		&binary->css_params);
+	if (binary) {
+		ia_css_isp_param_destroy_isp_parameters(&binary->mem_params,
+							&binary->css_params);
+	}
 }
 
 void

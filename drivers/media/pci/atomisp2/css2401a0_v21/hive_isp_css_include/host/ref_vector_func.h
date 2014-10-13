@@ -101,6 +101,8 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_mul_realigning(
  * As part of input processing for piecewise linear estimation config unit,
  * this function will perform scaling followed by adding offset and
  * then clamping to the MAX InputValue
+ * It asserts -MAX_SHIFT_1W <= input_scale <= MAX_SHIFT_1W, and
+ * -MAX_SHIFT_1W <= input_offset <= MAX_SHIFT_1W
  */
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_input_scaling_offset_clamping(
 	tvector1w a,
@@ -117,9 +119,8 @@ STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_input_scaling_offset_clamping(
  * As part of output processing for piecewise linear estimation config unit,
  * This function will perform scaling and then clamping to output
  * MAX value.
+ * It asserts -MAX_SHIFT_1W <= output_scale <= MAX_SHIFT_1W
  */
-
-
 STORAGE_CLASS_REF_VECTOR_FUNC_H tvector1w OP_1w_output_scaling_clamping(
 	tvector1w a,
 	tscalar1w_5bit_signed output_scale);

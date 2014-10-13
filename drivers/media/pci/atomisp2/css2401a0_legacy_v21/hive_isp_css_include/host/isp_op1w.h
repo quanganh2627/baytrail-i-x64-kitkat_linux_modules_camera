@@ -386,9 +386,9 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tflags OP_1w_gt(
  *
  * @return		_a >> _b
  *
- * If _b >= 0, this function will shift _a with _b bits to the right,
+ * This function will shift _a with _b bits to the right,
  * preserving the sign bit.
- * If _b < 0, this function will give the same result as OP_1w_asl(_a, -_b)
+ * It asserts 0 <= _b <= MAX_SHIFT_1W.
  *
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
@@ -404,11 +404,11 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asr(
  *
  * @return		_a >> _b
  *
- * If 0 <= _b < NUM_BITS, this function will shift _a with _b bits to the right,
+ * If _b < NUM_BITS, this function will shift _a with _b bits to the right,
  * preserving the sign bit, and depending on the rounding mode of the core
  * it will round to nearest or to nearest even.
  * If _b >= NUM_BITS, this function will return 0.
- * If _b <  0, this function will give the same result as OP_1w_asl(_a, -_b)
+ * It asserts 0 <= _b <= MAX_SHIFT_1W.
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */
@@ -423,12 +423,12 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_asrrnd(
  *
  * @return		_a << _b
  *
- * If 0 <= _b < MAX_BITDEPTH, this function will shift _a with _b bits to the left,
+ * If _b < MAX_BITDEPTH, this function will shift _a with _b bits to the left,
  * saturating at MIN_RANGE/MAX_RANGE in case of overflow.
- * If b >= MAX_BITDEPTH, this function will return MIN_RANGE if _a < 0,
+ * If _b >= MAX_BITDEPTH, this function will return MIN_RANGE if _a < 0,
  * MAX_RANGE if _a > 0, 0 if _a == 0.
- * If b < 0, this function will be identical to OP_1w_asr(_a, -_b).
  * (with MAX_BITDEPTH=64)
+ * It asserts 0 <= _b <= MAX_SHIFT_1W.
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */
@@ -456,9 +456,9 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_aslsat(
  *
  * @return		_a << _b
  *
- * If b >= 0, this function will shift _a with _b bits to the left.
- * It will insert zero's on the right.
- * If b <  0, this function will be identical to OP_1w_lsr(_a, -_b).
+ * This function will shift _a with _b bits to the left.
+ * It will insert zeroes on the right.
+ * It asserts 0 <= _b <= MAX_SHIFT_1W.
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */
@@ -473,9 +473,9 @@ STORAGE_CLASS_ISP_OP1W_FUNC_H tvector1w OP_1w_lsl(
  *
  * @return		_a >> _b
  *
- * If b >= 0, this function will shift _a with _b bits to the right.
- * It will insert zero's on the left.
- * If b <  0, this function will be identical to OP_1w_lsl(_a, -_b).
+ * This function will shift _a with _b bits to the right.
+ * It will insert zeroes on the left.
+ * It asserts 0 <= _b <= MAX_SHIFT_1W.
  * The operation count for this function assumes that
  * the shift amount is a cloned scalar input.
  */

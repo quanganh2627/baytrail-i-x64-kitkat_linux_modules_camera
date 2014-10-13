@@ -76,11 +76,11 @@
  * Struct type specification
  */
 
-typedef unsigned short tscalar1w_3bit;
-typedef short tscalar1w_5bit_signed;
-typedef unsigned short tscalar1w_5bit;
-typedef short tscalar1w_range1wbit;
-typedef short tscalar1w_unsigned_range1wbit;
+typedef unsigned short tscalar1w_3bit;       /* tscalar1w in interval [0, 2^3)                       */
+typedef short tscalar1w_5bit_signed;         /* tscalar1w in interval [-2^(5-1), 2^(5-1))            */
+typedef unsigned short tscalar1w_5bit;       /* tscalar1w in interval [0, 2^5)                       */
+typedef short tscalar1w_range1wbit;          /* tscalar1w in interval [-NUM_BITS, NUM_BITS]          */
+typedef short tscalar1w_unsigned_range1wbit; /* tscalar1w in interval [0, NUM_BITS]                  */
 typedef unsigned short tvector_5bit;
 typedef unsigned short tvector_4bit;
 typedef unsigned short tscalar1w_16bit;
