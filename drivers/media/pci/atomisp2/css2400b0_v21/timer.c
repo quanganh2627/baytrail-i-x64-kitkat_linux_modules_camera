@@ -19,13 +19,15 @@
  *
  */
 
-#ifndef __ISP2400_CONFIG_H_INCLUDED__
-#define __ISP2400_CONFIG_H_INCLUDED__
+#include <type_support.h>		/* for uint32_t */
+#include "ia_css_timer.h" /*struct ia_css_clock_tick */
+#include "sh_css_legacy.h" /* IA_CSS_PIPE_ID_NUM*/
 
-#define NUM_BITS 14
-#define NUM_SLICE_ELEMS 4
-#define ROUNDMODE           ROUND_NEAREST_EVEN
-#define MAX_SHIFT_1W        (NUM_BITS-1)   /* Max number of bits a 1w input can be shifted */
-#define MAX_SHIFT_2W        (2*NUM_BITS-1) /* Max number of bits a 2w input can be shifted */
+enum ia_css_err
+ia_css_timer_get_current_tick(
+	struct ia_css_clock_tick *curr_ts) {
 
-#endif /* __ISP2400_CONFIG_H_INCLUDED__ */
+	(void)curr_ts;
+	return IA_CSS_ERR_NOT_SUPPORTED;
+}
+

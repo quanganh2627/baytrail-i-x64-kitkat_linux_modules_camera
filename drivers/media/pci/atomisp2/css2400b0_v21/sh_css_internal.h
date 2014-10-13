@@ -814,6 +814,7 @@ struct sh_css_hmm_buffer {
 	CSS_ALIGN(uint64_t cookie_ptr, 8); /* TODO: check if this alignment is needed */
 	uint64_t kernel_ptr;
 	struct ia_css_time_meas timing_data;
+	clock_value_t isys_eof_clock_tick;
 };
 #define SIZE_OF_FRAME_STRUCT						\
 	(SIZE_OF_HRT_VADDRESS +						\
@@ -832,7 +833,9 @@ struct sh_css_hmm_buffer {
 	CALC_ALIGNMENT_MEMBER(SIZE_OF_PAYLOAD_UNION, 8) +		\
 	sizeof(uint64_t) +						\
 	sizeof(uint64_t) +						\
-	SIZE_OF_IA_CSS_TIME_MEAS_STRUCT)
+	SIZE_OF_IA_CSS_TIME_MEAS_STRUCT +				\
+	SIZE_OF_IA_CSS_CLOCK_TICK_STRUCT +			\
+	CALC_ALIGNMENT_MEMBER(SIZE_OF_IA_CSS_CLOCK_TICK_STRUCT, 8))
 
 enum sh_css_queue_type {
 	sh_css_invalid_queue_type = -1,

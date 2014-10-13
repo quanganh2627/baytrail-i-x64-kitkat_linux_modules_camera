@@ -25,7 +25,12 @@
 #define NUM_BITS            12
 #define NUM_SLICE_ELEMS     4
 #define ROUNDMODE           ROUND_NEAREST_EVEN
+#define MAX_SHIFT_1W        (NUM_BITS-1)   /* Max number of bits a 1w input can be shifted */
+#define MAX_SHIFT_2W        (2*NUM_BITS-1) /* Max number of bits a 2w input can be shifted */
+
 
 #define HAS_div_unit
+
+#define HAS_vec_sub
 
 #endif /* __ISP2500_CONFIG_H_INCLUDED__ */

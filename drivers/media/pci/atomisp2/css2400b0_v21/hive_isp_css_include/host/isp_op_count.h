@@ -204,4 +204,9 @@ bbb_func_print_totals(
 	FILE  * fp,
 	unsigned non_zero_only);
 
+void
+core_func_print_totals(
+	FILE* fp,
+	unsigned non_zero_only);
+
 #endif

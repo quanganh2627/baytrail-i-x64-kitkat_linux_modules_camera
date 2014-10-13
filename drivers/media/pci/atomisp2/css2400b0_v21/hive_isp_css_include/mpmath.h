@@ -32,8 +32,7 @@
 #define STORAGE_CLASS_MPMATH_DATA_H STORAGE_CLASS_EXTERN_DATA
 #endif  /* INLINE_MPMATH */
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <type_support.h>
 
 /*
  * Implementation limits
