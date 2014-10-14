@@ -1225,7 +1225,8 @@ static int atomisp_qbuf(struct file *file, void *fh, struct v4l2_buffer *buf)
 	}
 
 	if (asd->streaming == ATOMISP_DEVICE_STREAMING_STOPPING) {
-		dev_err(isp->dev, "ISP ERROR\n");
+		dev_err(isp->dev, "%s: reject, as ISP at stopping.\n",
+				__func__);
 		ret = -EIO;
 		goto error;
 	}
@@ -1418,7 +1419,8 @@ static int atomisp_dqbuf(struct file *file, void *fh, struct v4l2_buffer *buf)
 
 	if (asd->streaming == ATOMISP_DEVICE_STREAMING_STOPPING) {
 		rt_mutex_unlock(&isp->mutex);
-		dev_err(isp->dev, "ISP ERROR\n");
+		dev_err(isp->dev, "%s: reject, as ISP at stopping.\n",
+				__func__);
 		return -EIO;
 	}
 

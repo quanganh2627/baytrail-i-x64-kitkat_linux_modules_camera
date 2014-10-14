@@ -3053,6 +3053,11 @@ int atomisp_cp_dvs_6axis_config(struct atomisp_sub_device *asd,
 			asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream;
 	int ret = -EFAULT;
 
+	if (stream == NULL) {
+		dev_err(asd->isp->dev, "%s: internal error!", __func__);
+		return -EINVAL;
+	}
+
 	if (!user_6axis_config || !asd->params.curr_grid_info.dvs_grid.enable)
 		return 0;
 
@@ -3267,6 +3272,11 @@ int atomisp_set_parameters(struct video_device *vdev,
 	struct atomisp_css_params_with_list *param = NULL;
 	struct atomisp_css_params *css_param = &asd->params.css_param;
 	int ret;
+
+	if (asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL].stream == NULL) {
+		dev_err(asd->isp->dev, "%s: internal error!\n", __func__);
+		return -EINVAL;
+	}
 
 	dev_dbg(asd->isp->dev, "%s: set parameter with isp_config_id %d of %s\n",
 		__func__, arg->isp_config_id, vdev->name);

@@ -882,6 +882,11 @@ static int atomisp_release(struct file *file)
 
 	pipe->users--;
 
+	if (pipe->capq.streaming)
+		dev_warn(isp->dev,
+				"%s: ISP still streaming while closing!",
+				__func__);
+
 	if (pipe->capq.streaming &&
 	    __atomisp_streamoff(file, NULL, V4L2_BUF_TYPE_VIDEO_CAPTURE)) {
 		dev_err(isp->dev,
