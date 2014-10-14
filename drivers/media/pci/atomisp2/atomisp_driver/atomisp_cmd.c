@@ -3836,7 +3836,7 @@ int atomisp_digital_zoom(struct atomisp_sub_device *asd, int flag,
 
 		dev_dbg(isp->dev, "%s, zoom: %d\n", __func__, zoom);
 		atomisp_css_set_zoom_factor(asd, zoom);
-		asd->params.css_update_params_needed = true;
+		atomisp_css_update_isp_params(asd);
 	}
 
 	return 0;
