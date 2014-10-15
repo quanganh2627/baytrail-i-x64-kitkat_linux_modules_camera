@@ -3996,18 +3996,23 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 	f->fmt.pix.width = snr_fmt.fmt.pix.width;
 	f->fmt.pix.height = snr_fmt.fmt.pix.height;
 
+	format_bridge = atomisp_get_format_bridge(snr_fmt.fmt.pix.pixelformat);
+	if (format_bridge == NULL)
+		return -EINVAL;
+
 	atomisp_subdev_get_ffmt(&asd->subdev, NULL,
 				V4L2_SUBDEV_FORMAT_ACTIVE,
 				ATOMISP_SUBDEV_PAD_SINK)->code =
-		atomisp_get_format_bridge(
-			snr_fmt.fmt.pix.pixelformat)->mbus_code;
+		format_bridge->mbus_code;
 
 	isp_sink_fmt = *atomisp_subdev_get_ffmt(&asd->subdev, NULL,
 					    V4L2_SUBDEV_FORMAT_ACTIVE,
 					    ATOMISP_SUBDEV_PAD_SINK);
+	format_bridge = atomisp_get_format_bridge(f->fmt.pix.pixelformat);
+	if (format_bridge == NULL)
+		return -EINVAL;
 
-	isp_source_fmt.code = atomisp_get_format_bridge(
-		f->fmt.pix.pixelformat)->mbus_code;
+	isp_source_fmt.code = format_bridge->mbus_code;
 	atomisp_subdev_set_ffmt(&asd->subdev, &fh,
 				V4L2_SUBDEV_FORMAT_ACTIVE,
 				source_pad, &isp_source_fmt);

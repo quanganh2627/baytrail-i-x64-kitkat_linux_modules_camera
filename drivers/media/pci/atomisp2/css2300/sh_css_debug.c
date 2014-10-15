@@ -1913,7 +1913,7 @@ sh_css_debug_pipe_graph_dump_stage(
 			} else {
 				/* Too big for one line, find last space */
 				p=ENABLE_LINE1_MAX_LENGHT1;
-				while (ei[p] != ',')
+				while (ei[p] != ',' && p > 0)
 					p--;
 				/* Last space found, copy till that space */
 				strncpy(enable_info1, ei, p);
@@ -1934,7 +1934,7 @@ sh_css_debug_pipe_graph_dump_stage(
 				} else {
 					/* 2nd line is still too long */
 					p=ENABLE_LINE2_MAX_LENGHT2;
-					while (ei[p] != ',')
+					while (ei[p] != ',' && p > 0)
 						p--;
 					strncpy(enable_info2, ei, p);
 					enable_info2[p]='\0';
