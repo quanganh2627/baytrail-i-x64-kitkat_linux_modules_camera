@@ -533,12 +533,32 @@ static void clear_irq_reg(struct atomisp_device *isp)
 	pci_write_config_dword(isp->pdev, PCI_INTERRUPT_CTRL, msg_ret);
 }
 
+static struct atomisp_sub_device *
+__get_asd_from_port(struct atomisp_device *isp, mipi_port_ID_t port)
+{
+	int i;
+
+	/* Check which isp subdev to send eof */
+	for (i = 0; i < isp->num_of_streams; i++) {
+		struct atomisp_sub_device *asd = &isp->asd[i];
+		struct camera_mipi_info *mipi_info =
+				atomisp_to_sensor_mipi_info(
+					isp->inputs[asd->input_curr].camera);
+		if (isp->asd[i].streaming == ATOMISP_DEVICE_STREAMING_ENABLED &&
+		    __get_mipi_port(isp, mipi_info->port) == port) {
+			return &isp->asd[i];
+		}
+	}
+
+	return NULL;
+}
 
 /* interrupt handling function*/
 irqreturn_t atomisp_isr(int irq, void *dev)
 {
 	struct atomisp_device *isp = (struct atomisp_device *)dev;
 	struct atomisp_sub_device *asd;
+	struct atomisp_css_event eof_event;
 	unsigned int irq_infos = 0;
 	unsigned long flags;
 	unsigned int i;
@@ -616,6 +636,28 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 			atomisp_css_rx_clear_irq_info(port, rx_infos);
 		}
 	}
+
+	if (irq_infos & IA_CSS_IRQ_INFO_ISYS_EVENTS_READY) {
+		while (ia_css_dequeue_isys_event(&(eof_event.event)) ==
+		       IA_CSS_SUCCESS) {
+			/* EOF Event does not have the css_pipe returned */
+			asd = __get_asd_from_port(isp, eof_event.event.port);
+			if (!asd) {
+				dev_err(isp->dev, "%s:no subdev.event:%d",  __func__,
+				        eof_event.event.type);
+				continue;
+			}
+
+			atomisp_eof_event(asd, eof_event.event.exp_id);
+			dev_dbg(isp->dev, "%s EOF exp_id %d\n", __func__,
+				eof_event.event.exp_id);
+		}
+
+		irq_infos &= ~IA_CSS_IRQ_INFO_ISYS_EVENTS_READY;
+		if (irq_infos == 0)
+			goto out_nowake;
+	}
+
 	spin_unlock_irqrestore(&isp->lock, flags);
 
 	return IRQ_WAKE_THREAD;
@@ -1531,25 +1573,6 @@ void atomisp_setup_flash(struct atomisp_sub_device *asd)
 	}
 }
 
-static struct atomisp_sub_device *
-__get_asd_from_port(struct atomisp_device *isp, mipi_port_ID_t port)
-{
-	int i;
-
-	/* Check which isp subdev to send eof */
-	for (i = 0; i < isp->num_of_streams; i++) {
-		struct atomisp_sub_device *asd = &isp->asd[i];
-		struct camera_mipi_info *mipi_info =
-				atomisp_to_sensor_mipi_info(
-					isp->inputs[asd->input_curr].camera);
-		if (isp->asd[i].streaming == ATOMISP_DEVICE_STREAMING_ENABLED &&
-		    __get_mipi_port(isp, mipi_info->port) == port) {
-			return &isp->asd[i];
-		}
-	}
-
-	return NULL;
-}
 irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 {
 	struct atomisp_device *isp = isp_ptr;
@@ -1557,44 +1580,19 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 	bool frame_done_found[MAX_STREAM_NUM] = {0};
 	bool css_pipe_done[MAX_STREAM_NUM] = {0};
 	bool reset_wdt_timer = false;
-	struct atomisp_css_event eof_event;
 	unsigned int i;
 	struct atomisp_sub_device *asd = &isp->asd[0];
 
 	dev_dbg(isp->dev, ">%s\n", __func__);
-	mutex_lock(&isp->streamoff_mutex);
 
 	spin_lock_irqsave(&isp->lock, flags);
 
 	if (!atomisp_streaming_count(isp) && !isp->acc.pipeline) {
 		spin_unlock_irqrestore(&isp->lock, flags);
-		mutex_unlock(&isp->streamoff_mutex);
 		return IRQ_HANDLED;
 	}
+
 	spin_unlock_irqrestore(&isp->lock, flags);
-
-	while (ia_css_dequeue_isys_event(&(eof_event.event)) ==
-	       IA_CSS_SUCCESS) {
-		/* EOF Event does not have the css_pipe returned */
-		asd = __get_asd_from_port(isp, eof_event.event.port);
-		if (!asd) {
-			dev_err(isp->dev, "%s:no subdev.event:%d",  __func__,
-			        eof_event.event.type);
-			continue;
-		}
-
-		atomisp_eof_event(asd, eof_event.event.exp_id);
-		dev_dbg(isp->dev, "%s EOF exp_id %d\n", __func__,
-			eof_event.event.exp_id);
-
-		/* signal streamon after delayed init is done */
-		if (asd->delayed_init ==
-				ATOMISP_DELAYED_INIT_WORK_DONE) {
-			asd->delayed_init = ATOMISP_DELAYED_INIT_DONE;
-			complete(&asd->init_done);
-		}
-	}
-	mutex_unlock(&isp->streamoff_mutex);
 
 	/*
 	 * The standard CSS2.0 API tells the following calling sequence of
@@ -1622,6 +1620,15 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 	 * time, instead, dequue one and process one, then another
 	 */
 	rt_mutex_lock(&isp->mutex);
+
+	/* signal streamon after delayed init is done */
+	/* TODO: the delayed_init code should be refactored */
+	if (asd->delayed_init ==
+			ATOMISP_DELAYED_INIT_WORK_DONE) {
+		asd->delayed_init = ATOMISP_DELAYED_INIT_DONE;
+		complete(&asd->init_done);
+	}
+
 	if (atomisp_css_isr_thread(isp, frame_done_found, css_pipe_done,
 				   &reset_wdt_timer))
 		goto out;
