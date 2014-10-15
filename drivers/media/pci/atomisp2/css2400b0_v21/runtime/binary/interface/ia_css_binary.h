@@ -60,8 +60,8 @@
 /* now these ports only include output ports but not vf output ports */
 enum {
 	IA_CSS_BINARY_OUTPUT_PORT_0 = 0,
-	IA_CSS_BINARY_OUTPUT_PORT_1,
-	IA_CSS_BINARY_MAX_OUTPUT_PORTS,
+	IA_CSS_BINARY_OUTPUT_PORT_1 = 1,
+	IA_CSS_BINARY_MAX_OUTPUT_PORTS = 2
 };
 
 struct ia_css_cas_binary_descr {

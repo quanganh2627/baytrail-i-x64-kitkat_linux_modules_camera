@@ -23,7 +23,6 @@
 #define __IA_CSS_OB2_PARAM_H
 
 #include "type_support.h"
-#include "vmem.h"
 
 
 /* OB2 (Optical Black) */
