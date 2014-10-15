@@ -22,7 +22,9 @@
 #include "ia_css_types.h"
 #include "sh_css_defs.h"
 #include "sh_css_frac.h"
+#ifndef IA_CSS_NO_DEBUG
 #include "ia_css_debug.h"
+#endif
 #include "isp.h"
 #include "ia_css_ob2.host.h"
 
@@ -48,6 +50,7 @@ ia_css_ob2_encode(
 	to->blacklevel_gb = uDIGIT_FITTING(from->level_gb, 16, SH_CSS_BAYER_BITS);
 }
 
+#ifndef IA_CSS_NO_DEBUG
 void
 ia_css_ob2_dump(
 	const struct sh_css_isp_ob2_params *ob2,
@@ -80,4 +83,4 @@ ia_css_ob2_debug_dtrace(
 		config->level_gr, config->level_r,
 		config->level_b, config->level_gb);
 }
-
+#endif

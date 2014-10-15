@@ -1,9 +1,7 @@
-/* Release Version: irci_master_20141014_1500 */
-/* Release Version: irci_master_20141014_1500 */
 /*
  * INTEL CONFIDENTIAL
  *
- * Copyright (C) 2010 - 2013 Intel Corporation.
+ * Copyright (C) 2010 - 2014 Intel Corporation.
  * All Rights Reserved.
  *
  * The source code contained or described herein and all documents
@@ -24,28 +22,19 @@
  * must be express and approved by Intel in writing.
  */
 
-#include "ia_css_hdr.host.h"
+#ifndef _IA_CSS_IEFD2_6_STATE_H
+#define _IA_CSS_IEFD2_6_STATE_H
 
-void
-ia_css_hdr_init_config(
-	struct sh_css_isp_hdr_params *to,
-	const struct ia_css_hdr_config *from,
-	unsigned size)
-{
-	(void)size;
-	int i;
+#include "type_support.h"
+#include "vmem.h" /* for VMEM_ARRAY*/
+#include "iefd2_6_vssnlm.isp.h"
 
-	for (i = 0; i < HDR_NUM_INPUT_FRAMES - 1; i++) {
-		to->irradiance.match_shift[i] = from->irradiance.match_shift[i];
-		to->irradiance.match_mul[i]   = from->irradiance.match_mul[i];
-		to->irradiance.thr_low[i]     = from->irradiance.thr_low[i];
-		to->irradiance.thr_high[i]    = from->irradiance.thr_high[i];
-		to->irradiance.thr_coeff[i]   = from->irradiance.thr_coeff[i];
-		to->irradiance.thr_shift[i]   = from->irradiance.thr_shift[i];
-	}
-	to->irradiance.test_irr    = from->irradiance.test_irr;
-	to->irradiance.weight_bpp  = from->irradiance.weight_bpp;
+struct sh_css_isp_iefd2_6_vmem_state {
 
-	to->deghost.test_deg    = from->deghost.test_deg;
-	to->exclusion.test_excl = from->exclusion.test_excl;
-}
+	/* State buffers required for VSSNLM sub-kernel */
+	VMEM_ARRAY(vssnlm_input_y[VSSNLM_STATE_INPUT_BUFFER_HEIGHT], VSSNLM_STATE_INPUT_BUFFER_WIDTH*ISP_NWAY);
+	VMEM_ARRAY(vssnlm_input_diff_grad[1], VSSNLM_STATE_INPUT_BUFFER_WIDTH*ISP_NWAY);
+};
+
+#endif /* _IA_CSS_IEFD2_6_STATE_H */
+

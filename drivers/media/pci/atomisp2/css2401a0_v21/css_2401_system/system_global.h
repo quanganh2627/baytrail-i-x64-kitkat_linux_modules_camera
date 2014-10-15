@@ -241,6 +241,18 @@ typedef enum {
 } gp_device_ID_t;
 
 typedef enum {
+	GP_TIMER0_ID = 0,
+	GP_TIMER1_ID,
+	GP_TIMER2_ID,
+	GP_TIMER3_ID,
+	GP_TIMER4_ID,
+	GP_TIMER5_ID,
+	GP_TIMER6_ID,
+	GP_TIMER7_ID,
+	N_GP_TIMER_ID
+} gp_timer_ID_t;
+
+typedef enum {
 	GPIO0_ID = 0,
 	N_GPIO_ID
 } gpio_ID_t;

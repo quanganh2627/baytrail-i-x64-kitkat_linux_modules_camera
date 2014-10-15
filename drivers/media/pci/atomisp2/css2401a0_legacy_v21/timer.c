@@ -22,12 +22,18 @@
 #include <type_support.h>		/* for uint32_t */
 #include "ia_css_timer.h" /*struct ia_css_clock_tick */
 #include "sh_css_legacy.h" /* IA_CSS_PIPE_ID_NUM*/
+#include "gp_timer.h" /*gp_timer_read()*/
+#include "assert_support.h"
 
 enum ia_css_err
 ia_css_timer_get_current_tick(
 	struct ia_css_clock_tick *curr_ts) {
 
-	(void)curr_ts;
-	return IA_CSS_ERR_NOT_SUPPORTED;
+	assert(curr_ts !=  NULL);
+	if (curr_ts == NULL) {
+		return IA_CSS_ERR_INVALID_ARGUMENTS;
+	}
+	curr_ts->ticks = (clock_value_t)gp_timer_read(GP_TIMER_SEL);
+	return IA_CSS_SUCCESS;
 }
 

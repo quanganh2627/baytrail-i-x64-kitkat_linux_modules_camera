@@ -25,6 +25,8 @@
 #include "type_support.h"
 #include "vmem.h" /* for VMEM_ARRAY*/
 
+#include "ia_css_dpc2_param.h"
+
 struct sh_css_isp_dpc2_vmem_state {
 	VMEM_ARRAY(dpc2_input_lines[DPC2_STATE_INPUT_BUFFER_HEIGHT], DPC2_STATE_INPUT_BUFFER_WIDTH*ISP_NWAY);
 	VMEM_ARRAY(dpc2_local_deviations[DPC2_STATE_LOCAL_DEVIATION_BUFFER_HEIGHT], DPC2_STATE_LOCAL_DEVIATION_BUFFER_WIDTH*ISP_NWAY);

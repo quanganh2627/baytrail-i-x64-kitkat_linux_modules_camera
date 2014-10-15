@@ -19,18 +19,11 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __GP_TIMER_PRIVATE_H_INCLUDED__
+#define __GP_TIMER_PRIVATE_H_INCLUDED__
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "gp_timer_public.h"
+#include "device_access.h"
+#include "assert_support.h"
 
-
-#define CSS_VERSION_STRING "REL:20141014_42.2_1539; API:2.1.8.4; GIT:irci_20141013_1500__e1aae7#e1aae7f4badd10c57188ebad975743f469ced787; SDK:/nfs/iir/disks/iir_hivepackages_003/iir_hivepkgs_disk017/Css_Mizuchi/packages/Css_Mizuchi/int_css_mizuchi_20140829_1053; USER:viedifw; "
-
-
-#endif
-
+#endif /* __GP_TIMER_PRIVATE_H_INCLUDED__ */

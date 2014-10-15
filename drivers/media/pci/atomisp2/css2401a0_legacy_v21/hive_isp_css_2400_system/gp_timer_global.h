@@ -19,18 +19,22 @@
  *
  */
 
-//
-// This file contains the version data for the CSS
-//
-// === Do not change - automatically generated ===
-//
+#ifndef __GP_TIMER_GLOBAL_H_INCLUDED__
+#define __GP_TIMER_GLOBAL_H_INCLUDED__
 
-#ifndef __IA_CSS_VERSION_DATA_H
-#define __IA_CSS_VERSION_DATA_H
+#include "hive_isp_css_defs.h" /*HIVE_GP_TIMER_SP_DMEM_ERROR_IRQ */
 
+/* from gp_timer_defs.h*/
+#define GP_TIMER_COUNT_TYPE_HIGH             0
+#define GP_TIMER_COUNT_TYPE_LOW              1
+#define GP_TIMER_COUNT_TYPE_POSEDGE          2
+#define GP_TIMER_COUNT_TYPE_NEGEDGE          3
+#define GP_TIMER_COUNT_TYPE_TYPES            4
 
-#define CSS_VERSION_STRING "REL:20141014_42.2_1539; API:2.1.8.4; GIT:irci_20141013_1500__e1aae7#e1aae7f4badd10c57188ebad975743f469ced787; SDK:/nfs/iir/disks/iir_hivepackages_003/iir_hivepkgs_disk017/Css_Mizuchi/packages/Css_Mizuchi/int_css_mizuchi_20140829_1053; USER:viedifw; "
+/* timer - 3 is selected */
+#define GP_TIMER_SEL                         3
 
+/*HIVE_GP_TIMER_SP_DMEM_ERROR_IRQ is selected*/
+#define GP_TIMER_SIGNAL_SELECT  HIVE_GP_TIMER_SP_DMEM_ERROR_IRQ
 
-#endif
-
+#endif /* __GP_TIMER_GLOBAL_H_INCLUDED__ */

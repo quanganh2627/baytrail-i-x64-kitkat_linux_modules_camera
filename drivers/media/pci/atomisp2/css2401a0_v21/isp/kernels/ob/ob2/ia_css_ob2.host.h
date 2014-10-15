@@ -33,6 +33,7 @@ ia_css_ob2_encode(
 	const struct ia_css_ob2_config *from,
 	unsigned size);
 
+#ifndef IA_CSS_NO_DEBUG
 void
 ia_css_ob2_dump(
 	const struct sh_css_isp_ob2_params *ob2,
@@ -41,5 +42,6 @@ ia_css_ob2_dump(
 void
 ia_css_ob2_debug_dtrace(
 	const struct ia_css_ob2_config *config, unsigned level);
+#endif
 
 #endif /* __IA_CSS_OB2_HOST_H */
