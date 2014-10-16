@@ -1205,6 +1205,7 @@ static long mt9m114_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 }
 
 
+#endif
 /* This returns the exposure time being used. This should only be used
    for filling in EXIF data, not for actual image processing. */
 static int mt9m114_g_exposure(struct v4l2_subdev *sd, s32 *value)
@@ -1222,7 +1223,6 @@ static int mt9m114_g_exposure(struct v4l2_subdev *sd, s32 *value)
 	*value = coarse;
 	return 0;
 }
-#endif
 #ifndef CSS15
 /*
  * This function will return the sensor supported max exposure zone number.
@@ -1449,7 +1449,6 @@ static struct mt9m114_control mt9m114_controls[] = {
 		.query = mt9m114_g_2a_status,
 	},
 #endif
-#ifdef CONFIG_GMIN_INTEL_MID /* FIXME! for RAW Mode*/
 	{
 		.qc = {
 			.id = V4L2_CID_EXPOSURE_ABSOLUTE,
@@ -1463,7 +1462,6 @@ static struct mt9m114_control mt9m114_controls[] = {
 		},
 		.query = mt9m114_g_exposure,
 	},
-#endif
 #ifndef CSS15
 	{
 		.qc = {
