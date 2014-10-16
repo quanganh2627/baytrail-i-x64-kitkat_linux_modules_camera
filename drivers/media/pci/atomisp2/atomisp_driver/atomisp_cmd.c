@@ -607,13 +607,6 @@ irqreturn_t atomisp_isr(int irq, void *dev)
 						&asd->sequence_temp))
 				atomic_set(&asd->sequence_temp,
 						atomic_read(&asd->sof_count));
-
-			/* signal streamon after delayed init is done */
-			if (asd->delayed_init ==
-					ATOMISP_DELAYED_INIT_WORK_DONE) {
-				asd->delayed_init = ATOMISP_DELAYED_INIT_DONE;
-				complete(&asd->init_done);
-			}
 		}
 		if (irq_infos & CSS_IRQ_INFO_EVENTS_READY)
 			atomic_set(&asd->sequence,
@@ -1207,9 +1200,7 @@ void atomisp_delayed_init_work(struct work_struct *work)
 	/*
 	 * to SOC camera, use yuvpp pipe and no support continuous mode.
 	 */
-	if (ATOMISP_USE_YUVPP(asd)) {
-		asd->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
-	} else {
+	if (!ATOMISP_USE_YUVPP(asd)) {
 		struct v4l2_event event = {0};
 
 		atomisp_css_allocate_continuous_frames(false, asd);
@@ -1217,8 +1208,11 @@ void atomisp_delayed_init_work(struct work_struct *work)
 
 		event.type = V4L2_EVENT_ATOMISP_RAW_BUFFERS_ALLOC_DONE;
 		v4l2_event_queue(asd->subdev.devnode, &event);
-		asd->delayed_init = ATOMISP_DELAYED_INIT_WORK_DONE;
 	}
+
+	/* signal streamon after delayed init is done */
+	asd->delayed_init = ATOMISP_DELAYED_INIT_DONE;
+	complete(&asd->init_done);
 }
 
 static void __atomisp_css_recover(struct atomisp_device *isp)
@@ -1620,15 +1614,6 @@ irqreturn_t atomisp_isr_thread(int irq, void *isp_ptr)
 	 * time, instead, dequue one and process one, then another
 	 */
 	rt_mutex_lock(&isp->mutex);
-
-	/* signal streamon after delayed init is done */
-	/* TODO: the delayed_init code should be refactored */
-	if (asd->delayed_init ==
-			ATOMISP_DELAYED_INIT_WORK_DONE) {
-		asd->delayed_init = ATOMISP_DELAYED_INIT_DONE;
-		complete(&asd->init_done);
-	}
-
 	if (atomisp_css_isr_thread(isp, frame_done_found, css_pipe_done,
 				   &reset_wdt_timer))
 		goto out;

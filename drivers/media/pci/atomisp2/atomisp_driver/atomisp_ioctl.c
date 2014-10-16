@@ -1625,7 +1625,7 @@ static int atomisp_streamon(struct file *file, void *fh,
 				"ZSL last preview raw buffer id: %u\n",
 				asd->latest_preview_exp_id);
 
-			if (asd->delayed_init != ATOMISP_DELAYED_INIT_DONE) {
+			if (asd->delayed_init == ATOMISP_DELAYED_INIT_QUEUED) {
 				flush_work(&asd->delayed_init_work);
 				rt_mutex_unlock(&isp->mutex);
 				if (wait_for_completion_interruptible(
@@ -1767,6 +1767,8 @@ wdt_start:
 		queue_work(asd->delayed_init_workq, &asd->delayed_init_work);
 		atomisp_css_set_cont_prev_start_time(isp,
 				ATOMISP_CALC_CSS_PREV_OVERLAP(sink->height));
+	} else {
+		asd->delayed_init = ATOMISP_DELAYED_INIT_NOT_QUEUED;
 	}
 
 	if (atomisp_buffers_queued(asd))
