@@ -598,8 +598,6 @@ static int atomisp_release(struct file *file)
 	struct v4l2_subdev_fh fh;
 	int ret = 0;
 
-	dev_dbg(isp->dev, "release device %s\n", vdev->name);
-
 	v4l2_fh_init(&fh.vfh, vdev);
 
 	req.count = 0;
@@ -608,6 +606,8 @@ static int atomisp_release(struct file *file)
 
 	mutex_lock(&isp->streamoff_mutex);
 	mutex_lock(&isp->mutex);
+
+	dev_dbg(isp->dev, "release device %s\n", vdev->name);
 
 	pipe->users--;
 
