@@ -710,6 +710,7 @@ static int get_atomisp_parameters32(struct atomisp_parameters *kp,
 			struct atomisp_shading_table shading_table;
 			struct atomisp_morph_table   morph_table;
 			struct atomisp_dis_coefficients dvs2_coefs;
+			struct atomisp_dvs_6axis_config dvs_6axis_config;
 		} karg;
 
 		/* handle shading table */
@@ -761,6 +762,22 @@ static int get_atomisp_parameters32(struct atomisp_parameters *kp,
 
 			if (copy_to_user(kp->dvs2_coefs, &karg.dvs2_coefs,
 				sizeof(struct atomisp_dis_coefficients)))
+				return -EFAULT;
+		}
+		/* handle dvs 6axis configuration */
+		if (up->dvs_6axis_config != 0) {
+			if (get_atomisp_dvs_6axis_config32(&karg.dvs_6axis_config,
+				(struct atomisp_dvs_6axis_config32 __user *)
+						(uintptr_t)up->dvs_6axis_config))
+				return -EFAULT;
+
+			kp->dvs_6axis_config = compat_alloc_user_space(
+				sizeof(struct atomisp_dvs_6axis_config));
+			if (!kp->dvs_6axis_config)
+				return -EFAULT;
+
+			if (copy_to_user(kp->dvs_6axis_config, &karg.dvs_6axis_config,
+				sizeof(struct atomisp_dvs_6axis_config)))
 				return -EFAULT;
 		}
 	}
