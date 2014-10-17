@@ -387,14 +387,14 @@ static struct hm2056_reg const hm2056_global_setting[] = {
     {HM2056_8BIT, 0x0B20, 0xAE},	//Set clock lane is on at sending packet, Patrick: 0xAE
     {HM2056_8BIT, 0x007C, 0x09},	//0x09 //pre-hsync setting, Patrick: 0x09
 
-    // {HM2056_8BIT, 0x0B20, 0xBE},	//Set clock lane is on at sending packet, Patrick: 0xAE
-    // {HM2056_8BIT, 0x007C, 0x43},	//0x09 //pre-hsync setting, Patrick: 0x09
+    //{HM2056_8BIT, 0x0B20, 0xBE},	//Set clock lane is on at sending packet, Patrick: 0xAE
+    //{HM2056_8BIT, 0x007C, 0x43},	//0x09 //pre-hsync setting, Patrick: 0x09
 
-    // {HM2056_8BIT, 0x0B20, 0x9E},	//Set clock lane is on at sending packet, Patrick: 0xAE
-    // {HM2056_8BIT, 0x007C, 0x33},	//0x09 //pre-hsync setting, Patrick: 0x09
+    //{HM2056_8BIT, 0x0B20, 0x9E},	//Set clock lane is on at sending packet, Patrick: 0xAE
+    //{HM2056_8BIT, 0x007C, 0x33},	//0x09 //pre-hsync setting, Patrick: 0x09
 
-    // {HM2056_8BIT, 0x0B20, 0x8E},	//Set clock lane is on at sending packet, Patrick: 0xAE
-    // {HM2056_8BIT, 0x007C, 0x0E},	//0x09 //pre-hsync setting, Patrick: 0x09
+    //{HM2056_8BIT, 0x0B20, 0x8E},	//Set clock lane is on at sending packet, Patrick: 0xAE
+    //{HM2056_8BIT, 0x007C, 0x0E},	//0x09 //pre-hsync setting, Patrick: 0x09
 
     {HM2056_8BIT, 0x0078, 0x80},	//Set clock lane is on at sending packet, Patrick: new setting
     {HM2056_8BIT, 0x007D, 0x3E},	// 3E pre-vsync setting
@@ -489,11 +489,11 @@ static struct hm2056_reg const hm2056_656x496_30fps[] = {
     {HM2056_8BIT, 0x0192, 0x48},
     {HM2056_8BIT, 0x05E4, 0x00},
     {HM2056_8BIT, 0x05E5, 0x00},
-    {HM2056_8BIT, 0x05E6, 0x8f},//655
+    {HM2056_8BIT, 0x05E6, 0x90},//656
     {HM2056_8BIT, 0x05E7, 0x02},
     {HM2056_8BIT, 0x05E8, 0x00},
     {HM2056_8BIT, 0x05E9, 0x00},
-    {HM2056_8BIT, 0x05EA, 0xef},//495
+    {HM2056_8BIT, 0x05EA, 0xf0},//496
     {HM2056_8BIT, 0x05EB, 0x01},
     {HM2056_8BIT, 0x0024, 0x40},
     {HM2056_8BIT, 0x0005, 0x01},//Turn on rolling shutter
@@ -535,100 +535,51 @@ static struct hm2056_reg const hm2056_736x496_30fps[] = {
     {HM2056_TOK_TERM, 0, 0}
 };
 
-static struct hm2056_reg const hm2056_720x592_30fps[] = {
-    {HM2056_8BIT, 0x0005, 0x00}, // Turn on rolling shutter
-    // {HM2056_8BIT, 0x0024, 0x00},
-
-    {HM2056_8BIT, 0x0006, 0x00}, // Flip/Mirror
-    {HM2056_8BIT, 0x000D, 0x01}, // 20120220 to fix morie
-    {HM2056_8BIT, 0x000E, 0x11}, // Binning ON
-
-    {HM2056_8BIT, 0x0010, 0x00},
-    //{HM2056_8BIT, 0x0011, 0x8E
-    {HM2056_8BIT, 0x0011, 0x02},
-    {HM2056_8BIT, 0x0012, 0x08}, //2012.02.08
-    {HM2056_8BIT, 0x0013, 0x00},
-
-    {HM2056_8BIT, 0x002A, 0x2F},
-    {HM2056_8BIT, 0x0071, 0x37},
-    {HM2056_8BIT, 0x0074, 0x13},
-    {HM2056_8BIT, 0x0082, 0xE2},
-    {HM2056_8BIT, 0x0131, 0xB8}, // simle bpc enable[4]
-    {HM2056_8BIT, 0x0144, 0x04}, // Sort bpc hot pixel ratio
-    {HM2056_8BIT, 0x0190, 0x87}, // A11 BPC Strength[7:3], cluster correct P11[0]P12[1]P13[2]
-    {HM2056_8BIT, 0x0192, 0x50}, // A13 Strength[4:0],hot pixel detect for cluster[6]
-
-    {HM2056_8BIT, 0x05E4, 0x2C}, // X_START; 44;
-    {HM2056_8BIT, 0x05E5, 0x00},
-    {HM2056_8BIT, 0x05E6, 0xFB}, // X_END; 763;
-    {HM2056_8BIT, 0x05E7, 0x02},
-
-    {HM2056_8BIT, 0x05E8, 0x08}, // Y_START; 8;
-    {HM2056_8BIT, 0x05E9, 0x00},
-    {HM2056_8BIT, 0x05EA, 0x57}, // Y_END; 599;
-    {HM2056_8BIT, 0x05EB, 0x02},
-
-    // {HM2056_8BIT, 0x0024, 0x40},
-    {HM2056_8BIT, 0x0005, 0x01},	//Turn on rolling shutter
-
-    {HM2056_TOK_DELAY, 0, 50}, //Delay longer than 1 frame time ~37ms
-    {HM2056_TOK_TERM, 0, 0}
-};
-
-static struct hm2056_reg const hm2056_800x600_30fps[] = {
-    {HM2056_8BIT, 0x0005, 0x00}, //Turn on rolling shutter
-    // {HM2056_8BIT, 0x0024, 0x00},
-
-    {HM2056_8BIT, 0x0006, 0x00}, // Flip/Mirror
-    {HM2056_8BIT, 0x000D, 0x01}, // 20120220 to fix morie
-    {HM2056_8BIT, 0x000E, 0x11}, // Binning ON
-
+static struct hm2056_reg const hm2056_810x610_30fps[] = {
+    {HM2056_8BIT, 0x0005, 0x00},//Turn on rolling shutter
+    {HM2056_8BIT, 0x0024, 0x00},
+    {HM2056_8BIT, 0x0006, 0x00},//Fullsize
+    {HM2056_8BIT, 0x000D, 0x01},
+    {HM2056_8BIT, 0x000E, 0x01},
     {HM2056_8BIT, 0x0010, 0x00},
     {HM2056_8BIT, 0x0011, 0x02},
-    {HM2056_8BIT, 0x0012, 0x0F}, // 2012.02.08
+    {HM2056_8BIT, 0x0012, 0x0F},
     {HM2056_8BIT, 0x0013, 0x01},
-    {HM2056_8BIT, 0x002A, 0x2F}, // PLL, 288MHz;
-    {HM2056_8BIT, 0x0070, 0x2A}, // HBlank related - 20131106
-    {HM2056_8BIT, 0x0071, 0x37}, // HBlank related - 20131106
-    {HM2056_8BIT, 0x0072, 0x55}, // HBlank related - 20131106
-    {HM2056_8BIT, 0x0073, 0x50},
+    {HM2056_8BIT, 0x002A, 0x2F},
+    {HM2056_8BIT, 0x0070, 0x2A},
+    {HM2056_8BIT, 0x0071, 0x37},
+    {HM2056_8BIT, 0x0072, 0x55},
     {HM2056_8BIT, 0x0074, 0x13},
-
     {HM2056_8BIT, 0x0082, 0xE2},
-    {HM2056_8BIT, 0x0131, 0xB8}, // simle bpc enable[4]
-    {HM2056_8BIT, 0x0144, 0x04}, // Sort bpc hot pixel ratio
-    {HM2056_8BIT, 0x0190, 0x87}, // A11 BPC Strength[7:3], cluster correct P11[0]P12[1]P13[2]
-    {HM2056_8BIT, 0x0192, 0x50}, // A13 Strength[4:0],hot pixel detect for cluster[6]
-
-    {HM2056_8BIT, 0x05E4, 0x00}, // X_START; 0;
+    {HM2056_8BIT, 0x0131, 0xB8},
+    {HM2056_8BIT, 0x0144, 0x00},
+    {HM2056_8BIT, 0x0190, 0x80},
+    {HM2056_8BIT, 0x0192, 0x48},
+    {HM2056_8BIT, 0x05E4, 0x00},
     {HM2056_8BIT, 0x05E5, 0x00},
-    {HM2056_8BIT, 0x05E6, 0x1f}, // X_END; 799;
+    {HM2056_8BIT, 0x05E6, 0x29},//810
     {HM2056_8BIT, 0x05E7, 0x03},
-
-    {HM2056_8BIT, 0x05E8, 0x00}, // Y_START; 0;
+    {HM2056_8BIT, 0x05E8, 0x00},
     {HM2056_8BIT, 0x05E9, 0x00},
-    {HM2056_8BIT, 0x05EA, 0x57}, // Y_END; 599;
+    {HM2056_8BIT, 0x05EA, 0x61},//610
     {HM2056_8BIT, 0x05EB, 0x02},
-
-    // {HM2056_8BIT, 0x0024, 0x40},
-    {HM2056_8BIT, 0x0005, 0x01}, //Turn on rolling shutter
-
-    {HM2056_TOK_DELAY, 0, 50}, //Delay longer than 1 frame time ~37ms
+    {HM2056_8BIT, 0x0024, 0x40},
+    {HM2056_8BIT, 0x0005, 0x01},//Turn on rolling shutter
+    {HM2056_TOK_DELAY, 0, 200}, // Delay longer than 1 frame time ~35ms
     {HM2056_TOK_TERM, 0, 0}
 };
 
 static struct hm2056_reg const hm2056_1296x736_30fps[] = {
-    {HM2056_8BIT, 0x0005, 0x00}, // Turn on rolling shutter
-    // {HM2056_8BIT, 0x0024, 0x00},
+    {HM2056_8BIT, 0x0005, 0x00},	//Turn on rolling shutter
+
+    {HM2056_8BIT, 0x0024, 0x00},
     {HM2056_8BIT, 0x0006, 0x10},
     {HM2056_8BIT, 0x000D, 0x00},
     {HM2056_8BIT, 0x000E, 0x00},
-
     {HM2056_8BIT, 0x0010, 0x00},
     {HM2056_8BIT, 0x0011, 0x02},
     {HM2056_8BIT, 0x0012, 0x04},
     {HM2056_8BIT, 0x0013, 0x00},
-
     {HM2056_8BIT, 0x002A, 0x2F},
     {HM2056_8BIT, 0x0070, 0x2A},
     {HM2056_8BIT, 0x0071, 0x37},
@@ -639,152 +590,56 @@ static struct hm2056_reg const hm2056_1296x736_30fps[] = {
     {HM2056_8BIT, 0x0144, 0x00},
     {HM2056_8BIT, 0x0190, 0x87},
     {HM2056_8BIT, 0x0192, 0x48},
-
     {HM2056_8BIT, 0x05E4, 0x00},
     {HM2056_8BIT, 0x05E5, 0x00},
     {HM2056_8BIT, 0x05E6, 0x0f},
     {HM2056_8BIT, 0x05E7, 0x05},
-
     {HM2056_8BIT, 0x05E8, 0x00},
     {HM2056_8BIT, 0x05E9, 0x00},
     {HM2056_8BIT, 0x05EA, 0xdf},
     {HM2056_8BIT, 0x05EB, 0x02},
-
-    // {HM2056_8BIT, 0x0024, 0x40},
-    {HM2056_8BIT, 0x0005, 0x01}, // Turn on rolling shutter
+    {HM2056_8BIT, 0x0024, 0x40},
+    {HM2056_8BIT, 0x0005, 0x01},	//Turn on rolling shutter
     {HM2056_8BIT, 0x0100, 0x01},
-    {HM2056_TOK_DELAY, 0, 50}, // Delay longer than 1 frame time ~35ms
+    {HM2056_TOK_DELAY, 0, 200}, // Delay longer than 1 frame time ~35ms
     {HM2056_TOK_TERM, 0, 0}
 };
 
-static struct hm2056_reg const hm2056_1620x912_20fps[] = {
-    {HM2056_8BIT, 0x0005, 0x00}, // TGRDCFG: bit[0]: Trigger configuration mode; 0: no video; 1: turn on rolling shutter;
-    // {HM2056_8BIT, 0x0024, 0x00}, // DISABLE MIPI;
-
-    {HM2056_8BIT, 0x0006, 0x14}, // RDCFG: mirror/flip enable, fixed window enable;
-    {HM2056_8BIT, 0x000D, 0x00}, // VREAD;
-    {HM2056_8BIT, 0x000E, 0x00}, // HREAD;
-
-    {HM2056_8BIT, 0x0010, 0x00}, // BLNKRH: blanking row MSB;
-    //{HM2056_8BIT, 0x0011, 0x8A},
-    {HM2056_8BIT, 0x0011, 0x02}, // BLNKRL: blanking row LSB; minimum is 2 rows;
-                                 // BLNKRH x 256 + BLNKRL;
-    {HM2056_8BIT, 0x0012, 0x04}, // BLNKCCLK: blanking column per PCLK;
-    {HM2056_8BIT, 0x0013, 0x00}, // BLNKC: blanking column, BLNKC x 16 + BLNKCCLK;
-
-    {HM2056_8BIT, 0x002A, 0x2F}, // PLLCFG2: configure PLL feedback divider; 288MHz;
-    {HM2056_8BIT, 0x0071, 0xAB},
-    {HM2056_8BIT, 0x0074, 0x13},
-    {HM2056_8BIT, 0x0082, 0xE2},
-    {HM2056_8BIT, 0x0131, 0xB8}, // ISPCTRL7;
-    {HM2056_8BIT, 0x0144, 0x00},
-    {HM2056_8BIT, 0x0190, 0x87},
-    {HM2056_8BIT, 0x0192, 0x48},
-
-    {HM2056_8BIT, 0x05E4, 0x00}, // X_WIN Start low [7:0];
-    {HM2056_8BIT, 0x05E5, 0x00}, // X_WIN Start high [9:8]; 0;
-    {HM2056_8BIT, 0x05E6, 0x53}, // X_WIN End low [7:0];
-    {HM2056_8BIT, 0x05E7, 0x06}, // X_WIN End high [9:8]; 1619;
-
-    {HM2056_8BIT, 0x05E8, 0x00}, // Y_WIN_Start low [7:0];
-    {HM2056_8BIT, 0x05E9, 0x00}, // Y_WIN_Start high [9:8]; 0;
-    {HM2056_8BIT, 0x05EA, 0x8f}, // Y_WIN_END low [7:0];
-    {HM2056_8BIT, 0x05EB, 0x03}, // Y_WIN_END high [9:8]; 911;
-
-    // {HM2056_8BIT, 0x0024, 0x40}, // IOCCTRL; Enable MIPI I/F;
-    {HM2056_8BIT, 0x0005, 0x01}, //Turn on rolling shutter
-    {HM2056_TOK_DELAY, 0, 80}, // Delay longer than 1 frame time ~71ms
-    {HM2056_TOK_TERM, 0, 0}
-};
-
-
-static struct hm2056_reg const hm2056_1616x1096_15fps[] = {
-/*
-*  1616*1096
-*/
-    {HM2056_8BIT, 0x0005, 0x00}, // Turn on rolling shutter
-
-    // {HM2056_8BIT, 0x0024, 0x00},
-    {HM2056_8BIT, 0x0006, 0x00}, // Flip/Mirror
-    {HM2056_8BIT, 0x000D, 0x00}, // 20120220 to fix morie
-    {HM2056_8BIT, 0x000E, 0x00}, // Binning ON
-
+static struct hm2056_reg const hm2056_1620x1220_30fps[] = {
+    {HM2056_8BIT, 0x0005, 0x00},	//Turn on rolling shutter
+    {HM2056_8BIT, 0x0024, 0x00},
+    {HM2056_8BIT, 0x0006, 0x00},
+    {HM2056_8BIT, 0x000D, 0x00},
+    {HM2056_8BIT, 0x000E, 0x00},
     {HM2056_8BIT, 0x0010, 0x00},
-    //{HM2056_8BIT, 0x0011, 0x8E},
+    //{HM2056_8BIT, 0x0011, 0x8A},
     {HM2056_8BIT, 0x0011, 0x02},
-    {HM2056_8BIT, 0x0012, 0x04}, // 2012.02.08
+    {HM2056_8BIT, 0x0012, 0x04},
     {HM2056_8BIT, 0x0013, 0x00},
-
     {HM2056_8BIT, 0x002A, 0x2F},
-    {HM2056_8BIT, 0x0071, 0x99}, // 0xAB -> 0x99;
-    {HM2056_8BIT, 0x0074, 0x13},
-    {HM2056_8BIT, 0x0082, 0xE2},
-    {HM2056_8BIT, 0x0131, 0xB8}, // simle bpc enable[4]
-    {HM2056_8BIT, 0x0144, 0x04}, // Sort bpc hot pixel ratio; 0x00 -> 0x04;
-    {HM2056_8BIT, 0x0190, 0x87}, // A11 BPC Strength[7:3], cluster correct P11[0]P12[1]P13[2]
-    {HM2056_8BIT, 0x0192, 0x50}, // A13 Strength[4:0],hot pixel detect for cluster[6]; 0x48 -> 0x50;
-
-    {HM2056_8BIT, 0x05E4, 0x02}, // X_START; 2;
-    {HM2056_8BIT, 0x05E5, 0x00},
-    {HM2056_8BIT, 0x05E6, 0x51}, // X_END; 1617;
-    {HM2056_8BIT, 0x05E7, 0x06},
-
-    {HM2056_8BIT, 0x05E8, 0x3D}, // Y_START; 61;
-    {HM2056_8BIT, 0x05E9, 0x00},
-    {HM2056_8BIT, 0x05EA, 0x84}, // Y_END; 1156;
-    {HM2056_8BIT, 0x05EB, 0x04},
-
-    // {HM2056_8BIT, 0x0024, 0x40},
-    {HM2056_8BIT, 0x0005, 0x01}, //Turn on rolling shutter
-
-    {HM2056_TOK_DELAY, 0, 80}, //Delay longer than 1 frame time ~37ms
-    {HM2056_TOK_TERM, 0, 0}
-};
-
-static struct hm2056_reg const hm2056_1616x1216_15fps[] = {
-    {HM2056_8BIT, 0x0005, 0x00}, // TGRDCFG: bit[0]: Trigger configuration mode; 0: no video; 1: turn on rolling shutter;
-    // {HM2056_8BIT, 0x0024, 0x00}, // DISABLE MIPI;
-
-    {HM2056_8BIT, 0x0006, 0x00}, // RDCFG: mirror/flip enable, fixed window enable;
-    {HM2056_8BIT, 0x000D, 0x00}, // VREAD;
-    {HM2056_8BIT, 0x000E, 0x00}, // HREAD;
-
-    {HM2056_8BIT, 0x0010, 0x00}, // BLNKRH: blanking row MSB;
-    {HM2056_8BIT, 0x0011, 0x02}, // BLNKRL: blanking row LSB; minimum is 2 rows;
-                                 // BLNKRH x 256 + BLNKRL;
-    {HM2056_8BIT, 0x0012, 0x04}, // BLNKCCLK: blanking column per PCLK;
-    {HM2056_8BIT, 0x0013, 0x00}, // BLNKC: blanking column, BLNKC x 16 + BLNKCCLK;
-
-    {HM2056_8BIT, 0x002A, 0x2F}, // PLLCFG2: configure PLL feedback divider; 288MHz;
     {HM2056_8BIT, 0x0071, 0xAB},
     {HM2056_8BIT, 0x0074, 0x13},
     {HM2056_8BIT, 0x0082, 0xE2},
-    {HM2056_8BIT, 0x0131, 0xB8}, // ISPCTRL7;
+    {HM2056_8BIT, 0x0131, 0xB8},
     {HM2056_8BIT, 0x0144, 0x00},
     {HM2056_8BIT, 0x0190, 0x87},
     {HM2056_8BIT, 0x0192, 0x48},
-
-    {HM2056_8BIT, 0x05E4, 0x04}, // X_WIN Start low [7:0];
-    {HM2056_8BIT, 0x05E5, 0x00}, // X_WIN Start high [9:8];
-    {HM2056_8BIT, 0x05E6, 0x53}, // X_WIN End low [7:0];
-    {HM2056_8BIT, 0x05E7, 0x06}, // X_WIN End high [9:8]; 0x653 = 1619, 0x64f = 1615;
-
-    {HM2056_8BIT, 0x05E8, 0x00}, // Y_WIN_Start low [7:0];
-    {HM2056_8BIT, 0x05E9, 0x00}, // Y_WIN_Start high [9:8];
-    {HM2056_8BIT, 0x05EA, 0xbf}, // Y_WIN_END low [7:0];
-    {HM2056_8BIT, 0x05EB, 0x04}, // Y_WIN_END high [9:8]; 0x4c3 = 1219, 0x4bf = 1215;
-
-    // {HM2056_8BIT, 0x0024, 0x40}, // IOCCTRL; Enable MIPI I/F;
-    {HM2056_8BIT, 0x0005, 0x01}, //Turn on rolling shutter
+    {HM2056_8BIT, 0x05E6, 0x53},
+    {HM2056_8BIT, 0x05E7, 0x06},
+    {HM2056_8BIT, 0x05EA, 0xC3},
+    {HM2056_8BIT, 0x05EB, 0x04},
+    {HM2056_8BIT, 0x0024, 0x40},
+    {HM2056_8BIT, 0x0005, 0x01},	//Turn on rolling shutter
     {HM2056_TOK_DELAY, 0, 80}, // Delay longer than 1 frame time ~71ms
     {HM2056_TOK_TERM, 0, 0}
+
 };
 
 static struct hm2056_resolution hm2056_res_preview[] = {
     {
-        .desc = "hm2056_720x592_30fps",
-        .width = 720,
-        .height = 592,
+        .desc = "hm2056_656x496_30fps",
+        .width = 656,
+        .height = 496,
         .vt_pix_clk_freq_mhz=39000000,
         .fps = 30,
         .used = 0,
@@ -794,12 +649,12 @@ static struct hm2056_resolution hm2056_res_preview[] = {
         .bin_factor_y = 1,
         .bin_mode = 0,
         .skip_frames = 1,
-        .regs = hm2056_720x592_30fps,
+        .regs = hm2056_656x496_30fps,
     },
     {
-        .desc = "hm2056_800x600_30fps",
-        .width = 800,
-        .height = 600,
+        .desc = "hm2056_736x496_30fps",
+        .width = 736,
+        .height = 496,
         .vt_pix_clk_freq_mhz=39000000,
         .fps = 30,
         .used = 0,
@@ -809,129 +664,78 @@ static struct hm2056_resolution hm2056_res_preview[] = {
         .bin_factor_y = 1,
         .bin_mode = 0,
         .skip_frames = 1,
-        .regs = hm2056_800x600_30fps,
+        .regs = hm2056_736x496_30fps,
     },
-#if 0
+    {
+        .desc = "hm2056_810x610_30fps",
+        .width = 810,
+        .height = 610,
+        .vt_pix_clk_freq_mhz=39000000,
+        .fps = 30,
+        .used = 0,
+        .pixels_per_line = 1116,
+        .lines_per_frame = 628,
+        .bin_factor_x = 1,
+        .bin_factor_y = 1,
+        .bin_mode = 0,
+        .skip_frames = 1,
+        .regs = hm2056_810x610_30fps,
+    },
     {
         .desc = "hm2056_1296x736_30fps",
         .width = 1296,
         .height = 736,
-        .vt_pix_clk_freq_mhz=39000000,
         .fps = 30,
+        .vt_pix_clk_freq_mhz=39000000,
         .used = 0,
-        .pixels_per_line = 1651,
-        .lines_per_frame = 908,
+        .pixels_per_line = 1671,
+        .lines_per_frame = 798,
         .bin_factor_x = 1,
         .bin_factor_y = 1,
         .bin_mode = 0,
         .skip_frames = 1,
         .regs = hm2056_1296x736_30fps,
     },
-#else
+#if 0
     {
-        .desc = "hm2056_1620x912_20fps",
-        .width = 1620,
-        .height = 912,
+        .desc = "hm2056_720p_28fps",
+        .width = 1392,
+        .height = 780,
+        .fps = 30,
         .vt_pix_clk_freq_mhz=39000000,
-        .fps = 20,
         .used = 0,
-        .pixels_per_line = 1926, // 1991,
-        .lines_per_frame = 930, // 1238,
+        .pixels_per_line = 1671,
+        .lines_per_frame = 798,
         .bin_factor_x = 1,
         .bin_factor_y = 1,
         .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1620x912_20fps,
+        .skip_frames = 1,
+        .regs = hm2056_1392x780_30fps,
     },
 #endif
     {
-        .desc = "hm2056_1616x1096_15fps",
-        .width = 1616,
-        .height = 1096,
+        .desc = "hm2056_1620x1220_30fps",
+        .width = 1620,
+        .height = 1220,
         .vt_pix_clk_freq_mhz=39000000,
-        .fps = 15,
+        .fps = 30,
         .used = 0,
         .pixels_per_line = 1991,
         .lines_per_frame = 1238,
         .bin_factor_x = 1,
         .bin_factor_y = 1,
         .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1616x1096_15fps,
-    },
-    {
-        .desc = "hm2056_1616x1216_15fps",
-        .width = 1616,
-        .height = 1216,
-        .vt_pix_clk_freq_mhz=39000000,
-        .fps = 15,
-        .used = 0,
-        .pixels_per_line = 1991,
-        .lines_per_frame = 1238,
-        .bin_factor_x = 1,
-        .bin_factor_y = 1,
-        .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1616x1216_15fps,
+        .skip_frames = 1,
+        .regs = hm2056_1620x1220_30fps,
     },
 };
 #define N_RES_PREVIEW (ARRAY_SIZE(hm2056_res_preview))
 
 static struct hm2056_resolution hm2056_res_still[] = {
     {
-        .desc = "hm2056_1620x912_20fps",
-        .width = 1620,
-        .height = 912,
-        .vt_pix_clk_freq_mhz=39000000,
-        .fps = 20,
-        .used = 0,
-        .pixels_per_line = 1991,
-        .lines_per_frame = 1238,
-        .bin_factor_x = 1,
-        .bin_factor_y = 1,
-        .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1620x912_20fps,
-    },
-    {
-        .desc = "hm2056_1616x1096_15fps",
-        .width = 1616,
-        .height = 1096,
-        .vt_pix_clk_freq_mhz=39000000,
-        .fps = 15,
-        .used = 0,
-        .pixels_per_line = 1991,
-        .lines_per_frame = 1238,
-        .bin_factor_x = 1,
-        .bin_factor_y = 1,
-        .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1616x1096_15fps,
-    },
-    {
-        .desc = "hm2056_1616x1216_15fps",
-        .width = 1616,
-        .height = 1216,
-        .vt_pix_clk_freq_mhz=39000000,
-        .fps = 15,
-        .used = 0,
-        .pixels_per_line = 1991,
-        .lines_per_frame = 1238,
-        .bin_factor_x = 1,
-        .bin_factor_y = 1,
-        .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1616x1216_15fps,
-    },
-};
-#define N_RES_STILL (ARRAY_SIZE(hm2056_res_still))
-
-static struct hm2056_resolution hm2056_res_video[] = {
-    // QCIF/CIF;
-    {
-        .desc = "hm2056_720x592_30fps",
-        .width = 720,
-        .height = 592,
+        .desc = "hm2056_656x496_30fps",
+        .width = 656,
+        .height = 496,
         .vt_pix_clk_freq_mhz=39000000,
         .fps = 30,
         .used = 0,
@@ -941,12 +745,12 @@ static struct hm2056_resolution hm2056_res_video[] = {
         .bin_factor_y = 1,
         .bin_mode = 0,
         .skip_frames = 1,
-        .regs = hm2056_720x592_30fps,
+        .regs = hm2056_656x496_30fps,
     },
     {
-        .desc = "hm2056_800x600_30fps",
-        .width = 800,
-        .height = 600,
+        .desc = "hm2056_810x610_30fps",
+        .width = 810,
+        .height = 610,
         .vt_pix_clk_freq_mhz=39000000,
         .fps = 30,
         .used = 0,
@@ -956,71 +760,105 @@ static struct hm2056_resolution hm2056_res_video[] = {
         .bin_factor_y = 1,
         .bin_mode = 0,
         .skip_frames = 1,
-        .regs = hm2056_800x600_30fps,
+        .regs = hm2056_810x610_30fps,
     },
-    // 480p;
-    {
-        .desc = "hm2056_1616x1096_15fps",
-        .width = 1616,
-        .height = 1096,
-        .vt_pix_clk_freq_mhz=39000000,
-        .fps = 15,
-        .used = 0,
-        .pixels_per_line = 1991,
-        .lines_per_frame = 1238,
-        .bin_factor_x = 1,
-        .bin_factor_y = 1,
-        .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1616x1096_15fps,
-    },
-    // 720p;
-#if 0
     {
         .desc = "hm2056_1296x736_30fps",
         .width = 1296,
         .height = 736,
-        .vt_pix_clk_freq_mhz=39000000,
         .fps = 30,
+        .vt_pix_clk_freq_mhz=39000000,
         .used = 0,
-        .pixels_per_line = 1651,
-        .lines_per_frame = 908,
+        .pixels_per_line = 1671,
+        .lines_per_frame = 798,
         .bin_factor_x = 1,
         .bin_factor_y = 1,
         .bin_mode = 0,
         .skip_frames = 1,
         .regs = hm2056_1296x736_30fps,
     },
+#if 0
+    {
+        .desc = "hm2056_720p_28fps",
+        .width = 1392,
+        .height = 780,
+        .fps = 30,
+        .vt_pix_clk_freq_mhz=39000000,
+        .used = 0,
+        .pixels_per_line = 1671,
+        .lines_per_frame = 798,
+        .bin_factor_x = 1,
+        .bin_factor_y = 1,
+        .bin_mode = 0,
+        .skip_frames = 1,
+        .regs = hm2056_1392x780_30fps,
+    },
 #endif
     {
-        .desc = "hm2056_1620x912_20fps",
+        .desc = "hm2056_1620x1220_30fps",
         .width = 1620,
-        .height = 912,
+        .height = 1220,
         .vt_pix_clk_freq_mhz=39000000,
-        .fps = 20,
+        .fps = 30,
         .used = 0,
         .pixels_per_line = 1991,
         .lines_per_frame = 1238,
         .bin_factor_x = 1,
         .bin_factor_y = 1,
         .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1620x912_20fps,
+        .skip_frames = 1,
+        .regs = hm2056_1620x1220_30fps,
     },
+};
+#define N_RES_STILL (ARRAY_SIZE(hm2056_res_still))
+
+static struct hm2056_resolution hm2056_res_video[] = {
     {
-        .desc = "hm2056_1616x1216_15fps",
-        .width = 1616,
-        .height = 1216,
+        .desc = "hm2056_810x610_30fps",
+        .width = 810,
+        .height = 610,
         .vt_pix_clk_freq_mhz=39000000,
-        .fps = 15,
+        .fps = 30,
         .used = 0,
-        .pixels_per_line = 1991,
-        .lines_per_frame = 1238,
+        .pixels_per_line = 1116,
+        .lines_per_frame = 628,
         .bin_factor_x = 1,
         .bin_factor_y = 1,
         .bin_mode = 0,
-        .skip_frames = 2,
-        .regs = hm2056_1616x1216_15fps,
+        .skip_frames = 1,
+        .regs = hm2056_810x610_30fps,
+    },
+#if 0
+    {
+        .desc = "hm2056_720p_28fps",
+        .width = 1392,
+        .height = 780,
+        .fps = 30,
+        .vt_pix_clk_freq_mhz=39000000,
+        .used = 0,
+        .pixels_per_line = 1671,
+        .lines_per_frame = 798,
+        .bin_factor_x = 1,
+        .bin_factor_y = 1,
+        .bin_mode = 0,
+        .skip_frames = 1,
+        .regs = hm2056_1392x780_30fps,
+    },
+#endif
+    {
+        .desc = "hm2056_1296x736_30fps",
+        .width = 1296,
+        .height = 736,
+        .fps = 30,
+        .vt_pix_clk_freq_mhz=39000000,
+        .used = 0,
+        .pixels_per_line = 1671,
+        .lines_per_frame = 798,
+        .bin_factor_x = 1,
+        .bin_factor_y = 1,
+        .bin_mode = 0,
+        .skip_frames = 1,
+        .regs = hm2056_1296x736_30fps,
     },
 };
 #define N_RES_VIDEO (ARRAY_SIZE(hm2056_res_video))
