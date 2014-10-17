@@ -2913,7 +2913,11 @@ static int __atomisp_cp_lsc_table(struct atomisp_sub_device *asd,
 
 	/* user config is to disable the shading table. */
 	if (!user_st->enable) {
-		shading_table = NULL;
+		/* Generate a minimum table with enable = 0. */
+		shading_table = atomisp_css_shading_table_alloc(1,1);
+		if (!shading_table)
+			return -ENOMEM;
+		shading_table->enable = 0;
 		goto set_lsc;
 	}
 
