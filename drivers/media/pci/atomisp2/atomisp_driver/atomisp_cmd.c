@@ -4978,8 +4978,8 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 		main_compose.width = f->fmt.pix.width;
 		main_compose.height = f->fmt.pix.height;
 
-		if (isp_sink_crop.width * main_compose.width >
-		    isp_sink_crop.height * main_compose.height) {
+		if (isp_sink_crop.width * main_compose.height >
+		    isp_sink_crop.height * main_compose.width) {
 			sink_crop.height = isp_sink_crop.height;
 			sink_crop.width = DIV_NEAREST_STEP(sink_crop.height *
 							f->fmt.pix.width,
