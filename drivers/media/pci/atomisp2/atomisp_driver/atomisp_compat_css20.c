@@ -2584,6 +2584,8 @@ static void __configure_capture_pp_input(struct atomisp_sub_device *asd,
 		&stream_env->pipe_configs[pipe_id];
 	struct ia_css_pipe_extra_config *pipe_extra_configs =
 		&stream_env->pipe_extra_configs[pipe_id];
+	unsigned int hor_ds_factor = 0, ver_ds_factor = 0;
+#define CEIL_DIV(a, b)       ((b) ? ((a) + (b) - 1) / (b) : 0)
 
 	if (width == 0 && height == 0)
 		return;
@@ -2591,6 +2593,17 @@ static void __configure_capture_pp_input(struct atomisp_sub_device *asd,
 	if (width * 9 / 10 < pipe_configs->output_info[0].res.width ||
 	    height * 9 / 10 < pipe_configs->output_info[0].res.height)
 		return;
+	/* here just copy the calculation in css */
+	hor_ds_factor = CEIL_DIV(width >> 1,
+			pipe_configs->output_info[0].res.width);
+	ver_ds_factor = CEIL_DIV(height >> 1,
+			pipe_configs->output_info[0].res.height);
+
+	if (hor_ds_factor != ver_ds_factor) {
+		dev_warn(asd->isp->dev,
+				"Cropping for capture due to FW limitation");
+		return;
+	}
 
 	pipe_configs->mode = __pipe_id_to_pipe_mode(asd, pipe_id);
 	stream_env->update_pipe[pipe_id] = true;
