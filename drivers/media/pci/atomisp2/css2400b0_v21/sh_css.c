@@ -9134,7 +9134,7 @@ enum ia_css_err
 ia_css_stop_sp(void)
 {
 	unsigned int i;
-	unsigned long timeout;
+/*	unsigned long timeout; */
 	enum ia_css_err err = IA_CSS_SUCCESS;
 
 	IA_CSS_ENTER("void");
@@ -9151,6 +9151,7 @@ ia_css_stop_sp(void)
 	sh_css_write_host2sp_command(host2sp_cmd_terminate);
 	sh_css_sp_set_sp_running(false);
 
+#if 0
 	timeout = SP_SHUTDOWN_TIMEOUT_US;
 	while (!sp_ctrl_getbit(SP0_ID, SP_SC_REG, SP_IDLE_BIT) && timeout) {
 		timeout--;
@@ -9172,7 +9173,7 @@ ia_css_stop_sp(void)
 		IA_CSS_WARNING("ISP is not idle");
 		ia_css_debug_dump_sp_sw_debug_info();
 	}
-
+#endif
 	for (i = 0; i < MAX_HMM_BUFFER_NUM; i++) {
 		if (hmm_buffer_record_h[i] != NULL) {
 			ia_css_rmgr_rel_vbuf(hmm_buffer_pool, &hmm_buffer_record_h[i]);
