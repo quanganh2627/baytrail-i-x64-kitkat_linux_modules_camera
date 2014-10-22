@@ -2344,12 +2344,8 @@ int atomisp_css_stop(struct atomisp_sub_device *asd,
 	/*
 	 * SP can not be stop if other streams are in use
 	 */
-	if (atomisp_streaming_count(isp) == 0) {
+	if (atomisp_streaming_count(isp) == 0)
 		ia_css_stop_sp();
-		if (!sh_css_hrt_system_is_idle())
-			dev_err(isp->dev, "CSS HW not idle after stopping SP\n");
-	}
-
 
 	if (!in_reset) {
 		struct atomisp_stream_env *stream_env;
