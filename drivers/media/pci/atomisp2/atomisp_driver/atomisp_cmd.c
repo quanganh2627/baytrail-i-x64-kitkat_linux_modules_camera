@@ -1426,7 +1426,8 @@ void atomisp_wdt_work(struct work_struct *work)
 
 #ifndef CONFIG_GMIN_INTEL_MID
 	/* Push CrashEvent log for recovery cases tracking */
-	kct_log(CT_EV_CRASH, "ATOMISP2", "TIMEOUT", 0, "", "", "", "", "", "", "/logs/aplog");
+	if (dbg_level > 5)
+		kct_log(CT_EV_CRASH, "ATOMISP2", "TIMEOUT", 0, "", "", "", "", "", "", "/logs/aplog");
 #endif
 	__atomisp_css_recover(isp);
 	atomisp_set_stop_timeout(ATOMISP_CSS_STOP_TIMEOUT_US);
