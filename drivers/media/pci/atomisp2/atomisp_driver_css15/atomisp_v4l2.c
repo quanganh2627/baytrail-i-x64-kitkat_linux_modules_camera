@@ -1177,6 +1177,9 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 		return err;
 	}
 
+	if (!pcim_iomap_table(dev))
+		return -ENODEV;
+
 	base = pcim_iomap_table(dev)[ATOM_ISP_PCI_BAR];
 	dev_dbg(&dev->dev, "base: %p\n", base);
 	if (!base)
