@@ -619,29 +619,86 @@ static int mt9m114_s_power(struct v4l2_subdev *sd, int power)
 	}
 }
 
-static int mt9m114_try_res(u32 *w, u32 *h)
+/*
+ * distance - calculate the distance
+ * @res: resolution
+ * @w: width
+ * @h: height
+ *
+ * Get the gap between resolution and w/h.
+ * res->width/height smaller than w/h wouldn't be considered.
+ * Returns the value of gap or -1 if fail.
+ */
+#define LARGEST_ALLOWED_RATIO_MISMATCH 600
+static int distance(struct mt9m114_res_struct const *res, u32 w, u32 h)
+{
+	unsigned int w_ratio;
+	unsigned int h_ratio;
+	int match;
+
+	if (w == 0)
+		return -1;
+	w_ratio = (res->width << 13) / w;
+	if (h == 0)
+		return -1;
+	h_ratio = (res->height << 13) / h;
+	if (h_ratio == 0)
+		return -1;
+	match   = abs(((w_ratio << 13) / h_ratio) - ((int)8192));
+
+	if ((w_ratio < (int)8192) || (h_ratio < (int)8192)  ||
+		(match > LARGEST_ALLOWED_RATIO_MISMATCH))
+		return -1;
+
+	return w_ratio + h_ratio;
+}
+
+/* Return the nearest higher resolution index */
+static int nearest_resolution_index(int w, int h)
 {
 	int i;
+	int idx = -1;
+	int dist;
+	int min_dist = INT_MAX;
+	const struct mt9m114_res_struct *tmp_res = NULL;
 
-	/*
-	 * The mode list is in ascending order. We're done as soon as
-	 * we have found the first equal or bigger size.
-	 */
-	for (i = 0; i < N_RES; i++) {
-		if ((mt9m114_res[i].width >= *w) &&
-		    (mt9m114_res[i].height >= *h))
-			break;
+	for (i = 0; i < ARRAY_SIZE(mt9m114_res); i++) {
+		tmp_res = &mt9m114_res[i];
+		dist = distance(tmp_res, w, h);
+		if (dist == -1)
+			continue;
+		if (dist < min_dist) {
+			min_dist = dist;
+			idx = i;
+		}
 	}
 
-	/*
-	 * If no mode was found, it means we can provide only a smaller size.
-	 * Returning the biggest one available in this case.
-	 */
-	if (i == N_RES)
-		i--;
+	return idx;
+}
 
-	*w = mt9m114_res[i].width;
-	*h = mt9m114_res[i].height;
+static int mt9m114_try_res(u32 *w, u32 *h)
+{
+	int idx = 0;
+
+	if ((*w > MT9M114_RES_960P_SIZE_H)
+		|| (*h > MT9M114_RES_960P_SIZE_V)) {
+		*w = MT9M114_RES_960P_SIZE_H;
+		*h = MT9M114_RES_960P_SIZE_V;
+	} else {
+		idx = nearest_resolution_index(*w, *h);
+
+		/*
+		 * nearest_resolution_index() doesn't return smaller
+		 *  resolutions. If it fails, it means the requested
+		 *  resolution is higher than wecan support. Fallback
+		 *  to highest possible resolution in this case.
+		 */
+		if (idx == -1)
+			idx = ARRAY_SIZE(mt9m114_res) - 1;
+
+		*w = mt9m114_res[idx].width;
+		*h = mt9m114_res[idx].height;
+	}
 
 	return 0;
 }
