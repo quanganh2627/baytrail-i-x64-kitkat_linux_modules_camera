@@ -221,7 +221,7 @@ static int atomisp_save_iunit_reg(struct atomisp_device *isp)
 	pci_read_config_dword(dev, MRFLD_PCI_CSI_CONTROL,
 			      &isp->saved_regs.csi_control);
 	if (isp->media_dev.hw_revision >=
-	    ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT)
+	    (ATOMISP_HW_REVISION_ISP2401 << ATOMISP_HW_REVISION_SHIFT))
 		isp->saved_regs.csi_control |=
 			MRFLD_PCI_CSI_CONTROL_PARPATHEN;
 	/* Disable CSI interface on ANN B0/K0. It is turned on just before
@@ -1264,8 +1264,10 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 #else
 			 ATOMISP_HW_REVISION_ISP2401_LEGACY
 #endif
-			 << ATOMISP_HW_REVISION_SHIFT) |
-			ATOMISP_HW_STEPPING_A0;
+			<< ATOMISP_HW_REVISION_SHIFT);
+		isp->media_dev.hw_revision |= isp->pdev->revision < 2 ?
+			 ATOMISP_HW_STEPPING_A0 : ATOMISP_HW_STEPPING_B0;
+
 		isp->dfs = &dfs_config_cht;
 		isp->pdev->d3cold_delay = 0;
 		break;
