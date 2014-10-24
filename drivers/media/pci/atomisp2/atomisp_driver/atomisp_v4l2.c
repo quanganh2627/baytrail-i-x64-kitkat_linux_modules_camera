@@ -61,7 +61,7 @@
 
 #ifdef CONFIG_GMIN_INTEL_MID
 /* Moorefield lacks PCI PM, BYT advertises it but it's broken, use PUNIT */
-#define ATOMISP_INTERNAL_PM	(IS_MOFD || IS_BYT)
+#define ATOMISP_INTERNAL_PM	(IS_MOFD || IS_BYT || IS_CHT)
 #endif
 
 /* set reserved memory pool size in page */
