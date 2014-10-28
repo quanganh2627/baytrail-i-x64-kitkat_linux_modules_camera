@@ -1233,7 +1233,11 @@ static int atomisp_pci_probe(struct pci_dev *dev,
 			(ATOMISP_HW_REVISION_ISP2400
 			 << ATOMISP_HW_REVISION_SHIFT) |
 			ATOMISP_HW_STEPPING_B0;
-		isp->dfs = &dfs_config_byt;
+		if (INTEL_MID_BOARD(3, TABLET, BYT, BLK, PRO, CRV2) ||
+				INTEL_MID_BOARD(3, TABLET, BYT, BLK, ENG, CRV2))
+			isp->dfs = &dfs_config_byt_cr;
+		else
+			isp->dfs = &dfs_config_byt;
 		/*
 		 * for BYT/CHT we are put isp into D3cold to avoid pci registers access
 		 * in power off. Set d3cold_delay to 0 since default 100ms is not
