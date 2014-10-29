@@ -531,6 +531,7 @@ static int __destroy_stream(struct atomisp_sub_device *asd,
 {
 	struct atomisp_device *isp = asd->isp;
 	int i;
+	unsigned long timeout;
 
 	if (!stream_env->stream)
 		return 0;
@@ -549,6 +550,22 @@ static int __destroy_stream(struct atomisp_sub_device *asd,
 		dev_err(isp->dev, "stop stream failed.\n");
 		return -EINVAL;
 	}
+
+	if (stream_env->stream_state == CSS_STREAM_STARTED) {
+		timeout = jiffies + msecs_to_jiffies(40);
+		while (1) {
+			if (ia_css_stream_has_stopped(stream_env->stream))
+				break;
+
+			if (time_after(jiffies, timeout)) {
+				dev_warn(isp->dev, "stop stream timeout.\n");
+				break;
+			}
+
+			usleep_range(100, 200);
+		};
+	}
+
 	stream_env->stream_state = CSS_STREAM_STOPPED;
 
 	if (ia_css_stream_destroy(stream_env->stream) != IA_CSS_SUCCESS) {
