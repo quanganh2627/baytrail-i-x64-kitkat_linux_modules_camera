@@ -2271,6 +2271,27 @@ int atomisp_get_dis_stat(struct atomisp_sub_device *asd,
 }
 
 /*
+ * Function to get current sensor output effective resolution
+ */
+int atomisp_get_effective_res(struct atomisp_sub_device *asd,
+			 struct atomisp_resolution  *config)
+{
+	struct atomisp_stream_env stream_env =
+		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+
+	dev_dbg(asd->isp->dev, ">%s start\n", __func__);
+	if (config == NULL) {
+		dev_err(asd->isp->dev, "Get effective struct address is not valid.\n");
+		return -EINVAL;
+	}
+	config->width =
+		stream_env.stream_config.input_config.effective_res.width;
+	config->height =
+		stream_env.stream_config.input_config.effective_res.height;
+	return 0;
+}
+
+/*
  * Function to get DVS2 BQ resolution settings
  */
 int atomisp_get_dvs2_bq_resolutions(struct atomisp_sub_device *asd,
@@ -3437,6 +3458,8 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 	       sizeof(struct atomisp_css_dp_config));
 	memcpy(&asd->params.css_param.de_config, &config->de_config,
 	       sizeof(struct atomisp_css_de_config));
+	memcpy(&asd->params.css_param.dz_config, &config->dz_config,
+	       sizeof(struct atomisp_css_dz_config));
 	memcpy(&asd->params.css_param.ce_config, &config->ce_config,
 	       sizeof(struct atomisp_css_ce_config));
 	memcpy(&asd->params.css_param.nr_config, &config->nr_config,
@@ -3465,6 +3488,7 @@ int atomisp_param(struct atomisp_sub_device *asd, int flag,
 	atomisp_css_set_wb_config(asd, &asd->params.css_param.wb_config);
 	atomisp_css_set_ob_config(asd, &asd->params.css_param.ob_config);
 	atomisp_css_set_de_config(asd, &asd->params.css_param.de_config);
+	atomisp_css_set_dz_config(asd, &asd->params.css_param.dz_config);
 	atomisp_css_set_ce_config(asd, &asd->params.css_param.ce_config);
 	atomisp_css_set_dp_config(asd, &asd->params.css_param.dp_config);
 	atomisp_css_set_nr_config(asd, &asd->params.css_param.nr_config);

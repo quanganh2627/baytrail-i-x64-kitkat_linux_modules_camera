@@ -3482,6 +3482,12 @@ void atomisp_css_set_de_config(struct atomisp_sub_device *asd,
 	asd->params.config.de_config = de_config;
 }
 
+void atomisp_css_set_dz_config(struct atomisp_sub_device *asd,
+			struct atomisp_css_dz_config *dz_config)
+{
+	asd->params.config.dz_config = dz_config;
+}
+
 void atomisp_css_set_default_de_config(struct atomisp_sub_device *asd)
 {
 	asd->params.config.de_config = NULL;
