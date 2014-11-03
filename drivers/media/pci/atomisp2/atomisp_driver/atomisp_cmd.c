@@ -5010,6 +5010,26 @@ int atomisp_set_fmt(struct video_device *vdev, struct v4l2_format *f)
 					     V4L2_SUBDEV_FORMAT_ACTIVE,
 					     source_pad, V4L2_SEL_TGT_COMPOSE,
 					     0, &isp_sink_crop);
+	} else if (IS_MOFD) {
+		struct v4l2_rect main_compose = {0};
+
+		main_compose.width = isp_sink_crop.width;
+		main_compose.height =
+			DIV_ROUND_UP(main_compose.width * f->fmt.pix.height,
+				     f->fmt.pix.width);
+		if (main_compose.height > isp_sink_crop.height) {
+			main_compose.height = isp_sink_crop.height;
+			main_compose.width =
+				DIV_ROUND_UP(main_compose.height *
+					     f->fmt.pix.width,
+					     f->fmt.pix.height);
+		}
+
+		atomisp_subdev_set_selection(&asd->subdev, &fh,
+				V4L2_SUBDEV_FORMAT_ACTIVE,
+				source_pad,
+				V4L2_SEL_TGT_COMPOSE, 0,
+				&main_compose);
 	} else {
 		struct v4l2_rect sink_crop = {0};
 		struct v4l2_rect main_compose = {0};
