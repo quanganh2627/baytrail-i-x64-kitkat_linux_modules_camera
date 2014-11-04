@@ -708,9 +708,9 @@ static struct hm2056_reg const hm2056_1616x916_20fps[] = {
 
 
 /*
- *  1616*1082
+ *  1616*1080
  */
-static struct hm2056_reg const hm2056_1616x1082_15fps[] = {
+static struct hm2056_reg const hm2056_1616x1080_15fps[] = {
         {HM2056_8BIT, 0x0005, 0x00}, // Turn on rolling shutter
 
         // {HM2056_8BIT, 0x0024, 0x00},
@@ -719,7 +719,7 @@ static struct hm2056_reg const hm2056_1616x1082_15fps[] = {
         {HM2056_8BIT, 0x000E, 0x00}, // Binning ON
 
         {HM2056_8BIT, 0x0010, 0x00},
-        //{HM2056_8BIT, 0x0011, 0x8E},
+        // {HM2056_8BIT, 0x0011, 0x8E},
         {HM2056_8BIT, 0x0011, 0x02},
         {HM2056_8BIT, 0x0012, 0x04}, // 2012.02.08
         {HM2056_8BIT, 0x0013, 0x00},
@@ -740,7 +740,7 @@ static struct hm2056_reg const hm2056_1616x1082_15fps[] = {
 
         {HM2056_8BIT, 0x05E8, 0x3D}, // Y_START; 61;
         {HM2056_8BIT, 0x05E9, 0x00},
-        {HM2056_8BIT, 0x05EA, 0x66}, // Y_END; 1126;
+        {HM2056_8BIT, 0x05EA, 0x64}, // Y_END; 1124;
         {HM2056_8BIT, 0x05EB, 0x04},
 
         // {HM2056_8BIT, 0x0024, 0x40},
@@ -854,10 +854,10 @@ static struct hm2056_resolution hm2056_res_preview[] = {
         },
 #endif
         {
-                .desc = "hm2056_1616x1082_15fps",
+                .desc = "hm2056_1616x1080_15fps",
                 .width = 1616,
-                .height = 1082,
-                .vt_pix_clk_freq_mhz=39000000,
+                .height = 1080,
+                .vt_pix_clk_freq_mhz = 39000000,
                 .fps = 15,
                 .used = 0,
                 .pixels_per_line = 1991,
@@ -866,7 +866,7 @@ static struct hm2056_resolution hm2056_res_preview[] = {
                 .bin_factor_y = 1,
                 .bin_mode = 0,
                 .skip_frames = 2,
-                .regs = hm2056_1616x1082_15fps,
+                .regs = hm2056_1616x1080_15fps,
         },
         {
                 .desc = "hm2056_1616x1216_15fps",
@@ -903,10 +903,10 @@ static struct hm2056_resolution hm2056_res_still[] = {
                 .regs = hm2056_1616x916_20fps,
         },
         {
-                .desc = "hm2056_1616x1082_15fps",
+                .desc = "hm2056_1616x1080_15fps",
                 .width = 1616,
-                .height = 1082,
-                .vt_pix_clk_freq_mhz=39000000,
+                .height = 1080,
+                .vt_pix_clk_freq_mhz = 39000000,
                 .fps = 15,
                 .used = 0,
                 .pixels_per_line = 1991,
@@ -915,7 +915,7 @@ static struct hm2056_resolution hm2056_res_still[] = {
                 .bin_factor_y = 1,
                 .bin_mode = 0,
                 .skip_frames = 2,
-                .regs = hm2056_1616x1082_15fps,
+                .regs = hm2056_1616x1080_15fps,
         },
         {
                 .desc = "hm2056_1616x1216_15fps",
@@ -969,10 +969,10 @@ static struct hm2056_resolution hm2056_res_video[] = {
         },
         // 480p;
         {
-                .desc = "hm2056_1616x1082_15fps",
+                .desc = "hm2056_1616x1080_15fps",
                 .width = 1616,
-                .height = 1082,
-                .vt_pix_clk_freq_mhz=39000000,
+                .height = 1080,
+                .vt_pix_clk_freq_mhz = 39000000,
                 .fps = 15,
                 .used = 0,
                 .pixels_per_line = 1991,
@@ -981,7 +981,7 @@ static struct hm2056_resolution hm2056_res_video[] = {
                 .bin_factor_y = 1,
                 .bin_mode = 0,
                 .skip_frames = 2,
-                .regs = hm2056_1616x1082_15fps,
+                .regs = hm2056_1616x1080_15fps,
         },
         // 720p;
 #if 0
