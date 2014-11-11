@@ -28,7 +28,11 @@
 #include <media/lm3554.h>
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-device.h>
-
+#include <linux/acpi.h>
+#ifdef CONFIG_GMIN_INTEL_MID
+#include <linux/gpio/consumer.h>
+#include <linux/atomisp_gmin_platform.h>
+#endif
 #include <linux/atomisp.h>
 
 struct lm3554_ctrl_id {
@@ -755,17 +759,29 @@ static int lm3554_gpio_init(struct i2c_client *client)
 	struct lm3554_platform_data *pdata = flash->pdata;
 	int ret;
 
+#ifdef CONFIG_GMIN_INTEL_MID
+	if (!gpio_is_valid(pdata->gpio_reset))
+		return -EINVAL;
+#else
 	ret = gpio_request(pdata->gpio_reset, "flash reset");
 	if (ret < 0)
 		return ret;
+#endif
 
 	ret = gpio_direction_output(pdata->gpio_reset, 1);
 	if (ret < 0)
 		goto err_gpio_reset;
 
+#ifdef CONFIG_GMIN_INTEL_MID
+	if (!gpio_is_valid(pdata->gpio_strobe)) {
+		ret = -EINVAL;
+		goto err_gpio_dir_reset;
+	}
+#else
 	ret = gpio_request(pdata->gpio_strobe, "flash");
 	if (ret < 0)
 		goto err_gpio_dir_reset;
+#endif
 
 	ret = gpio_direction_output(pdata->gpio_strobe, 0);
 	if (ret < 0)
@@ -803,16 +819,55 @@ static int lm3554_gpio_uninit(struct i2c_client *client)
 	return 0;
 }
 
+
+#ifdef CONFIG_GMIN_INTEL_MID
+void *lm3554_platform_data_func(struct i2c_client *client)
+{
+	static struct lm3554_platform_data platform_data;
+
+	if (ACPI_COMPANION(&client->dev)) {
+		platform_data.gpio_reset  =
+			desc_to_gpio(gpiod_get_index(&(client->dev), "lm3554_gpio2", 2));
+		platform_data.gpio_strobe =
+			desc_to_gpio(gpiod_get_index(&(client->dev), "lm3554_gpio0", 0));
+		platform_data.gpio_torch  =
+			desc_to_gpio(gpiod_get_index(&(client->dev), "lm3554_gpio1", 1));
+	}else {
+		platform_data.gpio_reset = -1;
+		platform_data.gpio_strobe = -1;
+		platform_data.gpio_torch = -1;
+	}
+
+	dev_info(&client->dev, "camera pdata: lm3554: reset: %d strobe %d torch %d\n",
+		platform_data.gpio_reset, platform_data.gpio_strobe,
+		platform_data.gpio_torch);
+
+	/* Set to TX2 mode, then ENVM/TX2 pin is a power amplifier sync input:
+	 * ENVM/TX pin asserted, flash forced into torch;
+	 * ENVM/TX pin desserted, flash set back;
+	 */
+	platform_data.envm_tx2 = 1;
+	platform_data.tx2_polarity = 0;
+
+	/* set peak current limit to be 1000mA */
+	platform_data.current_limit = 0;
+
+	return &platform_data;
+}
+#endif
+
 static int lm3554_probe(struct i2c_client *client,
 				  const struct i2c_device_id *id)
 {
 	int err;
 	struct lm3554 *flash;
 
+#ifndef CONFIG_GMIN_INTEL_MID
 	if (client->dev.platform_data == NULL) {
 		dev_err(&client->dev, "no platform data\n");
 		return -ENODEV;
 	}
+#endif
 
 	flash = kzalloc(sizeof(*flash), GFP_KERNEL);
 	if (!flash) {
@@ -821,6 +876,11 @@ static int lm3554_probe(struct i2c_client *client,
 	}
 
 	flash->pdata = client->dev.platform_data;
+
+#ifdef CONFIG_GMIN_INTEL_MID
+	if (!flash->pdata || ACPI_COMPANION(&client->dev))
+		flash->pdata = lm3554_platform_data_func(client);
+#endif
 
 	v4l2_i2c_subdev_init(&flash->sd, client, &lm3554_ops);
 	flash->sd.internal_ops = &lm3554_internal_ops;
@@ -847,6 +907,10 @@ static int lm3554_probe(struct i2c_client *client,
 		goto fail2;
 	}
 
+#ifdef CONFIG_GMIN_INTEL_MID
+	if (ACPI_HANDLE(&client->dev))
+		err = atomisp_register_i2c_module(&flash->sd, NULL, LED_FLASH);
+#endif
 	return 0;
 fail2:
 	media_entity_cleanup(&flash->sd.entity);
@@ -892,11 +956,19 @@ static const struct dev_pm_ops lm3554_pm_ops = {
 	.resume = lm3554_resume,
 };
 
+static struct acpi_device_id lm3554_acpi_match[] = {
+	{ "INTCF1C" },
+	{},
+};
+
+MODULE_DEVICE_TABLE(acpi, lm3554_acpi_match);
+
 static struct i2c_driver lm3554_driver = {
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = LM3554_NAME,
 		.pm   = &lm3554_pm_ops,
+		.acpi_match_table = ACPI_PTR(lm3554_acpi_match),
 	},
 	.probe = lm3554_probe,
 	.remove = lm3554_remove,
