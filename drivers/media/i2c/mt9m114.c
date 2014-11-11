@@ -52,6 +52,7 @@
  * be printed.
  */
 static int debug;
+static int aaalock;
 module_param(debug, int, 0644);
 MODULE_PARM_DESC(debug, "Debug level (0-1)");
 
@@ -1402,6 +1403,76 @@ static int mt9m114_g_bin_factor_y(struct v4l2_subdev *sd, s32 *val)
 }
 #endif
 
+static int mt9m114_s_ev(struct v4l2_subdev *sd, s32 val)
+{
+	struct i2c_client *c = v4l2_get_subdevdata(sd);
+	s32 luma = 0x37;
+	int err;
+
+	/* EV value only support -2 to 2
+	 * 0: 0x37, 1:0x47, 2:0x57, -1:0x27, -2:0x17
+	 */
+	if (val < -2 || val > 2) {
+		return -EINVAL;
+	}
+	luma += 0x10 * val;
+	dev_dbg(&c->dev, "%s val:%d luma:0x%x\n", __func__, val, luma);
+	err = mt9m114_write_reg(c, MISENSOR_16BIT, 0x098E, 0xC87A);
+	if (err) {
+		dev_err(&c->dev, "%s logic addr access error\n", __func__);
+		return err;
+	}
+	err = mt9m114_write_reg(c, MISENSOR_8BIT, 0xC87A, (u32)luma);
+	if (err) {
+		dev_err(&c->dev, "%s write target_average_luma failed\n", __func__);
+		return err;
+	}
+	udelay(10);
+
+	return 0;
+}
+
+static int mt9m114_g_ev(struct v4l2_subdev *sd, s32 *val)
+{
+	struct i2c_client *c = v4l2_get_subdevdata(sd);
+	int err;
+	u32 luma;
+
+	err = mt9m114_write_reg(c, MISENSOR_16BIT, 0x098E, 0xC87A);
+	if (err) {
+		dev_err(&c->dev, "%s logic addr access error\n", __func__);
+		return err;
+	}
+	err = mt9m114_read_reg(c, MISENSOR_8BIT, 0xC87A, &luma);
+	if (err) {
+		dev_err(&c->dev, "%s read target_average_luma failed\n", __func__);
+		return err;
+	}
+	luma -= 0x17;
+	luma /= 0x10;
+	*val = (s32)luma - 2;
+	dev_dbg(&c->dev, "%s val:%d\n", __func__, *val);
+
+	return 0;
+}
+
+/* Fake interface
+ * mt9m114 now can not support 3a_lock
+*/
+static int mt9m114_s_3a_lock(struct v4l2_subdev *sd, s32 val)
+{
+	aaalock = val;
+	return 0;
+}
+
+static int mt9m114_g_3a_lock(struct v4l2_subdev *sd, s32 *val)
+{
+	if (aaalock)
+		return V4L2_LOCK_EXPOSURE | V4L2_LOCK_WHITE_BALANCE
+			| V4L2_LOCK_FOCUS;
+	return 0;
+}
+
 static struct mt9m114_control mt9m114_controls[] = {
 	{
 		.qc = {
@@ -1566,6 +1637,35 @@ static struct mt9m114_control mt9m114_controls[] = {
 		.query = mt9m114_g_bin_factor_y,
 	},
 #endif
+	{
+		.qc = {
+			.id = V4L2_CID_EXPOSURE,
+			.type = V4L2_CTRL_TYPE_INTEGER,
+			.name = "exposure biasx",
+			.minimum = -2,
+			.maximum = 2,
+			.step = 1,
+			.default_value = 0,
+			.flags = 0,
+		},
+		.tweak = mt9m114_s_ev,
+		.query = mt9m114_g_ev,
+	},
+	{
+		.qc = {
+			.id = V4L2_CID_3A_LOCK,
+			.type = V4L2_CTRL_TYPE_BITMASK,
+			.name = "3a lock",
+			.minimum = 0,
+			.maximum = V4L2_LOCK_EXPOSURE | V4L2_LOCK_WHITE_BALANCE
+			| V4L2_LOCK_FOCUS,
+			.step = 1,
+			.default_value = 0,
+			.flags = 0,
+		},
+		.tweak = mt9m114_s_3a_lock,
+		.query = mt9m114_g_3a_lock,
+	},
 };
 #define N_CONTROLS (ARRAY_SIZE(mt9m114_controls))
 
