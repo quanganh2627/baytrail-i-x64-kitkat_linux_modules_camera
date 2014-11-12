@@ -1565,6 +1565,63 @@ static const struct imx_reg imx135_wvga_dvs_binning[] = {
 	{IMX_TOK_TERM, 0, 0}
 };
 
+/* 480P 1036 x 696 */
+static const struct imx_reg imx135_480p_binning[] = {
+	GROUPED_PARAMETER_HOLD_ENABLE,
+	PLL_SETTINGS_FOR_MIPI_209_6MHZ_SALTBAY,
+	/* Mode setting */
+	{IMX_8BIT, 0x0108, 0x03 },
+	{IMX_8BIT, 0x0112, 0x0A },
+	{IMX_8BIT, 0x0113, 0x0A },
+	{IMX_8BIT, 0x0381, 0x01 },
+	{IMX_8BIT, 0x0383, 0x01 },
+	{IMX_8BIT, 0x0385, 0x01 },
+	{IMX_8BIT, 0x0387, 0x01 },
+	{IMX_8BIT, 0x0390, 0x01 },
+	{IMX_8BIT, 0x0391, 0x44 },
+	{IMX_8BIT, 0x0392, 0x00 },
+	{IMX_8BIT, 0x0401, 0x00 },
+	{IMX_8BIT, 0x0404, 0x00 },
+	{IMX_8BIT, 0x0405, 0x10 },/* No scal */
+	{IMX_8BIT, 0x4082, 0x00 },
+	{IMX_8BIT, 0x4083, 0x00 },
+	{IMX_8BIT, 0x7006, 0x04 },
+	/* Size setting */
+	{IMX_8BIT, 0x0344, 0x00 }, /* 52,20,4155, 3099 4144x2784*/
+	{IMX_8BIT, 0x0345, 0x20 },
+	{IMX_8BIT, 0x0346, 0x00 },
+	{IMX_8BIT, 0x0347, 0xA8 },
+	{IMX_8BIT, 0x0348, 0x10 },
+	{IMX_8BIT, 0x0349, 0x4F },
+	{IMX_8BIT, 0x034A, 0x0B },
+	{IMX_8BIT, 0x034B, 0x88 },
+	{IMX_8BIT, 0x034C, 0x04 }, /* 1036 * 696 */
+	{IMX_8BIT, 0x034D, 0x0C },
+	{IMX_8BIT, 0x034E, 0x02 },
+	{IMX_8BIT, 0x034F, 0xB8 },
+	{IMX_8BIT, 0x0350, 0x00 },
+	{IMX_8BIT, 0x0351, 0x00 },
+	{IMX_8BIT, 0x0352, 0x00 },
+	{IMX_8BIT, 0x0353, 0x00 },
+	{IMX_8BIT, 0x0354, 0x04 }, /* 1036x696 */
+	{IMX_8BIT, 0x0355, 0x0C },
+	{IMX_8BIT, 0x0356, 0x02 },
+	{IMX_8BIT, 0x0357, 0xB8 },
+	{IMX_8BIT, 0x301D, 0x30 },
+	{IMX_8BIT, 0x3310, 0x04 },
+	{IMX_8BIT, 0x3311, 0x0C },
+	{IMX_8BIT, 0x3312, 0x02 },
+	{IMX_8BIT, 0x3313, 0xB8 },
+	{IMX_8BIT, 0x331C, 0x02 },
+	{IMX_8BIT, 0x331D, 0x21 },
+	{IMX_8BIT, 0x4084, 0x04 },
+	{IMX_8BIT, 0x4085, 0x0C },
+	{IMX_8BIT, 0x4086, 0x02 },
+	{IMX_8BIT, 0x4087, 0xB8 },
+	{IMX_8BIT, 0x4400, 0x00 },
+	{IMX_TOK_TERM, 0, 0}
+};
+
 /* 480P DVS 936 x 602 */
 static const struct imx_reg imx135_480p_dvs_binning[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
@@ -1620,6 +1677,63 @@ static const struct imx_reg imx135_480p_dvs_binning[] = {
 	{ IMX_8BIT, 0x4087, 0x5a },
 	{ IMX_8BIT, 0x4400, 0x00 },
 	{ IMX_TOK_TERM, 0, 0}
+};
+
+/* VGA: H : 1036 V : 780 */
+static const struct imx_reg imx135_vga_binning[] = {
+	GROUPED_PARAMETER_HOLD_ENABLE,
+	PLL_SETTINGS_FOR_MIPI_209_6MHZ_SALTBAY,
+	/* Mode setting */
+	{IMX_8BIT, 0x0108, 0x03 },
+	{IMX_8BIT, 0x0112, 0x0A },
+	{IMX_8BIT, 0x0113, 0x0A },
+	{IMX_8BIT, 0x0381, 0x01 },
+	{IMX_8BIT, 0x0383, 0x01 },
+	{IMX_8BIT, 0x0385, 0x01 },
+	{IMX_8BIT, 0x0387, 0x01 },
+	{IMX_8BIT, 0x0390, 0x01 },
+	{IMX_8BIT, 0x0391, 0x44 },
+	{IMX_8BIT, 0x0392, 0x00 },
+	{IMX_8BIT, 0x0401, 0x00 },
+	{IMX_8BIT, 0x0404, 0x00 },
+	{IMX_8BIT, 0x0405, 0x10 },
+	{IMX_8BIT, 0x4082, 0x00 },
+	{IMX_8BIT, 0x4083, 0x00 },
+	{IMX_8BIT, 0x7006, 0x04 },
+	/* Size setting */
+	{IMX_8BIT, 0x0344, 0x00 }, /* 52,20,4155, 3099 4144x3120*/
+	{IMX_8BIT, 0x0345, 0x20 },
+	{IMX_8BIT, 0x0346, 0x00 },
+	{IMX_8BIT, 0x0347, 0x00 },
+	{IMX_8BIT, 0x0348, 0x10 },
+	{IMX_8BIT, 0x0349, 0x4F },
+	{IMX_8BIT, 0x034A, 0x0C },
+	{IMX_8BIT, 0x034B, 0x2F },
+	{IMX_8BIT, 0x034C, 0x04 }, /* 1036x780 */
+	{IMX_8BIT, 0x034D, 0x0C },
+	{IMX_8BIT, 0x034E, 0x03 },
+	{IMX_8BIT, 0x034F, 0x0C },
+	{IMX_8BIT, 0x0350, 0x00 },
+	{IMX_8BIT, 0x0351, 0x00 },
+	{IMX_8BIT, 0x0352, 0x00 },
+	{IMX_8BIT, 0x0353, 0x00 },
+	{IMX_8BIT, 0x0354, 0x04 }, /* 1036x780 */
+	{IMX_8BIT, 0x0355, 0x0C },
+	{IMX_8BIT, 0x0356, 0x03 },
+	{IMX_8BIT, 0x0357, 0x0C },
+	{IMX_8BIT, 0x301D, 0x30 },
+	{IMX_8BIT, 0x3310, 0x04 },
+	{IMX_8BIT, 0x3311, 0x0C },
+	{IMX_8BIT, 0x3312, 0x03 },
+	{IMX_8BIT, 0x3313, 0x0C },
+	{IMX_8BIT, 0x331C, 0x02 },
+	{IMX_8BIT, 0x331D, 0x21 },
+	{IMX_8BIT, 0x4084, 0x04 },
+	{IMX_8BIT, 0x4085, 0x0C },
+	{IMX_8BIT, 0x4086, 0x03 },
+	{IMX_8BIT, 0x4087, 0x0C },
+	{IMX_8BIT, 0x4400, 0x00 },
+	{IMX_TOK_TERM, 0, 0}
 };
 
 /* VGA: H : 820 V : 616 */
@@ -1853,6 +1967,63 @@ static const struct imx_reg imx135_cif_binning[] = {
 	{IMX_TOK_TERM, 0, 0}
 };
 
+/* CIF H : 1888 V : 1548 */
+static const struct imx_reg imx135_cif_binning_1888x1548[] = {
+	GROUPED_PARAMETER_HOLD_ENABLE,
+	PLL_SETTINGS_FOR_MIPI_209_6MHZ_SALTBAY,
+	/* Mode setting */
+	{IMX_8BIT, 0x0108, 0x03 },
+	{IMX_8BIT, 0x0112, 0x0A },
+	{IMX_8BIT, 0x0113, 0x0A },
+	{IMX_8BIT, 0x0381, 0x01 },
+	{IMX_8BIT, 0x0383, 0x01 },
+	{IMX_8BIT, 0x0385, 0x01 },
+	{IMX_8BIT, 0x0387, 0x01 },
+	{IMX_8BIT, 0x0390, 0x01 },
+	{IMX_8BIT, 0x0391, 0x22 },
+	{IMX_8BIT, 0x0392, 0x00 },
+	{IMX_8BIT, 0x0401, 0x00 },
+	{IMX_8BIT, 0x0404, 0x00 },
+	{IMX_8BIT, 0x0405, 0x10 },
+	{IMX_8BIT, 0x4082, 0x00 },
+	{IMX_8BIT, 0x4083, 0x00 },
+	{IMX_8BIT, 0x7006, 0x04 },
+	/* Size setting */
+	{IMX_8BIT, 0x0344, 0x00 }, /* 264,42, 3776x3096 */
+	{IMX_8BIT, 0x0345, 0xD8 },
+	{IMX_8BIT, 0x0346, 0x00 },
+	{IMX_8BIT, 0x0347, 0x0C },
+	{IMX_8BIT, 0x0348, 0x0F },
+	{IMX_8BIT, 0x0349, 0x97 },
+	{IMX_8BIT, 0x034A, 0x0C },
+	{IMX_8BIT, 0x034B, 0x23 },
+	{IMX_8BIT, 0x034C, 0x07 }, /* 1888x1548 */
+	{IMX_8BIT, 0x034D, 0x60 },
+	{IMX_8BIT, 0x034E, 0x06 },
+	{IMX_8BIT, 0x034F, 0x0C },
+	{IMX_8BIT, 0x0350, 0x00 },
+	{IMX_8BIT, 0x0351, 0x00 },
+	{IMX_8BIT, 0x0352, 0x00 },
+	{IMX_8BIT, 0x0353, 0x00 },
+	{IMX_8BIT, 0x0354, 0x07 }, /* 1888x1548 */
+	{IMX_8BIT, 0x0355, 0x60 },
+	{IMX_8BIT, 0x0356, 0x06 },
+	{IMX_8BIT, 0x0357, 0x0C },
+	{IMX_8BIT, 0x301D, 0x30 },
+	{IMX_8BIT, 0x3310, 0x07 },
+	{IMX_8BIT, 0x3311, 0x60 },
+	{IMX_8BIT, 0x3312, 0x06 },
+	{IMX_8BIT, 0x3313, 0x0C },
+	{IMX_8BIT, 0x331C, 0x02 }, /* TODO! binning 4x4 must be 021c? */
+	{IMX_8BIT, 0x331D, 0x1C },
+	{IMX_8BIT, 0x4084, 0x07 },
+	{IMX_8BIT, 0x4085, 0x60 },
+	{IMX_8BIT, 0x4086, 0x06 },
+	{IMX_8BIT, 0x4087, 0x0C },
+	{IMX_8BIT, 0x4400, 0x00 },
+	{IMX_TOK_TERM, 0, 0}
+};
+
 /* QCIF H : 216 V : 176 */
 static const struct imx_reg imx135_qcif_dvs_binning[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
@@ -1940,28 +2111,10 @@ struct imx_resolution imx135_res_preview[] = {
 		.mipi_freq = 209600,
 	},
 	{
-		 .desc = "imx135_480p_binning_preview",
-		 .regs = imx135_480p_dvs_binning,
-		 .width = 936,
-		 .height = 602,
-		.fps_options = {
-			{ /* Binning Pixel clock: 335.36MHz */
-				 .fps = 30,
-				 .pixels_per_line = 5464,
-				 .lines_per_frame = 2046,
-			},
-			{
-			}
-		},
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		.mipi_freq = 209600,
-	},
-	{
-		.desc = "imx135_vga_dvs_binning_preview",
-		.regs = imx135_vga_dvs_binning,
-		.width = 820,
-		.height = 616,
+		.desc = "imx135_vga_binning_preview",
+		.regs = imx135_vga_binning,
+		.width = 1036,
+		.height = 780,
 		.fps_options = {
 			{
 				 .fps = 30,
@@ -1973,6 +2126,24 @@ struct imx_resolution imx135_res_preview[] = {
 		},
 		.bin_factor_x = 2,
 		.bin_factor_y = 2,
+		.mipi_freq = 209600,
+	},
+	{
+		 .desc = "imx135_480p_preview",
+		 .regs = imx135_480p_binning,
+		 .width = 1036,
+		 .height = 696,
+		.fps_options = {
+			{ /* Binning Pixel clock: 335.36MHz */
+				 .fps = 30,
+				 .pixels_per_line = 9144,
+				 .lines_per_frame = 1226,
+			},
+			{
+			}
+		},
+		 .bin_factor_x = 2,
+		 .bin_factor_y = 2,
 		.mipi_freq = 209600,
 	},
 	{
@@ -2104,13 +2275,31 @@ struct imx_resolution imx135_res_preview[] = {
 struct imx_resolution imx135_res_still[] = {
 	{
 		.desc = "imx135_cif_binning_still",
-		.regs = imx135_cif_binning,
-		.width = 368,
-		.height = 304,
+		.regs = imx135_cif_binning_1888x1548,
+		.width = 1888,
+		.height = 1548,
 		.fps_options = {
 			{ /* Binning Pixel clock: 335.36MHz */
 				 .fps = 30,
-				 .pixels_per_line = 9114,
+				 .pixels_per_line = 5464,
+				 .lines_per_frame = 2046,
+			},
+			{
+			}
+		},
+		.bin_factor_x = 1,
+		.bin_factor_y = 1,
+		.mipi_freq = 209600,
+	},
+	{
+		.desc = "imx135_vga_binning_preview",
+		.regs = imx135_vga_binning,
+		.width = 1036,
+		.height = 780,
+		.fps_options = {
+			{
+				 .fps = 30,
+				 .pixels_per_line = 9144,
 				 .lines_per_frame = 1226,
 			},
 			{
@@ -2121,40 +2310,21 @@ struct imx_resolution imx135_res_still[] = {
 		.mipi_freq = 209600,
 	},
 	{
-		 .desc = "imx135_480p_binning_still",
-		 .regs = imx135_480p_dvs_binning,
-		 .width = 936,
-		 .height = 602,
+		 .desc = "imx135_480p_preview",
+		 .regs = imx135_480p_binning,
+		 .width = 1036,
+		 .height = 696,
 		.fps_options = {
 			{ /* Binning Pixel clock: 335.36MHz */
 				 .fps = 30,
-				 .pixels_per_line = 9114,
-				 .lines_per_frame = 2453,
+				 .pixels_per_line = 9144,
+				 .lines_per_frame = 1226,
 			},
 			{
 			}
 		},
-		 .bin_factor_x = 1,
-		 .bin_factor_y = 1,
-		.mipi_freq = 209600,
-	},
-	{
-		.desc = "imx135_1m_still",
-		.regs = imx135_1m,
-		.width = 1040,
-		.height = 784,
-		.fps_options = {
-			{
-				 .fps = 30,
-				 .pixels_per_line = 5464,
-				 .lines_per_frame = 2046,
-			},
-			{
-			}
-		},
-		.bin_factor_x = 1,
-		.bin_factor_y = 1,
-		.used = 0,
+		 .bin_factor_x = 2,
+		 .bin_factor_y = 2,
 		.mipi_freq = 209600,
 	},
 	{
