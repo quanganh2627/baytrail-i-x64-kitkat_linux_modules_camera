@@ -1527,6 +1527,8 @@ static struct imx_reg const imx134_1568_880_30fps[] = {
 
 static struct imx_reg const imx134_1568_876_60fps_0625[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -1639,6 +1641,8 @@ static struct imx_reg const imx134_1568_876_60fps_0625[] = {
 /* 4 lane for 720p dvs,  vendor provide */
 static struct imx_reg const imx134_1568_880[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
@@ -1862,6 +1866,8 @@ static struct imx_reg const imx134_880_592[] = {
 };
 static struct imx_reg const imx134_2336_1308_60fps[] = {
 	GROUPED_PARAMETER_HOLD_ENABLE,
+	/* mode set clear */
+	{ IMX_8BIT, 0x3A43, 0x01 },
 	/* Clock Setting */
 	{ IMX_8BIT, 0x011E, 0x13 },
 	{ IMX_8BIT, 0x011F, 0x33 },
