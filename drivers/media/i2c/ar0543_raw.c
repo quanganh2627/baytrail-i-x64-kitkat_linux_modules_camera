@@ -173,7 +173,7 @@ static int
 ar0543_raw_read_reg(struct i2c_client *client, u16 len, u16 reg, u16 *val)
 {
 	u16 data[AR0543_RAW_SHORT_MAX];
-	int err;
+	int err, i;
 
 	struct i2c_msg msg[2] = {
 		{
@@ -210,12 +210,13 @@ ar0543_raw_read_reg(struct i2c_client *client, u16 len, u16 reg, u16 *val)
 	}
 
 	/* high byte comes first */
-	if (len == AR0543_RAW_8BIT)
+	if (len == AR0543_RAW_8BIT) {
 		*val = (u8)data[0];
-	else if (len == AR0543_RAW_16BIT)
-		*val = be16_to_cpu(*(u16 *)&data[0]);
-	else
-		*val = be32_to_cpu(*(u32 *)&data[0]);
+	} else {
+		/* 16-bit access is default when len > 1 */
+		for (i = 0; i < (len >> 1); i++)
+			val[i] = be16_to_cpu(data[i]);
+	}
 
 	return 0;
 
@@ -317,7 +318,7 @@ static int ar0543_raw_rmw_reg(struct i2c_client *client, u16 data_length, u16 re
 			   u16 mask, u16 set)
 {
 	int err;
-	u16 val;
+	u16 val[AR0543_RAW_SHORT_MAX];
 
 	/* Exit when no mask */
 	if (mask == 0)
@@ -327,13 +328,13 @@ static int ar0543_raw_rmw_reg(struct i2c_client *client, u16 data_length, u16 re
 	if (data_length == AR0543_RAW_8BIT && mask & ~0xff)
 		return -EINVAL;
 
-	err = ar0543_raw_read_reg(client, data_length, reg, &val);
+	err = ar0543_raw_read_reg(client, data_length, reg, val);
 	if (err) {
 		v4l2_err(client, "ar0543_raw_rmw_reg error exit, read failed\n");
 		return -EINVAL;
 	}
 
-	val &= ~mask;
+	val[0] &= ~mask;
 
 	/*
 	 * Perform the OR function if the @set exists.
@@ -346,9 +347,9 @@ static int ar0543_raw_rmw_reg(struct i2c_client *client, u16 data_length, u16 re
 	 * this unneeded shift operation?
 	 */
 	set <<= ffs(mask) - 1;
-	val |= set & mask;
+	val[0] |= set & mask;
 
-	err = ar0543_raw_write_reg(client, data_length, reg, val);
+	err = ar0543_raw_write_reg(client, data_length, reg, val[0]);
 	if (err) {
 		v4l2_err(client, "ar0543_raw_rmw_reg error exit, write failed\n");
 		return -EINVAL;
