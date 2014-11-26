@@ -1866,6 +1866,8 @@ static int imx_s_stream(struct v4l2_subdev *sd, int enable)
 			return ret;
 		}
 		dev->streaming = 1;
+		if (dev->vcm_driver && dev->vcm_driver->t_focus_abs_init)
+			dev->vcm_driver->t_focus_abs_init(sd);
 	} else {
 		ret = imx_write_reg_array(client, imx_soft_standby);
 		if (ret != 0) {
