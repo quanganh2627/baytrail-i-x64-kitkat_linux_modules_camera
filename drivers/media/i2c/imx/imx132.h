@@ -459,6 +459,25 @@ struct imx_resolution imx132_res_preview[] = {
 
 struct imx_resolution imx132_res_still[] = {
 	{
+		.desc = "imx132_1336x1096_30fps",
+		.regs = imx132_1336x1096_30fps,
+		.width = 1336,
+		.height = 1096,
+		.fps_options = {
+			{
+				.fps = 30,
+				.pixels_per_line = 0x08F2,
+				.lines_per_frame = 0x045C,
+			},
+			{ }
+		},
+		.bin_factor_x = 0,
+		.bin_factor_y = 0,
+		.used = 0,
+		.skip_frames = 2,
+		.mipi_freq = 384000,
+	},
+	{
 		.desc = "imx132_1080p_30fps",
 		.regs = imx132_1080p_30fps,
 		.width = 1936,
