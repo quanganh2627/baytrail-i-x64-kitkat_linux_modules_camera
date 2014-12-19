@@ -1532,6 +1532,12 @@ static int distance(struct imx_resolution const *res, u32 w, u32 h)
 	return w_ratio + h_ratio;
 }
 
+static int is_moorefield(void)
+{
+	return INTEL_MID_BOARD(1, PHONE, MOFD) ||
+	       INTEL_MID_BOARD(1, TABLET, MOFD);
+}
+
 /* Return the nearest higher resolution index */
 static int nearest_resolution_index(struct v4l2_subdev *sd, int w, int h)
 {
@@ -1546,6 +1552,10 @@ static int nearest_resolution_index(struct v4l2_subdev *sd, int w, int h)
 
 	for (i = 0; i < dev->entries_curr_table; i++) {
 		tmp_res = &dev->curr_res_table[i];
+		/* FIXME/HACK: use this resolution only on MOFD.
+		 * Will break FOV in HALv3 */
+		if (!is_moorefield() && tmp_res->regs == imx132_1336x1096_still)
+			continue;
 		dist = distance(tmp_res, w, h);
 		if (dist == -1)
 			continue;
