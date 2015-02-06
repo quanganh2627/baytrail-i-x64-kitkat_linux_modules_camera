@@ -1265,6 +1265,7 @@ sh_css_params_write_to_ddr_pipe_internal(
 
 static enum ia_css_err
 sh_css_params_write_to_ddr_internal(
+		struct ia_css_pipe *pipe,
 		unsigned pipe_id,
 		struct ia_css_isp_parameters *params,
 		const struct ia_css_pipeline_stage *stage,
@@ -3954,6 +3955,7 @@ sh_css_param_update_isp_params(struct ia_css_pipe *curr_pipe,
 				break;
 
 			err = sh_css_params_write_to_ddr_internal(
+					pipe,
 					pipeline->pipe_id,
 					params,
 					stage,
@@ -4122,6 +4124,7 @@ sh_css_params_write_to_ddr_pipe_internal(
 
 static enum ia_css_err
 sh_css_params_write_to_ddr_internal(
+	struct ia_css_pipe *pipe,
 	unsigned pipe_id,
 	struct ia_css_isp_parameters *params,
 	const struct ia_css_pipeline_stage *stage,
@@ -4138,6 +4141,8 @@ sh_css_params_write_to_ddr_internal(
 #if !defined(IS_ISP_2500_SYSTEM)
 	/* struct is > 128 bytes so it should not be on stack (see checkpatch) */
 	static struct ia_css_macc_table converted_macc_table;
+#else
+	(void)pipe;
 #endif
 
 	IA_CSS_ENTER_PRIVATE("void");
@@ -4273,7 +4278,7 @@ sh_css_params_write_to_ddr_internal(
 					(const struct ia_css_shading_table *)params->sc_table,
 					params->sensor_binning,
 					&params->sc_config,
-					binary);
+					binary, pipe->required_bds_factor);
 				if (params->sc_config == NULL) {
 					IA_CSS_LEAVE_ERR_PRIVATE(IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY);
 					return IA_CSS_ERR_CANNOT_ALLOCATE_MEMORY;
@@ -4544,6 +4549,7 @@ sh_css_params_write_to_ddr(struct ia_css_pipe *pipe,
 		struct ia_css_pipeline *pipeline;
 		pipeline = ia_css_pipe_get_pipeline(pipe);
 		err = sh_css_params_write_to_ddr_internal(
+				pipe,
 				pipeline->pipe_id,
 				params,
 				stage,
@@ -4606,6 +4612,16 @@ struct ia_css_shading_table *ia_css_get_shading_table(struct ia_css_stream *stre
 /* ------ deprecated(bz675) : from ------ */
 		const struct ia_css_binary *binary
 			= ia_css_stream_get_shading_correction_binary(stream);
+		struct ia_css_pipe *pipe;
+
+		pipe = stream->pipes[0];
+
+		if (stream->num_pipes == 2) {
+			assert(stream->pipes[1] != NULL);
+			if (stream->pipes[1]->config.mode == IA_CSS_PIPE_MODE_VIDEO ||
+			    stream->pipes[1]->config.mode == IA_CSS_PIPE_MODE_PREVIEW)
+				pipe = stream->pipes[1];
+		}
 		if (binary) {
 			if (params->sc_config) {
 				ia_css_shading_table_free(params->sc_config);
@@ -4615,7 +4631,7 @@ struct ia_css_shading_table *ia_css_get_shading_table(struct ia_css_stream *stre
 				(const struct ia_css_shading_table *)params->sc_table,
 				params->sensor_binning,
 				&params->sc_config,
-				binary);
+				binary, pipe->required_bds_factor);
 
 			table = params->sc_config;
 			/* The sc_config will be freed in the
