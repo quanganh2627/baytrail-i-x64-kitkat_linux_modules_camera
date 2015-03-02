@@ -124,10 +124,35 @@ int atomisp_q_video_buffers_to_css(struct atomisp_sub_device *asd,
 			atomisp_apply_css_parameters(asd,
 						&param->us_params,
 						&param->params);
+
+			if (param->us_params.dz_config &&
+				asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO) {
+				err = atomisp_calculate_real_zoom_region(asd,
+					&param->params.dz_config, css_pipe_id);
+				if (!err)
+					atomisp_css_set_dz_config(asd,
+						&param->params.dz_config);
+			}
 			atomisp_css_set_isp_config_applied_frame(asd,
 						vm_mem->vaddr);
 			atomisp_css_update_isp_params_on_pipe(asd,
 				asd->stream_env[stream_id].pipes[css_pipe_id]);
+
+			/*
+			 * WORKAROUND:
+			 * Because the camera halv3 can't ensure to set zoom
+			 * region to per_frame setting and global setting at
+			 * same time and only set zoom region to pre_frame
+			 * setting now.so when the pre_frame setting inculde
+			 * zoom region,I will set it to global setting.
+			 */
+			if (param->us_params.dz_config &&
+				asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO
+				&& !err) {
+				atomisp_css_set_dz_config(asd,
+						&param->params.dz_config);
+				atomisp_css_update_isp_params(asd);
+			}
 			/* free the parameters */
 			atomisp_free_css_parameters(&param->params);
 			atomisp_kernel_free(param);
@@ -732,6 +757,8 @@ static void atomisp_subdev_init_struct(struct atomisp_sub_device *asd)
 
 	asd->stream_prepared = false;
 	asd->high_speed_mode = false;
+	asd->sensor_array_res.height = 0;
+	asd->sensor_array_res.width = 0;
 	atomisp_css_init_struct(asd);
 }
 /*

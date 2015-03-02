@@ -2280,23 +2280,20 @@ int atomisp_get_dis_stat(struct atomisp_sub_device *asd,
 }
 
 /*
- * Function to get current sensor output effective resolution
+ * Function  set camrea_prefiles.xml current sensor pixel array size
  */
-int atomisp_get_effective_res(struct atomisp_sub_device *asd,
+int atomisp_set_array_res(struct atomisp_sub_device *asd,
 			 struct atomisp_resolution  *config)
 {
-	struct atomisp_stream_env stream_env =
-		asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
-
 	dev_dbg(asd->isp->dev, ">%s start\n", __func__);
-	if (config == NULL) {
-		dev_err(asd->isp->dev, "Get effective struct address is not valid.\n");
+	if (config == NULL || config->width < 0
+		|| config->height < 0) {
+		dev_err(asd->isp->dev, "Set sensor array size is not valid\n");
 		return -EINVAL;
 	}
-	config->width =
-		stream_env.stream_config.input_config.effective_res.width;
-	config->height =
-		stream_env.stream_config.input_config.effective_res.height;
+
+	asd->sensor_array_res.width = config->width;
+	asd->sensor_array_res.height = config->height;
 	return 0;
 }
 
@@ -2688,6 +2685,159 @@ int atomisp_get_metadata_by_type(struct atomisp_sub_device *asd, int flag,
 	return 0;
 }
 
+/*
+ * Function to calculate real zoom region for every pipe
+ */
+int atomisp_calculate_real_zoom_region(struct atomisp_sub_device *asd,
+				struct ia_css_dz_config   *dz_config,
+				enum atomisp_css_pipe_id css_pipe_id)
+
+{
+	struct atomisp_stream_env *stream_env =
+			&asd->stream_env[ATOMISP_INPUT_STREAM_GENERAL];
+	struct atomisp_resolution  eff_res, out_res;
+
+	memset(&eff_res, 0, sizeof(eff_res));
+	memset(&out_res, 0, sizeof(out_res));
+
+	if (dz_config->dx || dz_config->dy)
+		return 0;
+
+	if (css_pipe_id != IA_CSS_PIPE_ID_PREVIEW
+		&& css_pipe_id != IA_CSS_PIPE_ID_CAPTURE) {
+		dev_err(asd->isp->dev, "%s the set pipe no support crop region"
+			, __func__);
+		return -EINVAL;
+	}
+
+	eff_res.width =
+		stream_env->stream_config.input_config.effective_res.width;
+	eff_res.height =
+		stream_env->stream_config.input_config.effective_res.height;
+	if (eff_res.width == 0 || eff_res.height == 0) {
+		dev_err(asd->isp->dev, "%s err effective resolution"
+				, __func__);
+		return -EINVAL;
+	}
+
+	if (dz_config->zoom_region.resolution.width
+		== asd->sensor_array_res.width
+		|| dz_config->zoom_region.resolution.height
+		== asd->sensor_array_res.height) {
+		/*no need crop region*/
+		dz_config->zoom_region.origin.x = 0;
+		dz_config->zoom_region.origin.y = 0;
+		dz_config->zoom_region.resolution.width = eff_res.width;
+		dz_config->zoom_region.resolution.height = eff_res.height;
+		return 0;
+	}
+
+	/* FIXME:
+	 * This is not the correct implementation with Google's definition, due
+	 * to firmware limitation.
+	 * map real crop region base on above calculating base max crop region.
+	 */
+	dz_config->zoom_region.origin.x =
+			dz_config->zoom_region.origin.x
+			* eff_res.width
+			/ asd->sensor_array_res.width;
+	dz_config->zoom_region.origin.y =
+			dz_config->zoom_region.origin.y
+			* eff_res.height
+			/ asd->sensor_array_res.height;
+	dz_config->zoom_region.resolution.width =
+			dz_config->zoom_region.resolution.width
+			* eff_res.width
+			/ asd->sensor_array_res.width;
+	dz_config->zoom_region.resolution.height =
+			dz_config->zoom_region.resolution.height
+			* eff_res.height
+			/ asd->sensor_array_res.height;
+
+	/*
+	  * Set same ratio of crop region resolution and current pipe output
+	  * resolution
+	  */
+	out_res.width =
+		stream_env->pipe_configs[css_pipe_id].output_info[0].res.width;
+	out_res.height =
+		stream_env->pipe_configs[css_pipe_id].output_info[0].res.height;
+	if (out_res.width == 0 || out_res.height == 0) {
+		dev_err(asd->isp->dev, "%s err current pipe output resolution"
+				, __func__);
+		return -EINVAL;
+	}
+
+	if (out_res.width * dz_config->zoom_region.resolution.height
+		> dz_config->zoom_region.resolution.width * out_res.height) {
+		dz_config->zoom_region.resolution.height =
+				dz_config->zoom_region.resolution.width
+				* out_res.height / out_res.width;
+	} else {
+		dz_config->zoom_region.resolution.width =
+				dz_config->zoom_region.resolution.height
+				* out_res.width / out_res.height;
+	}
+	dev_dbg(asd->isp->dev, "%s crop region:(%d,%d),(%d,%d) eff_res(%d, %d) array_size(%d,%d) out_res(%d, %d)\n",
+			__func__, dz_config->zoom_region.origin.x,
+			dz_config->zoom_region.origin.y,
+			dz_config->zoom_region.resolution.width,
+			dz_config->zoom_region.resolution.height,
+			eff_res.width, eff_res.height,
+			asd->sensor_array_res.width,
+			asd->sensor_array_res.height,
+			out_res.width, out_res.height);
+
+
+	if ((dz_config->zoom_region.origin.x +
+		dz_config->zoom_region.resolution.width
+		> eff_res.width) ||
+		(dz_config->zoom_region.origin.y +
+		dz_config->zoom_region.resolution.height
+		> eff_res.height))
+		return -EINVAL;
+
+	return 0;
+}
+
+
+/*
+ * Function to check the zoom region whether is effective
+ */
+static bool atomisp_check_zoom_region(
+			struct atomisp_sub_device *asd,
+			struct ia_css_dz_config *dz_config)
+{
+	struct atomisp_resolution  config;
+	bool flag = false;
+	unsigned int w , h;
+
+	memset(&config, 0, sizeof(struct atomisp_resolution));
+
+	if (dz_config->dx && dz_config->dy)
+		return true;
+
+	config.width = asd->sensor_array_res.width;
+	config.height = asd->sensor_array_res.height;
+	w = dz_config->zoom_region.origin.x +
+		dz_config->zoom_region.resolution.width;
+	h = dz_config->zoom_region.origin.y +
+		dz_config->zoom_region.resolution.height;
+
+	if ((w <= config.width) && (h <= config.height) && w > 0 && h > 0)
+		flag = true;
+	else
+		/* setting error zoom region */
+		dev_err(asd->isp->dev, "%s zoom region ERROR:dz_config:(%d,%d),(%d,%d)array_res(%d, %d)\n",
+				__func__, dz_config->zoom_region.origin.x,
+				dz_config->zoom_region.origin.y,
+				dz_config->zoom_region.resolution.width,
+				dz_config->zoom_region.resolution.height,
+				config.width, config.height);
+
+	return flag;
+}
+
 void atomisp_apply_css_parameters(
 				struct atomisp_sub_device *asd,
 				struct atomisp_parameters *arg,
@@ -2815,6 +2965,19 @@ static int __atomisp_cp_general_isp_parameters(
 		if (copy_from_user(&css_param->dp_config, arg->dp_config,
 				   sizeof(struct atomisp_css_dp_config)))
 			return -EFAULT;
+	if (asd->run_mode->val != ATOMISP_RUN_MODE_VIDEO) {
+		if (arg->dz_config) {
+			if (copy_from_user(&css_param->dz_config,
+				arg->dz_config,
+				sizeof(struct atomisp_css_dz_config)))
+				return -EFAULT;
+			if (!atomisp_check_zoom_region(asd,
+						&css_param->dz_config)) {
+				dev_err(asd->isp->dev, "crop region error!");
+				return -EINVAL;
+			}
+		}
+	}
 
 	if (arg->nr_config)
 		if (copy_from_user(&css_param->nr_config, arg->nr_config,
