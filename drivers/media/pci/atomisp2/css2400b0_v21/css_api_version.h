@@ -42,7 +42,7 @@ The version string has four dot-separated numbers, read left to right:
 
 */
 
-#define CSS_API_VERSION_STRING	"2.1.9.1"
+#define CSS_API_VERSION_STRING	"2.1.9.2"
 
 /*
 Change log
@@ -229,6 +229,9 @@ v2.1.9.0 (1 changes parallel), Introduce sp assert event.
 v2.1.9.1 (1 changes parallel), Exclude driver part from ia_css_buffer.h as it is also used by SP
 - Excluded driver part of the interface from SP/ISP code
 - Driver I/F is not affected
+
+v2.1.9.2, Fix copyright headers (no functional change)
+- No functional change; only fixes copyright headers
 
 */
 
